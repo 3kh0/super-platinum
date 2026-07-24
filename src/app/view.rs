@@ -10,7 +10,19 @@ pub(super) fn view(app: &App) -> Element<'_, Message> {
     match app.screen {
         Screen::Login => login_view(),
         Screen::Loading => center_text("Loading…"),
-        Screen::Main => with_palette(app, with_profile_hover(app, main_view(app))),
+        Screen::Main => with_image_viewer(
+            app,
+            with_palette(app, with_profile_hover(app, main_view(app))),
+        ),
+    }
+}
+
+fn with_image_viewer<'a>(app: &'a App, base: Element<'a, Message>) -> Element<'a, Message> {
+    match app.image_viewer.as_ref() {
+        Some(viewer) => {
+            ui::image_viewer::overlay(base, viewer, &app.file_previews, &app.avatar_previews)
+        }
+        None => base,
     }
 }
 

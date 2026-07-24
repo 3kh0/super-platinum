@@ -3,14 +3,16 @@ use std::f32::consts::TAU;
 use std::time::Duration;
 
 use iced::widget::image::Handle as ImageHandle;
-use iced::widget::{Column, Row, button, container, image, stack, svg, text, text_input};
+use iced::widget::{
+    Column, Row, button, container, image, mouse_area, stack, svg, text, text_input,
+};
 use iced::{Alignment, Color, ContentFit, Element, Fill, Font, Length, Point};
 use unicode_segmentation::UnicodeSegmentation;
 
 use super::{blocks, composer, icons, profile, selectable, theme};
 use crate::app::{
-    ComposerAttachment, FilePreview, Message, ProfileHoverState, TextSelection,
-    TextSelectionSurface,
+    ComposerAttachment, FilePreview, ImageFetchAuth, ImageViewerSource, MediaViewerKind, Message,
+    ProfileHoverState, TextSelection, TextSelectionSurface,
 };
 use crate::slack::models::Message as SlackMessage;
 use crate::state::{self, Workspace};
@@ -276,11 +278,11 @@ pub fn row<'a>(
     }
 
     for file in &msg.files {
-        col = col.push(file_row(file, file_previews, hovered));
+        col = col.push(file_row(ws, channel_id, msg, file, file_previews, hovered));
     }
 
     for att in &msg.attachments {
-        col = col.push(attachment_row(att, file_previews));
+        col = col.push(attachment_row(ws, channel_id, msg, att, file_previews));
     }
 
     if let Some(attachments) = pending_attachments {
@@ -979,6 +981,9 @@ pub fn empty_placeholder<'a>(label: &str) -> Element<'a, Message> {
 }
 
 fn attachment_row<'a>(
+    ws: &Workspace,
+    channel_id: &str,
+    msg: &SlackMessage,
     att: &crate::slack::models::Attachment,
     file_previews: &HashMap<String, FilePreview>,
 ) -> Element<'a, Message> {
@@ -1031,13 +1036,39 @@ fn attachment_row<'a>(
     if let Some(preview) = state::attachment_preview_url(att).and_then(|url| file_previews.get(url))
     {
         if let FilePreview::Loaded(handle) = preview {
-            content = content.push(
-                image::Image::new(handle.clone())
-                    .width(Length::Fixed(260.0))
-                    .height(Length::Fixed(160.0))
-                    .content_fit(ContentFit::Contain)
-                    .border_radius(6.0),
-            );
+            let open = state::attachment_viewer_url(att).map(|url| {
+                Message::ImageViewerOpened(image_viewer_source(
+                    ws,
+                    channel_id,
+                    msg,
+                    None,
+                    MediaViewerKind::Image,
+                    state::attachment_preview_url(att).unwrap_or(url).to_owned(),
+                    url.to_owned(),
+                    url.to_owned(),
+                    ImageFetchAuth::Public,
+                    state::attachment_download_name(att),
+                ))
+            });
+            let preview: Element<'a, Message> = image::Image::new(handle.clone())
+                .width(Length::Fixed(260.0))
+                .height(Length::Fixed(160.0))
+                .content_fit(ContentFit::Contain)
+                .border_radius(6.0)
+                .into();
+            content = content.push(match open {
+                Some(message) => container(
+                    mouse_area(preview)
+                        .on_press(message)
+                        .interaction(iced::mouse::Interaction::Pointer),
+                )
+                .id(iced::widget::Id::from(format!(
+                    "image-preview:{}",
+                    state::attachment_preview_url(att).unwrap_or_default()
+                )))
+                .into(),
+                None => preview,
+            });
         }
     }
 
@@ -1105,6 +1136,9 @@ pub fn avatar_with_size<'a>(
 }
 
 fn file_row<'a>(
+    ws: &Workspace,
+    channel_id: &str,
+    msg: &SlackMessage,
     file: &crate::slack::models::File,
     file_previews: &HashMap<String, FilePreview>,
     hovered: bool,
@@ -1116,13 +1150,46 @@ fn file_row<'a>(
         .map(str::to_owned)
         .unwrap_or_else(|| state::file_title(file));
     let (preview_width, preview_height) = file_preview_dimensions(file);
-    let download = file
-        .url_private
-        .clone()
+    let download = state::file_download_url(file)
+        .map(str::to_owned)
         .map(|url| Message::FileDownloadPressed {
+            auth: if state::is_slack_authenticated_url(&url) {
+                ImageFetchAuth::Slack
+            } else {
+                ImageFetchAuth::Public
+            },
             url,
             filename: state::file_download_name(file),
         });
+    let kind = if state::is_video_file(file) {
+        Some(MediaViewerKind::Video)
+    } else if state::is_image_file(file) {
+        Some(MediaViewerKind::Image)
+    } else {
+        None
+    };
+    let open = kind.and_then(|kind| {
+        state::file_viewer_url(file)
+            .zip(state::file_preview_key(file))
+            .map(|(url, key)| {
+                Message::ImageViewerOpened(image_viewer_source(
+                    ws,
+                    channel_id,
+                    msg,
+                    state::file_uploader_id(file),
+                    kind,
+                    key,
+                    url.to_owned(),
+                    state::file_download_url(file).unwrap_or(url).to_owned(),
+                    if state::is_slack_authenticated_url(url) {
+                        ImageFetchAuth::Slack
+                    } else {
+                        ImageFetchAuth::Public
+                    },
+                    state::file_download_name(file),
+                ))
+            })
+    });
     let mut content = Column::new()
         .spacing(theme::SPACE_XS)
         .push(text(title).size(theme::TEXT_SM).color(theme::TEXT_3));
@@ -1139,6 +1206,8 @@ fn file_row<'a>(
                 content = content.push(file_preview(
                     preview,
                     download.clone(),
+                    open.clone(),
+                    state::file_preview_key(file).map(|key| format!("image-preview:{key}")),
                     hovered,
                     preview_width,
                     preview_height,
@@ -1169,6 +1238,8 @@ fn file_row<'a>(
                     content = content.push(file_preview(
                         preview,
                         download.clone(),
+                        open.clone(),
+                        state::file_preview_key(file).map(|key| format!("image-preview:{key}")),
                         hovered,
                         preview_width,
                         preview_height,
@@ -1184,10 +1255,24 @@ fn file_row<'a>(
 fn file_preview<'a>(
     preview: Element<'a, Message>,
     download: Option<Message>,
+    open: Option<Message>,
+    preview_id: Option<String>,
     hovered: bool,
     width: f32,
     height: f32,
 ) -> Element<'a, Message> {
+    let preview: Element<'a, Message> = match open {
+        Some(message) => {
+            let area = mouse_area(preview)
+                .on_press(message)
+                .interaction(iced::mouse::Interaction::Pointer);
+            match preview_id {
+                Some(id) => container(area).id(iced::widget::Id::from(id)).into(),
+                None => area.into(),
+            }
+        }
+        None => preview,
+    };
     let Some(download) = download.filter(|_| hovered) else {
         return preview;
     };
@@ -1211,6 +1296,51 @@ fn file_preview<'a>(
     stack![preview, action].into()
 }
 
+fn image_viewer_source(
+    ws: &Workspace,
+    channel_id: &str,
+    msg: &SlackMessage,
+    author_override: Option<&str>,
+    kind: MediaViewerKind,
+    preview_key: String,
+    full_url: String,
+    download_url: String,
+    fetch_auth: ImageFetchAuth,
+    filename: String,
+) -> ImageViewerSource {
+    let (author_name, avatar_key) = match author_override {
+        Some(user) => (ws.display_name(user), Some(user.to_owned())),
+        None => {
+            let (avatar_key, _) = ws.message_avatar(msg);
+            (ws.message_author_name(msg), avatar_key)
+        }
+    };
+    let conversation = ws
+        .channels
+        .get(channel_id)
+        .map(|channel| {
+            let label = state::channel_display_name(ws, channel);
+            if channel.is_im || channel.is_mpim {
+                label
+            } else {
+                format!("#{label}")
+            }
+        })
+        .unwrap_or_else(|| format!("#{channel_id}"));
+    ImageViewerSource {
+        kind,
+        preview_key,
+        full_url,
+        download_url,
+        fetch_auth,
+        filename,
+        author_name,
+        avatar_key,
+        timestamp: msg.ts.clone().unwrap_or_default(),
+        conversation,
+    }
+}
+
 fn file_preview_dimensions(file: &crate::slack::models::File) -> (f32, f32) {
     const MAX: f32 = 320.0;
     const FALLBACK: (f32, f32) = (260.0, 160.0);
@@ -1219,10 +1349,10 @@ fn file_preview_dimensions(file: &crate::slack::models::File) -> (f32, f32) {
             .find_map(|key| file.extra.get(*key)?.as_f64())
             .filter(|value| *value > 0.0)
     };
-    let Some(width) = dimension(&["original_w", "thumb_360_w"]) else {
+    let Some(width) = dimension(&["original_w", "thumb_video_w", "thumb_360_w"]) else {
         return FALLBACK;
     };
-    let Some(height) = dimension(&["original_h", "thumb_360_h"]) else {
+    let Some(height) = dimension(&["original_h", "thumb_video_h", "thumb_360_h"]) else {
         return FALLBACK;
     };
     let scale = (MAX / width.max(height) as f32).min(1.0);

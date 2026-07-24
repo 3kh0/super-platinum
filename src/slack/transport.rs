@@ -176,11 +176,24 @@ impl Transport {
     }
 
     pub async fn get_bytes(&self, url: &str, user_agent: &str) -> Result<Vec<u8>, Error> {
-        let response = self
-            .http
-            .get(url)
-            .header("User-Agent", user_agent)
-            .header("Cookie", self.cookie())
+        self.get_bytes_with_auth(url, user_agent, true).await
+    }
+
+    pub async fn get_public_bytes(&self, url: &str, user_agent: &str) -> Result<Vec<u8>, Error> {
+        self.get_bytes_with_auth(url, user_agent, false).await
+    }
+
+    async fn get_bytes_with_auth(
+        &self,
+        url: &str,
+        user_agent: &str,
+        authenticated: bool,
+    ) -> Result<Vec<u8>, Error> {
+        let mut request = self.http.get(url).header("User-Agent", user_agent);
+        if authenticated {
+            request = request.header("Cookie", self.cookie());
+        }
+        let response = request
             .send()
             .await
             .map_err(|e| Error::Transport(format!("send: {e}")))?;
@@ -248,6 +261,7 @@ fn retry_delay(error: &Error, attempt: u32) -> Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use wreq::header::HeaderValue;
 
     #[test]
@@ -285,5 +299,46 @@ mod tests {
             status: 404,
             retry_after_secs: None
         }));
+    }
+
+    async fn captured_image_request(public: bool) -> String {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = vec![0; 8192];
+            let read = socket.read(&mut request).await.unwrap();
+            socket
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
+                .await
+                .unwrap();
+            String::from_utf8_lossy(&request[..read]).into_owned()
+        });
+        let transport = Transport::new("secret-cookie").unwrap();
+        let url = format!("http://{address}/image.png");
+        let bytes = if public {
+            transport.get_public_bytes(&url, "snack-test").await
+        } else {
+            transport.get_bytes(&url, "snack-test").await
+        }
+        .unwrap();
+        assert_eq!(bytes, b"ok");
+        server.await.unwrap()
+    }
+
+    #[tokio::test]
+    async fn public_image_fetch_never_sends_slack_cookie() {
+        let request = captured_image_request(true).await;
+        assert!(!request.to_ascii_lowercase().contains("cookie:"));
+    }
+
+    #[tokio::test]
+    async fn slack_image_fetch_sends_session_cookie() {
+        let request = captured_image_request(false).await;
+        assert!(
+            request
+                .to_ascii_lowercase()
+                .contains("cookie: d=secret-cookie")
+        );
     }
 }

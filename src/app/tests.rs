@@ -470,6 +470,175 @@ pub(super) fn multi_paragraph_emoji_app() -> App {
     app
 }
 
+pub(super) fn image_viewer_app(embedded: bool) -> App {
+    let mut app = test_app();
+    let width = 960_u32;
+    let height = 540_u32;
+    let mut pixels = Vec::with_capacity((width * height * 4) as usize);
+    for y in 0..height {
+        for x in 0..width {
+            let band = ((x / 80 + y / 60) % 2) as u8;
+            pixels.extend_from_slice(&[
+                32 + band * 26,
+                104 + (x * 90 / width) as u8,
+                150 + (y * 70 / height) as u8,
+                255,
+            ]);
+        }
+    }
+    let handle = ImageHandle::from_rgba(width, height, pixels);
+    let avatar = ImageHandle::from_rgba(
+        2,
+        2,
+        vec![
+            108, 190, 210, 255, 108, 190, 210, 255, 84, 150, 184, 255, 84, 150, 184, 255,
+        ],
+    );
+    app.avatar_previews
+        .insert("U_ALICE".into(), FilePreview::Loaded(avatar));
+    let timestamp = format!("{}.000100", crate::state::now_secs() - 12 * 60 * 60);
+
+    let (source, message) = if embedded {
+        let preview_key = "https://cdn.example.com/thumb/roadmap.png".to_owned();
+        app.file_previews
+            .insert(preview_key.clone(), FilePreview::Loaded(handle.clone()));
+        (
+            ImageViewerSource {
+                kind: MediaViewerKind::Image,
+                preview_key,
+                full_url: "https://cdn.example.com/images/roadmap.png".into(),
+                download_url: "https://cdn.example.com/images/roadmap.png".into(),
+                fetch_auth: ImageFetchAuth::Public,
+                filename: "Product roadmap.png".into(),
+                author_name: "Alice".into(),
+                avatar_key: Some("U_ALICE".into()),
+                timestamp: timestamp.clone(),
+                conversation: "#general".into(),
+            },
+            SlackMessage {
+                user: Some("U_ALICE".into()),
+                ts: Some(timestamp.clone()),
+                text: Some("Latest product roadmap".into()),
+                attachments: vec![crate::slack::models::Attachment {
+                    title: Some("Product roadmap.png".into()),
+                    image_url: Some("https://cdn.example.com/images/roadmap.png".into()),
+                    thumb_url: Some("https://cdn.example.com/thumb/roadmap.png".into()),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+        )
+    } else {
+        app.file_previews
+            .insert("F_LAUNCH".into(), FilePreview::Loaded(handle.clone()));
+        (
+            ImageViewerSource {
+                kind: MediaViewerKind::Image,
+                preview_key: "F_LAUNCH".into(),
+                full_url: "https://files.slack.com/files-pri/T/F/launch-board.png".into(),
+                download_url: "https://files.slack.com/files-pri/T/F/launch-board.png".into(),
+                fetch_auth: ImageFetchAuth::Slack,
+                filename: "launch-board.png".into(),
+                author_name: "Alice".into(),
+                avatar_key: Some("U_ALICE".into()),
+                timestamp: timestamp.clone(),
+                conversation: "#general".into(),
+            },
+            SlackMessage {
+                user: Some("U_ALICE".into()),
+                ts: Some(timestamp.clone()),
+                text: Some("Launch board".into()),
+                files: vec![File {
+                    id: Some("F_LAUNCH".into()),
+                    name: Some("launch-board.png".into()),
+                    mimetype: Some("image/png".into()),
+                    url_private: Some(
+                        "https://files.slack.com/files-pri/T/F/launch-board.png".into(),
+                    ),
+                    thumb_360: Some(
+                        "https://files.slack.com/files-tmb/T/F/launch-board_360.png".into(),
+                    ),
+                    extra: BTreeMap::from([
+                        ("original_w".into(), json!(960)),
+                        ("original_h".into(), json!(540)),
+                    ]),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+        )
+    };
+    app.active_workspace_mut()
+        .unwrap()
+        .messages
+        .get_mut("C_GENERAL")
+        .unwrap()
+        .upsert(message);
+    app.image_viewer = Some(ImageViewerState {
+        source,
+        image: ImageViewerImage::Loaded(handle),
+        generation: 1,
+        open: true,
+        zoom: 1.0,
+        offset: iced::Vector::ZERO,
+        video: None,
+    });
+    app
+}
+
+pub(super) fn video_viewer_app() -> App {
+    let mut app = image_viewer_app(false);
+    let viewer = app.image_viewer.as_mut().expect("viewer fixture");
+    let timestamp = viewer.source.timestamp.clone();
+    viewer.source.kind = MediaViewerKind::Video;
+    viewer.source.filename = "launch-demo.mp4".into();
+    viewer.source.full_url = "https://files.slack.com/files-pri/T/F/launch-demo.mp4".into();
+    viewer.source.download_url = viewer.source.full_url.clone();
+    viewer.video = Some(VideoViewerPlayback {
+        duration: 11.12,
+        position: 3.4,
+        playing: true,
+        volume: 0.72,
+        ..VideoViewerPlayback::default()
+    });
+    app.active_workspace_mut()
+        .unwrap()
+        .messages
+        .get_mut("C_GENERAL")
+        .unwrap()
+        .upsert(SlackMessage {
+            user: Some("U_ALICE".into()),
+            ts: Some(timestamp),
+            text: Some("Launch demo".into()),
+            files: vec![File {
+                id: Some("F_LAUNCH".into()),
+                name: Some("launch-demo.mp4".into()),
+                mimetype: Some("video/mp4".into()),
+                filetype: Some("mp4".into()),
+                url_private: Some("https://files.slack.com/files-pri/T/F/launch-demo.mp4".into()),
+                extra: BTreeMap::from([
+                    (
+                        "mp4".into(),
+                        json!("https://files.slack.com/files-tmb/T/F/launch-demo.mp4"),
+                    ),
+                    (
+                        "thumb_video".into(),
+                        json!("https://files.slack.com/files-tmb/T/F/launch-demo.jpeg"),
+                    ),
+                    ("thumb_video_w".into(), json!(960)),
+                    ("thumb_video_h".into(), json!(540)),
+                    (
+                        "url_private_download".into(),
+                        json!("https://files.slack.com/files-pri/T/F/download/launch-demo.mp4"),
+                    ),
+                ]),
+                ..Default::default()
+            }],
+            ..Default::default()
+        });
+    app
+}
+
 pub(super) fn login_app() -> App {
     let mut app = App::empty();
     app.settings = config::Settings::default();
@@ -2066,4 +2235,99 @@ fn profile_extras_result_updates_recent_conversations() {
     let alice = &app.workspaces[&team].users["U_ALICE"];
     assert_eq!(alice.im_mpim_ids, ["D_ALICE", "G_TEAM"]);
     assert!(alice.has_more_mpims);
+}
+
+fn test_image_viewer_source() -> ImageViewerSource {
+    ImageViewerSource {
+        kind: MediaViewerKind::Image,
+        preview_key: "F_IMAGE".into(),
+        full_url: "https://files.slack.com/files-pri/T/F/launch.png".into(),
+        download_url: "https://files.slack.com/files-pri/T/F/launch.png".into(),
+        fetch_auth: ImageFetchAuth::Slack,
+        filename: "launch.png".into(),
+        author_name: "Alice".into(),
+        avatar_key: Some("U_ALICE".into()),
+        timestamp: "1783372300.000100".into(),
+        conversation: "#general".into(),
+    }
+}
+
+#[test]
+fn image_viewer_open_zoom_close_and_dismiss_are_stateful() {
+    let mut app = test_app();
+    let _ = update(
+        &mut app,
+        Message::ImageViewerOpened(test_image_viewer_source()),
+    );
+    let generation = app.image_viewer.as_ref().unwrap().generation;
+    assert!(app.image_viewer.as_ref().unwrap().open);
+    assert_eq!(app.image_viewer.as_ref().unwrap().zoom, 1.0);
+
+    let _ = update(&mut app, Message::ImageViewerZoomChanged(2.25));
+    assert_eq!(app.image_viewer.as_ref().unwrap().zoom, 2.25);
+    let _ = update(&mut app, Message::ImageViewerZoomChanged(99.0));
+    assert_eq!(app.image_viewer.as_ref().unwrap().zoom, 5.0);
+    let _ = update(&mut app, Message::ImageViewerZoomChanged(1.0));
+    assert_eq!(
+        app.image_viewer.as_ref().unwrap().offset,
+        iced::Vector::ZERO
+    );
+
+    let _ = update(
+        &mut app,
+        Message::ImageViewerFullLoaded {
+            generation: generation.wrapping_sub(1),
+            result: Ok(vec![1, 2, 3]),
+        },
+    );
+    assert!(matches!(
+        app.image_viewer.as_ref().unwrap().image,
+        ImageViewerImage::Failed
+    ));
+
+    let _ = update(&mut app, Message::ImageViewerClosed);
+    assert!(!app.image_viewer.as_ref().unwrap().open);
+    let _ = update(
+        &mut app,
+        Message::ImageViewerFullLoaded {
+            generation,
+            result: Ok(vec![1, 2, 3]),
+        },
+    );
+    assert!(matches!(
+        app.image_viewer.as_ref().unwrap().image,
+        ImageViewerImage::Failed
+    ));
+    let _ = update(&mut app, Message::ImageViewerDismissed);
+    assert!(app.image_viewer.is_none());
+}
+
+#[test]
+fn image_viewer_transform_clamps_zoom_and_resets_fit_offset() {
+    let mut app = test_app();
+    let _ = update(
+        &mut app,
+        Message::ImageViewerOpened(test_image_viewer_source()),
+    );
+    let _ = update(
+        &mut app,
+        Message::ImageViewerTransformed {
+            zoom: 3.0,
+            offset: iced::Vector::new(24.0, -12.0),
+        },
+    );
+    let viewer = app.image_viewer.as_ref().unwrap();
+    assert_eq!(viewer.zoom, 3.0);
+    assert_eq!(viewer.offset, iced::Vector::new(24.0, -12.0));
+
+    let _ = update(
+        &mut app,
+        Message::ImageViewerTransformed {
+            zoom: 0.1,
+            offset: iced::Vector::new(99.0, 99.0),
+        },
+    );
+    let viewer = app.image_viewer.as_ref().unwrap();
+    assert_eq!(viewer.zoom, 1.0);
+    assert_eq!(viewer.offset, iced::Vector::ZERO);
 }

@@ -349,6 +349,66 @@ pub fn action_button(_theme: &Theme, status: button::Status) -> button::Style {
     }
 }
 
+pub fn image_viewer_panel(_theme: &Theme) -> container::Style {
+    container::Style {
+        background: Some(Background::Color(Color {
+            a: 0.965,
+            ..BG_BASE
+        })),
+        text_color: Some(TEXT_1),
+        border: Border {
+            color: Color { a: 0.55, ..BORDER },
+            width: 1.0,
+            radius: 12.0.into(),
+        },
+        shadow: Shadow {
+            color: Color {
+                a: 0.55,
+                ..Color::BLACK
+            },
+            offset: Vector::new(0.0, 8.0),
+            blur_radius: 28.0,
+        },
+        ..container::Style::default()
+    }
+}
+
+pub fn image_viewer_controls(_theme: &Theme) -> container::Style {
+    container::Style {
+        background: Some(Background::Color(Color { a: 0.88, ..BG_ELEV })),
+        text_color: Some(TEXT_1),
+        border: Border {
+            color: Color { a: 0.75, ..BORDER },
+            width: 1.0,
+            radius: 10.0.into(),
+        },
+        shadow: Shadow {
+            color: Color {
+                a: 0.40,
+                ..Color::BLACK
+            },
+            offset: Vector::new(0.0, 2.0),
+            blur_radius: 12.0,
+        },
+        ..container::Style::default()
+    }
+}
+
+pub fn image_viewer_button(_theme: &Theme, status: button::Status) -> button::Style {
+    let hovered = matches!(status, button::Status::Hovered);
+    let pressed = matches!(status, button::Status::Pressed);
+    button::Style {
+        background: (hovered || pressed).then_some(Background::Color(if pressed {
+            BG_ELEV_HI
+        } else {
+            HOVER
+        })),
+        text_color: if hovered { TEXT_1 } else { TEXT_2 },
+        border: Border::default().rounded(8.0),
+        ..button::Style::default()
+    }
+}
+
 pub fn reaction_chip(_theme: &Theme) -> container::Style {
     container::Style {
         background: Some(Background::Color(BG_ELEV)),

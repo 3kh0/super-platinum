@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use iced::widget::image::Handle as ImageHandle;
 use iced::widget::text_editor::{self, Content};
-use iced::{Point, Task};
+use iced::{Point, Task, Vector};
 
 use crate::cache::Cache;
 use crate::config::{self, Session};
@@ -112,6 +112,85 @@ pub enum FilePreview {
         total: Duration,
     },
     Failed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ImageFetchAuth {
+    Slack,
+    Public,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MediaViewerKind {
+    Image,
+    Video,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ImageViewerSource {
+    pub kind: MediaViewerKind,
+    pub preview_key: String,
+    pub full_url: String,
+    pub download_url: String,
+    pub fetch_auth: ImageFetchAuth,
+    pub filename: String,
+    pub author_name: String,
+    pub avatar_key: Option<String>,
+    pub timestamp: String,
+    pub conversation: String,
+}
+
+#[derive(Debug, Clone)]
+pub enum ImageViewerImage {
+    Loading,
+    Loaded(ImageHandle),
+    Failed,
+}
+
+#[derive(Debug, Clone)]
+pub struct PreparedVideo {
+    pub path: PathBuf,
+    pub player: Arc<iced_video_player::Video>,
+}
+
+#[derive(Debug, Clone)]
+pub struct VideoViewerPlayback {
+    pub path: Option<PathBuf>,
+    pub player: Option<Arc<iced_video_player::Video>>,
+    pub duration: f32,
+    pub position: f32,
+    pub playing: bool,
+    pub seeking: bool,
+    pub resume_after_seek: bool,
+    pub volume: f32,
+    pub muted: bool,
+}
+
+impl Default for VideoViewerPlayback {
+    fn default() -> Self {
+        Self {
+            path: None,
+            player: None,
+            duration: 0.0,
+            position: 0.0,
+            playing: false,
+            seeking: false,
+            resume_after_seek: false,
+            volume: 1.0,
+            muted: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ImageViewerState {
+    pub source: ImageViewerSource,
+    pub image: ImageViewerImage,
+    pub generation: u64,
+    pub open: bool,
+    pub zoom: f32,
+    pub offset: Vector,
+    pub video: Option<VideoViewerPlayback>,
 }
 
 #[derive(Debug, Clone)]
@@ -307,6 +386,8 @@ pub struct App {
     last_typing: HashMap<(TeamId, ChannelId), Instant>,
     last_active_channels: HashMap<TeamId, ChannelId>,
     file_previews: HashMap<String, FilePreview>,
+    image_viewer: Option<ImageViewerState>,
+    image_viewer_generation: u64,
     avatar_previews: HashMap<UserId, FilePreview>,
     profile_previews: HashMap<UserId, FilePreview>,
     emoji_previews: HashMap<String, FilePreview>,
@@ -564,8 +645,38 @@ pub enum Message {
     FileDownloadPressed {
         url: String,
         filename: String,
+        auth: ImageFetchAuth,
     },
     FileDownloaded(Result<PathBuf, SlackError>),
+    ImageViewerOpened(ImageViewerSource),
+    ImageViewerFullLoaded {
+        generation: u64,
+        result: Result<Vec<u8>, SlackError>,
+    },
+    ImageViewerVideoPrepared {
+        generation: u64,
+        result: Result<PreparedVideo, SlackError>,
+    },
+    ImageViewerVideoFrame(u64),
+    ImageViewerVideoEnded(u64),
+    ImageViewerVideoFailed {
+        generation: u64,
+        error: String,
+    },
+    ImageViewerVideoPlayPause,
+    ImageViewerVideoSeekChanged(f32),
+    ImageViewerVideoSeekReleased,
+    ImageViewerVideoVolumeChanged(f32),
+    ImageViewerVideoVolumeReleased,
+    ImageViewerVideoMuteToggled,
+    ImageViewerClosed,
+    ImageViewerDismissed,
+    ImageViewerZoomChanged(f32),
+    ImageViewerTransformed {
+        zoom: f32,
+        offset: Vector,
+    },
+    ImageViewerDownloadPressed,
     OpenUrl(String),
     UrlOpened(Result<(), String>),
     FilePreviewLoaded {
@@ -712,6 +823,8 @@ impl App {
             last_typing: HashMap::new(),
             last_active_channels: HashMap::new(),
             file_previews: HashMap::new(),
+            image_viewer: None,
+            image_viewer_generation: 0,
             avatar_previews: HashMap::new(),
             profile_previews: HashMap::new(),
             emoji_previews: HashMap::new(),
@@ -876,6 +989,8 @@ impl App {
         self.last_typing.clear();
         self.last_active_channels.clear();
         self.file_previews.clear();
+        self.image_viewer = None;
+        self.image_viewer_generation = self.image_viewer_generation.wrapping_add(1);
         self.avatar_previews.clear();
         self.profile_previews.clear();
         self.emoji_previews.clear();

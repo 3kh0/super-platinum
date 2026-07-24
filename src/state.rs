@@ -1122,19 +1122,165 @@ pub fn file_preview_key(file: &File) -> Option<String> {
         .map(str::to_owned)
 }
 
+pub fn file_uploader_id(file: &File) -> Option<&str> {
+    ["user", "user_id", "uploader"]
+        .into_iter()
+        .find_map(|key| file.extra.get(key)?.as_str())
+        .and_then(|user| non_empty(Some(user)))
+}
+
+pub fn is_image_file(file: &File) -> bool {
+    if non_empty(file.mimetype.as_deref()).is_some_and(|mime| mime.starts_with("image/")) {
+        return true;
+    }
+    let extension = non_empty(file.filetype.as_deref()).or_else(|| {
+        non_empty(file.name.as_deref())
+            .and_then(|name| name.rsplit_once('.').map(|(_, extension)| extension))
+    });
+    extension.is_some_and(|extension| {
+        matches!(
+            extension.to_ascii_lowercase().as_str(),
+            "avif"
+                | "bmp"
+                | "gif"
+                | "heic"
+                | "heif"
+                | "jpeg"
+                | "jpg"
+                | "png"
+                | "tif"
+                | "tiff"
+                | "webp"
+        )
+    })
+}
+
+pub fn is_video_file(file: &File) -> bool {
+    if non_empty(file.mimetype.as_deref()).is_some_and(|mime| mime.starts_with("video/")) {
+        return true;
+    }
+    let extension = non_empty(file.filetype.as_deref()).or_else(|| {
+        non_empty(file.name.as_deref())
+            .and_then(|name| name.rsplit_once('.').map(|(_, extension)| extension))
+    });
+    extension.is_some_and(|extension| {
+        matches!(
+            extension.to_ascii_lowercase().as_str(),
+            "avi" | "m4v" | "mkv" | "mov" | "mp4" | "webm"
+        )
+    })
+}
+
+pub fn file_original_is_viewer_decodable(file: &File) -> bool {
+    let kind = non_empty(file.filetype.as_deref())
+        .or_else(|| {
+            non_empty(file.name.as_deref())
+                .and_then(|name| name.rsplit_once('.').map(|(_, extension)| extension))
+        })
+        .map(str::to_ascii_lowercase);
+    !matches!(kind.as_deref(), Some("heic" | "heif"))
+        && !matches!(
+            non_empty(file.mimetype.as_deref()),
+            Some("image/heic" | "image/heif")
+        )
+}
+
+pub fn file_viewer_url(file: &File) -> Option<&str> {
+    let original = non_empty(file.url_private.as_deref());
+    if is_image_file(file) && !file_original_is_viewer_decodable(file) {
+        file_preview_url(file).or(original)
+    } else if is_video_file(file) {
+        file.extra
+            .get("mp4")
+            .and_then(|value| value.as_str())
+            .and_then(|url| non_empty(Some(url)))
+            .or(original)
+    } else {
+        original
+    }
+}
+
+pub fn file_download_url(file: &File) -> Option<&str> {
+    file.extra
+        .get("url_private_download")
+        .and_then(|value| value.as_str())
+        .and_then(|url| non_empty(Some(url)))
+        .or_else(|| non_empty(file.url_private.as_deref()))
+}
+
 pub fn attachment_preview_url(att: &crate::slack::models::Attachment) -> Option<&str> {
     non_empty(att.thumb_url.as_deref()).or_else(|| non_empty(att.image_url.as_deref()))
+}
+
+pub fn attachment_viewer_url(att: &crate::slack::models::Attachment) -> Option<&str> {
+    non_empty(att.image_url.as_deref()).or_else(|| non_empty(att.thumb_url.as_deref()))
+}
+
+pub fn attachment_download_name(att: &crate::slack::models::Attachment) -> String {
+    if let Some(title) = non_empty(att.title.as_deref()) {
+        return sanitize_file_name(title);
+    }
+    let from_url = attachment_viewer_url(att)
+        .and_then(|url| url.split(['?', '#']).next())
+        .and_then(|url| url.rsplit('/').next())
+        .and_then(|name| non_empty(Some(name)));
+    sanitize_file_name(from_url.unwrap_or("image"))
 }
 
 pub fn is_browser_url(url: &str) -> bool {
     url.starts_with("http://") || url.starts_with("https://")
 }
 
+pub fn is_slack_authenticated_url(url: &str) -> bool {
+    let Some(rest) = url
+        .strip_prefix("https://")
+        .or_else(|| url.strip_prefix("http://"))
+    else {
+        return false;
+    };
+    let host = rest
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or_default()
+        .rsplit('@')
+        .next()
+        .unwrap_or_default()
+        .split(':')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    host == "slack.com" || host.ends_with(".slack.com")
+}
+
 pub fn file_preview_url(file: &File) -> Option<&str> {
-    non_empty(file.thumb_360.as_deref())
-        .or_else(|| non_empty(file.thumb_160.as_deref()))
-        .or_else(|| non_empty(file.thumb_80.as_deref()))
-        .or_else(|| non_empty(file.thumb_64.as_deref()))
+    let large_image = [
+        "thumb_1024",
+        "thumb_960",
+        "thumb_800",
+        "thumb_720",
+        "thumb_480",
+    ]
+    .into_iter()
+    .find_map(|key| {
+        file.extra
+            .get(key)
+            .and_then(|value| value.as_str())
+            .and_then(|url| non_empty(Some(url)))
+    });
+    let video = file
+        .extra
+        .get("thumb_video")
+        .and_then(|value| value.as_str())
+        .and_then(|url| non_empty(Some(url)));
+    if is_video_file(file) {
+        video.or(large_image)
+    } else {
+        large_image.or(video)
+    }
+    .or_else(|| non_empty(file.thumb_360.as_deref()))
+    .or_else(|| non_empty(file.thumb_160.as_deref()))
+    .or_else(|| non_empty(file.thumb_80.as_deref()))
+    .or_else(|| non_empty(file.thumb_64.as_deref()))
 }
 
 fn sanitize_file_name(name: &str) -> String {
@@ -1173,6 +1319,18 @@ pub fn format_file_size(bytes: u64) -> String {
         format!("{:.1} MB", bytes as f64 / MB)
     } else {
         format!("{:.1} GB", bytes as f64 / GB)
+    }
+}
+
+pub fn format_relative_ts(ts: &str) -> String {
+    let (secs, _) = ts_key(ts);
+    let elapsed = now_secs().saturating_sub(secs as i64).max(0) as u64;
+    match elapsed {
+        0..=59 => "now".to_owned(),
+        60..=3_599 => format!("{}m ago", elapsed / 60),
+        3_600..=86_399 => format!("{}h ago", elapsed / 3_600),
+        86_400..=604_799 => format!("{}d ago", elapsed / 86_400),
+        _ => format_ts_date_label(ts),
     }
 }
 
@@ -1471,7 +1629,7 @@ pub fn scroll_ratio_for_ts(messages: &[SlackMessage], ts: &str) -> Option<f32> {
 mod tests {
     use super::*;
     use crate::slack::models::{
-        BootData, BootSelf, BotProfile, Emoji, MessageIcons, Reaction, UserProfile,
+        Attachment, BootData, BootSelf, BotProfile, Emoji, MessageIcons, Reaction, UserProfile,
     };
 
     fn msg(ts: &str, text: &str) -> SlackMessage {
@@ -2048,16 +2206,23 @@ mod tests {
 
     #[test]
     fn file_preview_uses_largest_known_thumb_and_stable_key() {
-        let file = File {
+        let mut file = File {
             id: Some("F123".into()),
             thumb_64: Some("https://files/thumb-64.png".into()),
             thumb_160: Some("https://files/thumb-160.png".into()),
             thumb_360: Some("https://files/thumb-360.png".into()),
             ..Default::default()
         };
+        file.extra.insert(
+            "thumb_1024".into(),
+            serde_json::json!("https://files/thumb-1024.png"),
+        );
 
         assert_eq!(file_preview_key(&file).as_deref(), Some("F123"));
-        assert_eq!(file_preview_url(&file), Some("https://files/thumb-360.png"));
+        assert_eq!(
+            file_preview_url(&file),
+            Some("https://files/thumb-1024.png")
+        );
 
         let without_id = File {
             thumb_80: Some("https://files/thumb-80.png".into()),
@@ -2066,6 +2231,62 @@ mod tests {
         assert_eq!(
             file_preview_key(&without_id).as_deref(),
             Some("https://files/thumb-80.png")
+        );
+    }
+
+    #[test]
+    fn heic_uses_slack_raster_preview_while_video_uses_original() {
+        let mut heic = File {
+            name: Some("camera.heic".into()),
+            mimetype: Some("image/heic".into()),
+            filetype: Some("heic".into()),
+            url_private: Some("https://files.slack.com/camera.heic".into()),
+            thumb_360: Some("https://files.slack.com/camera-360.jpg".into()),
+            ..Default::default()
+        };
+        heic.extra.insert(
+            "thumb_1024".into(),
+            serde_json::json!("https://files.slack.com/camera-1024.jpg"),
+        );
+        assert!(is_image_file(&heic));
+        assert!(!file_original_is_viewer_decodable(&heic));
+        assert_eq!(
+            file_viewer_url(&heic),
+            Some("https://files.slack.com/camera-1024.jpg")
+        );
+
+        let video = File {
+            name: Some("demo.mp4".into()),
+            mimetype: Some("video/mp4".into()),
+            url_private: Some("https://files.slack.com/files-tmb/demo.mp4".into()),
+            extra: BTreeMap::from([
+                (
+                    "mp4".into(),
+                    serde_json::json!("https://files.slack.com/files-tmb/demo.mp4"),
+                ),
+                (
+                    "thumb_video".into(),
+                    serde_json::json!("https://files.slack.com/files-tmb/demo.jpeg"),
+                ),
+                (
+                    "url_private_download".into(),
+                    serde_json::json!("https://files.slack.com/files-pri/download/demo.mp4"),
+                ),
+            ]),
+            ..Default::default()
+        };
+        assert!(is_video_file(&video));
+        assert_eq!(
+            file_viewer_url(&video),
+            Some("https://files.slack.com/files-tmb/demo.mp4")
+        );
+        assert_eq!(
+            file_preview_url(&video),
+            Some("https://files.slack.com/files-tmb/demo.jpeg")
+        );
+        assert_eq!(
+            file_download_url(&video),
+            Some("https://files.slack.com/files-pri/download/demo.mp4")
         );
     }
 
@@ -2236,6 +2457,69 @@ mod tests {
         assert!(!is_browser_url("javascript:alert(1)"));
         assert!(!is_browser_url(""));
         assert!(!is_browser_url("ftp://example.com"));
+    }
+
+    #[test]
+    fn authenticated_url_check_rejects_lookalike_hosts() {
+        assert!(is_slack_authenticated_url(
+            "https://files.slack.com/files-pri/T/F/image.png"
+        ));
+        assert!(is_slack_authenticated_url(
+            "https://workspace.slack.com/files/image.png"
+        ));
+        assert!(!is_slack_authenticated_url(
+            "https://files.slack.com.evil.example/image.png"
+        ));
+        assert!(!is_slack_authenticated_url(
+            "https://slack.com@evil.example/image.png"
+        ));
+    }
+
+    #[test]
+    fn attachment_viewer_prefers_original_and_names_download() {
+        let attachment = Attachment {
+            title: Some("Launch / board.png".into()),
+            image_url: Some("https://cdn.example.com/original/board.png?size=large".into()),
+            thumb_url: Some("https://cdn.example.com/thumb/board.png".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            attachment_viewer_url(&attachment),
+            Some("https://cdn.example.com/original/board.png?size=large")
+        );
+        assert_eq!(attachment_download_name(&attachment), "Launch _ board.png");
+    }
+
+    #[test]
+    fn image_file_detection_and_uploader_are_defensive() {
+        let image = File {
+            name: Some("launch.PNG".into()),
+            extra: BTreeMap::from([("user".into(), serde_json::json!("U_ALICE"))]),
+            ..Default::default()
+        };
+        assert!(is_image_file(&image));
+        assert_eq!(file_uploader_id(&image), Some("U_ALICE"));
+        assert!(!is_image_file(&File {
+            name: Some("brief.pdf".into()),
+            mimetype: Some("application/pdf".into()),
+            ..Default::default()
+        }));
+    }
+
+    #[test]
+    fn attachment_download_name_falls_back_to_url_then_image() {
+        let from_url = Attachment {
+            image_url: Some("https://cdn.example.com/path/design.jpg?width=1200".into()),
+            ..Default::default()
+        };
+        assert_eq!(attachment_download_name(&from_url), "design.jpg");
+        assert_eq!(attachment_download_name(&Attachment::default()), "image");
+    }
+
+    #[test]
+    fn relative_timestamp_uses_compact_hours() {
+        let ts = format!("{}.000000", now_secs() - 12 * 60 * 60);
+        assert_eq!(format_relative_ts(&ts), "12h ago");
     }
 
     #[test]

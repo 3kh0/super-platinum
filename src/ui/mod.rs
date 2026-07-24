@@ -4,6 +4,7 @@ pub mod channel;
 pub mod composer;
 pub mod dms;
 pub mod icons;
+pub mod image_viewer;
 pub mod message;
 pub mod motion;
 pub mod palette;

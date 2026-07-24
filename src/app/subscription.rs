@@ -28,7 +28,9 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
     {
         subs.push(iced::event::listen_with(selection_mouse_release));
     }
-    if app.palette_open {
+    if app.image_viewer.as_ref().is_some_and(|viewer| viewer.open) {
+        subs.push(iced::event::listen_with(image_viewer_navigation));
+    } else if app.palette_open {
         subs.push(iced::event::listen_with(palette_navigation));
     } else if app.profile_pane.is_some() {
         subs.push(iced::event::listen_with(profile_navigation));
@@ -91,6 +93,22 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
     }
 
     Subscription::batch(subs)
+}
+
+fn image_viewer_navigation(
+    event: iced::Event,
+    _status: iced::event::Status,
+    _id: iced::window::Id,
+) -> Option<Message> {
+    use iced::keyboard::key::Named;
+    use iced::keyboard::{Event, Key};
+    match event {
+        iced::Event::Keyboard(Event::KeyPressed {
+            key: Key::Named(Named::Escape),
+            ..
+        }) => Some(Message::ImageViewerClosed),
+        _ => None,
+    }
 }
 
 fn cursor_position(

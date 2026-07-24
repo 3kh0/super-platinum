@@ -35,6 +35,8 @@ emojis = "0.9"
 gif = "0.14.2"
 unicode-segmentation = "1"
 iced = { git = "https://github.com/iced-rs/iced", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39", features = ["tokio", "image", "svg", "advanced", "lazy"] }
+# Vendored only to keep the upstream player aligned with Snack's pinned Iced revision.
+iced_video_player = { path = "vendor/iced_video_player" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rusqlite = { version = "0.40", features = ["bundled"] }
@@ -52,6 +54,7 @@ tokio = { version = "1", features = [
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1", features = ["serde", "v4"] }
+url = "2"
 png = "0.18"
 
 wreq = { version = "6.0.0-rc.29", features = [

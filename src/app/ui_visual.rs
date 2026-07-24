@@ -14,8 +14,9 @@ use iced::{Event, Settings, Size, mouse, time, window};
 use iced_test::{Error, Simulator};
 
 use super::tests::{
-    account_menu_app, activity_app, dms_app, login_app, multi_paragraph_emoji_app, profile_app,
-    search_app, settings_app, test_app, thread_unread_app,
+    account_menu_app, activity_app, dms_app, image_viewer_app, login_app,
+    multi_paragraph_emoji_app, profile_app, search_app, settings_app, test_app, thread_unread_app,
+    video_viewer_app,
 };
 use super::update::update;
 use super::view::view;
@@ -32,11 +33,19 @@ fn capture_dir() -> PathBuf {
 }
 
 fn sim(app: &App) -> Simulator<'_, Message> {
-    Simulator::with_size(Settings::default(), VIEWPORT, view(app))
+    sim_with_size(app, VIEWPORT)
+}
+
+fn sim_with_size(app: &App, size: Size) -> Simulator<'_, Message> {
+    Simulator::with_size(Settings::default(), size, view(app))
 }
 
 fn capture(app: &App, name: &str) -> Result<PathBuf, Error> {
-    let mut ui = sim(app);
+    capture_with_size(app, name, VIEWPORT)
+}
+
+fn capture_with_size(app: &App, name: &str, size: Size) -> Result<PathBuf, Error> {
+    let mut ui = sim_with_size(app, size);
     let now = time::Instant::now();
     let _ = ui.simulate([Event::Window(window::Event::RedrawRequested(now))]);
     std::thread::sleep(std::time::Duration::from_millis(180));
@@ -323,6 +332,127 @@ fn ui_visual_settings_modal_renders() -> Result<(), Error> {
     ui.find("Accent")?;
     ui.find("Done")?;
     capture(&app, "settings")?;
+    Ok(())
+}
+
+#[test]
+fn ui_visual_uploaded_image_viewer_renders() -> Result<(), Error> {
+    let app = image_viewer_app(false);
+    let mut ui = sim(&app);
+    ui.find("12h ago in #general - launch-board.png")?;
+    ui.find(iced::widget::Id::new("image-viewer-close"))?;
+    ui.find(iced::widget::Id::new("image-viewer-download"))?;
+    drop(ui);
+    capture(&app, "image-viewer-upload")?;
+    Ok(())
+}
+
+#[test]
+fn ui_visual_embedded_image_viewer_renders_compact() -> Result<(), Error> {
+    let app = image_viewer_app(true);
+    let size = Size::new(640.0, 480.0);
+    let mut ui = sim_with_size(&app, size);
+    ui.find("12h ago in #general - Product roadmap.png")?;
+    drop(ui);
+    capture_with_size(&app, "image-viewer-embed-compact", size)?;
+    Ok(())
+}
+
+#[test]
+fn ui_visual_video_viewer_renders() -> Result<(), Error> {
+    let app = video_viewer_app();
+    let mut ui = sim(&app);
+    ui.find("12h ago in #general - launch-demo.mp4")?;
+    ui.find(iced::widget::Id::new("image-viewer-download"))?;
+    ui.click(iced::widget::Id::new("image-viewer-pause"))?;
+    ui.click(iced::widget::Id::new("image-viewer-mute"))?;
+    assert!(
+        ui.find(iced::widget::Id::new("image-viewer-zoom-in"))
+            .is_err()
+    );
+    let messages = drain_messages(ui);
+    assert!(
+        messages
+            .iter()
+            .any(|message| matches!(message, Message::ImageViewerVideoPlayPause))
+    );
+    assert!(
+        messages
+            .iter()
+            .any(|message| matches!(message, Message::ImageViewerVideoMuteToggled))
+    );
+    capture(&app, "video-viewer")?;
+    Ok(())
+}
+
+#[test]
+fn ui_visual_video_thumbnail_opens_video_source() -> Result<(), Error> {
+    let mut app = video_viewer_app();
+    app.image_viewer = None;
+    let messages = {
+        let mut ui = sim(&app);
+        ui.click(iced::widget::Id::new("image-preview:F_LAUNCH"))?;
+        drain_messages(ui)
+    };
+    assert!(messages.iter().any(|message| matches!(
+        message,
+        Message::ImageViewerOpened(source)
+            if source.kind == super::MediaViewerKind::Video
+                && source.filename == "launch-demo.mp4"
+                && source.preview_key == "F_LAUNCH"
+                && source.full_url.ends_with("/launch-demo.mp4")
+                && source.download_url.ends_with("/download/launch-demo.mp4")
+    )));
+    Ok(())
+}
+
+#[test]
+fn ui_visual_image_thumbnail_opens_viewer_source() -> Result<(), Error> {
+    let mut app = image_viewer_app(false);
+    app.image_viewer = None;
+    let messages = {
+        let mut ui = sim(&app);
+        ui.click(iced::widget::Id::new("image-preview:F_LAUNCH"))?;
+        drain_messages(ui)
+    };
+    assert!(messages.iter().any(|message| matches!(
+        message,
+        Message::ImageViewerOpened(source)
+            if source.filename == "launch-board.png"
+                && source.fetch_auth == super::ImageFetchAuth::Slack
+    )));
+    apply_messages(&mut app, messages);
+    assert!(app.image_viewer.as_ref().is_some_and(|viewer| viewer.open));
+    Ok(())
+}
+
+#[test]
+fn ui_visual_image_viewer_close_and_download_emit_actions() -> Result<(), Error> {
+    let app = image_viewer_app(true);
+    let mut ui = sim(&app);
+    ui.click(iced::widget::Id::new("image-viewer-zoom-in"))?;
+    ui.click(iced::widget::Id::new("image-viewer-canvas"))?;
+    ui.click(iced::widget::Id::new("image-viewer-download"))?;
+    ui.click(iced::widget::Id::new("image-viewer-close"))?;
+    let messages = drain_messages(ui);
+    assert!(messages.iter().any(|message| matches!(
+        message,
+        Message::ImageViewerZoomChanged(zoom) if (*zoom - 1.25).abs() < f32::EPSILON
+    )));
+    assert!(messages.iter().any(|message| matches!(
+        message,
+        Message::ImageViewerTransformed { zoom, .. } if (*zoom - 2.0).abs() < f32::EPSILON
+    )));
+    assert!(
+        messages
+            .iter()
+            .any(|message| matches!(message, Message::ImageViewerDownloadPressed))
+    );
+    assert!(
+        messages
+            .iter()
+            .any(|message| matches!(message, Message::ImageViewerClosed))
+    );
     Ok(())
 }
 

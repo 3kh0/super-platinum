@@ -25,9 +25,10 @@ use crate::ui;
 use super::palette::{self, PaletteEntry, PaletteState, PaletteTarget};
 use super::{
     ActivityState, App, ComposerAttachment, ComposerTarget, DesktopNotification, DmsState,
-    FilePreview, HistoryLoadKind, Message, PendingFileMessage, PendingScrollTarget,
-    ProfileHoverState, ProfilePaneState, SearchHit, SearchState, TextSelection, TextSelectionPoint,
-    TextSelectionSurface, ThreadKey,
+    FilePreview, HistoryLoadKind, ImageFetchAuth, ImageViewerImage, ImageViewerSource,
+    ImageViewerState, MediaViewerKind, Message, PendingFileMessage, PendingScrollTarget,
+    PreparedVideo, ProfileHoverState, ProfilePaneState, SearchHit, SearchState, TextSelection,
+    TextSelectionPoint, TextSelectionSurface, ThreadKey, VideoViewerPlayback,
 };
 use iced::widget::text_editor::Content;
 
@@ -1106,7 +1107,11 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
         }
         Message::DmOpened { team, user, result } => dm_opened(app, team, user, result),
 
-        Message::FileDownloadPressed { url, filename } => download_file_pressed(app, url, filename),
+        Message::FileDownloadPressed {
+            url,
+            filename,
+            auth,
+        } => download_file_pressed(app, url, filename, auth),
 
         Message::FileDownloaded(result) => {
             match result {
@@ -1114,6 +1119,258 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
                 Err(e) => app.toast(format!("download failed: {e}")),
             }
             Task::none()
+        }
+
+        Message::ImageViewerOpened(source) => image_viewer_opened(app, source),
+
+        Message::ImageViewerFullLoaded { generation, result } => {
+            let Some(viewer) = app
+                .image_viewer
+                .as_mut()
+                .filter(|viewer| viewer.open && viewer.generation == generation)
+            else {
+                return Task::none();
+            };
+            match result {
+                Ok(bytes) => {
+                    viewer.image = ImageViewerImage::Loaded(ImageHandle::from_bytes(bytes));
+                }
+                Err(error) => {
+                    tracing::warn!(error = %error, "full image failed");
+                    viewer.image = ImageViewerImage::Failed;
+                    app.toast("Original image unavailable");
+                }
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerVideoPrepared { generation, result } => {
+            let Some(viewer) = app
+                .image_viewer
+                .as_mut()
+                .filter(|viewer| viewer.open && viewer.generation == generation)
+            else {
+                return result
+                    .ok()
+                    .map(|prepared| remove_viewer_video(prepared.path))
+                    .unwrap_or_else(Task::none);
+            };
+            match result {
+                Ok(prepared) => {
+                    let video = viewer
+                        .video
+                        .get_or_insert_with(VideoViewerPlayback::default);
+                    video.path = Some(prepared.path);
+                    video.duration = prepared.player.duration().as_secs_f32();
+                    video.position = 0.0;
+                    video.playing = true;
+                    video.player = Some(prepared.player);
+                }
+                Err(error) => {
+                    tracing::warn!(error = %error, "video preparation failed");
+                    viewer.image = ImageViewerImage::Failed;
+                    app.toast("Video unavailable");
+                }
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerVideoFrame(generation) => {
+            let Some(video) = app.image_viewer.as_mut().and_then(|viewer| {
+                (viewer.open && viewer.generation == generation)
+                    .then_some(viewer)
+                    .and_then(|viewer| viewer.video.as_mut())
+            }) else {
+                return Task::none();
+            };
+            if !video.seeking
+                && let Some(player) = video.player.as_ref()
+            {
+                video.position = player.position().as_secs_f32().min(video.duration);
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerVideoEnded(generation) => {
+            if let Some(video) = app.image_viewer.as_mut().and_then(|viewer| {
+                (viewer.open && viewer.generation == generation)
+                    .then_some(viewer)
+                    .and_then(|viewer| viewer.video.as_mut())
+            }) {
+                video.position = video.duration;
+                video.playing = false;
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerVideoFailed { generation, error } => {
+            let Some(viewer) = app
+                .image_viewer
+                .as_mut()
+                .filter(|viewer| viewer.open && viewer.generation == generation)
+            else {
+                return Task::none();
+            };
+            tracing::warn!(%error, "video playback failed");
+            if let Some(video) = viewer.video.as_mut() {
+                video.playing = false;
+                video.player = None;
+            }
+            viewer.image = ImageViewerImage::Failed;
+            app.toast("Video playback failed");
+            Task::none()
+        }
+
+        Message::ImageViewerVideoPlayPause => {
+            if let Some(video) = app
+                .image_viewer
+                .as_mut()
+                .and_then(|viewer| viewer.video.as_mut())
+                .filter(|video| video.player.is_some())
+            {
+                let should_play = !video.playing;
+                if let Some(player) = video.player.as_mut().and_then(Arc::get_mut) {
+                    if should_play && video.position >= video.duration {
+                        if let Err(error) = player.restart_stream() {
+                            tracing::warn!(%error, "video restart failed");
+                            return Task::none();
+                        }
+                        video.position = 0.0;
+                    } else {
+                        player.set_paused(!should_play);
+                    }
+                    video.playing = should_play;
+                }
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerVideoSeekChanged(position) => {
+            if let Some(video) = app
+                .image_viewer
+                .as_mut()
+                .and_then(|viewer| viewer.video.as_mut())
+            {
+                if !video.seeking {
+                    video.resume_after_seek = video.playing;
+                    video.playing = false;
+                    video.seeking = true;
+                    if let Some(player) = video.player.as_mut().and_then(Arc::get_mut) {
+                        player.set_paused(true);
+                    }
+                }
+                video.position = position.clamp(0.0, video.duration);
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerVideoSeekReleased => {
+            if let Some(video) = app
+                .image_viewer
+                .as_mut()
+                .and_then(|viewer| viewer.video.as_mut())
+                .filter(|video| video.seeking)
+            {
+                if let Some(player) = video.player.as_mut().and_then(Arc::get_mut) {
+                    if let Err(error) = player.seek(Duration::from_secs_f32(video.position), true) {
+                        tracing::warn!(%error, "video seek failed");
+                    }
+                    player.set_paused(!video.resume_after_seek);
+                }
+                video.seeking = false;
+                video.playing = video.resume_after_seek;
+                video.resume_after_seek = false;
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerVideoVolumeChanged(volume) => {
+            if let Some(video) = app
+                .image_viewer
+                .as_mut()
+                .and_then(|viewer| viewer.video.as_mut())
+            {
+                video.volume = volume.clamp(0.0, 1.0);
+                video.muted = false;
+                if let Some(player) = video.player.as_mut().and_then(Arc::get_mut) {
+                    player.set_volume(video.volume as f64);
+                    player.set_muted(false);
+                }
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerVideoVolumeReleased => Task::none(),
+
+        Message::ImageViewerVideoMuteToggled => {
+            if let Some(video) = app
+                .image_viewer
+                .as_mut()
+                .and_then(|viewer| viewer.video.as_mut())
+            {
+                video.muted = !video.muted;
+                if let Some(player) = video.player.as_mut().and_then(Arc::get_mut) {
+                    player.set_muted(video.muted);
+                }
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerClosed => {
+            if let Some(viewer) = app.image_viewer.as_mut() {
+                viewer.open = false;
+                if let Some(video) = viewer.video.as_mut() {
+                    video.player = None;
+                }
+                if let Some(path) = viewer.video.as_mut().and_then(|video| video.path.take()) {
+                    return remove_viewer_video(path);
+                }
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerDismissed => {
+            if app.image_viewer.as_ref().is_some_and(|viewer| !viewer.open) {
+                app.image_viewer = None;
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerZoomChanged(zoom) => {
+            if let Some(viewer) = app.image_viewer.as_mut() {
+                let previous = viewer.zoom;
+                viewer.zoom = zoom.clamp(1.0, 5.0);
+                if viewer.zoom <= 1.0 {
+                    viewer.offset = iced::Vector::ZERO;
+                } else if previous > 0.0 {
+                    viewer.offset = viewer.offset * (viewer.zoom / previous);
+                }
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerTransformed { zoom, offset } => {
+            if let Some(viewer) = app.image_viewer.as_mut() {
+                viewer.zoom = zoom.clamp(1.0, 5.0);
+                viewer.offset = if viewer.zoom <= 1.0 {
+                    iced::Vector::ZERO
+                } else {
+                    offset
+                };
+            }
+            Task::none()
+        }
+
+        Message::ImageViewerDownloadPressed => {
+            let Some(viewer) = app.image_viewer.as_ref() else {
+                return Task::none();
+            };
+            download_file_pressed(
+                app,
+                viewer.source.download_url.clone(),
+                viewer.source.filename.clone(),
+                viewer.source.fetch_auth,
+            )
         }
 
         Message::OpenUrl(url) => open_url_pressed(app, url),
@@ -3875,13 +4132,149 @@ async fn open_url_in_browser(url: String) -> Result<(), String> {
     }
 }
 
-fn download_file_pressed(app: &mut App, url: String, filename: String) -> Task<Message> {
+fn image_viewer_opened(app: &mut App, source: ImageViewerSource) -> Task<Message> {
+    let cleanup = app
+        .image_viewer
+        .as_mut()
+        .and_then(|viewer| viewer.video.as_mut())
+        .and_then(|video| video.path.take())
+        .map(remove_viewer_video);
+    app.image_viewer_generation = app.image_viewer_generation.wrapping_add(1);
+    let generation = app.image_viewer_generation;
+    let image = if source.full_url == source.preview_key {
+        app.file_previews
+            .get(&source.preview_key)
+            .and_then(file_preview_handle)
+            .map(ImageViewerImage::Loaded)
+            .unwrap_or(ImageViewerImage::Loading)
+    } else {
+        ImageViewerImage::Loading
+    };
+    let already_loaded = matches!(image, ImageViewerImage::Loaded(_));
+    app.profile_hover = None;
+    app.image_viewer = Some(ImageViewerState {
+        source: source.clone(),
+        image,
+        generation,
+        open: true,
+        zoom: 1.0,
+        offset: iced::Vector::ZERO,
+        video: (source.kind == MediaViewerKind::Video).then(VideoViewerPlayback::default),
+    });
+    if already_loaded {
+        return cleanup.unwrap_or_else(Task::none);
+    }
+    let Some(transport) = app.transport.clone() else {
+        if let Some(viewer) = app.image_viewer.as_mut() {
+            viewer.image = ImageViewerImage::Failed;
+        }
+        return cleanup.unwrap_or_else(Task::none);
+    };
+    let user_agent = crate::slack::xparams::Identity::from_capture().user_agent;
+    let load = match source.kind {
+        MediaViewerKind::Image => Task::perform(
+            fetch_image_bytes(transport, source.full_url, source.fetch_auth, user_agent),
+            move |result| Message::ImageViewerFullLoaded { generation, result },
+        ),
+        MediaViewerKind::Video => Task::perform(
+            prepare_viewer_video(
+                transport,
+                source.full_url,
+                source.fetch_auth,
+                user_agent,
+                source.filename,
+            ),
+            move |result| Message::ImageViewerVideoPrepared { generation, result },
+        ),
+    };
+    match cleanup {
+        Some(cleanup) => Task::batch([cleanup, load]),
+        None => load,
+    }
+}
+
+fn remove_viewer_video(path: PathBuf) -> Task<Message> {
+    Task::perform(
+        async move {
+            let _ = tokio::fs::remove_file(path).await;
+        },
+        |_| Message::AnimationTick,
+    )
+}
+
+async fn prepare_viewer_video(
+    transport: Arc<Transport>,
+    url: String,
+    auth: ImageFetchAuth,
+    user_agent: String,
+    filename: String,
+) -> Result<PreparedVideo, SlackError> {
+    let bytes = fetch_image_bytes(transport, url, auth, user_agent).await?;
+    let extension = Path::new(&filename)
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .filter(|extension| !extension.is_empty())
+        .unwrap_or("mp4");
+    let path = std::env::temp_dir().join(format!(
+        "snack-viewer-{}.{}",
+        uuid::Uuid::new_v4(),
+        extension
+    ));
+    tokio::fs::write(&path, bytes)
+        .await
+        .map_err(|error| SlackError::Transport(format!("write video preview: {error}")))?;
+    let player_path = path.clone();
+    let player = tokio::task::spawn_blocking(move || {
+        let uri = url::Url::from_file_path(&player_path)
+            .map_err(|_| "could not create the local video URL".to_owned())?;
+        iced_video_player::Video::new(&uri).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| SlackError::Transport(format!("start video player: {error}")))?;
+    match player {
+        Ok(player) => Ok(PreparedVideo {
+            path,
+            player: Arc::new(player),
+        }),
+        Err(error) => {
+            let _ = tokio::fs::remove_file(&path).await;
+            Err(SlackError::Transport(format!("open video: {error}")))
+        }
+    }
+}
+
+fn file_preview_handle(preview: &FilePreview) -> Option<ImageHandle> {
+    match preview {
+        FilePreview::Loaded(handle) => Some(handle.clone()),
+        FilePreview::Animated { frames, .. } => frames.first().cloned(),
+        FilePreview::Loading | FilePreview::Failed => None,
+    }
+}
+
+async fn fetch_image_bytes(
+    transport: Arc<Transport>,
+    url: String,
+    auth: ImageFetchAuth,
+    user_agent: String,
+) -> Result<Vec<u8>, SlackError> {
+    match auth {
+        ImageFetchAuth::Slack => transport.get_bytes(&url, &user_agent).await,
+        ImageFetchAuth::Public => transport.get_public_bytes(&url, &user_agent).await,
+    }
+}
+
+fn download_file_pressed(
+    app: &mut App,
+    url: String,
+    filename: String,
+    auth: ImageFetchAuth,
+) -> Task<Message> {
     let Some(transport) = app.transport.clone() else {
         app.toast("download failed: transport not connected");
         return Task::none();
     };
     Task::perform(
-        async move { download_file_to_disk(transport, url, filename).await },
+        async move { download_file_to_disk(transport, url, filename, auth).await },
         Message::FileDownloaded,
     )
 }
@@ -3890,9 +4283,10 @@ async fn download_file_to_disk(
     transport: Arc<Transport>,
     url: String,
     filename: String,
+    auth: ImageFetchAuth,
 ) -> Result<PathBuf, SlackError> {
     let user_agent = crate::slack::xparams::Identity::from_capture().user_agent;
-    let bytes = transport.get_bytes(&url, &user_agent).await?;
+    let bytes = fetch_image_bytes(transport, url, auth, user_agent).await?;
     let dir = config::data_dir()
         .map_err(|e| SlackError::Transport(format!("download dir: {e}")))?
         .join("downloads");
@@ -4024,35 +4418,40 @@ fn load_file_previews(app: &mut App, messages: Vec<SlackMessage>) -> Task<Messag
         .filter_map(|file| {
             let key = crate::state::file_preview_key(file)?;
             let url = crate::state::file_preview_url(file)?.to_owned();
-            Some((key, url))
+            let auth = if crate::state::is_slack_authenticated_url(&url) {
+                ImageFetchAuth::Slack
+            } else {
+                ImageFetchAuth::Public
+            };
+            Some((key, url, auth))
         });
     let attachment_requests = messages
         .iter()
         .flat_map(|msg| &msg.attachments)
         .filter_map(|att| {
             let url = crate::state::attachment_preview_url(att)?.to_owned();
-            Some((url.clone(), url))
+            Some((url.clone(), url, ImageFetchAuth::Public))
         });
     let mut seen = std::collections::HashSet::new();
     let requests: Vec<_> = file_requests
         .chain(attachment_requests)
-        .filter(|(key, _)| !app.file_previews.contains_key(key) && seen.insert(key.clone()))
+        .filter(|(key, _, _)| !app.file_previews.contains_key(key) && seen.insert(key.clone()))
         .collect();
 
     if requests.is_empty() {
         return Task::none();
     }
 
-    for (key, _) in &requests {
+    for (key, _, _) in &requests {
         app.file_previews.insert(key.clone(), FilePreview::Loading);
     }
 
     let user_agent = crate::slack::xparams::Identity::from_capture().user_agent;
-    Task::batch(requests.into_iter().map(|(key, url)| {
+    Task::batch(requests.into_iter().map(|(key, url, auth)| {
         let transport = transport.clone();
         let user_agent = user_agent.clone();
         Task::perform(
-            async move { transport.get_bytes(&url, &user_agent).await },
+            fetch_image_bytes(transport, url, auth, user_agent),
             move |result| Message::FilePreviewLoaded {
                 key: key.clone(),
                 result,

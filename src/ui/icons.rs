@@ -51,6 +51,19 @@ material_icon!(
     "M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.41 4.29 19.71 2.88 18.3 9.17 12 2.88 5.7 4.29 4.29 10.59 10.59 16.89 4.29z"
 );
 
+material_icon!(MINUS, "M19 13H5v-2h14v2z");
+material_icon!(PLUS, "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z");
+material_icon!(PLAY, "M8 5v14l11-7z");
+material_icon!(PAUSE, "M6 19h4V5H6v14zm8-14v14h4V5h-4z");
+material_icon!(
+    VOLUME,
+    "M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
+);
+material_icon!(
+    VOLUME_OFF,
+    "M16.5 12c0-.77-.19-1.5-.52-2.14l-1.53 1.53c.03.2.05.4.05.61 0 .94-.29 1.82-.79 2.54l1.44 1.44A6.48 6.48 0 0 0 16.5 12zM19 12c0 1.84-.63 3.53-1.68 4.87l1.43 1.43A9.9 9.9 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73L16.73 18 18 16.73 4.27 3zM12 4 9.91 6.09 12 8.18V4z"
+);
+
 // "schedule" — local time
 material_icon!(
     SCHEDULE,
@@ -141,6 +154,30 @@ pub fn download() -> svg::Handle {
 
 pub fn close() -> svg::Handle {
     CLOSE.clone()
+}
+
+pub fn minus() -> svg::Handle {
+    MINUS.clone()
+}
+
+pub fn plus() -> svg::Handle {
+    PLUS.clone()
+}
+
+pub fn play() -> svg::Handle {
+    PLAY.clone()
+}
+
+pub fn pause() -> svg::Handle {
+    PAUSE.clone()
+}
+
+pub fn volume() -> svg::Handle {
+    VOLUME.clone()
+}
+
+pub fn volume_off() -> svg::Handle {
+    VOLUME_OFF.clone()
 }
 
 pub fn schedule() -> svg::Handle {

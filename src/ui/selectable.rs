@@ -242,7 +242,7 @@ impl Widget<Message, Theme, Renderer> for SelectableText {
         layout::sized(limits, self.width, Length::Shrink, |limits| {
             let bounds = limits.max();
             let font = renderer.default_font();
-            let hint_factor = renderer.scale_factor();
+            let hint_factor = renderer.hint_factor();
             let text_with_spans = || Text {
                 content: self.spans.as_slice(),
                 bounds,
