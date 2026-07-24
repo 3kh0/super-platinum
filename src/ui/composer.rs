@@ -6,20 +6,32 @@ use iced::widget::image::Handle as ImageHandle;
 use iced::widget::svg::Handle as SvgHandle;
 use iced::widget::text_editor::{Action, Binding, Content, Edit, KeyPress, Motion, Status};
 use iced::widget::{button, column, container, image, row, stack, svg, text, text_editor};
-use iced::{Alignment, ContentFit, Element, Fill, Length};
+use iced::{Alignment, ContentFit, Element, Fill, Length, Padding};
 use std::sync::atomic::Ordering;
 use unicode_segmentation::UnicodeSegmentation;
 
+use super::composer_drag::drag_capture;
 use super::theme;
-use crate::app::{ComposerAttachment, ComposerTarget, FormatMark, Message};
+use crate::app::{AttachTarget, ComposerAttachment, ComposerTarget, FormatMark, Message};
 
 pub const CHANNEL_INPUT_ID: &str = "composer-channel";
 pub const THREAD_INPUT_ID: &str = "composer-thread";
+pub const EDIT_INPUT_ID: &str = "composer-edit";
+
+const MIN_TEXT_HEIGHT: f32 = 28.0;
+const MAX_TEXT_HEIGHT: f32 = 120.0;
+const EDITOR_PADDING: Padding = Padding {
+    top: theme::SPACE_XS,
+    right: theme::SPACE_SM,
+    bottom: theme::SPACE_XS,
+    left: theme::SPACE_SM,
+};
 
 pub fn input_id(target: ComposerTarget) -> &'static str {
     match target {
         ComposerTarget::Channel => CHANNEL_INPUT_ID,
         ComposerTarget::Thread => THREAD_INPUT_ID,
+        ComposerTarget::Edit => EDIT_INPUT_ID,
     }
 }
 
@@ -27,78 +39,80 @@ pub fn view<'a>(
     content: &'a Content,
     attachments: &'a [ComposerAttachment],
     placeholder_label: &str,
-    target: ComposerTarget,
 ) -> Element<'a, Message> {
     let placeholder = format!("Message {placeholder_label}");
-    editor_owned(
+    let input = editor(
         content,
-        attachments,
         placeholder,
-        target,
+        ComposerTarget::Channel,
+        Message::SendPressed,
+    );
+    composer_shell(
+        input,
+        attachments,
+        AttachTarget::Channel,
         Message::SendPressed,
     )
+    .into()
 }
 
 pub fn thread_view<'a>(
     content: &'a Content,
     attachments: &'a [ComposerAttachment],
-    target: ComposerTarget,
 ) -> Element<'a, Message> {
-    editor(
+    let input = editor(
         content,
-        attachments,
         "Reply in thread",
-        target,
+        ComposerTarget::Thread,
+        Message::ThreadSendPressed,
+    );
+    composer_shell(
+        input,
+        attachments,
+        AttachTarget::Thread,
         Message::ThreadSendPressed,
     )
+    .into()
 }
 
-fn editor_owned<'a>(
+pub fn editor<'a>(
     content: &'a Content,
-    attachments: &'a [ComposerAttachment],
-    placeholder: String,
+    placeholder: impl iced::advanced::text::IntoFragment<'a>,
     target: ComposerTarget,
     send: Message,
 ) -> Element<'a, Message> {
-    let binding_send = send.clone();
     let input = text_editor(content)
         .id(input_id(target))
         .placeholder(placeholder)
         .on_action(move |action| Message::ComposerAction { target, action })
-        .key_binding(move |press| key_binding(press, target, binding_send.clone()))
+        .key_binding(move |press| key_binding(press, target, send.clone()))
         .size(theme::TEXT_MD)
-        .padding([theme::SPACE_XS, theme::SPACE_SM])
-        .height(Length::Fixed(30.0))
+        .padding(EDITOR_PADDING)
+        .height(Length::Shrink)
         .style(theme::composer_editor);
 
-    composer_shell(input.into(), attachments, target, send).into()
-}
+    let input = drag_capture(
+        input,
+        EDITOR_PADDING,
+        move |point| Message::ComposerAction {
+            target,
+            action: Action::Drag(point),
+        },
+        move |lines| Message::ComposerAction {
+            target,
+            action: Action::Scroll { lines },
+        },
+    );
 
-fn editor<'a>(
-    content: &'a Content,
-    attachments: &'a [ComposerAttachment],
-    placeholder: &'a str,
-    target: ComposerTarget,
-    send: Message,
-) -> Element<'a, Message> {
-    let binding_send = send.clone();
-    let input = text_editor(content)
-        .id(input_id(target))
-        .placeholder(placeholder)
-        .on_action(move |action| Message::ComposerAction { target, action })
-        .key_binding(move |press| key_binding(press, target, binding_send.clone()))
-        .size(theme::TEXT_MD)
-        .padding([theme::SPACE_XS, theme::SPACE_SM])
-        .height(Length::Fixed(30.0))
-        .style(theme::composer_editor);
-
-    composer_shell(input.into(), attachments, target, send).into()
+    container(input)
+        .height(Length::Shrink.min(MIN_TEXT_HEIGHT).max(MAX_TEXT_HEIGHT))
+        .into()
 }
 
 fn composer_shell<'a>(
     input: Element<'a, Message>,
     attachments: &'a [ComposerAttachment],
-    target: ComposerTarget,
+    target: AttachTarget,
     send: Message,
 ) -> iced::widget::Container<'a, Message> {
     let mut body = column![];
@@ -135,11 +149,10 @@ fn composer_shell<'a>(
                 .height(Length::Fixed(28.0)),
             ]
             .spacing(theme::SPACE_XS)
-            .align_y(Alignment::Center),
+            .align_y(Alignment::End),
         )
         .style(theme::file_attachment)
-        .padding(theme::SPACE_XS)
-        .height(Length::Fixed(36.0)),
+        .padding(theme::SPACE_XS),
     );
     container(body.spacing(theme::SPACE_SM))
         .width(Fill)
@@ -149,7 +162,7 @@ fn composer_shell<'a>(
 
 fn attachment_strip<'a>(
     attachments: &'a [ComposerAttachment],
-    target: ComposerTarget,
+    target: AttachTarget,
 ) -> Element<'a, Message> {
     let mut strip = row![].spacing(theme::SPACE_SM);
     for attachment in attachments {
@@ -398,7 +411,15 @@ fn key_binding(press: KeyPress, target: ComposerTarget, send: Message) -> Option
     if modifiers.command()
         && matches!(key, Key::Character(c) if c.as_str().eq_ignore_ascii_case("v"))
     {
-        return Some(Binding::Custom(Message::PasteAttachmentsRequested(target)));
+        return Some(match target {
+            ComposerTarget::Channel => {
+                Binding::Custom(Message::PasteAttachmentsRequested(AttachTarget::Channel))
+            }
+            ComposerTarget::Thread => {
+                Binding::Custom(Message::PasteAttachmentsRequested(AttachTarget::Thread))
+            }
+            ComposerTarget::Edit => Binding::Paste,
+        });
     }
 
     if modifiers.command()
@@ -416,11 +437,99 @@ fn key_binding(press: KeyPress, target: ComposerTarget, send: Message) -> Option
         });
     }
 
+    if let Some(motion) = delete_motion_for(*modifiers, key, *physical_key) {
+        return Some(Binding::Custom(Message::ComposerDelete { target, motion }));
+    }
+
+    if let Some(binding) = clipboard_binding(*modifiers, key, *physical_key) {
+        return Some(binding);
+    }
+
+    #[cfg(target_os = "macos")]
+    if let Some(binding) = emacs_binding(*modifiers, key, *physical_key) {
+        return Some(binding);
+    }
+
     if modifiers.command() && matches!(key, Key::Character(_)) {
         return None;
     }
 
     Binding::from_key_press(press)
+}
+
+fn clipboard_binding(
+    modifiers: Modifiers,
+    key: &Key,
+    physical_key: iced::keyboard::key::Physical,
+) -> Option<Binding<Message>> {
+    if !modifiers.command() || modifiers.alt() {
+        return None;
+    }
+    match key.to_latin(physical_key)? {
+        'a' if !modifiers.shift() => Some(Binding::SelectAll),
+        'c' if !modifiers.shift() => Some(Binding::Copy),
+        'x' if !modifiers.shift() => Some(Binding::Cut),
+        'z' if modifiers.shift() => Some(Binding::Redo),
+        'y' => Some(Binding::Redo),
+        'z' => Some(Binding::Undo),
+        _ => None,
+    }
+}
+
+fn delete_motion_for(
+    modifiers: Modifiers,
+    key: &Key,
+    physical_key: iced::keyboard::key::Physical,
+) -> Option<Motion> {
+    #[cfg(target_os = "macos")]
+    if modifiers.control()
+        && !modifiers.command()
+        && !modifiers.alt()
+        && key.to_latin(physical_key) == Some('k')
+    {
+        return Some(Motion::End);
+    }
+    let _ = physical_key;
+
+    match key {
+        Key::Named(Named::Backspace) => {
+            if modifiers.alt() {
+                Some(Motion::WordLeft)
+            } else if modifiers.command() {
+                Some(Motion::Home)
+            } else {
+                None
+            }
+        }
+        Key::Named(Named::Delete) if modifiers.alt() => Some(Motion::WordRight),
+        _ => None,
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn emacs_binding(
+    modifiers: Modifiers,
+    key: &Key,
+    physical_key: iced::keyboard::key::Physical,
+) -> Option<Binding<Message>> {
+    if !modifiers.control() || modifiers.command() || modifiers.alt() {
+        return None;
+    }
+    let motion = match key.to_latin(physical_key)? {
+        'a' => Motion::Home,
+        'e' => Motion::End,
+        'b' => Motion::Left,
+        'f' => Motion::Right,
+        'p' => Motion::Up,
+        'n' => Motion::Down,
+        'd' => return Some(Binding::Delete),
+        _ => return None,
+    };
+    Some(if modifiers.shift() {
+        Binding::Select(motion)
+    } else {
+        Binding::Move(motion)
+    })
 }
 
 fn is_enter(key: &Key, modified_key: &Key) -> bool {
@@ -536,6 +645,114 @@ mod tests {
         assert_eq!(
             wrap_selection("> a\n> b", FormatMark::Quote),
             ("a\nb".into(), 0)
+        );
+    }
+
+    fn character(c: char) -> Key {
+        Key::Character(c.to_string().into())
+    }
+
+    fn physical() -> iced::keyboard::key::Physical {
+        iced::keyboard::key::Physical::Unidentified(iced::keyboard::key::NativeCode::Unidentified)
+    }
+
+    #[test]
+    fn command_shortcuts_reach_the_editor() {
+        let cmd = Modifiers::COMMAND;
+        assert!(matches!(
+            clipboard_binding(cmd, &character('a'), physical()),
+            Some(Binding::SelectAll)
+        ));
+        assert!(matches!(
+            clipboard_binding(cmd, &character('c'), physical()),
+            Some(Binding::Copy)
+        ));
+        assert!(matches!(
+            clipboard_binding(cmd, &character('x'), physical()),
+            Some(Binding::Cut)
+        ));
+        assert!(matches!(
+            clipboard_binding(cmd, &character('z'), physical()),
+            Some(Binding::Undo)
+        ));
+        assert!(matches!(
+            clipboard_binding(cmd | Modifiers::SHIFT, &character('z'), physical()),
+            Some(Binding::Redo)
+        ));
+    }
+
+    #[test]
+    fn formatting_marks_win_over_clipboard() {
+        let cmd_shift = Modifiers::COMMAND | Modifiers::SHIFT;
+        assert!(clipboard_binding(cmd_shift, &character('x'), physical()).is_none());
+        assert!(clipboard_binding(cmd_shift, &character('c'), physical()).is_none());
+        assert_eq!(
+            format_mark_for(cmd_shift, &character('x'), physical()),
+            Some(FormatMark::Strike)
+        );
+        assert_eq!(
+            format_mark_for(cmd_shift, &character('c'), physical()),
+            Some(FormatMark::Code)
+        );
+    }
+
+    #[test]
+    fn plain_typing_is_left_alone() {
+        assert!(clipboard_binding(Modifiers::empty(), &character('a'), physical()).is_none());
+    }
+
+    #[test]
+    fn motion_deletes() {
+        assert_eq!(
+            delete_motion_for(Modifiers::ALT, &Key::Named(Named::Backspace), physical()),
+            Some(Motion::WordLeft)
+        );
+        assert_eq!(
+            delete_motion_for(
+                Modifiers::COMMAND,
+                &Key::Named(Named::Backspace),
+                physical()
+            ),
+            Some(Motion::Home)
+        );
+        assert_eq!(
+            delete_motion_for(Modifiers::ALT, &Key::Named(Named::Delete), physical()),
+            Some(Motion::WordRight)
+        );
+        assert_eq!(
+            delete_motion_for(
+                Modifiers::empty(),
+                &Key::Named(Named::Backspace),
+                physical()
+            ),
+            None
+        );
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macos_emacs_motions() {
+        let ctrl = Modifiers::CTRL;
+        assert!(matches!(
+            emacs_binding(ctrl, &character('a'), physical()),
+            Some(Binding::Move(Motion::Home))
+        ));
+        assert!(matches!(
+            emacs_binding(ctrl, &character('e'), physical()),
+            Some(Binding::Move(Motion::End))
+        ));
+        assert!(matches!(
+            emacs_binding(ctrl | Modifiers::SHIFT, &character('f'), physical()),
+            Some(Binding::Select(Motion::Right))
+        ));
+        assert!(matches!(
+            emacs_binding(ctrl, &character('d'), physical()),
+            Some(Binding::Delete)
+        ));
+        assert!(emacs_binding(Modifiers::COMMAND, &character('a'), physical()).is_none());
+        assert_eq!(
+            delete_motion_for(ctrl, &character('k'), physical()),
+            Some(Motion::End)
         );
     }
 }

@@ -2,6 +2,7 @@ pub mod activity;
 pub mod blocks;
 pub mod channel;
 pub mod composer;
+pub mod composer_drag;
 pub mod dms;
 pub mod icons;
 pub mod image_viewer;

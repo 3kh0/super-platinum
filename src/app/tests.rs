@@ -1472,6 +1472,54 @@ fn empty_send_is_noop() {
 }
 
 #[test]
+fn motion_delete_removes_the_spanned_text() {
+    use iced::widget::text_editor::{Action, Motion};
+
+    let mut app = test_app();
+    app.composer = iced::widget::text_editor::Content::with_text("hello world");
+    app.composer.perform(Action::Move(Motion::DocumentEnd));
+    let _ = update(
+        &mut app,
+        Message::ComposerDelete {
+            target: ComposerTarget::Channel,
+            motion: Motion::WordLeft,
+        },
+    );
+    assert_eq!(app.composer.text(), "hello ");
+
+    let _ = update(
+        &mut app,
+        Message::ComposerDelete {
+            target: ComposerTarget::Channel,
+            motion: Motion::Home,
+        },
+    );
+    assert_eq!(app.composer.text(), "");
+
+    app.edit_content = iced::widget::text_editor::Content::with_text("fix typo");
+    app.edit_content.perform(Action::Move(Motion::DocumentEnd));
+    let _ = update(
+        &mut app,
+        Message::ComposerDelete {
+            target: ComposerTarget::Edit,
+            motion: Motion::WordLeft,
+        },
+    );
+    assert_eq!(app.edit_content.text(), "fix ");
+
+    app.composer = iced::widget::text_editor::Content::with_text("done");
+    app.composer.perform(Action::Move(Motion::DocumentEnd));
+    let _ = update(
+        &mut app,
+        Message::ComposerDelete {
+            target: ComposerTarget::Channel,
+            motion: Motion::End,
+        },
+    );
+    assert_eq!(app.composer.text(), "done");
+}
+
+#[test]
 fn optimistic_send_inserts_pending_without_transport() {
     let mut app = test_app();
     app.active_channel = Some("C_GENERAL".into());
@@ -1759,7 +1807,7 @@ fn edit_pressed_populates_editor_with_current_text() {
         },
     );
     assert_eq!(
-        app.edit_text,
+        app.edit_content.text(),
         "morning — shipping the agent UI harness today"
     );
     assert_eq!(
@@ -1773,12 +1821,12 @@ fn edit_submit_optimistically_updates_text_and_marks_edited() {
     let mut app = test_app();
     let team = app.active_team.clone().unwrap();
     app.editing = Some(("C_GENERAL".into(), "1783372300.000100".into()));
-    app.edit_text = "morning (updated)".into();
+    app.edit_content = Content::with_text("morning (updated)");
 
     let _ = update(&mut app, Message::EditSubmit);
 
     assert!(app.editing.is_none());
-    assert!(app.edit_text.is_empty());
+    assert!(app.edit_content.text().is_empty());
     let cm = &app.workspaces[&team].messages["C_GENERAL"];
     let msg = cm
         .messages
@@ -1793,7 +1841,7 @@ fn edit_submit_optimistically_updates_text_and_marks_edited() {
 fn empty_edit_submit_keeps_editor_open() {
     let mut app = test_app();
     app.editing = Some(("C_GENERAL".into(), "1783372300.000100".into()));
-    app.edit_text = "   ".into();
+    app.edit_content = Content::with_text("   ");
 
     let _ = update(&mut app, Message::EditSubmit);
 
@@ -1811,7 +1859,7 @@ fn edit_applies_to_open_thread_copy() {
         .insert((team.clone(), "C_GENERAL".into(), root_ts.clone()), cm);
 
     app.editing = Some(("C_GENERAL".into(), "1783372310.000100".into()));
-    app.edit_text = "reply (fixed)".into();
+    app.edit_content = Content::with_text("reply (fixed)");
     let _ = update(&mut app, Message::EditSubmit);
 
     let cm = &app.threads[&(team, "C_GENERAL".into(), root_ts)];
@@ -1856,10 +1904,10 @@ fn message_deleted_ok_removes_from_channel_and_threads() {
 fn selecting_other_channel_cancels_edit() {
     let mut app = test_app();
     app.editing = Some(("C_GENERAL".into(), "1783372300.000100".into()));
-    app.edit_text = "in progress".into();
+    app.edit_content = Content::with_text("in progress");
     let _ = update(&mut app, Message::ChannelSelected("C_DEV".into()));
     assert!(app.editing.is_none());
-    assert!(app.edit_text.is_empty());
+    assert!(app.edit_content.text().is_empty());
 }
 
 fn search_page(page: u32, page_count: u32, total: u64) -> SearchMessagesPage {

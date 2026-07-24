@@ -24,13 +24,13 @@ use crate::ui;
 
 use super::palette::{self, PaletteEntry, PaletteState, PaletteTarget};
 use super::{
-    ActivityState, App, ComposerAttachment, ComposerTarget, DesktopNotification, DmsState,
-    FilePreview, HistoryLoadKind, ImageFetchAuth, ImageViewerImage, ImageViewerSource,
+    ActivityState, App, AttachTarget, ComposerAttachment, ComposerTarget, DesktopNotification,
+    DmsState, FilePreview, HistoryLoadKind, ImageFetchAuth, ImageViewerImage, ImageViewerSource,
     ImageViewerState, MediaViewerKind, Message, PendingFileMessage, PendingScrollTarget,
     PreparedVideo, ProfileHoverState, ProfilePaneState, SearchHit, SearchState, TextSelection,
     TextSelectionPoint, TextSelectionSurface, ThreadKey, VideoViewerPlayback,
 };
-use iced::widget::text_editor::Content;
+use iced::widget::text_editor::{Action, Content, Edit};
 
 const CACHE_SAVE_DEBOUNCE: Duration = Duration::from_millis(750);
 const LOAD_OLDER_SCROLL_TOP_PX: f32 = 48.0;
@@ -70,7 +70,7 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
                 .is_some_and(|(channel, _)| channel != &id)
             {
                 app.editing = None;
-                app.edit_text.clear();
+                app.edit_content = Content::new();
             }
             app.active_channel = Some(id.clone());
             if let Some(team) = app.active_team.clone() {
@@ -292,25 +292,29 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
 
         Message::ComposerAction { target, action } => {
             let is_edit = action.is_edit();
-            match target {
-                ComposerTarget::Channel => app.composer.perform(action),
-                ComposerTarget::Thread => app.thread_composer.perform(action),
-            }
+            composer_content_mut(app, target).perform(action);
             if is_edit && target == ComposerTarget::Channel {
                 maybe_send_typing(app);
             }
             Task::none()
         }
 
-        Message::ComposerFormat { target, mark } => {
-            match target {
-                ComposerTarget::Channel => {
-                    ui::composer::apply_format(&mut app.composer, mark);
+        Message::ComposerDelete { target, motion } => {
+            let content = composer_content_mut(app, target);
+            content.perform(Action::Select(motion));
+            if content.selection().is_some_and(|text| !text.is_empty()) {
+                content.perform(Action::Edit(Edit::Backspace));
+                if target == ComposerTarget::Channel {
                     maybe_send_typing(app);
                 }
-                ComposerTarget::Thread => {
-                    ui::composer::apply_format(&mut app.thread_composer, mark);
-                }
+            }
+            Task::none()
+        }
+
+        Message::ComposerFormat { target, mark } => {
+            ui::composer::apply_format(composer_content_mut(app, target), mark);
+            if target == ComposerTarget::Channel {
+                maybe_send_typing(app);
             }
             Task::none()
         }
@@ -406,13 +410,8 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
 
         Message::ClipboardTextRead { target, result } => {
             if let Ok(text) = result {
-                let content = match target {
-                    ComposerTarget::Channel => &mut app.composer,
-                    ComposerTarget::Thread => &mut app.thread_composer,
-                };
-                content.perform(iced::widget::text_editor::Action::Edit(
-                    iced::widget::text_editor::Edit::Paste(Arc::new(text)),
-                ));
+                composer_content_mut(app, target.composer())
+                    .perform(Action::Edit(Edit::Paste(Arc::new(text))));
             }
             Task::none()
         }
@@ -718,19 +717,14 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
 
         Message::EditPressed { channel, ts } => {
             let current = find_message_text(app, &channel, &ts).unwrap_or_default();
-            app.edit_text = current;
+            app.edit_content = Content::with_text(&current);
             app.editing = Some((channel, ts));
-            Task::none()
-        }
-
-        Message::EditComposerChanged(value) => {
-            app.edit_text = value;
-            Task::none()
+            operation::focus(ui::composer::EDIT_INPUT_ID)
         }
 
         Message::EditCancelled => {
             app.editing = None;
-            app.edit_text.clear();
+            app.edit_content = Content::new();
             Task::none()
         }
 
@@ -2435,7 +2429,7 @@ fn select_workspace(app: &mut App, team: TeamId) -> Task<Message> {
     app.search = None;
     app.search_input.clear();
     app.editing = None;
-    app.edit_text.clear();
+    app.edit_content = Content::new();
     app.text_selection = None;
     app.composer = Content::new();
     app.thread_composer = Content::new();
@@ -2628,28 +2622,21 @@ fn next_seq(app: &mut App) -> u64 {
     app.send_seq
 }
 
-/// Composer a dropped file belongs to.
-///
-/// With a thread open next to a channel both composers are on screen, so the
-/// drop is placed by the pointer: only a drop over the thread panel itself
-/// attaches to the thread.
-fn drop_target(app: &App) -> ComposerTarget {
+fn drop_target(app: &App) -> AttachTarget {
     if app.active_thread.is_none() {
-        return ComposerTarget::Channel;
+        return AttachTarget::Channel;
     }
-    // Outside the Home layout the thread replaces the channel panel, so it owns
-    // every drop; the channel composer is not visible at all.
     if app.main_view != crate::state::MainView::Home || !app.thread_open {
-        return ComposerTarget::Thread;
+        return AttachTarget::Thread;
     }
     let Some((cursor, window)) = cursor_in_window() else {
-        return ComposerTarget::Thread;
+        return AttachTarget::Thread;
     };
     let zone = thread_panel_x_range(window.width, app.profile_pane.is_some() && app.profile_open);
     let target = if zone.contains(&cursor.x) {
-        ComposerTarget::Thread
+        AttachTarget::Thread
     } else {
-        ComposerTarget::Channel
+        AttachTarget::Channel
     };
     tracing::debug!(
         cursor = cursor.x,
@@ -2691,14 +2678,22 @@ fn cursor_in_window() -> Option<(iced::Point, iced::Size)> {
     None
 }
 
-fn attachments_mut(app: &mut App, target: ComposerTarget) -> &mut Vec<ComposerAttachment> {
+fn composer_content_mut(app: &mut App, target: ComposerTarget) -> &mut Content {
     match target {
-        ComposerTarget::Channel => &mut app.composer_attachments,
-        ComposerTarget::Thread => &mut app.thread_composer_attachments,
+        ComposerTarget::Channel => &mut app.composer,
+        ComposerTarget::Thread => &mut app.thread_composer,
+        ComposerTarget::Edit => &mut app.edit_content,
     }
 }
 
-fn add_attachments(app: &mut App, target: ComposerTarget, paths: Vec<PathBuf>) {
+fn attachments_mut(app: &mut App, target: AttachTarget) -> &mut Vec<ComposerAttachment> {
+    match target {
+        AttachTarget::Channel => &mut app.composer_attachments,
+        AttachTarget::Thread => &mut app.thread_composer_attachments,
+    }
+}
+
+fn add_attachments(app: &mut App, target: AttachTarget, paths: Vec<PathBuf>) {
     for path in paths {
         if !path.is_file()
             || attachments_mut(app, target)
@@ -2879,7 +2874,7 @@ fn send_pressed(app: &mut App) -> Task<Message> {
     };
 
     if !app.composer_attachments.is_empty() {
-        return send_attachments(app, ComposerTarget::Channel, team, channel, None, text);
+        return send_attachments(app, AttachTarget::Channel, team, channel, None, text);
     }
 
     let seq = next_seq(app);
@@ -2947,7 +2942,7 @@ fn send_thread_pressed(app: &mut App) -> Task<Message> {
     if !app.thread_composer_attachments.is_empty() {
         return send_attachments(
             app,
-            ComposerTarget::Thread,
+            AttachTarget::Thread,
             team,
             channel,
             Some(root_ts),
@@ -3016,7 +3011,7 @@ fn send_thread_pressed(app: &mut App) -> Task<Message> {
 
 fn send_attachments(
     app: &mut App,
-    target: ComposerTarget,
+    target: AttachTarget,
     team: TeamId,
     channel: ChannelId,
     thread_ts: Option<MessageTs>,
@@ -3099,12 +3094,9 @@ fn send_attachments(
         text: text.clone(),
         attachments,
     });
-    match target {
-        ComposerTarget::Channel => app.composer = Content::new(),
-        ComposerTarget::Thread => app.thread_composer = Content::new(),
-    }
+    *composer_content_mut(app, target.composer()) = Content::new();
     mark_workspace_dirty(app, &team);
-    let scroll = if target == ComposerTarget::Channel {
+    let scroll = if target == AttachTarget::Channel {
         app.pending_scroll_to = Some((channel.clone(), PendingScrollTarget::Latest));
         scroll_to_pending(app, &channel)
     } else {
@@ -3241,7 +3233,7 @@ fn toggle_reaction(
 }
 
 fn edit_submit(app: &mut App) -> Task<Message> {
-    let text = app.edit_text.trim().to_owned();
+    let text = app.edit_content.text().trim().to_owned();
     let Some((channel, ts)) = app.editing.clone() else {
         return Task::none();
     };
@@ -3254,7 +3246,7 @@ fn edit_submit(app: &mut App) -> Task<Message> {
     };
 
     app.editing = None;
-    app.edit_text.clear();
+    app.edit_content = Content::new();
     apply_message_edit(app, &team, &channel, &ts, Some(text.clone()));
     mark_workspace_dirty(app, &team);
 
@@ -3296,7 +3288,7 @@ fn delete_pressed(app: &mut App, channel: ChannelId, ts: MessageTs) -> Task<Mess
     };
     if app.editing.as_ref() == Some(&(channel.clone(), ts.clone())) {
         app.editing = None;
-        app.edit_text.clear();
+        app.edit_content = Content::new();
     }
     let Some((transport, session)) = app.live() else {
         return Task::none();
@@ -3607,7 +3599,7 @@ fn open_search_result(
     }
     mark_workspace_dirty(app, &team);
     app.editing = None;
-    app.edit_text.clear();
+    app.edit_content = Content::new();
     app.pending_scroll_to = Some((channel.clone(), PendingScrollTarget::Message(ts)));
 
     let mut tasks = Vec::new();

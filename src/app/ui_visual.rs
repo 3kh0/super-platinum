@@ -678,3 +678,123 @@ fn ui_visual_optional_snapshot_hash() -> Result<(), Error> {
     );
     Ok(())
 }
+
+#[test]
+fn ui_visual_composer_grows_with_content_then_caps() -> Result<(), Error> {
+    let mut app = test_app();
+
+    let one_line = composer_height(&app)?;
+    app.composer = composer_text(4);
+    let four_lines = composer_height(&app)?;
+    app.composer = composer_text(40);
+    let capped = composer_height(&app)?;
+    app.composer = composer_text(400);
+    let still_capped = composer_height(&app)?;
+
+    assert!(
+        one_line < four_lines,
+        "composer should grow with content: 1 line = {one_line}, 4 lines = {four_lines}"
+    );
+    assert!(
+        four_lines < capped,
+        "composer should keep growing up to the cap: 4 lines = {four_lines}, cap = {capped}"
+    );
+    assert_eq!(
+        capped, still_capped,
+        "past the cap the composer scrolls instead of growing"
+    );
+
+    app.composer = composer_text(4);
+    capture(&app, "composer-multiline")?;
+    Ok(())
+}
+
+fn composer_text(lines: usize) -> iced::widget::text_editor::Content {
+    let text = (1..=lines)
+        .map(|n| format!("line {n}"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    iced::widget::text_editor::Content::with_text(&text)
+}
+
+fn composer_height(app: &App) -> Result<f32, Error> {
+    let mut ui = sim(app);
+    let target = ui.find(iced_test::selector::id(ui::composer::CHANNEL_INPUT_ID))?;
+    Ok(target
+        .visible_bounds()
+        .expect("composer should be visible")
+        .height)
+}
+
+#[test]
+fn ui_visual_edit_message_composer_renders() -> Result<(), Error> {
+    let mut app = test_app();
+    let _ = update(
+        &mut app,
+        Message::EditPressed {
+            channel: "C_GENERAL".into(),
+            ts: "1783372300.000100".into(),
+        },
+    );
+    let mut ui = sim(&app);
+    ui.find("Save")?;
+    ui.find("Cancel")?;
+    ui.find(iced_test::selector::id(ui::composer::EDIT_INPUT_ID))?;
+    drop(ui);
+    capture(&app, "edit-message-composer")?;
+    Ok(())
+}
+
+#[test]
+fn ui_visual_composer_drag_survives_leaving_bounds() -> Result<(), Error> {
+    use iced::widget::text_editor::Action;
+
+    let mut app = test_app();
+    app.composer = composer_text(4);
+
+    let mut ui = sim(&app);
+    let bounds = ui
+        .find(iced_test::selector::id(ui::composer::CHANNEL_INPUT_ID))?
+        .visible_bounds()
+        .expect("composer should be visible");
+
+    // Press inside the composer, then drag far above it.
+    ui.point_at(bounds.center());
+    let _ = ui.simulate([Event::Mouse(mouse::Event::ButtonPressed(
+        mouse::Button::Left,
+    ))]);
+    let outside = iced::Point::new(bounds.center().x, bounds.y - 200.0);
+    ui.point_at(outside);
+    let _ = ui.simulate([Event::Mouse(mouse::Event::CursorMoved {
+        position: outside,
+    })]);
+
+    let messages = drain_messages(ui);
+    let dragged = messages.iter().any(|message| {
+        matches!(
+            message,
+            Message::ComposerAction {
+                action: Action::Drag(_),
+                ..
+            }
+        )
+    });
+    let scrolled = messages.iter().any(|message| {
+        matches!(
+            message,
+            Message::ComposerAction {
+                action: Action::Scroll { lines },
+                ..
+            } if *lines < 0
+        )
+    });
+    assert!(
+        dragged,
+        "dragging above the composer should still extend the selection"
+    );
+    assert!(
+        scrolled,
+        "dragging above the composer should scroll it up towards earlier lines"
+    );
+    Ok(())
+}

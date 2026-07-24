@@ -874,35 +874,6 @@ pub fn input(_theme: &Theme, status: text_input::Status) -> text_input::Style {
     }
 }
 
-pub fn editor(
-    _theme: &Theme,
-    status: iced::widget::text_editor::Status,
-) -> iced::widget::text_editor::Style {
-    use iced::widget::text_editor;
-    let border_color = match status {
-        text_editor::Status::Focused { .. } => accent(),
-        text_editor::Status::Hovered => Color {
-            a: 0.35,
-            ..border()
-        },
-        _ => border(),
-    };
-    text_editor::Style {
-        background: Background::Color(bg_elev()),
-        border: Border {
-            color: border_color,
-            width: 1.0,
-            radius: CONTROL_RADIUS.into(),
-        },
-        placeholder: text_4(),
-        value: text_1(),
-        selection: Color {
-            a: 0.30,
-            ..accent()
-        },
-    }
-}
-
 pub fn composer_editor(
     _theme: &Theme,
     _status: iced::widget::text_editor::Status,

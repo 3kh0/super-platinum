@@ -1,3 +1,4 @@
+use iced::widget::text_editor::Content;
 use iced::widget::{
     Column, Id, Row, Space, button, column, container, image, mouse_area, row, scrollable, stack,
     text,
@@ -32,7 +33,7 @@ pub fn view<'a>(
     avatar_previews: &'a HashMap<String, FilePreview>,
     emoji_previews: &HashMap<String, FilePreview>,
     emoji_animation_elapsed: Duration,
-    editing: Option<(&str, &str)>,
+    editing: Option<(&str, &'a Content)>,
     hovered_ts: Option<&str>,
     text_selection: Option<&TextSelection>,
     pending_file_messages: &'a [PendingFileMessage],

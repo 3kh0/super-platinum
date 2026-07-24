@@ -3,16 +3,15 @@ use std::f32::consts::TAU;
 use std::time::Duration;
 
 use iced::widget::image::Handle as ImageHandle;
-use iced::widget::{
-    Column, Row, button, container, image, mouse_area, stack, svg, text, text_input,
-};
+use iced::widget::text_editor::Content;
+use iced::widget::{Column, Row, button, container, image, mouse_area, stack, svg, text};
 use iced::{Alignment, Color, ContentFit, Element, Fill, Font, Length, Point};
 use unicode_segmentation::UnicodeSegmentation;
 
 use super::{blocks, composer, icons, profile, selectable, theme};
 use crate::app::{
-    ComposerAttachment, FilePreview, ImageFetchAuth, ImageViewerSource, MediaViewerKind, Message,
-    ProfileHoverState, TextSelection, TextSelectionSurface,
+    ComposerAttachment, ComposerTarget, FilePreview, ImageFetchAuth, ImageViewerSource,
+    MediaViewerKind, Message, ProfileHoverState, TextSelection, TextSelectionSurface,
 };
 use crate::slack::models::Message as SlackMessage;
 use crate::state::{self, Workspace};
@@ -29,7 +28,7 @@ pub fn row<'a>(
     avatar_previews: &'a HashMap<String, FilePreview>,
     emoji_previews: &HashMap<String, FilePreview>,
     emoji_animation_elapsed: Duration,
-    edit_text: Option<&str>,
+    edit_content: Option<&'a Content>,
     selection_surface: TextSelectionSurface,
     message_index: usize,
     text_selection: Option<&TextSelection>,
@@ -108,7 +107,7 @@ pub fn row<'a>(
     let thread_ts = thread_target_ts(msg);
     let can_reply = !in_thread && thread_ts.is_some();
 
-    let action_bar: Option<Element<'a, Message>> = if hovered && edit_text.is_none() {
+    let action_bar: Option<Element<'a, Message>> = if hovered && edit_content.is_none() {
         let can_copy = !copy_text.is_empty();
         let edit_ts = editable.then(|| msg.ts.clone()).flatten();
         (can_reply || can_copy || edit_ts.is_some()).then(|| {
@@ -160,14 +159,16 @@ pub fn row<'a>(
         None
     };
 
-    if let Some(value) = edit_text {
-        let input = text_input("Edit message", value)
-            .on_input(Message::EditComposerChanged)
-            .on_submit(Message::EditSubmit)
-            .style(theme::input)
-            .size(theme::TEXT_MD)
-            .padding(theme::SPACE_SM)
-            .width(Length::Fixed(360.0));
+    if let Some(value) = edit_content {
+        let input = container(composer::editor(
+            value,
+            "Edit message",
+            ComposerTarget::Edit,
+            Message::EditSubmit,
+        ))
+        .style(theme::file_attachment)
+        .padding(theme::SPACE_XS)
+        .width(Length::Fixed(360.0));
         let actions = Row::new()
             .spacing(theme::SPACE_SM)
             .push(

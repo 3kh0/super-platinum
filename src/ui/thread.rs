@@ -6,8 +6,8 @@ use std::time::Duration;
 
 use super::{composer, icons, message, theme};
 use crate::app::{
-    ComposerAttachment, ComposerTarget, FilePreview, Message, PendingFileMessage,
-    ProfileHoverState, TextSelection, TextSelectionSurface,
+    ComposerAttachment, FilePreview, Message, PendingFileMessage, ProfileHoverState, TextSelection,
+    TextSelectionSurface,
 };
 use crate::slack::models::Message as SlackMessage;
 use crate::state::{ChannelMessages, Workspace};
@@ -28,7 +28,7 @@ pub fn view<'a>(
     avatar_previews: &'a HashMap<String, FilePreview>,
     emoji_previews: &'a HashMap<String, FilePreview>,
     emoji_animation_elapsed: Duration,
-    editing: Option<(&str, &str)>,
+    editing: Option<(&str, &'a Content)>,
     hovered_ts: Option<&str>,
     unread_marker_ts: Option<&str>,
     text_selection: Option<&TextSelection>,
@@ -184,7 +184,7 @@ pub fn view<'a>(
         }
     };
 
-    let input = composer::thread_view(content, attachments, ComposerTarget::Thread);
+    let input = composer::thread_view(content, attachments);
 
     container(column![
         container(header)

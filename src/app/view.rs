@@ -1,3 +1,4 @@
+use iced::widget::text_editor::Content;
 use iced::widget::{Space, button, column, container, image, opaque, row, stack, text};
 use iced::{Background, ContentFit, Element, Fill};
 
@@ -225,11 +226,11 @@ fn main_view(app: &App) -> Element<'_, Message> {
         );
     }
 
-    let editing_for = |channel_id: &str| -> Option<(&str, &str)> {
+    let editing_for = |channel_id: &str| -> Option<(&str, &Content)> {
         app.editing
             .as_ref()
             .filter(|(channel, _)| channel == channel_id)
-            .map(|(_, ts)| (ts.as_str(), app.edit_text.as_str()))
+            .map(|(_, ts)| (ts.as_str(), &app.edit_content))
     };
 
     let hovered_for = |in_thread: bool| -> Option<&str> {
@@ -323,7 +324,7 @@ fn channel_main_panel<'a>(
                 .editing
                 .as_ref()
                 .filter(|(channel, _)| channel == channel_id)
-                .map(|(_, ts)| (ts.as_str(), app.edit_text.as_str()));
+                .map(|(_, ts)| (ts.as_str(), &app.edit_content));
             let hovered = app
                 .hovered_message
                 .as_ref()
@@ -354,7 +355,6 @@ fn channel_main_panel<'a>(
                     &app.composer,
                     &app.composer_attachments,
                     &label,
-                    crate::app::ComposerTarget::Channel,
                 ))
                 .height(iced::Length::Shrink),
             ]
@@ -390,7 +390,7 @@ fn thread_static_panel<'a>(
         .editing
         .as_ref()
         .filter(|(c, _)| c == channel)
-        .map(|(_, ts)| (ts.as_str(), app.edit_text.as_str()));
+        .map(|(_, ts)| (ts.as_str(), &app.edit_content));
     let hovered = app
         .hovered_message
         .as_ref()

@@ -368,7 +368,7 @@ pub struct App {
     pending_file_messages: Vec<PendingFileMessage>,
     attachment_seq: u64,
     editing: Option<(ChannelId, MessageTs)>,
-    edit_text: String,
+    edit_content: Content,
     hovered_message: Option<(bool, MessageTs)>,
     profile_pane: Option<ProfilePaneState>,
     profile_open: bool,
@@ -418,6 +418,22 @@ pub struct App {
 pub enum ComposerTarget {
     Channel,
     Thread,
+    Edit,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttachTarget {
+    Channel,
+    Thread,
+}
+
+impl AttachTarget {
+    pub fn composer(self) -> ComposerTarget {
+        match self {
+            Self::Channel => ComposerTarget::Channel,
+            Self::Thread => ComposerTarget::Thread,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -443,9 +459,13 @@ pub enum Message {
         target: ComposerTarget,
         mark: FormatMark,
     },
-    AttachmentPickerOpened(ComposerTarget),
-    AttachmentsPicked {
+    ComposerDelete {
         target: ComposerTarget,
+        motion: text_editor::Motion,
+    },
+    AttachmentPickerOpened(AttachTarget),
+    AttachmentsPicked {
+        target: AttachTarget,
         paths: Vec<PathBuf>,
     },
     FilesDropped(Vec<PathBuf>),
@@ -454,20 +474,20 @@ pub enum Message {
         result: Result<PathBuf, String>,
     },
     AttachmentRemoved {
-        target: ComposerTarget,
+        target: AttachTarget,
         id: u64,
     },
-    PasteAttachmentsRequested(ComposerTarget),
+    PasteAttachmentsRequested(AttachTarget),
     ClipboardFilesRead {
-        target: ComposerTarget,
+        target: AttachTarget,
         result: Result<Vec<PathBuf>, String>,
     },
     ClipboardTextRead {
-        target: ComposerTarget,
+        target: AttachTarget,
         result: Result<String, String>,
     },
     AttachmentsSent {
-        target: ComposerTarget,
+        target: AttachTarget,
         team: TeamId,
         channel: ChannelId,
         thread_ts: Option<MessageTs>,
@@ -525,7 +545,6 @@ pub enum Message {
         channel: ChannelId,
         ts: MessageTs,
     },
-    EditComposerChanged(String),
     EditSubmit,
     CopyMessage(String),
     TextSelectionStarted(TextSelectionPoint),
@@ -828,7 +847,7 @@ impl App {
             pending_file_messages: Vec::new(),
             attachment_seq: 0,
             editing: None,
-            edit_text: String::new(),
+            edit_content: Content::new(),
             hovered_message: None,
             profile_pane: None,
             profile_open: false,
@@ -996,7 +1015,7 @@ impl App {
         self.pending_file_messages.clear();
         self.attachment_seq = 0;
         self.editing = None;
-        self.edit_text.clear();
+        self.edit_content = Content::new();
         self.hovered_message = None;
         self.profile_pane = None;
         self.profile_open = false;
