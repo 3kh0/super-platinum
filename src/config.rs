@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 #[cfg(test)]
 use std::sync::{Mutex, OnceLock};
 
@@ -132,30 +132,200 @@ pub enum AccentColor {
     Purple,
 }
 
-impl AccentColor {
-    pub const ALL: [AccentColor; 5] = [
-        AccentColor::Blue,
-        AccentColor::Red,
-        AccentColor::Green,
-        AccentColor::Yellow,
-        AccentColor::Purple,
-    ];
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ThemePreset {
+    #[default]
+    Countertop,
+    BlueSteel,
+    PaperBag,
+}
+
+impl ThemePreset {
+    pub const ALL: [Self; 3] = [Self::Countertop, Self::BlueSteel, Self::PaperBag];
 
     pub fn label(self) -> &'static str {
         match self {
-            AccentColor::Blue => "Blue",
-            AccentColor::Red => "Red",
-            AccentColor::Green => "Green",
-            AccentColor::Yellow => "Yellow",
-            AccentColor::Purple => "Purple",
+            Self::Countertop => "Countertop",
+            Self::BlueSteel => "Blue Steel",
+            Self::PaperBag => "Paper Bag",
+        }
+    }
+
+    pub fn description(self) -> &'static str {
+        match self {
+            Self::Countertop => "Warm graphite",
+            Self::BlueSteel => "Cool slate",
+            Self::PaperBag => "Soft light",
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HexColor([u8; 3]);
+
+impl HexColor {
+    pub const fn from_rgb(r: u8, g: u8, b: u8) -> Self {
+        Self([r, g, b])
+    }
+
+    pub const fn rgb(self) -> [u8; 3] {
+        self.0
+    }
+
+    pub fn as_hex(self) -> String {
+        format!("#{:02X}{:02X}{:02X}", self.0[0], self.0[1], self.0[2])
+    }
+}
+
+impl TryFrom<String> for HexColor {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let hex = value.strip_prefix('#').unwrap_or(&value);
+        if hex.len() != 6 || !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return Err("expected a color like #E8875B".to_owned());
+        }
+        let component = |range| {
+            u8::from_str_radix(&hex[range], 16)
+                .map_err(|_| "expected a color like #E8875B".to_owned())
+        };
+        Ok(Self([component(0..2)?, component(2..4)?, component(4..6)?]))
+    }
+}
+
+impl From<HexColor> for String {
+    fn from(value: HexColor) -> Self {
+        value.as_hex()
+    }
+}
+
+impl Serialize for HexColor {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.as_hex())
+    }
+}
+
+impl<'de> Deserialize<'de> for HexColor {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        String::deserialize(deserializer)?
+            .try_into()
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct RoleColorOverrides {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary: Option<HexColor>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hover: Option<HexColor>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mention: Option<HexColor>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub success: Option<HexColor>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub warning: Option<HexColor>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub danger: Option<HexColor>,
+}
+
+impl RoleColorOverrides {
+    pub fn is_empty(&self) -> bool {
+        *self == Self::default()
+    }
+
+    pub fn get(self, role: ColorRole) -> Option<HexColor> {
+        match role {
+            ColorRole::Primary => self.primary,
+            ColorRole::Hover => self.hover,
+            ColorRole::Mention => self.mention,
+            ColorRole::Success => self.success,
+            ColorRole::Warning => self.warning,
+            ColorRole::Danger => self.danger,
+        }
+    }
+
+    pub fn set(&mut self, role: ColorRole, value: Option<HexColor>) {
+        match role {
+            ColorRole::Primary => self.primary = value,
+            ColorRole::Hover => self.hover = value,
+            ColorRole::Mention => self.mention = value,
+            ColorRole::Success => self.success = value,
+            ColorRole::Warning => self.warning = value,
+            ColorRole::Danger => self.danger = value,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ColorRole {
+    Primary,
+    Hover,
+    Mention,
+    Success,
+    Warning,
+    Danger,
+}
+
+impl ColorRole {
+    pub const ALL: [Self; 6] = [
+        Self::Primary,
+        Self::Hover,
+        Self::Mention,
+        Self::Success,
+        Self::Warning,
+        Self::Danger,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Primary => "Primary",
+            Self::Hover => "Hover",
+            Self::Mention => "Mention",
+            Self::Success => "Success",
+            Self::Warning => "Warning",
+            Self::Danger => "Danger",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum BackgroundFit {
+    #[default]
+    Cover,
+    Contain,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BackgroundSettings {
+    pub file_name: String,
+    #[serde(default)]
+    pub fit: BackgroundFit,
+    #[serde(default = "default_background_dim")]
+    pub dim: f32,
+    #[serde(default = "default_surface_opacity")]
+    pub surface_opacity: f32,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
     #[serde(default)]
-    pub accent: AccentColor,
+    pub preset: ThemePreset,
+    #[serde(default)]
+    pub colors: RoleColorOverrides,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub background: Option<BackgroundSettings>,
+    /// Read old settings, but never write the superseded accent field.
+    #[serde(default, rename = "accent", skip_serializing)]
+    legacy_accent: Option<AccentColor>,
     #[serde(default = "default_gap")]
     pub gap: f32,
     #[serde(default = "default_panel_radius")]
@@ -180,11 +350,20 @@ fn default_border_thickness() -> f32 {
 fn default_sidebar_width() -> f32 {
     240.0
 }
+fn default_background_dim() -> f32 {
+    0.45
+}
+fn default_surface_opacity() -> f32 {
+    0.88
+}
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            accent: AccentColor::default(),
+            preset: ThemePreset::default(),
+            colors: RoleColorOverrides::default(),
+            background: None,
+            legacy_accent: None,
             gap: default_gap(),
             panel_radius: default_panel_radius(),
             border_thickness: default_border_thickness(),
@@ -207,9 +386,28 @@ pub fn load_settings() -> Settings {
         return Settings::default();
     };
     match std::fs::read(&path) {
-        Ok(bytes) => serde_json::from_slice(&bytes).unwrap_or_default(),
+        Ok(bytes) => serde_json::from_slice(&bytes)
+            .map(migrate_legacy_accent)
+            .unwrap_or_default(),
         Err(_) => Settings::default(),
     }
+}
+
+fn migrate_legacy_accent(mut settings: Settings) -> Settings {
+    if settings.colors.primary.is_none()
+        && let Some(accent) = settings.legacy_accent.take()
+    {
+        let (primary, hover) = match accent {
+            AccentColor::Blue => ("#4AAFE8", "#72C5F0"),
+            AccentColor::Red => ("#D96868", "#E98989"),
+            AccentColor::Green => ("#54B88A", "#7BCBA5"),
+            AccentColor::Yellow => ("#D6A93D", "#E5C367"),
+            AccentColor::Purple => ("#B382DA", "#C9A4E6"),
+        };
+        settings.colors.primary = primary.to_owned().try_into().ok();
+        settings.colors.hover = hover.to_owned().try_into().ok();
+    }
+    settings
 }
 
 pub fn save_settings(settings: &Settings) -> Result<(), AppError> {
@@ -218,6 +416,18 @@ pub fn save_settings(settings: &Settings) -> Result<(), AppError> {
     let json = serde_json::to_string_pretty(settings)?;
     std::fs::write(settings_path()?, json)?;
     Ok(())
+}
+
+pub fn background_dir() -> Result<PathBuf, AppError> {
+    Ok(config_dir()?.join("backgrounds"))
+}
+
+pub fn background_path(settings: &BackgroundSettings) -> Option<PathBuf> {
+    let name = Path::new(&settings.file_name);
+    if name.components().count() != 1 {
+        return None;
+    }
+    background_dir().ok().map(|dir| dir.join(name))
 }
 
 pub fn config_dir() -> Result<PathBuf, AppError> {
@@ -692,6 +902,96 @@ mod tests {
                 ),
             ]),
         }
+    }
+
+    #[test]
+    fn appearance_settings_roundtrip_with_managed_background() {
+        let _guard = test_lock();
+        reset();
+        let settings = Settings {
+            preset: ThemePreset::PaperBag,
+            colors: RoleColorOverrides {
+                primary: Some(HexColor::from_rgb(0x12, 0x34, 0x56)),
+                danger: Some(HexColor::from_rgb(0xAA, 0x22, 0x33)),
+                ..RoleColorOverrides::default()
+            },
+            background: Some(BackgroundSettings {
+                file_name: "fixture.webp".to_owned(),
+                fit: BackgroundFit::Contain,
+                dim: 0.32,
+                surface_opacity: 0.79,
+            }),
+            gap: 11.0,
+            ..Settings::default()
+        };
+
+        save_settings(&settings).expect("save appearance");
+        let loaded = load_settings();
+
+        assert_eq!(loaded, settings);
+        let serialized =
+            std::fs::read_to_string(settings_path().expect("settings path")).expect("settings");
+        assert!(serialized.contains("\"preset\": \"paper_bag\""));
+        assert!(serialized.contains("\"primary\": \"#123456\""));
+        assert!(!serialized.contains("\"accent\""));
+    }
+
+    #[test]
+    fn legacy_accent_migrates_to_role_overrides() {
+        let _guard = test_lock();
+        reset();
+        std::fs::create_dir_all(config_dir().expect("config dir")).expect("create config dir");
+        std::fs::write(
+            settings_path().expect("settings path"),
+            br#"{"accent":"purple","gap":12,"panel_radius":8,"border_thickness":1,"sidebar_width":240}"#,
+        )
+        .expect("write legacy settings");
+
+        let settings = load_settings();
+
+        assert_eq!(settings.preset, ThemePreset::Countertop);
+        assert_eq!(
+            settings.colors.primary.expect("migrated primary").as_hex(),
+            "#B382DA"
+        );
+        assert_eq!(
+            settings.colors.hover.expect("migrated hover").as_hex(),
+            "#C9A4E6"
+        );
+    }
+
+    #[test]
+    fn colors_require_six_digit_hex_values() {
+        assert_eq!(
+            HexColor::try_from("#e8875b".to_owned())
+                .expect("valid color")
+                .as_hex(),
+            "#E8875B"
+        );
+        assert!(HexColor::try_from("#fff".to_owned()).is_err());
+        assert!(HexColor::try_from("not-a-color".to_owned()).is_err());
+    }
+
+    #[test]
+    fn managed_background_paths_reject_traversal() {
+        let safe = BackgroundSettings {
+            file_name: "background.png".to_owned(),
+            fit: BackgroundFit::Cover,
+            dim: 0.45,
+            surface_opacity: 0.88,
+        };
+        assert!(
+            background_path(&safe)
+                .expect("safe path")
+                .ends_with("backgrounds/background.png")
+        );
+        assert!(
+            background_path(&BackgroundSettings {
+                file_name: "../outside.png".to_owned(),
+                ..safe
+            })
+            .is_none()
+        );
     }
 
     #[test]

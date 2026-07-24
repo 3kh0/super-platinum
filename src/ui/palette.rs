@@ -4,7 +4,7 @@ use iced::widget::{
     Column, Space, button, column, container, image, rich_text, row, scrollable, span, stack, svg,
     text, text_input,
 };
-use iced::{Alignment, ContentFit, Element, Fill, Length, font};
+use iced::{Alignment, ContentFit, Element, Fill, Length, Padding, font};
 
 use super::{icons, motion, theme};
 use crate::app::{FilePreview, Message, PaletteEntry, PaletteState, PaletteTarget};
@@ -85,7 +85,7 @@ fn results<'a>(
         return container(
             text(label)
                 .size(theme::TEXT_MD)
-                .color(theme::fade(theme::MUTED, alpha)),
+                .color(theme::fade(theme::muted(), alpha)),
         )
         .padding(theme::SPACE_MD)
         .into();
@@ -108,7 +108,7 @@ fn results<'a>(
         ));
     }
 
-    scrollable(list)
+    scrollable(list.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
         .style(theme::fade_scrollbar(alpha))
         .height(Length::Shrink)
         .width(Fill)
@@ -119,7 +119,7 @@ fn section_header<'a>(title: &str, alpha: f32) -> Element<'a, Message> {
     container(
         text(title.to_ascii_uppercase())
             .size(theme::TEXT_SM)
-            .color(theme::fade(theme::TEXT_4, alpha))
+            .color(theme::fade(theme::text_4(), alpha))
             .font(iced::Font {
                 weight: font::Weight::Semibold,
                 ..iced::Font::default()
@@ -142,7 +142,7 @@ fn entry_row<'a>(
         &entry.label,
         query,
         theme::TEXT_MD,
-        theme::fade(theme::TEXT_1, alpha),
+        theme::fade(theme::text_1(), alpha),
         font::Weight::Semibold,
     );
 
@@ -156,7 +156,7 @@ fn entry_row<'a>(
             &entry.sublabel,
             query,
             theme::TEXT_SM,
-            theme::fade(theme::MUTED, alpha),
+            theme::fade(theme::muted(), alpha),
             font::Weight::Normal,
         ));
     }
@@ -233,7 +233,7 @@ fn icon<'a>(
                 svg(handle)
                     .width(Length::Fixed(theme::SIDEBAR_ICON))
                     .height(Length::Fixed(theme::SIDEBAR_ICON))
-                    .style(theme::sidebar_icon(theme::fade(theme::TEXT_3, alpha)))
+                    .style(theme::sidebar_icon(theme::fade(theme::text_3(), alpha)))
                     .into(),
             )
         }

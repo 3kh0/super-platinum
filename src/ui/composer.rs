@@ -166,8 +166,8 @@ fn attachment_strip<'a>(
                     column![
                         text(truncate_filename(&attachment.name))
                             .size(theme::TEXT_SM)
-                            .color(theme::TEXT_1),
-                        text(detail).size(theme::TEXT_SM).color(theme::TEXT_4),
+                            .color(theme::text_1()),
+                        text(detail).size(theme::TEXT_SM).color(theme::text_4()),
                     ]
                     .spacing(2.0)
                     .width(Length::Fixed(128.0)),
@@ -211,7 +211,7 @@ pub fn pending_attachment_strip<'a>(attachments: &'a [ComposerAttachment]) -> El
                         "FILE"
                     })
                     .size(theme::TEXT_SM)
-                    .color(theme::TEXT_3),
+                    .color(theme::text_3()),
                 )
                 .width(Length::Fixed(220.0))
                 .height(Length::Fixed(96.0))
@@ -250,10 +250,10 @@ pub fn pending_attachment_strip<'a>(attachments: &'a [ComposerAttachment]) -> El
             media,
             text(truncate_filename(&attachment.name))
                 .size(theme::TEXT_SM)
-                .color(theme::TEXT_1),
+                .color(theme::text_1()),
             text(format_bytes(attachment.bytes))
                 .size(theme::TEXT_SM)
-                .color(theme::TEXT_4),
+                .color(theme::text_4()),
         ]
         .spacing(3.0);
         strip = strip.push(
@@ -282,7 +282,7 @@ fn attachment_preview<'a>(attachment: &'a ComposerAttachment) -> Element<'a, Mes
             } else {
                 "FILE"
             };
-            container(text(label).size(theme::TEXT_SM).color(theme::TEXT_3))
+            container(text(label).size(theme::TEXT_SM).color(theme::text_3()))
                 .width(Length::Fixed(64.0))
                 .height(Length::Fixed(64.0))
                 .center_x(Fill)

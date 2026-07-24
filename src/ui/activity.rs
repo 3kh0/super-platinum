@@ -26,7 +26,7 @@ pub fn list_panel<'a>(
     let mut header = row![
         text("Activity")
             .size(theme::TEXT_LG)
-            .color(theme::TEXT_1)
+            .color(theme::text_1())
             .font(iced::Font {
                 weight: font::Weight::Bold,
                 ..iced::Font::default()
@@ -37,7 +37,7 @@ pub fn list_panel<'a>(
             container(
                 text(unread.to_string())
                     .size(theme::TEXT_SM)
-                    .color(theme::BG_BASE),
+                    .color(theme::bg_base()),
             )
             .padding([1.0, theme::SPACE_SM])
             .style(theme::activity_count_pill),
@@ -85,7 +85,7 @@ pub fn list_panel<'a>(
                 elapsed,
             ));
         }
-        scrollable(list.padding(Padding::ZERO.right(theme::SPACE_SM)))
+        scrollable(list.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
             .on_scroll(|viewport| Message::ActivityScrolled {
                 remaining: (viewport.content_bounds().height
                     - viewport.bounds().height
@@ -114,7 +114,7 @@ fn date_header<'a>(feed_ts: &str) -> Element<'a, Message> {
     container(
         text(state::format_ts_date_label(feed_ts))
             .size(theme::TEXT_SM)
-            .color(theme::TEXT_3)
+            .color(theme::text_3())
             .font(iced::Font {
                 weight: font::Weight::Semibold,
                 ..iced::Font::default()
@@ -148,7 +148,7 @@ fn activity_row<'a>(
     let mut header = row![
         text(verb(item))
             .size(theme::TEXT_MD)
-            .color(theme::TEXT_1)
+            .color(theme::text_1())
             .font(iced::Font {
                 weight: font::Weight::Semibold,
                 ..iced::Font::default()
@@ -163,7 +163,7 @@ fn activity_row<'a>(
     header = header.push(
         text(time_label(item))
             .size(theme::TEXT_SM)
-            .color(theme::TEXT_4),
+            .color(theme::text_4()),
     );
     if let Some(count) = badge_count(item) {
         header = header.push(count_badge(count));
@@ -179,9 +179,9 @@ fn activity_row<'a>(
             elapsed,
             theme::TEXT_MD,
             if item.is_unread {
-                theme::TEXT_1
+                theme::text_1()
             } else {
-                theme::TEXT_3
+                theme::text_3()
             },
         ));
     }
@@ -194,7 +194,7 @@ fn activity_row<'a>(
             svg(icons::reply())
                 .width(Length::Fixed(20.0))
                 .height(Length::Fixed(20.0))
-                .style(theme::sidebar_icon(theme::TEXT_3)),
+                .style(theme::sidebar_icon(theme::text_3())),
         )
         .width(Length::Fixed(AVATAR))
         .height(Length::Fixed(AVATAR))
@@ -210,7 +210,7 @@ fn activity_row<'a>(
         );
         tooltip(
             glyph,
-            container(text(tip).size(theme::TEXT_SM).color(theme::TEXT_1))
+            container(text(tip).size(theme::TEXT_SM).color(theme::text_1()))
                 .padding([theme::SPACE_XS, theme::SPACE_SM])
                 .style(theme::tooltip_bubble),
             tooltip::Position::Right,
@@ -249,7 +249,12 @@ fn target_element<'a>(ws: &'a Workspace, item: &'a ActivityItem) -> Option<Eleme
     }
     let id = item.channel()?;
     if is_dm_channel(ws, item) {
-        return Some(text("DM").size(theme::TEXT_SM).color(theme::TEXT_2).into());
+        return Some(
+            text("DM")
+                .size(theme::TEXT_SM)
+                .color(theme::text_2())
+                .into(),
+        );
     }
     let channel = ws.channels.get(id);
     let name = channel
@@ -259,13 +264,16 @@ fn target_element<'a>(ws: &'a Workspace, item: &'a ActivityItem) -> Option<Eleme
     let glyph = svg(if private { icons::lock() } else { icons::tag() })
         .width(Length::Fixed(12.0))
         .height(Length::Fixed(12.0))
-        .style(theme::sidebar_icon(theme::TEXT_3));
+        .style(theme::sidebar_icon(theme::text_3()));
 
     Some(
         container(
-            row![glyph, text(name).size(theme::TEXT_SM).color(theme::TEXT_2)]
-                .spacing(theme::SPACE_XS)
-                .align_y(Alignment::Center),
+            row![
+                glyph,
+                text(name).size(theme::TEXT_SM).color(theme::text_2())
+            ]
+            .spacing(theme::SPACE_XS)
+            .align_y(Alignment::Center),
         )
         .padding([1.0, theme::SPACE_SM])
         .style(theme::activity_channel_chip)
@@ -286,7 +294,7 @@ fn count_badge<'a>(count: u32) -> Element<'a, Message> {
     } else {
         count.to_string()
     };
-    container(text(label).size(theme::TEXT_SM).color(theme::BG_BASE))
+    container(text(label).size(theme::TEXT_SM).color(theme::bg_base()))
         .padding([0.0, theme::SPACE_XS + 1.0])
         .style(theme::activity_count_badge)
         .into()
@@ -385,7 +393,7 @@ fn placeholder<'a>(label: &str) -> Element<'a, Message> {
     container(
         text(label.to_owned())
             .size(theme::TEXT_MD)
-            .color(theme::TEXT_4),
+            .color(theme::text_4()),
     )
     .center_x(Fill)
     .height(Fill)

@@ -108,7 +108,7 @@ fn panel<'a>(
                 "Loading original…"
             })
             .size(theme::TEXT_MD)
-            .color(theme::fade(theme::TEXT_3, alpha)),
+            .color(theme::fade(theme::text_3(), alpha)),
         )
         .center_x(Fill)
         .center_y(Fill)
@@ -224,7 +224,7 @@ fn video_controls<'a>(viewer: &ImageViewerState, alpha: f32) -> Element<'a, Mess
             ),
             text(format_media_time(position))
                 .size(theme::TEXT_SM)
-                .color(theme::fade(theme::TEXT_2, alpha)),
+                .color(theme::fade(theme::text_2(), alpha)),
             slider(
                 0.0..=slider_duration,
                 position.clamp(0.0, slider_duration),
@@ -236,7 +236,7 @@ fn video_controls<'a>(viewer: &ImageViewerState, alpha: f32) -> Element<'a, Mess
             .style(theme::fade_slider(alpha)),
             text(format_media_time(duration))
                 .size(theme::TEXT_SM)
-                .color(theme::fade(theme::TEXT_3, alpha)),
+                .color(theme::fade(theme::text_3(), alpha)),
             icon_button(
                 if muted {
                     icons::volume_off()
@@ -299,7 +299,7 @@ fn metadata<'a>(
             container(
                 text(initial)
                     .size(theme::TEXT_MD)
-                    .color(theme::fade(theme::TEXT_1, alpha))
+                    .color(theme::fade(theme::text_1(), alpha))
                     .font(Font {
                         weight: iced::font::Weight::Bold,
                         ..Font::default()
@@ -327,14 +327,14 @@ fn metadata<'a>(
             column![
                 text(viewer.source.author_name.clone())
                     .size(theme::TEXT_MD)
-                    .color(theme::fade(theme::TEXT_1, alpha))
+                    .color(theme::fade(theme::text_1(), alpha))
                     .font(Font {
                         weight: iced::font::Weight::Semibold,
                         ..Font::default()
                     }),
                 text(detail)
                     .size(theme::TEXT_SM)
-                    .color(theme::fade(theme::TEXT_3, alpha)),
+                    .color(theme::fade(theme::text_3(), alpha)),
             ]
             .width(Fill)
             .spacing(2.0),
@@ -355,7 +355,7 @@ fn icon_button<'a>(
     let icon = svg(handle)
         .width(Length::Fixed(15.0))
         .height(Length::Fixed(15.0))
-        .style(theme::sidebar_icon(theme::fade(theme::TEXT_1, alpha)));
+        .style(theme::sidebar_icon(theme::fade(theme::text_1(), alpha)));
     container(
         button(icon)
             .width(Length::Fixed(30.0))

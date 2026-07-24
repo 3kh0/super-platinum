@@ -22,7 +22,7 @@ echo "agent-ui-check: ICED_TEST_BACKEND=$ICED_TEST_BACKEND"
 echo "agent-ui-check: SNACK_UI_CAPTURE_DIR=$SNACK_UI_CAPTURE_DIR"
 echo "agent-ui-check: running ui_visual tests…"
 
-cargo test --locked ui_visual -- --nocapture
+cargo test --locked ui_visual -- --nocapture --test-threads=1
 
 echo
 echo "agent-ui-check: captures written to $SNACK_UI_CAPTURE_DIR"

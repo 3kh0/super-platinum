@@ -29,13 +29,13 @@ pub fn list_panel<'a>(
     let header = row![
         text("Direct messages")
             .size(theme::TEXT_LG)
-            .color(theme::TEXT_1)
+            .color(theme::text_1())
             .font(iced::Font {
                 weight: font::Weight::Bold,
                 ..iced::Font::default()
             }),
         Space::new().width(Fill),
-        text("Unreads").size(theme::TEXT_SM).color(theme::TEXT_2),
+        text("Unreads").size(theme::TEXT_SM).color(theme::text_2()),
         toggler(dms.unread_only)
             .size(theme::TEXT_LG)
             .style(theme::toggler)
@@ -88,7 +88,7 @@ pub fn list_panel<'a>(
                 elapsed,
             ));
         }
-        scrollable(list.padding(Padding::ZERO.right(theme::SPACE_SM)))
+        scrollable(list.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
             .on_scroll(|viewport| Message::DmsScrolled {
                 remaining: (viewport.content_bounds().height
                     - viewport.bounds().height
@@ -117,7 +117,7 @@ fn compose_button<'a>() -> Element<'a, Message> {
     let glyph = svg(icons::compose())
         .width(Length::Fixed(16.0))
         .height(Length::Fixed(16.0))
-        .style(theme::sidebar_icon(theme::TEXT_2));
+        .style(theme::sidebar_icon(theme::text_2()));
     tooltip(
         button(glyph)
             .padding(theme::SPACE_XS)
@@ -126,7 +126,7 @@ fn compose_button<'a>() -> Element<'a, Message> {
         container(
             text("New message")
                 .size(theme::TEXT_SM)
-                .color(theme::TEXT_1),
+                .color(theme::text_1()),
         )
         .padding([theme::SPACE_XS, theme::SPACE_SM])
         .style(theme::tooltip_bubble),
@@ -158,7 +158,11 @@ fn dm_row<'a>(
     let mut header = row![
         text(display_name(ws, entry))
             .size(theme::TEXT_MD)
-            .color(if unread { theme::TEXT_1 } else { theme::TEXT_2 })
+            .color(if unread {
+                theme::text_1()
+            } else {
+                theme::text_2()
+            })
             .font(iced::Font {
                 weight: font::Weight::Semibold,
                 ..iced::Font::default()
@@ -171,7 +175,7 @@ fn dm_row<'a>(
         header = header.push(
             text(time_label(latest))
                 .size(theme::TEXT_SM)
-                .color(theme::TEXT_4),
+                .color(theme::text_4()),
         );
     }
     let count = unread_count(ws, entry);
@@ -188,7 +192,11 @@ fn dm_row<'a>(
             emoji_previews,
             elapsed,
             theme::TEXT_MD,
-            if unread { theme::TEXT_1 } else { theme::TEXT_3 },
+            if unread {
+                theme::text_1()
+            } else {
+                theme::text_3()
+            },
         ));
     }
 
@@ -333,7 +341,7 @@ fn count_badge<'a>(count: u32) -> Element<'a, Message> {
     } else {
         count.to_string()
     };
-    container(text(label).size(theme::TEXT_SM).color(theme::TEXT_1))
+    container(text(label).size(theme::TEXT_SM).color(theme::text_1()))
         .padding([0.0, theme::SPACE_XS + 1.0])
         .style(theme::ping_badge)
         .into()
@@ -364,7 +372,7 @@ fn placeholder<'a>(label: &str) -> Element<'a, Message> {
     container(
         text(label.to_owned())
             .size(theme::TEXT_MD)
-            .color(theme::TEXT_4),
+            .color(theme::text_4()),
     )
     .center_x(Fill)
     .height(Fill)

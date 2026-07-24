@@ -51,6 +51,41 @@ pub fn ensure_app_bundle() -> Result<(), String> {
     std::process::exit(status.code().unwrap_or(1));
 }
 
+/// Pointer position inside the window under the cursor, in logical points from
+/// that window's top-left corner, together with its content size.
+///
+/// macOS drag-and-drop carries no coordinates — winit forwards only the dropped
+/// path — so a drop has to be placed by asking AppKit where the pointer is.
+pub fn cursor_in_window() -> Option<(iced::Point, iced::Size)> {
+    use objc2::MainThreadMarker;
+    use objc2_app_kit::{NSApplication, NSEvent};
+
+    let mtm = MainThreadMarker::new()?;
+    let screen = NSEvent::mouseLocation();
+    let app = NSApplication::sharedApplication(mtm);
+    for window in app.windows().iter() {
+        let frame = window.frame();
+        let inside = screen.x >= frame.origin.x
+            && screen.y >= frame.origin.y
+            && screen.x <= frame.origin.x + frame.size.width
+            && screen.y <= frame.origin.y + frame.size.height;
+        if !window.isVisible() || !inside {
+            continue;
+        }
+        let Some(view) = window.contentView() else {
+            continue;
+        };
+        let local = view.convertPoint_fromView(window.convertPointFromScreen(screen), None);
+        let bounds = view.bounds();
+        // AppKit measures from the bottom-left corner; Iced lays out from the top.
+        return Some((
+            iced::Point::new(local.x as f32, (bounds.size.height - local.y) as f32),
+            iced::Size::new(bounds.size.width as f32, bounds.size.height as f32),
+        ));
+    }
+    None
+}
+
 fn is_app_bundle_executable(executable: &Path) -> bool {
     executable.parent().is_some_and(|macos| {
         macos.file_name().is_some_and(|name| name == "MacOS")

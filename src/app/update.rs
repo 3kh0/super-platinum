@@ -345,11 +345,7 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
                 .filter(|path| is_video(path))
                 .cloned()
                 .collect::<Vec<_>>();
-            let target = if app.active_thread.is_some() {
-                ComposerTarget::Thread
-            } else {
-                ComposerTarget::Channel
-            };
+            let target = drop_target(app);
             add_attachments(app, target, paths);
             video_preview_tasks(video_paths)
         }
@@ -1898,6 +1894,7 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
 
         Message::SettingsOpened => {
             app.account_menu_open = false;
+            app.settings_color_errors.clear();
             app.show_settings = true;
             app.settings_open = true;
             Task::none()
@@ -1920,9 +1917,113 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
             super::agent::handle_screenshot(id, path, result)
         }
 
-        Message::SettingsAccentSelected(accent) => {
-            app.settings.accent = accent;
+        Message::SettingsPresetSelected(preset) => {
+            app.settings.preset = preset;
             apply_settings(app);
+            Task::none()
+        }
+
+        Message::SettingsRoleColorChanged(role, value) => {
+            app.settings_color_drafts.insert(role, value.clone());
+            let value = value.trim();
+            if value.is_empty() {
+                app.settings.colors.set(role, None);
+                app.settings_color_errors.remove(&role);
+                apply_settings(app);
+            } else {
+                match value.to_owned().try_into() {
+                    Ok(color) => {
+                        app.settings.colors.set(role, Some(color));
+                        app.settings_color_errors.remove(&role);
+                        apply_settings(app);
+                    }
+                    Err(error) => {
+                        app.settings_color_errors.insert(role, error);
+                    }
+                }
+            }
+            Task::none()
+        }
+
+        Message::SettingsPresetColorsRestored => {
+            app.settings.colors = config::RoleColorOverrides::default();
+            app.settings_color_drafts.clear();
+            app.settings_color_errors.clear();
+            apply_settings(app);
+            Task::none()
+        }
+
+        Message::SettingsBackgroundPickerOpened => Task::perform(
+            async {
+                rfd::AsyncFileDialog::new()
+                    .set_title("Choose a background")
+                    .add_filter("Images", &["png", "jpg", "jpeg", "webp"])
+                    .pick_file()
+                    .await
+                    .map(|file| file.path().to_owned())
+            },
+            Message::SettingsBackgroundPicked,
+        ),
+
+        Message::SettingsBackgroundPicked(Some(path)) => {
+            Task::perform(import_background(path), Message::SettingsBackgroundImported)
+        }
+
+        Message::SettingsBackgroundPicked(None) => Task::none(),
+
+        Message::SettingsBackgroundImported(result) => {
+            match result {
+                Ok(background) => {
+                    let previous = app.settings.background.replace(background.clone());
+                    if apply_settings(app) {
+                        if let Some(previous) = previous {
+                            remove_managed_background(&previous);
+                        }
+                    } else {
+                        app.settings.background = previous;
+                        ui::theme::apply(&app.settings);
+                        remove_managed_background(&background);
+                    }
+                }
+                Err(error) => app.toast(error),
+            }
+            Task::none()
+        }
+
+        Message::SettingsBackgroundFitChanged(fit) => {
+            if let Some(background) = app.settings.background.as_mut() {
+                background.fit = fit;
+                apply_settings(app);
+            }
+            Task::none()
+        }
+
+        Message::SettingsBackgroundDimChanged(value) => {
+            if let Some(background) = app.settings.background.as_mut() {
+                background.dim = value.clamp(0.0, 0.90);
+                apply_settings(app);
+            }
+            Task::none()
+        }
+
+        Message::SettingsSurfaceOpacityChanged(value) => {
+            if let Some(background) = app.settings.background.as_mut() {
+                background.surface_opacity = value.clamp(0.65, 1.0);
+                apply_settings(app);
+            }
+            Task::none()
+        }
+
+        Message::SettingsBackgroundRemoved => {
+            let previous = app.settings.background.take();
+            if apply_settings(app) {
+                if let Some(previous) = previous {
+                    remove_managed_background(&previous);
+                }
+            } else {
+                app.settings.background = previous;
+                ui::theme::apply(&app.settings);
+            }
             Task::none()
         }
 
@@ -1945,8 +2046,27 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
         }
 
         Message::SettingsReset => {
+            let previous = app.settings.clone();
             app.settings = config::Settings::default();
-            apply_settings(app);
+            app.settings_color_drafts.clear();
+            app.settings_color_errors.clear();
+            if apply_settings(app) {
+                if let Some(background) = previous.background {
+                    remove_managed_background(&background);
+                }
+            } else {
+                app.settings = previous;
+                app.settings_color_drafts = config::ColorRole::ALL
+                    .into_iter()
+                    .filter_map(|role| {
+                        app.settings
+                            .colors
+                            .get(role)
+                            .map(|color| (role, color.as_hex()))
+                    })
+                    .collect();
+                ui::theme::apply(&app.settings);
+            }
             Task::none()
         }
 
@@ -1979,7 +2099,22 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::AnimationTick => Task::none(),
+        Message::ScrollActivity => {
+            app.scrollbar_visible_until = Some(Instant::now() + Duration::from_millis(700));
+            ui::theme::set_scrollbars_visible(true);
+            Task::none()
+        }
+
+        Message::AnimationTick => {
+            if app
+                .scrollbar_visible_until
+                .is_some_and(|deadline| Instant::now() >= deadline)
+            {
+                app.scrollbar_visible_until = None;
+                ui::theme::set_scrollbars_visible(false);
+            }
+            Task::none()
+        }
 
         Message::Tick => {
             let now = Instant::now();
@@ -1991,10 +2126,90 @@ fn update_inner(app: &mut App, message: Message) -> Task<Message> {
     }
 }
 
-fn apply_settings(app: &mut App) {
+fn apply_settings(app: &mut App) -> bool {
     ui::theme::apply(&app.settings);
     if let Err(e) = config::save_settings(&app.settings) {
         app.toast(format!("could not save settings: {e}"));
+        false
+    } else {
+        true
+    }
+}
+
+async fn import_background(path: PathBuf) -> Result<config::BackgroundSettings, String> {
+    tokio::task::spawn_blocking(move || import_background_sync(&path))
+        .await
+        .map_err(|error| format!("could not import background: {error}"))?
+}
+
+pub(super) fn import_background_sync(path: &Path) -> Result<config::BackgroundSettings, String> {
+    const MAX_BYTES: u64 = 25 * 1024 * 1024;
+    const MAX_DIMENSION: u32 = 8192;
+
+    let metadata =
+        std::fs::metadata(path).map_err(|error| format!("could not read background: {error}"))?;
+    if metadata.len() > MAX_BYTES {
+        return Err("background must be 25 MB or smaller".to_owned());
+    }
+
+    let reader = image::ImageReader::open(path)
+        .and_then(image::ImageReader::with_guessed_format)
+        .map_err(|error| format!("could not read background: {error}"))?;
+    let format = reader
+        .format()
+        .ok_or_else(|| "background format could not be detected".to_owned())?;
+    let extension = match format {
+        image::ImageFormat::Png => "png",
+        image::ImageFormat::Jpeg => "jpg",
+        image::ImageFormat::WebP => "webp",
+        _ => return Err("choose a PNG, JPEG, or WebP image".to_owned()),
+    };
+    let (width, height) = reader
+        .into_dimensions()
+        .map_err(|error| format!("could not decode background: {error}"))?;
+    if width > MAX_DIMENSION || height > MAX_DIMENSION {
+        return Err("background dimensions must not exceed 8192 × 8192".to_owned());
+    }
+    let mut decoder = image::ImageReader::open(path)
+        .and_then(image::ImageReader::with_guessed_format)
+        .map_err(|error| format!("could not read background: {error}"))?;
+    let mut limits = image::Limits::default();
+    limits.max_image_width = Some(MAX_DIMENSION);
+    limits.max_image_height = Some(MAX_DIMENSION);
+    limits.max_alloc = Some(300 * 1024 * 1024);
+    decoder.limits(limits);
+    decoder
+        .decode()
+        .map_err(|error| format!("could not decode background: {error}"))?;
+
+    let directory = config::background_dir()
+        .map_err(|error| format!("could not prepare background storage: {error}"))?;
+    std::fs::create_dir_all(&directory)
+        .map_err(|error| format!("could not prepare background storage: {error}"))?;
+    let file_name = format!("{}.{}", uuid::Uuid::new_v4(), extension);
+    let destination = directory.join(&file_name);
+    let temporary = directory.join(format!("{file_name}.tmp"));
+    std::fs::copy(path, &temporary)
+        .map_err(|error| format!("could not copy background: {error}"))?;
+    if let Err(error) = std::fs::rename(&temporary, &destination) {
+        let _ = std::fs::remove_file(&temporary);
+        return Err(format!("could not finish background import: {error}"));
+    }
+
+    Ok(config::BackgroundSettings {
+        file_name,
+        fit: config::BackgroundFit::Cover,
+        dim: 0.45,
+        surface_opacity: 0.88,
+    })
+}
+
+fn remove_managed_background(background: &config::BackgroundSettings) {
+    if let Some(path) = config::background_path(background)
+        && let Err(error) = std::fs::remove_file(path)
+        && error.kind() != std::io::ErrorKind::NotFound
+    {
+        tracing::warn!(%error, "could not remove managed background");
     }
 }
 
@@ -2411,6 +2626,69 @@ pub(super) fn preferred_channel(app: &App, team: &str) -> Option<ChannelId> {
 fn next_seq(app: &mut App) -> u64 {
     app.send_seq += 1;
     app.send_seq
+}
+
+/// Composer a dropped file belongs to.
+///
+/// With a thread open next to a channel both composers are on screen, so the
+/// drop is placed by the pointer: only a drop over the thread panel itself
+/// attaches to the thread.
+fn drop_target(app: &App) -> ComposerTarget {
+    if app.active_thread.is_none() {
+        return ComposerTarget::Channel;
+    }
+    // Outside the Home layout the thread replaces the channel panel, so it owns
+    // every drop; the channel composer is not visible at all.
+    if app.main_view != crate::state::MainView::Home || !app.thread_open {
+        return ComposerTarget::Thread;
+    }
+    let Some((cursor, window)) = cursor_in_window() else {
+        return ComposerTarget::Thread;
+    };
+    let zone = thread_panel_x_range(window.width, app.profile_pane.is_some() && app.profile_open);
+    let target = if zone.contains(&cursor.x) {
+        ComposerTarget::Thread
+    } else {
+        ComposerTarget::Channel
+    };
+    tracing::debug!(
+        cursor = cursor.x,
+        window = window.width,
+        zone = ?zone,
+        ?target,
+        "routed file drop"
+    );
+    target
+}
+
+/// Horizontal span of the thread panel in the Home layout, in logical px.
+///
+/// The panel is pinned to the right edge inside the shell padding, behind the
+/// profile pane when that is open.
+pub(super) fn thread_panel_x_range(
+    window_width: f32,
+    profile_pane_open: bool,
+) -> std::ops::Range<f32> {
+    let gap = ui::theme::gap();
+    let right = if profile_pane_open {
+        gap + ui::profile::PANE_WIDTH + gap
+    } else {
+        gap
+    };
+    let end = window_width - right;
+    (end - ui::theme::THREAD_WIDTH)..end
+}
+
+#[cfg(target_os = "macos")]
+fn cursor_in_window() -> Option<(iced::Point, iced::Size)> {
+    crate::macos::cursor_in_window()
+}
+
+/// Other platforms give drops no coordinates either, and have no pointer query
+/// wired up yet, so the caller keeps its thread-first fallback.
+#[cfg(not(target_os = "macos"))]
+fn cursor_in_window() -> Option<(iced::Point, iced::Size)> {
+    None
 }
 
 fn attachments_mut(app: &mut App, target: ComposerTarget) -> &mut Vec<ComposerAttachment> {

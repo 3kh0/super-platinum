@@ -50,7 +50,7 @@ pub fn row<'a>(
 
     let author_label: Element<'a, Message> = text(author.clone())
         .size(theme::TEXT_MD)
-        .color(theme::TEXT_1)
+        .color(theme::text_1())
         .font(Font {
             weight: iced::font::Weight::Bold,
             ..Font::default()
@@ -88,10 +88,10 @@ pub fn row<'a>(
         );
     }
 
-    header = header.push(text(time).size(theme::TEXT_SM).color(theme::TEXT_5));
+    header = header.push(text(time).size(theme::TEXT_SM).color(theme::text_5()));
 
     if msg.edited.is_some() {
-        header = header.push(text("(edited)").size(theme::TEXT_SM).color(theme::MUTED));
+        header = header.push(text("(edited)").size(theme::TEXT_SM).color(theme::muted()));
     }
     if pending {
         header = header.push(sending_clock(emoji_animation_elapsed));
@@ -261,7 +261,7 @@ pub fn row<'a>(
             let mut body = selectable::SelectableText::new(
                 &segments,
                 theme::TEXT_MD,
-                theme::TEXT_2,
+                theme::text_2(),
                 theme::selection(),
             )
             .selection(selected_range);
@@ -485,8 +485,8 @@ fn avatar_spacer<'a>() -> Element<'a, Message> {
 fn sending_clock<'a>(elapsed: Duration) -> Element<'a, Message> {
     let hour_end = clock_hand_end(elapsed, 2.6, 4.6);
     let minute_end = clock_hand_end(elapsed, 1.3, 5.7);
-    let muted = svg_color(theme::MUTED);
-    let hand = svg_color(theme::TEXT_4);
+    let muted = svg_color(theme::muted());
+    let hand = svg_color(theme::text_4());
     let data = format!(
         r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" fill="none">
 <circle cx="7" cy="7" r="5.8" stroke="{muted}" stroke-width="1.25"/>
@@ -770,9 +770,9 @@ fn soft_wrap_lines(line: &blocks::RenderLine) -> Vec<SoftLine> {
 
 fn segment_fg(style: &blocks::SegmentStyle) -> Option<iced::Color> {
     if style.broadcast {
-        Some(theme::BROADCAST_FG)
+        Some(theme::broadcast_fg())
     } else if style.mention {
-        Some(theme::MENTION_FG)
+        Some(theme::mention_fg())
     } else if style.link {
         Some(theme::accent_bright())
     } else {
@@ -782,9 +782,9 @@ fn segment_fg(style: &blocks::SegmentStyle) -> Option<iced::Color> {
 
 fn segment_bg(style: &blocks::SegmentStyle) -> Option<iced::Color> {
     if style.broadcast {
-        Some(theme::BROADCAST_BG)
+        Some(theme::broadcast_bg())
     } else if style.mention {
-        Some(theme::MENTION_BG)
+        Some(theme::mention_bg())
     } else {
         None
     }
@@ -835,7 +835,7 @@ fn text_run<'a>(
     let styled = text(value)
         .size(theme::TEXT_MD)
         .font(font)
-        .color(segment_fg(style).unwrap_or(theme::TEXT_2));
+        .color(segment_fg(style).unwrap_or(theme::text_2()));
     match (segment_bg(style), channel, user) {
         (Some(_), Some(channel), _) => button(styled)
             .padding([0.0, 3.0])
@@ -930,7 +930,7 @@ pub(super) fn emoji_inline<'a>(
     }
     text(state::emoji_glyph(name))
         .size(size)
-        .color(theme::TEXT_2)
+        .color(theme::text_2())
         .into()
 }
 
@@ -974,7 +974,7 @@ pub fn empty_placeholder<'a>(label: &str) -> Element<'a, Message> {
     container(
         text(label.to_owned())
             .size(theme::TEXT_MD)
-            .color(theme::MUTED),
+            .color(theme::muted()),
     )
     .padding(theme::SPACE_LG)
     .into()
@@ -993,14 +993,14 @@ fn attachment_row<'a>(
         content = content.push(
             text(service.to_owned())
                 .size(theme::TEXT_SM)
-                .color(theme::MUTED),
+                .color(theme::muted()),
         );
     }
     if let Some(author) = non_empty(att.author_name.as_deref()) {
         content = content.push(
             text(author.to_owned())
                 .size(theme::TEXT_SM)
-                .color(theme::MUTED),
+                .color(theme::muted()),
         );
     }
     if let Some(title) = non_empty(att.title.as_deref()) {
@@ -1192,7 +1192,7 @@ fn file_row<'a>(
     });
     let mut content = Column::new()
         .spacing(theme::SPACE_XS)
-        .push(text(title).size(theme::TEXT_SM).color(theme::TEXT_3));
+        .push(text(title).size(theme::TEXT_SM).color(theme::text_3()));
 
     if let Some(preview) = state::file_preview_key(file).and_then(|key| file_previews.get(&key)) {
         match preview {
@@ -1217,14 +1217,14 @@ fn file_row<'a>(
                 content = content.push(
                     text("Loading preview...")
                         .size(theme::TEXT_SM)
-                        .color(theme::MUTED),
+                        .color(theme::muted()),
                 );
             }
             FilePreview::Failed => {
                 content = content.push(
                     text("Preview unavailable")
                         .size(theme::TEXT_SM)
-                        .color(theme::MUTED),
+                        .color(theme::muted()),
                 );
             }
             FilePreview::Animated { frames, .. } => {
@@ -1280,7 +1280,7 @@ fn file_preview<'a>(
     let icon = svg(icons::download())
         .width(Length::Fixed(18.0))
         .height(Length::Fixed(18.0))
-        .style(theme::sidebar_icon(theme::TEXT_1));
+        .style(theme::sidebar_icon(theme::text_1()));
     let action = container(
         button(icon)
             .padding(7.0)

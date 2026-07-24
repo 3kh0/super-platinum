@@ -6,7 +6,7 @@ use iced::widget::{
     Column, Row, Space, button, column, container, float, image, mouse_area, opaque, row,
     scrollable, svg, text,
 };
-use iced::{Alignment, ContentFit, Element, Fill, Font, Length, Vector, font};
+use iced::{Alignment, ContentFit, Element, Fill, Font, Length, Padding, Vector, font};
 
 use super::{icons, message, theme};
 use crate::app::{FilePreview, Message, ProfileHoverState, ProfilePaneState};
@@ -98,10 +98,10 @@ fn hover_card<'a>(
             .on_press(Message::ProfilePressed(user_id.to_owned())),
     );
     if let Some(title) = profile.and_then(|profile| non_empty(profile.title.as_deref())) {
-        identity = identity.push(text(title).size(theme::TEXT_MD).color(theme::TEXT_3));
+        identity = identity.push(text(title).size(theme::TEXT_MD).color(theme::text_3()));
     }
     if let Some(pronouns) = profile.and_then(|profile| non_empty(profile.pronouns.as_deref())) {
-        identity = identity.push(text(pronouns).size(theme::TEXT_SM).color(theme::TEXT_4));
+        identity = identity.push(text(pronouns).size(theme::TEXT_SM).color(theme::text_4()));
     }
 
     let mut body = column![
@@ -121,7 +121,7 @@ fn hover_card<'a>(
         body = body.push(status);
     }
     if let Some(local) = local_time(user) {
-        body = body.push(icon_line(icons::schedule(), local, theme::TEXT_2));
+        body = body.push(icon_line(icons::schedule(), local, theme::text_2()));
     }
     body = body.push(actions(ws, user_id, true));
 
@@ -148,7 +148,7 @@ pub fn pane<'a>(
     let header = row![
         text("Profile")
             .size(theme::TEXT_LG)
-            .color(theme::TEXT_1)
+            .color(theme::text_1())
             .font(Font {
                 weight: font::Weight::Bold,
                 ..Font::default()
@@ -158,7 +158,7 @@ pub fn pane<'a>(
             svg(icons::close())
                 .width(Length::Fixed(16.0))
                 .height(Length::Fixed(16.0))
-                .style(theme::sidebar_icon(theme::TEXT_3)),
+                .style(theme::sidebar_icon(theme::text_3())),
         )
         .width(Length::Fixed(theme::PANEL_CLOSE_SIZE))
         .height(Length::Fixed(theme::PANEL_CLOSE_SIZE))
@@ -179,10 +179,10 @@ pub fn pane<'a>(
     let hero = profile_avatar(user, &state.user, hero_previews, &name, 300.0, 14.0);
     let mut identity = column![name_line(ws, &state.user, &name, user),].spacing(theme::SPACE_XS);
     if let Some(title) = profile.and_then(|profile| non_empty(profile.title.as_deref())) {
-        identity = identity.push(text(title).size(theme::TEXT_LG).color(theme::TEXT_2));
+        identity = identity.push(text(title).size(theme::TEXT_LG).color(theme::text_2()));
     }
     if let Some(pronouns) = profile.and_then(|profile| non_empty(profile.pronouns.as_deref())) {
-        identity = identity.push(text(pronouns).size(theme::TEXT_MD).color(theme::TEXT_3));
+        identity = identity.push(text(pronouns).size(theme::TEXT_MD).color(theme::text_3()));
     }
     identity = identity.push(presence_line(ws, &state.user));
     if ws
@@ -193,14 +193,14 @@ pub fn pane<'a>(
         identity = identity.push(
             text("In a huddle")
                 .size(theme::TEXT_MD)
-                .color(theme::TEXT_2),
+                .color(theme::text_2()),
         );
     }
     if let Some(status) = status_line(ws, profile, emoji_previews, emoji_elapsed) {
         identity = identity.push(status);
     }
     if let Some(local) = local_time(user) {
-        identity = identity.push(icon_line(icons::schedule(), local, theme::TEXT_2));
+        identity = identity.push(icon_line(icons::schedule(), local, theme::text_2()));
     }
 
     let mut content = Column::new()
@@ -212,11 +212,11 @@ pub fn pane<'a>(
         content = content.push(
             text("Loading profile details…")
                 .size(theme::TEXT_SM)
-                .color(theme::TEXT_4),
+                .color(theme::text_4()),
         );
     }
     if let Some(error) = &state.error {
-        content = content.push(text(error).size(theme::TEXT_SM).color(theme::TEXT_4));
+        content = content.push(text(error).size(theme::TEXT_SM).color(theme::text_4()));
     }
     if let Some(section) = contact_section(profile) {
         content = content.push(theme::divider()).push(section);
@@ -228,9 +228,13 @@ pub fn pane<'a>(
         content = content.push(theme::divider()).push(section);
     }
 
-    let body = scrollable(container(content).padding(theme::SPACE_MD).width(Fill))
-        .style(theme::scrollbar)
-        .height(Fill);
+    let body = scrollable(
+        container(content)
+            .padding(Padding::new(theme::SPACE_MD).right(theme::SPACE_MD + theme::SCROLLBAR_GUTTER))
+            .width(Fill),
+    )
+    .style(theme::scrollbar)
+    .height(Fill);
     container(column![
         container(header)
             .center_y(Length::Fixed(theme::PANEL_HEADER_HEIGHT))
@@ -256,7 +260,7 @@ fn name_line<'a>(
         .push(
             text(name.to_owned())
                 .size(theme::TEXT_LG)
-                .color(theme::TEXT_1)
+                .color(theme::text_1())
                 .font(Font {
                     weight: font::Weight::Bold,
                     ..Font::default()
@@ -366,7 +370,7 @@ fn recent_dms<'a>(ws: &'a Workspace, user: &str) -> Option<Element<'a, Message>>
         let mut line = Row::new()
             .spacing(theme::SPACE_SM)
             .align_y(Alignment::Center)
-            .push(text(label).size(theme::TEXT_MD).color(theme::TEXT_2));
+            .push(text(label).size(theme::TEXT_MD).color(theme::text_2()));
         if unread > 0 {
             line = line
                 .push(Space::new().width(Fill))
@@ -498,7 +502,7 @@ fn section<'a>(title: &'a str, rows: Column<'a, Message>) -> Element<'a, Message
     column![
         text(title)
             .size(theme::TEXT_LG)
-            .color(theme::TEXT_1)
+            .color(theme::text_1())
             .font(Font {
                 weight: font::Weight::Bold,
                 ..Font::default()
@@ -515,12 +519,12 @@ fn field<'a>(label: impl Into<String>, value: impl Into<String>) -> Element<'a, 
     column![
         text(label)
             .size(theme::TEXT_SM)
-            .color(theme::TEXT_4)
+            .color(theme::text_4())
             .font(Font {
                 weight: font::Weight::Semibold,
                 ..Font::default()
             }),
-        text(value).size(theme::TEXT_MD).color(theme::TEXT_2),
+        text(value).size(theme::TEXT_MD).color(theme::text_2()),
     ]
     .spacing(2.0)
     .into()
@@ -551,7 +555,7 @@ fn status_line<'a>(
         ));
     }
     if let Some(value) = text_value {
-        line = line.push(text(value).size(theme::TEXT_MD).color(theme::TEXT_2));
+        line = line.push(text(value).size(theme::TEXT_MD).color(theme::text_2()));
     }
     Some(line.into())
 }
@@ -566,7 +570,7 @@ fn presence_line<'a>(ws: &Workspace, user: &str) -> Element<'a, Message> {
     let color = if presence == Presence::Active {
         theme::accent()
     } else {
-        theme::TEXT_3
+        theme::text_3()
     };
     let icon = if presence == Presence::Active {
         icons::active()

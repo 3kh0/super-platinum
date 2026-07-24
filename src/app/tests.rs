@@ -4,9 +4,10 @@ use serde_json::json;
 
 use super::update::{
     begin_mark, channel_needs_hydration, channel_open_scroll_target, emoji_preview_from_bytes,
-    is_permanent_mark_error, needs_user_hydration, notification_for_message, pending_target_ts,
-    preferred_channel, scope_message, should_auto_load_activity, should_load_older_activity,
-    should_load_older_history, unique_download_path, update,
+    import_background_sync, is_permanent_mark_error, needs_user_hydration,
+    notification_for_message, pending_target_ts, preferred_channel, scope_message,
+    should_auto_load_activity, should_load_older_activity, should_load_older_history,
+    thread_panel_x_range, unique_download_path, update,
 };
 use super::*;
 use crate::slack::Error as SlackError;
@@ -711,6 +712,87 @@ fn account_menu_toggles_and_closes_for_settings() {
 
     let _ = update(&mut app, Message::AccountMenuDismissed);
     assert!(!app.show_account_menu);
+}
+
+#[test]
+fn appearance_preset_and_semantic_colors_update_immediately() {
+    let mut app = test_app();
+
+    let _ = update(
+        &mut app,
+        Message::SettingsPresetSelected(config::ThemePreset::PaperBag),
+    );
+    let _ = update(
+        &mut app,
+        Message::SettingsRoleColorChanged(config::ColorRole::Danger, "#A12233".to_owned()),
+    );
+
+    assert_eq!(app.settings.preset, config::ThemePreset::PaperBag);
+    assert_eq!(
+        app.settings.colors.danger.expect("custom danger").as_hex(),
+        "#A12233"
+    );
+    assert!(
+        !app.settings_color_errors
+            .contains_key(&config::ColorRole::Danger)
+    );
+
+    let _ = update(
+        &mut app,
+        Message::SettingsRoleColorChanged(config::ColorRole::Danger, "#bad".to_owned()),
+    );
+    assert_eq!(
+        app.settings
+            .colors
+            .danger
+            .expect("previous valid danger")
+            .as_hex(),
+        "#A12233"
+    );
+    assert!(
+        app.settings_color_errors
+            .contains_key(&config::ColorRole::Danger)
+    );
+}
+
+#[test]
+fn background_import_validates_and_copies_supported_images() {
+    let source =
+        std::env::temp_dir().join(format!("snack-background-{}.png", uuid::Uuid::new_v4()));
+    let mut bytes = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(&mut bytes, 2, 2);
+        encoder.set_color(png::ColorType::Rgb);
+        encoder.set_depth(png::BitDepth::Eight);
+        let mut writer = encoder.write_header().expect("png header");
+        writer
+            .write_image_data(&[
+                0xE8, 0x87, 0x5B, 0x24, 0x21, 0x1F, 0xE8, 0x87, 0x5B, 0x24, 0x21, 0x1F,
+            ])
+            .expect("png pixels");
+    }
+    std::fs::write(&source, bytes).expect("write source");
+
+    let background = import_background_sync(&source).expect("import background");
+    let managed = config::background_path(&background).expect("managed path");
+    assert!(managed.exists());
+    assert_eq!(background.fit, config::BackgroundFit::Cover);
+
+    std::fs::remove_file(source).expect("remove source");
+    std::fs::remove_file(managed).expect("remove managed background");
+}
+
+#[test]
+fn background_import_rejects_oversized_files_before_decode() {
+    let source =
+        std::env::temp_dir().join(format!("snack-background-{}.png", uuid::Uuid::new_v4()));
+    let file = std::fs::File::create(&source).expect("create oversized image");
+    file.set_len(25 * 1024 * 1024 + 1).expect("set length");
+
+    let error = import_background_sync(&source).expect_err("reject oversized background");
+
+    assert!(error.contains("25 MB"));
+    std::fs::remove_file(source).expect("remove oversized image");
 }
 
 #[test]
@@ -1507,6 +1589,18 @@ fn near_bottom_scroll_does_not_pause_chat() {
         },
     );
     assert!(!app.chat_paused.contains_key("C_GENERAL"));
+}
+
+#[test]
+fn scrollbar_activity_auto_hides_after_idle_deadline() {
+    let mut app = test_app();
+
+    let _ = update(&mut app, Message::ScrollActivity);
+    assert!(app.scrollbar_visible_until.is_some());
+
+    app.scrollbar_visible_until = Some(Instant::now() - Duration::from_millis(1));
+    let _ = update(&mut app, Message::AnimationTick);
+    assert!(app.scrollbar_visible_until.is_none());
 }
 
 #[test]
@@ -2330,4 +2424,20 @@ fn image_viewer_transform_clamps_zoom_and_resets_fit_offset() {
     let viewer = app.image_viewer.as_ref().unwrap();
     assert_eq!(viewer.zoom, 1.0);
     assert_eq!(viewer.offset, iced::Vector::ZERO);
+}
+
+#[test]
+fn thread_drop_zone_hugs_the_right_edge_behind_the_profile_pane() {
+    let gap = crate::ui::theme::gap();
+    let thread = crate::ui::theme::THREAD_WIDTH;
+    let pane = crate::ui::profile::PANE_WIDTH;
+
+    let zone = thread_panel_x_range(1400.0, false);
+    assert_eq!(zone, (1400.0 - gap - thread)..(1400.0 - gap));
+    assert!(zone.contains(&(1400.0 - gap - 1.0)));
+    assert!(!zone.contains(&(1400.0 - gap - thread - 1.0)));
+
+    let zone = thread_panel_x_range(1400.0, true);
+    let end = 1400.0 - gap - pane - gap;
+    assert_eq!(zone, (end - thread)..end);
 }

@@ -88,7 +88,7 @@ fn nav_button<'a>(
                 container(
                     text(badge_label(badge))
                         .size(theme::TEXT_SM - 2.0)
-                        .color(theme::TEXT_1)
+                        .color(theme::text_1())
                 )
                 .padding([0.0, 3.0])
                 .style(theme::ping_badge)
@@ -141,12 +141,12 @@ pub fn account_menu<'a>(
         column![
             text(display_name)
                 .size(theme::TEXT_MD)
-                .color(theme::TEXT_1)
+                .color(theme::text_1())
                 .font(iced::Font {
                     weight: font::Weight::Semibold,
                     ..iced::Font::default()
                 }),
-            text(status).size(theme::TEXT_SM).color(theme::TEXT_3),
+            text(status).size(theme::TEXT_SM).color(theme::text_3()),
         ]
         .spacing(theme::SPACE_XS),
     ]
@@ -174,7 +174,7 @@ pub fn account_menu<'a>(
         theme::divider(),
         text("Accounts")
             .size(theme::TEXT_SM)
-            .color(theme::TEXT_3)
+            .color(theme::text_3())
             .font(iced::Font {
                 weight: font::Weight::Semibold,
                 ..iced::Font::default()
@@ -241,7 +241,7 @@ fn user_avatar<'a>(
     container(
         text(initial)
             .size(theme::TEXT_LG)
-            .color(theme::TEXT_1)
+            .color(theme::text_1())
             .font(iced::Font {
                 weight: font::Weight::Bold,
                 ..iced::Font::default()
@@ -262,9 +262,9 @@ fn menu_button<'a>(label: &str, selected: bool, message: Message) -> Element<'a,
             text(marker)
                 .size(theme::TEXT_SM)
                 .color(if selected {
-                    theme::ONLINE
+                    theme::online()
                 } else {
-                    theme::TEXT_4
+                    theme::text_4()
                 })
                 .width(Length::Fixed(16.0)),
             text(label.to_owned()).size(theme::TEXT_MD),

@@ -2,7 +2,7 @@ use iced::widget::{
     Column, Id, Row, Space, button, column, container, image, mouse_area, row, scrollable, stack,
     text,
 };
-use iced::{Alignment, ContentFit, Element, Fill, Length, font};
+use iced::{Alignment, ContentFit, Element, Fill, Length, Padding, font};
 
 use super::{message, profile, theme};
 use crate::app::{
@@ -116,7 +116,7 @@ pub fn view<'a>(
                 previous_group_message = Some(m);
             }
             let is_paused = paused.is_some();
-            let mut list = scrollable(col)
+            let mut list = scrollable(col.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
                 .id(scrollable_id(channel_id))
                 .on_scroll({
                     let channel_id = channel_id.to_owned();
@@ -164,7 +164,7 @@ pub fn view<'a>(
         container(
             text(typing_line(&typing))
                 .size(theme::TEXT_SM)
-                .color(theme::MUTED),
+                .color(theme::muted()),
         )
         .padding([0.0, theme::SPACE_MD])
         .into()
@@ -226,7 +226,7 @@ fn history_failed_placeholder<'a>(channel_id: &str) -> Element<'a, Message> {
         column![
             text("Couldn't load messages.")
                 .size(theme::TEXT_MD)
-                .color(theme::MUTED),
+                .color(theme::muted()),
             button(text("Retry").size(theme::TEXT_SM))
                 .padding([theme::SPACE_XS, theme::SPACE_MD])
                 .style(theme::secondary_button)
@@ -267,7 +267,7 @@ fn channel_header<'a>(
 fn plain_title<'a>(label: String) -> Element<'a, Message> {
     text(label)
         .size(theme::TEXT_LG)
-        .color(theme::TEXT_1)
+        .color(theme::text_1())
         .font(iced::Font {
             weight: iced::font::Weight::Bold,
             ..iced::Font::default()
@@ -310,7 +310,7 @@ fn huddle_badge<'a>(room: &crate::slack::models::Room) -> Element<'a, Message> {
         dot,
         text(format!("Huddle · {count}"))
             .size(theme::TEXT_SM)
-            .color(theme::TEXT_1),
+            .color(theme::text_1()),
     ]
     .spacing(theme::SPACE_XS)
     .align_y(Alignment::Center);
@@ -339,7 +339,7 @@ fn dm_header<'a>(
         avatar,
         text(name)
             .size(theme::TEXT_LG)
-            .color(theme::TEXT_1)
+            .color(theme::text_1())
             .font(iced::Font {
                 weight: iced::font::Weight::Bold,
                 ..iced::Font::default()
@@ -450,7 +450,7 @@ fn date_separator<'a>(label: String) -> Element<'a, Message> {
             .height(Length::Fixed(1.0))
             .width(Fill)
             .style(|_theme| iced::widget::container::Style {
-                background: Some(iced::Background::Color(theme::BORDER)),
+                background: Some(iced::Background::Color(theme::border())),
                 ..Default::default()
             })
     };
@@ -460,7 +460,7 @@ fn date_separator<'a>(label: String) -> Element<'a, Message> {
         .spacing(theme::SPACE_SM)
         .push(line())
         .push(
-            container(text(label).size(theme::TEXT_SM).color(theme::TEXT_2))
+            container(text(label).size(theme::TEXT_SM).color(theme::text_2()))
                 .padding([2.0, theme::SPACE_SM])
                 .style(theme::date_separator_label),
         )

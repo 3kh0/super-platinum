@@ -1,5 +1,5 @@
 use iced::widget::{Column, Row, button, column, container, row, scrollable, text};
-use iced::{Element, Fill, Font};
+use iced::{Element, Fill, Font, Padding};
 
 use super::{blocks, theme};
 use crate::app::{Message, SearchHit, SearchState};
@@ -21,12 +21,12 @@ pub fn view<'a>(ws: &Workspace, state: &SearchState) -> Element<'a, Message> {
         column![
             text("Search")
                 .size(theme::TEXT_LG)
-                .color(theme::TEXT_1)
+                .color(theme::text_1())
                 .font(Font {
                     weight: iced::font::Weight::Bold,
                     ..Font::default()
                 }),
-            text(summary).size(theme::TEXT_SM).color(theme::TEXT_4),
+            text(summary).size(theme::TEXT_SM).color(theme::text_4()),
         ]
         .spacing(theme::SPACE_XS)
         .width(Fill),
@@ -43,7 +43,7 @@ pub fn view<'a>(ws: &Workspace, state: &SearchState) -> Element<'a, Message> {
         } else {
             "No messages found."
         };
-        container(text(label).size(theme::TEXT_MD).color(theme::MUTED))
+        container(text(label).size(theme::TEXT_MD).color(theme::muted()))
             .padding(theme::SPACE_MD)
             .into()
     } else {
@@ -51,7 +51,10 @@ pub fn view<'a>(ws: &Workspace, state: &SearchState) -> Element<'a, Message> {
         for hit in &state.hits {
             list = list.push(hit_row(ws, hit));
         }
-        scrollable(list).style(theme::scrollbar).height(Fill).into()
+        scrollable(list.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
+            .style(theme::scrollbar)
+            .height(Fill)
+            .into()
     };
 
     let footer = pagination(state);
@@ -87,7 +90,7 @@ fn hit_row<'a>(ws: &Workspace, hit: &SearchHit) -> Element<'a, Message> {
             weight: iced::font::Weight::Bold,
             ..Font::default()
         }))
-        .push(text(time).size(theme::TEXT_SM).color(theme::MUTED));
+        .push(text(time).size(theme::TEXT_SM).color(theme::muted()));
 
     let snippet = blocks::notification_text(ws, msg);
     let snippet = if snippet.trim().is_empty() {
@@ -126,7 +129,7 @@ fn pagination<'a>(state: &SearchState) -> Element<'a, Message> {
     controls = controls.push(
         text(format!("Page {} of {}", state.page, state.page_count))
             .size(theme::TEXT_SM)
-            .color(theme::MUTED),
+            .color(theme::muted()),
     );
     if state.page < state.page_count {
         controls = controls.push(

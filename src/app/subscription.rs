@@ -18,6 +18,14 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
     subs.push(iced::event::listen_with(palette_hotkey));
     subs.push(iced::event::listen_with(file_drop));
     subs.push(iced::event::listen_with(cursor_position));
+    subs.push(iced::event::listen_with(
+        |event, _status, _id| match event {
+            iced::Event::Mouse(iced::mouse::Event::WheelScrolled { .. }) => {
+                Some(Message::ScrollActivity)
+            }
+            _ => None,
+        },
+    ));
     if app.text_selection.is_some() {
         subs.push(iced::event::listen_with(selection_copy_hotkey));
     }
@@ -53,6 +61,7 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
             .iter()
             .flat_map(|pending| &pending.attachments)
             .any(|attachment| attachment.uploading)
+        || app.scrollbar_visible_until.is_some()
     {
         subs.push(iced::time::every(Duration::from_millis(50)).map(|_| Message::AnimationTick));
     }

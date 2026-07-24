@@ -1,6 +1,7 @@
-use iced::widget::{button, column, container, opaque, row, stack, text};
-use iced::{Element, Fill};
+use iced::widget::{Space, button, column, container, image, opaque, row, stack, text};
+use iced::{Background, ContentFit, Element, Fill};
 
+use crate::config;
 use crate::state::Screen;
 use crate::ui;
 
@@ -71,17 +72,17 @@ fn login_view() -> Element<'static, Message> {
             column![
                 text("Snack")
                     .size(ui::theme::TEXT_LG)
-                    .color(ui::theme::TEXT_1)
+                    .color(ui::theme::text_1())
                     .font(iced::Font {
                         weight: iced::font::Weight::Bold,
                         ..iced::Font::default()
                     }),
                 text("Sign in to your Slack workspace.")
                     .size(ui::theme::TEXT_MD)
-                    .color(ui::theme::TEXT_2),
+                    .color(ui::theme::text_2()),
                 text("Opens a new window for the Slack sign-in flow.")
                     .size(ui::theme::TEXT_SM)
-                    .color(ui::theme::TEXT_4),
+                    .color(ui::theme::text_4()),
             ]
             .spacing(ui::theme::SPACE_XS),
             button(text("Sign in").size(ui::theme::TEXT_MD))
@@ -147,7 +148,7 @@ fn main_view(app: &App) -> Element<'_, Message> {
             .height(Fill);
         return with_modal(
             app,
-            with_account_menu(app, shell(with_profile_pane(app, ws, body.into()))),
+            with_account_menu(app, shell(app, with_profile_pane(app, ws, body.into()))),
         );
     }
 
@@ -179,7 +180,7 @@ fn main_view(app: &App) -> Element<'_, Message> {
             .height(Fill);
         return with_modal(
             app,
-            with_account_menu(app, shell(with_profile_pane(app, ws, body.into()))),
+            with_account_menu(app, shell(app, with_profile_pane(app, ws, body.into()))),
         );
     }
 
@@ -208,15 +209,18 @@ fn main_view(app: &App) -> Element<'_, Message> {
             app,
             with_account_menu(
                 app,
-                shell(with_profile_pane(
+                shell(
                     app,
-                    ws,
-                    row![rail, sidebar, content]
-                        .spacing(ui::theme::gap())
-                        .width(Fill)
-                        .height(Fill)
-                        .into(),
-                )),
+                    with_profile_pane(
+                        app,
+                        ws,
+                        row![rail, sidebar, content]
+                            .spacing(ui::theme::gap())
+                            .width(Fill)
+                            .height(Fill)
+                            .into(),
+                    ),
+                ),
             ),
         );
     }
@@ -285,11 +289,14 @@ fn main_view(app: &App) -> Element<'_, Message> {
             app,
             with_account_menu(
                 app,
-                shell(with_profile_pane(
+                shell(
                     app,
-                    ws,
-                    row![body, thread_panel].width(Fill).height(Fill).into(),
-                )),
+                    with_profile_pane(
+                        app,
+                        ws,
+                        row![body, thread_panel].width(Fill).height(Fill).into(),
+                    ),
+                ),
             ),
         )
     } else {
@@ -299,7 +306,7 @@ fn main_view(app: &App) -> Element<'_, Message> {
             .height(Fill);
         with_modal(
             app,
-            with_account_menu(app, shell(with_profile_pane(app, ws, body.into()))),
+            with_account_menu(app, shell(app, with_profile_pane(app, ws, body.into()))),
         )
     }
 }
@@ -466,7 +473,13 @@ fn resize_handle<'a>() -> Element<'a, Message> {
 
 fn with_modal<'a>(app: &'a App, base: Element<'a, Message>) -> Element<'a, Message> {
     if app.show_settings {
-        ui::settings::modal(base, &app.settings, app.settings_open)
+        ui::settings::modal(
+            base,
+            &app.settings,
+            &app.settings_color_drafts,
+            &app.settings_color_errors,
+            app.settings_open,
+        )
     } else {
         overlay_host(base, None)
     }
@@ -507,20 +520,69 @@ fn with_account_menu<'a>(app: &'a App, base: Element<'a, Message>) -> Element<'a
     stack![base, menu].into()
 }
 
-fn shell(content: Element<'_, Message>) -> Element<'_, Message> {
-    container(content)
+fn shell<'a>(app: &'a App, content: Element<'a, Message>) -> Element<'a, Message> {
+    let content = container(content)
         .style(ui::theme::root)
         .padding(ui::theme::gap())
         .width(Fill)
+        .height(Fill);
+
+    let Some(background) = app.settings.background.as_ref() else {
+        return content.into();
+    };
+    let Some(path) = config::background_path(background) else {
+        return stack![
+            container(Space::new())
+                .width(Fill)
+                .height(Fill)
+                .style(ui::theme::root_base),
+            content,
+        ]
+        .width(Fill)
         .height(Fill)
-        .into()
+        .into();
+    };
+
+    let fit = match background.fit {
+        config::BackgroundFit::Cover => ContentFit::Cover,
+        config::BackgroundFit::Contain => ContentFit::Contain,
+    };
+    let background_image = image(path)
+        .width(Fill)
+        .height(Fill)
+        .content_fit(fit)
+        .expand(true);
+    let dim = background.dim.clamp(0.0, 0.90);
+    let scrim = container(Space::new())
+        .width(Fill)
+        .height(Fill)
+        .style(move |_theme| container::Style {
+            background: Some(Background::Color(iced::Color {
+                a: dim,
+                ..iced::Color::BLACK
+            })),
+            ..container::Style::default()
+        });
+
+    stack![
+        container(Space::new())
+            .width(Fill)
+            .height(Fill)
+            .style(ui::theme::root_base),
+        background_image,
+        scrim,
+        content,
+    ]
+    .width(Fill)
+    .height(Fill)
+    .into()
 }
 
 fn center_text(label: &str) -> Element<'_, Message> {
     container(
         text(label.to_owned())
             .size(ui::theme::TEXT_LG)
-            .color(ui::theme::TEXT_3),
+            .color(ui::theme::text_3()),
     )
     .center_x(Fill)
     .center_y(Fill)

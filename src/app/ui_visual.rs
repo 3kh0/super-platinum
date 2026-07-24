@@ -21,7 +21,7 @@ use super::tests::{
 use super::update::update;
 use super::view::view;
 use super::{App, Message};
-use crate::ui;
+use crate::{config, ui};
 
 const VIEWPORT: Size = Size::new(1280.0, 800.0);
 
@@ -49,7 +49,7 @@ fn capture_with_size(app: &App, name: &str, size: Size) -> Result<PathBuf, Error
     let now = time::Instant::now();
     let _ = ui.simulate([Event::Window(window::Event::RedrawRequested(now))]);
     std::thread::sleep(std::time::Duration::from_millis(180));
-    let theme = ui::theme::midnight();
+    let theme = ui::theme::snack_theme();
     let snapshot = ui.snapshot(&theme)?;
 
     let path = capture_dir().join(name);
@@ -328,11 +328,65 @@ fn ui_visual_switch_channel_by_text() -> Result<(), Error> {
 fn ui_visual_settings_modal_renders() -> Result<(), Error> {
     let app = settings_app();
     let mut ui = sim(&app);
-    ui.find("Settings")?;
-    ui.find("Accent")?;
+    ui.find("Appearance")?;
+    ui.find("Preset")?;
+    ui.find("Colors")?;
     ui.find("Done")?;
     capture(&app, "settings")?;
     Ok(())
+}
+
+#[test]
+fn ui_visual_appearance_presets_render() -> Result<(), Error> {
+    for (preset, name) in [
+        (config::ThemePreset::Countertop, "appearance-countertop"),
+        (config::ThemePreset::BlueSteel, "appearance-blue-steel"),
+        (config::ThemePreset::PaperBag, "appearance-paper-bag"),
+    ] {
+        let mut app = test_app();
+        app.settings.preset = preset;
+        ui::theme::apply(&app.settings);
+        capture(&app, name)?;
+    }
+    Ok(())
+}
+
+#[test]
+fn ui_visual_custom_background_renders() -> Result<(), Error> {
+    let directory = config::background_dir().expect("background dir");
+    fs::create_dir_all(&directory).expect("create background dir");
+    let file_name = format!("ui-visual-{}.png", uuid::Uuid::new_v4());
+    let path = directory.join(&file_name);
+    let mut bytes = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(&mut bytes, 8, 8);
+        encoder.set_color(png::ColorType::Rgb);
+        encoder.set_depth(png::BitDepth::Eight);
+        let mut writer = encoder.write_header().expect("png header");
+        let pixels = (0..64)
+            .flat_map(|index| {
+                if index % 2 == 0 {
+                    [0xC8, 0x5A, 0x48]
+                } else {
+                    [0x2E, 0x63, 0x72]
+                }
+            })
+            .collect::<Vec<_>>();
+        writer.write_image_data(&pixels).expect("png pixels");
+    }
+    fs::write(&path, bytes).expect("write background");
+
+    let mut app = test_app();
+    app.settings.background = Some(config::BackgroundSettings {
+        file_name,
+        fit: config::BackgroundFit::Cover,
+        dim: 0.30,
+        surface_opacity: 0.82,
+    });
+    ui::theme::apply(&app.settings);
+    let result = capture(&app, "appearance-custom-background");
+    let _ = fs::remove_file(path);
+    result.map(|_| ())
 }
 
 #[test]
@@ -614,7 +668,7 @@ fn ui_visual_optional_snapshot_hash() -> Result<(), Error> {
 
     let app = test_app();
     let mut ui = sim(&app);
-    let theme = ui::theme::midnight();
+    let theme = ui::theme::snack_theme();
     let snapshot = ui.snapshot(&theme)?;
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("snapshots/ui");
     fs::create_dir_all(&dir).expect("create snapshot dir");

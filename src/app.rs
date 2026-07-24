@@ -403,12 +403,15 @@ pub struct App {
     cache_dirty: HashMap<TeamId, Instant>,
     cache_saving: HashMap<TeamId, Instant>,
     settings: config::Settings,
+    settings_color_drafts: HashMap<config::ColorRole, String>,
+    settings_color_errors: HashMap<config::ColorRole, String>,
     show_settings: bool,
     settings_open: bool,
     show_account_menu: bool,
     account_menu_open: bool,
     sidebar_resizing: bool,
     sidebar_resize_prev_x: Option<f32>,
+    scrollbar_visible_until: Option<Instant>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -755,7 +758,16 @@ pub enum Message {
     SettingsOpened,
     SettingsClosed,
     SettingsDismissed,
-    SettingsAccentSelected(config::AccentColor),
+    SettingsPresetSelected(config::ThemePreset),
+    SettingsRoleColorChanged(config::ColorRole, String),
+    SettingsPresetColorsRestored,
+    SettingsBackgroundPickerOpened,
+    SettingsBackgroundPicked(Option<PathBuf>),
+    SettingsBackgroundImported(Result<config::BackgroundSettings, String>),
+    SettingsBackgroundFitChanged(config::BackgroundFit),
+    SettingsBackgroundDimChanged(f32),
+    SettingsSurfaceOpacityChanged(f32),
+    SettingsBackgroundRemoved,
     SettingsGapChanged(f32),
     SettingsRadiusChanged(f32),
     SettingsBorderChanged(f32),
@@ -764,6 +776,7 @@ pub enum Message {
     SidebarResizeStarted,
     SidebarResizeMoved(f32),
     SidebarResizeEnded,
+    ScrollActivity,
     AnimationTick,
     Tick,
     AgentRequest {
@@ -780,6 +793,15 @@ pub enum Message {
 impl App {
     fn empty() -> Self {
         let settings = config::load_settings();
+        let settings_color_drafts = config::ColorRole::ALL
+            .into_iter()
+            .filter_map(|role| {
+                settings
+                    .colors
+                    .get(role)
+                    .map(|color| (role, color.as_hex()))
+            })
+            .collect();
         ui::theme::apply(&settings);
         App {
             screen: Screen::Login,
@@ -841,12 +863,15 @@ impl App {
             cache_dirty: HashMap::new(),
             cache_saving: HashMap::new(),
             settings,
+            settings_color_drafts,
+            settings_color_errors: HashMap::new(),
             show_settings: false,
             settings_open: false,
             show_account_menu: false,
             account_menu_open: false,
             sidebar_resizing: false,
             sidebar_resize_prev_x: None,
+            scrollbar_visible_until: None,
         }
     }
 
@@ -1011,6 +1036,8 @@ impl App {
         self.account_menu_open = false;
         self.sidebar_resizing = false;
         self.sidebar_resize_prev_x = None;
+        self.scrollbar_visible_until = None;
+        ui::theme::set_scrollbars_visible(false);
         self.screen = Screen::Login;
     }
 
@@ -1311,5 +1338,5 @@ fn app_icon() -> Option<iced::window::Icon> {
 }
 
 fn theme(_app: &App) -> iced::Theme {
-    ui::theme::midnight()
+    ui::theme::snack_theme()
 }

@@ -1,6 +1,6 @@
 use iced::widget::text_editor::Content;
 use iced::widget::{Column, Id, button, column, container, mouse_area, row, scrollable, svg, text};
-use iced::{Element, Fill, Font, Length};
+use iced::{Element, Fill, Font, Length, Padding};
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -39,7 +39,7 @@ pub fn view<'a>(
     let header = row![
         text("Thread")
             .size(theme::TEXT_LG)
-            .color(theme::TEXT_1)
+            .color(theme::text_1())
             .font(Font {
                 weight: iced::font::Weight::Bold,
                 ..Font::default()
@@ -49,7 +49,7 @@ pub fn view<'a>(
             svg(icons::close())
                 .width(Length::Fixed(16.0))
                 .height(Length::Fixed(16.0))
-                .style(theme::sidebar_icon(theme::TEXT_3)),
+                .style(theme::sidebar_icon(theme::text_3())),
         )
         .width(Length::Fixed(theme::PANEL_CLOSE_SIZE))
         .height(Length::Fixed(theme::PANEL_CLOSE_SIZE))
@@ -120,7 +120,7 @@ pub fn view<'a>(
                 };
                 col = col.push(row);
             }
-            scrollable(col)
+            scrollable(col.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
                 .id(scrollable_id(channel_id, root_ts))
                 .style(theme::scrollbar)
                 .height(Fill)
@@ -173,10 +173,10 @@ pub fn view<'a>(
                 "Loading thread..."
             };
             col = col.push(
-                container(text(status).size(theme::TEXT_MD).color(theme::MUTED))
+                container(text(status).size(theme::TEXT_MD).color(theme::muted()))
                     .padding(theme::SPACE_MD),
             );
-            scrollable(col)
+            scrollable(col.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
                 .id(scrollable_id(channel_id, root_ts))
                 .style(theme::scrollbar)
                 .height(Fill)

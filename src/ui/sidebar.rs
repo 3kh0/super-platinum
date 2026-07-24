@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, HashMap};
 
 use iced::widget::text::Wrapping;
 use iced::widget::{Column, button, column, container, image, row, scrollable, svg, text};
-use iced::{Alignment, Color, ContentFit, Element, Fill, Length, font};
+use iced::{Alignment, Color, ContentFit, Element, Fill, Length, Padding, font};
 
 use super::{icons, theme};
 use crate::app::{FilePreview, Message};
@@ -145,7 +145,7 @@ fn section_header<'a>(title: &str) -> Element<'a, Message> {
     container(
         text(title.to_ascii_uppercase())
             .size(theme::TEXT_SM - 1.0)
-            .color(theme::TEXT_4)
+            .color(theme::text_4())
             .font(iced::Font {
                 weight: font::Weight::Semibold,
                 ..iced::Font::default()
@@ -194,9 +194,9 @@ fn channel_button<'a>(
 
     // unread (no ping): white + slightly bolder. read: muted normal.
     let fg = if active || unread {
-        theme::TEXT_1
+        theme::text_1()
     } else {
-        theme::TEXT_3
+        theme::text_3()
     };
     let weight = if unread {
         font::Weight::Semibold
@@ -326,7 +326,7 @@ fn ping_badge<'a>(count: u32) -> Element<'a, Message> {
     container(
         text(label)
             .size(theme::TEXT_SM)
-            .color(theme::TEXT_1)
+            .color(theme::text_1())
             .wrapping(Wrapping::None)
             .font(iced::Font {
                 weight: font::Weight::Bold,
@@ -345,9 +345,9 @@ fn workspace_button<'a>(ws: &Workspace, active: bool) -> Element<'a, Message> {
     let dot = text(if connected { "●" } else { "○" })
         .size(theme::TEXT_SM)
         .color(if connected {
-            theme::ONLINE
+            theme::online()
         } else {
-            theme::TEXT_5
+            theme::text_5()
         });
     button(
         iced::widget::row![dot, text(ws.name.clone()).size(theme::TEXT_MD)]
@@ -371,10 +371,10 @@ fn jump_to_button<'a>() -> Element<'a, Message> {
         svg(icons::search())
             .width(Length::Fixed(theme::SIDEBAR_ICON))
             .height(Length::Fixed(theme::SIDEBAR_ICON))
-            .style(theme::sidebar_icon(theme::TEXT_4)),
-        text("Jump to…").size(theme::TEXT_SM).color(theme::TEXT_3),
+            .style(theme::sidebar_icon(theme::text_4())),
+        text("Jump to…").size(theme::TEXT_SM).color(theme::text_3()),
         iced::widget::Space::new().width(Fill),
-        text(hint).size(theme::TEXT_SM).color(theme::TEXT_5),
+        text(hint).size(theme::TEXT_SM).color(theme::text_5()),
     ]
     .spacing(theme::SPACE_SM)
     .align_y(Alignment::Center);
@@ -414,7 +414,7 @@ pub fn view<'a>(
     let header = container(
         text(ws.name.clone())
             .size(theme::TEXT_LG)
-            .color(theme::TEXT_1)
+            .color(theme::text_1())
             .font(iced::Font {
                 weight: iced::font::Weight::Bold,
                 ..iced::Font::default()
@@ -427,7 +427,9 @@ pub fn view<'a>(
     let body = column![
         header,
         search,
-        scrollable(list).style(theme::scrollbar).height(Fill)
+        scrollable(list.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
+            .style(theme::scrollbar)
+            .height(Fill)
     ]
     .spacing(theme::SPACE_XS)
     .width(Length::Fixed(width))
