@@ -52,6 +52,7 @@ use workspace::*;
 
 use discovery::*;
 use media::*;
+pub(super) use media::{allocate_animated_preview, visit_message_emoji_names};
 #[cfg(test)]
 pub(super) use media::{
     channel_open_scroll_target, emoji_preview_from_bytes, pending_target_ts,

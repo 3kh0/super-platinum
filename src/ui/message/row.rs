@@ -269,11 +269,26 @@ pub fn row<'a>(
     }
 
     for file in &msg.files {
-        col = col.push(file_row(ws, channel_id, msg, file, file_previews, hovered));
+        col = col.push(file_row(
+            ws,
+            channel_id,
+            msg,
+            file,
+            file_previews,
+            emoji_animation_elapsed,
+            hovered,
+        ));
     }
 
     for att in &msg.attachments {
-        col = col.push(attachment_row(ws, channel_id, msg, att, file_previews));
+        col = col.push(attachment_row(
+            ws,
+            channel_id,
+            msg,
+            att,
+            file_previews,
+            emoji_animation_elapsed,
+        ));
     }
 
     if let Some(attachments) = pending_attachments {

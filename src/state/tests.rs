@@ -875,6 +875,41 @@ fn attachment_viewer_prefers_original_and_names_download() {
 }
 
 #[test]
+fn gif_picker_attachment_exposes_nested_image_block() {
+    let message: SlackMessage = serde_json::from_value(serde_json::json!({
+        "type": "message",
+        "user": "U08TCSANHDX",
+        "text": "",
+        "ts": "1785200205.163019",
+        "files": [],
+        "blocks": [],
+        "attachments": [{
+            "id": 1,
+            "fallback": "shared a GIF",
+            "blocks": [{
+                "type": "image",
+                "image_url": "https://media0.giphy.com/media/OIKS4GcqcKqNtndh1o/200w.gif?rid=200w.gif",
+                "image_width": 200,
+                "image_height": 206,
+                "image_bytes": 17943,
+                "is_animated": true,
+                "alt_text": "Main Character Instagram GIF"
+            }]
+        }]
+    }))
+    .expect("decode picker message");
+
+    let images: Vec<_> = attachment_images(&message.attachments[0]).collect();
+    assert_eq!(images.len(), 1);
+    assert_eq!(images[0].width, Some(200));
+    assert_eq!(images[0].height, Some(206));
+    assert!(images[0].animated);
+    assert_eq!(images[0].alt_text, Some("Main Character Instagram GIF"));
+    assert!(images[0].preview_url.ends_with("rid=200w.gif"));
+    assert_eq!(message_text(&message), "");
+}
+
+#[test]
 fn image_file_detection_and_uploader_are_defensive() {
     let image = File {
         name: Some("launch.PNG".into()),

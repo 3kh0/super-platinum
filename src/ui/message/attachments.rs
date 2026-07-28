@@ -6,6 +6,7 @@ pub(super) fn attachment_row<'a>(
     msg: &SlackMessage,
     att: &crate::slack::models::Attachment,
     file_previews: &HashMap<String, FilePreview>,
+    animation_elapsed: Duration,
 ) -> Element<'a, Message> {
     let mut content = Column::new().spacing(theme::SPACE_XS);
 
@@ -55,45 +56,70 @@ pub(super) fn attachment_row<'a>(
         content = content.push(text(line).size(theme::TEXT_SM));
     }
 
-    if let Some(preview) = state::attachment_preview_url(att).and_then(|url| file_previews.get(url))
-    {
-        if let FilePreview::Loaded(handle) = preview {
-            let open = state::attachment_viewer_url(att).map(|url| {
-                Message::Discovery(crate::app::DiscoveryMessage::ImageViewerOpened(
-                    image_viewer_source(
-                        ws,
-                        channel_id,
-                        msg,
-                        None,
-                        MediaViewerKind::Image,
-                        state::attachment_preview_url(att).unwrap_or(url).to_owned(),
-                        url.to_owned(),
-                        url.to_owned(),
-                        ImageFetchAuth::Public,
-                        state::attachment_download_name(att),
-                    ),
-                ))
-            });
-            let preview: Element<'a, Message> = image::Image::new(handle.clone())
-                .width(Length::Fixed(260.0))
-                .height(Length::Fixed(160.0))
-                .content_fit(ContentFit::Contain)
-                .border_radius(6.0)
-                .into();
-            content = content.push(match open {
-                Some(message) => container(
-                    mouse_area(preview)
-                        .on_press(message)
-                        .interaction(iced::mouse::Interaction::Pointer),
-                )
-                .id(iced::widget::Id::from(format!(
-                    "image-preview:{}",
-                    state::attachment_preview_url(att).unwrap_or_default()
-                )))
-                .into(),
-                None => preview,
-            });
-        }
+    for media in state::attachment_images(att) {
+        let Some(preview) = file_previews.get(media.preview_url) else {
+            continue;
+        };
+        let handle = match preview {
+            FilePreview::Loaded(handle) => Some(handle.clone()),
+            FilePreview::Animated {
+                frames,
+                delays,
+                total,
+                ..
+            } => animated_frame(frames, delays, *total, animation_elapsed),
+            FilePreview::Loading => {
+                content = content.push(
+                    text("Loading preview...")
+                        .size(theme::TEXT_SM)
+                        .color(theme::muted()),
+                );
+                None
+            }
+            FilePreview::Failed => {
+                content = content.push(
+                    text("Preview unavailable")
+                        .size(theme::TEXT_SM)
+                        .color(theme::muted()),
+                );
+                None
+            }
+        };
+        let Some(handle) = handle else {
+            continue;
+        };
+        let (width, height) = attachment_preview_dimensions(media.width, media.height);
+        let open = Message::Discovery(crate::app::DiscoveryMessage::ImageViewerOpened(
+            image_viewer_source(
+                ws,
+                channel_id,
+                msg,
+                None,
+                MediaViewerKind::Image,
+                media.preview_url.to_owned(),
+                media.full_url.to_owned(),
+                media.full_url.to_owned(),
+                ImageFetchAuth::Public,
+                state::attachment_download_name(att),
+            ),
+        ));
+        let preview: Element<'a, Message> = image::Image::new(handle)
+            .width(Length::Fixed(width))
+            .height(Length::Fixed(height))
+            .content_fit(ContentFit::Contain)
+            .border_radius(6.0)
+            .into();
+        content = content.push(
+            container(
+                mouse_area(preview)
+                    .on_press(open)
+                    .interaction(iced::mouse::Interaction::Pointer),
+            )
+            .id(iced::widget::Id::from(format!(
+                "image-preview:{}",
+                media.preview_url
+            ))),
+        );
     }
 
     container(content)
@@ -165,6 +191,7 @@ pub(super) fn file_row<'a>(
     msg: &SlackMessage,
     file: &crate::slack::models::File,
     file_previews: &HashMap<String, FilePreview>,
+    animation_elapsed: Duration,
     hovered: bool,
 ) -> Element<'a, Message> {
     let title = file
@@ -255,9 +282,14 @@ pub(super) fn file_row<'a>(
                         .color(theme::muted()),
                 );
             }
-            FilePreview::Animated { frames, .. } => {
-                if let Some(handle) = frames.first() {
-                    let preview = image::Image::new(handle.clone())
+            FilePreview::Animated {
+                frames,
+                delays,
+                total,
+                ..
+            } => {
+                if let Some(handle) = animated_frame(frames, delays, *total, animation_elapsed) {
+                    let preview = image::Image::new(handle)
                         .width(Length::Fixed(preview_width))
                         .height(Length::Fixed(preview_height))
                         .content_fit(ContentFit::Contain)
@@ -385,4 +417,15 @@ pub(super) fn file_preview_dimensions(file: &crate::slack::models::File) -> (f32
     };
     let scale = (MAX / width.max(height) as f32).min(1.0);
     (width as f32 * scale, height as f32 * scale)
+}
+
+pub(super) fn attachment_preview_dimensions(width: Option<u32>, height: Option<u32>) -> (f32, f32) {
+    const MAX: f32 = 320.0;
+    const FALLBACK: (f32, f32) = (260.0, 160.0);
+    let Some((width, height)) = width.zip(height) else {
+        return FALLBACK;
+    };
+    let (width, height) = (width as f32, height as f32);
+    let scale = (MAX / width.max(height)).min(1.0);
+    (width * scale, height * scale)
 }

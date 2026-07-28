@@ -373,6 +373,9 @@ pub(super) async fn fetch_image_bytes(
 ) -> Result<Vec<u8>, SlackError> {
     match auth {
         ImageFetchAuth::Slack => transport.get_bytes(&url, &user_agent).await,
+        ImageFetchAuth::Public if crate::state::is_gif_url(&url) => {
+            transport.get_public_gif_bytes(&url, &user_agent).await
+        }
         ImageFetchAuth::Public => transport.get_public_bytes(&url, &user_agent).await,
     }
 }
@@ -550,9 +553,10 @@ pub(super) fn load_file_previews(app: &mut App, messages: Vec<SlackMessage>) -> 
     let attachment_requests = messages
         .iter()
         .flat_map(|msg| &msg.attachments)
-        .filter_map(|att| {
-            let url = crate::state::attachment_preview_url(att)?.to_owned();
-            Some((url.clone(), url, ImageFetchAuth::Public))
+        .flat_map(crate::state::attachment_images)
+        .map(|image| {
+            let url = image.preview_url.to_owned();
+            (url.clone(), url, ImageFetchAuth::Public)
         });
     let mut seen = std::collections::HashSet::new();
     let requests: Vec<_> = file_requests
@@ -573,7 +577,7 @@ pub(super) fn load_file_previews(app: &mut App, messages: Vec<SlackMessage>) -> 
         let transport = transport.clone();
         let user_agent = user_agent.clone();
         Task::perform(
-            fetch_image_bytes(transport, url, auth, user_agent),
+            fetch_image_preview(transport, url, auth, user_agent),
             move |result| {
                 Message::Discovery(crate::app::DiscoveryMessage::FilePreviewLoaded {
                     key: key.clone(),
@@ -724,7 +728,7 @@ pub(super) fn load_emoji_previews_for_names(
         Task::perform(
             async move {
                 let bytes = transport.get_bytes(&url, &user_agent).await?;
-                Ok(emoji_preview_from_bytes(bytes))
+                decode_preview_bytes(bytes).await
             },
             move |result| {
                 Message::Discovery(crate::app::DiscoveryMessage::EmojiPreviewLoaded {
@@ -737,10 +741,79 @@ pub(super) fn load_emoji_previews_for_names(
 }
 
 pub(in crate::app) fn emoji_preview_from_bytes(bytes: Vec<u8>) -> FilePreview {
+    preview_from_bytes(bytes)
+}
+
+pub(in crate::app) fn allocate_animated_preview(
+    preview: FilePreview,
+) -> Task<Result<FilePreview, SlackError>> {
+    let FilePreview::Animated {
+        frames,
+        allocations,
+        delays,
+        total,
+    } = preview
+    else {
+        return Task::done(Ok(preview));
+    };
+    if !allocations.is_empty() {
+        return Task::done(Ok(FilePreview::Animated {
+            frames,
+            allocations,
+            delays,
+            total,
+        }));
+    }
+
+    Task::batch(frames.iter().cloned().map(iced::widget::image::allocate))
+        .collect()
+        .map(move |results| {
+            let allocations =
+                results
+                    .into_iter()
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|error| {
+                        SlackError::Transport(format!("allocate animated image frames: {error}"))
+                    })?;
+            Ok(FilePreview::Animated {
+                frames: frames.clone(),
+                allocations,
+                delays: delays.clone(),
+                total,
+            })
+        })
+}
+
+const MAX_GIF_BYTES: usize = 10 * 1024 * 1024;
+const MAX_GIF_PIXELS: usize = 2_000_000;
+const MAX_GIF_FRAMES: usize = 300;
+const MAX_GIF_DECODED_BYTES: usize = 64 * 1024 * 1024;
+
+async fn fetch_image_preview(
+    transport: Arc<Transport>,
+    url: String,
+    auth: ImageFetchAuth,
+    user_agent: String,
+) -> Result<FilePreview, SlackError> {
+    let bytes = fetch_image_bytes(transport, url, auth, user_agent).await?;
+    decode_preview_bytes(bytes).await
+}
+
+async fn decode_preview_bytes(bytes: Vec<u8>) -> Result<FilePreview, SlackError> {
+    tokio::task::spawn_blocking(move || preview_from_bytes(bytes))
+        .await
+        .map_err(|error| SlackError::Transport(format!("decode image preview: {error}")))
+}
+
+fn preview_from_bytes(bytes: Vec<u8>) -> FilePreview {
     if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        if bytes.len() > MAX_GIF_BYTES {
+            return FilePreview::Failed;
+        }
         if let Some(preview) = decode_gif_preview(&bytes) {
             return preview;
         }
+        return FilePreview::Failed;
     }
     FilePreview::Loaded(ImageHandle::from_bytes(bytes))
 }
@@ -750,25 +823,28 @@ pub(super) fn decode_gif_preview(bytes: &[u8]) -> Option<FilePreview> {
     options.set_color_output(gif::ColorOutput::RGBA);
     let mut decoder = options.read_info(std::io::Cursor::new(bytes)).ok()?;
 
-    let width = decoder.width() as usize;
-    let height = decoder.height() as usize;
-    if width == 0 || height == 0 {
+    let width = usize::from(decoder.width());
+    let height = usize::from(decoder.height());
+    let pixels = width.checked_mul(height)?;
+    let frame_bytes = pixels.checked_mul(4)?;
+    if width == 0 || height == 0 || pixels > MAX_GIF_PIXELS {
         return None;
     }
 
     let mut frames = Vec::new();
     let mut delays = Vec::new();
-    let mut canvas = vec![0u8; width * height * 4];
+    let mut canvas = vec![0u8; frame_bytes];
     while let Some(frame) = decoder.read_next_frame().ok()? {
+        if frames.len() >= MAX_GIF_FRAMES
+            || frames.len().checked_add(1)?.checked_mul(frame_bytes)? > MAX_GIF_DECODED_BYTES
+        {
+            return frames.into_iter().next().map(FilePreview::Loaded);
+        }
         let snapshot =
             matches!(frame.dispose, gif::DisposalMethod::Previous).then(|| canvas.clone());
 
         composite_frame(&mut canvas, width, height, frame);
-        frames.push(ImageHandle::from_rgba(
-            width as u32,
-            height as u32,
-            canvas.clone(),
-        ));
+        frames.push(png_frame_handle(width as u32, height as u32, &canvas)?);
         delays.push(gif_delay(frame.delay));
 
         match frame.dispose {
@@ -791,11 +867,23 @@ pub(super) fn decode_gif_preview(bytes: &[u8]) -> Option<FilePreview> {
             let total = delays.iter().copied().sum();
             Some(FilePreview::Animated {
                 frames,
+                allocations: Vec::new(),
                 delays,
                 total,
             })
         }
     }
+}
+
+fn png_frame_handle(width: u32, height: u32, pixels: &[u8]) -> Option<ImageHandle> {
+    let mut bytes = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(&mut bytes, width, height);
+        encoder.set_color(png::ColorType::Rgba);
+        encoder.set_depth(png::BitDepth::Eight);
+        encoder.write_header().ok()?.write_image_data(pixels).ok()?;
+    }
+    Some(ImageHandle::from_bytes(bytes))
 }
 
 pub(super) fn gif_delay(delay_cs: u16) -> Duration {
@@ -877,14 +965,22 @@ pub(super) fn thread_messages(
 
 pub(super) fn message_emoji_names(msg: &SlackMessage) -> Vec<String> {
     let mut names = Vec::new();
+    visit_message_emoji_names(msg, |name| names.push(name.to_owned()));
+    names
+}
+
+pub(in crate::app) fn visit_message_emoji_names<'a>(
+    msg: &'a SlackMessage,
+    mut visit: impl FnMut(&'a str),
+) {
     if let Some(text) = msg.text.as_deref() {
-        names.extend(crate::state::emoji_names_in_text(text));
+        crate::state::visit_emoji_names_in_text(text, &mut visit);
     }
     for reaction in &msg.reactions {
-        names.push(reaction.name.clone());
+        visit(&reaction.name);
     }
     for block in &msg.blocks {
-        collect_value_emoji_names(block, &mut names);
+        visit_value_emoji_names(block, &mut visit);
     }
     for att in &msg.attachments {
         for text in [
@@ -898,18 +994,23 @@ pub(super) fn message_emoji_names(msg: &SlackMessage) -> Vec<String> {
         .into_iter()
         .flatten()
         {
-            names.extend(crate::state::emoji_names_in_text(text));
+            crate::state::visit_emoji_names_in_text(text, &mut visit);
         }
     }
-    names
 }
 
 pub(super) fn collect_value_emoji_names(value: &serde_json::Value, names: &mut Vec<String>) {
+    visit_value_emoji_names(value, &mut |name| names.push(name.to_owned()));
+}
+
+fn visit_value_emoji_names<'a>(value: &'a serde_json::Value, visit: &mut impl FnMut(&'a str)) {
     match value {
-        serde_json::Value::String(text) => names.extend(crate::state::emoji_names_in_text(text)),
+        serde_json::Value::String(text) => {
+            crate::state::visit_emoji_names_in_text(text, &mut *visit);
+        }
         serde_json::Value::Array(values) => {
             for value in values {
-                collect_value_emoji_names(value, names);
+                visit_value_emoji_names(value, visit);
             }
         }
         serde_json::Value::Object(map) => {
@@ -919,11 +1020,11 @@ pub(super) fn collect_value_emoji_names(value: &serde_json::Value, names: &mut V
                 .is_some_and(|kind| kind == "emoji")
             {
                 if let Some(name) = map.get("name").and_then(serde_json::Value::as_str) {
-                    names.push(name.to_owned());
+                    visit(name);
                 }
             }
             for value in map.values() {
-                collect_value_emoji_names(value, names);
+                visit_value_emoji_names(value, visit);
             }
         }
         _ => {}

@@ -308,7 +308,7 @@ pub fn message_text(msg: &SlackMessage) -> String {
     if let Some(text) = non_empty(msg.text.as_deref()) {
         return text.to_owned();
     }
-    if !msg.files.is_empty() {
+    if !msg.files.is_empty() || !msg.attachments.is_empty() {
         return String::new();
     }
     if let Some(subtype) = non_empty(msg.subtype.as_deref()) {
@@ -395,9 +395,11 @@ pub fn file_download_name(file: &File) -> String {
 }
 
 pub fn file_preview_key(file: &File) -> Option<String> {
-    non_empty(file.id.as_deref())
-        .or_else(|| file_preview_url(file))
-        .map(str::to_owned)
+    file_preview_key_ref(file).map(str::to_owned)
+}
+
+pub fn file_preview_key_ref(file: &File) -> Option<&str> {
+    non_empty(file.id.as_deref()).or_else(|| file_preview_url(file))
 }
 
 pub fn file_uploader_id(file: &File) -> Option<&str> {
@@ -486,12 +488,94 @@ pub fn file_download_url(file: &File) -> Option<&str> {
         .or_else(|| non_empty(file.url_private.as_deref()))
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AttachmentImage<'a> {
+    pub preview_url: &'a str,
+    pub full_url: &'a str,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub animated: bool,
+    pub alt_text: Option<&'a str>,
+}
+
+pub fn attachment_images(
+    att: &crate::slack::models::Attachment,
+) -> impl Iterator<Item = AttachmentImage<'_>> {
+    let preview_url =
+        non_empty(att.thumb_url.as_deref()).or_else(|| non_empty(att.image_url.as_deref()));
+    let full_url = non_empty(att.image_url.as_deref()).or(preview_url);
+    let top_level = preview_url
+        .zip(full_url)
+        .map(|(preview_url, full_url)| AttachmentImage {
+            preview_url,
+            full_url,
+            width: None,
+            height: None,
+            animated: is_gif_url(full_url),
+            alt_text: non_empty(att.title.as_deref()),
+        });
+    let nested = att
+        .blocks
+        .iter()
+        .enumerate()
+        .filter_map(move |(index, block)| {
+            if block.get("type").and_then(serde_json::Value::as_str) != Some("image") {
+                return None;
+            }
+            let url = block
+                .get("image_url")
+                .and_then(serde_json::Value::as_str)
+                .and_then(|url| non_empty(Some(url)))?;
+            if preview_url == Some(url)
+                || full_url == Some(url)
+                || att.blocks[..index].iter().any(|previous| {
+                    previous
+                        .get("image_url")
+                        .and_then(serde_json::Value::as_str)
+                        .is_some_and(|previous| previous == url)
+                })
+            {
+                return None;
+            }
+            Some(AttachmentImage {
+                preview_url: url,
+                full_url: url,
+                width: block
+                    .get("image_width")
+                    .and_then(serde_json::Value::as_u64)
+                    .and_then(|value| u32::try_from(value).ok())
+                    .filter(|value| *value > 0),
+                height: block
+                    .get("image_height")
+                    .and_then(serde_json::Value::as_u64)
+                    .and_then(|value| u32::try_from(value).ok())
+                    .filter(|value| *value > 0),
+                animated: block
+                    .get("is_animated")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or_else(|| is_gif_url(url)),
+                alt_text: block
+                    .get("alt_text")
+                    .and_then(serde_json::Value::as_str)
+                    .and_then(|text| non_empty(Some(text))),
+            })
+        });
+
+    top_level.into_iter().chain(nested)
+}
+
+pub fn is_gif_url(url: &str) -> bool {
+    url.split(['?', '#'])
+        .next()
+        .is_some_and(|path| path.to_ascii_lowercase().ends_with(".gif"))
+}
+
 pub fn attachment_preview_url(att: &crate::slack::models::Attachment) -> Option<&str> {
-    non_empty(att.thumb_url.as_deref()).or_else(|| non_empty(att.image_url.as_deref()))
+    attachment_images(att).next().map(|image| image.preview_url)
 }
 
 pub fn attachment_viewer_url(att: &crate::slack::models::Attachment) -> Option<&str> {
-    non_empty(att.image_url.as_deref()).or_else(|| non_empty(att.thumb_url.as_deref()))
+    attachment_images(att).next().map(|image| image.full_url)
 }
 
 pub fn attachment_download_name(att: &crate::slack::models::Attachment) -> String {
@@ -682,13 +766,26 @@ pub fn emoji_text_tokens(text: &str) -> Vec<EmojiTextToken> {
 }
 
 pub fn emoji_names_in_text(text: &str) -> Vec<String> {
-    emoji_text_tokens(text)
-        .into_iter()
-        .filter_map(|token| match token {
-            EmojiTextToken::Emoji(name) => Some(name),
-            EmojiTextToken::Text(_) => None,
-        })
-        .collect()
+    let mut names = Vec::new();
+    visit_emoji_names_in_text(text, |name| names.push(name.to_owned()));
+    names
+}
+
+pub fn visit_emoji_names_in_text<'a>(text: &'a str, mut visit: impl FnMut(&'a str)) {
+    let mut rest = text;
+    while let Some(start) = rest.find(':') {
+        let after_start = &rest[start + 1..];
+        let Some(end) = after_start.find(':') else {
+            break;
+        };
+        let name = &after_start[..end];
+        if is_emoji_name(name) {
+            visit(name);
+            rest = &after_start[end + 1..];
+        } else {
+            rest = after_start;
+        }
+    }
 }
 
 pub(super) fn custom_emoji_url<'a>(

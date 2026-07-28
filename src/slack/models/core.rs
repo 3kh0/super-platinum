@@ -251,6 +251,8 @@ pub struct Attachment {
     pub original_url: Option<String>,
     #[serde(default)]
     pub fields: Vec<AttachmentField>,
+    #[serde(default)]
+    pub blocks: Vec<Value>,
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
 }

@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::time::Duration;
 
 use iced::Subscription;
@@ -5,7 +6,7 @@ use iced::Subscription;
 use crate::slack::models::TeamId;
 use crate::slack::realtime::{self, ConnectParams, RtUpdate};
 
-use super::{App, Message};
+use super::{App, FilePreview, Message};
 
 pub(super) fn subscription(app: &App) -> Subscription<Message> {
     let needs_tick =
@@ -46,11 +47,8 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
     } else if app.profile_pane.is_some() {
         subs.push(iced::event::listen_with(profile_navigation));
     }
-    if app
-        .emoji_previews
-        .values()
-        .any(|preview| matches!(preview, super::FilePreview::Animated { .. }))
-        || has_pending_sends(app)
+    let visible_media_animation_interval = visible_media_animation_interval(app);
+    let needs_existing_animation_tick = has_pending_sends(app)
         || app
             .composer_attachments
             .iter()
@@ -64,10 +62,19 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
             .iter()
             .flat_map(|pending| &pending.attachments)
             .any(|attachment| attachment.uploading)
-        || app.scrollbar_visible_until.is_some()
-    {
+        || app.scrollbar_visible_until.is_some();
+    if needs_existing_animation_tick || visible_media_animation_interval.is_some() {
+        let interval = match (
+            needs_existing_animation_tick,
+            visible_media_animation_interval,
+        ) {
+            (true, Some(media)) => Duration::from_millis(50).min(media),
+            (true, None) => Duration::from_millis(50),
+            (false, Some(media)) => media,
+            (false, None) => unreachable!(),
+        };
         subs.push(
-            iced::time::every(Duration::from_millis(50))
+            iced::time::every(interval)
                 .map(|_| Message::Runtime(crate::app::RuntimeMessage::AnimationTick)),
         );
     }
@@ -110,6 +117,97 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
     }
 
     Subscription::batch(subs)
+}
+
+pub(super) fn visible_media_animation_interval(app: &App) -> Option<Duration> {
+    if app.screen != crate::state::Screen::Main
+        || app.search.is_some()
+        || app.image_viewer.is_some()
+    {
+        return None;
+    }
+    let team = app.active_team.as_ref()?;
+    let channel = app.active_channel.as_ref()?;
+    let workspace = app.workspaces.get(team)?;
+    let mut interval = None;
+    let mut emoji_names = HashSet::new();
+
+    if let Some(messages) = workspace.messages.get(channel) {
+        for message in &messages.messages {
+            update_message_animation_interval(app, message, &mut emoji_names, &mut interval);
+        }
+    }
+
+    if let Some((thread_channel, root_ts)) = app.active_thread.as_ref() {
+        if let Some(root) = workspace.messages.get(thread_channel).and_then(|messages| {
+            messages
+                .messages
+                .iter()
+                .find(|message| message.ts.as_deref() == Some(root_ts))
+        }) {
+            update_message_animation_interval(app, root, &mut emoji_names, &mut interval);
+        }
+        if let Some(replies) =
+            app.threads
+                .get(&(team.clone(), thread_channel.clone(), root_ts.clone()))
+        {
+            for message in &replies.messages {
+                update_message_animation_interval(app, message, &mut emoji_names, &mut interval);
+            }
+        }
+    }
+
+    let emoji_prefix = format!("{team}:");
+    for (key, preview) in &app.emoji_previews {
+        let Some(name) = key.strip_prefix(&emoji_prefix) else {
+            continue;
+        };
+        if emoji_names.contains(name) {
+            update_preview_animation_interval(preview, &mut interval);
+        }
+    }
+
+    interval.map(|interval: Duration| {
+        interval.clamp(Duration::from_millis(16), Duration::from_millis(100))
+    })
+}
+
+fn update_message_animation_interval<'a>(
+    app: &App,
+    message: &'a crate::slack::models::Message,
+    emoji_names: &mut HashSet<&'a str>,
+    interval: &mut Option<Duration>,
+) {
+    super::update::visit_message_emoji_names(message, |name| {
+        emoji_names.insert(name);
+    });
+    let file_keys = message
+        .files
+        .iter()
+        .filter_map(crate::state::file_preview_key_ref);
+    let attachment_keys = message
+        .attachments
+        .iter()
+        .flat_map(crate::state::attachment_images)
+        .map(|image| image.preview_url);
+
+    for key in file_keys.chain(attachment_keys) {
+        let Some(preview) = app.file_previews.get(key) else {
+            continue;
+        };
+        update_preview_animation_interval(preview, interval);
+    }
+}
+
+fn update_preview_animation_interval(preview: &FilePreview, interval: &mut Option<Duration>) {
+    if let FilePreview::Animated { delays, .. } = preview {
+        let delay = delays
+            .iter()
+            .copied()
+            .min()
+            .unwrap_or(Duration::from_millis(50));
+        *interval = Some(interval.map_or(delay, |current| current.min(delay)));
+    }
 }
 
 fn image_viewer_navigation(

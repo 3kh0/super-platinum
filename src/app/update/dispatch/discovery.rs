@@ -397,9 +397,20 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
 
         Message::Discovery(crate::app::DiscoveryMessage::FilePreviewLoaded { key, result }) => {
             match result {
-                Ok(bytes) => {
-                    app.file_previews
-                        .insert(key, FilePreview::Loaded(ImageHandle::from_bytes(bytes)));
+                Ok(preview) => {
+                    if matches!(
+                        &preview,
+                        FilePreview::Animated { allocations, .. } if allocations.is_empty()
+                    ) {
+                        let result_key = key.clone();
+                        return allocate_animated_preview(preview).map(move |result| {
+                            Message::Discovery(crate::app::DiscoveryMessage::FilePreviewLoaded {
+                                key: result_key.clone(),
+                                result,
+                            })
+                        });
+                    }
+                    app.file_previews.insert(key, preview);
                 }
                 Err(e) => {
                     tracing::warn!(%key, error = %e, "file preview failed");
@@ -426,6 +437,18 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
         Message::Discovery(crate::app::DiscoveryMessage::EmojiPreviewLoaded { key, result }) => {
             match result {
                 Ok(preview) => {
+                    if matches!(
+                        &preview,
+                        FilePreview::Animated { allocations, .. } if allocations.is_empty()
+                    ) {
+                        let result_key = key.clone();
+                        return allocate_animated_preview(preview).map(move |result| {
+                            Message::Discovery(crate::app::DiscoveryMessage::EmojiPreviewLoaded {
+                                key: result_key.clone(),
+                                result,
+                            })
+                        });
+                    }
                     app.emoji_previews.insert(key, preview);
                 }
                 Err(e) => {

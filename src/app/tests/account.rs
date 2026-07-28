@@ -661,10 +661,17 @@ fn gif_emoji_preview_decodes_as_animation() {
     match emoji_preview_from_bytes(bytes) {
         FilePreview::Animated {
             frames,
+            allocations,
             delays,
             total,
         } => {
             assert_eq!(frames.len(), 2);
+            assert!(allocations.is_empty());
+            assert!(
+                frames
+                    .iter()
+                    .all(|frame| matches!(frame, ImageHandle::Bytes(_, _)))
+            );
             assert_eq!(
                 delays,
                 vec![
@@ -676,6 +683,59 @@ fn gif_emoji_preview_decodes_as_animation() {
         }
         other => panic!("expected animated preview, got {other:?}"),
     }
+}
+
+#[test]
+fn file_animation_tick_only_tracks_visible_messages() {
+    let mut app = gif_picker_app();
+    assert_eq!(
+        visible_media_animation_interval(&app),
+        Some(std::time::Duration::from_millis(40))
+    );
+
+    app.active_channel = Some("C_DEV".into());
+    assert_eq!(visible_media_animation_interval(&app), None);
+}
+
+#[test]
+fn reaction_animation_tick_uses_visible_emoji_frame_delay() {
+    let mut app = test_app();
+    let message = &mut app
+        .active_workspace_mut()
+        .unwrap()
+        .messages
+        .get_mut("C_GENERAL")
+        .unwrap()
+        .messages[0];
+    message.reactions.push(crate::slack::models::Reaction {
+        name: "party".into(),
+        users: vec!["U_ALICE".into()],
+        count: 1,
+        ..Default::default()
+    });
+    app.emoji_previews.insert(
+        crate::state::emoji_preview_key("T_TEST", "party"),
+        FilePreview::Animated {
+            frames: vec![
+                ImageHandle::from_rgba(1, 1, vec![255, 0, 0, 255]),
+                ImageHandle::from_rgba(1, 1, vec![0, 255, 0, 255]),
+            ],
+            allocations: Vec::new(),
+            delays: vec![
+                std::time::Duration::from_millis(20),
+                std::time::Duration::from_millis(50),
+            ],
+            total: std::time::Duration::from_millis(70),
+        },
+    );
+
+    assert_eq!(
+        visible_media_animation_interval(&app),
+        Some(std::time::Duration::from_millis(20))
+    );
+
+    app.active_channel = Some("C_DEV".into());
+    assert_eq!(visible_media_animation_interval(&app), None);
 }
 
 #[test]

@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use serde_json::json;
 
+use super::subscription::visible_media_animation_interval;
 use super::update::{
     begin_mark, channel_needs_hydration, channel_open_scroll_target, emoji_preview_from_bytes,
     import_background_sync, is_permanent_mark_error, needs_user_hydration,
@@ -162,6 +163,95 @@ pub(super) fn test_app() -> App {
     app.active_team = Some(team);
     app.active_channel = Some("C_GENERAL".into());
     app.screen = Screen::Main;
+    app
+}
+
+pub(super) fn gif_picker_app() -> App {
+    let mut app = test_app();
+    let url = "https://media0.giphy.com/media/OIKS4GcqcKqNtndh1o/200w.gif?rid=200w.gif";
+    let message = SlackMessage {
+        user: Some("U_ALICE".into()),
+        ts: Some("1783372400.000100".into()),
+        text: Some(String::new()),
+        attachments: vec![crate::slack::models::Attachment {
+            blocks: vec![json!({
+                "type": "image",
+                "image_url": url,
+                "image_width": 200,
+                "image_height": 206,
+                "image_bytes": 17943,
+                "is_animated": true,
+                "alt_text": "Main Character Instagram GIF"
+            })],
+            extra: BTreeMap::from([("fallback".into(), json!("shared a GIF"))]),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+    app.active_workspace_mut()
+        .expect("workspace")
+        .messages
+        .get_mut("C_GENERAL")
+        .expect("general")
+        .upsert(message);
+    app.file_previews.insert(
+        url.into(),
+        FilePreview::Animated {
+            frames: vec![
+                ImageHandle::from_rgba(
+                    2,
+                    2,
+                    vec![
+                        210, 62, 90, 255, 210, 62, 90, 255, 210, 62, 90, 255, 210, 62, 90, 255,
+                    ],
+                ),
+                ImageHandle::from_rgba(
+                    2,
+                    2,
+                    vec![
+                        67, 160, 120, 255, 67, 160, 120, 255, 67, 160, 120, 255, 67, 160, 120, 255,
+                    ],
+                ),
+            ],
+            allocations: Vec::new(),
+            delays: vec![Duration::from_millis(40), Duration::from_millis(60)],
+            total: Duration::from_millis(100),
+        },
+    );
+    app
+}
+
+pub(super) fn animated_reaction_app() -> App {
+    let mut app = test_app();
+    let ws = app.active_workspace_mut().expect("workspace");
+    ws.custom_emoji.insert(
+        "party".into(),
+        crate::slack::models::Emoji {
+            name: "party".into(),
+            value: "https://emoji.slack-edge.com/T_TEST/party/animated.gif".into(),
+            ..Default::default()
+        },
+    );
+    ws.messages.get_mut("C_GENERAL").expect("general").messages[0]
+        .reactions
+        .push(crate::slack::models::Reaction {
+            name: "party".into(),
+            users: vec!["U_ALICE".into()],
+            count: 1,
+            ..Default::default()
+        });
+    app.emoji_previews.insert(
+        crate::state::emoji_preview_key("T_TEST", "party"),
+        FilePreview::Animated {
+            frames: vec![
+                ImageHandle::from_bytes(&include_bytes!("../../assets/icons/png/icon_32.png")[..]),
+                ImageHandle::from_bytes(&include_bytes!("../../assets/icons/png/icon_48.png")[..]),
+            ],
+            allocations: Vec::new(),
+            delays: vec![Duration::from_millis(20), Duration::from_millis(50)],
+            total: Duration::from_millis(70),
+        },
+    );
     app
 }
 

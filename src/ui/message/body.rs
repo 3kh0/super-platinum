@@ -408,6 +408,7 @@ pub(in crate::ui) fn emoji_inline<'a>(
                 frames,
                 delays,
                 total,
+                ..
             }) => {
                 if let Some(handle) = animated_frame(frames, delays, *total, elapsed) {
                     return emoji_image(handle, size);
@@ -436,7 +437,17 @@ pub(super) fn animated_frame(
     total: Duration,
     elapsed: Duration,
 ) -> Option<ImageHandle> {
-    if frames.is_empty() || total.is_zero() {
+    let index = animated_frame_index(frames.len(), delays, total, elapsed)?;
+    frames.get(index).cloned()
+}
+
+pub(super) fn animated_frame_index(
+    frame_count: usize,
+    delays: &[Duration],
+    total: Duration,
+    elapsed: Duration,
+) -> Option<usize> {
+    if frame_count == 0 || total.is_zero() {
         return None;
     }
     let elapsed_ms = elapsed.as_millis() % total.as_millis().max(1);
@@ -444,10 +455,10 @@ pub(super) fn animated_frame(
     for (index, delay) in delays.iter().enumerate() {
         cursor += delay.as_millis().max(1);
         if elapsed_ms < cursor {
-            return frames.get(index).cloned();
+            return (index < frame_count).then_some(index);
         }
     }
-    frames.last().cloned()
+    Some(frame_count - 1)
 }
 
 pub(super) fn action_item<'a>(label: &'a str, on_press: Message) -> Element<'a, Message> {

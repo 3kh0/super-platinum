@@ -176,11 +176,20 @@ impl Transport {
     }
 
     pub async fn get_bytes(&self, url: &str, user_agent: &str) -> Result<Vec<u8>, Error> {
-        self.get_bytes_with_auth(url, user_agent, true).await
+        self.get_bytes_with_auth(url, user_agent, true, None).await
     }
 
     pub async fn get_public_bytes(&self, url: &str, user_agent: &str) -> Result<Vec<u8>, Error> {
-        self.get_bytes_with_auth(url, user_agent, false).await
+        self.get_bytes_with_auth(url, user_agent, false, None).await
+    }
+
+    pub async fn get_public_gif_bytes(
+        &self,
+        url: &str,
+        user_agent: &str,
+    ) -> Result<Vec<u8>, Error> {
+        self.get_bytes_with_auth(url, user_agent, false, Some("image/gif"))
+            .await
     }
 
     async fn get_bytes_with_auth(
@@ -188,8 +197,12 @@ impl Transport {
         url: &str,
         user_agent: &str,
         authenticated: bool,
+        accept: Option<&str>,
     ) -> Result<Vec<u8>, Error> {
         let mut request = self.http.get(url).header("User-Agent", user_agent);
+        if let Some(accept) = accept {
+            request = request.header("Accept", accept);
+        }
         if authenticated {
             request = request.header("Cookie", self.cookie());
         }
@@ -301,7 +314,7 @@ mod tests {
         }));
     }
 
-    async fn captured_image_request(public: bool) -> String {
+    async fn captured_image_request(public: bool, gif: bool) -> String {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let server = tokio::spawn(async move {
@@ -315,8 +328,10 @@ mod tests {
             String::from_utf8_lossy(&request[..read]).into_owned()
         });
         let transport = Transport::new("secret-cookie").unwrap();
-        let url = format!("http://{address}/image.png");
-        let bytes = if public {
+        let url = format!("http://{address}/image.{}", if gif { "gif" } else { "png" });
+        let bytes = if gif {
+            transport.get_public_gif_bytes(&url, "snack-test").await
+        } else if public {
             transport.get_public_bytes(&url, "snack-test").await
         } else {
             transport.get_bytes(&url, "snack-test").await
@@ -328,13 +343,22 @@ mod tests {
 
     #[tokio::test]
     async fn public_image_fetch_never_sends_slack_cookie() {
-        let request = captured_image_request(true).await;
+        let request = captured_image_request(true, false).await;
         assert!(!request.to_ascii_lowercase().contains("cookie:"));
     }
 
     #[tokio::test]
+    async fn public_gif_fetch_forces_gif_content_negotiation_without_cookie() {
+        let request = captured_image_request(true, true)
+            .await
+            .to_ascii_lowercase();
+        assert!(request.contains("accept: image/gif"));
+        assert!(!request.contains("cookie:"));
+    }
+
+    #[tokio::test]
     async fn slack_image_fetch_sends_session_cookie() {
-        let request = captured_image_request(false).await;
+        let request = captured_image_request(false, false).await;
         assert!(
             request
                 .to_ascii_lowercase()

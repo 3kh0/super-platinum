@@ -305,7 +305,7 @@ pub enum DiscoveryMessage {
     UrlOpened(Result<(), String>),
     FilePreviewLoaded {
         key: String,
-        result: Result<Vec<u8>, SlackError>,
+        result: Result<FilePreview, SlackError>,
     },
     AvatarLoaded {
         user: UserId,

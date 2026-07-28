@@ -76,6 +76,7 @@ pub enum FilePreview {
     Loaded(ImageHandle),
     Animated {
         frames: Vec<ImageHandle>,
+        allocations: Vec<iced::widget::image::Allocation>,
         delays: Vec<Duration>,
         total: Duration,
     },

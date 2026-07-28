@@ -14,9 +14,9 @@ use iced::{Event, Settings, Size, mouse, time, window};
 use iced_test::{Error, Simulator};
 
 use super::tests::{
-    account_menu_app, activity_app, dms_app, image_viewer_app, loaded_channel, login_app,
-    multi_paragraph_emoji_app, profile_app, search_app, settings_app, test_app, thread_unread_app,
-    video_viewer_app,
+    account_menu_app, activity_app, animated_reaction_app, dms_app, gif_picker_app,
+    image_viewer_app, loaded_channel, login_app, multi_paragraph_emoji_app, profile_app,
+    search_app, settings_app, test_app, thread_unread_app, video_viewer_app,
 };
 use super::update::update;
 use super::view::view;
@@ -131,6 +131,16 @@ fn ui_visual_main_channel_renders() -> Result<(), Error> {
     ui.find("You")?;
     drop(ui);
     capture(&app, "main-general")?;
+    Ok(())
+}
+
+#[test]
+fn ui_visual_animated_reaction_renders() -> Result<(), Error> {
+    let app = animated_reaction_app();
+    let mut ui = sim(&app);
+    ui.find("1")?;
+    drop(ui);
+    capture(&app, "animated-reaction")?;
     Ok(())
 }
 
@@ -402,6 +412,19 @@ fn ui_visual_uploaded_image_viewer_renders() -> Result<(), Error> {
     ui.find(iced::widget::Id::new("image-viewer-download"))?;
     drop(ui);
     capture(&app, "image-viewer-upload")?;
+    Ok(())
+}
+
+#[test]
+fn ui_visual_gif_picker_attachment_renders() -> Result<(), Error> {
+    let app = gif_picker_app();
+    let mut ui = sim(&app);
+    ui.find(iced::widget::Id::new(
+        "image-preview:https://media0.giphy.com/media/OIKS4GcqcKqNtndh1o/200w.gif?rid=200w.gif",
+    ))?;
+    assert!(ui.find("[no text]").is_err());
+    drop(ui);
+    capture(&app, "gif-picker-attachment")?;
     Ok(())
 }
 
