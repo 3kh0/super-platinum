@@ -394,7 +394,7 @@ pub(super) fn show_desktop_notification_blocking(
 
 #[cfg(target_os = "linux")]
 pub(super) fn linux_notification_icon() -> Result<std::path::PathBuf, String> {
-    const APP_ICON: &[u8] = include_bytes!("../../assets/icons/icon-256.png");
+    const APP_ICON: &[u8] = include_bytes!("../../../assets/icons/icon-256.png");
     static ICON_PATH: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
 
     if let Some(icon) = ICON_PATH.get() {
