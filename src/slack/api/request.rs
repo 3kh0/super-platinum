@@ -102,6 +102,25 @@ pub fn subscriptions_thread_mark(
     )
 }
 
+pub fn subscriptions_thread_get_view(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    limit: u32,
+    max_ts: Option<MessageTs>,
+    vip_only: bool,
+) -> PreparedRequest {
+    let mut fields = vec![
+        ("limit", limit.to_string()),
+        ("fetch_threads_state", "true".to_owned()),
+        (
+            "priority_mode",
+            if vip_only { "priority" } else { "all" }.to_owned(),
+        ),
+    ];
+    push_opt(&mut fields, "max_ts", max_ts);
+    client.rest_form(workspace, "subscriptions.thread.getView", fields)
+}
+
 pub fn conversations_info(
     client: &SlackClient,
     workspace: &WorkspaceSession,

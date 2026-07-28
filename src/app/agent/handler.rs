@@ -321,6 +321,7 @@ pub fn handle(app: &mut App, id: u64, command: AgentCommand) -> iced::Task<Messa
                 "activity" | "notifications" | "bell" => crate::state::MainView::Activity,
                 "dms" | "dm" | "direct-messages" => crate::state::MainView::Dms,
                 "unreads" | "unread" => crate::state::MainView::Unreads,
+                "threads" | "thread-feed" => crate::state::MainView::Threads,
                 "home" | "channels" => crate::state::MainView::Home,
                 other => {
                     complete(
@@ -344,6 +345,8 @@ pub fn handle(app: &mut App, id: u64, command: AgentCommand) -> iced::Task<Messa
                         "activity_item_count": app.activity.items.len(),
                         "dms_loading": app.dms.loading,
                         "dms_entry_count": app.dms.entries.len(),
+                        "threads_loading": app.threads_view.loading,
+                        "threads_item_count": app.threads_view.items.len(),
                     }),
                 ),
             );
@@ -382,6 +385,7 @@ pub(super) fn main_view_label(view: crate::state::MainView) -> &'static str {
     match view {
         crate::state::MainView::Home => "home",
         crate::state::MainView::Unreads => "unreads",
+        crate::state::MainView::Threads => "threads",
         crate::state::MainView::Dms => "dms",
         crate::state::MainView::Activity => "activity",
     }

@@ -213,6 +213,39 @@ pub struct UnreadsState {
     pub load_seq: u64,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct ThreadsState {
+    pub items: Vec<crate::slack::models::ThreadViewItem>,
+    pub max_ts: Option<MessageTs>,
+    pub has_more: bool,
+    pub load_seq: u64,
+    pub loading: bool,
+    pub loaded: bool,
+    pub vip_only: bool,
+    pub selected: Option<(ChannelId, MessageTs)>,
+}
+
+impl ThreadsState {
+    pub fn upsert(&mut self, item: crate::slack::models::ThreadViewItem) {
+        let identity = item.channel().cloned().zip(item.root_ts().cloned());
+        if let Some((channel, root_ts)) = identity {
+            if let Some(existing) = self.items.iter_mut().find(|existing| {
+                existing.channel() == Some(&channel) && existing.root_ts() == Some(&root_ts)
+            }) {
+                *existing = item;
+            } else {
+                self.items.push(item);
+            }
+        }
+        self.items.sort_by(|a, b| {
+            crate::state::cmp_ts(
+                b.latest_ts().map(String::as_str),
+                a.latest_ts().map(String::as_str),
+            )
+        });
+    }
+}
+
 impl ActivityState {
     pub fn upsert(&mut self, item: crate::slack::models::ActivityItem) {
         let identity = item.identity();

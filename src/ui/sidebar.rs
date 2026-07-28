@@ -433,6 +433,32 @@ fn unreads_button<'a>(ws: &Workspace, selected: bool) -> Element<'a, Message> {
         .into()
 }
 
+fn threads_button<'a>(selected: bool) -> Element<'a, Message> {
+    let color = if selected {
+        theme::text_1()
+    } else {
+        theme::text_3()
+    };
+    let inner = row![
+        svg(icons::reply())
+            .width(Length::Fixed(theme::SIDEBAR_ICON))
+            .height(Length::Fixed(theme::SIDEBAR_ICON))
+            .style(theme::sidebar_icon(color)),
+        text("Threads").size(theme::TEXT_MD).color(color),
+    ]
+    .spacing(theme::SPACE_SM)
+    .align_y(Alignment::Center);
+
+    button(inner)
+        .width(Fill)
+        .padding([theme::SPACE_XS + 1.0, theme::SPACE_SM])
+        .style(theme::channel_row(selected))
+        .on_press(Message::Runtime(
+            crate::app::RuntimeMessage::MainViewSelected(crate::state::MainView::Threads),
+        ))
+        .into()
+}
+
 pub fn view<'a>(
     workspaces: &BTreeMap<TeamId, Workspace>,
     active_team: Option<&str>,
@@ -470,10 +496,10 @@ pub fn view<'a>(
     .padding([theme::SPACE_SM, theme::SPACE_SM]);
 
     let search = container(jump_to_button()).padding([0.0, theme::SPACE_SM]);
-    let pages = container(unreads_button(
-        ws,
-        main_view == crate::state::MainView::Unreads,
-    ))
+    let pages = container(column![
+        unreads_button(ws, main_view == crate::state::MainView::Unreads),
+        threads_button(main_view == crate::state::MainView::Threads),
+    ])
     .padding([0.0, theme::SPACE_SM]);
 
     let body = column![

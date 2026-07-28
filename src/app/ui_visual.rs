@@ -16,7 +16,8 @@ use iced_test::{Error, Simulator};
 use super::tests::{
     account_menu_app, activity_app, animated_reaction_app, dms_app, gif_picker_app,
     image_viewer_app, loaded_channel, login_app, multi_paragraph_emoji_app, profile_app,
-    search_app, settings_app, test_app, thread_unread_app, unreads_app, video_viewer_app,
+    search_app, settings_app, test_app, thread_unread_app, threads_app, unreads_app,
+    video_viewer_app,
 };
 use super::update::update;
 use super::view::view;
@@ -156,6 +157,20 @@ fn ui_visual_unreads_renders_grouped_messages() -> Result<(), Error> {
             if channel == "C_GENERAL"
     )));
     capture(&app, "unreads")?;
+    Ok(())
+}
+
+#[test]
+fn ui_visual_threads_renders_channel_and_dm_threads() -> Result<(), Error> {
+    let app = threads_app();
+    let mut ui = sim(&app);
+    ui.find("Threads")?;
+    ui.find("All")?;
+    ui.find("# general")?;
+    ui.find("Alice")?;
+    ui.find("Reply…")?;
+    drop(ui);
+    capture(&app, "threads")?;
     Ok(())
 }
 

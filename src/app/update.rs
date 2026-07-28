@@ -28,8 +28,8 @@ use super::{
     DmsState, FilePreview, HistoryLoadKind, ImageFetchAuth, ImageViewerImage, ImageViewerSource,
     ImageViewerState, MediaViewerKind, Message, PendingFileMessage, PendingScrollTarget,
     PreparedVideo, ProfileHoverState, ProfilePaneState, ReadTarget, SearchHit, SearchState,
-    TextSelection, TextSelectionPoint, TextSelectionSurface, ThreadKey, UnreadsSort, UnreadsState,
-    VideoViewerPlayback,
+    TextSelection, TextSelectionPoint, TextSelectionSurface, ThreadKey, ThreadsState, UnreadsSort,
+    UnreadsState, VideoViewerPlayback,
 };
 use iced::widget::text_editor::{Action, Content, Edit};
 

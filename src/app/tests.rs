@@ -1,6 +1,7 @@
 mod account;
 mod discovery;
 mod messaging;
+mod threads;
 mod unreads;
 
 use std::collections::{BTreeMap, HashMap};
@@ -487,6 +488,67 @@ pub(super) fn unreads_app() -> App {
     app.unreads
         .loaded
         .extend(["C_GENERAL".into(), "C_DEV".into()]);
+    app
+}
+
+pub(super) fn threads_app() -> App {
+    let mut app = test_app();
+    app.main_view = MainView::Threads;
+    app.threads_view.loaded = true;
+    let mut channel_root = msg(
+        "U_ALICE",
+        "1783372300.000100",
+        "A channel thread about shipping the desktop app",
+    );
+    channel_root.channel = Some("C_GENERAL".into());
+    channel_root.thread_ts = channel_root.ts.clone();
+    channel_root.reply_count = Some(2);
+    let mut channel_reply = msg(
+        "U_BOB",
+        "1783372400.000100",
+        "The latest build looks ready to test.",
+    );
+    channel_reply.channel = Some("C_GENERAL".into());
+    channel_reply.thread_ts = channel_root.ts.clone();
+    app.threads_view
+        .upsert(crate::slack::models::ThreadViewItem {
+            root_msg: channel_root,
+            unread_replies: vec![channel_reply],
+            ..Default::default()
+        });
+
+    {
+        let ws = app.active_workspace_mut().unwrap();
+        ws.channels.insert(
+            "D_ALICE".into(),
+            Channel {
+                id: "D_ALICE".into(),
+                is_im: true,
+                user: Some("U_ALICE".into()),
+                ..Default::default()
+            },
+        );
+    }
+    let mut dm_root = msg(
+        "U_ALICE",
+        "1783372100.000100",
+        "Can you review this before tomorrow?",
+    );
+    dm_root.channel = Some("D_ALICE".into());
+    dm_root.thread_ts = dm_root.ts.clone();
+    let mut dm_reply = msg(
+        SELF_USER,
+        "1783372200.000100",
+        "Yes, I’ll take a look tonight.",
+    );
+    dm_reply.channel = Some("D_ALICE".into());
+    dm_reply.thread_ts = dm_root.ts.clone();
+    app.threads_view
+        .upsert(crate::slack::models::ThreadViewItem {
+            root_msg: dm_root,
+            latest_replies: vec![dm_reply],
+            ..Default::default()
+        });
     app
 }
 

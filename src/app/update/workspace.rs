@@ -10,6 +10,52 @@ pub(super) fn activity_scrolled(app: &mut App, remaining: f32) -> Task<Message> 
     load_activity(app, cursor)
 }
 
+pub(super) fn threads_scrolled(app: &mut App, remaining: f32) -> Task<Message> {
+    if app.main_view != crate::state::MainView::Threads
+        || remaining > LOAD_OLDER_ACTIVITY_BOTTOM_PX
+        || !app.threads_view.loaded
+        || app.threads_view.loading
+        || !app.threads_view.has_more
+    {
+        return Task::none();
+    }
+    load_threads(app, app.threads_view.max_ts.clone())
+}
+
+pub(super) fn load_threads(app: &mut App, max_ts: Option<MessageTs>) -> Task<Message> {
+    if app.main_view != crate::state::MainView::Threads || app.threads_view.loading {
+        return Task::none();
+    }
+    let Some(team) = app.active_team.clone() else {
+        return Task::none();
+    };
+    let Some((transport, session)) = app.live() else {
+        return Task::none();
+    };
+    let Some(ws) = session.workspaces.get(&team) else {
+        return Task::none();
+    };
+    let transport = transport.clone();
+    let client = app.client.clone();
+    let ws = ws.clone();
+    let vip_only = app.threads_view.vip_only;
+    app.threads_view.load_seq = app.threads_view.load_seq.wrapping_add(1);
+    let seq = app.threads_view.load_seq;
+    app.threads_view.loading = true;
+    let requested_max_ts = max_ts.clone();
+    Task::perform(
+        async move { api::fetch_threads_view(&transport, &client, &ws, 20, max_ts, vip_only).await },
+        move |result| {
+            Message::Runtime(crate::app::RuntimeMessage::ThreadsLoaded {
+                team: team.clone(),
+                max_ts: requested_max_ts.clone(),
+                seq,
+                result,
+            })
+        },
+    )
+}
+
 pub(super) fn unreads_scrolled(app: &mut App, remaining: f32) -> Task<Message> {
     if app.main_view != crate::state::MainView::Unreads || remaining > LOAD_OLDER_ACTIVITY_BOTTOM_PX
     {
@@ -373,6 +419,7 @@ pub(super) fn select_workspace(app: &mut App, team: TeamId) -> Task<Message> {
     app.active_team = Some(team.clone());
     app.activity = ActivityState::default();
     app.unreads = UnreadsState::default();
+    app.threads_view = ThreadsState::default();
     app.dms = DmsState::default();
     app.show_account_menu = false;
     app.account_menu_open = false;
@@ -393,6 +440,7 @@ pub(super) fn select_workspace(app: &mut App, team: TeamId) -> Task<Message> {
 
     let activity_task = match app.main_view {
         crate::state::MainView::Unreads => load_unreads(app, None),
+        crate::state::MainView::Threads => load_threads(app, None),
         crate::state::MainView::Activity => load_activity(app, None),
         crate::state::MainView::Dms => load_dms(app, None),
         crate::state::MainView::Home => Task::none(),

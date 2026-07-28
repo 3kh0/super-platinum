@@ -7,12 +7,14 @@ mod activity;
 mod conversations;
 mod core;
 mod search;
+mod threads;
 mod users;
 
 pub use activity::*;
 pub use conversations::*;
 pub use core::*;
 pub use search::*;
+pub use threads::*;
 pub use users::*;
 
 #[cfg(test)]

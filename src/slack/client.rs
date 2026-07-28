@@ -236,6 +236,7 @@ impl PreparedRequest {
                 "/api/conversations.replies?",
                 "/api/conversations.mark?",
                 "/api/subscriptions.thread.mark?",
+                "/api/subscriptions.thread.getView?",
                 "/api/search.modules.messages?",
                 "/api/search.inline?",
             ]

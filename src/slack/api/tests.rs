@@ -215,6 +215,28 @@ fn thread_mark_request_includes_thread_and_latest_reply() {
 }
 
 #[test]
+fn threads_view_request_matches_slack_feed_fields() {
+    let request = subscriptions_thread_get_view(
+        &SlackClient::default(),
+        &workspace(),
+        20,
+        Some("1783372400.222222".into()),
+        false,
+    );
+    let fields = form_fields(&request);
+
+    assert!(request.url.contains("/api/subscriptions.thread.getView?"));
+    assert!(request.retry_safe());
+    assert!(fields.contains(&("limit".into(), "20".into())));
+    assert!(fields.contains(&("fetch_threads_state".into(), "true".into())));
+    assert!(fields.contains(&("priority_mode".into(), "all".into())));
+    assert!(fields.contains(&("max_ts".into(), "1783372400.222222".into())));
+
+    let vip = subscriptions_thread_get_view(&SlackClient::default(), &workspace(), 20, None, true);
+    assert!(form_fields(&vip).contains(&("priority_mode".into(), "priority".into())));
+}
+
+#[test]
 fn conversations_info_request_targets_channel() {
     let request = conversations_info(&SlackClient::default(), &workspace(), "C123".into());
     let fields = form_fields(&request);

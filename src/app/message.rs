@@ -365,6 +365,21 @@ pub enum RuntimeMessage {
         seq: u64,
         result: Result<HistoryPage, SlackError>,
     },
+    ThreadsScrolled {
+        remaining: f32,
+    },
+    ThreadsVipSelected(bool),
+    ThreadsLoaded {
+        team: TeamId,
+        max_ts: Option<MessageTs>,
+        seq: u64,
+        result: Result<ThreadsViewPage, SlackError>,
+    },
+    ThreadFeedSelected {
+        channel: ChannelId,
+        root_ts: MessageTs,
+        unread_range: Option<(MessageTs, MessageTs)>,
+    },
     ActivityScrolled {
         remaining: f32,
     },

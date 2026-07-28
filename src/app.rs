@@ -15,8 +15,8 @@ use crate::slack::events::RtEvent;
 use crate::slack::models::{
     ActivityFeedPage, BootData, Channel, ChannelId, ChannelSectionsPage, ClientDmsPage, CountsPage,
     Emoji, HistoryPage, Message as SlackMessage, MessageTs, MessagesListPage, ProfileExtrasPage,
-    SearchMessagesPage, SentMessage, SidebarDmsPage, TeamId, TeamProfileField, User, UserId,
-    UserProfile,
+    SearchMessagesPage, SentMessage, SidebarDmsPage, TeamId, TeamProfileField, ThreadsViewPage,
+    User, UserId, UserProfile,
 };
 use crate::slack::realtime::Connection;
 use crate::slack::{Error as SlackError, SlackClient, Transport};
@@ -40,8 +40,8 @@ pub use model::{
     ActivityState, ComposerAttachment, DmsState, FilePreview, HistoryLoadKind, ImageFetchAuth,
     ImageViewerImage, ImageViewerSource, ImageViewerState, LoadedHistory, MediaViewerKind,
     PendingFileMessage, PreparedVideo, ProfileHoverState, ProfilePaneState, SearchHit, SearchState,
-    TextSelection, TextSelectionPoint, TextSelectionSurface, UnreadsSort, UnreadsState,
-    VideoViewerPlayback,
+    TextSelection, TextSelectionPoint, TextSelectionSurface, ThreadsState, UnreadsSort,
+    UnreadsState, VideoViewerPlayback,
 };
 use runtime::merge_history_pages;
 pub use runtime::run;
@@ -75,6 +75,7 @@ pub struct App {
     thread_open: bool,
     main_view: crate::state::MainView,
     unreads: UnreadsState,
+    threads_view: ThreadsState,
     activity: ActivityState,
     dms: DmsState,
     workspaces: BTreeMap<TeamId, Workspace>,

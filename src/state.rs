@@ -41,6 +41,7 @@ pub enum MainView {
     #[default]
     Home,
     Unreads,
+    Threads,
     Dms,
     Activity,
 }

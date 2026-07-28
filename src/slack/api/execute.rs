@@ -62,6 +62,22 @@ pub async fn mark_thread(
     Ok(())
 }
 
+pub async fn fetch_threads_view(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    limit: u32,
+    max_ts: Option<MessageTs>,
+    vip_only: bool,
+) -> Result<ThreadsViewPage, Error> {
+    let value = transport
+        .execute(subscriptions_thread_get_view(
+            client, workspace, limit, max_ts, vip_only,
+        ))
+        .await?;
+    decode(value, "subscriptions.thread.getView")
+}
+
 pub async fn fetch_counts(
     transport: &Transport,
     client: &SlackClient,

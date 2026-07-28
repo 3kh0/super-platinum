@@ -189,7 +189,10 @@ fn main_view(app: &App) -> Element<'_, Message> {
         &app.workspaces,
         app.active_team.as_deref(),
         ws,
-        if app.main_view == crate::state::MainView::Unreads {
+        if matches!(
+            app.main_view,
+            crate::state::MainView::Unreads | crate::state::MainView::Threads
+        ) {
             None
         } else {
             app.active_channel.as_deref()
@@ -205,6 +208,35 @@ fn main_view(app: &App) -> Element<'_, Message> {
         container(resize_handle()).align_right(Fill).height(Fill),
     ]
     .into();
+
+    if app.main_view == crate::state::MainView::Threads {
+        let hovered = app
+            .hovered_message
+            .as_ref()
+            .filter(|(thread, _)| *thread)
+            .map(|(_, ts)| ts.as_str());
+        let content = ui::threads::view(
+            ws,
+            &app.threads_view,
+            &app.file_previews,
+            &app.avatar_previews,
+            &app.emoji_previews,
+            app.emoji_animation_started.elapsed(),
+            hovered,
+            app.text_selection.as_ref(),
+            app.profile_hover.as_ref(),
+            &app.thread_composer,
+            &app.thread_composer_attachments,
+        );
+        let body = row![rail, sidebar, content]
+            .spacing(ui::theme::gap())
+            .width(Fill)
+            .height(Fill);
+        return with_modal(
+            app,
+            with_account_menu(app, shell(app, with_profile_pane(app, ws, body.into()))),
+        );
+    }
 
     if app.main_view == crate::state::MainView::Unreads {
         let hovered = app

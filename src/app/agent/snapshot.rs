@@ -109,6 +109,24 @@ pub fn dump_state(app: &App) -> Value {
         })).collect::<Vec<_>>(),
     });
 
+    let threads = json!({
+        "loading": app.threads_view.loading,
+        "loaded": app.threads_view.loaded,
+        "vip_only": app.threads_view.vip_only,
+        "has_more": app.threads_view.has_more,
+        "item_count": app.threads_view.items.len(),
+        "selected": app.threads_view.selected.as_ref().map(|(channel, root_ts)| {
+            json!({"channel": channel, "root_ts": root_ts})
+        }),
+        "items": app.threads_view.items.iter().take(20).map(|item| json!({
+            "channel": item.channel(),
+            "root_ts": item.root_ts(),
+            "latest_ts": item.latest_ts(),
+            "unread_reply_count": item.unread_replies.len(),
+            "visible_reply_count": item.replies().len(),
+        })).collect::<Vec<_>>(),
+    });
+
     let profile = app.profile_pane.as_ref().map(|pane| {
         let details = app.active_workspace().and_then(|workspace| {
             workspace
@@ -133,6 +151,7 @@ pub fn dump_state(app: &App) -> Value {
         "main_view": main_view_label(app.main_view),
         "activity": activity,
         "dms": dms,
+        "threads": threads,
         "profile": profile,
         "active_team": app.active_team,
         "active_channel": app.active_channel,
@@ -210,7 +229,7 @@ pub(super) fn help_data() -> Value {
             {"cmd": "open-profile", "args": {"user": "user id"}, "desc": "open a user profile pane"},
             {"cmd": "close-profile", "desc": "close the profile pane"},
             {"cmd": "screenshot", "args": {"path": "optional"}, "desc": "capture window PNG"},
-            {"cmd": "main-view", "args": {"view": "home|unreads|dms|activity"}, "desc": "switch main surface"},
+            {"cmd": "main-view", "args": {"view": "home|unreads|threads|dms|activity"}, "desc": "switch main surface"},
             {"cmd": "activity-select", "args": {"index": "usize"}, "desc": "open an activity item in the right panel"},
             {"cmd": "toast", "args": {"text": "string"}, "desc": "show a toast"},
             {"cmd": "allow-destructive", "args": {"enabled": "bool"}, "desc": "allow send/etc"},

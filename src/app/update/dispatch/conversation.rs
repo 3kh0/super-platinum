@@ -226,6 +226,13 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                             messages.mention_count = 0;
                         }
                     }
+                    if let Some(item) = app.threads_view.items.iter_mut().find(|item| {
+                        item.channel() == Some(&channel) && item.root_ts() == Some(&root_ts)
+                    }) {
+                        item.unread_replies.retain(|reply| {
+                            crate::state::cmp_ts(reply.ts.as_deref(), Some(&ts)).is_gt()
+                        });
+                    }
                     reconcile_activity_read(app, &team, &channel, Some(&root_ts));
                     mark_workspace_dirty(app, &team);
                 }
@@ -269,18 +276,24 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
             }
             match result {
                 Ok(sent) => {
+                    let message = SlackMessage {
+                        ts: Some(sent.ts),
+                        channel: Some(channel.clone()),
+                        thread_ts: Some(root_ts.clone()),
+                        ..sent.message
+                    };
                     if let Some(cm) =
                         app.threads
                             .get_mut(&(team.clone(), channel.clone(), root_ts.clone()))
                     {
-                        cm.confirm(
-                            &client_msg_id,
-                            SlackMessage {
-                                ts: Some(sent.ts),
-                                thread_ts: Some(root_ts),
-                                ..sent.message
-                            },
-                        );
+                        cm.confirm(&client_msg_id, message.clone());
+                    }
+                    if let Some(item) = app.threads_view.items.iter_mut().find(|item| {
+                        item.channel() == Some(&channel) && item.root_ts() == Some(&root_ts)
+                    }) {
+                        item.latest_replies
+                            .retain(|reply| reply.ts.as_deref() != message.ts.as_deref());
+                        item.latest_replies.push(message);
                     }
                 }
                 Err(e) => {

@@ -28,6 +28,7 @@ impl App {
             thread_open: false,
             main_view: crate::state::MainView::Home,
             unreads: UnreadsState::default(),
+            threads_view: ThreadsState::default(),
             activity: ActivityState::default(),
             dms: DmsState::default(),
             workspaces: BTreeMap::new(),
@@ -197,6 +198,7 @@ impl App {
         self.thread_open = false;
         self.main_view = crate::state::MainView::Home;
         self.unreads = UnreadsState::default();
+        self.threads_view = ThreadsState::default();
         self.activity = ActivityState::default();
         self.dms = DmsState::default();
         self.workspaces.clear();

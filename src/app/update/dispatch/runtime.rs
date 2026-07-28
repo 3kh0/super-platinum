@@ -9,6 +9,7 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                 .is_some_and(|ws| ws.rt_generation == generation)
                 && workspace_cacheable_event(&event);
             let activity_pushed = matches!(event, RtEvent::ActivityUpdated(_));
+            let thread_message = matches!(&event, RtEvent::Message(msg) if msg.thread_ts.is_some());
             let dm_message = match &event {
                 RtEvent::Message(msg) if msg.ts.is_some() => {
                     msg.channel.clone().map(|channel| (channel, msg.clone()))
@@ -36,6 +37,9 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                 if activity_pushed {
                     tasks.push(hydrate_activity_messages(app));
                     tasks.push(refresh_counts(app));
+                }
+                if thread_message && app.main_view == crate::state::MainView::Threads {
+                    tasks.push(load_threads(app, None));
                 }
                 if let Some((channel, msg)) = dm_message {
                     let is_dm = app
@@ -103,6 +107,13 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
             app.main_view = view;
             if view == crate::state::MainView::Unreads {
                 return Task::batch([refresh_counts(app), load_unreads(app, None)]);
+            }
+            if view == crate::state::MainView::Threads {
+                let mut tasks = vec![refresh_counts(app)];
+                if !app.threads_view.loaded && !app.threads_view.loading {
+                    tasks.push(load_threads(app, None));
+                }
+                return Task::batch(tasks);
             }
             if view == crate::state::MainView::Activity {
                 let mut tasks = vec![refresh_counts(app)];
@@ -219,6 +230,104 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                     app.unreads.mark_when_loaded.remove(&channel);
                     app.unreads.failed.insert(channel.clone());
                     tracing::warn!(%team, %channel, %error, "unreads history load failed");
+                    Task::none()
+                }
+            }
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::ThreadsScrolled { remaining }) => {
+            threads_scrolled(app, remaining)
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::ThreadsVipSelected(vip_only)) => {
+            if app.threads_view.vip_only == vip_only {
+                return Task::none();
+            }
+            app.threads_view.vip_only = vip_only;
+            app.threads_view.loaded = false;
+            app.threads_view.has_more = false;
+            app.threads_view.max_ts = None;
+            app.threads_view.items.clear();
+            load_threads(app, None)
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::ThreadFeedSelected {
+            channel,
+            root_ts,
+            unread_range,
+        }) => {
+            app.threads_view.selected = Some((channel.clone(), root_ts.clone()));
+            super::update_inner(
+                app,
+                Message::Conversation(crate::app::ConversationMessage::ThreadOpened {
+                    channel,
+                    ts: root_ts,
+                    unread_range,
+                }),
+            )
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::ThreadsLoaded {
+            team,
+            max_ts,
+            seq,
+            result,
+        }) => {
+            if app.active_team.as_deref() != Some(team.as_str()) || app.threads_view.load_seq != seq
+            {
+                return Task::none();
+            }
+            app.threads_view.loading = false;
+            match result {
+                Ok(page) => {
+                    if max_ts.is_none() {
+                        app.threads_view.items.clear();
+                    }
+                    app.threads_view.loaded = true;
+                    app.threads_view.has_more = page.has_more;
+                    app.threads_view.max_ts = page.max_ts;
+                    let mut messages = Vec::new();
+                    for mut item in page.threads {
+                        let Some(channel) = item.channel().cloned() else {
+                            continue;
+                        };
+                        let Some(root_ts) = item.root_ts().cloned() else {
+                            continue;
+                        };
+                        item.root_msg.channel.get_or_insert_with(|| channel.clone());
+                        let key = (team.clone(), channel.clone(), root_ts.clone());
+                        let cached = app.threads.entry(key).or_default();
+                        cached.upsert(item.root_msg.clone());
+                        for reply in item
+                            .unread_replies
+                            .iter_mut()
+                            .chain(&mut item.latest_replies)
+                        {
+                            reply.channel.get_or_insert_with(|| channel.clone());
+                            cached.upsert(reply.clone());
+                        }
+                        cached.loaded = true;
+                        cached.last_read = item
+                            .root_msg
+                            .extra
+                            .get("last_read")
+                            .and_then(|value| value.as_str())
+                            .map(str::to_owned);
+                        messages.push(item.root_msg.clone());
+                        messages.extend(item.unread_replies.iter().cloned());
+                        messages.extend(item.latest_replies.iter().cloned());
+                        app.threads_view.upsert(item);
+                    }
+                    Task::batch([
+                        hydrate_missing_users(app, &team, &messages),
+                        hydrate_message_channels(app, &team, &messages),
+                        hydrate_emojis(app, &team, &messages),
+                        load_avatar_previews(app, &team, messages),
+                    ])
+                }
+                Err(error) => {
+                    tracing::warn!(%team, %error, "threads feed load failed");
+                    app.toast(format!("Could not load threads: {error}"));
                     Task::none()
                 }
             }

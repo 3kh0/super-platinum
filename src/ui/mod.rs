@@ -17,4 +17,5 @@ pub mod settings;
 pub mod sidebar;
 pub mod theme;
 pub mod thread;
+pub mod threads;
 pub mod unreads;
