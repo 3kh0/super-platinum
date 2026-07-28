@@ -12,7 +12,10 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
         !app.cache_dirty.is_empty() || app.workspaces.values().any(|ws| !ws.typing.is_empty());
     let mut subs = Vec::new();
     if needs_tick {
-        subs.push(iced::time::every(Duration::from_secs(1)).map(|_| Message::Tick));
+        subs.push(
+            iced::time::every(Duration::from_secs(1))
+                .map(|_| Message::Runtime(crate::app::RuntimeMessage::Tick)),
+        );
     }
 
     subs.push(iced::event::listen_with(palette_hotkey));
@@ -21,7 +24,7 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
     subs.push(iced::event::listen_with(
         |event, _status, _id| match event {
             iced::Event::Mouse(iced::mouse::Event::WheelScrolled { .. }) => {
-                Some(Message::ScrollActivity)
+                Some(Message::Runtime(crate::app::RuntimeMessage::ScrollActivity))
             }
             _ => None,
         },
@@ -63,18 +66,23 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
             .any(|attachment| attachment.uploading)
         || app.scrollbar_visible_until.is_some()
     {
-        subs.push(iced::time::every(Duration::from_millis(50)).map(|_| Message::AnimationTick));
+        subs.push(
+            iced::time::every(Duration::from_millis(50))
+                .map(|_| Message::Runtime(crate::app::RuntimeMessage::AnimationTick)),
+        );
     }
 
     if app.sidebar_resizing {
         subs.push(iced::event::listen_with(
             |event, _status, _id| match event {
-                iced::Event::Mouse(iced::mouse::Event::CursorMoved { position }) => {
-                    Some(Message::SidebarResizeMoved(position.x))
-                }
+                iced::Event::Mouse(iced::mouse::Event::CursorMoved { position }) => Some(
+                    Message::Runtime(crate::app::RuntimeMessage::SidebarResizeMoved(position.x)),
+                ),
                 iced::Event::Mouse(iced::mouse::Event::ButtonReleased(
                     iced::mouse::Button::Left,
-                )) => Some(Message::SidebarResizeEnded),
+                )) => Some(Message::Runtime(
+                    crate::app::RuntimeMessage::SidebarResizeEnded,
+                )),
                 _ => None,
             },
         ));
@@ -115,7 +123,9 @@ fn image_viewer_navigation(
         iced::Event::Keyboard(Event::KeyPressed {
             key: Key::Named(Named::Escape),
             ..
-        }) => Some(Message::ImageViewerClosed),
+        }) => Some(Message::Discovery(
+            crate::app::DiscoveryMessage::ImageViewerClosed,
+        )),
         _ => None,
     }
 }
@@ -126,9 +136,9 @@ fn cursor_position(
     _id: iced::window::Id,
 ) -> Option<Message> {
     match event {
-        iced::Event::Mouse(iced::mouse::Event::CursorMoved { position }) => {
-            Some(Message::CursorMoved(position))
-        }
+        iced::Event::Mouse(iced::mouse::Event::CursorMoved { position }) => Some(
+            Message::Workspace(crate::app::WorkspaceMessage::CursorMoved(position)),
+        ),
         _ => None,
     }
 }
@@ -144,7 +154,9 @@ fn profile_navigation(
         iced::Event::Keyboard(Event::KeyPressed {
             key: Key::Named(Named::Escape),
             ..
-        }) => Some(Message::ProfileDismissed),
+        }) => Some(Message::Workspace(
+            crate::app::WorkspaceMessage::ProfileDismissed,
+        )),
         _ => None,
     }
 }
@@ -155,9 +167,9 @@ fn file_drop(
     _id: iced::window::Id,
 ) -> Option<Message> {
     match event {
-        iced::Event::Window(iced::window::Event::FileDropped(path)) => {
-            Some(Message::FilesDropped(vec![path]))
-        }
+        iced::Event::Window(iced::window::Event::FileDropped(path)) => Some(Message::Conversation(
+            crate::app::ConversationMessage::FilesDropped(vec![path]),
+        )),
         _ => None,
     }
 }
@@ -175,9 +187,9 @@ fn selection_copy_hotkey(
         return None;
     };
     match key {
-        Key::Character(c) if c.as_str().eq_ignore_ascii_case("c") && modifiers.command() => {
-            Some(Message::TextSelectionCopyRequested)
-        }
+        Key::Character(c) if c.as_str().eq_ignore_ascii_case("c") && modifiers.command() => Some(
+            Message::Workspace(crate::app::WorkspaceMessage::TextSelectionCopyRequested),
+        ),
         _ => None,
     }
 }
@@ -188,9 +200,9 @@ fn selection_mouse_release(
     _id: iced::window::Id,
 ) -> Option<Message> {
     match event {
-        iced::Event::Mouse(iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left)) => {
-            Some(Message::TextSelectionEnded)
-        }
+        iced::Event::Mouse(iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left)) => Some(
+            Message::Workspace(crate::app::WorkspaceMessage::TextSelectionEnded),
+        ),
         _ => None,
     }
 }
@@ -216,9 +228,9 @@ fn palette_hotkey(
         return None;
     };
     match key {
-        Key::Character(c) if c.as_str().eq_ignore_ascii_case("k") && modifiers.command() => {
-            Some(Message::PaletteToggled)
-        }
+        Key::Character(c) if c.as_str().eq_ignore_ascii_case("k") && modifiers.command() => Some(
+            Message::Discovery(crate::app::DiscoveryMessage::PaletteToggled),
+        ),
         _ => None,
     }
 }
@@ -234,9 +246,15 @@ fn palette_navigation(
         return None;
     };
     match key {
-        Key::Named(Named::ArrowUp) => Some(Message::PaletteMoved(-1)),
-        Key::Named(Named::ArrowDown) => Some(Message::PaletteMoved(1)),
-        Key::Named(Named::Escape) => Some(Message::PaletteClosed),
+        Key::Named(Named::ArrowUp) => Some(Message::Discovery(
+            crate::app::DiscoveryMessage::PaletteMoved(-1),
+        )),
+        Key::Named(Named::ArrowDown) => Some(Message::Discovery(
+            crate::app::DiscoveryMessage::PaletteMoved(1),
+        )),
+        Key::Named(Named::Escape) => Some(Message::Discovery(
+            crate::app::DiscoveryMessage::PaletteClosed,
+        )),
         _ => None,
     }
 }
@@ -246,9 +264,15 @@ fn map_rt_update((team, update): (TeamId, RtUpdate)) -> Message {
         RtUpdate::Connected {
             generation,
             connection,
-        } => Message::RtConnected(team, generation, connection),
-        RtUpdate::Event { generation, event } => Message::Realtime(team, generation, event),
-        RtUpdate::Disconnected { generation } => Message::RtDisconnected(team, generation),
+        } => Message::Runtime(crate::app::RuntimeMessage::RtConnected(
+            team, generation, connection,
+        )),
+        RtUpdate::Event { generation, event } => Message::Runtime(
+            crate::app::RuntimeMessage::Realtime(team, generation, event),
+        ),
+        RtUpdate::Disconnected { generation } => {
+            Message::Runtime(crate::app::RuntimeMessage::RtDisconnected(team, generation))
+        }
     }
 }
 

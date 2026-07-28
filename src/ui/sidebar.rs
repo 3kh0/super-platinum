@@ -227,7 +227,9 @@ fn channel_button<'a>(
         .width(Fill)
         .padding([3.0, theme::SPACE_SM])
         .style(theme::channel_row(active))
-        .on_press(Message::ChannelSelected(c.id.clone()))
+        .on_press(Message::Conversation(
+            crate::app::ConversationMessage::ChannelSelected(c.id.clone()),
+        ))
         .into()
 }
 
@@ -357,7 +359,9 @@ fn workspace_button<'a>(ws: &Workspace, active: bool) -> Element<'a, Message> {
     .width(Fill)
     .padding([3.0, theme::SPACE_SM])
     .style(theme::channel_row(active))
-    .on_press(Message::WorkspaceSelected(ws.team_id.clone()))
+    .on_press(Message::Conversation(
+        crate::app::ConversationMessage::WorkspaceSelected(ws.team_id.clone()),
+    ))
     .into()
 }
 
@@ -383,7 +387,9 @@ fn jump_to_button<'a>() -> Element<'a, Message> {
         .width(Fill)
         .padding([theme::SPACE_XS + 1.0, theme::SPACE_SM])
         .style(theme::channel_row(false))
-        .on_press(Message::PaletteToggled)
+        .on_press(Message::Discovery(
+            crate::app::DiscoveryMessage::PaletteToggled,
+        ))
         .into()
 }
 

@@ -30,19 +30,21 @@ pub fn view<'a>(
         icons::home(),
         view == MainView::Home,
         0,
-        Message::MainViewSelected(MainView::Home),
+        Message::Runtime(crate::app::RuntimeMessage::MainViewSelected(MainView::Home)),
     );
     let dms = nav_button(
         icons::dms(),
         view == MainView::Dms,
         dm_unread,
-        Message::MainViewSelected(MainView::Dms),
+        Message::Runtime(crate::app::RuntimeMessage::MainViewSelected(MainView::Dms)),
     );
     let notifications = nav_button(
         icons::bell(),
         view == MainView::Activity,
         activity_unread,
-        Message::MainViewSelected(MainView::Activity),
+        Message::Runtime(crate::app::RuntimeMessage::MainViewSelected(
+            MainView::Activity,
+        )),
     );
 
     let account = button(account_avatar(ws, avatars))
@@ -50,7 +52,9 @@ pub fn view<'a>(
         .height(Length::Fixed(ICON_SIZE))
         .padding(0)
         .style(theme::rail_button)
-        .on_press(Message::AccountMenuToggled);
+        .on_press(Message::Runtime(
+            crate::app::RuntimeMessage::AccountMenuToggled,
+        ));
 
     let body = column![home, dms, notifications, Space::new().height(Fill), account]
         .spacing(theme::SPACE_XS + 2.0)
@@ -157,13 +161,17 @@ pub fn account_menu<'a>(
         menu_button(
             "Set offline",
             false,
-            Message::SelfPresenceSelected(Presence::Away),
+            Message::Runtime(crate::app::RuntimeMessage::SelfPresenceSelected(
+                Presence::Away,
+            )),
         )
     } else {
         menu_button(
             "Set active",
             false,
-            Message::SelfPresenceSelected(Presence::Active),
+            Message::Runtime(crate::app::RuntimeMessage::SelfPresenceSelected(
+                Presence::Active,
+            )),
         )
     };
 
@@ -184,21 +192,27 @@ pub fn account_menu<'a>(
         menu = menu.push(menu_button(
             &session.account_label(),
             active_account == Some(account_id.as_str()),
-            Message::AccountSelected(account_id.clone()),
+            Message::Runtime(crate::app::RuntimeMessage::AccountSelected(
+                account_id.clone(),
+            )),
         ));
     }
     menu = menu
         .push(menu_button(
             "+ Add another account",
             false,
-            Message::AddAccountPressed,
+            Message::Runtime(crate::app::RuntimeMessage::AddAccountPressed),
         ))
         .push(theme::divider())
-        .push(menu_button("Settings", false, Message::SettingsOpened))
+        .push(menu_button(
+            "Settings",
+            false,
+            Message::Runtime(crate::app::RuntimeMessage::SettingsOpened),
+        ))
         .push(menu_button(
             "Sign out of this account",
             false,
-            Message::SignOutPressed,
+            Message::Runtime(crate::app::RuntimeMessage::SignOutPressed),
         ))
         .spacing(theme::SPACE_XS);
 

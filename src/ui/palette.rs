@@ -27,7 +27,10 @@ pub fn modal<'a>(
     let layers = motion::overlay(open, move |anim, at| {
         let progress = motion::t(anim, at);
         let alpha = motion::fade(progress);
-        let scrim = motion::scrim(progress, Message::PaletteClosed);
+        let scrim = motion::scrim(
+            progress,
+            Message::Discovery(crate::app::DiscoveryMessage::PaletteClosed),
+        );
         let card = motion::zoom_y(card(ws, state, avatars, alpha), progress, -8.0);
         let centered = container(card)
             .center_x(Fill)
@@ -36,7 +39,9 @@ pub fn modal<'a>(
 
         Element::from(stack![scrim, centered].width(Fill).height(Fill))
     })
-    .on_finish_maybe((!open).then_some(Message::PaletteDismissed));
+    .on_finish_maybe((!open).then_some(Message::Discovery(
+        crate::app::DiscoveryMessage::PaletteDismissed,
+    )));
 
     stack![base, layers].into()
 }
@@ -50,7 +55,9 @@ fn card<'a>(
     let input = text_input("Jump to channel or person…", &state.query)
         .id(INPUT_ID)
         .on_input(Message::PaletteQueryChanged)
-        .on_submit(Message::PaletteSubmitted)
+        .on_submit(Message::Discovery(
+            crate::app::DiscoveryMessage::PaletteSubmitted,
+        ))
         .style(theme::fade_input(theme::input, alpha))
         .size(theme::TEXT_MD)
         .padding([theme::SPACE_SM, theme::SPACE_MD])
@@ -165,7 +172,9 @@ fn entry_row<'a>(
         .width(Fill)
         .padding([theme::SPACE_XS + 1.0, theme::SPACE_SM])
         .style(theme::fade_button(theme::channel_row(selected), alpha))
-        .on_press(Message::PaletteEntryPressed(index))
+        .on_press(Message::Discovery(
+            crate::app::DiscoveryMessage::PaletteEntryPressed(index),
+        ))
         .into()
 }
 

@@ -49,7 +49,9 @@ pub fn list_panel<'a>(
             button(text("Unread").size(theme::TEXT_SM))
                 .style(theme::reaction_button(activity.unread_only))
                 .padding([theme::SPACE_XS, theme::SPACE_SM])
-                .on_press(Message::ActivityUnreadOnlyToggled),
+                .on_press(Message::Runtime(
+                    crate::app::RuntimeMessage::ActivityUnreadOnlyToggled,
+                )),
         )
         .spacing(theme::SPACE_SM)
         .align_y(Alignment::Center)
@@ -86,11 +88,13 @@ pub fn list_panel<'a>(
             ));
         }
         scrollable(list.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
-            .on_scroll(|viewport| Message::ActivityScrolled {
-                remaining: (viewport.content_bounds().height
-                    - viewport.bounds().height
-                    - viewport.absolute_offset().y)
-                    .max(0.0),
+            .on_scroll(|viewport| {
+                Message::Runtime(crate::app::RuntimeMessage::ActivityScrolled {
+                    remaining: (viewport.content_bounds().height
+                        - viewport.bounds().height
+                        - viewport.absolute_offset().y)
+                        .max(0.0),
+                })
             })
             .style(theme::scrollbar)
             .height(Fill)
@@ -239,7 +243,9 @@ fn activity_row<'a>(
         .width(Fill)
         .padding([theme::SPACE_XS + 2.0, 0.0])
         .style(theme::activity_row(active, item.is_unread))
-        .on_press(Message::ActivitySelected(item.key.clone()))
+        .on_press(Message::Runtime(
+            crate::app::RuntimeMessage::ActivitySelected(item.key.clone()),
+        ))
         .into()
 }
 

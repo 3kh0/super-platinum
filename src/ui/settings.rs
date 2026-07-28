@@ -23,7 +23,10 @@ pub fn modal<'a>(
     let layers = motion::overlay(open, move |anim, at| {
         let progress = motion::t(anim, at);
         let alpha = motion::fade(progress);
-        let scrim = motion::scrim(progress, Message::SettingsClosed);
+        let scrim = motion::scrim(
+            progress,
+            Message::Runtime(crate::app::RuntimeMessage::SettingsClosed),
+        );
         let card = motion::zoom_y(
             card(settings, color_drafts, color_errors, alpha),
             progress,
@@ -36,7 +39,9 @@ pub fn modal<'a>(
 
         Element::from(stack![scrim, centered].width(Fill).height(Fill))
     })
-    .on_finish_maybe((!open).then_some(Message::SettingsDismissed));
+    .on_finish_maybe((!open).then_some(Message::Runtime(
+        crate::app::RuntimeMessage::SettingsDismissed,
+    )));
 
     stack![base, layers].into()
 }
@@ -131,7 +136,9 @@ fn preset_section(selected: ThemePreset, alpha: f32) -> Element<'static, Message
                     theme::preset_card(preset == selected),
                     alpha,
                 ))
-                .on_press(Message::SettingsPresetSelected(preset)),
+                .on_press(Message::Runtime(
+                    crate::app::RuntimeMessage::SettingsPresetSelected(preset),
+                )),
         );
     }
     cards.into()
@@ -146,7 +153,9 @@ fn background_section<'a>(settings: &'a Settings, alpha: f32) -> Element<'a, Mes
             button(text("Choose image").size(theme::TEXT_SM))
                 .padding([theme::SPACE_XS, theme::SPACE_SM])
                 .style(theme::fade_button(theme::secondary_button, alpha))
-                .on_press(Message::SettingsBackgroundPickerOpened),
+                .on_press(Message::Runtime(
+                    crate::app::RuntimeMessage::SettingsBackgroundPickerOpened
+                )),
         ]
         .spacing(theme::SPACE_SM)
         .into();
@@ -159,15 +168,17 @@ fn background_section<'a>(settings: &'a Settings, alpha: f32) -> Element<'a, Mes
                 theme::preset_card(background.fit == BackgroundFit::Cover),
                 alpha,
             ))
-            .on_press(Message::SettingsBackgroundFitChanged(BackgroundFit::Cover)),
+            .on_press(Message::Runtime(
+                crate::app::RuntimeMessage::SettingsBackgroundFitChanged(BackgroundFit::Cover)
+            )),
         button(text("Contain").size(theme::TEXT_SM))
             .padding([theme::SPACE_XS, theme::SPACE_SM])
             .style(theme::fade_button(
                 theme::preset_card(background.fit == BackgroundFit::Contain),
                 alpha,
             ))
-            .on_press(Message::SettingsBackgroundFitChanged(
-                BackgroundFit::Contain
+            .on_press(Message::Runtime(
+                crate::app::RuntimeMessage::SettingsBackgroundFitChanged(BackgroundFit::Contain)
             )),
     ]
     .spacing(theme::SPACE_SM);
@@ -187,11 +198,15 @@ fn background_section<'a>(settings: &'a Settings, alpha: f32) -> Element<'a, Mes
             button(text("Replace").size(theme::TEXT_SM))
                 .padding([theme::SPACE_XS, theme::SPACE_SM])
                 .style(theme::fade_button(theme::secondary_button, alpha))
-                .on_press(Message::SettingsBackgroundPickerOpened),
+                .on_press(Message::Runtime(
+                    crate::app::RuntimeMessage::SettingsBackgroundPickerOpened
+                )),
             button(text("Remove").size(theme::TEXT_SM))
                 .padding([theme::SPACE_XS, theme::SPACE_SM])
                 .style(theme::fade_button(theme::secondary_button, alpha))
-                .on_press(Message::SettingsBackgroundRemoved),
+                .on_press(Message::Runtime(
+                    crate::app::RuntimeMessage::SettingsBackgroundRemoved
+                )),
         ]
         .spacing(theme::SPACE_SM)
         .align_y(Alignment::Center),
@@ -232,9 +247,9 @@ fn color_section<'a>(
             button(text("Use preset colors").size(theme::TEXT_SM))
                 .padding([theme::SPACE_XS, theme::SPACE_SM])
                 .style(theme::fade_button(theme::secondary_button, alpha))
-                .on_press_maybe(
-                    (!settings.colors.is_empty()).then_some(Message::SettingsPresetColorsRestored),
-                ),
+                .on_press_maybe((!settings.colors.is_empty()).then_some(Message::Runtime(
+                    crate::app::RuntimeMessage::SettingsPresetColorsRestored
+                )),),
         ]
         .align_y(Alignment::Center),
         text("Leave a field empty to use the preset value.")
@@ -246,7 +261,11 @@ fn color_section<'a>(
     for role in ColorRole::ALL {
         let value = drafts.get(&role).map_or("", String::as_str);
         let input = text_input("Preset", value)
-            .on_input(move |value| Message::SettingsRoleColorChanged(role, value))
+            .on_input(move |value| {
+                Message::Runtime(crate::app::RuntimeMessage::SettingsRoleColorChanged(
+                    role, value,
+                ))
+            })
             .size(theme::TEXT_SM)
             .padding([theme::SPACE_XS, theme::SPACE_SM])
             .style(theme::fade_input(theme::input, alpha))
@@ -357,12 +376,12 @@ fn actions<'a>(alpha: f32) -> Element<'a, Message> {
         button(text("Reset appearance").size(theme::TEXT_SM))
             .style(theme::fade_button(theme::secondary_button, alpha))
             .padding([theme::SPACE_XS, theme::SPACE_SM])
-            .on_press(Message::SettingsReset),
+            .on_press(Message::Runtime(crate::app::RuntimeMessage::SettingsReset)),
         Space::new().width(Fill),
         button(text("Done").size(theme::TEXT_SM))
             .style(theme::fade_button(theme::primary_button, alpha))
             .padding([theme::SPACE_XS, theme::SPACE_SM])
-            .on_press(Message::SettingsClosed),
+            .on_press(Message::Runtime(crate::app::RuntimeMessage::SettingsClosed)),
     ]
     .align_y(Alignment::Center)
     .into()

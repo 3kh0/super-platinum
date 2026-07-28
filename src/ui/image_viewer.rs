@@ -35,7 +35,10 @@ pub fn overlay<'a>(
     let layers = motion::overlay(viewer.open, move |anim, at| {
         let progress = motion::t(anim, at);
         let alpha = motion::fade(progress);
-        let scrim = motion::scrim(progress, Message::ImageViewerClosed);
+        let scrim = motion::scrim(
+            progress,
+            Message::Discovery(crate::app::DiscoveryMessage::ImageViewerClosed),
+        );
         let content = responsive(move |size| {
             let gutter = if size.width < 700.0 || size.height < 500.0 {
                 8.0
@@ -51,7 +54,9 @@ pub fn overlay<'a>(
         let content = motion::zoom_y(content.into(), progress, -8.0);
         Element::from(stack![scrim, content].width(Fill).height(Fill))
     })
-    .on_finish_maybe((!viewer.open).then_some(Message::ImageViewerDismissed));
+    .on_finish_maybe((!viewer.open).then_some(Message::Discovery(
+        crate::app::DiscoveryMessage::ImageViewerDismissed,
+    )));
 
     stack![base, layers].into()
 }
@@ -67,7 +72,10 @@ fn panel<'a>(
         MediaViewerKind::Image if handle.is_some() => {
             let handle = handle.expect("checked image handle");
             ControlledViewer::new(handle, viewer.zoom, viewer.offset, alpha, |zoom, offset| {
-                Message::ImageViewerTransformed { zoom, offset }
+                Message::Discovery(crate::app::DiscoveryMessage::ImageViewerTransformed {
+                    zoom,
+                    offset,
+                })
             })
             .into()
         }
@@ -87,11 +95,17 @@ fn panel<'a>(
                 .width(Fill)
                 .height(Fill)
                 .content_fit(ContentFit::Contain)
-                .on_new_frame(Message::ImageViewerVideoFrame(viewer.generation))
-                .on_end_of_stream(Message::ImageViewerVideoEnded(viewer.generation))
-                .on_error(move |error| Message::ImageViewerVideoFailed {
-                    generation: viewer.generation,
-                    error: error.to_string(),
+                .on_new_frame(Message::Discovery(
+                    crate::app::DiscoveryMessage::ImageViewerVideoFrame(viewer.generation),
+                ))
+                .on_end_of_stream(Message::Discovery(
+                    crate::app::DiscoveryMessage::ImageViewerVideoEnded(viewer.generation),
+                ))
+                .on_error(move |error| {
+                    Message::Discovery(crate::app::DiscoveryMessage::ImageViewerVideoFailed {
+                        generation: viewer.generation,
+                        error: error.to_string(),
+                    })
                 })
                 .into()
         }
@@ -124,7 +138,12 @@ fn panel<'a>(
     let top = container(
         row![
             metadata(viewer, avatar_previews, alpha),
-            icon_button(icons::close(), Message::ImageViewerClosed, alpha, "Close"),
+            icon_button(
+                icons::close(),
+                Message::Discovery(crate::app::DiscoveryMessage::ImageViewerClosed),
+                alpha,
+                "Close"
+            ),
         ]
         .align_y(iced::Alignment::Start),
     )
@@ -136,7 +155,9 @@ fn panel<'a>(
         row![
             icon_button(
                 icons::minus(),
-                Message::ImageViewerZoomChanged((viewer.zoom - 0.25).max(MIN_ZOOM)),
+                Message::Discovery(crate::app::DiscoveryMessage::ImageViewerZoomChanged(
+                    (viewer.zoom - 0.25).max(MIN_ZOOM)
+                )),
                 alpha,
                 "Zoom out",
             ),
@@ -150,7 +171,9 @@ fn panel<'a>(
             .style(theme::fade_slider(alpha)),
             icon_button(
                 icons::plus(),
-                Message::ImageViewerZoomChanged((viewer.zoom + 0.25).min(MAX_ZOOM)),
+                Message::Discovery(crate::app::DiscoveryMessage::ImageViewerZoomChanged(
+                    (viewer.zoom + 0.25).min(MAX_ZOOM)
+                )),
                 alpha,
                 "Zoom in",
             ),
@@ -172,7 +195,7 @@ fn panel<'a>(
             Space::new().width(Fill),
             container(icon_button(
                 icons::download(),
-                Message::ImageViewerDownloadPressed,
+                Message::Discovery(crate::app::DiscoveryMessage::ImageViewerDownloadPressed),
                 alpha,
                 "Download",
             ))
@@ -218,7 +241,7 @@ fn video_controls<'a>(viewer: &ImageViewerState, alpha: f32) -> Element<'a, Mess
                 } else {
                     icons::play()
                 },
-                Message::ImageViewerVideoPlayPause,
+                Message::Discovery(crate::app::DiscoveryMessage::ImageViewerVideoPlayPause),
                 alpha,
                 play_label,
             ),
@@ -230,7 +253,9 @@ fn video_controls<'a>(viewer: &ImageViewerState, alpha: f32) -> Element<'a, Mess
                 position.clamp(0.0, slider_duration),
                 Message::ImageViewerVideoSeekChanged,
             )
-            .on_release(Message::ImageViewerVideoSeekReleased)
+            .on_release(Message::Discovery(
+                crate::app::DiscoveryMessage::ImageViewerVideoSeekReleased
+            ))
             .step(0.01)
             .width(Length::Fixed(140.0))
             .style(theme::fade_slider(alpha)),
@@ -243,12 +268,14 @@ fn video_controls<'a>(viewer: &ImageViewerState, alpha: f32) -> Element<'a, Mess
                 } else {
                     icons::volume()
                 },
-                Message::ImageViewerVideoMuteToggled,
+                Message::Discovery(crate::app::DiscoveryMessage::ImageViewerVideoMuteToggled),
                 alpha,
                 volume_label,
             ),
             slider(0.0..=1.0, volume, Message::ImageViewerVideoVolumeChanged,)
-                .on_release(Message::ImageViewerVideoVolumeReleased)
+                .on_release(Message::Discovery(
+                    crate::app::DiscoveryMessage::ImageViewerVideoVolumeReleased
+                ))
                 .step(0.01)
                 .width(Length::Fixed(60.0))
                 .style(theme::fade_slider(alpha)),

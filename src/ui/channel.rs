@@ -105,11 +105,15 @@ pub fn view<'a>(
                 );
                 let row: Element<'a, Message> = match m.ts.clone() {
                     Some(ts) => mouse_area(row)
-                        .on_enter(Message::MessageHovered {
-                            in_thread: false,
-                            ts,
-                        })
-                        .on_exit(Message::MessageUnhovered)
+                        .on_enter(Message::Workspace(
+                            crate::app::WorkspaceMessage::MessageHovered {
+                                in_thread: false,
+                                ts,
+                            },
+                        ))
+                        .on_exit(Message::Workspace(
+                            crate::app::WorkspaceMessage::MessageUnhovered,
+                        ))
                         .into(),
                     None => row,
                 };
@@ -129,11 +133,11 @@ pub fn view<'a>(
                         } else {
                             (reversed, offset)
                         };
-                        Message::ChannelScrolled {
+                        Message::Workspace(crate::app::WorkspaceMessage::ChannelScrolled {
                             channel: channel_id.clone(),
                             y,
                             bottom_gap,
-                        }
+                        })
                     }
                 })
                 .style(theme::scrollbar)
@@ -191,7 +195,9 @@ fn chat_paused_pill<'a>(channel_id: &str, new_count: u32) -> Element<'a, Message
     button(text(label).size(theme::TEXT_SM))
         .padding([theme::SPACE_XS, theme::SPACE_MD])
         .style(theme::chat_paused_pill)
-        .on_press(Message::ChatResumePressed(channel_id.to_owned()))
+        .on_press(Message::Workspace(
+            crate::app::WorkspaceMessage::ChatResumePressed(channel_id.to_owned()),
+        ))
         .into()
 }
 
@@ -231,7 +237,9 @@ fn history_failed_placeholder<'a>(channel_id: &str) -> Element<'a, Message> {
             button(text("Retry").size(theme::TEXT_SM))
                 .padding([theme::SPACE_XS, theme::SPACE_MD])
                 .style(theme::secondary_button)
-                .on_press(Message::ChannelSelected(channel_id.to_owned())),
+                .on_press(Message::Conversation(
+                    crate::app::ConversationMessage::ChannelSelected(channel_id.to_owned())
+                )),
         ]
         .spacing(theme::SPACE_SM)
         .align_x(Alignment::Center),
@@ -320,7 +328,9 @@ fn huddle_badge<'a>(room: &crate::slack::models::Room) -> Element<'a, Message> {
         .padding([3.0, theme::SPACE_SM])
         .style(theme::secondary_button);
     if let Some(link) = &room.huddle_link {
-        join = join.on_press(Message::OpenUrl(link.clone()));
+        join = join.on_press(Message::Discovery(crate::app::DiscoveryMessage::OpenUrl(
+            link.clone(),
+        )));
     }
     join.into()
 }

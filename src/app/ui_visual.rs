@@ -169,7 +169,7 @@ fn ui_visual_message_author_emits_profile_hover() -> Result<(), Error> {
     let messages = drain_messages(ui);
     assert!(messages.iter().any(|message| matches!(
         message,
-        Message::ProfileHoverEntered { user, .. } if user == "U_ALICE"
+        Message::Workspace(crate::app::WorkspaceMessage::ProfileHoverEntered { user, .. }) if user == "U_ALICE"
     )));
     Ok(())
 }
@@ -211,11 +211,13 @@ fn ui_visual_channel_thread_profile_headers_align() -> Result<(), Error> {
     let mut app = profile_app();
     apply_messages(
         &mut app,
-        [Message::ThreadOpened {
-            channel: "C_GENERAL".into(),
-            ts: "1783372300.000100".into(),
-            unread_range: None,
-        }],
+        [Message::Conversation(
+            crate::app::ConversationMessage::ThreadOpened {
+                channel: "C_GENERAL".into(),
+                ts: "1783372300.000100".into(),
+                unread_range: None,
+            },
+        )],
     );
     app.profile_open = true;
     app.profile_pane = Some(super::ProfilePaneState {
@@ -258,15 +260,17 @@ fn ui_visual_chat_paused_pill() -> Result<(), Error> {
     let mut app = test_app();
     apply_messages(
         &mut app,
-        [Message::ChannelScrolled {
-            channel: "C_GENERAL".into(),
-            y: 100.0,
-            bottom_gap: 300.0,
-        }],
+        [Message::Workspace(
+            crate::app::WorkspaceMessage::ChannelScrolled {
+                channel: "C_GENERAL".into(),
+                y: 100.0,
+                bottom_gap: 300.0,
+            },
+        )],
     );
     apply_messages(
         &mut app,
-        [Message::Realtime(
+        [Message::Runtime(crate::app::RuntimeMessage::Realtime(
             "T_TEST".into(),
             1,
             crate::slack::events::RtEvent::Message(crate::slack::models::Message {
@@ -276,7 +280,7 @@ fn ui_visual_chat_paused_pill() -> Result<(), Error> {
                 text: Some("posted while you were reading".into()),
                 ..Default::default()
             }),
-        )],
+        ))],
     );
 
     let mut ui = sim(&app);
@@ -425,16 +429,14 @@ fn ui_visual_video_viewer_renders() -> Result<(), Error> {
             .is_err()
     );
     let messages = drain_messages(ui);
-    assert!(
-        messages
-            .iter()
-            .any(|message| matches!(message, Message::ImageViewerVideoPlayPause))
-    );
-    assert!(
-        messages
-            .iter()
-            .any(|message| matches!(message, Message::ImageViewerVideoMuteToggled))
-    );
+    assert!(messages.iter().any(|message| matches!(
+        message,
+        Message::Discovery(crate::app::DiscoveryMessage::ImageViewerVideoPlayPause)
+    )));
+    assert!(messages.iter().any(|message| matches!(
+        message,
+        Message::Discovery(crate::app::DiscoveryMessage::ImageViewerVideoMuteToggled)
+    )));
     capture(&app, "video-viewer")?;
     Ok(())
 }
@@ -450,7 +452,7 @@ fn ui_visual_video_thumbnail_opens_video_source() -> Result<(), Error> {
     };
     assert!(messages.iter().any(|message| matches!(
         message,
-        Message::ImageViewerOpened(source)
+        Message::Discovery(crate::app::DiscoveryMessage::ImageViewerOpened(source))
             if source.kind == super::MediaViewerKind::Video
                 && source.filename == "launch-demo.mp4"
                 && source.preview_key == "F_LAUNCH"
@@ -471,7 +473,7 @@ fn ui_visual_image_thumbnail_opens_viewer_source() -> Result<(), Error> {
     };
     assert!(messages.iter().any(|message| matches!(
         message,
-        Message::ImageViewerOpened(source)
+        Message::Discovery(crate::app::DiscoveryMessage::ImageViewerOpened(source))
             if source.filename == "launch-board.png"
                 && source.fetch_auth == super::ImageFetchAuth::Slack
     )));
@@ -491,22 +493,20 @@ fn ui_visual_image_viewer_close_and_download_emit_actions() -> Result<(), Error>
     let messages = drain_messages(ui);
     assert!(messages.iter().any(|message| matches!(
         message,
-        Message::ImageViewerZoomChanged(zoom) if (*zoom - 1.25).abs() < f32::EPSILON
+        Message::Discovery(crate::app::DiscoveryMessage::ImageViewerZoomChanged(zoom)) if (*zoom - 1.25).abs() < f32::EPSILON
     )));
     assert!(messages.iter().any(|message| matches!(
         message,
-        Message::ImageViewerTransformed { zoom, .. } if (*zoom - 2.0).abs() < f32::EPSILON
+        Message::Discovery(crate::app::DiscoveryMessage::ImageViewerTransformed { zoom, .. }) if (*zoom - 2.0).abs() < f32::EPSILON
     )));
-    assert!(
-        messages
-            .iter()
-            .any(|message| matches!(message, Message::ImageViewerDownloadPressed))
-    );
-    assert!(
-        messages
-            .iter()
-            .any(|message| matches!(message, Message::ImageViewerClosed))
-    );
+    assert!(messages.iter().any(|message| matches!(
+        message,
+        Message::Discovery(crate::app::DiscoveryMessage::ImageViewerDownloadPressed)
+    )));
+    assert!(messages.iter().any(|message| matches!(
+        message,
+        Message::Discovery(crate::app::DiscoveryMessage::ImageViewerClosed)
+    )));
     Ok(())
 }
 
@@ -575,7 +575,12 @@ fn ui_visual_dms_list_renders() -> Result<(), Error> {
 #[test]
 fn ui_visual_dms_unread_and_name_filters() -> Result<(), Error> {
     let mut app = dms_app();
-    apply_messages(&mut app, [Message::DmsUnreadOnlyToggled(true)]);
+    apply_messages(
+        &mut app,
+        [Message::Runtime(
+            crate::app::RuntimeMessage::DmsUnreadOnlyToggled(true),
+        )],
+    );
     assert!(app.dms.unread_only);
     let mut ui = sim(&app);
     ui.find("Alice")?;
@@ -588,8 +593,8 @@ fn ui_visual_dms_unread_and_name_filters() -> Result<(), Error> {
     apply_messages(
         &mut app,
         [
-            Message::DmsUnreadOnlyToggled(false),
-            Message::DmsFilterChanged("bob".into()),
+            Message::Runtime(crate::app::RuntimeMessage::DmsUnreadOnlyToggled(false)),
+            Message::Runtime(crate::app::RuntimeMessage::DmsFilterChanged("bob".into())),
         ],
     );
     let mut ui = sim(&app);
@@ -607,7 +612,7 @@ fn ui_visual_dm_unread_clears_after_realtime_mark() -> Result<(), Error> {
     apply_messages(
         &mut app,
         [
-            Message::Realtime(
+            Message::Runtime(crate::app::RuntimeMessage::Realtime(
                 "T_TEST".into(),
                 1,
                 crate::slack::events::RtEvent::ChannelMarked {
@@ -616,8 +621,8 @@ fn ui_visual_dm_unread_clears_after_realtime_mark() -> Result<(), Error> {
                     unread_count: Some(0),
                     mention_count: Some(0),
                 },
-            ),
-            Message::DmsUnreadOnlyToggled(true),
+            )),
+            Message::Runtime(crate::app::RuntimeMessage::DmsUnreadOnlyToggled(true)),
         ],
     );
 
@@ -645,11 +650,13 @@ fn ui_visual_dm_history_loading_and_failure_states() -> Result<(), Error> {
 
     apply_messages(
         &mut app,
-        [Message::HistoryLoaded(
-            "T_TEST".into(),
-            "D_ALICE".into(),
-            crate::app::HistoryLoadKind::Latest,
-            Err(crate::slack::Error::Transport("offline".into())),
+        [Message::Workspace(
+            crate::app::WorkspaceMessage::HistoryLoaded(
+                "T_TEST".into(),
+                "D_ALICE".into(),
+                crate::app::HistoryLoadKind::Latest,
+                Err(crate::slack::Error::Transport("offline".into())),
+            ),
         )],
     );
     let mut ui = sim(&app);
@@ -731,10 +738,10 @@ fn ui_visual_edit_message_composer_renders() -> Result<(), Error> {
     let mut app = test_app();
     let _ = update(
         &mut app,
-        Message::EditPressed {
+        Message::Workspace(crate::app::WorkspaceMessage::EditPressed {
             channel: "C_GENERAL".into(),
             ts: "1783372300.000100".into(),
-        },
+        }),
     );
     let mut ui = sim(&app);
     ui.find("Save")?;
@@ -773,19 +780,19 @@ fn ui_visual_composer_drag_survives_leaving_bounds() -> Result<(), Error> {
     let dragged = messages.iter().any(|message| {
         matches!(
             message,
-            Message::ComposerAction {
+            Message::Conversation(crate::app::ConversationMessage::ComposerAction {
                 action: Action::Drag(_),
                 ..
-            }
+            })
         )
     });
     let scrolled = messages.iter().any(|message| {
         matches!(
             message,
-            Message::ComposerAction {
+            Message::Conversation(crate::app::ConversationMessage::ComposerAction {
                 action: Action::Scroll { lines },
                 ..
-            } if *lines < 0
+            }) if *lines < 0
         )
     });
     assert!(

@@ -31,17 +31,23 @@ pub fn trigger<'a>(
         button(content)
             .padding(0)
             .style(theme::link_button)
-            .on_press(Message::ProfilePressed(user.to_owned())),
+            .on_press(Message::Workspace(
+                crate::app::WorkspaceMessage::ProfilePressed(user.to_owned()),
+            )),
     )
     .interaction(iced::mouse::Interaction::Pointer)
-    .on_enter(Message::ProfileHoverEntered {
-        user: user.to_owned(),
-        key: key.clone(),
-    })
-    .on_exit(Message::ProfileHoverExited {
-        user: user.to_owned(),
-        key: key.clone(),
-    });
+    .on_enter(Message::Workspace(
+        crate::app::WorkspaceMessage::ProfileHoverEntered {
+            user: user.to_owned(),
+            key: key.clone(),
+        },
+    ))
+    .on_exit(Message::Workspace(
+        crate::app::WorkspaceMessage::ProfileHoverExited {
+            user: user.to_owned(),
+            key: key.clone(),
+        },
+    ));
 
     source.into()
 }
@@ -61,8 +67,12 @@ pub fn hover_overlay<'a>(
         emoji_previews,
         emoji_elapsed,
     )))
-    .on_enter(Message::ProfileCardEntered)
-    .on_exit(Message::ProfileCardExited);
+    .on_enter(Message::Workspace(
+        crate::app::WorkspaceMessage::ProfileCardEntered,
+    ))
+    .on_exit(Message::Workspace(
+        crate::app::WorkspaceMessage::ProfileCardExited,
+    ));
     float(card)
         .translate(move |bounds, viewport| {
             let margin = theme::SPACE_SM;
@@ -95,7 +105,9 @@ fn hover_card<'a>(
         button(name_line(ws, user_id, &name, user))
             .padding(0)
             .style(theme::link_button)
-            .on_press(Message::ProfilePressed(user_id.to_owned())),
+            .on_press(Message::Workspace(
+                crate::app::WorkspaceMessage::ProfilePressed(user_id.to_owned()),
+            )),
     );
     if let Some(title) = profile.and_then(|profile| non_empty(profile.title.as_deref())) {
         identity = identity.push(text(title).size(theme::TEXT_MD).color(theme::text_3()));
@@ -109,7 +121,9 @@ fn hover_card<'a>(
             button(avatar)
                 .padding(0)
                 .style(theme::link_button)
-                .on_press(Message::ProfilePressed(user_id.to_owned())),
+                .on_press(Message::Workspace(
+                    crate::app::WorkspaceMessage::ProfilePressed(user_id.to_owned())
+                )),
             identity,
         ]
         .spacing(theme::SPACE_MD)
@@ -164,7 +178,9 @@ pub fn pane<'a>(
         .height(Length::Fixed(theme::PANEL_CLOSE_SIZE))
         .padding(4.0)
         .style(theme::panel_close_button)
-        .on_press(Message::ProfileDismissed),
+        .on_press(Message::Workspace(
+            crate::app::WorkspaceMessage::ProfileDismissed
+        )),
     ]
     .align_y(Alignment::Center);
 
@@ -297,7 +313,9 @@ fn actions<'a>(ws: &Workspace, user: &str, compact: bool) -> Element<'a, Message
             button(text("Message").size(theme::TEXT_MD))
                 .padding(padding)
                 .style(theme::secondary_button)
-                .on_press(Message::ProfileMessagePressed(user.to_owned())),
+                .on_press(Message::Workspace(
+                    crate::app::WorkspaceMessage::ProfileMessagePressed(user.to_owned()),
+                )),
         );
     }
     actions = actions.push(
@@ -381,7 +399,9 @@ fn recent_dms<'a>(ws: &'a Workspace, user: &str) -> Option<Element<'a, Message>>
                 .width(Fill)
                 .padding(theme::SPACE_SM)
                 .style(theme::channel_row(false))
-                .on_press(Message::ChannelSelected(channel.id.clone())),
+                .on_press(Message::Conversation(
+                    crate::app::ConversationMessage::ChannelSelected(channel.id.clone()),
+                )),
         );
     }
     if member.is_some_and(|member| member.has_more_mpims) {
@@ -394,7 +414,9 @@ fn recent_dms<'a>(ws: &'a Workspace, user: &str) -> Option<Element<'a, Message>>
             )
             .padding([theme::SPACE_SM, 0.0])
             .style(theme::link_button)
-            .on_press(Message::ProfileSeeAllConversations(user.to_owned())),
+            .on_press(Message::Workspace(
+                crate::app::WorkspaceMessage::ProfileSeeAllConversations(user.to_owned()),
+            )),
         );
     }
     Some(section("Recent DMs", rows))

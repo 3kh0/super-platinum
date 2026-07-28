@@ -89,11 +89,13 @@ pub fn list_panel<'a>(
             ));
         }
         scrollable(list.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
-            .on_scroll(|viewport| Message::DmsScrolled {
-                remaining: (viewport.content_bounds().height
-                    - viewport.bounds().height
-                    - viewport.absolute_offset().y)
-                    .max(0.0),
+            .on_scroll(|viewport| {
+                Message::Runtime(crate::app::RuntimeMessage::DmsScrolled {
+                    remaining: (viewport.content_bounds().height
+                        - viewport.bounds().height
+                        - viewport.absolute_offset().y)
+                        .max(0.0),
+                })
             })
             .style(theme::scrollbar)
             .height(Fill)
@@ -122,7 +124,9 @@ fn compose_button<'a>() -> Element<'a, Message> {
         button(glyph)
             .padding(theme::SPACE_XS)
             .style(theme::action_button)
-            .on_press(Message::PaletteToggled),
+            .on_press(Message::Discovery(
+                crate::app::DiscoveryMessage::PaletteToggled,
+            )),
         container(
             text("New message")
                 .size(theme::TEXT_SM)
@@ -209,7 +213,9 @@ fn dm_row<'a>(
         .width(Fill)
         .padding([theme::SPACE_XS + 2.0, 0.0])
         .style(theme::activity_row(active, unread))
-        .on_press(Message::ChannelSelected(entry.id.clone()))
+        .on_press(Message::Conversation(
+            crate::app::ConversationMessage::ChannelSelected(entry.id.clone()),
+        ))
         .into()
 }
 

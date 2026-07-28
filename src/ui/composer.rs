@@ -45,13 +45,13 @@ pub fn view<'a>(
         content,
         placeholder,
         ComposerTarget::Channel,
-        Message::SendPressed,
+        Message::Conversation(crate::app::ConversationMessage::SendPressed),
     );
     composer_shell(
         input,
         attachments,
         AttachTarget::Channel,
-        Message::SendPressed,
+        Message::Conversation(crate::app::ConversationMessage::SendPressed),
     )
     .into()
 }
@@ -64,13 +64,13 @@ pub fn thread_view<'a>(
         content,
         "Reply in thread",
         ComposerTarget::Thread,
-        Message::ThreadSendPressed,
+        Message::Conversation(crate::app::ConversationMessage::ThreadSendPressed),
     );
     composer_shell(
         input,
         attachments,
         AttachTarget::Thread,
-        Message::ThreadSendPressed,
+        Message::Conversation(crate::app::ConversationMessage::ThreadSendPressed),
     )
     .into()
 }
@@ -84,7 +84,12 @@ pub fn editor<'a>(
     let input = text_editor(content)
         .id(input_id(target))
         .placeholder(placeholder)
-        .on_action(move |action| Message::ComposerAction { target, action })
+        .on_action(move |action| {
+            Message::Conversation(crate::app::ConversationMessage::ComposerAction {
+                target,
+                action,
+            })
+        })
         .key_binding(move |press| key_binding(press, target, send.clone()))
         .size(theme::TEXT_MD)
         .padding(EDITOR_PADDING)
@@ -94,13 +99,17 @@ pub fn editor<'a>(
     let input = drag_capture(
         input,
         EDITOR_PADDING,
-        move |point| Message::ComposerAction {
-            target,
-            action: Action::Drag(point),
+        move |point| {
+            Message::Conversation(crate::app::ConversationMessage::ComposerAction {
+                target,
+                action: Action::Drag(point),
+            })
         },
-        move |lines| Message::ComposerAction {
-            target,
-            action: Action::Scroll { lines },
+        move |lines| {
+            Message::Conversation(crate::app::ConversationMessage::ComposerAction {
+                target,
+                action: Action::Scroll { lines },
+            })
         },
     );
 
@@ -129,7 +138,9 @@ fn composer_shell<'a>(
                         .center_x(Fill)
                         .center_y(Fill),
                 )
-                .on_press(Message::AttachmentPickerOpened(target))
+                .on_press(Message::Conversation(
+                    crate::app::ConversationMessage::AttachmentPickerOpened(target)
+                ))
                 .style(theme::action_button)
                 .padding(0.0)
                 .width(Length::Fixed(28.0))
@@ -185,10 +196,12 @@ fn attachment_strip<'a>(
                     .spacing(2.0)
                     .width(Length::Fixed(128.0)),
                     button(text("×").size(theme::TEXT_LG))
-                        .on_press(Message::AttachmentRemoved {
-                            target,
-                            id: attachment.id,
-                        })
+                        .on_press(Message::Conversation(
+                            crate::app::ConversationMessage::AttachmentRemoved {
+                                target,
+                                id: attachment.id,
+                            }
+                        ))
                         .style(theme::action_button)
                         .padding([0.0, 5.0]),
                 ]
@@ -405,19 +418,21 @@ fn key_binding(press: KeyPress, target: ComposerTarget, send: Message) -> Option
     } = &press;
 
     if let Some(mark) = format_mark_for(*modifiers, key, *physical_key) {
-        return Some(Binding::Custom(Message::ComposerFormat { target, mark }));
+        return Some(Binding::Custom(Message::Conversation(
+            crate::app::ConversationMessage::ComposerFormat { target, mark },
+        )));
     }
 
     if modifiers.command()
         && matches!(key, Key::Character(c) if c.as_str().eq_ignore_ascii_case("v"))
     {
         return Some(match target {
-            ComposerTarget::Channel => {
-                Binding::Custom(Message::PasteAttachmentsRequested(AttachTarget::Channel))
-            }
-            ComposerTarget::Thread => {
-                Binding::Custom(Message::PasteAttachmentsRequested(AttachTarget::Thread))
-            }
+            ComposerTarget::Channel => Binding::Custom(Message::Conversation(
+                crate::app::ConversationMessage::PasteAttachmentsRequested(AttachTarget::Channel),
+            )),
+            ComposerTarget::Thread => Binding::Custom(Message::Conversation(
+                crate::app::ConversationMessage::PasteAttachmentsRequested(AttachTarget::Thread),
+            )),
             ComposerTarget::Edit => Binding::Paste,
         });
     }
@@ -425,7 +440,9 @@ fn key_binding(press: KeyPress, target: ComposerTarget, send: Message) -> Option
     if modifiers.command()
         && matches!(key, Key::Character(c) if c.as_str().eq_ignore_ascii_case("k"))
     {
-        return Some(Binding::Custom(Message::PaletteToggled));
+        return Some(Binding::Custom(Message::Discovery(
+            crate::app::DiscoveryMessage::PaletteToggled,
+        )));
     }
 
     // Slack: Enter sends, Shift+Enter inserts a newline.
@@ -438,7 +455,9 @@ fn key_binding(press: KeyPress, target: ComposerTarget, send: Message) -> Option
     }
 
     if let Some(motion) = delete_motion_for(*modifiers, key, *physical_key) {
-        return Some(Binding::Custom(Message::ComposerDelete { target, motion }));
+        return Some(Binding::Custom(Message::Conversation(
+            crate::app::ConversationMessage::ComposerDelete { target, motion },
+        )));
     }
 
     if let Some(binding) = clipboard_binding(*modifiers, key, *physical_key) {

@@ -55,7 +55,9 @@ pub fn view<'a>(
         .height(Length::Fixed(theme::PANEL_CLOSE_SIZE))
         .style(theme::panel_close_button)
         .padding(4.0)
-        .on_press(Message::ThreadClosed),
+        .on_press(Message::Conversation(
+            crate::app::ConversationMessage::ThreadClosed
+        )),
     ]
     .align_y(iced::Alignment::Center)
     .spacing(theme::SPACE_SM);
@@ -110,11 +112,15 @@ pub fn view<'a>(
                 );
                 let row: Element<'a, Message> = match msg.ts.clone() {
                     Some(ts) => mouse_area(row)
-                        .on_enter(Message::MessageHovered {
-                            in_thread: true,
-                            ts,
-                        })
-                        .on_exit(Message::MessageUnhovered)
+                        .on_enter(Message::Workspace(
+                            crate::app::WorkspaceMessage::MessageHovered {
+                                in_thread: true,
+                                ts,
+                            },
+                        ))
+                        .on_exit(Message::Workspace(
+                            crate::app::WorkspaceMessage::MessageUnhovered,
+                        ))
                         .into(),
                     None => row,
                 };
@@ -157,11 +163,15 @@ pub fn view<'a>(
                 );
                 let root_row: Element<'a, Message> = match root.ts.clone() {
                     Some(ts) => mouse_area(root_row)
-                        .on_enter(Message::MessageHovered {
-                            in_thread: true,
-                            ts,
-                        })
-                        .on_exit(Message::MessageUnhovered)
+                        .on_enter(Message::Workspace(
+                            crate::app::WorkspaceMessage::MessageHovered {
+                                in_thread: true,
+                                ts,
+                            },
+                        ))
+                        .on_exit(Message::Workspace(
+                            crate::app::WorkspaceMessage::MessageUnhovered,
+                        ))
                         .into(),
                     None => root_row,
                 };

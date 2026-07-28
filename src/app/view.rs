@@ -89,10 +89,10 @@ fn login_view() -> Element<'static, Message> {
             button(text("Sign in").size(ui::theme::TEXT_MD))
                 .style(ui::theme::primary_button)
                 .padding([ui::theme::SPACE_XS + 2.0, ui::theme::SPACE_MD])
-                .on_press(Message::SignInPressed),
+                .on_press(Message::Runtime(crate::app::RuntimeMessage::SignInPressed)),
             button(text("Reload session").size(ui::theme::TEXT_SM))
                 .style(ui::theme::link_button)
-                .on_press(Message::RetryAuth),
+                .on_press(Message::Runtime(crate::app::RuntimeMessage::RetryAuth)),
         ]
         .spacing(ui::theme::SPACE_MD),
     )
@@ -280,7 +280,9 @@ fn main_view(app: &App) -> Element<'_, Message> {
             ui::motion::collapse_x(panel.into(), progress, ui::theme::THREAD_WIDTH + gap)
         })
         .key(thread_key)
-        .on_finish_maybe((!open).then_some(Message::ThreadDismissed));
+        .on_finish_maybe((!open).then_some(Message::Conversation(
+            crate::app::ConversationMessage::ThreadDismissed,
+        )));
 
         let body = row![rail, sidebar, main]
             .spacing(gap)
@@ -447,7 +449,9 @@ fn with_profile_pane<'a>(
         ui::motion::collapse_x(pane.into(), progress, ui::profile::PANE_WIDTH + gap)
     })
     .key(profile_key)
-    .on_finish_maybe((!open).then_some(Message::ProfilePaneDismissed));
+    .on_finish_maybe((!open).then_some(Message::Workspace(
+        crate::app::WorkspaceMessage::ProfilePaneDismissed,
+    )));
     row![base, panel].width(Fill).height(Fill).into()
 }
 
@@ -467,7 +471,9 @@ fn resize_handle<'a>() -> Element<'a, Message> {
     use iced::widget::{Space, mouse_area};
     mouse_area(Space::new().width(8.0).height(Fill))
         .interaction(iced::mouse::Interaction::ResizingHorizontally)
-        .on_press(Message::SidebarResizeStarted)
+        .on_press(Message::Runtime(
+            crate::app::RuntimeMessage::SidebarResizeStarted,
+        ))
         .into()
 }
 
@@ -515,7 +521,9 @@ fn with_account_menu<'a>(app: &'a App, base: Element<'a, Message>) -> Element<'a
                 ]),
         )
     })
-    .on_finish_maybe((!open).then_some(Message::AccountMenuDismissed));
+    .on_finish_maybe((!open).then_some(Message::Runtime(
+        crate::app::RuntimeMessage::AccountMenuDismissed,
+    )));
 
     stack![base, menu].into()
 }

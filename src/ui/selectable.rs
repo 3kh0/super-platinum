@@ -411,7 +411,9 @@ impl Widget<Message, Theme, Renderer> for SelectableText {
                     let state = tree.state.downcast_mut::<State>();
                     state.drag_anchor = index;
                     if let Some(point) = index.and_then(|index| self.point(index)) {
-                        shell.publish(Message::TextSelectionStarted(point));
+                        shell.publish(Message::Workspace(
+                            crate::app::WorkspaceMessage::TextSelectionStarted(point),
+                        ));
                     }
                     shell.request_redraw();
                 }
@@ -422,7 +424,9 @@ impl Widget<Message, Theme, Renderer> for SelectableText {
                         .locate(tree.state.downcast_ref::<State>(), layout, cursor)
                         .and_then(|index| self.point(index))
                     {
-                        shell.publish(Message::TextSelectionDragged(point));
+                        shell.publish(Message::Workspace(
+                            crate::app::WorkspaceMessage::TextSelectionDragged(point),
+                        ));
                     }
                     shell.request_redraw();
                     shell.capture_event();
@@ -436,7 +440,9 @@ impl Widget<Message, Theme, Renderer> for SelectableText {
                 let state = tree.state.downcast_mut::<State>();
                 let anchor = state.drag_anchor.take();
                 if self.selection_active && (cursor.is_over(bounds) || anchor.is_some()) {
-                    shell.publish(Message::TextSelectionEnded);
+                    shell.publish(Message::Workspace(
+                        crate::app::WorkspaceMessage::TextSelectionEnded,
+                    ));
                     shell.capture_event();
                 }
                 if self.selection.is_none()
@@ -444,10 +450,14 @@ impl Widget<Message, Theme, Renderer> for SelectableText {
                     && let Some(index) = index
                 {
                     if let Some(channel) = self.channel_at(index) {
-                        shell.publish(Message::ChannelSelected(channel.to_owned()));
+                        shell.publish(Message::Conversation(
+                            crate::app::ConversationMessage::ChannelSelected(channel.to_owned()),
+                        ));
                         shell.capture_event();
                     } else if let Some(user) = self.user_at(index) {
-                        shell.publish(Message::ProfilePressed(user.to_owned()));
+                        shell.publish(Message::Workspace(
+                            crate::app::WorkspaceMessage::ProfilePressed(user.to_owned()),
+                        ));
                         shell.capture_event();
                     }
                 }

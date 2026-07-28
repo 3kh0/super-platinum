@@ -33,7 +33,9 @@ pub fn view<'a>(ws: &Workspace, state: &SearchState) -> Element<'a, Message> {
         button(text("Close").size(theme::TEXT_SM))
             .style(theme::secondary_button)
             .padding([theme::SPACE_XS, theme::SPACE_SM])
-            .on_press(Message::SearchCleared),
+            .on_press(Message::Discovery(
+                crate::app::DiscoveryMessage::SearchCleared
+            )),
     ]
     .spacing(theme::SPACE_SM);
 
@@ -106,11 +108,13 @@ fn hit_row<'a>(ws: &Workspace, hit: &SearchHit) -> Element<'a, Message> {
         .width(Fill)
         .padding([theme::SPACE_XS + 2.0, theme::SPACE_MD])
         .style(theme::channel_row(false))
-        .on_press(Message::SearchResultSelected {
-            channel: hit.channel.clone(),
-            ts: target_ts,
-            thread_ts: msg.thread_ts.clone(),
-        })
+        .on_press(Message::Discovery(
+            crate::app::DiscoveryMessage::SearchResultSelected {
+                channel: hit.channel.clone(),
+                ts: target_ts,
+                thread_ts: msg.thread_ts.clone(),
+            },
+        ))
         .into()
 }
 
@@ -123,7 +127,9 @@ fn pagination<'a>(state: &SearchState) -> Element<'a, Message> {
         controls = controls.push(
             button(text("‹ Prev").size(theme::TEXT_SM))
                 .style(theme::link_button)
-                .on_press(Message::SearchPageRequested(state.page - 1)),
+                .on_press(Message::Discovery(
+                    crate::app::DiscoveryMessage::SearchPageRequested(state.page - 1),
+                )),
         );
     }
     controls = controls.push(
@@ -135,7 +141,9 @@ fn pagination<'a>(state: &SearchState) -> Element<'a, Message> {
         controls = controls.push(
             button(text("Next ›").size(theme::TEXT_SM))
                 .style(theme::link_button)
-                .on_press(Message::SearchPageRequested(state.page + 1)),
+                .on_press(Message::Discovery(
+                    crate::app::DiscoveryMessage::SearchPageRequested(state.page + 1),
+                )),
         );
     }
     container(controls)
