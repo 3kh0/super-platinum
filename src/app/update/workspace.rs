@@ -254,7 +254,9 @@ pub(super) fn select_workspace(app: &mut App, team: TeamId) -> Task<Message> {
     app.pending_scroll_to =
         channel_open_scroll_target(app, &team, &channel).map(|target| (channel.clone(), target));
     let focus = focus_active_composer(app);
+    let mark = mark_latest_visible(app, &team, &channel);
     Task::batch([
+        mark,
         refresh_channel_history(app, &team, &channel),
         scroll_to_pending(app, &channel),
         activity_task,
@@ -696,22 +698,102 @@ pub(super) fn mark_latest_visible(app: &mut App, team: &str, channel: &ChannelId
     app.mark_channel_read(team, channel, latest)
 }
 
+pub(super) fn mark_latest_thread(
+    app: &mut App,
+    team: &str,
+    channel: &ChannelId,
+    root_ts: &MessageTs,
+    known_latest: Option<MessageTs>,
+) -> Task<Message> {
+    let latest = known_latest.or_else(|| {
+        app.threads
+            .get(&(team.to_owned(), channel.clone(), root_ts.clone()))
+            .and_then(ChannelMessages::latest_confirmed_ts)
+    });
+    let Some(latest) = latest else {
+        return Task::none();
+    };
+    if app.live().is_none() || !begin_thread_mark(app, team, channel, root_ts, &latest) {
+        return Task::none();
+    }
+    app.mark_thread_read(team, channel, root_ts.clone(), latest)
+}
+
 pub(in crate::app) fn begin_mark(
     app: &mut App,
     team: &str,
     channel: &ChannelId,
     ts: &MessageTs,
 ) -> bool {
-    let team_channel = (team.to_owned(), channel.clone());
-    if app.mark_blocked.contains(&team_channel) {
+    begin_read_mark(
+        app,
+        ReadTarget::Conversation {
+            team: team.to_owned(),
+            channel: channel.clone(),
+        },
+        ts,
+    )
+}
+
+pub(in crate::app) fn begin_thread_mark(
+    app: &mut App,
+    team: &str,
+    channel: &ChannelId,
+    root_ts: &MessageTs,
+    ts: &MessageTs,
+) -> bool {
+    begin_read_mark(
+        app,
+        ReadTarget::Thread {
+            team: team.to_owned(),
+            channel: channel.clone(),
+            root_ts: root_ts.clone(),
+        },
+        ts,
+    )
+}
+
+fn begin_read_mark(app: &mut App, target: ReadTarget, ts: &MessageTs) -> bool {
+    if app.mark_blocked.contains(&target) {
         return false;
     }
-    let key = (team.to_owned(), channel.clone(), ts.clone());
+    let key = (target, ts.clone());
     if app.pending_marks.contains(&key) {
         return false;
     }
     app.pending_marks.insert(key);
     true
+}
+
+pub(super) fn reconcile_activity_read(
+    app: &mut App,
+    team: &str,
+    channel: &str,
+    root_ts: Option<&str>,
+) {
+    if app.active_team.as_deref() != Some(team) {
+        return;
+    }
+    let mut transitioned = 0_u32;
+    for item in &mut app.activity.items {
+        let matches = item.channel() == Some(channel)
+            && match root_ts {
+                Some(root_ts) => item.is_thread() && item.thread_ts() == Some(root_ts),
+                None => item.is_conversation(),
+            };
+        if matches && item.mark_read() {
+            transitioned += 1;
+        }
+    }
+    if transitioned > 0 {
+        if let Some(count) = app
+            .workspaces
+            .get_mut(team)
+            .and_then(|workspace| workspace.activity_unread_count.as_mut())
+        {
+            *count = count.saturating_sub(transitioned);
+        }
+    }
 }
 
 pub(in crate::app) fn is_permanent_mark_error(error: &SlackError) -> bool {

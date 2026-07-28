@@ -110,6 +110,13 @@ pub enum ConversationMessage {
         unread_anchor: Option<MessageTs>,
         result: Result<HistoryPage, SlackError>,
     },
+    ThreadMarked {
+        team: TeamId,
+        channel: ChannelId,
+        root_ts: MessageTs,
+        ts: MessageTs,
+        result: Result<(), SlackError>,
+    },
     ThreadSendPressed,
     ThreadReplySent {
         team: TeamId,

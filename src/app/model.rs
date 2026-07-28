@@ -2,6 +2,19 @@ use super::*;
 
 pub(super) type ActiveThreadKey = (ChannelId, MessageTs);
 pub(super) type ThreadKey = (TeamId, ChannelId, MessageTs);
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub(super) enum ReadTarget {
+    Conversation {
+        team: TeamId,
+        channel: ChannelId,
+    },
+    Thread {
+        team: TeamId,
+        channel: ChannelId,
+        root_ts: MessageTs,
+    },
+}
 pub(super) fn thread_replies_args(
     channel: ChannelId,
     root_ts: MessageTs,

@@ -197,6 +197,24 @@ fn mark_request_includes_channel_and_ts() {
 }
 
 #[test]
+fn thread_mark_request_includes_thread_and_latest_reply() {
+    let request = subscriptions_thread_mark(
+        &SlackClient::default(),
+        &workspace(),
+        "C0159TSJVH8".into(),
+        "1783372300.111111".into(),
+        "1783372400.222222".into(),
+    );
+    let fields = form_fields(&request);
+
+    assert!(request.url.contains("/api/subscriptions.thread.mark?"));
+    assert!(fields.contains(&("channel".into(), "C0159TSJVH8".into())));
+    assert!(fields.contains(&("thread_ts".into(), "1783372300.111111".into())));
+    assert!(fields.contains(&("ts".into(), "1783372400.222222".into())));
+    assert!(fields.contains(&("read".into(), "1".into())));
+}
+
+#[test]
 fn conversations_info_request_targets_channel() {
     let request = conversations_info(&SlackClient::default(), &workspace(), "C123".into());
     let fields = form_fields(&request);

@@ -83,6 +83,25 @@ pub fn conversations_mark(
     )
 }
 
+pub fn subscriptions_thread_mark(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    channel: ChannelId,
+    root_ts: MessageTs,
+    ts: MessageTs,
+) -> PreparedRequest {
+    client.rest_form(
+        workspace,
+        "subscriptions.thread.mark",
+        vec![
+            ("channel", channel),
+            ("thread_ts", root_ts),
+            ("ts", ts),
+            ("read", "1".to_owned()),
+        ],
+    )
+}
+
 pub fn conversations_info(
     client: &SlackClient,
     workspace: &WorkspaceSession,

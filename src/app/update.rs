@@ -27,8 +27,8 @@ use super::{
     ActivityState, App, AttachTarget, ComposerAttachment, ComposerTarget, DesktopNotification,
     DmsState, FilePreview, HistoryLoadKind, ImageFetchAuth, ImageViewerImage, ImageViewerSource,
     ImageViewerState, MediaViewerKind, Message, PendingFileMessage, PendingScrollTarget,
-    PreparedVideo, ProfileHoverState, ProfilePaneState, SearchHit, SearchState, TextSelection,
-    TextSelectionPoint, TextSelectionSurface, ThreadKey, VideoViewerPlayback,
+    PreparedVideo, ProfileHoverState, ProfilePaneState, ReadTarget, SearchHit, SearchState,
+    TextSelection, TextSelectionPoint, TextSelectionSurface, ThreadKey, VideoViewerPlayback,
 };
 use iced::widget::text_editor::{Action, Content, Edit};
 
@@ -66,8 +66,8 @@ use sync::*;
 pub(super) use sync::{channel_needs_hydration, needs_user_hydration, notification_for_message};
 #[cfg(test)]
 pub(super) use workspace::{
-    begin_mark, is_permanent_mark_error, should_auto_load_activity, should_load_older_activity,
-    thread_panel_x_range,
+    begin_mark, begin_thread_mark, is_permanent_mark_error, should_auto_load_activity,
+    should_load_older_activity, thread_panel_x_range,
 };
 
 pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {

@@ -133,6 +133,34 @@ pub struct MessagesListChannel {
 }
 
 impl ActivityItem {
+    pub fn is_thread(&self) -> bool {
+        self.thread_entry().is_some()
+            || matches!(self.item.kind.as_str(), "thread_v2" | "thread_reply")
+    }
+
+    pub fn is_conversation(&self) -> bool {
+        matches!(self.item.kind.as_str(), "dm" | "bot_dm_bundle" | "channel")
+    }
+
+    pub fn mark_read(&mut self) -> bool {
+        let changed = self.is_unread;
+        self.is_unread = false;
+        if let Some(payload) = self
+            .item
+            .bundle_info
+            .as_mut()
+            .and_then(|bundle| bundle.payload.as_mut())
+        {
+            if let Some(entry) = payload.thread_entry.as_mut() {
+                entry.unread_msg_count = 0;
+            }
+            if let Some(entry) = payload.channel_entry.as_mut() {
+                entry.unread_msg_count = 0;
+            }
+        }
+        changed
+    }
+
     pub fn channel(&self) -> Option<&str> {
         if let Some(entry) = self.thread_entry() {
             return entry.channel_id.as_deref();
@@ -255,9 +283,7 @@ impl ActivityItem {
 
     pub fn identity(&self) -> String {
         let channel = self.channel().unwrap_or("");
-        if self.thread_entry().is_some()
-            || matches!(self.item.kind.as_str(), "thread_v2" | "thread_reply")
-        {
+        if self.is_thread() {
             let thread_ts = self.thread_ts().unwrap_or("");
             return format!("thread:{channel}:{thread_ts}");
         }

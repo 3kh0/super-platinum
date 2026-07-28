@@ -46,6 +46,22 @@ pub async fn mark_channel(
     Ok(())
 }
 
+pub async fn mark_thread(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    channel: ChannelId,
+    root_ts: MessageTs,
+    ts: MessageTs,
+) -> Result<(), Error> {
+    transport
+        .execute(subscriptions_thread_mark(
+            client, workspace, channel, root_ts, ts,
+        ))
+        .await?;
+    Ok(())
+}
+
 pub async fn fetch_counts(
     transport: &Transport,
     client: &SlackClient,

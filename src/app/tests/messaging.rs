@@ -20,6 +20,169 @@ fn thread_open_tracks_selected_root() {
 }
 
 #[test]
+fn unread_thread_open_marks_activity_latest_immediately() {
+    let mut app = live_test_app();
+    let team = app.active_team.clone().unwrap();
+    let channel = "C_GENERAL".to_owned();
+    let root_ts = "1783372300.000100".to_owned();
+    let latest = "1783372400.000100".to_owned();
+
+    let _ = update(
+        &mut app,
+        Message::Conversation(crate::app::ConversationMessage::ThreadOpened {
+            channel: channel.clone(),
+            ts: root_ts.clone(),
+            unread_range: Some(("1783372350.000100".into(), latest.clone())),
+        }),
+    );
+
+    assert!(app.pending_marks.contains(&(
+        ReadTarget::Thread {
+            team,
+            channel,
+            root_ts,
+        },
+        latest,
+    )));
+}
+
+#[test]
+fn loaded_thread_marks_latest_only_while_still_open() {
+    let mut app = live_test_app();
+    let team = app.active_team.clone().unwrap();
+    let channel = "C_GENERAL".to_owned();
+    let root_ts = "1783372300.000100".to_owned();
+    let latest = "1783372410.000100".to_owned();
+    app.active_thread = Some((channel.clone(), root_ts.clone()));
+    app.thread_open = true;
+
+    let _ = update(
+        &mut app,
+        Message::Conversation(crate::app::ConversationMessage::ThreadLoaded {
+            team: team.clone(),
+            channel: channel.clone(),
+            root_ts: root_ts.clone(),
+            unread_anchor: None,
+            result: Ok(HistoryPage {
+                messages: vec![
+                    msg("U_ALICE", &root_ts, "root"),
+                    SlackMessage {
+                        thread_ts: Some(root_ts.clone()),
+                        ..msg("U_BOB", &latest, "new reply")
+                    },
+                ],
+                ..Default::default()
+            }),
+        }),
+    );
+
+    assert!(app.pending_marks.contains(&(
+        ReadTarget::Thread {
+            team: team.clone(),
+            channel: channel.clone(),
+            root_ts: root_ts.clone(),
+        },
+        latest.clone(),
+    )));
+
+    app.pending_marks.clear();
+    app.thread_open = false;
+    let _ = update(
+        &mut app,
+        Message::Conversation(crate::app::ConversationMessage::ThreadLoaded {
+            team,
+            channel,
+            root_ts,
+            unread_anchor: None,
+            result: Ok(HistoryPage {
+                messages: vec![msg("U_BOB", "1783372420.000100", "late response")],
+                ..Default::default()
+            }),
+        }),
+    );
+    assert!(app.pending_marks.is_empty());
+}
+
+#[test]
+fn thread_mark_success_clears_matching_activity_once() {
+    let mut app = test_app();
+    let team = app.active_team.clone().unwrap();
+    let channel = "C_GENERAL".to_owned();
+    let root_ts = "1783372300.000100".to_owned();
+    let latest = "1783372400.000100".to_owned();
+    app.active_workspace_mut().unwrap().activity_unread_count = Some(3);
+    app.activity.items.push(
+        serde_json::from_value(json!({
+            "is_unread": true,
+            "feed_ts": latest,
+            "key": "thread-C_GENERAL-1783372300",
+            "item": {
+                "type": "thread_v2",
+                "bundle_info": {"payload": {"thread_entry": {
+                    "channel_id": channel,
+                    "thread_ts": root_ts,
+                    "latest_ts": latest,
+                    "unread_msg_count": 2
+                }}}
+            }
+        }))
+        .unwrap(),
+    );
+    assert!(begin_thread_mark(
+        &mut app, &team, &channel, &root_ts, &latest,
+    ));
+
+    let marked = Message::Conversation(crate::app::ConversationMessage::ThreadMarked {
+        team: team.clone(),
+        channel: channel.clone(),
+        root_ts: root_ts.clone(),
+        ts: latest.clone(),
+        result: Ok(()),
+    });
+    let _ = update(&mut app, marked.clone());
+    let _ = update(&mut app, marked);
+
+    assert!(!app.activity.items[0].is_unread);
+    assert_eq!(app.activity.items[0].unread_msg_count(), 0);
+    assert_eq!(
+        app.active_workspace().unwrap().activity_unread_count,
+        Some(2)
+    );
+}
+
+#[test]
+fn permanent_thread_mark_failure_does_not_block_channel_marks() {
+    let mut app = test_app();
+    let team = app.active_team.clone().unwrap();
+    let channel = "C_GENERAL".to_owned();
+    let root_ts = "1783372300.000100".to_owned();
+    let latest = "1783372400.000100".to_owned();
+    assert!(begin_thread_mark(
+        &mut app, &team, &channel, &root_ts, &latest,
+    ));
+
+    let _ = update(
+        &mut app,
+        Message::Conversation(crate::app::ConversationMessage::ThreadMarked {
+            team: team.clone(),
+            channel: channel.clone(),
+            root_ts: root_ts.clone(),
+            ts: latest.clone(),
+            result: Err(SlackError::Api("channel_not_found".into())),
+        }),
+    );
+
+    assert!(!begin_thread_mark(
+        &mut app,
+        &team,
+        &channel,
+        &root_ts,
+        &"1783372500.000100".into(),
+    ));
+    assert!(begin_mark(&mut app, &team, &channel, &latest));
+}
+
+#[test]
 fn thread_loaded_stores_replies() {
     let mut app = test_app();
     let team = app.active_team.clone().unwrap();

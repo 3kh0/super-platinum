@@ -545,6 +545,43 @@ impl App {
         )
     }
 
+    pub(super) fn mark_thread_read(
+        &self,
+        team: &str,
+        channel: &ChannelId,
+        root_ts: MessageTs,
+        ts: MessageTs,
+    ) -> Task<Message> {
+        let Some((transport, session)) = self.live() else {
+            return Task::none();
+        };
+        let Some(ws) = session.workspaces.get(team) else {
+            return Task::none();
+        };
+        let transport = transport.clone();
+        let client = self.client.clone();
+        let ws = ws.clone();
+        let team = team.to_owned();
+        let channel = channel.clone();
+        let send_channel = channel.clone();
+        let send_root_ts = root_ts.clone();
+        let mark_ts = ts.clone();
+        Task::perform(
+            async move {
+                api::mark_thread(&transport, &client, &ws, send_channel, send_root_ts, ts).await
+            },
+            move |result| {
+                Message::Conversation(crate::app::ConversationMessage::ThreadMarked {
+                    team: team.clone(),
+                    channel: channel.clone(),
+                    root_ts: root_ts.clone(),
+                    ts: mark_ts.clone(),
+                    result,
+                })
+            },
+        )
+    }
+
     pub(super) fn load_thread(
         &self,
         team: &str,

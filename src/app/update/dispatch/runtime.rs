@@ -231,13 +231,13 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
             };
             match thread_ts {
                 Some(root_ts) => {
-                    let mut task = update(
+                    let mut task = super::update_inner(
                         app,
                         Message::Conversation(crate::app::ConversationMessage::ChannelSelected(
                             channel.clone(),
                         )),
                     );
-                    task = task.chain(update(
+                    task = task.chain(super::update_inner(
                         app,
                         Message::Conversation(crate::app::ConversationMessage::ThreadOpened {
                             channel,
@@ -250,7 +250,7 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                 None => {
                     app.active_thread = None;
                     app.thread_open = false;
-                    update(
+                    super::update_inner(
                         app,
                         Message::Conversation(crate::app::ConversationMessage::ChannelSelected(
                             channel,

@@ -293,7 +293,7 @@ fn channel_selection_preserves_loaded_messages() {
 }
 
 #[test]
-fn selecting_cached_channel_starts_background_refresh_without_marking_stale_tail() {
+fn selecting_cached_channel_marks_cached_tail_while_refreshing() {
     let mut app = live_test_app();
     let team = app.active_team.clone().unwrap();
 
@@ -308,7 +308,13 @@ fn selecting_cached_channel_starts_background_refresh_without_marking_stale_tail
     assert!(cm.loaded);
     assert!(cm.history_refreshing);
     assert!(!cm.messages.is_empty());
-    assert!(app.pending_marks.is_empty());
+    assert!(app.pending_marks.contains(&(
+        ReadTarget::Conversation {
+            team,
+            channel: "C_DEV".into(),
+        },
+        "1783370010.000200".into(),
+    )));
 }
 
 #[test]

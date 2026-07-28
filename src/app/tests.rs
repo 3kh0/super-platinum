@@ -9,11 +9,11 @@ use serde_json::json;
 
 use super::subscription::visible_media_animation_interval;
 use super::update::{
-    begin_mark, channel_needs_hydration, channel_open_scroll_target, emoji_preview_from_bytes,
-    import_background_sync, is_permanent_mark_error, needs_user_hydration,
-    notification_for_message, pending_target_ts, preferred_channel, scope_message,
-    should_auto_load_activity, should_load_older_activity, should_load_older_history,
-    thread_panel_x_range, unique_download_path, update,
+    begin_mark, begin_thread_mark, channel_needs_hydration, channel_open_scroll_target,
+    emoji_preview_from_bytes, import_background_sync, is_permanent_mark_error,
+    needs_user_hydration, notification_for_message, pending_target_ts, preferred_channel,
+    scope_message, should_auto_load_activity, should_load_older_activity,
+    should_load_older_history, thread_panel_x_range, unique_download_path, update,
 };
 use super::*;
 use crate::slack::Error as SlackError;

@@ -41,6 +41,7 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                         .filter(|_| app.active_team.as_deref() == Some(&team))
                     {
                         tasks.extend([
+                            mark_latest_visible(app, &team, &channel),
                             hydrate_visible_missing_users(app, &team, &channel),
                             load_visible_file_previews(app, &team, &channel),
                             load_visible_avatar_previews(app, &team, &channel),
@@ -218,18 +219,22 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
             ts,
             result,
         )) => {
-            app.pending_marks
-                .remove(&(team.clone(), channel.clone(), ts.clone()));
+            let target = ReadTarget::Conversation {
+                team: team.clone(),
+                channel: channel.clone(),
+            };
+            app.pending_marks.remove(&(target.clone(), ts.clone()));
             match result {
                 Ok(()) => {
                     if let Some(ws) = app.workspaces.get_mut(&team) {
                         apply_channel_marked(ws, &channel, &ts, 0, 0);
                     }
+                    reconcile_activity_read(app, &team, &channel, None);
                     mark_workspace_dirty(app, &team);
                 }
                 Err(e) => {
                     if is_permanent_mark_error(&e) {
-                        app.mark_blocked.insert((team.clone(), channel.clone()));
+                        app.mark_blocked.insert(target);
                         tracing::warn!(
                             %team,
                             %channel,

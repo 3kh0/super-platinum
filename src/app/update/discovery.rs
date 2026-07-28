@@ -118,7 +118,7 @@ pub(super) fn open_search_result(
     app.edit_content = Content::new();
     app.pending_scroll_to = Some((channel.clone(), PendingScrollTarget::Message(ts.clone())));
 
-    let mut tasks = Vec::new();
+    let mut tasks = vec![mark_latest_visible(app, &team, &channel)];
     let target_loaded = app
         .workspaces
         .get(&team)
@@ -140,6 +140,7 @@ pub(super) fn open_search_result(
         Some(root) => {
             app.active_thread = Some((channel.clone(), root.clone()));
             app.thread_open = true;
+            tasks.push(mark_latest_thread(app, &team, &channel, &root, None));
             let needs_thread = !app
                 .threads
                 .get(&(team.clone(), channel.clone(), root.clone()))

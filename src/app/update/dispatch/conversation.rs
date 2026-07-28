@@ -50,7 +50,9 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                 focus_active_composer(app)
             };
             if let Some(team) = app.active_team.clone() {
+                let mark = mark_latest_visible(app, &team, &id);
                 return Task::batch([
+                    mark,
                     refresh_channel_history(app, &team, &id),
                     hydrate_visible_missing_users(app, &team, &id),
                     hydrate_visible_channels(app, &team, &id),
@@ -79,6 +81,8 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
             let Some(team) = app.active_team.clone() else {
                 return focus;
             };
+            let known_latest = unread_range.as_ref().map(|(_, latest)| latest.clone());
+            let mark = mark_latest_thread(app, &team, &channel, &ts, known_latest);
             let needs_load = unread_range.is_some()
                 || !app
                     .threads
@@ -86,9 +90,14 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                     .map(|cm| cm.loaded)
                     .unwrap_or(false);
             if needs_load {
-                Task::batch([app.load_thread(&team, &channel, &ts, unread_range), focus])
+                Task::batch([
+                    mark,
+                    app.load_thread(&team, &channel, &ts, unread_range),
+                    focus,
+                ])
             } else {
                 Task::batch([
+                    mark,
                     load_thread_file_previews(app, &team, &channel, &ts),
                     load_thread_avatar_previews(app, &team, &channel, &ts),
                     hydrate_thread_emojis(app, &team, &channel, &ts),
@@ -158,7 +167,15 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                             Some(((team.clone(), channel.clone(), root_ts.clone()), anchor));
                     }
                     tracing::info!(%channel, %root_ts, messages = n, "thread loaded");
+                    let mark = if app.thread_open
+                        && app.active_thread.as_ref() == Some(&(channel.clone(), root_ts.clone()))
+                    {
+                        mark_latest_thread(app, &team, &channel, &root_ts, None)
+                    } else {
+                        Task::none()
+                    };
                     return Task::batch([
+                        mark,
                         hydrate_missing_users(app, &team, &messages),
                         hydrate_message_channels(app, &team, &messages),
                         hydrate_emojis(app, &team, &messages),
@@ -178,6 +195,58 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                     app.toast(format!("thread failed for {channel}/{root_ts}: {e}"));
                     if is_auth_error(&e) {
                         app.screen = Screen::Login;
+                    }
+                }
+            }
+            Task::none()
+        }
+
+        Message::Conversation(crate::app::ConversationMessage::ThreadMarked {
+            team,
+            channel,
+            root_ts,
+            ts,
+            result,
+        }) => {
+            let target = ReadTarget::Thread {
+                team: team.clone(),
+                channel: channel.clone(),
+                root_ts: root_ts.clone(),
+            };
+            app.pending_marks.remove(&(target.clone(), ts.clone()));
+            match result {
+                Ok(()) => {
+                    if let Some(messages) =
+                        app.threads
+                            .get_mut(&(team.clone(), channel.clone(), root_ts.clone()))
+                    {
+                        if !crate::state::cmp_ts(Some(&ts), messages.last_read.as_deref()).is_lt() {
+                            messages.last_read = Some(ts.clone());
+                            messages.unread_count = 0;
+                            messages.mention_count = 0;
+                        }
+                    }
+                    reconcile_activity_read(app, &team, &channel, Some(&root_ts));
+                    mark_workspace_dirty(app, &team);
+                }
+                Err(error) => {
+                    if is_permanent_mark_error(&error) {
+                        app.mark_blocked.insert(target);
+                        tracing::warn!(
+                            %team,
+                            %channel,
+                            %root_ts,
+                            error = %error,
+                            "thread mark failed permanently; blocking further attempts this session"
+                        );
+                    } else {
+                        tracing::warn!(
+                            %team,
+                            %channel,
+                            %root_ts,
+                            error = %error,
+                            "thread mark failed"
+                        );
                     }
                 }
             }

@@ -199,7 +199,10 @@ fn mark_gate_dedupes_in_flight_and_blocks_channel_not_found() {
     );
 
     assert!(app.pending_marks.is_empty());
-    assert!(app.mark_blocked.contains(&(team.clone(), channel.clone())));
+    assert!(app.mark_blocked.contains(&ReadTarget::Conversation {
+        team: team.clone(),
+        channel: channel.clone(),
+    }));
     assert!(
         !begin_mark(&mut app, &team, &channel, &ts),
         "channel_not_found must block further marks this session"
@@ -237,7 +240,10 @@ fn mark_gate_allows_retry_after_transient_error() {
     );
 
     assert!(app.pending_marks.is_empty());
-    assert!(!app.mark_blocked.contains(&(team.clone(), channel.clone())));
+    assert!(!app.mark_blocked.contains(&ReadTarget::Conversation {
+        team: team.clone(),
+        channel: channel.clone(),
+    }));
     assert!(
         begin_mark(&mut app, &team, &channel, &ts),
         "transient failures must remain retryable"
@@ -250,6 +256,22 @@ fn mark_success_updates_last_read_without_optimistic_write() {
     let team = app.active_team.clone().unwrap();
     let channel = "C_GENERAL".to_string();
     let ts = "1783372300.000100".to_string();
+    app.active_workspace_mut().unwrap().activity_unread_count = Some(2);
+    app.activity.items.push(
+        serde_json::from_value(json!({
+            "is_unread": true,
+            "feed_ts": ts,
+            "key": "channel-C_GENERAL",
+            "item": {
+                "type": "channel",
+                "bundle_info": {"payload": {"channel_entry": {
+                    "latest_message": {"channel": channel, "ts": ts},
+                    "unread_msg_count": 1
+                }}}
+            }
+        }))
+        .unwrap(),
+    );
 
     {
         let cm = app
@@ -284,6 +306,12 @@ fn mark_success_updates_last_read_without_optimistic_write() {
     assert_eq!(cm.last_read.as_deref(), Some(ts.as_str()));
     assert_eq!(cm.unread_count, 0);
     assert_eq!(cm.mention_count, 0);
+    assert!(!app.activity.items[0].is_unread);
+    assert_eq!(app.activity.items[0].unread_msg_count(), 0);
+    assert_eq!(
+        app.active_workspace().unwrap().activity_unread_count,
+        Some(1)
+    );
 }
 
 #[test]
@@ -322,6 +350,41 @@ fn activity_upsert_dedups_thread_by_identity() {
     .unwrap();
     state.upsert(other);
     assert_eq!(state.items.len(), 2);
+}
+
+#[test]
+fn selecting_thread_activity_routes_into_conversation_reducer() {
+    let mut app = test_app();
+    let item: ActivityItem = serde_json::from_value(json!({
+        "is_unread": true,
+        "feed_ts": "1783372400.000100",
+        "key": "thread-C_GENERAL-1783372300",
+        "item": {
+            "type": "thread_v2",
+            "bundle_info": {"payload": {"thread_entry": {
+                "channel_id": "C_GENERAL",
+                "thread_ts": "1783372300.000100",
+                "latest_ts": "1783372400.000100",
+                "min_unread_ts": "1783372350.000100",
+                "unread_msg_count": 1
+            }}}
+        }
+    }))
+    .unwrap();
+    let key = item.key.clone();
+    app.activity.items.push(item);
+
+    let _ = update(
+        &mut app,
+        Message::Runtime(crate::app::RuntimeMessage::ActivitySelected(key.clone())),
+    );
+
+    assert_eq!(app.activity.selected.as_deref(), Some(key.as_str()));
+    assert_eq!(
+        app.active_thread.as_ref(),
+        Some(&("C_GENERAL".into(), "1783372300.000100".into()))
+    );
+    assert!(app.thread_open);
 }
 
 #[test]

@@ -33,7 +33,8 @@ pub use message::{
     RuntimeMessage, WorkspaceMessage,
 };
 use model::{
-    ActiveThreadKey, DesktopNotification, PendingScrollTarget, ThreadKey, thread_replies_args,
+    ActiveThreadKey, DesktopNotification, PendingScrollTarget, ReadTarget, ThreadKey,
+    thread_replies_args,
 };
 pub use model::{
     ActivityState, ComposerAttachment, DmsState, FilePreview, HistoryLoadKind, ImageFetchAuth,
@@ -113,8 +114,8 @@ pub struct App {
     pending_scroll_to: Option<(ChannelId, PendingScrollTarget)>,
     thread_unread_marker: Option<(ThreadKey, MessageTs)>,
     chat_paused: HashMap<ChannelId, u32>,
-    pending_marks: HashSet<(TeamId, ChannelId, MessageTs)>,
-    mark_blocked: HashSet<(TeamId, ChannelId)>,
+    pending_marks: HashSet<(ReadTarget, MessageTs)>,
+    mark_blocked: HashSet<ReadTarget>,
     cache_dirty: HashMap<TeamId, Instant>,
     cache_saving: HashMap<TeamId, Instant>,
     settings: config::Settings,
