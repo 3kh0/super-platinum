@@ -14,7 +14,7 @@ use iced::{Event, Settings, Size, mouse, time, window};
 use iced_test::{Error, Simulator};
 
 use super::tests::{
-    account_menu_app, activity_app, dms_app, image_viewer_app, login_app,
+    account_menu_app, activity_app, dms_app, image_viewer_app, loaded_channel, login_app,
     multi_paragraph_emoji_app, profile_app, search_app, settings_app, test_app, thread_unread_app,
     video_viewer_app,
 };
@@ -664,6 +664,35 @@ fn ui_visual_dm_history_loading_and_failure_states() -> Result<(), Error> {
     ui.find("Retry")?;
     drop(ui);
     capture(&app, "dm-history-failed")?;
+    Ok(())
+}
+
+#[test]
+fn ui_visual_cached_dm_stays_visible_when_refresh_fails() -> Result<(), Error> {
+    let mut app = dms_app();
+    app.active_channel = Some("D_ALICE".into());
+    let ws = app.workspaces.get_mut("T_TEST").unwrap();
+    let mut cached = loaded_channel("U_ALICE", "1783372300.000100", "unread dm from alice");
+    cached.history_refreshing = true;
+    ws.messages.insert("D_ALICE".into(), cached);
+
+    apply_messages(
+        &mut app,
+        [Message::Workspace(
+            crate::app::WorkspaceMessage::HistoryLoaded(
+                "T_TEST".into(),
+                "D_ALICE".into(),
+                crate::app::HistoryLoadKind::Since,
+                Err(crate::slack::Error::Transport("offline".into())),
+            ),
+        )],
+    );
+
+    let mut ui = sim(&app);
+    ui.find("unread dm from alice")?;
+    assert!(ui.find("Couldn't load messages.").is_err());
+    drop(ui);
+    capture(&app, "dm-cached-refresh-failed")?;
     Ok(())
 }
 

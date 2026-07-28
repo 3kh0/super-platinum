@@ -370,7 +370,10 @@ impl App {
                     },
                 )
                 .await?;
-                Ok(merge_history_pages(before, after))
+                Ok(LoadedHistory {
+                    page: merge_history_pages(before, after),
+                    replace_cached: false,
+                })
             },
             move |result| {
                 Message::Workspace(crate::app::WorkspaceMessage::HistoryLoaded(
@@ -387,9 +390,72 @@ impl App {
         &self,
         team: &str,
         channel: &ChannelId,
-        oldest: Option<MessageTs>,
+        oldest: MessageTs,
     ) -> Task<Message> {
-        self.load_history_page(team, channel, HistoryLoadKind::Since, None, oldest)
+        const MAX_CATCH_UP_MESSAGES: usize = 200;
+
+        let Some((transport, session)) = self.live() else {
+            return Task::none();
+        };
+        let Some(ws) = session.workspaces.get(team) else {
+            return Task::none();
+        };
+        let transport = transport.clone();
+        let client = self.client.clone();
+        let ws = ws.clone();
+        let team = team.to_owned();
+        let channel = channel.clone();
+        let fetch_channel = channel.clone();
+        Task::perform(
+            async move {
+                let mut messages = Vec::new();
+                let mut cursor = None;
+                let replace_cached = loop {
+                    let page = api::fetch_history(
+                        &transport,
+                        &client,
+                        &ws,
+                        HistoryArgs {
+                            channel: fetch_channel.clone(),
+                            cursor,
+                            oldest: Some(oldest.clone()),
+                            limit: Some(50),
+                            ..Default::default()
+                        },
+                    )
+                    .await?;
+                    messages.extend(page.messages);
+                    let next = page
+                        .response_metadata
+                        .and_then(|metadata| metadata.next_cursor)
+                        .filter(|cursor| !cursor.is_empty());
+                    if next.is_none() {
+                        break false;
+                    }
+                    if messages.len() >= MAX_CATCH_UP_MESSAGES {
+                        messages.truncate(MAX_CATCH_UP_MESSAGES);
+                        break true;
+                    }
+                    cursor = next;
+                };
+                Ok(LoadedHistory {
+                    page: HistoryPage {
+                        messages,
+                        has_more: replace_cached,
+                        ..Default::default()
+                    },
+                    replace_cached,
+                })
+            },
+            move |result| {
+                Message::Workspace(crate::app::WorkspaceMessage::HistoryLoaded(
+                    team.clone(),
+                    channel.clone(),
+                    HistoryLoadKind::Since,
+                    result,
+                ))
+            },
+        )
     }
 
     pub(super) fn load_older_history(
@@ -428,7 +494,14 @@ impl App {
             ..Default::default()
         };
         Task::perform(
-            async move { api::fetch_history(&transport, &client, &ws, args).await },
+            async move {
+                api::fetch_history(&transport, &client, &ws, args)
+                    .await
+                    .map(|page| LoadedHistory {
+                        page,
+                        replace_cached: false,
+                    })
+            },
             move |result| {
                 Message::Workspace(crate::app::WorkspaceMessage::HistoryLoaded(
                     team.clone(),

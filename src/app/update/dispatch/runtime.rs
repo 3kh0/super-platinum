@@ -66,14 +66,7 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
             }
             if app.active_team.as_deref() == Some(&team) {
                 if let Some(channel) = app.active_channel.clone() {
-                    if app.transport.is_some() {
-                        let oldest = app
-                            .workspaces
-                            .get(&team)
-                            .and_then(|ws| ws.messages.get(&channel))
-                            .and_then(|cm| cm.latest_ts());
-                        return app.load_history_since(&team, &channel, oldest);
-                    }
+                    return refresh_channel_history(app, &team, &channel);
                 }
             }
             Task::none()

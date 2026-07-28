@@ -50,25 +50,10 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                 focus_active_composer(app)
             };
             if let Some(team) = app.active_team.clone() {
-                let needs_load = app
-                    .workspaces
-                    .get(&team)
-                    .map(|ws| !ws.messages.get(&id).map(|cm| cm.loaded).unwrap_or(false))
-                    .unwrap_or(false);
-                if app.transport.is_some() && needs_load {
-                    if let Some(cm) = app
-                        .workspaces
-                        .get_mut(&team)
-                        .and_then(|ws| ws.messages.get_mut(&id))
-                    {
-                        cm.history_failed = false;
-                    }
-                    return Task::batch([app.load_history(&team, &id), focus]);
-                }
                 return Task::batch([
+                    refresh_channel_history(app, &team, &id),
                     hydrate_visible_missing_users(app, &team, &id),
                     hydrate_visible_channels(app, &team, &id),
-                    mark_latest_visible(app, &team, &id),
                     load_visible_file_previews(app, &team, &id),
                     load_visible_avatar_previews(app, &team, &id),
                     hydrate_visible_emojis(app, &team, &id),

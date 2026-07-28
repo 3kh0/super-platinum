@@ -32,7 +32,7 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                             app.pending_scroll_to =
                                 channel_open_scroll_target(app, &team, &channel)
                                     .map(|target| (channel.clone(), target));
-                            tasks.push(app.load_history(&team, &channel));
+                            tasks.push(refresh_channel_history(app, &team, &channel));
                         }
                     }
                     if let Some(channel) = app
@@ -111,7 +111,9 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
             result,
         )) => {
             match result {
-                Ok(page) => {
+                Ok(loaded) => {
+                    let replace_cached = loaded.replace_cached;
+                    let page = loaded.page;
                     let has_more = page.has_more;
                     let messages: Vec<_> = page
                         .messages
@@ -121,6 +123,14 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                     if let Some(ws) = app.workspaces.get_mut(&team) {
                         let cm = ws.messages.entry(channel.clone()).or_default();
                         let n = messages.len();
+                        if replace_cached {
+                            cm.messages.retain(|message| {
+                                message.ts.as_deref().is_some_and(|ts| {
+                                    cm.pending.iter().any(|pending| pending == ts)
+                                })
+                            });
+                            cm.has_more_older = true;
+                        }
                         for msg in messages.clone() {
                             if crate::state::is_channel_timeline_visible(&msg) {
                                 cm.upsert(msg);
@@ -128,6 +138,9 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                         }
                         cm.loaded = true;
                         cm.history_failed = false;
+                        if kind != HistoryLoadKind::Older {
+                            cm.history_refreshing = false;
+                        }
                         if matches!(
                             kind,
                             HistoryLoadKind::Latest
@@ -142,6 +155,11 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                         tracing::info!(%channel, messages = n, "history loaded");
                     }
                     mark_workspace_dirty(app, &team);
+                    let is_active = app.active_team.as_deref() == Some(team.as_str())
+                        && app.active_channel.as_deref() == Some(channel.as_str());
+                    if !is_active {
+                        return Task::none();
+                    }
                     let mut tasks = vec![
                         hydrate_missing_users(app, &team, &messages),
                         hydrate_message_channels(app, &team, &messages),
@@ -162,6 +180,8 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                         cm.history_failed = true;
                         if kind == HistoryLoadKind::Older {
                             cm.history_loading_older = false;
+                        } else {
+                            cm.history_refreshing = false;
                         }
                     }
                     if kind == HistoryLoadKind::Older

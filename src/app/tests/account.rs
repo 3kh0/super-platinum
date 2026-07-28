@@ -293,6 +293,171 @@ fn channel_selection_preserves_loaded_messages() {
 }
 
 #[test]
+fn selecting_cached_channel_starts_background_refresh_without_marking_stale_tail() {
+    let mut app = live_test_app();
+    let team = app.active_team.clone().unwrap();
+
+    let _ = update(
+        &mut app,
+        Message::Conversation(crate::app::ConversationMessage::ChannelSelected(
+            "C_DEV".into(),
+        )),
+    );
+
+    let cm = &app.workspaces[&team].messages["C_DEV"];
+    assert!(cm.loaded);
+    assert!(cm.history_refreshing);
+    assert!(!cm.messages.is_empty());
+    assert!(app.pending_marks.is_empty());
+}
+
+#[test]
+fn cached_history_refresh_merges_new_messages_and_clears_refresh_state() {
+    let mut app = test_app();
+    let team = app.active_team.clone().unwrap();
+    let channel = app.active_channel.clone().unwrap();
+    app.workspaces
+        .get_mut(&team)
+        .unwrap()
+        .messages
+        .get_mut(&channel)
+        .unwrap()
+        .history_refreshing = true;
+
+    let _ = update(
+        &mut app,
+        Message::Workspace(crate::app::WorkspaceMessage::HistoryLoaded(
+            team.clone(),
+            channel.clone(),
+            HistoryLoadKind::Since,
+            Ok(loaded_history(HistoryPage {
+                messages: vec![msg("U_ALICE", "1783372400.000100", "fresh from Slack")],
+                ..Default::default()
+            })),
+        )),
+    );
+
+    let cm = &app.workspaces[&team].messages[&channel];
+    assert!(!cm.history_refreshing);
+    assert!(cm.messages.iter().any(|message| {
+        message.ts.as_deref() == Some("1783372400.000100")
+            && message.text.as_deref() == Some("fresh from Slack")
+    }));
+}
+
+#[test]
+fn cached_history_refresh_failure_keeps_messages_and_allows_retry() {
+    let mut app = test_app();
+    let team = app.active_team.clone().unwrap();
+    let channel = app.active_channel.clone().unwrap();
+    let before = app.workspaces[&team].messages[&channel].messages.len();
+    app.workspaces
+        .get_mut(&team)
+        .unwrap()
+        .messages
+        .get_mut(&channel)
+        .unwrap()
+        .history_refreshing = true;
+
+    let _ = update(
+        &mut app,
+        Message::Workspace(crate::app::WorkspaceMessage::HistoryLoaded(
+            team.clone(),
+            channel.clone(),
+            HistoryLoadKind::Since,
+            Err(SlackError::Transport("offline".into())),
+        )),
+    );
+
+    let cm = &app.workspaces[&team].messages[&channel];
+    assert!(!cm.history_refreshing);
+    assert!(cm.history_failed);
+    assert_eq!(cm.messages.len(), before);
+}
+
+#[test]
+fn late_history_refresh_for_inactive_channel_does_not_mark_it_read() {
+    let mut app = test_app();
+    let team = app.active_team.clone().unwrap();
+    app.active_channel = Some("C_DEV".into());
+    app.workspaces
+        .get_mut(&team)
+        .unwrap()
+        .messages
+        .get_mut("C_GENERAL")
+        .unwrap()
+        .history_refreshing = true;
+
+    let _ = update(
+        &mut app,
+        Message::Workspace(crate::app::WorkspaceMessage::HistoryLoaded(
+            team.clone(),
+            "C_GENERAL".into(),
+            HistoryLoadKind::Since,
+            Ok(loaded_history(HistoryPage {
+                messages: vec![msg("U_ALICE", "1783372500.000100", "arrived after switch")],
+                ..Default::default()
+            })),
+        )),
+    );
+
+    assert!(app.pending_marks.is_empty());
+    assert!(
+        app.workspaces[&team].messages["C_GENERAL"]
+            .messages
+            .iter()
+            .any(|message| message.ts.as_deref() == Some("1783372500.000100"))
+    );
+}
+
+#[test]
+fn bounded_catch_up_replaces_stale_tail_but_preserves_pending_send() {
+    let mut app = test_app();
+    let team = app.active_team.clone().unwrap();
+    let channel = app.active_channel.clone().unwrap();
+    let pending_ts = "9999999999.000001".to_owned();
+    {
+        let cm = app
+            .workspaces
+            .get_mut(&team)
+            .unwrap()
+            .messages
+            .get_mut(&channel)
+            .unwrap();
+        cm.upsert(msg(SELF_USER, &pending_ts, "pending send"));
+        cm.pending.push(pending_ts.clone());
+        cm.history_refreshing = true;
+    }
+
+    let _ = update(
+        &mut app,
+        Message::Workspace(crate::app::WorkspaceMessage::HistoryLoaded(
+            team.clone(),
+            channel.clone(),
+            HistoryLoadKind::Since,
+            Ok(LoadedHistory {
+                page: HistoryPage {
+                    messages: vec![msg("U_ALICE", "1783372600.000100", "new contiguous tail")],
+                    has_more: true,
+                    ..Default::default()
+                },
+                replace_cached: true,
+            }),
+        )),
+    );
+
+    let cm = &app.workspaces[&team].messages[&channel];
+    assert_eq!(cm.messages.len(), 2);
+    assert!(cm.is_pending(&pending_ts));
+    assert!(
+        cm.messages
+            .iter()
+            .any(|message| { message.ts.as_deref() == Some("1783372600.000100") })
+    );
+    assert!(cm.has_more_older);
+}
+
+#[test]
 fn channel_selection_records_last_active_channel() {
     let mut app = test_app();
     let team = app.active_team.clone().unwrap();

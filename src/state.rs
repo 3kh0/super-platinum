@@ -84,6 +84,7 @@ impl Presence {
 pub struct ChannelMessages {
     pub messages: Vec<SlackMessage>,
     pub loaded: bool,
+    pub history_refreshing: bool,
     pub has_more_older: bool,
     pub history_loading_older: bool,
     pub history_failed: bool,
@@ -195,6 +196,16 @@ impl ChannelMessages {
         self.messages
             .iter()
             .filter_map(|m| m.ts.clone())
+            .max_by(|a, b| ts_key(a).cmp(&ts_key(b)))
+    }
+
+    pub fn latest_confirmed_ts(&self) -> Option<MessageTs> {
+        self.messages
+            .iter()
+            .filter_map(|message| {
+                let ts = message.ts.as_ref()?;
+                (!self.is_pending(ts)).then(|| ts.clone())
+            })
             .max_by(|a, b| ts_key(a).cmp(&ts_key(b)))
     }
 

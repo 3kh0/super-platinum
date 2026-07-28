@@ -130,7 +130,7 @@ pub enum WorkspaceMessage {
         TeamId,
         ChannelId,
         HistoryLoadKind,
-        Result<HistoryPage, SlackError>,
+        Result<super::LoadedHistory, SlackError>,
     ),
     ChannelScrolled {
         channel: ChannelId,

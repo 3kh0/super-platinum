@@ -37,9 +37,9 @@ use model::{
 };
 pub use model::{
     ActivityState, ComposerAttachment, DmsState, FilePreview, HistoryLoadKind, ImageFetchAuth,
-    ImageViewerImage, ImageViewerSource, ImageViewerState, MediaViewerKind, PendingFileMessage,
-    PreparedVideo, ProfileHoverState, ProfilePaneState, SearchHit, SearchState, TextSelection,
-    TextSelectionPoint, TextSelectionSurface, VideoViewerPlayback,
+    ImageViewerImage, ImageViewerSource, ImageViewerState, LoadedHistory, MediaViewerKind,
+    PendingFileMessage, PreparedVideo, ProfileHoverState, ProfilePaneState, SearchHit, SearchState,
+    TextSelection, TextSelectionPoint, TextSelectionSurface, VideoViewerPlayback,
 };
 use runtime::merge_history_pages;
 pub use runtime::run;

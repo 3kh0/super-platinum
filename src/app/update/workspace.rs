@@ -253,27 +253,71 @@ pub(super) fn select_workspace(app: &mut App, team: TeamId) -> Task<Message> {
     };
     app.pending_scroll_to =
         channel_open_scroll_target(app, &team, &channel).map(|target| (channel.clone(), target));
-    let needs_load = app
-        .workspaces
-        .get(&team)
-        .map(|ws| {
-            !ws.messages
-                .get(&channel)
-                .map(|cm| cm.loaded)
-                .unwrap_or(false)
-        })
-        .unwrap_or(false);
     let focus = focus_active_composer(app);
-    if app.transport.is_some() && needs_load {
-        Task::batch([app.load_history(&team, &channel), activity_task, focus])
-    } else {
-        Task::batch([
-            mark_latest_visible(app, &team, &channel),
-            scroll_to_pending(app, &channel),
-            activity_task,
-            focus,
-        ])
+    Task::batch([
+        refresh_channel_history(app, &team, &channel),
+        scroll_to_pending(app, &channel),
+        activity_task,
+        focus,
+    ])
+}
+
+pub(super) fn refresh_channel_history(
+    app: &mut App,
+    team: &str,
+    channel: &ChannelId,
+) -> Task<Message> {
+    if app.live().is_none() {
+        return Task::none();
     }
+    let unread_anchor = app.unread_anchor(team, channel);
+    let latest = {
+        let cm = app
+            .workspaces
+            .get_mut(team)
+            .map(|ws| ws.messages.entry(channel.clone()).or_default());
+        let Some(cm) = cm else {
+            return Task::none();
+        };
+        if cm.history_refreshing {
+            return Task::none();
+        }
+        cm.history_refreshing = true;
+        cm.history_failed = false;
+        cm.loaded.then(|| cm.latest_confirmed_ts()).flatten()
+    };
+
+    if let Some(anchor) = unread_anchor {
+        app.load_history_around(team, channel, anchor)
+    } else if let Some(latest) = latest {
+        app.load_history_since(team, channel, latest)
+    } else {
+        app.load_history(team, channel)
+    }
+}
+
+pub(super) fn refresh_channel_history_around(
+    app: &mut App,
+    team: &str,
+    channel: &ChannelId,
+    anchor: MessageTs,
+) -> Task<Message> {
+    if app.live().is_none() {
+        return Task::none();
+    }
+    let Some(cm) = app
+        .workspaces
+        .get_mut(team)
+        .map(|ws| ws.messages.entry(channel.clone()).or_default())
+    else {
+        return Task::none();
+    };
+    if cm.history_refreshing {
+        return Task::none();
+    }
+    cm.history_refreshing = true;
+    cm.history_failed = false;
+    app.load_history_around(team, channel, anchor)
 }
 
 pub(super) fn focus_active_composer(app: &App) -> Task<Message> {
@@ -633,7 +677,7 @@ pub(super) fn mark_latest_visible(app: &mut App, team: &str, channel: &ChannelId
     if !cm.loaded {
         return Task::none();
     }
-    let Some(latest) = cm.latest_ts() else {
+    let Some(latest) = cm.latest_confirmed_ts() else {
         return Task::none();
     };
     if cm

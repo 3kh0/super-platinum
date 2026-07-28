@@ -65,6 +65,12 @@ pub enum HistoryLoadKind {
 }
 
 #[derive(Debug, Clone)]
+pub struct LoadedHistory {
+    pub page: HistoryPage,
+    pub replace_cached: bool,
+}
+
+#[derive(Debug, Clone)]
 pub enum FilePreview {
     Loading,
     Loaded(ImageHandle),

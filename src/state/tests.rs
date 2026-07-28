@@ -73,6 +73,19 @@ fn confirm_reconciles_pending_by_client_msg_id() {
 }
 
 #[test]
+fn latest_confirmed_ts_ignores_optimistic_pending_messages() {
+    let mut cm = ChannelMessages::default();
+    cm.upsert(msg("1783372400.111111", "confirmed"));
+    cm.upsert(msg("9999999999.000000", "pending"));
+    cm.pending.push("9999999999.000000".to_owned());
+
+    assert_eq!(
+        cm.latest_confirmed_ts().as_deref(),
+        Some("1783372400.111111")
+    );
+}
+
+#[test]
 fn matching_pending_confirm_skips_ambiguous_duplicates() {
     let mut cm = ChannelMessages::default();
     cm.upsert(msg("9999999999.000001", "hi"));

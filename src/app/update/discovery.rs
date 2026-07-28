@@ -116,26 +116,25 @@ pub(super) fn open_search_result(
     mark_workspace_dirty(app, &team);
     app.editing = None;
     app.edit_content = Content::new();
-    app.pending_scroll_to = Some((channel.clone(), PendingScrollTarget::Message(ts)));
+    app.pending_scroll_to = Some((channel.clone(), PendingScrollTarget::Message(ts.clone())));
 
     let mut tasks = Vec::new();
-    let needs_load = app
+    let target_loaded = app
         .workspaces
         .get(&team)
-        .map(|ws| {
-            !ws.messages
-                .get(&channel)
-                .map(|cm| cm.loaded)
-                .unwrap_or(false)
-        })
-        .unwrap_or(true);
-    if app.transport.is_some() && needs_load {
-        tasks.push(app.load_history(&team, &channel));
+        .and_then(|ws| ws.messages.get(&channel))
+        .is_some_and(|cm| {
+            cm.messages
+                .iter()
+                .any(|message| message.ts.as_deref() == Some(ts.as_str()))
+        });
+    if target_loaded {
+        tasks.push(refresh_channel_history(app, &team, &channel));
     } else {
-        tasks.push(mark_latest_visible(app, &team, &channel));
-        tasks.push(load_visible_file_previews(app, &team, &channel));
-        tasks.push(scroll_to_pending(app, &channel));
+        tasks.push(refresh_channel_history_around(app, &team, &channel, ts));
     }
+    tasks.push(load_visible_file_previews(app, &team, &channel));
+    tasks.push(scroll_to_pending(app, &channel));
 
     match thread_ts {
         Some(root) => {

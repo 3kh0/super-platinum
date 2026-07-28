@@ -3,6 +3,7 @@ mod discovery;
 mod messaging;
 
 use std::collections::{BTreeMap, HashMap};
+use std::sync::Arc;
 
 use serde_json::json;
 
@@ -40,6 +41,20 @@ pub(super) fn loaded_channel(user: &str, ts: &str, text: &str) -> ChannelMessage
     cm.upsert(msg(user, ts, text));
     cm.loaded = true;
     cm
+}
+
+pub(super) fn loaded_history(page: HistoryPage) -> LoadedHistory {
+    LoadedHistory {
+        page,
+        replace_cached: false,
+    }
+}
+
+pub(super) fn live_test_app() -> App {
+    let mut app = test_app();
+    app.session = Some(account_session("T_TEST", SELF_USER, "Test"));
+    app.transport = Some(Arc::new(Transport::new("test-cookie").unwrap()));
+    app
 }
 
 fn test_user(id: &str, display_name: &str) -> User {
