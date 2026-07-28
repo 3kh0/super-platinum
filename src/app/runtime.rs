@@ -18,6 +18,7 @@ impl App {
             accounts: BTreeMap::new(),
             active_account: None,
             account_epoch: 0,
+            auth_in_progress: false,
             session: None,
             cache: None,
             client: SlackClient::default(),

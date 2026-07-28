@@ -13,13 +13,31 @@ use crate::config::{self, Session, WorkspaceSession};
 use crate::slack::xparams::Identity;
 const LOGIN_USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36";
+const SLACK_WEB_URL: &str = "https://app.slack.com/";
+
+enum LoginEvent {
+    LocalConfig(String),
+    MagicLoginAccepted,
+    MagicLoginFailed(String),
+}
 
 const SCR: &str = r#"
 (function () {
   if (window.__snackGrab) return;
   window.__snackGrab = true;
   function ipc(m) { try { window.ipc.postMessage(m); } catch (e) {} }
-  ipc('LOG: loaded ' + location.href);
+  ipc('LOG: loaded ' + location.origin + location.pathname);
+  if (location.pathname.indexOf('/api/auth.loginMagicBulk') !== -1) {
+    function readMagicResponse() {
+      try {
+        var response = JSON.parse(document.body.innerText);
+        ipc(response.ok ? 'MAGIC_OK' : 'MAGIC_ERR:' + (response.error || 'unknown error'));
+      } catch (e) { ipc('MAGIC_ERR:invalid response'); }
+    }
+    if (document.readyState === 'loading') addEventListener('DOMContentLoaded', readMagicResponse);
+    else readMagicResponse();
+    return;
+  }
   var tries = 0;
   var iv = setInterval(function () {
     tries++;
@@ -27,13 +45,25 @@ const SCR: &str = r#"
       var lc = localStorage.getItem('localConfig_v2');
       if (lc && lc.indexOf('xoxc-') !== -1) { clearInterval(iv); ipc('CFG:' + lc); return; }
     } catch (e) { ipc('LOG: err ' + e); }
-    if (tries > 1200) clearInterval(iv); // ~14 min safety cap
+    if (tries > 240) {
+      clearInterval(iv);
+      ipc('MAGIC_ERR:timed out waiting for Slack session');
+    }
   }, 700);
 })();
 "#;
 
 pub fn login(fresh_profile: bool) -> Result<Session, String> {
-    drive_login(fresh_profile)
+    drive_login(fresh_profile, SLACK_WEB_URL.to_owned(), true)
+}
+
+pub fn login_magic(url: &str) -> Result<Session, String> {
+    let request_url = magic_login_request_url(url)?;
+    drive_login(true, request_url, false)
+}
+
+pub fn is_magic_login_url(url: &str) -> bool {
+    magic_login_request_url(url).is_ok()
 }
 
 const CAPTURE_SCR: &str = r#"
@@ -132,11 +162,12 @@ pub fn capture_huddle_webview() -> Result<(), String> {
     Ok(())
 }
 
-fn drive_login(fresh_profile: bool) -> Result<Session, String> {
+fn drive_login(fresh_profile: bool, initial_url: String, visible: bool) -> Result<Session, String> {
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new()
         .with_title("Sign in to Slack")
         .with_inner_size(LogicalSize::new(520.0, 720.0))
+        .with_visible(visible)
         .build(&event_loop)
         .map_err(|e| format!("window: {e}"))?;
 
@@ -157,15 +188,19 @@ fn drive_login(fresh_profile: bool) -> Result<Session, String> {
     std::fs::create_dir_all(&data_dir).map_err(|error| format!("create webview data: {error}"))?;
     let mut web_context = WebContext::new(Some(data_dir));
 
-    let (tx, rx) = mpsc::channel::<String>();
+    let (tx, rx) = mpsc::channel::<LoginEvent>();
     let webview = WebViewBuilder::new_with_web_context(&mut web_context)
-        .with_url("https://app.slack.com/")
+        .with_url(&initial_url)
         .with_user_agent(LOGIN_USER_AGENT)
         .with_initialization_script(SCR)
         .with_ipc_handler(move |req: Request<String>| {
             let body = req.into_body();
             if let Some(cfg) = body.strip_prefix("CFG:") {
-                let _ = tx.send(cfg.to_owned());
+                let _ = tx.send(LoginEvent::LocalConfig(cfg.to_owned()));
+            } else if body == "MAGIC_OK" {
+                let _ = tx.send(LoginEvent::MagicLoginAccepted);
+            } else if let Some(error) = body.strip_prefix("MAGIC_ERR:") {
+                let _ = tx.send(LoginEvent::MagicLoginFailed(error.to_owned()));
             } else if let Some(log) = body.strip_prefix("LOG:") {
                 eprintln!("snack auth [webview]:{log}");
             }
@@ -175,27 +210,42 @@ fn drive_login(fresh_profile: bool) -> Result<Session, String> {
         .build(&window)
         .map_err(|e| format!("webview: {e}"))?;
 
-    eprintln!("snack auth: pick your workspace / sign in; waiting for the client to boot…");
+    eprintln!("snack auth: waiting for the Slack session to boot…");
 
     let mut result: Option<Result<Session, String>> = None;
 
     event_loop.run_return(|event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
-        if let Ok(local_config) = rx.try_recv() {
-            eprintln!(
-                "snack auth: received localConfig ({} bytes)",
-                local_config.len()
-            );
-            let d_cookie = harvest_d_cookie(&webview);
-            result = Some(match d_cookie {
-                Some(d) => session_from_localconfig(&local_config, d),
-                None => Err(
-                    "no `d` cookie found in the webview (is the client fully signed in?)"
-                        .to_owned(),
-                ),
-            });
-            *control_flow = ControlFlow::Exit;
+        if let Ok(event) = rx.try_recv() {
+            match event {
+                LoginEvent::MagicLoginAccepted => {
+                    eprintln!("snack auth: magic login accepted; loading workspace…");
+                    if let Err(error) = webview.load_url(SLACK_WEB_URL) {
+                        result = Some(Err(format!("load signed-in Slack workspace: {error}")));
+                        *control_flow = ControlFlow::Exit;
+                    }
+                }
+                LoginEvent::MagicLoginFailed(error) => {
+                    result = Some(Err(format!("Slack rejected magic login: {error}")));
+                    *control_flow = ControlFlow::Exit;
+                }
+                LoginEvent::LocalConfig(local_config) => {
+                    eprintln!(
+                        "snack auth: received localConfig ({} bytes)",
+                        local_config.len()
+                    );
+                    let d_cookie = harvest_d_cookie(&webview);
+                    result = Some(match d_cookie {
+                        Some(d) => session_from_localconfig(&local_config, d),
+                        None => Err(
+                            "no `d` cookie found in the webview (is the client fully signed in?)"
+                                .to_owned(),
+                        ),
+                    });
+                    *control_flow = ControlFlow::Exit;
+                }
+            }
         }
 
         if let Event::WindowEvent {
@@ -213,6 +263,56 @@ fn drive_login(fresh_profile: bool) -> Result<Session, String> {
     });
 
     result.unwrap_or_else(|| Err("login window closed before completing sign-in".to_owned()))
+}
+
+fn magic_login_request_url(deep_link: &str) -> Result<String, String> {
+    let url = url::Url::parse(deep_link).map_err(|_| "invalid Slack sign-in link".to_owned())?;
+    let path = url
+        .path_segments()
+        .map(Iterator::collect::<Vec<_>>)
+        .unwrap_or_default();
+    if url.scheme() != "slack" || path.len() != 2 || path.first() != Some(&"magic-login") {
+        return Err("unsupported Slack link".to_owned());
+    }
+    let team = url
+        .host_str()
+        .filter(|team| {
+            team.len() >= 9
+                && team
+                    .chars()
+                    .all(|character| character.is_ascii_alphanumeric())
+        })
+        .ok_or_else(|| "Slack sign-in link has no valid workspace".to_owned())?
+        .to_ascii_uppercase();
+    let key = path
+        .get(1)
+        .copied()
+        .filter(|key| {
+            !key.is_empty()
+                && key
+                    .chars()
+                    .all(|character| character.is_ascii_alphanumeric() || character == '-')
+        })
+        .ok_or_else(|| "Slack sign-in link has no valid key".to_owned())?;
+    let host = url
+        .query_pairs()
+        .find_map(|(name, value)| (name == "host").then(|| value.into_owned()))
+        .unwrap_or_else(|| "slack.com".to_owned());
+    let host = match url::Host::parse(&host) {
+        Ok(url::Host::Domain(host)) if host == "slack.com" || host.ends_with(".slack.com") => host,
+        _ => return Err("Slack sign-in link has an invalid host".to_owned()),
+    };
+    let token = format!("z-app-{team}-{key}");
+    let mut request = url::Url::parse("https://slack.com/api/auth.loginMagicBulk")
+        .expect("static Slack URL must parse");
+    if request.set_host(Some(&host)).is_err() {
+        return Err("Slack sign-in link has an invalid host".to_owned());
+    }
+    request
+        .query_pairs_mut()
+        .append_pair("magic_tokens", &token)
+        .append_pair("ssb", "1");
+    Ok(request.into())
 }
 
 fn harvest_d_cookie(webview: &wry::WebView) -> Option<String> {
@@ -276,8 +376,7 @@ fn session_from_localconfig(local_config: &str, d_cookie: String) -> Result<Sess
             .to_owned();
 
         eprintln!(
-            "snack auth: team={team_id} name={name:?} url={url} enterprise={enterprise_id:?} token={}…",
-            token.chars().take(10).collect::<String>()
+            "snack auth: team={team_id} name={name:?} url={url} enterprise={enterprise_id:?} token_present=true"
         );
 
         workspaces.insert(
@@ -358,5 +457,39 @@ mod tests {
     fn errors_on_missing_teams() {
         assert!(session_from_localconfig("{}", "d".into()).is_err());
         assert!(session_from_localconfig("not json", "d".into()).is_err());
+    }
+
+    #[test]
+    fn builds_magic_login_request_from_protocol_url() {
+        let request = magic_login_request_url(
+            "slack://t0266frgm/magic-login/abc-123?host=hackclub.enterprise.slack.com",
+        )
+        .unwrap();
+        let parsed = url::Url::parse(&request).unwrap();
+        assert_eq!(parsed.host_str(), Some("hackclub.enterprise.slack.com"));
+        assert_eq!(parsed.path(), "/api/auth.loginMagicBulk");
+        assert_eq!(
+            parsed
+                .query_pairs()
+                .find_map(|(name, value)| (name == "magic_tokens").then(|| value.into_owned())),
+            Some("z-app-T0266FRGM-abc-123".to_owned())
+        );
+    }
+
+    #[test]
+    fn rejects_non_login_and_untrusted_magic_login_urls() {
+        assert!(magic_login_request_url("slack://open?team=T0266FRGM").is_err());
+        assert!(magic_login_request_url("slack://T0266FRGM/magic-login/").is_err());
+        assert!(magic_login_request_url("slack://T0266FRGM/magic-login/abc/ignored").is_err());
+        assert!(
+            magic_login_request_url("slack://T0266FRGM/magic-login/abc?host=attacker.example.com")
+                .is_err()
+        );
+        assert!(
+            magic_login_request_url(
+                "slack://T0266FRGM/magic-login/abc?host=attacker.example/api?x=.slack.com"
+            )
+            .is_err()
+        );
     }
 }

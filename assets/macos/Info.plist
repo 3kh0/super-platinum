@@ -24,6 +24,17 @@
   <string>snack</string>
   <key>CFBundleIconName</key>
   <string>snack</string>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>Slack</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>slack</string>
+      </array>
+    </dict>
+  </array>
   <key>LSMinimumSystemVersion</key>
   <string>13.0</string>
   <key>NSHighResolutionCapable</key>

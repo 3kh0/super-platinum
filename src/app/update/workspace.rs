@@ -530,23 +530,88 @@ pub(super) fn focus_active_composer(app: &App) -> Task<Message> {
 }
 
 pub(super) fn authenticate(app: &mut App, add_account: bool) -> Task<Message> {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = (app, add_account);
+        Task::perform(
+            open_url_in_browser("https://hackclub.enterprise.slack.com/ssb/redirect".to_owned()),
+            Message::UrlOpened,
+        )
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        match std::env::current_exe() {
+            Ok(exe) => Task::perform(
+                async move {
+                    let mut command = tokio::process::Command::new(exe);
+                    command.env("SNACK_AUTH", "1");
+                    if add_account {
+                        command.env("SNACK_AUTH_ADD", "1");
+                    }
+                    command
+                        .status()
+                        .await
+                        .map(|status| status.success())
+                        .unwrap_or(false)
+                },
+                Message::AuthenticationFinished,
+            ),
+            Err(e) => {
+                app.toast(format!("could not locate snack binary: {e}"));
+                Task::none()
+            }
+        }
+    }
+}
+
+pub(super) fn authenticate_magic(app: &mut App, url: String) -> Task<Message> {
+    if !crate::auth::is_magic_login_url(&url) {
+        app.toast("unsupported Slack link");
+        return Task::none();
+    }
+    if app.auth_in_progress {
+        return Task::none();
+    }
+    app.auth_in_progress = true;
+    spawn_auth_process(app, url)
+}
+
+fn spawn_auth_process(app: &mut App, magic_login: String) -> Task<Message> {
     match std::env::current_exe() {
         Ok(exe) => Task::perform(
             async move {
+                use tokio::io::AsyncWriteExt;
+
                 let mut command = tokio::process::Command::new(exe);
                 command.env("SNACK_AUTH", "1");
-                if add_account {
-                    command.env("SNACK_AUTH_ADD", "1");
+                command.env("SNACK_AUTH_ADD", "1");
+                command.env("SNACK_MAGIC_LOGIN_STDIN", "1");
+                command.stdin(std::process::Stdio::piped());
+                command.kill_on_drop(true);
+                let Ok(mut child) = command.spawn() else {
+                    return false;
+                };
+                let Some(mut stdin) = child.stdin.take() else {
+                    return false;
+                };
+                if stdin.write_all(magic_login.as_bytes()).await.is_err() {
+                    return false;
                 }
-                command
-                    .status()
-                    .await
-                    .map(|status| status.success())
-                    .unwrap_or(false)
+                drop(stdin);
+                match tokio::time::timeout(std::time::Duration::from_secs(240), child.wait()).await
+                {
+                    Ok(Ok(status)) => status.success(),
+                    Ok(Err(_)) => false,
+                    Err(_) => {
+                        let _ = child.kill().await;
+                        false
+                    }
+                }
             },
             Message::AuthenticationFinished,
         ),
         Err(e) => {
+            app.auth_in_progress = false;
             app.toast(format!("could not locate snack binary: {e}"));
             Task::none()
         }

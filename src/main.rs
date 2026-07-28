@@ -19,7 +19,6 @@ pub fn main() -> iced::Result {
         eprintln!("snack: {error}");
         std::process::exit(1);
     }
-
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -58,7 +57,21 @@ pub fn main() -> iced::Result {
 
     if std::env::var_os("SNACK_AUTH").is_some() {
         let add_account = std::env::var_os("SNACK_AUTH_ADD").is_some();
-        match auth::login(add_account) {
+        let magic_login = if std::env::var_os("SNACK_MAGIC_LOGIN_STDIN").is_some() {
+            let mut url = String::new();
+            if let Err(error) = std::io::Read::read_to_string(&mut std::io::stdin(), &mut url) {
+                eprintln!("snack auth: could not read Slack sign-in link: {error}");
+                std::process::exit(1);
+            }
+            Some(url)
+        } else {
+            None
+        };
+        let result = match magic_login {
+            Some(url) => auth::login_magic(&url),
+            None => auth::login(add_account),
+        };
+        match result {
             Ok(session) => {
                 if let Err(e) = config::save_session(&session) {
                     eprintln!("snack auth: failed to save session: {e}");
@@ -71,6 +84,11 @@ pub fn main() -> iced::Result {
                 std::process::exit(1);
             }
         }
+    }
+
+    #[cfg(target_os = "macos")]
+    if let Err(error) = macos::register_as_slack_handler() {
+        eprintln!("snack: {error}");
     }
 
     app::run()

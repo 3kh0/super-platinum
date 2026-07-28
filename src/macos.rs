@@ -1,7 +1,34 @@
 use std::path::Path;
 
+use objc2::runtime::AnyObject;
+use objc2::{class, msg_send};
+
+#[link(name = "CoreServices", kind = "framework")]
+unsafe extern "C" {
+    fn LSSetDefaultHandlerForURLScheme(
+        scheme: *const std::ffi::c_void,
+        bundle: *const std::ffi::c_void,
+    ) -> i32;
+}
+
 const INFO_PLIST: &[u8] = include_bytes!("../assets/macos/Info.plist");
 const APP_ICON: &[u8] = include_bytes!("../assets/icons/snack.icns");
+
+pub fn register_as_slack_handler() -> Result<(), String> {
+    // SAFETY: NSString and CFString are toll-free bridged. LaunchServices only borrows both
+    // strings for this call.
+    let status = unsafe {
+        let scheme: *mut AnyObject =
+            msg_send![class!(NSString), stringWithUTF8String: c"slack".as_ptr()];
+        let bundle: *mut AnyObject = msg_send![class!(NSString),
+            stringWithUTF8String: c"com.echonet.snack".as_ptr()
+        ];
+        LSSetDefaultHandlerForURLScheme(scheme.cast(), bundle.cast())
+    };
+    (status == 0)
+        .then_some(())
+        .ok_or_else(|| format!("could not claim the slack:// URL scheme (OSStatus {status})"))
+}
 
 pub fn ensure_app_bundle() -> Result<(), String> {
     let executable = std::env::current_exe()

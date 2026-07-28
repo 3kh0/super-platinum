@@ -405,6 +405,7 @@ pub enum RuntimeMessage {
     DmsFilterChanged(String),
     SignInPressed,
     AddAccountPressed,
+    SlackProtocolOpened(String),
     AuthenticationFinished(bool),
     RetryAuth,
     AccountMenuToggled,

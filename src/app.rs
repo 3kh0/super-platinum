@@ -65,6 +65,7 @@ pub struct App {
     accounts: BTreeMap<config::AccountId, Session>,
     active_account: Option<config::AccountId>,
     account_epoch: u64,
+    auth_in_progress: bool,
     session: Option<Session>,
     cache: Option<Cache>,
     client: SlackClient,

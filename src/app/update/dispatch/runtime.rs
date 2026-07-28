@@ -92,11 +92,17 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
             authenticate(app, true)
         }
 
+        Message::Runtime(crate::app::RuntimeMessage::SlackProtocolOpened(url)) => {
+            authenticate_magic(app, url)
+        }
+
         Message::Runtime(crate::app::RuntimeMessage::AuthenticationFinished(true)) => {
+            app.auth_in_progress = false;
             app.load_session()
         }
 
         Message::Runtime(crate::app::RuntimeMessage::AuthenticationFinished(false)) => {
+            app.auth_in_progress = false;
             app.toast("Slack sign-in was not completed");
             Task::none()
         }

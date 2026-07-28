@@ -12,6 +12,7 @@ icon = ["assets/icons/snack.icns", "assets/icons/snack.ico", "assets/icons/snack
 short_description = "A stupid fast and lightweight Slack client"
 long_description = "A stupid fast and lightweight Slack client built with Rust and Iced."
 category = "public.app-category.social-networking"
+osx_url_schemes = ["slack"]
 
 [profile.dev]
 opt-level = 1

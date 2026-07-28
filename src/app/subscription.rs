@@ -22,6 +22,11 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
     subs.push(iced::event::listen_with(palette_hotkey));
     subs.push(iced::event::listen_with(file_drop));
     subs.push(iced::event::listen_with(cursor_position));
+    #[cfg(target_os = "macos")]
+    subs.push(
+        iced::event::listen_url()
+            .map(|url| Message::Runtime(crate::app::RuntimeMessage::SlackProtocolOpened(url))),
+    );
     subs.push(iced::event::listen_with(
         |event, _status, _id| match event {
             iced::Event::Mouse(iced::mouse::Event::WheelScrolled { .. }) => {
