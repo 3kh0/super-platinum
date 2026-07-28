@@ -28,6 +28,34 @@ pub fn panel(_theme: &Theme) -> container::Style {
     }
 }
 
+pub fn unreads_group_header(_theme: &Theme) -> container::Style {
+    container::Style {
+        background: Some(Background::Color(bg_elev())),
+        text_color: Some(text_1()),
+        ..container::Style::default()
+    }
+}
+
+pub fn unreads_date_pill(_theme: &Theme) -> container::Style {
+    container::Style {
+        background: Some(Background::Color(bg_elev())),
+        text_color: Some(text_2()),
+        border: Border {
+            color: border(),
+            width: 1.0,
+            radius: 999.0.into(),
+        },
+        ..container::Style::default()
+    }
+}
+
+pub fn unreads_date_line(_theme: &Theme) -> container::Style {
+    container::Style {
+        background: Some(Background::Color(border())),
+        ..container::Style::default()
+    }
+}
+
 pub fn profile_card(_theme: &Theme) -> container::Style {
     container::Style {
         background: Some(Background::Color(bg_panel())),

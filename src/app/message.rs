@@ -350,6 +350,21 @@ pub enum RuntimeMessage {
     RtConnected(TeamId, u64, Connection),
     RtDisconnected(TeamId, u64),
     MainViewSelected(crate::state::MainView),
+    UnreadsScrolled {
+        remaining: f32,
+    },
+    UnreadsSortToggled,
+    UnreadsChannelToggled(ChannelId),
+    UnreadsChannelFocused(ChannelId),
+    UnreadsMarkRead(ChannelId),
+    UnreadsMarkFocused,
+    UnreadsChannelOpened(ChannelId),
+    UnreadsChannelLoaded {
+        team: TeamId,
+        channel: ChannelId,
+        seq: u64,
+        result: Result<HistoryPage, SlackError>,
+    },
     ActivityScrolled {
         remaining: f32,
     },

@@ -68,10 +68,16 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                         ws.apply_counts(counts);
                     }
                     mark_workspace_dirty(app, &team);
-                    return Task::batch([
+                    let mut tasks = vec![
                         hydrate_sidebar_channels(app, &team),
                         hydrate_sidebar_dm_users(app, &team),
-                    ]);
+                    ];
+                    if app.active_team.as_deref() == Some(team.as_str())
+                        && app.main_view == crate::state::MainView::Unreads
+                    {
+                        tasks.push(load_unreads(app, None));
+                    }
+                    return Task::batch(tasks);
                 }
                 Err(e) => tracing::warn!(%team, error = %e, "counts failed"),
             }
@@ -229,6 +235,11 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                     if let Some(ws) = app.workspaces.get_mut(&team) {
                         apply_channel_marked(ws, &channel, &ts, 0, 0);
                     }
+                    app.unreads.loaded.remove(&channel);
+                    app.unreads.has_more.remove(&channel);
+                    app.unreads.failed.remove(&channel);
+                    app.unreads.collapsed.remove(&channel);
+                    app.unreads.mark_when_loaded.remove(&channel);
                     reconcile_activity_read(app, &team, &channel, None);
                     mark_workspace_dirty(app, &team);
                 }

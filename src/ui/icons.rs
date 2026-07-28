@@ -45,6 +45,11 @@ material_icon!(
 // "home" — channels view
 material_icon!(HOME, "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z");
 
+material_icon!(
+    UNREADS,
+    "M19 3h-4.2A3 3 0 0 0 12 1a3 3 0 0 0-2.8 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7H5V5h4.2A3 3 0 0 0 12 7a3 3 0 0 0 2.8-2H19v4h2V5a2 2 0 0 0-2-2zm-7 2a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"
+);
+
 // "close" — shared dismiss affordance for side panels
 material_icon!(
     CLOSE,
@@ -118,6 +123,10 @@ pub fn reply() -> svg::Handle {
 
 pub fn home() -> svg::Handle {
     HOME.clone()
+}
+
+pub fn unreads() -> svg::Handle {
+    UNREADS.clone()
 }
 
 pub fn at() -> svg::Handle {

@@ -10,6 +10,153 @@ pub(super) fn activity_scrolled(app: &mut App, remaining: f32) -> Task<Message> 
     load_activity(app, cursor)
 }
 
+pub(super) fn unreads_scrolled(app: &mut App, remaining: f32) -> Task<Message> {
+    if app.main_view != crate::state::MainView::Unreads || remaining > LOAD_OLDER_ACTIVITY_BOTTOM_PX
+    {
+        return Task::none();
+    }
+    load_unreads(app, None)
+}
+
+pub(super) fn load_unreads(app: &mut App, preferred: Option<ChannelId>) -> Task<Message> {
+    if app.main_view != crate::state::MainView::Unreads {
+        return Task::none();
+    }
+    let Some(team) = app.active_team.clone() else {
+        return Task::none();
+    };
+    let (transport, ws_session) = {
+        let Some((transport, session)) = app.live() else {
+            return Task::none();
+        };
+        let Some(ws_session) = session.workspaces.get(&team).cloned() else {
+            return Task::none();
+        };
+        (transport.clone(), ws_session)
+    };
+    let Some(ws) = app.workspaces.get(&team) else {
+        return Task::none();
+    };
+
+    let mut channels: Vec<_> = ws
+        .channels
+        .values()
+        .filter(|channel| ws.unread_total(channel) > 0)
+        .map(|channel| {
+            let last_read = ws
+                .messages
+                .get(&channel.id)
+                .and_then(|messages| messages.last_read.clone())
+                .or_else(|| channel.last_read.clone());
+            (
+                channel.id.clone(),
+                ws.channel_recency(channel),
+                ws.unread_total(channel),
+                last_read,
+            )
+        })
+        .collect();
+    channels.sort_by(|a, b| {
+        let order = b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0));
+        if app.unreads.sort == UnreadsSort::Newest {
+            order
+        } else {
+            order.reverse()
+        }
+    });
+    if let Some(preferred) = preferred.as_ref() {
+        channels.sort_by_key(|(channel, ..)| channel != preferred);
+    }
+
+    let pending: Vec<_> = channels
+        .into_iter()
+        .filter(|(channel, ..)| {
+            !app.unreads.loaded.contains(channel)
+                && !app.unreads.loading.contains_key(channel)
+                && (preferred.as_ref() == Some(channel) || !app.unreads.collapsed.contains(channel))
+        })
+        .take(if preferred.is_some() {
+            1
+        } else {
+            UNREADS_BATCH_SIZE
+        })
+        .collect();
+
+    let mut tasks = Vec::with_capacity(pending.len());
+    for (channel, _, unread_count, oldest) in pending {
+        app.unreads.load_seq = app.unreads.load_seq.wrapping_add(1);
+        let seq = app.unreads.load_seq;
+        app.unreads.loading.insert(channel.clone(), seq);
+        app.unreads.failed.remove(&channel);
+        let transport = transport.clone();
+        let client = app.client.clone();
+        let ws_session = ws_session.clone();
+        let result_team = team.clone();
+        let result_channel = channel.clone();
+        tasks.push(Task::perform(
+            async move {
+                api::fetch_history(
+                    &transport,
+                    &client,
+                    &ws_session,
+                    HistoryArgs {
+                        channel,
+                        oldest,
+                        limit: Some(unread_count.saturating_add(1).clamp(56, 100)),
+                        inclusive: true,
+                        ..Default::default()
+                    },
+                )
+                .await
+            },
+            move |result| {
+                Message::Runtime(crate::app::RuntimeMessage::UnreadsChannelLoaded {
+                    team: result_team.clone(),
+                    channel: result_channel.clone(),
+                    seq,
+                    result,
+                })
+            },
+        ));
+    }
+    Task::batch(tasks)
+}
+
+pub(super) fn mark_unread_channel(app: &mut App, channel: ChannelId) -> Task<Message> {
+    let Some(team) = app.active_team.clone() else {
+        return Task::none();
+    };
+    let has_latest = app
+        .workspaces
+        .get(&team)
+        .and_then(|ws| ws.messages.get(&channel))
+        .and_then(ChannelMessages::latest_confirmed_ts)
+        .is_some();
+    if has_latest {
+        mark_latest_visible(app, &team, &channel)
+    } else {
+        app.unreads.mark_when_loaded.insert(channel.clone());
+        load_unreads(app, Some(channel))
+    }
+}
+
+pub(super) fn focused_unread_channel(app: &App) -> Option<ChannelId> {
+    if let Some(channel) = app.unreads.focused.as_ref().filter(|channel| {
+        app.active_workspace()
+            .and_then(|ws| ws.channels.get(*channel).map(|item| ws.unread_total(item)))
+            .unwrap_or(0)
+            > 0
+    }) {
+        return Some(channel.clone());
+    }
+    let ws = app.active_workspace()?;
+    ws.channels
+        .values()
+        .filter(|channel| ws.unread_total(channel) > 0)
+        .max_by_key(|channel| ws.channel_recency(channel))
+        .map(|channel| channel.id.clone())
+}
+
 pub(in crate::app) fn should_load_older_activity(activity: &ActivityState, remaining: f32) -> bool {
     remaining <= LOAD_OLDER_ACTIVITY_BOTTOM_PX
         && activity.loaded
@@ -225,6 +372,7 @@ pub(super) fn select_workspace(app: &mut App, team: TeamId) -> Task<Message> {
 
     app.active_team = Some(team.clone());
     app.activity = ActivityState::default();
+    app.unreads = UnreadsState::default();
     app.dms = DmsState::default();
     app.show_account_menu = false;
     app.account_menu_open = false;
@@ -244,6 +392,7 @@ pub(super) fn select_workspace(app: &mut App, team: TeamId) -> Task<Message> {
     app.thread_composer = Content::new();
 
     let activity_task = match app.main_view {
+        crate::state::MainView::Unreads => load_unreads(app, None),
         crate::state::MainView::Activity => load_activity(app, None),
         crate::state::MainView::Dms => load_dms(app, None),
         crate::state::MainView::Home => Task::none(),

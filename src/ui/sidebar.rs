@@ -393,11 +393,52 @@ fn jump_to_button<'a>() -> Element<'a, Message> {
         .into()
 }
 
+fn unreads_button<'a>(ws: &Workspace, selected: bool) -> Element<'a, Message> {
+    let unread = ws
+        .channels
+        .values()
+        .any(|channel| ws.unread_total(channel) > 0);
+    let color = if selected || unread {
+        theme::text_1()
+    } else {
+        theme::text_3()
+    };
+    let inner = row![
+        svg(icons::unreads())
+            .width(Length::Fixed(theme::SIDEBAR_ICON))
+            .height(Length::Fixed(theme::SIDEBAR_ICON))
+            .style(theme::sidebar_icon(color)),
+        text("Unreads")
+            .size(theme::TEXT_MD)
+            .color(color)
+            .font(iced::Font {
+                weight: if unread {
+                    font::Weight::Semibold
+                } else {
+                    font::Weight::Normal
+                },
+                ..iced::Font::default()
+            }),
+    ]
+    .spacing(theme::SPACE_SM)
+    .align_y(Alignment::Center);
+
+    button(inner)
+        .width(Fill)
+        .padding([theme::SPACE_XS + 1.0, theme::SPACE_SM])
+        .style(theme::channel_row(selected))
+        .on_press(Message::Runtime(
+            crate::app::RuntimeMessage::MainViewSelected(crate::state::MainView::Unreads),
+        ))
+        .into()
+}
+
 pub fn view<'a>(
     workspaces: &BTreeMap<TeamId, Workspace>,
     active_team: Option<&str>,
     ws: &'a Workspace,
     active: Option<&str>,
+    main_view: crate::state::MainView,
     avatars: &'a AvatarPreviews,
     width: f32,
 ) -> Element<'a, Message> {
@@ -429,10 +470,17 @@ pub fn view<'a>(
     .padding([theme::SPACE_SM, theme::SPACE_SM]);
 
     let search = container(jump_to_button()).padding([0.0, theme::SPACE_SM]);
+    let pages = container(unreads_button(
+        ws,
+        main_view == crate::state::MainView::Unreads,
+    ))
+    .padding([0.0, theme::SPACE_SM]);
 
     let body = column![
         header,
         search,
+        pages,
+        theme::divider_faded(0.65),
         scrollable(list.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
             .style(theme::scrollbar)
             .height(Fill)

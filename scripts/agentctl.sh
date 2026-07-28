@@ -53,7 +53,7 @@ Commands:
   search <query>
   clear-search
   open-settings
-  main-view <home|dms|activity>   Switch far-rail surface
+  main-view <home|unreads|dms|activity>   Switch main surface
   activity-select <index>         Open activity item in right panel
   close-settings
   open-profile <user_id>
@@ -166,7 +166,7 @@ case "$cmd" in
     fi
     ;;
   main-view)
-    [[ $# -ge 1 ]] || { echo "usage: agentctl.sh main-view <home|dms|activity>" >&2; exit 2; }
+    [[ $# -ge 1 ]] || { echo "usage: agentctl.sh main-view <home|unreads|dms|activity>" >&2; exit 2; }
     JSON=$(python3 -c 'import json,sys; print(json.dumps({"id": int(sys.argv[1]), "cmd":"main-view", "view": sys.argv[2]}))' "$REQ_ID" "$1")
     ;;
   activity-select)

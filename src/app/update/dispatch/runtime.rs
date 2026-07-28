@@ -101,6 +101,9 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
 
         Message::Runtime(crate::app::RuntimeMessage::MainViewSelected(view)) => {
             app.main_view = view;
+            if view == crate::state::MainView::Unreads {
+                return Task::batch([refresh_counts(app), load_unreads(app, None)]);
+            }
             if view == crate::state::MainView::Activity {
                 let mut tasks = vec![refresh_counts(app)];
                 if !app.activity.loaded && !app.activity.loading {
@@ -116,6 +119,109 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
                 return Task::batch(tasks);
             }
             Task::none()
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::UnreadsScrolled { remaining }) => {
+            unreads_scrolled(app, remaining)
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::UnreadsSortToggled) => {
+            app.unreads.sort = match app.unreads.sort {
+                UnreadsSort::Newest => UnreadsSort::Oldest,
+                UnreadsSort::Oldest => UnreadsSort::Newest,
+            };
+            load_unreads(app, None)
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::UnreadsChannelToggled(channel)) => {
+            if !app.unreads.collapsed.remove(&channel) {
+                app.unreads.collapsed.insert(channel);
+                Task::none()
+            } else {
+                load_unreads(app, Some(channel))
+            }
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::UnreadsChannelFocused(channel)) => {
+            app.unreads.focused = Some(channel);
+            Task::none()
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::UnreadsMarkRead(channel)) => {
+            mark_unread_channel(app, channel)
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::UnreadsMarkFocused) => {
+            focused_unread_channel(app)
+                .map(|channel| mark_unread_channel(app, channel))
+                .unwrap_or_else(Task::none)
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::UnreadsChannelOpened(channel)) => {
+            app.main_view = crate::state::MainView::Home;
+            super::update_inner(
+                app,
+                Message::Conversation(crate::app::ConversationMessage::ChannelSelected(channel)),
+            )
+        }
+
+        Message::Runtime(crate::app::RuntimeMessage::UnreadsChannelLoaded {
+            team,
+            channel,
+            seq,
+            result,
+        }) => {
+            if app.active_team.as_deref() != Some(team.as_str())
+                || app.unreads.loading.get(&channel) != Some(&seq)
+            {
+                return Task::none();
+            }
+            app.unreads.loading.remove(&channel);
+            match result {
+                Ok(page) => {
+                    let has_more = page.has_more;
+                    let messages: Vec<_> = page
+                        .messages
+                        .into_iter()
+                        .map(crate::state::visible_message)
+                        .filter(crate::state::is_channel_timeline_visible)
+                        .collect();
+                    if let Some(ws) = app.workspaces.get_mut(&team) {
+                        let channel_messages = ws.messages.entry(channel.clone()).or_default();
+                        for message in messages.iter().cloned() {
+                            channel_messages.upsert(message);
+                        }
+                        channel_messages.loaded = true;
+                    }
+                    app.unreads.loaded.insert(channel.clone());
+                    if has_more {
+                        app.unreads.has_more.insert(channel.clone());
+                    } else {
+                        app.unreads.has_more.remove(&channel);
+                    }
+                    app.unreads.failed.remove(&channel);
+                    mark_workspace_dirty(app, &team);
+                    let mark = if app.unreads.mark_when_loaded.remove(&channel) {
+                        mark_latest_visible(app, &team, &channel)
+                    } else {
+                        Task::none()
+                    };
+                    Task::batch([
+                        hydrate_missing_users(app, &team, &messages),
+                        hydrate_emojis(app, &team, &messages),
+                        load_emoji_previews(app, &team, &messages),
+                        load_avatar_previews(app, &team, messages),
+                        load_visible_file_previews(app, &team, &channel),
+                        mark,
+                    ])
+                }
+                Err(error) => {
+                    app.unreads.mark_when_loaded.remove(&channel);
+                    app.unreads.failed.insert(channel.clone());
+                    tracing::warn!(%team, %channel, %error, "unreads history load failed");
+                    Task::none()
+                }
+            }
         }
 
         Message::Runtime(crate::app::RuntimeMessage::ActivityScrolled { remaining }) => {

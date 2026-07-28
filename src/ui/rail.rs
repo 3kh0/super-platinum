@@ -28,7 +28,7 @@ pub fn view<'a>(
 ) -> Element<'a, Message> {
     let home = nav_button(
         icons::home(),
-        view == MainView::Home,
+        matches!(view, MainView::Home | MainView::Unreads),
         0,
         Message::Runtime(crate::app::RuntimeMessage::MainViewSelected(MainView::Home)),
     );

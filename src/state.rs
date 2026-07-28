@@ -40,6 +40,7 @@ pub enum Screen {
 pub enum MainView {
     #[default]
     Home,
+    Unreads,
     Dms,
     Activity,
 }

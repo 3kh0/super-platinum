@@ -189,7 +189,12 @@ fn main_view(app: &App) -> Element<'_, Message> {
         &app.workspaces,
         app.active_team.as_deref(),
         ws,
-        app.active_channel.as_deref(),
+        if app.main_view == crate::state::MainView::Unreads {
+            None
+        } else {
+            app.active_channel.as_deref()
+        },
+        app.main_view,
         &app.avatar_previews,
         app.settings.sidebar_width,
     );
@@ -200,6 +205,49 @@ fn main_view(app: &App) -> Element<'_, Message> {
         container(resize_handle()).align_right(Fill).height(Fill),
     ]
     .into();
+
+    if app.main_view == crate::state::MainView::Unreads {
+        let hovered = app
+            .hovered_message
+            .as_ref()
+            .filter(|(thread, _)| !thread)
+            .map(|(_, ts)| ts.as_str());
+        let unreads = ui::unreads::view(
+            ws,
+            &app.unreads,
+            &app.file_previews,
+            &app.avatar_previews,
+            &app.emoji_previews,
+            app.emoji_animation_started.elapsed(),
+            hovered,
+            app.text_selection.as_ref(),
+            app.profile_hover.as_ref(),
+        );
+        let content: Element<'_, Message> = match (
+            app.active_team.as_deref(),
+            app.active_thread.as_ref(),
+            app.thread_open,
+        ) {
+            (Some(team), Some((channel, root_ts)), true) => row![
+                unreads,
+                container(thread_static_panel(app, ws, team, channel, root_ts))
+                    .width(iced::Length::Fixed(ui::theme::THREAD_WIDTH))
+            ]
+            .spacing(ui::theme::gap())
+            .width(Fill)
+            .height(Fill)
+            .into(),
+            _ => unreads,
+        };
+        let body = row![rail, sidebar, content]
+            .spacing(ui::theme::gap())
+            .width(Fill)
+            .height(Fill);
+        return with_modal(
+            app,
+            with_account_menu(app, shell(app, with_profile_pane(app, ws, body.into()))),
+        );
+    }
 
     if let Some(state) = app.search.as_ref() {
         let content = container(ui::search::view(ws, state))

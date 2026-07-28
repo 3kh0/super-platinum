@@ -46,6 +46,8 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
         subs.push(iced::event::listen_with(palette_navigation));
     } else if app.profile_pane.is_some() {
         subs.push(iced::event::listen_with(profile_navigation));
+    } else if app.main_view == crate::state::MainView::Unreads && app.active_thread.is_none() {
+        subs.push(iced::event::listen_with(unreads_navigation));
     }
     let visible_media_animation_interval = visible_media_animation_interval(app);
     let needs_existing_animation_tick = has_pending_sends(app)
@@ -117,6 +119,24 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
     }
 
     Subscription::batch(subs)
+}
+
+fn unreads_navigation(
+    event: iced::Event,
+    _status: iced::event::Status,
+    _id: iced::window::Id,
+) -> Option<Message> {
+    use iced::keyboard::key::Named;
+    use iced::keyboard::{Event, Key};
+    match event {
+        iced::Event::Keyboard(Event::KeyPressed {
+            key: Key::Named(Named::Escape),
+            ..
+        }) => Some(Message::Runtime(
+            crate::app::RuntimeMessage::UnreadsMarkFocused,
+        )),
+        _ => None,
+    }
 }
 
 pub(super) fn visible_media_animation_interval(app: &App) -> Option<Duration> {

@@ -1,6 +1,7 @@
 mod account;
 mod discovery;
 mod messaging;
+mod unreads;
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
@@ -462,6 +463,30 @@ pub(super) fn activity_app() -> App {
     );
     app.activity.upsert(channel_post);
 
+    app
+}
+
+pub(super) fn unreads_app() -> App {
+    let mut app = test_app();
+    app.main_view = MainView::Unreads;
+    {
+        let ws = app.active_workspace_mut().expect("workspace");
+        for (channel_id, last_read, unread_count) in [
+            ("C_GENERAL", "1783372300.000100", 2),
+            ("C_DEV", "1783369999.000100", 2),
+        ] {
+            let channel = ws.channels.get_mut(channel_id).expect("channel");
+            channel.unread_count = Some(unread_count);
+            channel.last_read = Some(last_read.into());
+            channel.has_unreads = true;
+            let messages = ws.messages.get_mut(channel_id).expect("messages");
+            messages.unread_count = unread_count;
+            messages.last_read = Some(last_read.into());
+        }
+    }
+    app.unreads
+        .loaded
+        .extend(["C_GENERAL".into(), "C_DEV".into()]);
     app
 }
 

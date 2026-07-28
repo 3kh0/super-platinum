@@ -11,7 +11,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::cache::Cache;
 use crate::config;
-use crate::slack::api::{self, SearchArgs};
+use crate::slack::api::{self, HistoryArgs, SearchArgs};
 use crate::slack::events::RtEvent;
 use crate::slack::models::{
     Channel, ChannelId, Emoji, Message as SlackMessage, MessageTs, SearchMessagesPage, TeamId,
@@ -28,7 +28,8 @@ use super::{
     DmsState, FilePreview, HistoryLoadKind, ImageFetchAuth, ImageViewerImage, ImageViewerSource,
     ImageViewerState, MediaViewerKind, Message, PendingFileMessage, PendingScrollTarget,
     PreparedVideo, ProfileHoverState, ProfilePaneState, ReadTarget, SearchHit, SearchState,
-    TextSelection, TextSelectionPoint, TextSelectionSurface, ThreadKey, VideoViewerPlayback,
+    TextSelection, TextSelectionPoint, TextSelectionSurface, ThreadKey, UnreadsSort, UnreadsState,
+    VideoViewerPlayback,
 };
 use iced::widget::text_editor::{Action, Content, Edit};
 
@@ -36,6 +37,7 @@ const CACHE_SAVE_DEBOUNCE: Duration = Duration::from_millis(750);
 const LOAD_OLDER_SCROLL_TOP_PX: f32 = 48.0;
 const CHAT_PIN_BOTTOM_PX: f32 = 12.0;
 const LOAD_OLDER_ACTIVITY_BOTTOM_PX: f32 = 96.0;
+const UNREADS_BATCH_SIZE: usize = 1;
 
 mod discovery;
 mod dispatch;

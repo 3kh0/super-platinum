@@ -40,7 +40,8 @@ pub use model::{
     ActivityState, ComposerAttachment, DmsState, FilePreview, HistoryLoadKind, ImageFetchAuth,
     ImageViewerImage, ImageViewerSource, ImageViewerState, LoadedHistory, MediaViewerKind,
     PendingFileMessage, PreparedVideo, ProfileHoverState, ProfilePaneState, SearchHit, SearchState,
-    TextSelection, TextSelectionPoint, TextSelectionSurface, VideoViewerPlayback,
+    TextSelection, TextSelectionPoint, TextSelectionSurface, UnreadsSort, UnreadsState,
+    VideoViewerPlayback,
 };
 use runtime::merge_history_pages;
 pub use runtime::run;
@@ -73,6 +74,7 @@ pub struct App {
     active_thread: Option<ActiveThreadKey>,
     thread_open: bool,
     main_view: crate::state::MainView,
+    unreads: UnreadsState,
     activity: ActivityState,
     dms: DmsState,
     workspaces: BTreeMap<TeamId, Workspace>,

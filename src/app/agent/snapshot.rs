@@ -210,7 +210,7 @@ pub(super) fn help_data() -> Value {
             {"cmd": "open-profile", "args": {"user": "user id"}, "desc": "open a user profile pane"},
             {"cmd": "close-profile", "desc": "close the profile pane"},
             {"cmd": "screenshot", "args": {"path": "optional"}, "desc": "capture window PNG"},
-            {"cmd": "main-view", "args": {"view": "home|activity"}, "desc": "switch far-rail surface"},
+            {"cmd": "main-view", "args": {"view": "home|unreads|dms|activity"}, "desc": "switch main surface"},
             {"cmd": "activity-select", "args": {"index": "usize"}, "desc": "open an activity item in the right panel"},
             {"cmd": "toast", "args": {"text": "string"}, "desc": "show a toast"},
             {"cmd": "allow-destructive", "args": {"enabled": "bool"}, "desc": "allow send/etc"},

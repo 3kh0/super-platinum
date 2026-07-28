@@ -320,6 +320,7 @@ pub fn handle(app: &mut App, id: u64, command: AgentCommand) -> iced::Task<Messa
             let target = match view.trim().to_ascii_lowercase().as_str() {
                 "activity" | "notifications" | "bell" => crate::state::MainView::Activity,
                 "dms" | "dm" | "direct-messages" => crate::state::MainView::Dms,
+                "unreads" | "unread" => crate::state::MainView::Unreads,
                 "home" | "channels" => crate::state::MainView::Home,
                 other => {
                     complete(
@@ -380,6 +381,7 @@ pub fn handle(app: &mut App, id: u64, command: AgentCommand) -> iced::Task<Messa
 pub(super) fn main_view_label(view: crate::state::MainView) -> &'static str {
     match view {
         crate::state::MainView::Home => "home",
+        crate::state::MainView::Unreads => "unreads",
         crate::state::MainView::Dms => "dms",
         crate::state::MainView::Activity => "activity",
     }

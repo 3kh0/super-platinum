@@ -193,6 +193,26 @@ pub struct ActivityState {
     pub unread_only: bool,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum UnreadsSort {
+    #[default]
+    Newest,
+    Oldest,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UnreadsState {
+    pub loading: HashMap<ChannelId, u64>,
+    pub loaded: HashSet<ChannelId>,
+    pub has_more: HashSet<ChannelId>,
+    pub failed: HashSet<ChannelId>,
+    pub collapsed: HashSet<ChannelId>,
+    pub mark_when_loaded: HashSet<ChannelId>,
+    pub focused: Option<ChannelId>,
+    pub sort: UnreadsSort,
+    pub load_seq: u64,
+}
+
 impl ActivityState {
     pub fn upsert(&mut self, item: crate::slack::models::ActivityItem) {
         let identity = item.identity();
