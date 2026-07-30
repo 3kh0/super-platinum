@@ -306,6 +306,7 @@ fn optimistic_thread_reply_inserts_pending_without_transport() {
     let mut app = test_app();
     let root_ts = "1783372300.000100".to_owned();
     app.active_thread = Some(("C_GENERAL".into(), root_ts.clone()));
+    app.thread_open = true;
     app.thread_composer = iced::widget::text_editor::Content::with_text("thread answer");
     let _ = update(
         &mut app,
@@ -314,11 +315,16 @@ fn optimistic_thread_reply_inserts_pending_without_transport() {
 
     assert!(app.thread_composer.text().is_empty());
     let team = app.active_team.clone().unwrap();
-    let cm = &app.threads[&(team, "C_GENERAL".into(), root_ts)];
+    let key = (team, "C_GENERAL".into(), root_ts);
+    let cm = &app.threads[&key];
     let reply = cm.messages.last().unwrap();
     assert_eq!(reply.text.as_deref(), Some("thread answer"));
     assert_eq!(reply.thread_ts.as_deref(), Some("1783372300.000100"));
     assert!(cm.is_pending(reply.ts.as_deref().unwrap()));
+    assert!(
+        app.message_list_animations
+            .contains_key(&(key.0, key.1, Some(key.2)))
+    );
 }
 
 #[test]
@@ -327,6 +333,7 @@ fn realtime_thread_reply_updates_open_thread_not_channel() {
     let team = app.active_team.clone().unwrap();
     let root_ts = "1783372300.000100".to_owned();
     app.active_thread = Some(("C_GENERAL".into(), root_ts.clone()));
+    app.thread_open = true;
     app.threads.insert(
         (team.clone(), "C_GENERAL".into(), root_ts.clone()),
         ChannelMessages::default(),
@@ -350,10 +357,14 @@ fn realtime_thread_reply_updates_open_thread_not_channel() {
         before
     );
     assert_eq!(
-        app.threads[&(team, "C_GENERAL".into(), root_ts)].messages[0]
+        app.threads[&(team.clone(), "C_GENERAL".into(), root_ts.clone())].messages[0]
             .text
             .as_deref(),
         Some("reply")
+    );
+    assert!(
+        app.message_list_animations
+            .contains_key(&(team, "C_GENERAL".into(), Some(root_ts),))
     );
 }
 
@@ -440,6 +451,11 @@ fn optimistic_send_inserts_pending_without_transport() {
     assert_eq!(last.user.as_deref(), Some(SELF_USER));
     let ts = last.ts.clone().unwrap();
     assert!(cm.is_pending(&ts));
+    assert!(app.message_list_animations.contains_key(&(
+        app.active_team.clone().unwrap(),
+        "C_GENERAL".into(),
+        None,
+    )));
 }
 
 #[test]
@@ -510,6 +526,10 @@ fn realtime_message_upserts_into_channel() {
     );
     let after = app.workspaces[&team].messages["C_GENERAL"].messages.len();
     assert_eq!(after, before + 1);
+    assert!(
+        app.message_list_animations
+            .contains_key(&(team, "C_GENERAL".into(), None,))
+    );
 }
 
 #[test]
@@ -590,6 +610,7 @@ fn realtime_message_counts_toward_paused_pill() {
         );
     }
     assert_eq!(app.chat_paused.get("C_GENERAL"), Some(&2));
+    assert!(app.message_list_animations.is_empty());
 
     let _ = update(
         &mut app,
@@ -598,6 +619,23 @@ fn realtime_message_counts_toward_paused_pill() {
         )),
     );
     assert!(!app.chat_paused.contains_key("C_GENERAL"));
+}
+
+#[test]
+fn completed_message_list_motion_stops_requesting_frames() {
+    let mut app = test_app();
+    let team = app.active_team.clone().unwrap();
+    app.message_list_animations.insert(
+        (team, "C_GENERAL".into(), None),
+        Instant::now() - ui::motion::MESSAGE_LIST_DURATION,
+    );
+
+    let _ = update(
+        &mut app,
+        Message::Runtime(crate::app::RuntimeMessage::AnimationTick),
+    );
+
+    assert!(app.message_list_animations.is_empty());
 }
 
 #[test]

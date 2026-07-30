@@ -55,6 +55,12 @@ pub(super) fn subscription(app: &App) -> Subscription<Message> {
         subs.push(iced::event::listen_with(unreads_navigation));
     }
     let visible_media_animation_interval = visible_media_animation_interval(app);
+    if !app.message_list_animations.is_empty() {
+        subs.push(
+            iced::window::frames()
+                .map(|_| Message::Runtime(crate::app::RuntimeMessage::AnimationTick)),
+        );
+    }
     let needs_existing_animation_tick = has_pending_sends(app)
         || app
             .composer_attachments

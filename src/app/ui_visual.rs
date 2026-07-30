@@ -136,6 +136,19 @@ fn ui_visual_main_channel_renders() -> Result<(), Error> {
 }
 
 #[test]
+fn ui_visual_new_message_motion_stays_inside_conversation() -> Result<(), Error> {
+    let mut app = test_app();
+    app.composer = iced::widget::text_editor::Content::with_text("A freshly sent message");
+    let _ = update(
+        &mut app,
+        Message::Conversation(crate::app::ConversationMessage::SendPressed),
+    );
+
+    capture(&app, "main-general-new-message-motion")?;
+    Ok(())
+}
+
+#[test]
 fn ui_visual_unreads_renders_grouped_messages() -> Result<(), Error> {
     let app = unreads_app();
     let mut ui = sim(&app);

@@ -10,6 +10,8 @@ use iced::{Background, Color, Element, Length, Vector};
 const LAYER: Duration = Duration::from_millis(140);
 const PANEL: Duration = Duration::from_millis(160);
 const MICRO: Duration = Duration::from_millis(80);
+pub const MESSAGE_LIST_DURATION: Duration = Duration::from_millis(180);
+const MESSAGE_LIST_TRAVEL: f32 = 24.0;
 
 const CURVE: animation::Easing = animation::Easing::EaseOutCubic;
 
@@ -23,6 +25,22 @@ fn panel_anim() -> Animation<bool> {
 
 fn micro_anim() -> Animation<bool> {
     Animation::new(false).duration(MICRO).easing(CURVE)
+}
+
+pub fn message_list<'a, Message: 'a>(
+    content: Element<'a, Message>,
+    started_at: Option<Instant>,
+) -> Element<'a, Message> {
+    let Some(started_at) = started_at else {
+        return content;
+    };
+    let now = Instant::now();
+    let progress = Animation::new(false)
+        .duration(MESSAGE_LIST_DURATION)
+        .easing(animation::Easing::EaseInOutCubic)
+        .go(true, started_at)
+        .interpolate(0.0, 1.0, now);
+    translate(content, 0.0, MESSAGE_LIST_TRAVEL * (1.0 - progress))
 }
 
 /// Progress in \[0, 1\] for an open/close animation (easing already applied).

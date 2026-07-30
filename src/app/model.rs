@@ -2,6 +2,7 @@ use super::*;
 
 pub(super) type ActiveThreadKey = (ChannelId, MessageTs);
 pub(super) type ThreadKey = (TeamId, ChannelId, MessageTs);
+pub(super) type MessageListKey = (TeamId, ChannelId, Option<MessageTs>);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(super) enum ReadTarget {

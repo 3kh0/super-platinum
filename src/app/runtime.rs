@@ -69,6 +69,7 @@ impl App {
             avatar_profile_hydrated: HashSet::new(),
             text_selection: None,
             pending_scroll_to: None,
+            message_list_animations: HashMap::new(),
             thread_unread_marker: None,
             chat_paused: HashMap::new(),
             pending_marks: HashSet::new(),

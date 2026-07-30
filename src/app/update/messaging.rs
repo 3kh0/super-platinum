@@ -35,6 +35,7 @@ pub(super) fn send_pressed(app: &mut App) -> Task<Message> {
     cm.upsert(pending);
     cm.pending.push(ts);
     app.composer = Content::new();
+    start_message_list_animation(app, &team, &channel, None);
     mark_workspace_dirty(app, &team);
     app.pending_scroll_to = Some((channel.clone(), PendingScrollTarget::Latest));
     let scroll = scroll_to_pending(app, &channel);
@@ -113,6 +114,7 @@ pub(super) fn send_thread_pressed(app: &mut App) -> Task<Message> {
     cm.upsert(pending);
     cm.pending.push(ts);
     app.thread_composer = Content::new();
+    start_message_list_animation(app, &team, &channel, Some(&root_ts));
 
     let Some((transport, session)) = app.live() else {
         return Task::none();
@@ -235,6 +237,7 @@ pub(super) fn send_attachments(
         attachments,
     });
     *composer_content_mut(app, target.composer()) = Content::new();
+    start_message_list_animation(app, &team, &channel, thread_ts.as_deref());
     mark_workspace_dirty(app, &team);
     let scroll = if target == AttachTarget::Channel {
         app.pending_scroll_to = Some((channel.clone(), PendingScrollTarget::Latest));

@@ -4,7 +4,7 @@ use iced::{Element, Fill, Font, Length, Padding};
 use std::collections::HashMap;
 use std::time::Duration;
 
-use super::{composer, icons, message, theme};
+use super::{composer, icons, message, motion, theme};
 use crate::app::{
     ComposerAttachment, FilePreview, Message, PendingFileMessage, ProfileHoverState, TextSelection,
     TextSelectionSurface,
@@ -34,6 +34,7 @@ pub fn view<'a>(
     text_selection: Option<&TextSelection>,
     pending_file_messages: &'a [PendingFileMessage],
     width: Length,
+    message_list_animation_started: Option<iced::time::Instant>,
     profile_hover: Option<&'a ProfileHoverState>,
 ) -> Element<'a, Message> {
     let header = row![
@@ -126,10 +127,16 @@ pub fn view<'a>(
                 };
                 col = col.push(row);
             }
-            scrollable(col.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
-                .id(scrollable_id(channel_id, root_ts))
-                .style(theme::scrollbar)
+            let list: Element<'a, Message> =
+                scrollable(col.padding(Padding::ZERO.right(theme::SCROLLBAR_GUTTER)))
+                    .id(scrollable_id(channel_id, root_ts))
+                    .style(theme::scrollbar)
+                    .height(Fill)
+                    .into();
+            container(motion::message_list(list, message_list_animation_started))
+                .width(Fill)
                 .height(Fill)
+                .clip(true)
                 .into()
         }
         _ => {

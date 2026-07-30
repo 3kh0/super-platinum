@@ -354,6 +354,9 @@ fn main_view(app: &App) -> Element<'_, Message> {
                 app.text_selection.as_ref(),
                 &app.pending_file_messages,
                 iced::Length::Fixed(ui::theme::THREAD_WIDTH),
+                app.message_list_animations
+                    .get(&(team.clone(), channel.clone(), Some(root_ts.clone())))
+                    .copied(),
                 app.profile_hover.as_ref(),
             ))
             .padding(iced::Padding::ZERO.left(gap));
@@ -430,6 +433,11 @@ fn channel_main_panel<'a>(
                     app.text_selection.as_ref(),
                     &app.pending_file_messages,
                     app.chat_paused.get(channel_id).copied(),
+                    app.active_team.as_ref().and_then(|team| {
+                        app.message_list_animations
+                            .get(&(team.clone(), channel_id.to_owned(), None))
+                            .copied()
+                    }),
                     app.profile_hover.as_ref(),
                 ))
                 .height(Fill),
@@ -496,6 +504,13 @@ fn thread_static_panel<'a>(
         app.text_selection.as_ref(),
         &app.pending_file_messages,
         Fill,
+        app.message_list_animations
+            .get(&(
+                team.to_owned(),
+                channel.to_owned(),
+                Some(root_ts.to_owned()),
+            ))
+            .copied(),
         app.profile_hover.as_ref(),
     )
 }

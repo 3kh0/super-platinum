@@ -5,7 +5,7 @@ use iced::widget::{
 };
 use iced::{Alignment, ContentFit, Element, Fill, Length, Padding, font};
 
-use super::{message, profile, theme};
+use super::{message, motion, profile, theme};
 use crate::app::{
     FilePreview, Message, PendingFileMessage, ProfileHoverState, TextSelection,
     TextSelectionSurface,
@@ -38,6 +38,7 @@ pub fn view<'a>(
     text_selection: Option<&TextSelection>,
     pending_file_messages: &'a [PendingFileMessage],
     paused: Option<u32>,
+    message_list_animation_started: Option<iced::time::Instant>,
     profile_hover: Option<&'a ProfileHoverState>,
 ) -> Element<'a, Message> {
     let header = channel_header(ws, channel_id, avatar_previews, profile_hover);
@@ -145,17 +146,24 @@ pub fn view<'a>(
             if !is_paused {
                 list = list.anchor_bottom();
             }
-            match paused {
-                Some(new_count) => stack![
-                    list,
-                    container(chat_paused_pill(channel_id, new_count))
-                        .center_x(Fill)
-                        .align_bottom(Fill)
-                        .padding(theme::SPACE_SM),
-                ]
-                .into(),
-                None => list.into(),
-            }
+            let list = container(motion::message_list(
+                match paused {
+                    Some(new_count) => stack![
+                        list,
+                        container(chat_paused_pill(channel_id, new_count))
+                            .center_x(Fill)
+                            .align_bottom(Fill)
+                            .padding(theme::SPACE_SM),
+                    ]
+                    .into(),
+                    None => list.into(),
+                },
+                message_list_animation_started,
+            ))
+            .width(Fill)
+            .height(Fill)
+            .clip(true);
+            list.into()
         }
         Some(cm) if cm.history_failed => history_failed_placeholder(channel_id),
         Some(cm) if cm.loaded => message::empty_placeholder("No messages yet."),

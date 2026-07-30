@@ -837,6 +837,8 @@ pub(super) fn update(app: &mut App, message: Message) -> Task<Message> {
         }
 
         Message::Runtime(crate::app::RuntimeMessage::AnimationTick) => {
+            app.message_list_animations
+                .retain(|_, started_at| started_at.elapsed() < ui::motion::MESSAGE_LIST_DURATION);
             if app
                 .scrollbar_visible_until
                 .is_some_and(|deadline| Instant::now() >= deadline)

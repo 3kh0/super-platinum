@@ -516,6 +516,9 @@ pub(super) fn apply_realtime(
     let active_channel = (app.active_team.as_deref() == Some(team))
         .then(|| app.active_channel.clone())
         .flatten();
+    let active_thread = (app.active_team.as_deref() == Some(team) && app.thread_open)
+        .then(|| app.active_thread.clone())
+        .flatten();
     let Some(ws) = app.workspaces.get_mut(team) else {
         tracing::debug!(%team, "realtime event for unknown workspace, ignoring");
         return None;
@@ -571,7 +574,16 @@ pub(super) fn apply_realtime(
                     if let Some(pending_ts) = pending_message_ts {
                         cm.remove(pending_ts);
                     }
-                    upsert_realtime_message(cm, msg.clone());
+                    if upsert_realtime_message(cm, msg.clone())
+                        && active_thread
+                            .as_ref()
+                            .is_some_and(|(active_channel, active_root)| {
+                                active_channel == &channel && active_root == &key.2
+                            })
+                    {
+                        app.message_list_animations
+                            .insert((team.to_owned(), channel.clone(), Some(key.2.clone())), now);
+                    }
                 }
                 if msg.subtype.as_deref() != Some("thread_broadcast") {
                     return notification;
@@ -580,11 +592,17 @@ pub(super) fn apply_realtime(
             if let Some(new_count) = app.chat_paused.get_mut(&channel) {
                 *new_count += 1;
             }
-            let cm = ws.messages.entry(channel).or_default();
+            let cm = ws.messages.entry(channel.clone()).or_default();
             if let Some(pending_ts) = pending_message_ts {
                 cm.remove(pending_ts);
             }
-            upsert_realtime_message(cm, msg);
+            if upsert_realtime_message(cm, msg)
+                && active_channel.as_deref() == Some(channel.as_str())
+                && !app.chat_paused.contains_key(&channel)
+            {
+                app.message_list_animations
+                    .insert((team.to_owned(), channel, None), now);
+            }
             notification
         }
         RtEvent::MessageChanged { channel, message } => {
@@ -728,16 +746,16 @@ pub(super) fn apply_channel_marked(
     }
 }
 
-pub(super) fn upsert_realtime_message(cm: &mut ChannelMessages, msg: SlackMessage) {
+pub(super) fn upsert_realtime_message(cm: &mut ChannelMessages, msg: SlackMessage) -> bool {
     if let Some(cid) = msg.client_msg_id.clone() {
         if cm.confirm(&cid, msg.clone()) {
-            return;
+            return false;
         }
     }
     if cm.confirm_matching_pending(msg.user.as_deref(), msg.text.as_deref(), msg.clone()) {
-        return;
+        return false;
     }
-    cm.upsert(msg);
+    cm.upsert(msg)
 }
 
 pub(super) fn thread_root_for_reply(msg: &SlackMessage) -> Option<MessageTs> {

@@ -39,6 +39,35 @@ const CHAT_PIN_BOTTOM_PX: f32 = 12.0;
 const LOAD_OLDER_ACTIVITY_BOTTOM_PX: f32 = 96.0;
 const UNREADS_BATCH_SIZE: usize = 1;
 
+fn start_message_list_animation(app: &mut App, team: &str, channel: &str, root_ts: Option<&str>) {
+    let is_active = app.active_team.as_deref() == Some(team)
+        && match root_ts {
+            Some(root_ts) => {
+                app.thread_open
+                    && app
+                        .active_thread
+                        .as_ref()
+                        .is_some_and(|(active_channel, active_root)| {
+                            active_channel == channel && active_root == root_ts
+                        })
+            }
+            None => {
+                app.active_channel.as_deref() == Some(channel)
+                    && !app.chat_paused.contains_key(channel)
+            }
+        };
+    if is_active {
+        app.message_list_animations.insert(
+            (
+                team.to_owned(),
+                channel.to_owned(),
+                root_ts.map(str::to_owned),
+            ),
+            Instant::now(),
+        );
+    }
+}
+
 mod discovery;
 mod dispatch;
 mod media;
