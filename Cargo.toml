@@ -47,7 +47,10 @@ tokio = { version = "1", features = [
     "time",
 ] }
 url = "2"
-tao = "0.36.0"
+# tao and wry must match the versions dioxus-desktop resolves to. A different
+# version compiles a second copy into the graph, and its traits (for example
+# WindowExtWindows::hwnd) then do not apply to the window dioxus hands us.
+tao = "0.34.8"
 wry = "0.53.5"
 
 [target.'cfg(target_os = "macos")'.dependencies]
