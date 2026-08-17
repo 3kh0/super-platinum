@@ -1,0 +1,38 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "srgb:0.12549,0.14118,0.18039,1.00000",
+      "srgb:0.05098,0.06275,0.07843,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "foreground.svg",
+          "name" : "mark",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [0, 0]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.35
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.22
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

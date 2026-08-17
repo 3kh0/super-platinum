@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Super Platinum
+Comment=A stupid fast and lightweight Slack client
+Exec=super-platinum
+Icon=super-platinum
+Terminal=false
+Categories=Network;InstantMessaging;Chat;
+StartupWMClass=super-platinum

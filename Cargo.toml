@@ -1,16 +1,20 @@
 [package]
-name = "snack"
+name = "super-platinum"
 version = "0.1.0"
 edition = "2024"
 description = "A stupid fast and lightweight Slack client"
 license-file = "LICENSE.txt"
 
+[[bin]]
+name = "super-platinum"
+path = "src/desktop/main.rs"
+
 [package.metadata.bundle]
-name = "Snack"
-identifier = "com.echonet.snack"
-icon = ["assets/icons/snack.icns", "assets/icons/snack.ico", "assets/icons/snack.svg"]
+name = "Super Platinum"
+identifier = "com.echonet.superplatinum"
+icon = ["assets/icons/super-platinum.icns", "assets/icons/super-platinum.ico", "assets/icons/super-platinum.svg"]
 short_description = "A stupid fast and lightweight Slack client"
-long_description = "A stupid fast and lightweight Slack client built with Rust and Iced."
+long_description = "A fast native Rust Slack client rendered with Dioxus Desktop."
 category = "public.app-category.social-networking"
 osx_url_schemes = ["slack"]
 
@@ -31,74 +35,20 @@ panic = "abort"
 winresource = "0.1"
 
 [dependencies]
-chrono = { version = "0.4", features = ["serde"] }
-emojis = "0.9"
-gif = "0.14.2"
-image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
-unicode-segmentation = "1"
-iced = { git = "https://github.com/iced-rs/iced", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39", features = ["tokio", "image", "svg", "advanced", "lazy"] }
-# Vendored only to keep the upstream player aligned with Snack's pinned Iced revision.
-iced_video_player = { path = "vendor/iced_video_player" }
-serde = { version = "1", features = ["derive"] }
+base64 = "0.22"
+dioxus = { git = "https://github.com/DioxusLabs/dioxus", rev = "57d6794ad60b949e5bd8aa282f6f8c3dc97a365e", default-features = false, features = ["desktop", "document", "minimal"] }
+super-platinum-core = { path = "crates/super-platinum-core" }
 serde_json = "1"
-rusqlite = { version = "0.40", features = ["bundled"] }
-thiserror = "2"
 tokio = { version = "1", features = [
-    "rt-multi-thread",
-    "macros",
+    "io-util",
+    "net",
+    "process",
     "sync",
     "time",
-    "fs",
-    "process",
-    "net",
-    "io-util",
 ] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-uuid = { version = "1", features = ["serde", "v4"] }
 url = "2"
-png = "0.18"
-
-wreq = { version = "6.0.0-rc.29", features = [
-    "json",
-    "form",
-    "cookies",
-    "gzip",
-    "brotli",
-    "deflate",
-    "zstd",
-    "stream",
-    "ws",
-] }
-wreq-util = "3.0.0-rc.13"
-futures = "0.3"
-
-directories = "6"
-rfd = "0.17"
-
-wry = "0.56"
-tao = "0.36"
+tao = "0.34.8"
+wry = "0.53.5"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-keyring = { version = "3", features = ["apple-native"] }
-mac-usernotifications = "0.3.1"
-objc2 = "0.6"
-objc2-app-kit = { version = "0.3", features = [
-    "NSApplication",
-    "NSEvent",
-    "NSResponder",
-    "NSView",
-    "NSWindow",
-] }
-
-[target.'cfg(target_os = "linux")'.dependencies]
-keyring = { version = "3", features = ["sync-secret-service"] }
-notify-rust = "4.18.0"
-
-[target.'cfg(target_os = "windows")'.dependencies]
-keyring = { version = "3", features = ["windows-native"] }
-notify-rust = { version = "4.18.0", default-features = false }
-windows-registry = "0.6.1"
-
-[dev-dependencies]
-iced_test = { git = "https://github.com/iced-rs/iced", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39" }
+objc2-app-kit = { version = "0.3.2", default-features = false, features = ["NSWindow"] }

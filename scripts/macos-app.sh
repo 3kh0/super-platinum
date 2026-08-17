@@ -16,7 +16,7 @@ done
 
 ICONS="$ROOT/assets/icons"
 BIN_DIR="$ROOT/target/$PROFILE"
-APP="$BIN_DIR/Snack.app"
+APP="$BIN_DIR/Super Platinum.app"
 CONTENTS="$APP/Contents"
 MACOS="$CONTENTS/MacOS"
 RES="$CONTENTS/Resources"
@@ -24,19 +24,19 @@ RES="$CONTENTS/Resources"
 echo "→ cargo build ${CARGO_ARGS[*]:-}"
 cargo build --locked "${CARGO_ARGS[@]+"${CARGO_ARGS[@]}"}"
 
-if [[ ! -x "$BIN_DIR/snack" ]]; then
-  echo "error: expected binary at $BIN_DIR/snack" >&2
+if [[ ! -x "$BIN_DIR/super-platinum" ]]; then
+  echo "error: expected binary at $BIN_DIR/super-platinum" >&2
   exit 1
 fi
 
 rm -rf "$APP"
 mkdir -p "$MACOS" "$RES"
 
-cp "$BIN_DIR/snack" "$MACOS/snack"
-chmod +x "$MACOS/snack"
+cp "$BIN_DIR/super-platinum" "$MACOS/super-platinum"
+chmod +x "$MACOS/super-platinum"
 
-if [[ -f "$ICONS/snack.icns" ]]; then
-  cp "$ICONS/snack.icns" "$RES/snack.icns"
+if [[ -f "$ICONS/super-platinum.icns" ]]; then
+  cp "$ICONS/super-platinum.icns" "$RES/super-platinum.icns"
 fi
 
 if [[ -f "$ICONS/macos/Assets.car" ]]; then

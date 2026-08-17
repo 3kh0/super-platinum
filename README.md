@@ -1,27 +1,32 @@
-# snack
+# Super Platinum
 
-a stupid fast and lightweight Slack client built with Rust and [Iced](https://iced.rs/)
+A fast, focused Slack client built in Rust with [Dioxus Desktop](https://dioxuslabs.com/learn/0.7/guides/platforms/desktop/).
 
-## run
+Super Platinum uses the operating system WebView for presentation while Slack networking, realtime delivery, caching, persistence, media authorization, and reducers remain native Rust.
 
-install GStreamer 1.14 or newer first. on macOS:
+## Layout
 
-```sh
-brew install gstreamer
+```text
+crates/super-platinum-core/   Renderer-neutral domain: Slack, cache, config, state, agent protocol
+src/desktop/         Dioxus Desktop shell: view, state, bootstrap, media, agent control plane
 ```
 
-on Ubuntu/Debian:
+Import domain behavior through `super_platinum_core` only. The desktop package should not reach into core sources by path.
+
+## Run
+
+Install the system WebView development package on Linux (`libwebkit2gtk-4.1-dev` and `libgtk-3-dev` on Ubuntu/Debian). macOS and Windows use their built-in WKWebView and WebView2 runtimes.
 
 ```sh
-sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-  gstreamer1.0-{libav,plugins-base,plugins-good,plugins-bad,plugins-ugly}
+cargo run --locked
 ```
 
-windows installers are available from the
-[GStreamer project](https://gstreamer.freedesktop.org/download/).
-
-clone the repo locally and run the following command to start the app:
+## Develop
 
 ```sh
-cargo run
+cargo fmt --check
+cargo check --locked
+cargo test --locked --manifest-path crates/super-platinum-core/Cargo.toml
+cargo test --locked
+scripts/agent-ui-check.sh
 ```

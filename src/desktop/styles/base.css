@@ -1,0 +1,52 @@
+/* Super Platinum desktop chrome — dense layout tokens (rail 44px, sidebar ~240px, header 42px). */
+
+:root {
+  color-scheme: dark;
+  --bg: #020305;
+  --surface: #070a0f;
+  --surface-raised: #0c1119;
+  --panel: #090d14;
+  --sidebar: #05070b;
+  --rail: #010204;
+  --border: #162231;
+  --border-strong: #28435f;
+  --text: #f3f7fc;
+  --muted: #93a4b7;
+  --muted-2: #60758c;
+  --accent: #2f8cff;
+  --accent-soft: #0b2848;
+  --accent-faint: #071a2c;
+  --mention: #42a5ff;
+  --success: #42d392;
+  --warning: #f5b942;
+  --danger: #ff647c;
+  --link: #69b1ff;
+  --avatar-bg: #123a61;
+  --hover-overlay: rgb(47 140 255 / 9%);
+  --on-accent: #fff;
+  --on-warning: #07111d;
+  --rail-width: 44px;
+  --list-panel-width: 340px;
+  --header-height: 42px;
+  --sidebar-width: 240px;
+  --density-gap: 6px;
+  --panel-radius: 8px;
+  --border-thickness: 1px;
+  --msg-avatar: 28px;
+}
+
+* { box-sizing: border-box; }
+html, body, #main { width: 100%; height: 100%; margin: 0; }
+body {
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.4 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { border: 0; background: transparent; cursor: pointer; }
+::selection { background: color-mix(in srgb, var(--accent) 42%, transparent); color: var(--text); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+img.icon { display: block; width: 18px; height: 18px; opacity: 0.78; }
+img.icon.sm { width: 15px; height: 15px; }
+button:hover img.icon, .active img.icon, .nav-row.active img.icon { opacity: 1; }

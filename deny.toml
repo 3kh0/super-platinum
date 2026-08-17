@@ -3,12 +3,7 @@ all-features = false
 no-default-features = false
 
 [advisories]
-# Transitive unmaintained crates via Iced/GTK3/winit forks; no actionable upgrade path yet.
 unmaintained = "none"
-ignore = [
-    { id = "RUSTSEC-2026-0194", reason = "quick-xml via iced/wayland; pinned by upstream" },
-    { id = "RUSTSEC-2026-0195", reason = "quick-xml via iced/wayland; pinned by upstream" },
-]
 
 [licenses]
 allow = [
@@ -46,7 +41,5 @@ unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = [
-    "https://github.com/iced-rs/iced",
-    "https://github.com/iced-rs/winit.git",
-    "https://github.com/iced-rs/cryoglyph.git",
+    "https://github.com/DioxusLabs/dioxus",
 ]

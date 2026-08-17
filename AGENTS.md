@@ -4,35 +4,42 @@ Guidance for agents working in this repository.
 
 ## Project Shape
 
-Snack is a Rust desktop Slack client built with Iced.
+Super Platinum is a Rust desktop Slack client built with Dioxus Desktop.
 
 Important boundaries:
 
-- `src/app.rs` is the app facade and shared state/message type surface.
-- `src/app/update.rs` owns reducer-style update logic and async effects. Its `update/` children own domain helpers and the conversation, workspace, discovery, and runtime event routers.
-- `src/app/view.rs` owns top-level rendering.
-- `src/app/subscription.rs` owns Iced subscriptions and periodic ticks.
-- `src/app/agent.rs` is the optional live control plane (`SNACK_AGENT=1`).
-- `src/app/ui_visual.rs` is headless UI capture tests for agents.
-- `src/ui/` contains reusable Slack UI widgets and styling (message bodies: `message.rs`, `message/`, `blocks.rs`, `selectable.rs`; theme facades: `theme.rs`, `theme/`).
-- `src/slack/` contains Slack API, realtime, transport, models, and events. `api.rs` and `models.rs` are stable facades over their focused child modules.
-- `src/config.rs` is the session/settings persistence boundary.
-- `src/cache.rs` is the local SQLite/cache persistence boundary.
-- `src/state.rs` is the shared state facade; presentation helpers and theirtests live under `src/state/`.
+- `crates/super-platinum-core/` owns renderer-neutral domain code: cache, config/session,
+  Slack API/realtime/models, workspace state helpers, palette ranking, commands,
+  reducers, supervisors, and the stable agent protocol.
+- `src/desktop/main.rs` is the Dioxus application entry point.
+- `src/desktop/state/` owns the serial shell state and mutation boundary
+  (projections, selection, timeline window, composer, fixtures).
+- `src/desktop/bootstrap/`, `messaging.rs`, and `realtime.rs` own native async
+  Slack work (session, history, discovery, persistence).
+- `src/desktop/view/`, `overlays.rs`, and `src/desktop/styles/` own the typed
+  DOM UI and CSS cascade modules.
+- `src/desktop/media.rs` owns the opaque `super-platinum-media://` protocol.
+- `src/desktop/agent.rs` is the optional live control plane (`SUPER_PLATINUM_AGENT=1`).
+- `src/desktop/auth.rs` owns the Slack sign-in WebView flow (tao/wry).
 
-Keep changes inside the smallest boundary that matches the task. Do not fold feature logic back into `src/app.rs` unless it is truly shared app surface. Keep implementation modules focused: aim for 300–700 lines, split a module before it exceeds 1,000 lines, and do not split cohesive logic solely to meet an arbitrary line count. Facade files should mostly contain module wiring, shared root types, and compatibility re-exports.
+Keep changes inside the smallest boundary that matches the task. Domain behavior
+belongs in `super-platinum-core`; DOM focus, selection, scrolling, capture, and other
+renderer-owned behavior belongs in `src/desktop/`. Keep implementation modules
+focused: aim for 300–700 lines and split before 1,000 lines when cohesive.
 
-## Iced Documentation Rule
+## Dioxus Documentation Rule
 
-Do not guess Iced APIs from memory. Iced changes quickly, and this project uses a pinned git dependency rather than a plain crates.io release.
+Do not guess Dioxus APIs from memory. This project uses an exact pinned git
+revision rather than a crates.io range.
 
-For any question, explanation, or code change involving Iced application setup, widgets, layout, styling, tasks, subscriptions, themes, images, SVGs, canvas, or runtime behavior, check the current Iced docs first:
+For application setup, components, signals, hooks, document evaluation, desktop
+configuration, custom protocols, or runtime behavior, check the Dioxus 0.7 docs
+first:
 
-<https://docs.rs/iced/latest/iced/>
+<https://dioxuslabs.com/learn/0.7/>
 
-If documentation access is unavailable, say that explicitly and validate the assumption with the compiler. Prefer small compile-backed changes over broad rewrites based on remembered Iced examples.
-
-When docs.rs `latest` disagrees with this repo's pinned git revision in `Cargo.toml`, the repository wins. Use docs to orient yourself, then confirm against `cargo check --locked` or focused compiler feedback.
+When documentation disagrees with the pinned revision in `Cargo.toml`, the
+repository and compiler win. Prefer small compile-backed changes.
 
 ## Development Commands
 
@@ -44,7 +51,9 @@ cargo check --locked
 cargo test --locked
 ```
 
-For most Rust changes, run `cargo fmt --check` and `cargo test --locked` before calling the work done. Use `cargo check --locked` for faster iteration while editing, especially around Iced API changes.
+For most Rust changes, run `cargo fmt --check` and `cargo test --locked` before
+calling the work done. Also run the independently locked core suite when domain
+behavior changes. Use `cargo check --locked` for faster iteration.
 
 If a build fails with stale dependency artifacts under `target/debug/deps`, a clean rebuild has fixed that class of local issue before:
 
@@ -57,9 +66,13 @@ Do not treat local environment noise, such as shell startup warnings, as the roo
 
 ## Persistence And Secrets
 
-Be careful around `src/config.rs`.
+Be careful around `crates/super-platinum-core/src/config/`.
 
 - The app stores Slack session secrets through the configured secret backend.
+- `STORAGE_QUALIFIER` and `KEYRING_SERVICE` still say `snack` after the Super
+  Platinum rebrand. That is deliberate: renaming either one orphans the existing
+  config directory, warm cache, and Keychain item, signing every user out. Change
+  them only together with a migration.
 - Tests should not touch the real macOS Keychain or platform keyring.
 - Keep test-only secret isolation behind `cfg(test)`.
 - When changing session format, preserve migration behavior and add round-trip tests for both current and legacy shapes.
@@ -70,20 +83,20 @@ The app should not introduce repeated keychain prompts on boot or during tests.
 
 This is intended to feel fast in dev and release builds.
 
-- Do not add synchronous disk or network work to the Iced update/view path.
+- Do not add synchronous disk or network work to Dioxus render/event paths.
 - Prefer async tasks or background work for cache writes and Slack calls.
 - Keep rendered message lists bounded or lazily computed where possible.
-- Be careful with periodic subscriptions; avoid always-on ticks unless needed.
+- Be careful with supervisors and periodic ticks; avoid always-on work unless needed.
 - Preserve `[profile.dev]` settings unless there is a measured reason to change
   them.
 
 ## UI Expectations
 
-Snack should feel like a focused desktop Slack client, not a marketing page.
+Super Platinum should feel like a focused desktop Slack client, not a marketing page.
 
 - Keep the UI quiet, dense, and readable.
-- Use the existing `src/ui/theme.rs` constants and helper styles.
-- Prefer existing UI modules over one-off widget styling.
+- Use the existing CSS custom properties and appearance helpers.
+- Prefer existing Dioxus components over one-off presentation logic.
 - Keep controls stable in size; avoid layout shifts on hover, loading, or text changes.
 - Do not add decorative chrome that competes with channels, messages, threads, and search.
 
@@ -116,7 +129,7 @@ Agents should **not** wait on a human to `cargo run`, click around, and paste sc
 | Mode | When | Entry point |
 | --- | --- | --- |
 | Offline fixtures | Chrome, layout, message rendering, modals — no real Slack data needed | `scripts/agent-ui-check.sh` |
-| Live control plane | Real channels/messages, palette ranking, search, warm cache, realtime | `SNACK_AGENT=1` + `scripts/agentctl.sh` |
+| Live control plane | Real channels/messages, palette ranking, search, warm cache, realtime | `SUPER_PLATINUM_AGENT=1` + `scripts/agentctl.sh` |
 
 Still run `cargo fmt --check` and `cargo test --locked` (or a focused subset) for logic. Captures are not a substitute for unit tests.
 
@@ -128,13 +141,12 @@ scripts/agent-ui-check.sh
 
 What it does:
 
-- Runs `ui_visual` tests with `iced_test::Simulator` (no window, no Slack network).
-- Seeds offline fixture state from `src/app/tests.rs` helpers:
-  - `test_app`, `login_app`, `settings_app`, `search_app`
-  - `multi_paragraph_emoji_app` — multi-paragraph rich_text + custom emoji (reproduces the `#ship` “Hack Piano” layout class of bugs)
-- Writes PNGs under `tmp/agent-ui/` (override with `SNACK_UI_CAPTURE_DIR`).
-- Uses `ICED_TEST_BACKEND=tiny-skia` by default for a stable software renderer.
-- Capture tests live in `src/app/ui_visual.rs`.
+- Builds and launches the real Dioxus Desktop binary once per offline fixture.
+- Drives the unchanged agent protocol and captures the native WebView window.
+- Includes multi-paragraph rich text and custom emoji fixtures that reproduce
+  the `#ship` “Hack Piano” layout class of bugs.
+- Writes PNGs under `tmp/agent-ui/` (override with `SUPER_PLATINUM_UI_CAPTURE_DIR`).
+- Fixture state and rendering live under `src/desktop/`.
 
 After the script finishes, **read the PNGs** and verify layout, copy, and chrome.
 
@@ -142,14 +154,15 @@ Rules:
 
 - Fixtures only — do not put tokens or real session secrets in tests.
 - Do not claim visual verification without running this harness (or having live screenshots you inspected).
-- When you add a new screen, modal, or message-layout path, add a `ui_visual_*` capture test in `src/app/ui_visual.rs` (and a fixture helper if needed).
-- Optional pixel regression: `SNACK_UI_SNAPSHOT=1 cargo test --locked ui_visual_optional` writes/checks `snapshots/ui/*.sha256` (machine/font sensitive — opt-in only).
+- When you add a new screen, modal, or message-layout path, add a named fixture
+  to `ShellState::fixture_core` and `scripts/agent-ui-check.sh`.
 
 ### Live control plane (real session + drive the UI)
 
-For features that need real data (quick switcher ranking, search hits, warm cache, live message layout), run Snack with the agent socket and drive it via `scripts/agentctl.sh`.
+For features that need real data (quick switcher ranking, search hits, warm cache, live message layout), run Super Platinum with the agent socket and drive it via `scripts/agentctl.sh`.
 
-Implementation: `src/app/agent.rs` (Unix socket NDJSON → injects normal app `Message`s). Wired only when `SNACK_AGENT` is set.
+Implementation: `src/desktop/agent.rs` (Unix socket or Windows loopback TCP
+NDJSON into the serial dispatcher). Wired only when `SUPER_PLATINUM_AGENT` is set.
 
 #### Boot
 
@@ -158,14 +171,14 @@ Implementation: `src/app/agent.rs` (Unix socket NDJSON → injects normal app `M
 cargo build --locked
 
 # Clear a stale socket if a previous agent run died hard.
-rm -f "${TMPDIR:-/tmp}/snack-agent.sock" "${TMPDIR:-/tmp}/snack-agent.sock.path"
+rm -f "${TMPDIR:-/tmp}/super-platinum-agent.sock" "${TMPDIR:-/tmp}/super-platinum-agent.sock.path"
 
-# Uses the normal Snack session / Keychain (macOS).
-SNACK_AGENT=1 ./target/debug/snack
-# equivalent: SNACK_AGENT=1 cargo run --locked
+# Uses the normal Super Platinum session / Keychain (macOS).
+SUPER_PLATINUM_AGENT=1 ./target/debug/super-platinum
+# equivalent: SUPER_PLATINUM_AGENT=1 cargo run --locked
 ```
 
-Socket path: `SNACK_AGENT_SOCK`, else `$TMPDIR/snack-agent.sock` (also written to `$TMPDIR/snack-agent.sock.path` for discovery). If `agentctl` gets `Connection refused`, remove the stale sock and restart with `SNACK_AGENT=1`.
+Socket path: `SUPER_PLATINUM_AGENT_SOCK`, else `$TMPDIR/super-platinum-agent.sock` (also written to `$TMPDIR/super-platinum-agent.sock.path` for discovery). If `agentctl` gets `Connection refused`, remove the stale sock and restart with `SUPER_PLATINUM_AGENT=1`.
 
 #### Drive the UI
 
@@ -200,16 +213,17 @@ Useful commands (full list: `scripts/agentctl.sh help` or `agentctl help`):
 - Prefer `state` for structural checks; use `screenshot` when layout/typography matters, then **read the PNG**.
 - Recent messages in `state` are text snippets only; full Block Kit layout needs a screenshot or an offline fixture built from known blocks.
 - Do not assume the viewport shows a particular historical message — the live list is scrolled to recent. For a fixed layout repro, use `multi_paragraph_emoji_app` offline rather than scrolling the live client.
-- Destructive actions (`send`) require `SNACK_AGENT_ALLOW_DESTRUCTIVE=1` or `scripts/agentctl.sh allow-destructive true`. Never enable that casually.
+- Destructive actions (`send`) require `SUPER_PLATINUM_AGENT_ALLOW_DESTRUCTIVE=1` or `scripts/agentctl.sh allow-destructive true`. Never enable that casually.
 - Live mode uses the real Slack session. Never print tokens, cookies, or secrets.
 - Prefer offline `agent-ui-check.sh` when live data is not needed.
 
 ### Message rendering notes (for UI work)
 
-- Message bodies: `src/ui/message.rs` + `src/ui/blocks.rs` + selectable text in `src/ui/selectable.rs`.
+- Message bodies are typed DOM nodes built by `src/desktop/message_vm.rs` and
+  rendered in `src/desktop/view.rs`; never inject raw Slack HTML.
 - Slack often packs multi-paragraph posts as **one** `rich_text_section` with embedded `\n` in text leaves. Block rendering **must** split those into separate lines (`split_segments_on_newlines` in `blocks.rs`).
-- Standard emoji → Unicode via `state::emoji_glyph` and render with `SelectableText`.
-- Custom workspace emoji (image URL known) forces the `emoji_body` wrap path so images can sit inline. That path is word-chip + `Row::wrap`; it is more fragile than `SelectableText`. After changing it, re-run `ui_visual_multi_paragraph_custom_emoji_message` and inspect the PNG.
+- Standard emoji resolve through `state::emoji_glyph`; custom workspace emoji
+  use opaque native media IDs and inline image nodes.
 - Do not reintroduce “one big line with `\n` inside a wrapping row of text chips” — that produces floating mid-line words (the old `#ship` Hack Piano bug).
 
 ## Working Style
