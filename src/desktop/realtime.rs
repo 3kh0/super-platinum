@@ -26,7 +26,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                             .core
                             .workspaces
                             .get(&team)
-                            .is_none_or(|workspace| workspace.users.get(user).is_none())
+                            .is_none_or(|workspace| !workspace.users.contains_key(user))
                     }),
                     _ => false,
                 };
