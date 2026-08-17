@@ -166,8 +166,7 @@ pub fn ensure_identity() -> Result<(), String> {
                 "/d",
                 "Super Platinum",
                 "/f",
-            ]
-            .as_slice(),
+            ],
             [
                 "add",
                 key,
@@ -178,8 +177,7 @@ pub fn ensure_identity() -> Result<(), String> {
                 "/d",
                 "0",
                 "/f",
-            ]
-            .as_slice(),
+            ],
         ];
         for args in commands {
             let status = std::process::Command::new("reg.exe")
