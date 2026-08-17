@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
@@ -32,17 +34,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends \
-            cmake \
             libdbus-1-dev \
-            libgstreamer1.0-dev \
-            libgstreamer-plugins-base1.0-dev \
             libgtk-3-dev \
+            libxdo-dev \
             libwebkit2gtk-4.1-dev \
-            gstreamer1.0-libav \
-            gstreamer1.0-plugins-bad \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good \
-            gstreamer1.0-plugins-ugly \
             pkg-config
 
       - uses: dtolnay/rust-toolchain@stable
@@ -65,8 +60,6 @@ jobs:
 
   test:
     runs-on: ubuntu-24.04
-    env:
-      ICED_TEST_BACKEND: tiny-skia
     steps:
       - uses: actions/checkout@v7
 
@@ -74,17 +67,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends \
-            cmake \
             libdbus-1-dev \
-            libgstreamer1.0-dev \
-            libgstreamer-plugins-base1.0-dev \
             libgtk-3-dev \
+            libxdo-dev \
             libwebkit2gtk-4.1-dev \
-            gstreamer1.0-libav \
-            gstreamer1.0-plugins-bad \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good \
-            gstreamer1.0-plugins-ugly \
             pkg-config
 
       - uses: dtolnay/rust-toolchain@stable
@@ -102,9 +88,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - name: macOS Intel
+            os: macos-15-intel
+            target: x86_64-apple-darwin
           - name: macOS ARM64
             os: macos-26
             target: aarch64-apple-darwin
+          - name: Windows x64
+            os: windows-2025
+            target: x86_64-pc-windows-msvc
+          - name: Windows ARM64
+            os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+          - name: Linux x64
+            os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - name: Linux ARM64
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -114,17 +115,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends \
-            cmake \
             libdbus-1-dev \
-            libgstreamer1.0-dev \
-            libgstreamer-plugins-base1.0-dev \
             libgtk-3-dev \
+            libxdo-dev \
             libwebkit2gtk-4.1-dev \
-            gstreamer1.0-libav \
-            gstreamer1.0-plugins-bad \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good \
-            gstreamer1.0-plugins-ugly \
             pkg-config
 
       - uses: dtolnay/rust-toolchain@stable
@@ -135,52 +129,11 @@ jobs:
         with:
           shared-key: ${{ matrix.target }}
 
-      - name: Configure CMake for Windows ARM64
+      - name: Configure BoringSSL for Windows ARM64
         if: matrix.target == 'aarch64-pc-windows-msvc'
         shell: pwsh
         run: |
           "CMAKE_TOOLCHAIN_FILE=$env:GITHUB_WORKSPACE\.github\cmake\windows-arm64.cmake" >> $env:GITHUB_ENV
 
-      - name: Install CMake on macOS
-        if: runner.os == 'macOS'
-        run: brew install cmake gstreamer
-
-      - name: Install GStreamer on Windows
-        if: runner.os == 'Windows'
-        shell: pwsh
-        timeout-minutes: 30
-        run: |
-          $ErrorActionPreference = "Stop"
-          $arch = if ("${{ matrix.target }}" -eq "aarch64-pc-windows-msvc") { "arm64" } else { "x86_64" }
-          $root = "$env:LOCALAPPDATA\Programs\gstreamer\1.0\msvc_$arch"
-          $installer = "$env:RUNNER_TEMP\gstreamer.exe"
-          $installLog = "$env:RUNNER_TEMP\gstreamer-install.log"
-          Invoke-WebRequest `
-            -Uri "https://gstreamer.freedesktop.org/data/pkg/windows/1.28.5/msvc/gstreamer-1.0-msvc-$arch-1.28.5.exe" `
-            -OutFile $installer
-          $process = Start-Process `
-            -FilePath $installer `
-            -ArgumentList @(
-              "/VERYSILENT",
-              "/SUPPRESSMSGBOXES",
-              "/NORESTART",
-              "/CURRENTUSER",
-              "/TYPE=devel",
-              "/DIR=$root",
-              "/LOG=$installLog"
-            ) `
-            -Wait `
-            -PassThru
-          if ($process.ExitCode -ne 0) {
-            Get-Content $installLog -ErrorAction SilentlyContinue
-            throw "GStreamer installer exited with code $($process.ExitCode)"
-          }
-          if (-not (Test-Path "$root\lib\pkgconfig")) {
-            Get-Content $installLog -ErrorAction SilentlyContinue
-            throw "GStreamer development files were not installed under $root"
-          }
-          "$root\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          "PKG_CONFIG_PATH=$root\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
       - name: Build
-        run: cargo build --locked --target ${{ matrix.target }}
+        run: cargo build --release --locked --target ${{ matrix.target }}

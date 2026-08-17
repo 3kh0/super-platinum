@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# CLI for Snack's live agent control plane.
+# CLI for Super Platinum's live agent control plane.
 #
 # Prerequisites:
-#   SNACK_AGENT=1 cargo run
+#   SUPER_PLATINUM_AGENT=1 cargo run
 #
 # Examples:
 #   scripts/agentctl.sh ping
@@ -22,16 +22,16 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 sock_path() {
-  if [[ -n "${SNACK_AGENT_SOCK:-}" ]]; then
-    printf '%s\n' "$SNACK_AGENT_SOCK"
+  if [[ -n "${SUPER_PLATINUM_AGENT_SOCK:-}" ]]; then
+    printf '%s\n' "$SUPER_PLATINUM_AGENT_SOCK"
     return
   fi
-  local marker="${TMPDIR:-/tmp}/snack-agent.sock.path"
+  local marker="${TMPDIR:-/tmp}/super-platinum-agent.sock.path"
   if [[ -f "$marker" ]]; then
     cat "$marker"
     return
   fi
-  printf '%s\n' "${TMPDIR:-/tmp}/snack-agent.sock"
+  printf '%s\n' "${TMPDIR:-/tmp}/super-platinum-agent.sock"
 }
 
 usage() {
@@ -73,7 +73,7 @@ Commands:
   raw <json>                    Send a raw JSON request object
 
 Env:
-  SNACK_AGENT_SOCK   Unix socket path (default $TMPDIR/snack-agent.sock)
+  SUPER_PLATINUM_AGENT_SOCK   Unix socket path or tcp://host:port endpoint
 EOF
 }
 
@@ -213,9 +213,13 @@ def call(cmd_obj):
     cmd_obj = dict(cmd_obj)
     cmd_obj["id"] = req_id
     payload = (json.dumps(cmd_obj) + "\n").encode()
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(5)
-    s.connect(sock_path)
+    if sock_path.startswith("tcp://"):
+        host, port = sock_path[6:].rsplit(":", 1)
+        s = socket.create_connection((host, int(port)), timeout=5)
+    else:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(5)
+        s.connect(sock_path)
     s.sendall(payload)
     buf = b""
     while b"\n" not in buf:
@@ -278,9 +282,9 @@ PY
 esac
 
 SOCK="$(sock_path)"
-if [[ ! -S "$SOCK" && ! -e "$SOCK" ]]; then
+if [[ "$SOCK" != tcp://* && ! -S "$SOCK" && ! -e "$SOCK" ]]; then
   echo "agentctl: socket not found at $SOCK" >&2
-  echo "start snack with: SNACK_AGENT=1 cargo run" >&2
+  echo "start super-platinum with: SUPER_PLATINUM_AGENT=1 cargo run" >&2
   exit 1
 fi
 
@@ -290,9 +294,13 @@ sock_path, payload = sys.argv[1], sys.argv[2]
 data = payload.encode()
 if not data.endswith(b"\n"):
     data += b"\n"
-s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-s.settimeout(35)
-s.connect(sock_path)
+if sock_path.startswith("tcp://"):
+    host, port = sock_path[6:].rsplit(":", 1)
+    s = socket.create_connection((host, int(port)), timeout=35)
+else:
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(35)
+    s.connect(sock_path)
 s.sendall(data)
 buf = b""
 while b"\n" not in buf:

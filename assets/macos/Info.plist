@@ -5,15 +5,15 @@
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>Snack</string>
+  <string>Super Platinum</string>
   <key>CFBundleExecutable</key>
-  <string>snack</string>
+  <string>super-platinum</string>
   <key>CFBundleIdentifier</key>
-  <string>com.echonet.snack</string>
+  <string>com.echonet.superplatinum</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>Snack</string>
+  <string>Super Platinum</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -21,9 +21,9 @@
   <key>CFBundleVersion</key>
   <string>0.1.0</string>
   <key>CFBundleIconFile</key>
-  <string>snack</string>
+  <string>super-platinum</string>
   <key>CFBundleIconName</key>
-  <string>snack</string>
+  <string>super-platinum</string>
   <key>CFBundleURLTypes</key>
   <array>
     <dict>
