@@ -106,3 +106,21 @@ pub fn scroll_ratio_for_ts(messages: &[SlackMessage], ts: &str) -> Option<f32> {
         Some(index as f32 / last as f32)
     }
 }
+
+/// Slack's message-unfurl footer stamp: `Today at 10:47`, `Yesterday at 10:47`,
+/// then `Aug 18th` once the referenced message is older than that.
+pub fn format_ts_unfurl_label(ts: &str) -> String {
+    use chrono::{Datelike, Local, TimeZone};
+    let (secs, _) = ts_key(ts);
+    let Some(date_time) = Local.timestamp_opt(secs as i64, 0).single() else {
+        return ts.to_owned();
+    };
+    let date = date_time.date_naive();
+    let today = Local::now().date_naive();
+    let clock = date_time.format("%H:%M");
+    match today.signed_duration_since(date).num_days() {
+        0 => format!("Today at {clock}"),
+        1 => format!("Yesterday at {clock}"),
+        _ => format!("{} {}", date.format("%b"), ordinal_day(date.day())),
+    }
+}

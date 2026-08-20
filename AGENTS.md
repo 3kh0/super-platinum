@@ -130,6 +130,7 @@ Agents should **not** wait on a human to `cargo run`, click around, and paste sc
 | --- | --- | --- |
 | Offline fixtures | Chrome, layout, message rendering, modals — no real Slack data needed | `scripts/agent-ui-check.sh` |
 | Live control plane | Real channels/messages, palette ranking, search, warm cache, realtime | `SUPER_PLATINUM_AGENT=1` + `scripts/agentctl.sh` |
+| Real Slack reference | What Slack itself renders for a shape (HTML, computed styles, payloads) | `scripts/capture-slack-cdp.mjs` |
 
 Still run `cargo fmt --check` and `cargo test --locked` (or a focused subset) for logic. Captures are not a substitute for unit tests.
 
@@ -145,6 +146,11 @@ What it does:
 - Drives the unchanged agent protocol and captures the native WebView window.
 - Includes multi-paragraph rich text and custom emoji fixtures that reproduce
   the `#ship` “Hack Piano” layout class of bugs.
+- `media-loading-state` captures the cold-boot state — every image registered,
+  no bytes landed — so a regression back to broken-image icons is visible.
+- Holds the display awake for the run (macOS) and retries each capture: a
+  sleeping display has no window surface, and `screencapture -l` fails outright
+  with “could not create image from window”, losing the whole sweep.
 - Writes PNGs under `tmp/agent-ui/` (override with `SUPER_PLATINUM_UI_CAPTURE_DIR`).
 - Fixture state and rendering live under `src/desktop/`.
 
@@ -217,14 +223,114 @@ Useful commands (full list: `scripts/agentctl.sh help` or `agentctl help`):
 - Live mode uses the real Slack session. Never print tokens, cookies, or secrets.
 - Prefer offline `agent-ui-check.sh` when live data is not needed.
 
+### Real Slack as the reference implementation
+
+When the question is "what does Slack actually render / send for this shape",
+drive the real desktop app over CDP rather than guessing:
+
+```sh
+osascript -e 'quit app "Slack"'
+open -a Slack --args --remote-debugging-port=9222
+node scripts/capture-slack-cdp.mjs --list
+node scripts/capture-slack-cdp.mjs --eval '(() => document.querySelector("[data-qa=message_attachment]").outerHTML)()'
+node scripts/capture-slack-cdp.mjs --screenshot tmp/slack-reference.png
+node scripts/capture-slack-cdp.mjs --filter conversations.history --reload   # network capture, Ctrl+C to stop
+```
+
+- `--eval` runs in the `app.slack.com/client` renderer; wrap multi-statement
+  expressions in an IIFE and return a value, or the result reads back `undefined`.
+- Do not navigate the renderer to a non-`/client` URL; it lands on `app://error/`
+  and has to be steered back.
+- Network captures go to `captures/` (gitignored — they contain cookies, tokens,
+  and real messages). Never commit or paste their contents.
+- Getting the raw JSON for a channel is often faster through a **temporary**
+  env-gated probe against the persisted session (`config::load_session()` +
+  `Transport` + `api::conversations_history`, print `transport.execute` output)
+  than through the UI. Delete the probe when done.
+
 ### Message rendering notes (for UI work)
 
-- Message bodies are typed DOM nodes built by `src/desktop/message_vm.rs` and
-  rendered in `src/desktop/view.rs`; never inject raw Slack HTML.
-- Slack often packs multi-paragraph posts as **one** `rich_text_section` with embedded `\n` in text leaves. Block rendering **must** split those into separate lines (`split_segments_on_newlines` in `blocks.rs`).
-- Standard emoji resolve through `state::emoji_glyph`; custom workspace emoji
-  use opaque native media IDs and inline image nodes.
+Message bodies are typed `RichNode` trees; never inject raw Slack HTML. The
+pipeline is:
+
+| Module | Owns |
+| --- | --- |
+| `src/desktop/blocks.rs` | Block Kit blocks/elements → `RichNode` (`rich_text*`, `section`, `context`, `header`, `divider`, `actions`, `image`, `button`) |
+| `src/desktop/blocks/text.rs` | Slack's text layer: `mrkdwn` spans, `<…>` entities, `:emoji:`, mention chips |
+| `src/desktop/unfurl.rs` | `message.attachments` → `AttachmentVm` (message unfurls, link unfurls, app unfurls, legacy bot attachments) |
+| `src/desktop/message_vm.rs` | Assembles `MessageVm`: body, reactions, attachments, reply bar, timeline annotation |
+| `src/desktop/view/rich.rs` | Renders all of the above; `src/desktop/styles/blocks.css` owns the CSS |
+
+- Slack often packs multi-paragraph posts as **one** `rich_text_section` with embedded `\n` in text leaves. Block rendering **must** split those into separate lines (`split_section_on_newlines` in `blocks.rs`).
 - Do not reintroduce “one big line with `\n` inside a wrapping row of text chips” — that produces floating mid-line words (the old `#ship` Hack Piano bug).
+- Standard emoji resolve through `state::emoji_glyph`; custom workspace emoji
+  become `RichNode::EmojiImage` / `ReactionVm::media` — opaque native media IDs
+  sized to the text, never attachment-sized images.
+- A Block Kit body wins over `message.text`; the text field is only a fallback
+  when the blocks render nothing (otherwise bots double-print, and alt text like
+  `user pfp` leaks into the body).
+- Bot avatars follow Slack: per-message `icons` first, then the posting user's
+  workspace profile image, and only then `bot_profile.icons`.
+- Slack's own footer strings for shared-message unfurls are useless
+  (`"Thread in Slack Conversation"`); synthesize them from `is_msg_unfurl` /
+  `is_reply_unfurl` plus `channel_id` and `ts`, like the real client does.
+- Attachment `ts` is a string for unfurls and a bare epoch **number** for legacy
+  bot attachments. Model shapes must stay permissive — a strict field there broke
+  warm boot from the on-disk cache.
+
+### Media loading rules
+
+`src/desktop/media.rs` registers sources during projection and fetches them
+afterwards, so anything painted before the bytes land holds a failed request.
+
+**A broken-image icon is a bug.** Two mechanisms keep it off screen, and new
+image sites must use one of them:
+
+- Anywhere with a real fallback (initials, an event glyph), gate the `img` on
+  `MediaRegistry::is_ready`. See `view/mod.rs`, `chrome.rs`, `secondary.rs`.
+- Everything else falls through to the protocol, which answers a pending asset
+  with a placeholder (`200`, `no-store`) rather than `404` — a skeleton box, or a
+  transparent gap for emoji, which sit inline in a sentence.
+
+- Render media with `MediaAssetId::uri_at(media_epoch)`, never bare `uri()`. An
+  element `key` is **not** a diffed attribute; `src` is, so only a changing URL
+  makes the WebView retry. `FromStr` ignores the `?v=` stamp.
+- `runtime::ticks` owns `media_epoch`: it bumps once per tick when
+  `take_dirty()` reports bytes, so a slow host cannot hold back avatars that
+  already arrived. Do not bump it from a load path.
+- The same tick sweeps `has_pending()` every second. Sources are also registered
+  during *render* (hover cards, activity rows), which no Slack call follows, so
+  without the sweep those images would never load.
+- Media fetches must stay time-bounded (`MEDIA_FETCH_TIMEOUT` in
+  `slack/transport.rs`). Loads are serialized behind one lock, so a single
+  hanging third-party host otherwise wedges every later refresh.
+- A fetch failure is either permanent (4xx: the URL is gone, abandon it) or
+  transient (timeout, 5xx, 429: retry on a doubling delay). With a sweep running
+  every second, retrying a dead URL forever is a steady stream of doomed
+  requests; giving up on a timeout loses the image for the whole session.
+- `register_image` decides the session-cookie question centrally: Slack hosts get
+  the cookie, Block Kit and unfurl images (arbitrary third-party hosts) must not.
+
+#### The persistent picture cache
+
+`MediaStore` (`core/src/media/store.rs`) keeps avatars, emoji, and icon-sized
+images on disk so a relaunch paints faces without touching the network.
+
+- Entries are keyed by a **slot** — a stable identity (`avatar/U123`,
+  `emoji/party`), not the URL. Slack rotates the avatar URL whenever somebody
+  changes their picture, so URL keying misses exactly where a user would notice.
+- A slot hit at a *different* URL is inserted as **provisional**: it paints
+  immediately (the person's previous picture) and stays pending so the new bytes
+  replace it. An exact URL hit skips the network entirely.
+- Register through `register_avatar(identity, url)` / `register_emoji(name, url)`
+  / `register_icon(kind, url)`. Plain `register_image` is for one-off images
+  (unfurl previews, file thumbnails) that must not fill the cache.
+- Slots must be stable *and* unambiguous. Webhook and bot icon keys from
+  `state::message_avatar` deliberately embed the URL: one webhook posts as many
+  different people, and an identity-keyed slot there would flash the wrong face.
+- Entry writes are capped (`MAX_ENTRY_BYTES`) and the directory is pruned to
+  `MAX_ENTRIES` by mtime. `slot_hash` is FNV-1a, pinned by a test: a
+  `DefaultHasher` is not stable across Rust releases and would orphan the cache.
 
 ## Working Style
 

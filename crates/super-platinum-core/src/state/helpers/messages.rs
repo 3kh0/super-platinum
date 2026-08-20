@@ -151,3 +151,191 @@ pub(crate) fn merge_message(existing: &mut SlackMessage, update: SlackMessage) {
     existing.message = update.message.or_else(|| existing.message.take());
     existing.extra.extend(update.extra);
 }
+
+/// Every user id a message references anywhere the renderer will need a display
+/// name or avatar for: the author, Block Kit `user` elements, `<@Uxxx>` mentions
+/// in text/mrkdwn leaves, and attachment (unfurl) authors.
+pub fn collect_message_user_ids(msg: &SlackMessage, ids: &mut std::collections::HashSet<String>) {
+    let mut push = |id: &str| {
+        let id = id.trim();
+        // Slack user ids are `U…` (or `W…` on enterprise grids). Bot ids
+        // (`B…`) are not resolvable through users.info.
+        if id.len() > 1 && id.starts_with(['U', 'W']) {
+            ids.insert(id.to_owned());
+        }
+    };
+    if let Some(user) = msg.user.as_deref() {
+        push(user);
+    }
+    if let Some(user) = msg
+        .bot_profile
+        .as_ref()
+        .and_then(|profile| profile.user_id.as_deref())
+    {
+        push(user);
+    }
+    // The thread reply bar shows replier avatars.
+    for user in &msg.reply_users {
+        push(user);
+    }
+    if let Some(text) = msg.text.as_deref() {
+        visit_text_user_mentions(text, &mut push);
+    }
+    for block in &msg.blocks {
+        visit_block_user_ids(block, &mut push);
+    }
+    for attachment in &msg.attachments {
+        if let Some(author) = attachment.author_id.as_deref() {
+            push(author);
+        }
+        for field in [attachment.text.as_deref(), attachment.pretext.as_deref()]
+            .into_iter()
+            .flatten()
+        {
+            visit_text_user_mentions(field, &mut push);
+        }
+        for block in &attachment.blocks {
+            visit_block_user_ids(block, &mut push);
+        }
+    }
+}
+
+/// Every custom (non-standard) emoji name a message references: Block Kit
+/// `emoji` elements, `:shortcode:` runs in text leaves, reactions, and the same
+/// again inside attachments.
+pub fn collect_message_emoji_names(
+    msg: &SlackMessage,
+    names: &mut std::collections::HashSet<String>,
+) {
+    let mut push = |name: &str| {
+        let base = name.split("::").next().unwrap_or(name);
+        if !base.is_empty() && !super::emoji::is_standard_emoji(base) {
+            names.insert(base.to_owned());
+        }
+    };
+    if let Some(text) = msg.text.as_deref() {
+        super::emoji::visit_emoji_names_in_text(text, &mut push);
+    }
+    for reaction in &msg.reactions {
+        push(&reaction.name);
+    }
+    for block in &msg.blocks {
+        visit_block_emoji_names(block, &mut push);
+    }
+    for attachment in &msg.attachments {
+        for field in [
+            attachment.text.as_deref(),
+            attachment.pretext.as_deref(),
+            attachment.title.as_deref(),
+            attachment.footer.as_deref(),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            super::emoji::visit_emoji_names_in_text(field, &mut push);
+        }
+        for block in &attachment.blocks {
+            visit_block_emoji_names(block, &mut push);
+        }
+    }
+}
+
+/// Channel ids a message points at, so unfurl footers and `#channel` chips can
+/// resolve a name instead of printing a raw id.
+pub fn collect_message_channel_ids(
+    msg: &SlackMessage,
+    ids: &mut std::collections::HashSet<String>,
+) {
+    fn visit(value: &serde_json::Value, ids: &mut std::collections::HashSet<String>) {
+        match value {
+            serde_json::Value::Object(object) => {
+                if object.get("type").and_then(serde_json::Value::as_str) == Some("channel")
+                    && let Some(id) = object.get("channel_id").and_then(serde_json::Value::as_str)
+                {
+                    ids.insert(id.to_owned());
+                }
+                for child in object.values() {
+                    visit(child, ids);
+                }
+            }
+            serde_json::Value::Array(values) => values.iter().for_each(|child| visit(child, ids)),
+            _ => {}
+        }
+    }
+    for block in &msg.blocks {
+        visit(block, ids);
+    }
+    for attachment in &msg.attachments {
+        if let Some(channel) = attachment.channel_id.as_deref().filter(|id| !id.is_empty()) {
+            ids.insert(channel.to_owned());
+        }
+        for block in &attachment.blocks {
+            visit(block, ids);
+        }
+    }
+}
+
+fn visit_text_user_mentions(text: &str, push: &mut impl FnMut(&str)) {
+    let mut rest = text;
+    while let Some(start) = rest.find("<@") {
+        let after = &rest[start + 2..];
+        let Some(end) = after.find('>') else { break };
+        let token = &after[..end];
+        push(token.split_once('|').map_or(token, |(id, _)| id));
+        rest = &after[end + 1..];
+    }
+}
+
+fn visit_block_user_ids(value: &serde_json::Value, push: &mut impl FnMut(&str)) {
+    match value {
+        serde_json::Value::Object(object) => {
+            match object.get("type").and_then(serde_json::Value::as_str) {
+                Some("user") => {
+                    if let Some(id) = object.get("user_id").and_then(serde_json::Value::as_str) {
+                        push(id);
+                    }
+                }
+                Some("mrkdwn" | "plain_text" | "text") => {
+                    if let Some(text) = object.get("text").and_then(serde_json::Value::as_str) {
+                        visit_text_user_mentions(text, push);
+                    }
+                }
+                _ => {}
+            }
+            for child in object.values() {
+                visit_block_user_ids(child, push);
+            }
+        }
+        serde_json::Value::Array(values) => values
+            .iter()
+            .for_each(|child| visit_block_user_ids(child, push)),
+        _ => {}
+    }
+}
+
+fn visit_block_emoji_names(value: &serde_json::Value, push: &mut impl FnMut(&str)) {
+    match value {
+        serde_json::Value::Object(object) => {
+            match object.get("type").and_then(serde_json::Value::as_str) {
+                Some("emoji") => {
+                    if let Some(name) = object.get("name").and_then(serde_json::Value::as_str) {
+                        push(name);
+                    }
+                }
+                Some("mrkdwn" | "plain_text" | "text") => {
+                    if let Some(text) = object.get("text").and_then(serde_json::Value::as_str) {
+                        super::emoji::visit_emoji_names_in_text(text, &mut *push);
+                    }
+                }
+                _ => {}
+            }
+            for child in object.values() {
+                visit_block_emoji_names(child, push);
+            }
+        }
+        serde_json::Value::Array(values) => values
+            .iter()
+            .for_each(|child| visit_block_emoji_names(child, push)),
+        _ => {}
+    }
+}

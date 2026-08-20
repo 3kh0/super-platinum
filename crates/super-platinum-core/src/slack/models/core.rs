@@ -253,6 +253,42 @@ pub struct Attachment {
     pub fields: Vec<AttachmentField>,
     #[serde(default)]
     pub blocks: Vec<Value>,
+    #[serde(default)]
+    pub files: Vec<File>,
+    #[serde(default)]
+    pub footer_icon: Option<String>,
+    #[serde(default)]
+    pub author_icon: Option<String>,
+    #[serde(default)]
+    pub author_id: Option<UserId>,
+    #[serde(default)]
+    pub author_subname: Option<String>,
+    /// Origin conversation for a shared-message unfurl.
+    #[serde(default)]
+    pub channel_id: Option<ChannelId>,
+    #[serde(default)]
+    pub channel_team: Option<TeamId>,
+    /// Timestamp of the *referenced* message, not the one carrying the unfurl.
+    /// Slack sends a `"1787153585.078499"` string for message unfurls but a bare
+    /// epoch integer for legacy bot attachments, so accept both.
+    #[serde(default, deserialize_with = "deserialize_timestamp")]
+    pub ts: Option<MessageTs>,
+    #[serde(default)]
+    pub is_msg_unfurl: bool,
+    #[serde(default)]
+    pub is_reply_unfurl: bool,
+    #[serde(default)]
+    pub is_thread_root_unfurl: bool,
+    #[serde(default)]
+    pub is_app_unfurl: bool,
+    #[serde(default)]
+    pub is_share: bool,
+    #[serde(default)]
+    pub image_width: Option<u32>,
+    #[serde(default)]
+    pub image_height: Option<u32>,
+    #[serde(default)]
+    pub mrkdwn_in: Vec<String>,
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
 }
@@ -317,4 +353,17 @@ pub struct File {
     pub is_external: Option<bool>,
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
+}
+
+/// Slack attachment timestamps arrive as either `"1787153585.078499"` or a bare
+/// epoch number. Normalize both to the string form the rest of the app uses.
+fn deserialize_timestamp<'de, D>(deserializer: D) -> Result<Option<MessageTs>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Ok(match Option::<Value>::deserialize(deserializer)? {
+        Some(Value::String(value)) => Some(value).filter(|value| !value.is_empty()),
+        Some(Value::Number(number)) => Some(number.to_string()),
+        _ => None,
+    })
 }

@@ -118,20 +118,18 @@ pub(crate) fn secondary_view(mut state: Signal<ShellState>, snapshot: &ShellStat
                         let avatar = workspace.and_then(|workspace| {
                             let user = item.root_msg.user.as_deref()?;
                             let url = workspace.avatar_url(user)?;
-                            let asset = snapshot.media.register(
-                                super_platinum_core::MediaAssetKind::Avatar,
-                                &url,
-                                "image/jpeg",
-                                url.contains("slack-edge.com") || url.contains("slack.com"),
-                            );
-                            Some(asset.uri())
+                            let asset = snapshot.media.register_avatar(user, &url);
+                            snapshot
+                                .media
+                                .is_ready(&asset)
+                                .then(|| asset.uri_at(snapshot.media_epoch))
                         });
                         rsx! {
                             button { class: "secondary-row thread-row", key: "thread-feed-{item.root_ts().cloned().unwrap_or_default()}",
                                 onclick: { let channel = item.channel().cloned(); let root = item.root_ts().cloned(); move |_| if let (Some(channel), Some(root)) = (channel.clone(), root.clone()) { spawn(crate::bootstrap::open_thread(state, channel, root)); } },
                                 span { class: "secondary-avatar",
                                     if let Some(uri) = avatar.as_ref() {
-                                        img { key: "thread-av-{snapshot.media_epoch}-{uri}", src: "{uri}", alt: "{author}" }
+                                        img { src: "{uri}", alt: "{author}" }
                                     } else {
                                         "{initials}"
                                     }
@@ -287,8 +285,8 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                                 },
                                 div { class: "dm-avatar-wrap",
                                     div { class: "dm-avatar",
-                                        if let Some(avatar) = avatar.as_ref() {
-                                            img { key: "dm-av-{snapshot.media_epoch}-{avatar.uri()}", src: "{avatar.uri()}", alt: "{label}" }
+                                        if let Some(avatar) = avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
+                                            img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{label}" }
                                         } else {
                                             "{initials}"
                                         }
@@ -528,7 +526,7 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                                 div { class: "activity-bar" }
                                 div { class: "dm-avatar activity-event-icon",
                                     if let Some((uri, label)) = avatar.as_ref() {
-                                        img { key: "act-{snapshot.media_epoch}-{uri}", src: "{uri}", alt: "{label}" }
+                                        img { src: "{uri}", alt: "{label}" }
                                     } else {
                                         "{event_icon}"
                                     }
@@ -744,11 +742,13 @@ fn activity_avatar(
         return None;
     }
     let url = workspace.avatar_url(user)?;
-    let asset = snapshot.media.register(
-        super_platinum_core::MediaAssetKind::Avatar,
-        &url,
-        "image/jpeg",
-        url.contains("slack-edge.com") || url.contains("slack.com"),
-    );
-    Some((asset.uri(), workspace.display_name(user)))
+    let asset = snapshot.media.register_avatar(user, &url);
+    // Until the bytes land the row shows its event glyph; an `img` with nothing
+    // behind it would paint a broken-image icon.
+    snapshot.media.is_ready(&asset).then(|| {
+        (
+            asset.uri_at(snapshot.media_epoch),
+            workspace.display_name(user),
+        )
+    })
 }

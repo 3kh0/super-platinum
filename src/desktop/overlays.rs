@@ -74,14 +74,8 @@ pub fn overlay_view(
         .map(crate::model::PresenceVm::from_core)
         .unwrap_or_default();
     let profile_avatar = profile.and_then(|user| {
-        super_platinum_core::state::user_profile_image_url(user).map(|url| {
-            snapshot.media.register(
-                super_platinum_core::MediaAssetKind::Avatar,
-                url,
-                "image/jpeg",
-                true,
-            )
-        })
+        super_platinum_core::state::user_profile_image_url(user)
+            .map(|url| snapshot.media.register_avatar(&user.id, url))
     });
     let profile_initials = profile_name
         .chars()
@@ -284,10 +278,9 @@ pub fn overlay_view(
             } else {
                 div { class: "profile-card",
                     div { class: "profile-avatar",
-                        if let Some(avatar) = profile_avatar.as_ref() {
+                        if let Some(avatar) = profile_avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
                             img {
-                                key: "profile-{snapshot.media_epoch}-{avatar.uri()}",
-                                src: "{avatar.uri()}",
+                                src: "{avatar.uri_at(snapshot.media_epoch)}",
                                 alt: "{profile_name}"
                             }
                         } else {
@@ -374,11 +367,10 @@ fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
                             span { class: "palette-icon",
                                 if is_im {
                                     span { class: "palette-avatar-wrap",
-                                        if let Some(avatar) = avatar.as_ref() {
+                                        if let Some(avatar) = avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
                                             img {
-                                                key: "pal-av-{snapshot.media_epoch}-{avatar.uri()}",
                                                 class: "palette-avatar",
-                                                src: "{avatar.uri()}",
+                                                src: "{avatar.uri_at(snapshot.media_epoch)}",
                                                 alt: "{name}"
                                             }
                                         } else {

@@ -108,9 +108,55 @@ pub(crate) async fn hydrate_current_surface(mut state: Signal<ShellState>) {
     };
     hydrate_activity_messages(&mut state, &transport, &client, &workspace_session).await;
     hydrate_surface_emojis(&mut state, &transport, &client, &workspace_session, &team).await;
+    hydrate_surface_channels(&mut state, &transport, &client, &workspace_session, &team).await;
     hydrate_surface_users(&mut state, &transport, &client, &workspace_session, &team).await;
     register_surface_avatars(&state, &team);
     refresh_media(state, transport).await;
+}
+
+/// Every Slack message currently projected onto a visible surface. Emoji, user,
+/// and channel hydration all need the same set.
+fn visit_surface_messages(
+    shell: &ShellState,
+    team: &str,
+    visit: &mut impl FnMut(&super_platinum_core::slack::models::Message),
+) {
+    let Some(workspace) = shell.core.workspaces.get(team) else {
+        return;
+    };
+    if let Some(messages) = shell
+        .core
+        .active_channel
+        .as_ref()
+        .and_then(|channel| workspace.messages.get(channel))
+    {
+        for message in &messages.messages {
+            visit(message);
+        }
+    }
+    if let Some(messages) = shell.thread_root.as_ref().and_then(|root| {
+        shell.core.active_channel.as_ref().and_then(|channel| {
+            shell
+                .core
+                .threads
+                .get(&(team.to_owned(), channel.clone(), root.clone()))
+        })
+    }) {
+        for message in &messages.messages {
+            visit(message);
+        }
+    }
+    for message in shell.core.activity.hydrated.values() {
+        visit(message);
+    }
+    for item in &shell.core.threads_view.items {
+        for message in std::iter::once(&item.root_msg)
+            .chain(&item.unread_replies)
+            .chain(&item.latest_replies)
+        {
+            visit(message);
+        }
+    }
 }
 
 async fn hydrate_surface_emojis(
@@ -126,57 +172,43 @@ async fn hydrate_surface_emojis(
             return;
         };
         let mut names = std::collections::HashSet::new();
-        let mut collect = |message: &super_platinum_core::slack::models::Message| {
-            for block in &message.blocks {
-                collect_custom_emoji_names(block, &mut names);
-            }
-        };
-        if let Some(messages) = shell
-            .core
-            .active_channel
-            .as_ref()
-            .and_then(|channel| workspace.messages.get(channel))
-        {
-            for message in &messages.messages {
-                collect(message);
-            }
-        }
-        if let Some(messages) = shell.thread_root.as_ref().and_then(|root| {
-            shell.core.active_channel.as_ref().and_then(|channel| {
-                shell
+        visit_surface_messages(&shell, team, &mut |message| {
+            super_platinum_core::state::collect_message_emoji_names(message, &mut names);
+        });
+        names.retain(|name| {
+            !workspace.custom_emoji.contains_key(name)
+                // Names Slack has already told us it does not know must not be
+                // re-requested on every projection.
+                && !shell
                     .core
-                    .threads
-                    .get(&(team.to_owned(), channel.clone(), root.clone()))
-            })
-        }) {
-            for message in &messages.messages {
-                collect(message);
-            }
-        }
-        for message in shell.core.activity.hydrated.values() {
-            collect(message);
-        }
-        for item in &shell.core.threads_view.items {
-            for message in std::iter::once(&item.root_msg)
-                .chain(&item.unread_replies)
-                .chain(&item.latest_replies)
-            {
-                collect(message);
-            }
-        }
-        names
-            .into_iter()
-            .filter(|name| !workspace.custom_emoji.contains_key(name))
-            .collect::<Vec<_>>()
+                    .emoji_hydrated
+                    .contains(&(team.to_owned(), name.clone()))
+        });
+        names.into_iter().collect::<Vec<_>>()
     };
     if names.is_empty() {
         return;
     }
+    state
+        .write()
+        .core
+        .emoji_hydrated
+        .extend(names.iter().map(|name| (team.to_owned(), name.clone())));
     let mut loaded = Vec::new();
     for chunk in names.chunks(100) {
         match api::fetch_emojis_info(transport, client, workspace_session, chunk.to_vec()).await {
             Ok(emojis) => loaded.extend(emojis),
-            Err(error) => eprintln!("super-platinum: custom emoji hydration failed: {error}"),
+            Err(error) => {
+                eprintln!("super-platinum: custom emoji hydration failed: {error}");
+                // Allow a retry on the next projection.
+                let mut shell = state.write();
+                for name in chunk {
+                    shell
+                        .core
+                        .emoji_hydrated
+                        .remove(&(team.to_owned(), name.clone()));
+                }
+            }
         }
     }
     if loaded.is_empty() {
@@ -189,29 +221,59 @@ async fn hydrate_surface_emojis(
     shell.refresh_from_core();
 }
 
-fn collect_custom_emoji_names(
-    value: &serde_json::Value,
-    names: &mut std::collections::HashSet<String>,
+/// Unfurl footers and `#channel` chips print a raw id until the conversation is
+/// known, so pull metadata for the ones the visible messages point at.
+async fn hydrate_surface_channels(
+    state: &mut Signal<ShellState>,
+    transport: &super_platinum_core::slack::Transport,
+    client: &super_platinum_core::slack::SlackClient,
+    workspace_session: &super_platinum_core::config::WorkspaceSession,
+    team: &str,
 ) {
-    match value {
-        serde_json::Value::Object(object) => {
-            if object.get("type").and_then(serde_json::Value::as_str) == Some("emoji")
-                && let Some(name) = object.get("name").and_then(serde_json::Value::as_str)
-                && !super_platinum_core::state::is_standard_emoji(name)
-            {
-                names.insert(name.to_owned());
-            }
-            for child in object.values() {
-                collect_custom_emoji_names(child, names);
-            }
-        }
-        serde_json::Value::Array(values) => {
-            for child in values {
-                collect_custom_emoji_names(child, names);
-            }
-        }
-        _ => {}
+    let channels = {
+        let shell = state.read();
+        let Some(workspace) = shell.core.workspaces.get(team) else {
+            return;
+        };
+        let mut ids = std::collections::HashSet::new();
+        visit_surface_messages(&shell, team, &mut |message| {
+            super_platinum_core::state::collect_message_channel_ids(message, &mut ids);
+        });
+        ids.retain(|id| {
+            !workspace
+                .channels
+                .get(id)
+                .is_some_and(|channel| channel.name.is_some())
+                && !shell
+                    .core
+                    .channel_hydrated
+                    .contains(&(team.to_owned(), id.clone()))
+        });
+        ids.into_iter().collect::<Vec<_>>()
+    };
+    if channels.is_empty() {
+        return;
     }
+    state.write().core.channel_hydrated.extend(
+        channels
+            .iter()
+            .map(|channel| (team.to_owned(), channel.clone())),
+    );
+    let mut loaded = Vec::new();
+    for chunk in channels.chunks(50) {
+        match api::fetch_channels_info(transport, client, workspace_session, chunk.to_vec()).await {
+            Ok(channels) => loaded.extend(channels),
+            Err(error) => eprintln!("super-platinum: unfurl channel hydration failed: {error}"),
+        }
+    }
+    if loaded.is_empty() {
+        return;
+    }
+    let mut shell = state.write();
+    if let Some(workspace) = shell.core.workspaces.get_mut(team) {
+        workspace.apply_channels_info(loaded);
+    }
+    shell.refresh_from_core();
 }
 
 fn register_surface_avatars(state: &Signal<ShellState>, team: &str) {
@@ -242,34 +304,25 @@ fn register_surface_avatars(state: &Signal<ShellState>, team: &str) {
                 })?;
             message.user.as_deref()
         });
-        let Some(url) = user.and_then(|user| workspace.avatar_url(user)) else {
+        let Some((user, url)) = user.and_then(|user| Some((user, workspace.avatar_url(user)?)))
+        else {
             continue;
         };
-        shell.media.register(
-            super_platinum_core::MediaAssetKind::Avatar,
-            &url,
-            "image/jpeg",
-            url.contains("slack-edge.com") || url.contains("slack.com"),
-        );
+        shell.media.register_avatar(user, &url);
     }
     for item in &shell.core.threads_view.items {
         for message in std::iter::once(&item.root_msg)
             .chain(&item.unread_replies)
             .chain(&item.latest_replies)
         {
-            let Some(url) = message
+            let Some((user, url)) = message
                 .user
                 .as_deref()
-                .and_then(|user| workspace.avatar_url(user))
+                .and_then(|user| Some((user, workspace.avatar_url(user)?)))
             else {
                 continue;
             };
-            shell.media.register(
-                super_platinum_core::MediaAssetKind::Avatar,
-                &url,
-                "image/jpeg",
-                url.contains("slack-edge.com") || url.contains("slack.com"),
-            );
+            shell.media.register_avatar(user, &url);
         }
     }
 }
@@ -360,18 +413,11 @@ async fn hydrate_surface_users(
                 }
             }
         }
-        ids.extend(
-            shell
-                .messages
-                .iter()
-                .filter_map(|message| message.user_id.clone()),
-        );
-        ids.extend(
-            shell
-                .thread_messages
-                .iter()
-                .filter_map(|message| message.user_id.clone()),
-        );
+        // Mentions inside Block Kit and unfurl authors need display names and
+        // avatars too, not just the message authors.
+        visit_surface_messages(&shell, team, &mut |message| {
+            super_platinum_core::state::collect_message_user_ids(message, &mut ids);
+        });
         if shell.main_view == crate::state::MainView::Unreads {
             for channel in workspace
                 .channels
@@ -543,11 +589,12 @@ async fn reload_account(mut state: Signal<ShellState>) {
 }
 
 pub(super) async fn refresh_media(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     transport: std::sync::Arc<super_platinum_core::slack::Transport>,
 ) {
     let media = state.read().media.clone();
+    // The media generation is bumped by `runtime::ticks` as bytes land, not
+    // here: a single slow host would otherwise hold back every avatar that
+    // already arrived in the same batch.
     media.load_pending(transport).await;
-    let next_epoch = state.read().media_epoch.wrapping_add(1);
-    state.write().media_epoch = next_epoch;
 }

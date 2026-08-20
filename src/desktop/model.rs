@@ -50,6 +50,32 @@ impl ActivityTab {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ButtonStyle {
+    #[default]
+    Default,
+    Primary,
+    Danger,
+}
+
+impl ButtonStyle {
+    pub fn from_block(style: Option<&str>) -> Self {
+        match style {
+            Some("primary") => Self::Primary,
+            Some("danger") => Self::Danger,
+            _ => Self::Default,
+        }
+    }
+
+    pub fn class(self) -> &'static str {
+        match self {
+            Self::Default => "block-button",
+            Self::Primary => "block-button primary",
+            Self::Danger => "block-button danger",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RichNode {
     Text(String),
@@ -79,11 +105,186 @@ pub enum RichNode {
         name: String,
         glyph: String,
     },
+    /// A custom workspace emoji: an image sized to the text, not an attachment.
+    EmojiImage {
+        id: MediaAssetId,
+        name: String,
+    },
     Media {
         id: MediaAssetId,
         name: String,
         mime: String,
     },
+    /// Block Kit `divider`.
+    Divider,
+    /// Block Kit `header` — a bold standalone line.
+    Header(Vec<RichNode>),
+    /// Block Kit `context` — a small muted row of 20px images and text.
+    Context(Vec<RichNode>),
+    /// Block Kit `section`, with optional two-column `fields` and an accessory.
+    Section {
+        text: Vec<RichNode>,
+        fields: Vec<Vec<RichNode>>,
+        accessory: Option<Box<RichNode>>,
+    },
+    /// Block Kit `actions` — a wrapping row of interactive elements.
+    Actions(Vec<RichNode>),
+    /// Block Kit `button`. Only `url` buttons can act without a Slack backend
+    /// round-trip; the rest render disabled so the layout still matches.
+    Button {
+        label: String,
+        url: Option<String>,
+        style: ButtonStyle,
+    },
+    /// A small inline image (context element or section accessory).
+    InlineImage {
+        id: MediaAssetId,
+        alt: String,
+    },
+    /// Block Kit `image` block — optional title above a bounded image. Slack
+    /// draws these at their declared intrinsic size, not full body width.
+    ImageBlock {
+        id: MediaAssetId,
+        alt: String,
+        title: Option<String>,
+        size: Option<(u32, u32)>,
+    },
+    /// `rich_text_list`, ordered or bulleted, with Slack's nesting indent.
+    List {
+        ordered: bool,
+        indent: u8,
+        offset: u32,
+        items: Vec<Vec<RichNode>>,
+    },
+}
+
+impl RichNode {
+    /// Flatten to plain text: message previews, clipboard copy, and the edit
+    /// composer all need the same reading of a node tree.
+    pub fn plain_text(&self) -> String {
+        let mut output = String::new();
+        self.write_plain(&mut output);
+        output.trim_end().to_owned()
+    }
+
+    fn write_plain(&self, output: &mut String) {
+        let block = |children: &[RichNode], output: &mut String| {
+            for child in children {
+                child.write_plain(output);
+            }
+            output.push('\n');
+        };
+        match self {
+            Self::Text(text) | Self::StyledText { text, .. } | Self::Code(text) => {
+                output.push_str(text)
+            }
+            Self::Link { label, .. }
+            | Self::UserMention { label, .. }
+            | Self::ChannelMention { label, .. }
+            | Self::Button { label, .. } => output.push_str(label),
+            Self::Emoji { glyph, .. } => output.push_str(glyph),
+            Self::EmojiImage { name, .. } => output.push_str(name),
+            Self::Media { name, .. } => output.push_str(name),
+            Self::InlineImage { alt, .. } => output.push_str(alt),
+            Self::ImageBlock { title, alt, .. } => {
+                output.push_str(title.as_deref().unwrap_or(alt.as_str()));
+                output.push('\n');
+            }
+            Self::Paragraph(children)
+            | Self::Quote(children)
+            | Self::Header(children)
+            | Self::Actions(children) => block(children, output),
+            Self::Context(children) => {
+                for child in children {
+                    child.write_plain(output);
+                    output.push(' ');
+                }
+                output.push('\n');
+            }
+            Self::Section {
+                text,
+                fields,
+                accessory,
+            } => {
+                block(text, output);
+                for field in fields {
+                    block(field, output);
+                }
+                if let Some(accessory) = accessory {
+                    accessory.write_plain(output);
+                }
+            }
+            Self::List { items, .. } => {
+                for item in items {
+                    block(item, output);
+                }
+            }
+            Self::Divider => output.push('\n'),
+        }
+    }
+}
+
+/// One reaction pill: a resolved glyph, or a workspace custom-emoji image.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ReactionVm {
+    pub name: String,
+    pub count: u32,
+    pub own: bool,
+    /// Unicode glyph when the shortcode is standard, else `None`.
+    pub glyph: Option<String>,
+    /// Custom workspace emoji image, when one resolved.
+    pub media: Option<MediaAssetId>,
+}
+
+impl ReactionVm {
+    /// Text shown when neither a glyph nor an image resolved.
+    pub fn fallback(&self) -> String {
+        format!(":{}:", self.name)
+    }
+}
+
+/// The author line of a message attachment (Slack unfurl or bot embed).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AttachmentAuthorVm {
+    pub name: String,
+    pub user_id: Option<String>,
+    pub icon: Option<MediaAssetId>,
+    pub link: Option<String>,
+}
+
+/// The footer of a shared-message unfurl: origin channel, stamp, permalink.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AttachmentFooterVm {
+    /// e.g. `From a thread in` / `Posted in`, or a bot-supplied footer string.
+    pub lead: String,
+    pub channel_id: Option<String>,
+    pub channel_label: Option<String>,
+    pub stamp: Option<String>,
+    /// `View reply` / `View message`, paired with the permalink.
+    pub permalink: Option<(String, String)>,
+    pub icon: Option<MediaAssetId>,
+}
+
+/// A message attachment: Slack message unfurls, link unfurls, app unfurls, and
+/// legacy bot attachments all project onto this one shape.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AttachmentVm {
+    pub key: String,
+    /// CSS color for the 4px left bar, when the attachment sets one.
+    pub color: Option<String>,
+    pub service: Option<String>,
+    pub service_icon: Option<MediaAssetId>,
+    pub author: Option<AttachmentAuthorVm>,
+    pub pretext: Vec<RichNode>,
+    pub title: Option<String>,
+    pub title_link: Option<String>,
+    pub body: Vec<RichNode>,
+    pub fields: Vec<(String, Vec<RichNode>, bool)>,
+    /// Large preview image plus its intrinsic size, for aspect-correct layout.
+    pub image: Option<(MediaAssetId, Option<(u32, u32)>)>,
+    pub thumb: Option<MediaAssetId>,
+    pub files: Vec<RichNode>,
+    pub footer: Option<AttachmentFooterVm>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -103,8 +304,13 @@ pub struct MessageVm {
     pub compact: bool,
     pub date_label: Option<String>,
     pub show_unread_divider: bool,
-    pub reactions: Vec<(String, u32, bool)>,
+    pub reactions: Vec<ReactionVm>,
+    pub attachments: Vec<AttachmentVm>,
     pub reply_count: u32,
+    /// Avatars of the repliers shown on the thread reply bar.
+    pub reply_avatars: Vec<(String, Option<MediaAssetId>, String)>,
+    /// Relative stamp for the newest reply (`14h ago`).
+    pub last_reply: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

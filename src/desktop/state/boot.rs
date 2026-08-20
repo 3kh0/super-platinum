@@ -9,6 +9,17 @@ use crate::fixture::fixture_core;
 use crate::media::MediaRegistry;
 use crate::model::*;
 
+/// Fixture reaction pill — resolves the glyph the same way live messages do.
+fn reaction(name: &str, count: u32, own: bool) -> ReactionVm {
+    ReactionVm {
+        glyph: Some(super_platinum_core::state::emoji_glyph(name)),
+        media: None,
+        name: name.to_owned(),
+        count,
+        own,
+    }
+}
+
 impl ShellState {
     pub fn from_environment(media: MediaRegistry) -> Self {
         let Ok(fixture) = std::env::var("SUPER_PLATINUM_FIXTURE") else {
@@ -58,7 +69,7 @@ impl ShellState {
                             "I measured the warm path: cache, render, then refresh.".into(),
                         )],
                         edited: true,
-                        reactions: vec![("white_check_mark".into(), 6, false)],
+                        reactions: vec![reaction("white_check_mark", 6, false)],
                         reply_count: 1,
                         ..Default::default()
                     },
@@ -334,7 +345,7 @@ impl ShellState {
                 },
                 RichNode::Text(" when you have a minute.".into()),
             ],
-            reactions: vec![("🚀".into(), 4, false), ("eyes".into(), 2, false)],
+            reactions: vec![reaction("rocket", 4, false), reaction("eyes", 2, false)],
             reply_count: 3,
             date_label: Some(super_platinum_core::state::format_ts_date_label(
                 "1719800000.000100",
@@ -357,7 +368,7 @@ impl ShellState {
                 )]),
             ],
             edited: true,
-            reactions: vec![("white_check_mark".into(), 6, false)],
+            reactions: vec![reaction("white_check_mark", 6, false)],
             reply_count: 1,
             show_unread_divider: true,
             ..Default::default()
@@ -504,7 +515,8 @@ impl ShellState {
             "animated-reaction" => {
                 keep_recent_messages(&mut state, 8);
                 if let Some(message) = state.messages.last_mut() {
-                    message.reactions = vec![("🚀".into(), 12, true), ("eyes".into(), 4, false)];
+                    message.reactions =
+                        vec![reaction("rocket", 12, true), reaction("eyes", 4, false)];
                 }
                 state.sync_fixture_messages();
             }
@@ -688,9 +700,79 @@ impl ShellState {
                     state.select_channel(index);
                 }
             }
+            "message-unfurl-embed" => {
+                keep_recent_messages(&mut state, 3);
+                state.append_projected_fixture_messages(&[out_of_context_message()], true);
+            }
+            "block-kit-layout" => {
+                keep_recent_messages(&mut state, 3);
+                state.append_projected_fixture_messages(&[weather_block_kit_message()], true);
+            }
+            "media-loading-state" => {
+                keep_recent_messages(&mut state, 3);
+                state.append_projected_fixture_messages(&[out_of_context_message()], false);
+                // A cold boot: every source is registered, no bytes have landed
+                // yet. The avatar column must fall back to initials and inline
+                // images to skeleton boxes — never a broken-image icon.
+                let media = state.media.clone();
+                for (index, message) in state.messages.iter_mut().enumerate() {
+                    message.avatar = Some(media.register_avatar(
+                        &format!("cold-{index}"),
+                        &format!("https://example.test/cold-{index}.png"),
+                    ));
+                }
+                state.sync_fixture_messages();
+            }
             _ => {}
         }
         state
+    }
+
+    /// Project raw Slack JSON through the live `message_vm` path so a fixture
+    /// exercises real Block Kit and attachment translation, not hand-built nodes.
+    ///
+    /// `seed_media` controls whether the assets the projection registers already
+    /// have bytes: `false` captures the cold-boot state, where every image is
+    /// still downloading.
+    fn append_projected_fixture_messages(&mut self, raw: &[serde_json::Value], seed_media: bool) {
+        // Pre-seed the bytes for every asset the projection will register, keyed
+        // by the same (kind, url) pair `blocks`/`unfurl` use.
+        if seed_media {
+            let placeholder = include_bytes!("../../../assets/icons/icon-512.png");
+            for (kind, url) in [
+                (MediaAssetKind::Attachment, "https://example.test/pfp.png"),
+                (
+                    MediaAssetKind::Attachment,
+                    "https://example.test/weather.png",
+                ),
+                (MediaAssetKind::Avatar, "https://example.test/maya.png"),
+                (MediaAssetKind::Emoji, "https://example.test/sob-pray.png"),
+            ] {
+                let id = self.media.register(kind, url, "image/png", false);
+                self.media.insert(id, "image/png", placeholder.as_slice());
+            }
+        }
+        let Some(workspace) = self.core.workspaces.get_mut("T1") else {
+            return;
+        };
+        workspace.apply_emojis(vec![
+            serde_json::from_value(serde_json::json!({
+                "name": "sob-pray",
+                "value": "https://example.test/sob-pray.png"
+            }))
+            .expect("fixture emoji"),
+        ]);
+        let workspace = &self.core.workspaces["T1"];
+        for value in raw {
+            let message: super_platinum_core::slack::models::Message =
+                serde_json::from_value(value.clone()).expect("fixture slack message");
+            self.messages.push(crate::message_vm::message_vm(
+                workspace,
+                &message,
+                &self.media,
+            ));
+        }
+        self.sync_fixture_messages();
     }
 
     fn open_fixture_viewer(&mut self, mime: &str) {
@@ -719,4 +801,135 @@ impl ShellState {
             .insert("C2".into(), self.messages.clone());
         self.reset_timeline_window();
     }
+}
+
+/// The #out-of-context shape, trimmed from real `conversations.history` JSON:
+/// an APP post whose body is a `context` block and whose embed is a reply unfurl.
+fn out_of_context_message() -> serde_json::Value {
+    serde_json::json!({
+        "type": "message",
+        "ts": "1719801200.000400",
+        "user": "U4",
+        "bot_id": "B1",
+        "app_id": "A1",
+        "bot_profile": {
+            "id": "B1",
+            "name": "Out of Context",
+            "user_id": "U4",
+            // Deliberately unregistered: Slack shows the bot user's avatar, so a
+            // regression back to this generic icon shows up as a broken image.
+            "icons": {"image_48": "https://a.slack-edge.com/img/plugins/app/bot_48.png"}
+        },
+        "edited": {"ts": "1719801300.000000", "user": "U4"},
+        "text": "user pfp <@U1>",
+        "blocks": [{
+            "type": "context",
+            "block_id": "ctx-1",
+            "elements": [
+                {"type": "image", "image_url": "https://example.test/pfp.png", "alt_text": "user pfp"},
+                {"type": "mrkdwn", "text": "<@U1>", "verbatim": false}
+            ]
+        }],
+        "attachments": [{
+            "id": 1,
+            "author_icon": "https://example.test/maya.png",
+            "author_id": "U1",
+            "author_name": "Maya Chen",
+            "author_subname": "Maya Chen",
+            "blocks": [{
+                "type": "rich_text",
+                "elements": [{
+                    "type": "rich_text_section",
+                    "elements": [
+                        {"type": "text", "text": "6.1 inches is crazy "},
+                        {"type": "emoji", "name": "sob-pray"}
+                    ]
+                }]
+            }],
+            "channel_id": "C1",
+            "channel_team": "T1",
+            "color": "D0D0D0",
+            "fallback": "[…] 6.1 inches is crazy",
+            "footer": "Thread in Slack Conversation",
+            "from_url": "https://example.test/archives/C1/p1719800900000100",
+            "is_msg_unfurl": true,
+            "is_reply_unfurl": true,
+            "is_share": true,
+            "mrkdwn_in": ["text"],
+            "text": "6.1 inches is crazy :sob-pray:",
+            "ts": "1719800900.000100"
+        }],
+        "reactions": [
+            {"name": "sob-pray", "count": 1, "users": ["U1"]},
+            {"name": "interrobang", "count": 6, "users": ["U0", "U1", "U2"]}
+        ],
+        "reply_count": 7,
+        "reply_users": ["U1", "U2"],
+        "latest_reply": "1719801000.000100"
+    })
+}
+
+/// A Block Kit layout post (image, header, sections, divider, actions, context),
+/// trimmed from a real weather-bot message.
+fn weather_block_kit_message() -> serde_json::Value {
+    serde_json::json!({
+        "type": "message",
+        "ts": "1719801600.000500",
+        "user": "U4",
+        "bot_id": "B1",
+        "bot_profile": {"id": "B1", "name": "Weather", "user_id": "U4"},
+        "text": "Shelburne - Vermont",
+        "blocks": [
+            {
+                "type": "image",
+                "block_id": "img-1",
+                "image_url": "https://example.test/weather.png",
+                "alt_text": "Patchy rain nearby",
+                "image_width": 64,
+                "image_height": 64,
+                "title": {"type": "plain_text", "text": "Patchy rain nearby", "emoji": true}
+            },
+            {
+                "type": "header",
+                "block_id": "hdr-1",
+                "text": {"type": "plain_text", "text": "Shelburne - Vermont", "emoji": true}
+            },
+            {
+                "type": "section",
+                "block_id": "sec-1",
+                "text": {"type": "mrkdwn", "text": "*Temp:* 62.4 (16.9)", "verbatim": false}
+            },
+            {
+                "type": "section",
+                "block_id": "sec-2",
+                "fields": [
+                    {"type": "mrkdwn", "text": "*Wind*\n6.5 (10.4)"},
+                    {"type": "mrkdwn", "text": "*Gust*\n7.6 (12.3)"}
+                ]
+            },
+            {"type": "divider", "block_id": "div-1"},
+            {
+                "type": "actions",
+                "block_id": "act-1",
+                "elements": [
+                    {
+                        "type": "button",
+                        "action_id": "open",
+                        "text": {"type": "plain_text", "text": "Weather on accuweather", "emoji": true},
+                        "url": "https://example.test/weather"
+                    },
+                    {
+                        "type": "static_select",
+                        "action_id": "pick",
+                        "placeholder": {"type": "plain_text", "text": "Change location"}
+                    }
+                ]
+            },
+            {
+                "type": "context",
+                "block_id": "ctx-2",
+                "elements": [{"type": "mrkdwn", "text": "Made by <@U1>"}]
+            }
+        ]
+    })
 }

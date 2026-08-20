@@ -584,29 +584,13 @@ fn main_view_label(view: MainView) -> &'static str {
 }
 
 fn message_preview_text(message: &crate::state::MessageVm) -> String {
-    fn append(node: &crate::state::RichNode, output: &mut String) {
-        match node {
-            crate::state::RichNode::Text(text)
-            | crate::state::RichNode::StyledText { text, .. }
-            | crate::state::RichNode::Code(text) => output.push_str(text),
-            crate::state::RichNode::Link { label, .. }
-            | crate::state::RichNode::UserMention { label, .. }
-            | crate::state::RichNode::ChannelMention { label, .. } => output.push_str(label),
-            crate::state::RichNode::Emoji { glyph, .. } => output.push_str(glyph),
-            crate::state::RichNode::Media { name, .. } => output.push_str(name),
-            crate::state::RichNode::Paragraph(nodes) | crate::state::RichNode::Quote(nodes) => {
-                for child in nodes {
-                    append(child, output);
-                }
-                output.push(' ');
-            }
-        }
-    }
-    let mut output = String::new();
-    for node in &message.body {
-        append(node, &mut output);
-    }
-    output.trim().to_owned()
+    let text = message
+        .body
+        .iter()
+        .map(crate::state::RichNode::plain_text)
+        .collect::<Vec<_>>()
+        .join(" ");
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 fn help_data() -> Value {

@@ -1,0 +1,278 @@
+/* ── Block Kit ───────────────────────────────────────── */
+/* Slack's own metrics scaled to this app's 14px body: header/section share the
+   body size, context drops one step and goes muted, buttons are 12px. */
+
+.block-header {
+  margin: 7px 0 3px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+.message-body > .block-header:first-child { margin-top: 0; }
+
+.block-divider {
+  height: 1px;
+  margin: 5px 0 7px;
+  border-radius: 1px;
+  background: var(--border);
+}
+
+.block-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 5px 0 3px;
+}
+.block-section:first-child { margin-top: 0; }
+.block-section-text { flex: 1; min-width: 0; }
+.block-accessory { flex: 0 0 auto; }
+/* Section accessories are thumbnails, not full-width block images. */
+.block-accessory .block-image { margin: 0; }
+.block-accessory .block-image figcaption { display: none; }
+.block-accessory .block-inline-image,
+.block-accessory .block-image-media {
+  width: 72px;
+  height: 72px;
+  max-width: 72px;
+  max-height: 72px;
+  border-radius: 5px;
+  object-fit: cover;
+  vertical-align: top;
+}
+
+.block-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 3px 14px;
+  /* Slack caps the field grid rather than letting pairs drift to the far edges. */
+  max-width: 620px;
+  margin-top: 5px;
+}
+.block-field { min-width: 0; overflow-wrap: anywhere; }
+
+.block-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 3px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.block-context p { margin: 0; }
+.block-context .mention-chip { font-size: 12px; }
+
+.block-inline-image {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  object-fit: cover;
+  vertical-align: -4px;
+}
+
+.block-image { margin: 6px 0 0; }
+.block-image figcaption {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.block-image-media {
+  display: block;
+  max-width: min(360px, 100%);
+  max-height: 300px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+.block-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 7px 0 3px;
+}
+.block-button {
+  padding: 3px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.block-button:hover { border-color: var(--accent); background: var(--accent-faint); }
+.block-button.primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.block-button.primary:hover { background: color-mix(in srgb, var(--accent) 82%, #fff); }
+.block-button.danger {
+  border-color: transparent;
+  background: var(--danger);
+  color: var(--on-warning);
+}
+/* Menus and submit buttons have no local action; keep the shape, drop the hover. */
+.block-button.inert {
+  color: var(--muted-2);
+  cursor: default;
+}
+.block-button.inert:hover { border-color: var(--border-strong); background: var(--surface-raised); }
+
+.block-list {
+  margin: 3px 0;
+  padding-left: calc(18px + var(--list-indent, 0) * 16px);
+}
+.block-list li { margin: 1px 0; }
+.block-list li p { margin: 0; }
+
+/* ── Attachments (unfurls and bot embeds) ────────────── */
+
+.message-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 5px;
+}
+.message-attachment {
+  display: flex;
+  max-width: 620px;
+}
+.attachment-bar {
+  flex: 0 0 3px;
+  border-radius: 8px;
+  /* Slack's default when the attachment sets no colour. */
+  background: var(--border-strong);
+}
+.attachment-body {
+  min-width: 0;
+  padding-left: 10px;
+}
+.attachment-pretext { color: var(--muted); font-size: 12px; margin-bottom: 3px; }
+.attachment-service,
+.attachment-author {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.attachment-service { color: var(--muted); font-size: 12px; }
+.attachment-service img { width: 14px; height: 14px; border-radius: 2px; }
+.attachment-author img { width: 16px; height: 16px; border-radius: 3px; object-fit: cover; }
+.attachment-author-name {
+  padding: 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.attachment-author-name:disabled { cursor: default; }
+.attachment-author-name:hover:not(:disabled) { text-decoration: underline; }
+.attachment-title { font-weight: 700; margin-bottom: 2px; }
+.attachment-title a { color: var(--link); }
+.attachment-text p:last-child { margin-bottom: 0; }
+.attachment-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 4px 14px;
+  margin-top: 5px;
+}
+.attachment-field.short { grid-column: span 1; }
+.attachment-field-title { color: var(--muted); font-size: 11px; font-weight: 700; }
+.attachment-field-value { font-size: 13px; }
+.attachment-files { margin-top: 5px; }
+.attachment-thumb {
+  float: right;
+  width: 72px;
+  height: 72px;
+  margin: 0 0 6px 10px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+.attachment-image {
+  display: block;
+  margin-top: 6px;
+  cursor: zoom-in;
+}
+.attachment-image img {
+  display: block;
+  width: 100%;
+  max-width: 380px;
+  max-height: 300px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.attachment-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+  color: var(--muted-2);
+  font-size: 11px;
+}
+.attachment-footer img { width: 13px; height: 13px; border-radius: 2px; }
+.attachment-footer a { color: var(--link); }
+.attachment-footer-origin { display: inline-flex; align-items: center; gap: 4px; }
+.attachment-footer-origin .channel-chip { font-size: 11px; }
+.attachment-footer-sep { color: var(--border-strong); }
+
+/* ── Reactions and the thread reply bar ──────────────── */
+
+.reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.reaction-emoji { width: 15px; height: 15px; object-fit: contain; }
+/* A custom emoji still downloading: hold the pill's size and read as loading
+   rather than as an empty pill. */
+.reaction-emoji.pending {
+  display: inline-block;
+  border-radius: 3px;
+  background: var(--border-strong);
+  opacity: 0.6;
+}
+.reaction-glyph { font-size: 13px; line-height: 1; }
+.reaction-count { font-variant-numeric: tabular-nums; }
+.reaction:hover { border-color: var(--border-strong); }
+
+.reply-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 2px 7px 2px 3px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.reply-bar:hover { border-color: var(--border); background: var(--surface); }
+.reply-avatar {
+  width: 18px;
+  height: 18px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--avatar-bg);
+  color: var(--text);
+  font-size: 9px;
+  font-weight: 750;
+  display: grid;
+  place-items: center;
+}
+.reply-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.reply-count { color: var(--link); font-size: 12px; font-weight: 700; }
+.reply-last { color: var(--muted-2); font-size: 11px; }
+.reply-bar:not(:hover) .reply-last { color: var(--muted-2); }
+
+/* Custom workspace emoji sit on the text baseline at text height, never as
+   attachment-sized images. */
+.emoji-image {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  object-fit: contain;
+  vertical-align: -0.25em;
+}

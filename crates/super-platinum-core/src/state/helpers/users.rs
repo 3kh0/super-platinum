@@ -86,12 +86,29 @@ pub fn message_author_name(ws: &Workspace, msg: &SlackMessage) -> String {
 }
 
 pub fn message_avatar(ws: &Workspace, msg: &SlackMessage) -> (Option<String>, Option<String>) {
-    if let Some(user) = msg
-        .user
-        .as_deref()
-        .filter(|_| msg.bot_profile.is_none() && msg.bot_id.is_none())
+    // Per-message `icons` are an explicit webhook override and win outright.
+    if let Some(url) = msg.icons.as_ref().and_then(message_icon_url) {
+        let key = msg
+            .bot_id
+            .clone()
+            .or_else(|| msg.user.clone())
+            .unwrap_or_else(|| "icon".to_owned());
+        return (Some(format!("msg-icon:{key}")), Some(url.to_owned()));
+    }
+    // Slack renders the posting (bot) user's real profile image, not the
+    // generic `bot_profile.icons` placeholder, whenever that user is known.
+    for candidate in [
+        msg.user.as_deref(),
+        msg.bot_profile
+            .as_ref()
+            .and_then(|profile| profile.user_id.as_deref()),
+    ]
+    .into_iter()
+    .flatten()
     {
-        return (Some(user.to_owned()), ws.avatar_url(user));
+        if let Some(url) = ws.avatar_url(candidate) {
+            return (Some(candidate.to_owned()), Some(url));
+        }
     }
     if let Some((key, url)) = message_bot_avatar(msg) {
         return (Some(key), Some(url));

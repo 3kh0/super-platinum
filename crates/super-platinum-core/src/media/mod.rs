@@ -1,5 +1,9 @@
+mod store;
+
 use std::fmt;
 use std::str::FromStr;
+
+pub use store::{CachedImage, MediaStore};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MediaAssetKind {
@@ -60,6 +64,15 @@ impl MediaAssetId {
             self.opaque
         )
     }
+
+    /// URI stamped with a media generation. Sources are registered during
+    /// projection and fetched afterwards, so a WebView `img` painted before the
+    /// bytes land holds a failed request forever. `src` is a diffed attribute
+    /// (an element `key` is not), so folding the generation into the URL is what
+    /// actually makes the image retry once the asset arrives.
+    pub fn uri_at(&self, generation: u64) -> String {
+        format!("{}?v={generation}", self.uri())
+    }
 }
 
 impl FromStr for MediaAssetId {
@@ -69,6 +82,8 @@ impl FromStr for MediaAssetId {
         let value = value
             .strip_prefix("super-platinum-media://")
             .ok_or(MediaAssetIdError)?;
+        // Ignore the `?v=` generation stamp `uri_at` adds for cache busting.
+        let value = value.split(['?', '#']).next().unwrap_or_default();
         let (kind, opaque) = value.split_once('/').ok_or(MediaAssetIdError)?;
         let kind = match kind {
             "avatar" => MediaAssetKind::Avatar,
@@ -84,6 +99,23 @@ impl FromStr for MediaAssetId {
             kind,
             opaque: opaque.to_ascii_lowercase(),
         })
+    }
+}
+
+/// The image format the bytes actually are, which is not always what the
+/// source advertised: Slack serves PNG avatars from `.jpg` URLs, and a wrong
+/// `Content-Type` makes the WebView refuse to paint them.
+pub fn detect_image_mime(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Some("image/png")
+    } else if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
+        Some("image/jpeg")
+    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        Some("image/gif")
+    } else if bytes.len() >= 12 && bytes.starts_with(b"RIFF") && &bytes[8..12] == b"WEBP" {
+        Some("image/webp")
+    } else {
+        None
     }
 }
 

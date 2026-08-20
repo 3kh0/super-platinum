@@ -1,5 +1,3 @@
-use super_platinum_core::MediaAssetKind;
-
 use crate::media::MediaRegistry;
 use crate::model::{ChannelVm, PresenceVm, SidebarSectionVm};
 
@@ -21,7 +19,7 @@ pub(crate) fn channel_vm(
     let avatar = user_id.as_ref().and_then(|user| {
         workspace
             .avatar_url(user)
-            .map(|url| media.register(MediaAssetKind::Avatar, &url, "image/jpeg", true))
+            .map(|url| media.register_avatar(user, &url))
     });
     let avatar_initials = name
         .chars()

@@ -21,6 +21,9 @@ impl std::fmt::Debug for Transport {
     }
 }
 
+/// Upper bound on a single media fetch (avatars, emoji, unfurl images, files).
+const MEDIA_FETCH_TIMEOUT: Duration = Duration::from_secs(20);
+
 impl Transport {
     pub fn new(d_cookie: impl Into<String>) -> Result<Self, Error> {
         let http = wreq::Client::builder()
@@ -203,7 +206,14 @@ impl Transport {
         authenticated: bool,
         accept: Option<&str>,
     ) -> Result<Vec<u8>, Error> {
-        let mut request = self.http.get(url).header("User-Agent", user_agent);
+        // Media hosts are third-party and occasionally never answer. Without a
+        // bound, one stalled avatar or unfurl image wedges the whole media
+        // refresh (and every later one, since loads are serialized).
+        let mut request = self
+            .http
+            .get(url)
+            .timeout(MEDIA_FETCH_TIMEOUT)
+            .header("User-Agent", user_agent);
         if let Some(accept) = accept {
             request = request.header("Accept", accept);
         }

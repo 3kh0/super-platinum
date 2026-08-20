@@ -94,7 +94,7 @@
   user-select: text;
   -webkit-user-select: text;
 }
-.message-body ::selection,
+.message-content ::selection,
 .message-meta strong ::selection {
   background: color-mix(in srgb, var(--accent) 42%, transparent);
   color: var(--text);
@@ -207,8 +207,8 @@
   overflow-wrap: anywhere;
   font-size: 14px;
 }
-.message-body p { margin: 0 0 4px; }
-.message-body p:last-child { margin-bottom: 0; }
+.message-content p { margin: 0 0 4px; }
+.message-content p:last-child { margin-bottom: 0; }
 .bold { font-weight: 700; }
 .italic { font-style: italic; }
 .strike { text-decoration: line-through; }
@@ -219,8 +219,8 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12.5px;
 }
-.message-body a { color: var(--link); }
-.message-body code {
+.message-content a { color: var(--link); }
+.message-content code {
   display: block;
   width: fit-content;
   max-width: 100%;
@@ -233,7 +233,7 @@
   font-size: 12.5px;
   white-space: pre-wrap;
 }
-.message-body blockquote {
+.message-content blockquote {
   margin: 6px 0;
   padding-left: 10px;
   border-left: 3px solid var(--muted-2);
@@ -265,7 +265,7 @@
 .media-button { display: block; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
 .media-preview > button { margin-top: 5px; color: var(--accent); background: transparent; cursor: pointer; }
 .message-actions { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
-.reaction, .replies {
+.reaction {
   padding: 1px 7px;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -274,7 +274,6 @@
   font-size: 12px;
 }
 .reaction.own { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); background: var(--accent-soft); }
-.replies { color: var(--link); cursor: pointer; }
 .mention-chip {
   display: inline;
   padding: 0 3px;

@@ -1,11 +1,21 @@
-use dioxus::prelude::{Signal, WritableExt};
+use dioxus::prelude::{ReadableExt, Signal, WritableExt};
 
 use crate::state::ShellState;
 
+/// How often the tick checks for media that nothing else is going to fetch.
+///
+/// Sources registered during render (hover cards, activity rows, thread lists)
+/// have no Slack call behind them, so without this sweep their images would stay
+/// placeholders until the next unrelated refresh. The first tick sweeps too, so
+/// cached avatars paint from disk without waiting on any Slack call.
+const MEDIA_SWEEP_TICKS: u32 = 5;
+
 pub async fn ticks(mut state: Signal<ShellState>) {
     let mut interval = tokio::time::interval(std::time::Duration::from_millis(200));
+    let mut tick: u32 = 0;
     loop {
         interval.tick().await;
+        tick = tick.wrapping_add(1);
         let now = std::time::Instant::now();
         let mut shell = state.write();
         let typing_changed = shell
@@ -36,6 +46,20 @@ pub async fn ticks(mut state: Signal<ShellState>) {
                 shell.refresh_from_core();
             }
             shell.upload_ui_epoch = shell.upload_ui_epoch.wrapping_add(1);
+        }
+        // Bumping the generation is what re-stamps painted `src` attributes, so
+        // images swap from their placeholder as soon as any bytes land — one
+        // slow host cannot hold back the whole batch.
+        if shell.media.take_dirty() {
+            shell.media_epoch = shell.media_epoch.wrapping_add(1);
+        }
+        let sweep =
+            tick % MEDIA_SWEEP_TICKS == 1 && shell.media.has_pending() && !shell.media.is_loading();
+        let transport = sweep.then(|| shell.core.transport.clone()).flatten();
+        drop(shell);
+        if let Some(transport) = transport {
+            let media = state.read().media.clone();
+            dioxus::prelude::spawn(async move { media.load_pending(transport).await });
         }
     }
 }

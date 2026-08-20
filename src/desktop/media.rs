@@ -1,26 +1,90 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
+use std::time::{Duration, Instant};
 
 use dioxus::desktop::wry::http::{Request, Response, StatusCode};
 use dioxus::desktop::{Config, WindowBuilder};
 use super_platinum_core::slack::Transport;
-use super_platinum_core::{MediaAssetId, MediaAssetKind};
+use super_platinum_core::{MediaAssetId, MediaAssetKind, MediaStore, detect_image_mime};
 
 const CSP: &str = "default-src 'none'; img-src 'self' super-platinum-media: data:; media-src super-platinum-media:; style-src 'unsafe-inline'; script-src dioxus: 'unsafe-inline' 'unsafe-eval'; connect-src dioxus: ipc: ws: wss:; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+
+/// A 64×64 translucent grey skeleton box.
+///
+/// Sources are registered during projection and fetched afterwards, so the
+/// WebView always asks for some assets before their bytes exist. Answering that
+/// with 404 paints the platform's broken-image icon — a hard visual error for
+/// what is only a load in flight. Sized elements (avatars, emoji, icons) stretch
+/// this to their own box; block and attachment images have no intrinsic size in
+/// CSS, so 64 square is what they reserve until the real image arrives.
+const PLACEHOLDER_PNG: &[u8] = &[
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x40, 0x08, 0x06, 0x00, 0x00, 0x00, 0xaa, 0x69, 0x71,
+    0xde, 0x00, 0x00, 0x00, 0x64, 0x49, 0x44, 0x41, 0x54, 0x78, 0xda, 0xed, 0xd0, 0x41, 0x11, 0x00,
+    0x00, 0x08, 0x03, 0xa0, 0xa5, 0x31, 0xe7, 0xa2, 0x9b, 0xc3, 0x93, 0x07, 0x05, 0x48, 0xdb, 0xf9,
+    0x2c, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
+    0x80, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10,
+    0x20, 0x40, 0x80, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x00, 0x01, 0x02, 0x04,
+    0x08, 0x10, 0x20, 0x40, 0x80, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x00, 0x01,
+    0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0xc0, 0x7d, 0x0b, 0x59, 0x1a, 0x61, 0x87, 0x15, 0x15, 0x35,
+    0xe6, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+];
+
+/// A fully transparent 1×1 PNG for emoji, which sit inline in a sentence: a grey
+/// box mid-word reads as damage, whereas a gap reads as text still loading.
+const TRANSPARENT_PNG: &[u8] = &[
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+    0x89, 0x00, 0x00, 0x00, 0x0b, 0x49, 0x44, 0x41, 0x54, 0x78, 0xda, 0x63, 0x60, 0x00, 0x02, 0x00,
+    0x00, 0x05, 0x00, 0x01, 0xe9, 0xfa, 0xdc, 0xd8, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44,
+    0xae, 0x42, 0x60, 0x82,
+];
+
+/// Ceiling on the retry backoff, reached after eight consecutive failures.
+const MAX_RETRY_BACKOFF: Duration = Duration::from_secs(256);
+
+/// Hosts Slack serves its own assets from, which require the session cookie.
+fn is_slack_hosted(url: &str) -> bool {
+    url.contains("slack-edge.com") || url.contains("slack.com")
+}
 
 #[derive(Clone, Default)]
 pub struct MediaRegistry {
     assets: Arc<RwLock<HashMap<MediaAssetId, MediaAsset>>>,
     sources: Arc<RwLock<HashMap<MediaAssetId, MediaSource>>>,
     source_ids: Arc<RwLock<HashMap<(MediaAssetKind, String), MediaAssetId>>>,
+    backoff: Arc<RwLock<HashMap<MediaAssetId, Backoff>>>,
     load_lock: Arc<tokio::sync::Mutex<()>>,
+    /// Set whenever bytes land. The UI tick turns this into one media generation
+    /// bump, which is what actually makes painted `img` elements re-request.
+    dirty: Arc<AtomicBool>,
+    store: Option<Arc<MediaStore>>,
+    pruned: Arc<AtomicBool>,
+}
+
+/// What to do about a source that failed to download.
+#[derive(Clone, Copy)]
+enum Backoff {
+    /// The host answered, and the answer will not change: the URL is gone. The
+    /// sweep polls every second, so retrying this is a permanent stream of
+    /// requests that can never succeed.
+    Abandoned,
+    /// A timeout, a refused connection, or a server error — all of which pass.
+    /// Retried on a doubling delay so a boot while offline does not turn into a
+    /// request per second per image.
+    Retry { failures: u32, at: Instant },
 }
 
 #[derive(Clone)]
 struct MediaAsset {
     mime: String,
     bytes: Arc<[u8]>,
+    /// Bytes worth painting that are not the ones asked for — the slot's
+    /// previous picture, recovered from disk. They stay pending so the current
+    /// image replaces them once it downloads.
+    provisional: bool,
 }
 
 #[derive(Clone)]
@@ -28,20 +92,100 @@ struct MediaSource {
     url: String,
     mime: String,
     authenticated: bool,
+    /// Stable identity for the on-disk cache; see `MediaStore`. Only set for the
+    /// small, endlessly reused images (avatars, emoji) worth persisting.
+    slot: Option<String>,
 }
 
 impl MediaRegistry {
+    /// The registry the app runs on: remembers avatars and emoji across restarts.
+    pub fn with_persistence() -> Self {
+        let store = match MediaStore::open_default() {
+            Ok(store) => Some(Arc::new(store)),
+            Err(error) => {
+                eprintln!("super-platinum: media cache unavailable, staying in memory: {error}");
+                None
+            }
+        };
+        Self {
+            store,
+            ..Self::default()
+        }
+    }
+
     pub fn insert(&self, id: MediaAssetId, mime: impl Into<String>, bytes: impl Into<Arc<[u8]>>) {
+        self.insert_asset(id, mime.into(), bytes.into(), false);
+    }
+
+    fn insert_asset(&self, id: MediaAssetId, mime: String, bytes: Arc<[u8]>, provisional: bool) {
         self.assets
             .write()
             .expect("media registry poisoned")
             .insert(
                 id,
                 MediaAsset {
-                    mime: mime.into(),
-                    bytes: bytes.into(),
+                    mime,
+                    bytes,
+                    provisional,
                 },
             );
+        self.dirty.store(true, Ordering::Release);
+    }
+
+    /// Registers a remote image, deciding for itself whether the Slack session
+    /// cookie belongs on the request. Slack-hosted assets need it; Block Kit
+    /// `image_url`s and unfurl previews point at arbitrary public hosts and must
+    /// never see it.
+    pub fn register_image(
+        &self,
+        kind: MediaAssetKind,
+        url: &str,
+        mime: impl Into<String>,
+    ) -> MediaAssetId {
+        self.register(kind, url, mime, is_slack_hosted(url))
+    }
+
+    /// Registers a profile picture under a stable identity — a Slack user id, or
+    /// the bot/webhook icon key from `state::message_avatar`.
+    ///
+    /// The identity, not the URL, is what the on-disk cache is keyed by: Slack
+    /// rotates the URL whenever somebody changes their picture, so identity
+    /// keying is what lets the previous face paint immediately while the new one
+    /// downloads in the background.
+    pub fn register_avatar(&self, identity: &str, url: &str) -> MediaAssetId {
+        self.register_slotted(
+            MediaAssetKind::Avatar,
+            format!("avatar/{identity}"),
+            url,
+            "image/jpeg",
+        )
+    }
+
+    /// Registers an image the UI paints at icon size — a context-block avatar,
+    /// an unfurl service icon — which has no identity beyond its URL. Cached so
+    /// a channel of bot posts stops re-downloading the same faces every launch.
+    pub fn register_icon(&self, kind: MediaAssetKind, url: &str) -> MediaAssetId {
+        self.register_slotted(kind, format!("icon/{url}"), url, "image/png")
+    }
+
+    /// Registers a custom workspace emoji under its shortcode.
+    pub fn register_emoji(&self, name: &str, url: &str) -> MediaAssetId {
+        self.register_slotted(
+            MediaAssetKind::Emoji,
+            format!("emoji/{name}"),
+            url,
+            "image/png",
+        )
+    }
+
+    fn register_slotted(
+        &self,
+        kind: MediaAssetKind,
+        slot: String,
+        url: &str,
+        mime: &str,
+    ) -> MediaAssetId {
+        self.register_source(kind, url, mime.to_owned(), is_slack_hosted(url), Some(slot))
     }
 
     /// Registers a native-only source and returns an opaque URL safe to expose
@@ -52,6 +196,17 @@ impl MediaRegistry {
         url: &str,
         mime: impl Into<String>,
         authenticated: bool,
+    ) -> MediaAssetId {
+        self.register_source(kind, url, mime.into(), authenticated, None)
+    }
+
+    fn register_source(
+        &self,
+        kind: MediaAssetKind,
+        url: &str,
+        mime: String,
+        authenticated: bool,
+        slot: Option<String>,
     ) -> MediaAssetId {
         let key = (kind, url.to_owned());
         if let Some(id) = self
@@ -74,31 +229,69 @@ impl MediaRegistry {
                 id.clone(),
                 MediaSource {
                     url: url.to_owned(),
-                    mime: mime.into(),
+                    mime,
                     authenticated,
+                    slot,
                 },
             );
         id
     }
 
+    /// Whether this asset has bytes to paint right now.
+    ///
+    /// Callers with a real fallback — initials, an event glyph — should render
+    /// that instead of an `img` whose bytes have not landed. The placeholder the
+    /// protocol serves is only for images with nothing better to show.
+    pub fn is_ready(&self, id: &MediaAssetId) -> bool {
+        self.assets
+            .read()
+            .expect("media registry poisoned")
+            .contains_key(id)
+    }
+
+    /// Whether any registered source still needs bytes. Sources are also
+    /// registered during render (hover cards, activity rows), which no Slack
+    /// call follows, so the UI tick polls this to kick a load.
+    pub fn has_pending(&self) -> bool {
+        let now = Instant::now();
+        let assets = self.assets.read().expect("media registry poisoned");
+        let backoff = self.backoff.read().expect("media registry poisoned");
+        self.sources
+            .read()
+            .expect("media registry poisoned")
+            .keys()
+            .any(|id| {
+                is_due(backoff.get(id), now) && assets.get(id).is_none_or(|asset| asset.provisional)
+            })
+    }
+
+    pub fn is_loading(&self) -> bool {
+        self.load_lock.try_lock().is_err()
+    }
+
+    /// Consumes the "new bytes landed" flag. The caller owns the media
+    /// generation bump that makes the WebView re-request painted images.
+    pub fn take_dirty(&self) -> bool {
+        self.dirty.swap(false, Ordering::AcqRel)
+    }
+
+    /// Populates every registered source that has no current bytes yet, from the
+    /// on-disk cache where possible and the network otherwise.
     pub async fn load_pending(&self, transport: Arc<Transport>) {
         // Serialize refreshes so a later projection can safely queue more
         // sources while an earlier batch is still downloading.
         let _guard = self.load_lock.lock().await;
-        let pending = self
-            .sources
-            .read()
-            .expect("media registry poisoned")
-            .iter()
-            .filter(|(id, _)| {
-                !self
-                    .assets
-                    .read()
-                    .expect("media registry poisoned")
-                    .contains_key(*id)
-            })
-            .map(|(id, source)| (id.clone(), source.clone()))
-            .collect::<Vec<_>>();
+        let pending = self.pending_sources();
+        if pending.is_empty() {
+            return;
+        }
+        // Disk first: an unchanged URL needs no request at all, and a hit under
+        // the same identity at an older URL paints the previous picture
+        // immediately instead of leaving a gap until the download finishes.
+        let pending = self.hydrate_from_store(pending).await;
+        if pending.is_empty() {
+            return;
+        }
         let user_agent = super_platinum_core::slack::xparams::Identity::from_capture().user_agent;
         let permits = Arc::new(tokio::sync::Semaphore::new(12));
         let mut tasks = tokio::task::JoinSet::new();
@@ -120,14 +313,22 @@ impl MediaRegistry {
                 (id, source, result)
             });
         }
+        let mut persist = Vec::new();
         while let Some(result) = tasks.join_next().await {
             let Ok((id, source, result)) = result else {
                 continue;
             };
             match result {
                 Ok(bytes) => {
-                    let mime = detected_image_mime(&bytes).unwrap_or(&source.mime);
-                    self.insert(id, mime, bytes);
+                    let mime = detect_image_mime(&bytes).unwrap_or(&source.mime);
+                    if let Some(slot) = source.slot.clone() {
+                        persist.push((slot, source.url.clone(), bytes.clone()));
+                    }
+                    self.backoff
+                        .write()
+                        .expect("media registry poisoned")
+                        .remove(&id);
+                    self.insert_asset(id, mime.to_owned(), bytes.into(), false);
                 }
                 Err(error) => {
                     let host = url::Url::parse(&source.url)
@@ -138,9 +339,118 @@ impl MediaRegistry {
                         "super-platinum: {} media fetch from {host} failed: {error}",
                         id.kind().as_str()
                     );
+                    self.record_failure(&id, is_permanent(&error));
                 }
             }
         }
+        self.persist(persist).await;
+    }
+
+    /// Sources with no current bytes, cheapest and most noticeable first.
+    fn pending_sources(&self) -> Vec<(MediaAssetId, MediaSource)> {
+        let now = Instant::now();
+        let assets = self.assets.read().expect("media registry poisoned");
+        let backoff = self.backoff.read().expect("media registry poisoned");
+        let mut pending = self
+            .sources
+            .read()
+            .expect("media registry poisoned")
+            .iter()
+            .filter(|(id, _)| {
+                is_due(backoff.get(*id), now)
+                    && assets.get(*id).is_none_or(|asset| asset.provisional)
+            })
+            .map(|(id, source)| (id.clone(), source.clone()))
+            .collect::<Vec<_>>();
+        // Avatars and emoji are small and are what the reader notices first;
+        // let them land ahead of multi-megabyte file attachments.
+        pending.sort_by_key(|(id, _)| match id.kind() {
+            MediaAssetKind::Avatar | MediaAssetKind::Emoji => 0,
+            MediaAssetKind::Background => 1,
+            MediaAssetKind::Attachment => 2,
+        });
+        pending
+    }
+
+    /// Fills in what the on-disk cache already holds and returns the sources
+    /// that still need the network.
+    async fn hydrate_from_store(
+        &self,
+        pending: Vec<(MediaAssetId, MediaSource)>,
+    ) -> Vec<(MediaAssetId, MediaSource)> {
+        let Some(store) = self.store.clone() else {
+            return pending;
+        };
+        let lookups = pending
+            .iter()
+            .filter_map(|(id, source)| {
+                let slot = source.slot.clone()?;
+                Some((id.clone(), slot, source.url.clone()))
+            })
+            .collect::<Vec<_>>();
+        if lookups.is_empty() {
+            return pending;
+        }
+        let hits = tokio::task::spawn_blocking(move || {
+            lookups
+                .into_iter()
+                .filter_map(|(id, slot, url)| store.load(&slot, &url).map(|image| (id, image)))
+                .collect::<Vec<_>>()
+        })
+        .await
+        .unwrap_or_default();
+        let mut satisfied = HashSet::new();
+        for (id, image) in hits {
+            if image.current {
+                satisfied.insert(id.clone());
+            }
+            self.insert_asset(id, image.mime, image.bytes.into(), !image.current);
+        }
+        pending
+            .into_iter()
+            .filter(|(id, _)| !satisfied.contains(id))
+            .collect()
+    }
+
+    async fn persist(&self, entries: Vec<(String, String, Vec<u8>)>) {
+        let Some(store) = self.store.clone() else {
+            return;
+        };
+        if entries.is_empty() {
+            return;
+        }
+        let prune = !self.pruned.swap(true, Ordering::AcqRel);
+        let _ = tokio::task::spawn_blocking(move || {
+            for (slot, url, bytes) in entries {
+                if let Err(error) = store.store(&slot, &url, &bytes) {
+                    eprintln!("super-platinum: could not cache {slot}: {error}");
+                }
+            }
+            if prune {
+                store.prune();
+            }
+        })
+        .await;
+    }
+
+    fn record_failure(&self, id: &MediaAssetId, permanent: bool) {
+        let mut backoff = self.backoff.write().expect("media registry poisoned");
+        if permanent {
+            backoff.insert(id.clone(), Backoff::Abandoned);
+            return;
+        }
+        let failures = match backoff.get(id) {
+            Some(Backoff::Retry { failures, .. }) => failures.saturating_add(1),
+            _ => 1,
+        };
+        let delay = Duration::from_secs(1 << failures.min(8)).min(MAX_RETRY_BACKOFF);
+        backoff.insert(
+            id.clone(),
+            Backoff::Retry {
+                failures,
+                at: Instant::now() + delay,
+            },
+        );
     }
 
     fn respond(&self, request: Request<Vec<u8>>) -> Response<Cow<'static, [u8]>> {
@@ -171,17 +481,51 @@ impl MediaRegistry {
                 StatusCode::OK,
                 &asset.mime,
                 Cow::Owned(asset.bytes.to_vec()),
-                "private, max-age=3600",
+                // Provisional bytes are replaced in place once the current
+                // picture downloads, so they must not be held by the WebView.
+                if asset.provisional {
+                    "no-store"
+                } else {
+                    "private, max-age=3600"
+                },
             ),
+            // Not an error: the asset is still downloading. A placeholder keeps
+            // the layout intact where a 404 would paint a broken-image icon.
             None => response(
-                StatusCode::NOT_FOUND,
-                "text/plain",
-                Cow::Borrowed(b"media not found"),
-                // Sources are registered during projection and populated
-                // asynchronously. Never let WebKit cache that transient miss.
+                StatusCode::OK,
+                "image/png",
+                Cow::Borrowed(placeholder_for(id.kind())),
                 "no-store",
             ),
         }
+    }
+}
+
+fn is_due(backoff: Option<&Backoff>, now: Instant) -> bool {
+    match backoff {
+        None => true,
+        Some(Backoff::Abandoned) => false,
+        Some(Backoff::Retry { at, .. }) => *at <= now,
+    }
+}
+
+/// A dead URL will never start working; a stalled host, a refused connection, or
+/// a server error all pass. Only the first is worth giving up on, and one
+/// answer from the host is enough to know.
+fn is_permanent(error: &super_platinum_core::slack::Error) -> bool {
+    matches!(
+        error,
+        super_platinum_core::slack::Error::HttpStatus { status, .. }
+            if (400..500).contains(status) && *status != 408 && *status != 429
+    )
+}
+
+/// Emoji flow inline with text and get a transparent gap; everything else gets a
+/// skeleton box the size of the image that is coming.
+fn placeholder_for(kind: MediaAssetKind) -> &'static [u8] {
+    match kind {
+        MediaAssetKind::Emoji => TRANSPARENT_PNG,
+        _ => PLACEHOLDER_PNG,
     }
 }
 
@@ -216,20 +560,6 @@ fn response(
         .expect("static media response is valid")
 }
 
-fn detected_image_mime(bytes: &[u8]) -> Option<&'static str> {
-    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
-        Some("image/png")
-    } else if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
-        Some("image/jpeg")
-    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
-        Some("image/gif")
-    } else if bytes.len() >= 12 && bytes.starts_with(b"RIFF") && &bytes[8..12] == b"WEBP" {
-        Some("image/webp")
-    } else {
-        None
-    }
-}
-
 pub fn open_external(url: &str) -> Result<(), String> {
     let parsed = validated_external_url(url)?;
     #[cfg(target_os = "macos")]
@@ -261,6 +591,14 @@ fn validated_external_url(url: &str) -> Result<url::Url, String> {
 mod tests {
     use super::*;
 
+    fn get(registry: &MediaRegistry, uri: &str) -> Response<Cow<'static, [u8]>> {
+        let request = Request::builder()
+            .uri(uri)
+            .body(Vec::new())
+            .expect("media request");
+        registry.respond(request)
+    }
+
     #[test]
     fn validates_external_urls_without_spawning() {
         assert!(validated_external_url("javascript:alert(1)").is_err());
@@ -281,36 +619,247 @@ mod tests {
     }
 
     #[test]
-    fn pending_media_misses_are_not_cached_by_the_webview() {
+    fn pending_media_paints_a_placeholder_instead_of_a_broken_image() {
+        // A 404 here is what the platform draws its broken-image icon for, and
+        // the source is merely still downloading.
         let registry = MediaRegistry::default();
-        let id = registry.register(
+        let avatar = registry.register(
             MediaAssetKind::Avatar,
             "https://example.test/avatar.png",
             "image/png",
             false,
         );
-        let request = Request::builder()
-            .uri(id.uri())
-            .body(Vec::new())
-            .expect("media request");
-        let response = registry.respond(request);
-
-        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        let response = get(&registry, &avatar.uri());
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()["Content-Type"], "image/png");
+        assert_eq!(response.body().as_ref(), PLACEHOLDER_PNG);
+        // Never let the WebView hold that transient answer.
         assert_eq!(response.headers()["Cache-Control"], "no-store");
+        assert!(!registry.is_ready(&avatar));
+
+        // Inline emoji get a gap rather than a grey box mid-sentence.
+        let emoji = registry.register_emoji("party", "https://example.test/party.png");
+        assert_eq!(
+            get(&registry, &emoji.uri()).body().as_ref(),
+            TRANSPARENT_PNG
+        );
+    }
+
+    #[test]
+    fn generation_stamped_uris_resolve_to_the_same_asset() {
+        // `src` is what the WebView diffs, so a pending image only retries when
+        // the generation changes the URL. The protocol must still resolve it.
+        let registry = MediaRegistry::default();
+        let id = registry.register_image(
+            MediaAssetKind::Attachment,
+            "http://cdn.example.test/weather/64x64/night/302.png",
+            "image/png",
+        );
+        registry.insert(id.clone(), "image/png", b"png-bytes".as_slice());
+        for uri in [id.uri(), id.uri_at(0), id.uri_at(7)] {
+            let response = get(&registry, &uri);
+            assert_eq!(response.status(), StatusCode::OK, "{uri}");
+            assert_eq!(response.body().as_ref(), b"png-bytes", "{uri}");
+        }
+    }
+
+    #[test]
+    fn only_slack_hosted_images_carry_the_session_cookie() {
+        assert!(is_slack_hosted("https://ca.slack-edge.com/T1-U1-abc-48"));
+        assert!(is_slack_hosted("https://files.slack.com/files-tmb/x.png"));
+        // Block Kit and unfurl images point at arbitrary third-party hosts.
+        assert!(!is_slack_hosted("http://cdn.weatherapi.com/weather/64.png"));
+        assert!(!is_slack_hosted("https://cachet.dunkirk.sh/users/U1/r"));
+    }
+
+    #[test]
+    fn landed_bytes_raise_the_dirty_flag_exactly_once() {
+        // The flag is what the UI tick turns into a media generation bump; a
+        // stuck flag would re-stamp every image URL on every tick.
+        let registry = MediaRegistry::default();
+        assert!(!registry.take_dirty());
+        let id = registry.register_avatar("U1", "https://ca.slack-edge.com/T1-U1-abc-48");
+        assert!(!registry.take_dirty(), "registering is not painting");
+        registry.insert(id, "image/png", b"bytes".as_slice());
+        assert!(registry.take_dirty());
+        assert!(!registry.take_dirty());
+    }
+
+    #[test]
+    fn provisional_bytes_paint_but_stay_pending() {
+        // The previous picture for this identity, recovered from disk while the
+        // new URL downloads: it must render, must not be cached by the WebView,
+        // and must not stop the fetch.
+        let registry = MediaRegistry::default();
+        let id = registry.register_avatar("U1", "https://ca.slack-edge.com/T1-U1-new-48");
+        registry.insert_asset(
+            id.clone(),
+            "image/png".into(),
+            b"old".as_slice().into(),
+            true,
+        );
+
+        assert!(registry.is_ready(&id), "the old face still paints");
+        assert!(registry.has_pending(), "the new face is still wanted");
+        let response = get(&registry, &id.uri());
+        assert_eq!(response.body().as_ref(), b"old");
+        assert_eq!(response.headers()["Cache-Control"], "no-store");
+
+        registry.insert(id.clone(), "image/png", b"new".as_slice());
+        assert!(!registry.has_pending());
+        assert_eq!(
+            get(&registry, &id.uri()).headers()["Cache-Control"],
+            "private, max-age=3600"
+        );
+    }
+
+    #[test]
+    fn a_dead_url_is_abandoned_and_a_stalled_host_is_retried_on_a_backoff() {
+        let registry = MediaRegistry::default();
+        let gone = registry.register_avatar("U1", "https://ca.slack-edge.com/T1-U1-gone-48");
+        let stalled = registry.register_avatar("U2", "https://ca.slack-edge.com/T1-U2-abc-48");
+
+        registry.record_failure(&gone, true);
+        registry.record_failure(&stalled, false);
+        assert!(
+            !registry.has_pending(),
+            "neither source is due, so the sweep must stay quiet"
+        );
+
+        let backoff = registry.backoff.read().unwrap();
+        assert!(matches!(backoff[&gone], Backoff::Abandoned));
+        let Backoff::Retry { failures, at } = backoff[&stalled] else {
+            panic!("a timeout is transient, not fatal");
+        };
+        assert_eq!(failures, 1);
+        assert!(at > Instant::now());
+        drop(backoff);
+
+        // Once the delay is up the source is tried again — an app that booted
+        // offline must not be stuck showing initials for the whole session.
+        registry.backoff.write().unwrap().insert(
+            stalled.clone(),
+            Backoff::Retry {
+                failures: 1,
+                at: Instant::now() - Duration::from_secs(1),
+            },
+        );
+        assert!(registry.has_pending());
+        assert_eq!(registry.pending_sources().len(), 1, "only the due source");
+
+        // Each further failure doubles the wait rather than adding a fixed step.
+        registry.record_failure(&stalled, false);
+        let Backoff::Retry { failures, .. } = registry.backoff.read().unwrap()[&stalled] else {
+            panic!("still transient");
+        };
+        assert_eq!(failures, 2);
+    }
+
+    #[test]
+    fn only_client_errors_count_as_permanent() {
+        use super_platinum_core::slack::Error;
+        assert!(is_permanent(&Error::HttpStatus {
+            status: 404,
+            retry_after_secs: None
+        }));
+        assert!(!is_permanent(&Error::HttpStatus {
+            status: 503,
+            retry_after_secs: None
+        }));
+        // Timeouts and rate limits pass; giving up on them loses the image for
+        // the rest of the session.
+        assert!(!is_permanent(&Error::HttpStatus {
+            status: 429,
+            retry_after_secs: Some(5)
+        }));
+        assert!(!is_permanent(&Error::Transport("send: timeout".into())));
+    }
+
+    #[test]
+    fn identity_slots_survive_the_avatar_url_rotating() {
+        let registry = MediaRegistry::default();
+        let old = registry.register_avatar("U1", "https://ca.slack-edge.com/T1-U1-old-48");
+        let new = registry.register_avatar("U1", "https://ca.slack-edge.com/T1-U1-new-48");
+        assert_ne!(old, new, "different bytes need different asset ids");
+        let sources = registry.sources.read().unwrap();
+        assert_eq!(sources[&old].slot.as_deref(), Some("avatar/U1"));
+        assert_eq!(sources[&new].slot.as_deref(), Some("avatar/U1"));
+        assert!(sources[&new].authenticated, "Slack hosts need the cookie");
+    }
+
+    #[test]
+    fn cached_pictures_paint_from_disk_and_a_rotated_url_stays_pending() {
+        let root = std::env::temp_dir().join(format!(
+            "super-platinum-registry-{}",
+            super_platinum_core::MediaAssetId::new(MediaAssetKind::Avatar).opaque()
+        ));
+        let store = MediaStore::open(&root).expect("store");
+        store
+            .store(
+                "avatar/U1",
+                "https://ca.slack-edge.com/T1-U1-old-48",
+                b"face",
+            )
+            .expect("seed");
+        store
+            .store(
+                "emoji/party",
+                "https://emoji.slack-edge.com/party.png",
+                b"gif",
+            )
+            .expect("seed");
+        let registry = MediaRegistry {
+            store: Some(Arc::new(store)),
+            ..MediaRegistry::default()
+        };
+
+        // U1 changed their picture: same identity, new URL.
+        let rotated = registry.register_avatar("U1", "https://ca.slack-edge.com/T1-U1-new-48");
+        let unchanged = registry.register_emoji("party", "https://emoji.slack-edge.com/party.png");
+        let cold = registry.register_avatar("U2", "https://ca.slack-edge.com/T1-U2-abc-48");
+
+        let still_wanted = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime")
+            .block_on(registry.hydrate_from_store(registry.pending_sources()));
+
+        assert!(
+            registry.is_ready(&rotated),
+            "the previous picture paints while the new one downloads"
+        );
+        assert!(registry.is_ready(&unchanged));
+        assert!(!registry.is_ready(&cold), "nothing cached for U2");
+
+        let wanted = still_wanted
+            .iter()
+            .map(|(id, _)| id.clone())
+            .collect::<HashSet<_>>();
+        assert!(
+            wanted.contains(&rotated),
+            "the new picture is still fetched"
+        );
+        assert!(wanted.contains(&cold));
+        assert!(
+            !wanted.contains(&unchanged),
+            "an unchanged URL needs no request at all"
+        );
+
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]
     fn downloaded_image_signature_overrides_a_stale_mime_hint() {
         assert_eq!(
-            detected_image_mime(b"\x89PNG\r\n\x1a\nrest"),
+            detect_image_mime(b"\x89PNG\r\n\x1a\nrest"),
             Some("image/png")
         );
         assert_eq!(
-            detected_image_mime(&[0xff, 0xd8, 0xff, 0xe0]),
+            detect_image_mime(&[0xff, 0xd8, 0xff, 0xe0]),
             Some("image/jpeg")
         );
         assert_eq!(
-            detected_image_mime(b"RIFF\0\0\0\0WEBPrest"),
+            detect_image_mime(b"RIFF\0\0\0\0WEBPrest"),
             Some("image/webp")
         );
     }

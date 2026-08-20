@@ -43,6 +43,9 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
         serde_json::json!({"id":"U0","name":"you","real_name":"You","profile":{"display_name":"You","image_72":"https://example.test/you.png"}}),
         serde_json::json!({"id":"U1","name":"maya","real_name":"Maya Chen","tz_offset":-25200,"profile":{"display_name":"Maya Chen","title":"Desktop engineer","status_text":"Shipping the migration","status_emoji":":ship:","email":"maya@example.com","pronouns":"she/her","image_72":"https://example.test/maya.png","image_512":"https://example.test/maya-lg.png"}}),
         serde_json::json!({"id":"U2","name":"jules","real_name":"Jules","profile":{"display_name":"Jules","image_72":"https://example.test/jules.png"}}),
+        // Bot user behind the "Out of Context" app fixture: Slack renders this
+        // profile image, not the app's generic `bot_profile.icons` placeholder.
+        serde_json::json!({"id":"U4","name":"outofcontext","real_name":"Out of Context","profile":{"display_name":"Out of Context","image_72":"https://example.test/bot.png"}}),
     ] {
         let user: super_platinum_core::slack::models::User =
             serde_json::from_value(user).expect("fixture user");

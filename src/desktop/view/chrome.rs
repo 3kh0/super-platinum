@@ -33,14 +33,7 @@ pub(crate) fn profile_hover_card(
                 .iter()
                 .find(|channel| channel.user_id.as_deref() == Some(user_id))
                 .and_then(|channel| channel.avatar.clone())
-                .or_else(|| {
-                    Some(snapshot.media.register(
-                        super_platinum_core::MediaAssetKind::Avatar,
-                        url,
-                        "image/jpeg",
-                        true,
-                    ))
-                })
+                .or_else(|| Some(snapshot.media.register_avatar(user_id, url)))
         });
     let initials = name
         .chars()
@@ -53,8 +46,8 @@ pub(crate) fn profile_hover_card(
             class: "profile-hover",
             onmouseleave: move |_| state.write().profile_hover = None,
             div { class: "profile-hover-avatar",
-                if let Some(avatar) = avatar.as_ref() {
-                    img { src: "{avatar.uri()}", alt: "{name}" }
+                if let Some(avatar) = avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
+                    img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{name}" }
                 } else {
                     "{initials}"
                 }
@@ -214,8 +207,8 @@ pub(crate) fn channel_sidebar(
                                 },
                                 span { class: "channel-icon",
                                     if channel.is_im {
-                                        if let Some(avatar) = channel.avatar.as_ref() {
-                                            img { key: "side-av-{snapshot.media_epoch}-{avatar.uri()}", class: "sidebar-avatar", src: "{avatar.uri()}", alt: "{channel.name}" }
+                                        if let Some(avatar) = channel.avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
+                                            img { class: "sidebar-avatar", src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{channel.name}" }
                                         } else {
                                             span { class: "sidebar-avatar placeholder", "{channel.avatar_initials}" }
                                         }
@@ -275,8 +268,8 @@ pub(crate) fn conversation_header(
                         spawn(crate::bootstrap::open_profile(state, user));
                     }
                 },
-                if let Some(avatar) = dm_avatar.as_ref() {
-                    img { key: "hdr-{snapshot.media_epoch}-{avatar.uri()}", src: "{avatar.uri()}", alt: "{title}" }
+                if let Some(avatar) = dm_avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
+                    img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{title}" }
                 } else {
                     "{dm_initials}"
                 }

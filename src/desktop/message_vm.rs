@@ -1,7 +1,9 @@
 use super_platinum_core::MediaAssetKind;
 
+use crate::blocks::{BlockCtx, block_nodes, custom_emoji_media, plain_inline_nodes};
 use crate::media::MediaRegistry;
-use crate::model::{MessageVm, RichNode};
+use crate::model::{MessageVm, ReactionVm, RichNode};
+use crate::unfurl::attachment_vms;
 
 pub(crate) fn message_vm(
     workspace: &super_platinum_core::state::Workspace,
@@ -20,15 +22,12 @@ pub(crate) fn message_vm(
     } else {
         initials
     };
-    let (_, avatar_url) = super_platinum_core::state::message_avatar(workspace, message);
-    let avatar = avatar_url.map(|url| {
-        media.register(
-            MediaAssetKind::Avatar,
-            &url,
-            "image/jpeg",
-            url.contains("slack-edge.com") || url.contains("slack.com"),
-        )
-    });
+    // The key is the avatar's stable identity (a user id, or a bot/webhook icon
+    // key), which is what the media cache keys its entries by.
+    let (identity, avatar_url) = super_platinum_core::state::message_avatar(workspace, message);
+    let avatar = avatar_url
+        .as_deref()
+        .map(|url| media.register_avatar(identity.as_deref().unwrap_or(url), url));
     let raw_ts = message
         .ts
         .clone()
@@ -71,22 +70,73 @@ pub(crate) fn message_vm(
         compact: false,
         date_label: None,
         show_unread_divider: false,
-        reactions: message
-            .reactions
-            .iter()
-            .map(|reaction| {
-                (
-                    reaction.name.clone(),
-                    reaction.count,
-                    reaction
-                        .users
-                        .iter()
-                        .any(|user| user == &workspace.self_user_id),
-                )
-            })
-            .collect(),
+        reactions: reaction_vms(workspace, message, media),
+        attachments: attachment_vms(workspace, message, media),
         reply_count: message.reply_count.unwrap_or(0),
+        reply_avatars: reply_avatars(workspace, message, media),
+        last_reply: message
+            .latest_reply
+            .as_deref()
+            .map(super_platinum_core::state::format_relative_ts),
     }
+}
+
+/// Reaction pills resolve like inline emoji: workspace custom emoji become
+/// images, standard shortcodes become glyphs, unknown names stay `:name:`.
+fn reaction_vms(
+    workspace: &super_platinum_core::state::Workspace,
+    message: &super_platinum_core::slack::models::Message,
+    media: &MediaRegistry,
+) -> Vec<ReactionVm> {
+    let ctx = BlockCtx::new(workspace, media);
+    message
+        .reactions
+        .iter()
+        .map(|reaction| {
+            let media = custom_emoji_media(ctx, &reaction.name);
+            ReactionVm {
+                glyph: media
+                    .is_none()
+                    .then(|| super_platinum_core::state::emoji_glyph(&reaction.name)),
+                media,
+                name: reaction.name.clone(),
+                count: reaction.count.max(1),
+                own: super_platinum_core::state::reaction_has_user(
+                    reaction,
+                    &workspace.self_user_id,
+                ),
+            }
+        })
+        .collect()
+}
+
+/// Avatars for the thread reply bar, in Slack's order (first repliers first).
+fn reply_avatars(
+    workspace: &super_platinum_core::state::Workspace,
+    message: &super_platinum_core::slack::models::Message,
+    media: &MediaRegistry,
+) -> Vec<(String, Option<super_platinum_core::MediaAssetId>, String)> {
+    message
+        .reply_users
+        .iter()
+        .take(5)
+        .map(|user| {
+            let name = workspace.display_name(user);
+            let initials = name
+                .chars()
+                .next()
+                .map(|first| first.to_uppercase().to_string())
+                .unwrap_or_else(|| "?".into());
+            (
+                user.clone(),
+                workspace
+                    .avatar_url(user)
+                    .as_deref()
+                    .map(|url| media.register_avatar(user, url)),
+                initials,
+            )
+        })
+        .collect()
 }
 
 /// Annotate date separators, compact grouping, and the first-unread divider.
@@ -141,21 +191,22 @@ fn message_body(
     message: &super_platinum_core::slack::models::Message,
     media: &MediaRegistry,
 ) -> Vec<RichNode> {
+    let ctx = BlockCtx::new(workspace, media);
     let mut nodes = message
         .blocks
         .iter()
-        .flat_map(|block| block_nodes(workspace, block, media))
+        .flat_map(|block| block_nodes(ctx, block))
         .collect::<Vec<_>>();
     if nodes.is_empty() {
+        // Fall back to `text` only when the blocks rendered nothing — otherwise
+        // the fallback string duplicates the Block Kit body.
         let text = super_platinum_core::state::message_text(message);
         if text.contains('\n') {
             for line in text.split('\n') {
-                nodes.push(RichNode::Paragraph(plain_inline_nodes(
-                    workspace, line, media,
-                )));
+                nodes.push(RichNode::Paragraph(plain_inline_nodes(ctx, line)));
             }
         } else if !text.is_empty() {
-            nodes.extend(plain_inline_nodes(workspace, &text, media));
+            nodes.extend(plain_inline_nodes(ctx, &text));
         }
     }
     for file in &message.files {
@@ -181,420 +232,140 @@ fn message_body(
     nodes
 }
 
-fn plain_inline_nodes(
-    workspace: &super_platinum_core::state::Workspace,
-    text: &str,
-    media: &MediaRegistry,
-) -> Vec<RichNode> {
-    let mut nodes = Vec::new();
-    let mut rest = text;
-    while let Some(start) = rest.find('<') {
-        let (before, candidate) = rest.split_at(start);
-        append_emoji_text(workspace, before, media, &mut nodes);
-        let Some(end) = candidate.find('>') else {
-            append_emoji_text(workspace, candidate, media, &mut nodes);
-            return nodes;
-        };
-        let token = &candidate[1..end];
-        if let Some(user) = token.strip_prefix('@') {
-            nodes.push(RichNode::UserMention {
-                user_id: user.into(),
-                label: format!("@{}", workspace.display_name(user)),
-            });
-        } else if let Some(channel) = token.strip_prefix('#') {
-            let (channel_id, fallback) = channel.split_once('|').unwrap_or((channel, channel));
-            let label = workspace
-                .channels
-                .get(channel_id)
-                .map(|channel| super_platinum_core::state::channel_display_name(workspace, channel))
-                .unwrap_or_else(|| fallback.into());
-            nodes.push(RichNode::ChannelMention {
-                channel_id: channel_id.into(),
-                label: format!("#{label}"),
-            });
-        } else if let Some(broadcast) = token.strip_prefix('!').or_else(|| token.strip_prefix('|'))
-        {
-            if broadcast.starts_with("date^") {
-                let fallback = broadcast
-                    .rsplit_once('|')
-                    .map(|(_, fallback)| fallback)
-                    .unwrap_or("date");
-                nodes.push(RichNode::Text(fallback.into()));
-            } else {
-                let range = broadcast
-                    .split_once('|')
-                    .map(|(_, label)| label.trim_start_matches('@'))
-                    .unwrap_or_else(|| {
-                        broadcast
-                            .split_once('^')
-                            .map_or(broadcast, |(kind, _)| kind)
-                    });
-                nodes.push(RichNode::StyledText {
-                    text: format!("@{range}"),
-                    bold: true,
-                    italic: false,
-                    strike: false,
-                    code: false,
-                });
-            }
-        } else if token.starts_with("https://") || token.starts_with("http://") {
-            let (url, label) = token.split_once('|').unwrap_or((token, token));
-            nodes.push(RichNode::Link {
-                label: label.into(),
-                url: url.into(),
-            });
-        } else {
-            append_emoji_text(workspace, &candidate[..=end], media, &mut nodes);
-        }
-        rest = &candidate[end + 1..];
-    }
-    append_emoji_text(workspace, rest, media, &mut nodes);
-    nodes
-}
-
-fn append_emoji_text(
-    workspace: &super_platinum_core::state::Workspace,
-    text: &str,
-    media: &MediaRegistry,
-    nodes: &mut Vec<RichNode>,
-) {
-    for token in super_platinum_core::state::emoji_text_tokens(text) {
-        match token {
-            super_platinum_core::state::EmojiTextToken::Text(text) => {
-                if !text.is_empty() {
-                    nodes.push(RichNode::Text(text));
-                }
-            }
-            super_platinum_core::state::EmojiTextToken::Emoji(name) => {
-                if let Some(url) = workspace.custom_emoji_url(&name) {
-                    nodes.push(RichNode::Media {
-                        id: media.register(MediaAssetKind::Emoji, url, "image/png", false),
-                        name: format!(":{name}:"),
-                        mime: "image/png".into(),
-                    });
-                } else {
-                    nodes.push(RichNode::Emoji {
-                        glyph: super_platinum_core::state::emoji_glyph(&name),
-                        name,
-                    });
-                }
-            }
-        }
-    }
-}
-
-fn block_nodes(
-    workspace: &super_platinum_core::state::Workspace,
-    value: &serde_json::Value,
-    media: &MediaRegistry,
-) -> Vec<RichNode> {
-    let kind = value.get("type").and_then(serde_json::Value::as_str);
-    match kind {
-        Some("rich_text") => value
-            .get("elements")
-            .and_then(serde_json::Value::as_array)
-            .into_iter()
-            .flatten()
-            .flat_map(|element| block_nodes(workspace, element, media))
-            .collect(),
-        Some("rich_text_section") => {
-            // Slack packs multi-paragraph posts as one section with embedded `\n`.
-            split_section_on_newlines(child_nodes(workspace, value, media))
-        }
-        Some("rich_text_quote") => vec![RichNode::Quote(child_nodes(workspace, value, media))],
-        Some("rich_text_preformatted") => {
-            vec![RichNode::Code(plain_children(workspace, value, media))]
-        }
-        Some("rich_text_list") => value
-            .get("elements")
-            .and_then(serde_json::Value::as_array)
-            .into_iter()
-            .flatten()
-            .map(|element| {
-                let mut children = vec![RichNode::Text("• ".into())];
-                children.extend(block_nodes(workspace, element, media));
-                RichNode::Paragraph(children)
-            })
-            .collect(),
-        Some("section") => value
-            .get("text")
-            .and_then(|text| text.get("text"))
-            .and_then(serde_json::Value::as_str)
-            .map(|text| {
-                text.split('\n')
-                    .map(|line| RichNode::Paragraph(plain_inline_nodes(workspace, line, media)))
-                    .collect()
-            })
-            .unwrap_or_default(),
-        Some("text") => text_leaf_nodes(workspace, value, media),
-        Some("link") => {
-            let url = value
-                .get("url")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or_default();
-            let label = value
-                .get("text")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or(url);
-            vec![RichNode::Link {
-                label: label.into(),
-                url: url.into(),
-            }]
-        }
-        Some("emoji") => {
-            let name = value
-                .get("name")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("emoji");
-            match workspace.custom_emoji_url(name) {
-                Some(url) => vec![RichNode::Media {
-                    id: media.register(MediaAssetKind::Emoji, url, "image/png", false),
-                    name: format!(":{name}:"),
-                    mime: "image/png".into(),
-                }],
-                None => vec![RichNode::Emoji {
-                    name: name.into(),
-                    glyph: super_platinum_core::state::emoji_glyph(name),
-                }],
-            }
-        }
-        Some("user") => {
-            let user = value
-                .get("user_id")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or_default();
-            vec![RichNode::UserMention {
-                user_id: user.into(),
-                label: format!("@{}", workspace.display_name(user)),
-            }]
-        }
-        Some("channel") => {
-            let channel = value
-                .get("channel_id")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or_default();
-            let label = workspace
-                .channels
-                .get(channel)
-                .map(|channel| super_platinum_core::state::channel_display_name(workspace, channel))
-                .unwrap_or_else(|| channel.into());
-            vec![RichNode::ChannelMention {
-                channel_id: channel.into(),
-                label: format!("#{label}"),
-            }]
-        }
-        Some("broadcast") => {
-            let range = value
-                .get("range")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("channel");
-            vec![RichNode::StyledText {
-                text: format!("@{range}"),
-                bold: true,
-                italic: false,
-                strike: false,
-                code: false,
-            }]
-        }
-        _ => Vec::new(),
-    }
-}
-
-fn text_leaf_nodes(
-    workspace: &super_platinum_core::state::Workspace,
-    value: &serde_json::Value,
-    media: &MediaRegistry,
-) -> Vec<RichNode> {
-    let text = value
-        .get("text")
-        .and_then(serde_json::Value::as_str)
-        .unwrap_or_default()
-        .to_owned();
-    if text.contains('<') || !super_platinum_core::state::emoji_names_in_text(&text).is_empty() {
-        return plain_inline_nodes(workspace, &text, media);
-    }
-    let style = value.get("style");
-    let bold = style
-        .and_then(|s| s.get("bold"))
-        .and_then(serde_json::Value::as_bool)
-        .unwrap_or(false);
-    let italic = style
-        .and_then(|s| s.get("italic"))
-        .and_then(serde_json::Value::as_bool)
-        .unwrap_or(false);
-    let strike = style
-        .and_then(|s| s.get("strike"))
-        .and_then(serde_json::Value::as_bool)
-        .unwrap_or(false);
-    let code = style
-        .and_then(|s| s.get("code"))
-        .and_then(serde_json::Value::as_bool)
-        .unwrap_or(false);
-    if bold || italic || strike || code {
-        vec![RichNode::StyledText {
-            text,
-            bold,
-            italic,
-            strike,
-            code,
-        }]
-    } else {
-        vec![RichNode::Text(text)]
-    }
-}
-
-/// Split a rich_text_section's inline children into real paragraph lines when
-/// Slack embeds `\n` inside text leaves (the Hack Piano layout class).
-fn split_section_on_newlines(children: Vec<RichNode>) -> Vec<RichNode> {
-    let mut lines: Vec<Vec<RichNode>> = vec![Vec::new()];
-    for child in children {
-        match child {
-            RichNode::Text(text) if text.contains('\n') => {
-                let mut pieces = text.split('\n');
-                if let Some(first) = pieces.next()
-                    && !first.is_empty()
-                {
-                    lines
-                        .last_mut()
-                        .unwrap()
-                        .push(RichNode::Text(first.to_owned()));
-                }
-                for piece in pieces {
-                    lines.push(Vec::new());
-                    if !piece.is_empty() {
-                        lines
-                            .last_mut()
-                            .unwrap()
-                            .push(RichNode::Text(piece.to_owned()));
-                    }
-                }
-            }
-            RichNode::StyledText {
-                text,
-                bold,
-                italic,
-                strike,
-                code,
-            } if text.contains('\n') => {
-                let mut pieces = text.split('\n');
-                if let Some(first) = pieces.next()
-                    && !first.is_empty()
-                {
-                    lines.last_mut().unwrap().push(RichNode::StyledText {
-                        text: first.to_owned(),
-                        bold,
-                        italic,
-                        strike,
-                        code,
-                    });
-                }
-                for piece in pieces {
-                    lines.push(Vec::new());
-                    if !piece.is_empty() {
-                        lines.last_mut().unwrap().push(RichNode::StyledText {
-                            text: piece.to_owned(),
-                            bold,
-                            italic,
-                            strike,
-                            code,
-                        });
-                    }
-                }
-            }
-            other => lines.last_mut().unwrap().push(other),
-        }
-    }
-    if lines.len() == 1 {
-        return vec![RichNode::Paragraph(lines.pop().unwrap_or_default())];
-    }
-    lines
-        .into_iter()
-        .filter(|line| !line.is_empty())
-        .map(RichNode::Paragraph)
-        .collect()
-}
-
-fn child_nodes(
-    workspace: &super_platinum_core::state::Workspace,
-    value: &serde_json::Value,
-    media: &MediaRegistry,
-) -> Vec<RichNode> {
-    value
-        .get("elements")
-        .and_then(serde_json::Value::as_array)
-        .into_iter()
-        .flatten()
-        .flat_map(|element| block_nodes(workspace, element, media))
-        .collect()
-}
-
-fn plain_children(
-    workspace: &super_platinum_core::state::Workspace,
-    value: &serde_json::Value,
-    media: &MediaRegistry,
-) -> String {
-    child_nodes(workspace, value, media)
-        .into_iter()
-        .map(|node| match node {
-            RichNode::Text(text) | RichNode::StyledText { text, .. } | RichNode::Code(text) => text,
-            RichNode::Link { label, .. }
-            | RichNode::UserMention { label, .. }
-            | RichNode::ChannelMention { label, .. } => label,
-            RichNode::Emoji { glyph, .. } => glyph,
-            RichNode::Media { name, .. } => name,
-            RichNode::Paragraph(_) | RichNode::Quote(_) => String::new(),
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn expands_plain_slack_mentions_and_broadcasts() {
+    fn workspace_message(
+        value: serde_json::Value,
+    ) -> (
+        super_platinum_core::CoreAppState,
+        super_platinum_core::slack::models::Message,
+    ) {
         let core = crate::fixture::fixture_core();
-        let workspace = &core.workspaces["T1"];
-        let nodes = plain_inline_nodes(
-            workspace,
-            "hello <@U1> in <#C2|ship> <!channel>",
-            &MediaRegistry::default(),
-        );
-        assert!(nodes.iter().any(
-            |node| matches!(node, RichNode::UserMention { label, .. } if label == "@Maya Chen")
-        ));
-        assert!(nodes.iter().any(
-            |node| matches!(node, RichNode::ChannelMention { label, .. } if label == "#ship")
-        ));
-        assert!(
-            nodes.iter().any(
-                |node| matches!(node, RichNode::StyledText { text, .. } if text == "@channel")
-            )
+        let message = serde_json::from_value(value).expect("message fixture");
+        (core, message)
+    }
+
+    #[test]
+    fn custom_emoji_reactions_resolve_to_images() {
+        let (mut core, message) = workspace_message(serde_json::json!({
+            "ts": "1.0",
+            "user": "U1",
+            "reactions": [
+                {"name": "sob-pray", "count": 1, "users": ["U9"]},
+                {"name": "interrobang", "count": 6, "users": ["U0"]},
+                {"name": "gone-from-workspace", "count": 2, "users": []}
+            ]
+        }));
+        core.workspaces
+            .get_mut("T1")
+            .expect("fixture workspace")
+            .apply_emojis(vec![
+                serde_json::from_value(serde_json::json!({
+                    "name": "sob-pray",
+                    "value": "https://example.test/sob-pray.png"
+                }))
+                .expect("emoji fixture"),
+            ]);
+        let media = MediaRegistry::default();
+        let vm = message_vm(&core.workspaces["T1"], &message, &media);
+        assert!(vm.reactions[0].media.is_some(), "custom emoji → image");
+        assert!(vm.reactions[0].glyph.is_none());
+        assert_eq!(vm.reactions[1].glyph.as_deref(), Some("⁉️"));
+        assert!(vm.reactions[1].own, "self reaction is marked own");
+        // An unresolvable name keeps its shortcode rather than vanishing.
+        assert_eq!(
+            vm.reactions[2].glyph.as_deref(),
+            Some(":gone-from-workspace:")
         );
     }
 
     #[test]
-    fn splits_embedded_newlines_into_paragraphs() {
-        let nodes = split_section_on_newlines(vec![
-            RichNode::Text("First line\nSecond line".into()),
-            RichNode::Emoji {
-                name: "ship".into(),
-                glyph: "🚢".into(),
-            },
-        ]);
-        assert_eq!(nodes.len(), 2);
-        match &nodes[0] {
-            RichNode::Paragraph(children) => {
-                assert!(matches!(&children[0], RichNode::Text(t) if t == "First line"));
+    fn bot_messages_prefer_the_posting_users_avatar() {
+        // Slack shows the bot user's real profile image, not the generic
+        // `bot_profile.icons` placeholder.
+        let (mut core, message) = workspace_message(serde_json::json!({
+            "ts": "1.0",
+            "user": "U1",
+            "bot_id": "B1",
+            "bot_profile": {
+                "id": "B1",
+                "name": "Out of Context",
+                "user_id": "U1",
+                "icons": {"image_48": "https://a.slack-edge.com/img/plugins/app/bot_48.png"}
             }
-            _ => panic!("expected paragraph"),
-        }
-        match &nodes[1] {
-            RichNode::Paragraph(children) => {
-                assert!(matches!(&children[0], RichNode::Text(t) if t == "Second line"));
-                assert!(matches!(&children[1], RichNode::Emoji { .. }));
+        }));
+        let media = MediaRegistry::default();
+        let workspace = core.workspaces.get("T1").expect("fixture workspace");
+        let (_, url) = super_platinum_core::state::message_avatar(workspace, &message);
+        assert_eq!(url.as_deref(), Some("https://example.test/maya.png"));
+        let vm = message_vm(workspace, &message, &media);
+        assert!(vm.avatar.is_some());
+        assert!(vm.is_app);
+        core.workspaces.clear();
+    }
+
+    #[test]
+    fn bot_messages_fall_back_to_the_app_icon() {
+        let (core, message) = workspace_message(serde_json::json!({
+            "ts": "1.0",
+            "user": "UNKNOWN",
+            "bot_id": "B1",
+            "bot_profile": {
+                "id": "B1",
+                "name": "Out of Context",
+                "icons": {"image_48": "https://a.slack-edge.com/img/plugins/app/bot_48.png"}
             }
-            _ => panic!("expected paragraph"),
-        }
+        }));
+        let (_, url) = super_platinum_core::state::message_avatar(&core.workspaces["T1"], &message);
+        assert_eq!(
+            url.as_deref(),
+            Some("https://a.slack-edge.com/img/plugins/app/bot_48.png")
+        );
+    }
+
+    #[test]
+    fn block_body_wins_over_the_fallback_text() {
+        // The real #out-of-context shape: a context block plus a `text` fallback
+        // that repeats the mention and leaks the image's alt text.
+        let (core, message) = workspace_message(serde_json::json!({
+            "ts": "1.0",
+            "user": "U1",
+            "text": "user pfp <@U1>",
+            "blocks": [{
+                "type": "context",
+                "elements": [
+                    {"type": "image", "image_url": "https://example.test/pfp.png", "alt_text": "user pfp"},
+                    {"type": "mrkdwn", "text": "<@U1>"}
+                ]
+            }]
+        }));
+        let media = MediaRegistry::default();
+        let vm = message_vm(&core.workspaces["T1"], &message, &media);
+        let [RichNode::Context(children)] = vm.body.as_slice() else {
+            panic!("expected a single context node, got {:?}", vm.body);
+        };
+        assert!(matches!(children[0], RichNode::InlineImage { .. }));
+        assert!(
+            matches!(&children[1], RichNode::UserMention { label, .. } if label == "@Maya Chen")
+        );
+    }
+
+    #[test]
+    fn reply_bar_carries_avatars_and_last_reply() {
+        let (core, message) = workspace_message(serde_json::json!({
+            "ts": "1.0",
+            "user": "U1",
+            "reply_count": 7,
+            "reply_users": ["U1", "U2"],
+            "latest_reply": "1.5"
+        }));
+        let media = MediaRegistry::default();
+        let vm = message_vm(&core.workspaces["T1"], &message, &media);
+        assert_eq!(vm.reply_count, 7);
+        assert_eq!(vm.reply_avatars.len(), 2);
+        assert!(vm.reply_avatars[0].1.is_some());
+        assert!(vm.last_reply.is_some());
     }
 }

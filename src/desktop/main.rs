@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 mod agent;
 mod appearance;
 mod auth;
+mod blocks;
 mod bootstrap;
 mod channel_vm;
 mod clipboard;
@@ -19,6 +20,7 @@ mod performance;
 mod realtime;
 mod runtime;
 mod state;
+mod unfurl;
 mod view;
 
 use state::ShellState;
@@ -31,7 +33,7 @@ fn main() {
     if let Err(error) = notification::ensure_identity() {
         eprintln!("super-platinum: could not register Windows notification identity: {error}");
     }
-    let media = media::MediaRegistry::default();
+    let media = media::MediaRegistry::with_persistence();
     let config = media::desktop_config(media.clone());
     dioxus::LaunchBuilder::desktop()
         .with_cfg(config)

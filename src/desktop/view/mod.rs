@@ -13,7 +13,10 @@ use crate::state::{MainView, ShellState};
 
 use chrome::{channel_sidebar, conversation_header, profile_hover_card, rail_view};
 use composer::{composer, load_older_if_needed, measure_timeline};
-use rich::{message_plain_text, pending_attachment_strip, reaction_label, rich_node};
+use rich::{
+    attachment_embeds, message_plain_text, pending_attachment_strip, reactions_row, reply_bar,
+    rich_node,
+};
 use secondary::{activity_list_panel, dm_list_panel, secondary_view};
 use theme::theme_css;
 
@@ -22,6 +25,7 @@ const CSS: &str = concat!(
     include_str!("../styles/chrome.css"),
     include_str!("../styles/lists.css"),
     include_str!("../styles/conversation.css"),
+    include_str!("../styles/blocks.css"),
     include_str!("../styles/composer.css"),
     include_str!("../styles/overlays.css"),
 );
@@ -256,8 +260,11 @@ pub fn shell() -> Element {
                                             if let Some(user) = user.clone() { spawn(crate::bootstrap::open_profile(state, user)); }
                                         }
                                     },
-                                    if let Some(avatar) = message.avatar.as_ref() {
-                                        img { key: "avatar-{snapshot.media_epoch}-{avatar.uri()}", src: "{avatar.uri()}", alt: "{message.author}" }
+                                    // Initials until the bytes land: an `img`
+                                    // with nothing behind it paints the
+                                    // platform's broken-image icon.
+                                    if let Some(avatar) = message.avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
+                                        img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{message.author}" }
                                     } else { "{message.avatar_initials}" }
                                 }
                             }
@@ -351,47 +358,20 @@ pub fn shell() -> Element {
                                     div { class: "message-body",
                                         for node in &message.body { {rich_node(node, snapshot.media_epoch, state)} }
                                     }
+                                    if !message.attachments.is_empty() {
+                                        {attachment_embeds(state, snapshot.media_epoch, &message.attachments)}
+                                    }
                                     if let Some(attachments) = snapshot.pending_attachments_for_message(&message.id) {
                                         {pending_attachment_strip(attachments, snapshot.upload_ui_epoch)}
                                     }
                                 }
-                                if !message.reactions.is_empty() || message.reply_count > 0 {
+                                if !message.reactions.is_empty() {
                                     div { class: "message-actions",
-                                        for (reaction, count, own) in &message.reactions {
-                                            {
-                                                let glyph = reaction_label(reaction);
-                                                rsx! {
-                                                    button {
-                                                        class: if *own { "reaction own" } else { "reaction" },
-                                                        title: ":{reaction}:",
-                                                        onclick: {
-                                                            let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
-                                                            let ts = message.id.clone();
-                                                            let reaction = reaction.clone();
-                                                            let own = *own;
-                                                            move |_| {
-                                                                spawn(crate::bootstrap::toggle_reaction(state, channel.clone(), ts.clone(), reaction.clone(), own));
-                                                            }
-                                                        },
-                                                        "{glyph} {count}"
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        if message.reply_count > 0 {
-                                            button {
-                                                class: "replies",
-                                                onclick: {
-                                                    let id = message.id.clone();
-                                                    let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
-                                                    move |_| {
-                                                        spawn(crate::bootstrap::open_thread(state, channel.clone(), id.clone()));
-                                                    }
-                                                },
-                                                "{message.reply_count} replies"
-                                            }
-                                        }
+                                        {reactions_row(state, &snapshot.media, snapshot.media_epoch, active_channel_id, message)}
                                     }
+                                }
+                                if message.reply_count > 0 {
+                                    {reply_bar(state, &snapshot.media, snapshot.media_epoch, active_channel_id, message)}
                                 }
                             }
                         }
@@ -450,8 +430,8 @@ pub fn shell() -> Element {
                                             }
                                         }
                                     },
-                                    if let Some(avatar) = message.avatar.as_ref() {
-                                        img { key: "t-av-{snapshot.media_epoch}-{avatar.uri()}", src: "{avatar.uri()}", alt: "{message.author}" }
+                                    if let Some(avatar) = message.avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
+                                        img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{message.author}" }
                                     } else {
                                         "{message.avatar_initials}"
                                     }
@@ -473,19 +453,15 @@ pub fn shell() -> Element {
                                         }
                                     }
                                     div { class: "message-body", for node in &message.body { {rich_node(node, snapshot.media_epoch, state)} } }
+                                    if !message.attachments.is_empty() {
+                                        {attachment_embeds(state, snapshot.media_epoch, &message.attachments)}
+                                    }
                                     if let Some(attachments) = snapshot.pending_attachments_for_message(&message.id) {
                                         {pending_attachment_strip(attachments, snapshot.upload_ui_epoch)}
                                     }
                                     if !message.reactions.is_empty() {
                                         div { class: "message-actions",
-                                            for (reaction, count, own) in &message.reactions {
-                                                {
-                                                    let glyph = reaction_label(reaction);
-                                                    rsx! {
-                                                        span { class: if *own { "reaction own" } else { "reaction" }, "{glyph} {count}" }
-                                                    }
-                                                }
-                                            }
+                                            {reactions_row(state, &snapshot.media, snapshot.media_epoch, active_channel_id, message)}
                                         }
                                     }
                                 }

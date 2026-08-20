@@ -23,11 +23,22 @@ FIXTURES=(
   dm-history-failed dm-cached-refresh-failed composer-multiline
   composer-upload-progress
   edit-message-composer accounts
-  multi-paragraph-custom-emoji
+  multi-paragraph-custom-emoji message-unfurl-embed block-kit-layout
+  media-loading-state
 )
 
 echo "agent-ui-check: building the locked Dioxus desktop shell…"
 cargo build --manifest-path "$MANIFEST" --locked
+
+# A sleeping display has no composited window surface, so `screencapture -l`
+# fails outright ("could not create image from window") and every fixture in the
+# sweep is lost. Hold the display awake for the run instead.
+awake_pid=""
+if [[ "$(uname -s)" == "Darwin" ]] && command -v caffeinate >/dev/null 2>&1; then
+  caffeinate -u -t 2 || true
+  caffeinate -d &
+  awake_pid="$!"
+fi
 
 cleanup_pid=""
 cleanup_socket=""
@@ -40,7 +51,12 @@ cleanup() {
     rm -f "$cleanup_socket"
   fi
 }
-trap cleanup EXIT INT TERM
+release_display() {
+  if [[ -n "$awake_pid" ]] && kill -0 "$awake_pid" 2>/dev/null; then
+    kill "$awake_pid" 2>/dev/null || true
+  fi
+}
+trap 'cleanup; release_display' EXIT INT TERM
 
 fixture_index=0
 for fixture in "${FIXTURES[@]}"; do
@@ -77,7 +93,22 @@ for fixture in "${FIXTURES[@]}"; do
   # slack so a successful capture cannot be an all-white pre-paint surface.
   sleep 0.25
 
-  SUPER_PLATINUM_AGENT_SOCK="$socket" scripts/agentctl.sh screenshot "$png" >/dev/null
+  # The window can still have no capturable surface for a beat after that, which
+  # `screencapture` reports as a plain failure. Retry before giving up on the
+  # whole sweep.
+  captured=false
+  for _ in {1..10}; do
+    if SUPER_PLATINUM_AGENT_SOCK="$socket" scripts/agentctl.sh screenshot "$png" >/dev/null 2>&1; then
+      captured=true
+      break
+    fi
+    sleep 0.4
+  done
+  if [[ "$captured" != true ]]; then
+    echo "agent-ui-check: could not capture $fixture window" >&2
+    tail -40 "$log" >&2 || true
+    exit 1
+  fi
   echo "agent-ui-check: wrote $png"
 
   cleanup

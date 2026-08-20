@@ -27,5 +27,7 @@ pub use composer::{ComposerState, FormatMark, TextRange};
 pub use dispatcher::{AppDispatcher, DispatchHandle, Reducer, UiCommandExecutor};
 pub use events::{ConversationMessage, DiscoveryMessage, RuntimeMessage, WorkspaceMessage};
 pub use geometry::{Point, Size, Vector};
-pub use media::{MediaAssetId, MediaAssetIdError, MediaAssetKind};
+pub use media::{
+    CachedImage, MediaAssetId, MediaAssetIdError, MediaAssetKind, MediaStore, detect_image_mime,
+};
 pub use supervisor::{Generation, RealtimeSupervisor, SupervisorContext};

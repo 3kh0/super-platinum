@@ -203,12 +203,7 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
         .get(&team)
         .and_then(|workspace| workspace.avatar_url(&user))
     {
-        shell.media.register(
-            super_platinum_core::MediaAssetKind::Avatar,
-            &url,
-            "image/jpeg",
-            url.contains("slack-edge.com") || url.contains("slack.com"),
-        );
+        shell.media.register_avatar(&user, &url);
     }
     shell.refresh_from_core();
     drop(shell);

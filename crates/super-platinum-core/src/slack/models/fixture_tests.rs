@@ -495,3 +495,87 @@ fn deserialize_bot_profile_message() {
         Some("https://example.test/48.png")
     );
 }
+
+#[test]
+fn deserialize_message_unfurl_attachment() {
+    // Trimmed from a real #out-of-context bot post.
+    let page: HistoryPage = serde_json::from_str(
+        r#"{"ok":true,"messages":[{
+                "type":"message",
+                "ts":"1787180246.285849",
+                "user":"U0BKU1GSAGJ",
+                "bot_id":"B0BKVUPP2F3",
+                "text":"user pfp <@U0A55A4B21K>",
+                "blocks":[{
+                    "type":"context",
+                    "block_id":"8122cf2a",
+                    "elements":[
+                        {"type":"image","image_url":"https://cachet.example/u/r","alt_text":"user pfp"},
+                        {"type":"mrkdwn","text":"<@U0A55A4B21K>","verbatim":false}
+                    ]
+                }],
+                "attachments":[{
+                    "id":1,
+                    "author_icon":"https://avatars.slack-edge.com/x_48.png",
+                    "author_id":"U09AFPZ852L",
+                    "author_name":"kc",
+                    "author_subname":"kc",
+                    "channel_id":"C09M3V4E7MM",
+                    "channel_team":"T0266FRGM",
+                    "color":"D0D0D0",
+                    "footer":"Thread in Slack Conversation",
+                    "from_url":"https://example.slack.com/archives/C09M3V4E7MM/p1787153585078499",
+                    "is_msg_unfurl":true,
+                    "is_reply_unfurl":true,
+                    "is_share":true,
+                    "mrkdwn_in":["text"],
+                    "text":"aarav gets TOUCHED by slack icl",
+                    "ts":"1787153585.078499",
+                    "blocks":[{"type":"rich_text","elements":[{"type":"rich_text_section",
+                        "elements":[{"type":"text","text":"aarav gets TOUCHED by slack icl"}]}]}]
+                }]
+            }]}"#,
+    )
+    .unwrap();
+    let attachment = &page.messages[0].attachments[0];
+    assert_eq!(attachment.author_id.as_deref(), Some("U09AFPZ852L"));
+    assert_eq!(attachment.channel_id.as_deref(), Some("C09M3V4E7MM"));
+    assert_eq!(attachment.ts.as_deref(), Some("1787153585.078499"));
+    assert!(attachment.is_msg_unfurl && attachment.is_reply_unfurl && attachment.is_share);
+    assert_eq!(attachment.mrkdwn_in, vec!["text".to_owned()]);
+    assert_eq!(attachment.blocks.len(), 1);
+    assert_eq!(page.messages[0].blocks.len(), 1);
+}
+
+#[test]
+fn deserialize_link_unfurl_and_numeric_attachment_ts() {
+    // Legacy bot attachments send `ts` as a bare epoch number, not a string.
+    // Rejecting those broke warm boot from the on-disk cache.
+    let page: HistoryPage = serde_json::from_str(
+        r#"{"ok":true,"messages":[{
+                "type":"message",
+                "ts":"1787000000.000100",
+                "attachments":[{
+                    "id":1,
+                    "service_name":"Stardance",
+                    "service_icon":"https://example.test/icon.png",
+                    "title":"UrStudyBuddy",
+                    "title_link":"https://example.test/projects/22862",
+                    "text":"Here is a buddy for u.",
+                    "image_url":"https://example.test/og.png",
+                    "image_width":1200,
+                    "image_height":630,
+                    "footer":"Stardance",
+                    "footer_icon":"https://example.test/footer.png",
+                    "ts":1786923846
+                }]
+            }]}"#,
+    )
+    .unwrap();
+    let attachment = &page.messages[0].attachments[0];
+    assert_eq!(attachment.ts.as_deref(), Some("1786923846"));
+    assert_eq!(attachment.image_width, Some(1200));
+    assert_eq!(attachment.image_height, Some(630));
+    assert_eq!(attachment.service_name.as_deref(), Some("Stardance"));
+    assert!(!attachment.is_msg_unfurl);
+}
