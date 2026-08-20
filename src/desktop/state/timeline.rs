@@ -35,6 +35,11 @@ impl ShellState {
         self.active_channel = index;
         self.channel_switch_started = Some(std::time::Instant::now());
         self.core.active_channel = Some(channel_id.clone());
+        if let Some(team) = self.core.active_team.clone()
+            && let Some(workspace) = self.core.workspaces.get_mut(&team)
+        {
+            workspace.remember_visit(&channel_id);
+        }
         // Keep DMs / Activity list panels open when opening a conversation.
         if !matches!(self.main_view, MainView::Dms | MainView::Activity) {
             self.main_view = MainView::Home;

@@ -9,7 +9,8 @@ pub(crate) fn channel_vm(
     media: &MediaRegistry,
 ) -> ChannelVm {
     let name = super_platinum_core::state::channel_display_name(workspace, channel);
-    let unread = workspace.unread_total(channel) > 0;
+    let unread_count = workspace.unread_total(channel);
+    let unread = unread_count > 0;
     let mention_count = workspace
         .messages
         .get(&channel.id)
@@ -32,6 +33,7 @@ pub(crate) fn channel_vm(
         id: channel.id.clone(),
         name,
         unread,
+        unread_count,
         mention_count,
         is_im: channel.is_im,
         is_mpim: channel.is_mpim,

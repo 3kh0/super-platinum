@@ -19,7 +19,7 @@ FIXTURES=(
   thread-unread-divider main-dev settings appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background
   image-viewer-upload image-viewer-embed-compact gif-picker-attachment
-  video-viewer search activity-unread activity-channel-post dms
+  video-viewer search palette activity-unread activity-channel-post dms
   dm-history-failed dm-cached-refresh-failed composer-multiline
   composer-upload-progress
   edit-message-composer accounts

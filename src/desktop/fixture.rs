@@ -24,6 +24,7 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
         serde_json::json!({"id":"C5","name":"ops-private","is_channel":true,"is_private":true,"is_group":true}),
         serde_json::json!({"id":"C6","name":"vercel-embassy","is_channel":true,"is_ext_shared":true}),
         serde_json::json!({"id":"D1","name":"Maya Chen","is_im":true,"user":"U1","has_unreads":true,"unread_count":1,"unread_count_display":1}),
+        serde_json::json!({"id":"D2","name":"Jules","is_im":true,"user":"U2"}),
         serde_json::json!({"id":"G1","name":"mpdm-maya--jules--you-1","is_mpim":true,"is_group":true,"is_private":true}),
     ] {
         let channel: super_platinum_core::slack::models::Channel =
@@ -31,6 +32,13 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
         workspace.channels.insert(channel.id.clone(), channel);
     }
     workspace.starred_order = vec!["C1".into()];
+    workspace.recent_channels = vec![
+        "D1".into(),
+        "D2".into(),
+        "C2".into(),
+        "C1".into(),
+        "C3".into(),
+    ];
     for user in [
         serde_json::json!({"id":"U0","name":"you","real_name":"You","profile":{"display_name":"You","image_72":"https://example.test/you.png"}}),
         serde_json::json!({"id":"U1","name":"maya","real_name":"Maya Chen","tz_offset":-25200,"profile":{"display_name":"Maya Chen","title":"Desktop engineer","status_text":"Shipping the migration","status_emoji":":ship:","email":"maya@example.com","pronouns":"she/her","image_72":"https://example.test/maya.png","image_512":"https://example.test/maya-lg.png"}}),
@@ -43,6 +51,9 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
     workspace
         .presence
         .insert("U1".into(), super_platinum_core::state::Presence::Active);
+    workspace
+        .presence
+        .insert("U2".into(), super_platinum_core::state::Presence::Away);
     let messages = vec![
         super_platinum_core::slack::models::Message {
             user: Some("U1".into()),

@@ -151,35 +151,7 @@ pub fn overlay_view(
                             p { class: "results-empty", "Press Enter to search messages" }
                         }
                     } else {
-                        for (selection, index) in snapshot.palette_matches().into_iter().enumerate() {
-                            if let Some(channel) = snapshot.channels.get(index).cloned() {
-                                {
-                                    let glyph = if channel.is_im {
-                                        "●"
-                                    } else if channel.is_mpim {
-                                        "👥"
-                                    } else if channel.is_private {
-                                        "🔒"
-                                    } else {
-                                        "#"
-                                    };
-                                    let name = channel.name.clone();
-                                    let unread = channel.unread;
-                                    rsx! {
-                                        button {
-                                            class: if selection == snapshot.palette_selected { "palette-result selected" } else { "palette-result" },
-                                            onclick: move |_| {
-                                                state.write().select_channel(index);
-                                                state.write().overlay = None;
-                                                spawn(crate::bootstrap::refresh_selected_channel(state));
-                                            },
-                                            "{glyph} {name}"
-                                            if unread { span { " · unread" } }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        {palette_results(state, snapshot)}
                     }
                 }
             } else if overlay == Overlay::Viewer {
@@ -359,6 +331,100 @@ pub fn overlay_view(
                 }
             }
         }
+    }
+}
+
+fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
+    let matches = snapshot.palette_matches();
+    let query_empty = snapshot.palette_query.trim().is_empty();
+    let empty = matches.is_empty();
+    let show_recents = query_empty && !empty;
+    let lock_src = crate::icons::lock_uri();
+    rsx! {
+        if show_recents {
+            div { class: "palette-section", "Recent" }
+        }
+        for (selection, index) in matches.into_iter().enumerate() {
+            if let Some(channel) = snapshot.channels.get(index) {
+                {
+                    let selected = selection == snapshot.palette_selected;
+                    let class = palette_row_class(channel.unread, selected);
+                    let name = channel.name.clone();
+                    let is_im = channel.is_im;
+                    let is_mpim = channel.is_mpim;
+                    let is_private = channel.is_private;
+                    let initials = channel.avatar_initials.clone();
+                    let avatar = channel.avatar.clone();
+                    let presence = channel.presence;
+                    let mention_count = channel.mention_count;
+                    let unread = channel.unread;
+                    let unread_count = channel.unread_count;
+                    let member_count = channel.member_count;
+                    let show_dm_badge = is_im && unread && mention_count == 0 && unread_count > 0;
+                    let row_key = channel.id.clone();
+                    rsx! {
+                        button {
+                            class: "{class}",
+                            key: "palette-{row_key}",
+                            onclick: move |_| {
+                                state.write().select_channel(index);
+                                state.write().overlay = None;
+                                spawn(crate::bootstrap::refresh_selected_channel(state));
+                            },
+                            span { class: "palette-icon",
+                                if is_im {
+                                    span { class: "palette-avatar-wrap",
+                                        if let Some(avatar) = avatar.as_ref() {
+                                            img {
+                                                key: "pal-av-{snapshot.media_epoch}-{avatar.uri()}",
+                                                class: "palette-avatar",
+                                                src: "{avatar.uri()}",
+                                                alt: "{name}"
+                                            }
+                                        } else {
+                                            span { class: "palette-avatar placeholder", "{initials}" }
+                                        }
+                                        span { class: if presence == crate::model::PresenceVm::Active { "palette-presence active" } else { "palette-presence" } }
+                                    }
+                                } else if is_mpim {
+                                    span { class: "palette-mpdm", "{member_count.unwrap_or(0)}" }
+                                } else if is_private {
+                                    img { class: "icon sm", src: "{lock_src}", alt: "private" }
+                                } else {
+                                    span { class: "palette-hash", "#" }
+                                }
+                            }
+                            span { class: "palette-name", "{name}" }
+                            if mention_count > 0 {
+                                span { class: "ping-badge",
+                                    if mention_count > 99 { "99+" } else { "{mention_count}" }
+                                }
+                            } else if show_dm_badge {
+                                span { class: "ping-badge",
+                                    if unread_count > 99 { "99+" } else { "{unread_count}" }
+                                }
+                            } else if unread && !is_im {
+                                i { class: "unread-dot" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if empty && query_empty {
+            p { class: "results-empty", "No recent conversations yet" }
+        } else if empty {
+            p { class: "results-empty", "No matching conversations" }
+        }
+    }
+}
+
+fn palette_row_class(unread: bool, selected: bool) -> &'static str {
+    match (unread, selected) {
+        (true, true) => "palette-result unread selected",
+        (true, false) => "palette-result unread",
+        (false, true) => "palette-result selected",
+        (false, false) => "palette-result",
     }
 }
 

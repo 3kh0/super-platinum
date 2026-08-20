@@ -135,6 +135,10 @@ impl ShellState {
             }
         }
         if indices.is_empty() {
+            if self.palette_query.trim().is_empty() {
+                // Empty recents should not dump every loaded conversation.
+                return Vec::new();
+            }
             return self.palette_matches_fallback();
         }
         indices

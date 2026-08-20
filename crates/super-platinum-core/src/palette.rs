@@ -26,6 +26,7 @@ pub struct PaletteState {
 }
 
 const MAX_RESULTS: usize = 12;
+const RECENTS_SHOWN: usize = crate::state::PALETTE_RECENTS_SHOWN;
 
 fn match_score(haystack: &str, needle: &str) -> Option<i32> {
     let hay = haystack.to_lowercase();
@@ -97,6 +98,9 @@ struct Scored {
 
 fn entry_for_channel(ws: &Workspace, id: &ChannelId) -> Option<PaletteEntry> {
     let channel = ws.channels.get(id)?;
+    if channel.is_archived {
+        return None;
+    }
     if channel.is_im {
         let user = state::dm_user_id(channel)?.to_owned();
         let label = ws.display_name(&user);
@@ -159,11 +163,16 @@ fn score_channel(
     })
 }
 
-pub fn recents(ws: &Workspace, active: Option<&str>) -> Vec<PaletteEntry> {
-    ws.recent_channels
-        .iter()
-        .filter(|id| active != Some(id.as_str()))
+pub fn recents(ws: &Workspace) -> Vec<PaletteEntry> {
+    let seeded = ws.last_active_channel.as_ref().into_iter();
+    let ids = if ws.recent_channels.is_empty() {
+        seeded.cloned().collect::<Vec<_>>()
+    } else {
+        ws.recent_channels.clone()
+    };
+    ids.iter()
         .filter_map(|id| entry_for_channel(ws, id))
+        .take(RECENTS_SHOWN)
         .collect()
 }
 
@@ -174,7 +183,7 @@ pub fn rank(
 ) -> Vec<PaletteEntry> {
     let needle = query.trim().to_lowercase();
     if needle.is_empty() {
-        return recents(ws, None);
+        return recents(ws);
     }
 
     let mut scored: Vec<Scored> = Vec::new();
@@ -418,7 +427,7 @@ mod tests {
     }
 
     #[test]
-    fn recents_are_ordered_and_skip_active() {
+    fn recents_are_ordered_and_include_current() {
         let mut ws = ws();
         insert_channel(&mut ws, channel("C1", "one"));
         insert_channel(&mut ws, channel("C2", "two"));
@@ -427,9 +436,66 @@ mod tests {
         ws.touch_recent(&"C2".into());
         ws.touch_recent(&"C3".into());
 
-        let entries = recents(&ws, Some("C3"));
+        let entries = recents(&ws);
         let labels: Vec<_> = entries.iter().map(|e| e.label.clone()).collect();
-        assert_eq!(labels, ["two", "one"]);
+        assert_eq!(labels, ["three", "two", "one"]);
+    }
+
+    #[test]
+    fn recents_cap_at_five_and_include_dms() {
+        let mut ws = ws();
+        ws.users
+            .insert("U_ALICE".into(), user("U_ALICE", "alice", "Alice"));
+        insert_channel(&mut ws, im("D_ALICE", "U_ALICE"));
+        for i in 0..8 {
+            let id = format!("C{i}");
+            insert_channel(&mut ws, channel(&id, &format!("chan-{i}")));
+            ws.touch_recent(&id);
+        }
+        ws.touch_recent(&"D_ALICE".into());
+
+        let entries = recents(&ws);
+        assert_eq!(entries.len(), crate::state::PALETTE_RECENTS_SHOWN);
+        assert_eq!(entries[0].label, "Alice");
+        assert_eq!(
+            entries[0].target,
+            PaletteTarget::User {
+                user: "U_ALICE".into(),
+                dm: Some("D_ALICE".into()),
+            }
+        );
+    }
+
+    #[test]
+    fn recents_seed_from_last_active_when_empty() {
+        let mut ws = ws();
+        insert_channel(&mut ws, channel("C1", "one"));
+        ws.last_active_channel = Some("C1".into());
+        let labels: Vec<_> = recents(&ws).iter().map(|e| e.label.clone()).collect();
+        assert_eq!(labels, ["one"]);
+    }
+
+    #[test]
+    fn recents_skip_archived() {
+        let mut ws = ws();
+        let mut archived = channel("C_OLD", "old");
+        archived.is_archived = true;
+        insert_channel(&mut ws, archived);
+        insert_channel(&mut ws, channel("C_LIVE", "live"));
+        ws.touch_recent(&"C_OLD".into());
+        ws.touch_recent(&"C_LIVE".into());
+        let labels: Vec<_> = recents(&ws).iter().map(|e| e.label.clone()).collect();
+        assert_eq!(labels, ["live"]);
+    }
+
+    #[test]
+    fn remember_visit_updates_recents_and_last_active() {
+        let mut ws = ws();
+        ws.remember_visit(&"C1".into());
+        ws.remember_visit(&"C2".into());
+        ws.remember_visit(&"C1".into());
+        assert_eq!(ws.last_active_channel.as_deref(), Some("C1"));
+        assert_eq!(ws.recent_channels, vec!["C1".to_string(), "C2".to_string()]);
     }
 
     #[test]

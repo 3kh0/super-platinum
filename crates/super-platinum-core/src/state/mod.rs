@@ -7,6 +7,8 @@ use crate::slack::models::{
 use crate::slack::realtime::Connection;
 
 pub const RECENT_CHANNELS_MAX: usize = 20;
+/// Conversations shown in the empty quick-switcher recents list.
+pub const PALETTE_RECENTS_SHOWN: usize = 5;
 
 pub const FRECENCY_HALF_LIFE_SECS: f64 = 7.0 * 24.0 * 3600.0;
 
@@ -648,6 +650,13 @@ impl Workspace {
         self.recent_channels.retain(|existing| existing != id);
         self.recent_channels.insert(0, id.clone());
         self.recent_channels.truncate(RECENT_CHANNELS_MAX);
+    }
+
+    /// Record an explicit conversation visit for recents, last-active, and frecency.
+    pub fn remember_visit(&mut self, id: &ChannelId) {
+        self.last_active_channel = Some(id.clone());
+        self.touch_recent(id);
+        self.record_visit(id, now_secs());
     }
 
     pub fn record_visit(&mut self, id: &ChannelId, now: i64) {

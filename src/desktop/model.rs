@@ -138,6 +138,7 @@ pub struct ChannelVm {
     pub id: String,
     pub name: String,
     pub unread: bool,
+    pub unread_count: u32,
     pub mention_count: u32,
     pub is_im: bool,
     pub is_mpim: bool,

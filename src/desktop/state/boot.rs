@@ -113,9 +113,15 @@ impl ShellState {
             .workspaces
             .values()
             .map(|workspace_session| {
-                let workspace = cache.load_workspace(workspace_session)?.unwrap_or_else(|| {
-                    super_platinum_core::state::Workspace::from_session(workspace_session)
-                });
+                let mut workspace =
+                    cache.load_workspace(workspace_session)?.unwrap_or_else(|| {
+                        super_platinum_core::state::Workspace::from_session(workspace_session)
+                    });
+                if workspace.recent_channels.is_empty()
+                    && let Some(id) = workspace.last_active_channel.clone()
+                {
+                    workspace.touch_recent(&id);
+                }
                 Ok((workspace_session.team_id.clone(), workspace))
             })
             .collect::<Result<std::collections::BTreeMap<_, _>, super_platinum_core::error::AppError>>()?;
@@ -494,6 +500,7 @@ impl ShellState {
             }
             "activity-channel-post" => state.main_view = MainView::Activity,
             "accounts" => state.overlay = Some(Overlay::Accounts),
+            "palette" => state.overlay = Some(Overlay::Palette),
             "animated-reaction" => {
                 keep_recent_messages(&mut state, 8);
                 if let Some(message) = state.messages.last_mut() {
