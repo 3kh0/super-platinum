@@ -57,6 +57,11 @@ pub const PLUS: &str = "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z";
 // Filled triangle — matches the pre-migration send control in the composer.
 pub const SEND: &str = "M8 5v14l11-7z";
 pub const COMPOSE: &str = "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z";
+pub const MESSAGE: &str =
+    "M4 3h16c1.1 0 2 .9 2 2v11c0 1.1-.9 2-2 2H7l-5 4V5c0-1.1.9-2 2-2zm0 2v12.83L6.3 16H20V5H4z";
+pub const CLOCK: &str = "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-13h-2v6l5.25 3.15 1-1.64-4.25-2.51V7z";
+pub const USER_ADD: &str = "M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z";
+pub const MORE: &str = "M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z";
 #[allow(dead_code)]
 pub const AT: &str = "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10h5v-2h-5c-4.34 0-8-3.66-8-8s3.66-8 8-8 8 3.66 8 8v1.43c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57V12c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.38 0 2.64-.56 3.54-1.47.65.89 1.77 1.47 2.96 1.47 1.97 0 3.5-1.6 3.5-3.57V12c0-5.52-4.48-10-10-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z";
 
@@ -93,6 +98,18 @@ pub fn send_uri() -> String {
 }
 pub fn compose_uri() -> String {
     svg_data_uri(COMPOSE)
+}
+pub fn message_uri() -> String {
+    svg_data_uri(MESSAGE)
+}
+pub fn clock_uri() -> String {
+    svg_data_uri(CLOCK)
+}
+pub fn user_add_uri() -> String {
+    svg_data_uri(USER_ADD)
+}
+pub fn more_uri() -> String {
+    svg_data_uri(MORE)
 }
 #[allow(dead_code)]
 pub fn at_uri() -> String {

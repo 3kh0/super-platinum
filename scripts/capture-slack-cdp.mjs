@@ -7,6 +7,7 @@
 // Usage:
 //   node scripts/capture-slack-cdp.mjs --list
 //   node scripts/capture-slack-cdp.mjs --eval 'document.title'
+//   node scripts/capture-slack-cdp.mjs --hover '[data-qa=message_sender_name]'
 //   node scripts/capture-slack-cdp.mjs --screenshot out.png
 //   node scripts/capture-slack-cdp.mjs [--filter substr] [--reload]   # network capture until Ctrl+C
 //
@@ -86,6 +87,98 @@ if (has('--eval')) {
   });
   const value = result.result?.value;
   console.log(typeof value === 'string' ? value : JSON.stringify(value, null, 1));
+  process.exit(0);
+}
+
+if (has('--hover')) {
+  const selector = String(flag('--hover'));
+  const result = await cdp.send('Runtime.evaluate', {
+    expression: `(() => {
+      const element = document.querySelector(${JSON.stringify(selector)});
+      if (!element) return null;
+      element.scrollIntoView({ block: 'center', inline: 'center' });
+      const rect = element.getBoundingClientRect();
+      return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+    })()`,
+    returnByValue: true,
+  });
+  const point = result.result?.value;
+  if (!point) {
+    console.error(`no element matched hover selector: ${selector}`);
+    process.exit(1);
+  }
+  await cdp.send('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: point.x,
+    y: point.y,
+  });
+  await new Promise((resolve) => setTimeout(resolve, Number(flag('--wait', 1200))));
+  const visible = await cdp.send('Runtime.evaluate', {
+    expression: `(() => [...document.querySelectorAll('body *')]
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        const text = element.innerText || '';
+        return rect.width > 250 && rect.height > 140 &&
+          text.includes('Message') && text.includes('local time');
+      })
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          tag: element.tagName,
+          role: element.getAttribute('role'),
+          qa: element.getAttribute('data-qa'),
+          className: element.className,
+          text: element.innerText,
+          rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+          html: element.outerHTML,
+        };
+      })
+      .sort((a, b) => (a.rect.width * a.rect.height) - (b.rect.width * b.rect.height))
+      .slice(0, 3))()`,
+    returnByValue: true,
+  });
+  if (has('--screenshot')) {
+    const out = String(flag('--screenshot', 'slack.png'));
+    const shot = await cdp.send('Page.captureScreenshot', { format: 'png' });
+    fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
+    fs.writeFileSync(out, Buffer.from(shot.data, 'base64'));
+  }
+  console.log(JSON.stringify({ point, visible: visible.result?.value }, null, 1));
+  process.exit(0);
+}
+
+if (has('--click')) {
+  const selector = String(flag('--click'));
+  const result = await cdp.send('Runtime.evaluate', {
+    expression: `(() => {
+      const element = document.querySelector(${JSON.stringify(selector)});
+      if (!element) return null;
+      element.scrollIntoView({ block: 'center', inline: 'center' });
+      const rect = element.getBoundingClientRect();
+      return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+    })()`,
+    returnByValue: true,
+  });
+  const point = result.result?.value;
+  if (!point) {
+    console.error(`no element matched click selector: ${selector}`);
+    process.exit(1);
+  }
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point });
+  await cdp.send('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    button: 'left',
+    clickCount: 1,
+    ...point,
+  });
+  await cdp.send('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    button: 'left',
+    clickCount: 1,
+    ...point,
+  });
+  await new Promise((resolve) => setTimeout(resolve, Number(flag('--wait', 800))));
+  console.log(JSON.stringify(point));
   process.exit(0);
 }
 

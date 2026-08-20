@@ -214,8 +214,19 @@
 }
 .attachment-footer img { width: 13px; height: 13px; border-radius: 2px; }
 .attachment-footer a { color: var(--link); }
-.attachment-footer-origin { display: inline-flex; align-items: center; gap: 4px; }
-.attachment-footer-origin .channel-chip { font-size: 11px; }
+.attachment-footer-origin { display: inline; max-width: 100%; overflow-wrap: anywhere; }
+.attachment-channel-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--link);
+  font: inherit;
+  overflow-wrap: anywhere;
+  text-align: left;
+  white-space: normal;
+}
+.attachment-channel-link:hover { text-decoration: underline; }
 .attachment-footer-sep { color: var(--border-strong); }
 
 /* ── Reactions and the thread reply bar ──────────────── */

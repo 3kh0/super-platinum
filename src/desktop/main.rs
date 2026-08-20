@@ -17,6 +17,7 @@ mod model;
 mod notification;
 mod overlays;
 mod performance;
+mod profile;
 mod realtime;
 mod runtime;
 mod state;
@@ -142,6 +143,10 @@ fn app() -> Element {
                         continue;
                     }
                     if shell.overlay.take().is_some() {
+                        continue;
+                    }
+                    if shell.profile_user.is_some() {
+                        shell.close_profile();
                         continue;
                     }
                     if shell.thread_root.take().is_some() {

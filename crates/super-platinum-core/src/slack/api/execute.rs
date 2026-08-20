@@ -208,6 +208,30 @@ pub async fn fetch_team_profile_fields(
     Ok(page.profile.fields)
 }
 
+pub async fn add_priority_user(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    user: UserId,
+) -> Result<(), Error> {
+    transport
+        .execute(users_priority_add(client, workspace, user))
+        .await?;
+    Ok(())
+}
+
+pub async fn remove_priority_user(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    user: UserId,
+) -> Result<(), Error> {
+    transport
+        .execute(users_priority_remove(client, workspace, user))
+        .await?;
+    Ok(())
+}
+
 pub async fn fetch_channels_info(
     transport: &Transport,
     client: &SlackClient,

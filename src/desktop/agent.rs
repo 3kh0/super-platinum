@@ -269,8 +269,12 @@ fn dispatch(
             state.write().overlay = Some(Overlay::Settings);
             AgentResponse::ok(id, json!({ "settings_open": true }))
         }
-        AgentCommand::CloseSettings | AgentCommand::CloseProfile => {
+        AgentCommand::CloseSettings => {
             state.write().overlay = None;
+            AgentResponse::ok(id, json!({ "closed": true }))
+        }
+        AgentCommand::CloseProfile => {
+            state.write().close_profile();
             AgentResponse::ok(id, json!({ "closed": true }))
         }
         AgentCommand::OpenProfile { user } => {
@@ -500,6 +504,24 @@ fn state_snapshot(state: &ShellState) -> Value {
     };
     let active_channel = state.channels.get(state.active_channel);
     let palette_matches = state.palette_matches();
+    let profile = state.profile_user.as_ref().map(|user_id| {
+        let workspace = state
+            .core
+            .active_team
+            .as_ref()
+            .and_then(|team| state.core.workspaces.get(team));
+        let user = workspace.and_then(|workspace| workspace.users.get(user_id));
+        let profile = user.and_then(|user| user.profile.as_ref());
+        json!({
+            "user": user_id,
+            "name": user.map(|user| super_platinum_core::state::display_name(Some(user), user_id)),
+            "loading": state.core.profile_pane.as_ref().is_some_and(|pane| pane.user == *user_id && pane.loading),
+            "is_vip": workspace.is_some_and(|workspace| workspace.vip_users.contains(user_id)),
+            "recent_dm_count": user.map(|user| user.im_mpim_ids.len()).unwrap_or(0),
+            "custom_field_count": profile.map(|profile| profile.fields.len()).unwrap_or(0),
+            "pane_width": state.profile_pane_width,
+        })
+    });
     json!({
         "screen": screen,
         "signed_in": state.signed_in,
@@ -509,6 +531,8 @@ fn state_snapshot(state: &ShellState) -> Value {
         "active_channel_name": active_channel.map(|channel| &channel.name),
         "thread_open": state.thread_root.is_some(),
         "active_thread": state.thread_root,
+        "profile": profile,
+        "profile_hover": state.profile_hover.as_ref().map(|hover| &hover.user_id),
         "palette_open": state.overlay == Some(Overlay::Palette),
         "palette": (state.overlay == Some(Overlay::Palette)).then(|| json!({
             "query": state.palette_query,
@@ -599,6 +623,7 @@ fn help_data() -> Value {
             {"cmd": "ping"}, {"cmd": "state"}, {"cmd": "open-palette"},
             {"cmd": "set-query"}, {"cmd": "submit"}, {"cmd": "select-channel"},
             {"cmd": "search"}, {"cmd": "open-settings"}, {"cmd": "screenshot"},
+            {"cmd": "open-profile"}, {"cmd": "close-profile"},
             {"cmd": "allow-destructive"}, {"cmd": "send"}
         ]
     })

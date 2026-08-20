@@ -14,7 +14,8 @@ MANIFEST="Cargo.toml"
 BINARY="target/debug/super-platinum"
 FIXTURES=(
   login loading channel main-general-new-message-motion unreads threads
-  animated-reaction profile-hover-card profile-pane dm-header-compact
+  animated-reaction profile-hover-card profile-pane profile-pane-rich-fields
+  profile-pane-min-width dm-header-compact
   channel-thread-profile-headers channel-huddle chat-paused-pill
   thread-unread-divider main-dev settings appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background

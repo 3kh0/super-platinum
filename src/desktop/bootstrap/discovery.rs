@@ -142,9 +142,20 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
     {
         let mut shell = state.write();
         shell.profile_user = Some(user.clone());
-        shell.overlay = Some(crate::state::Overlay::Profile);
+        shell.profile_hover = None;
+        shell.profile_menu_open = false;
+        shell.thread_root = None;
+        shell.thread_messages.clear();
+        shell.core.profile_pane = Some(super_platinum_core::domain::ProfilePaneState {
+            user: user.clone(),
+            loading: true,
+            error: None,
+        });
     }
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+        if let Some(pane) = state.write().core.profile_pane.as_mut() {
+            pane.loading = false;
+        }
         return;
     }
     let Some((transport, client, workspaces)) = credentials(&state) else {
@@ -170,14 +181,92 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
             std::slice::from_ref(&user),
         ));
     }
-    let (profile, extras) = tokio::join!(
+    let needs_fields = !state.read().core.profile_fields.contains_key(&team);
+    let (profile, extras, fields) = tokio::join!(
         api::fetch_user_profile(&transport, &client, &workspace_session, user.clone()),
         api::fetch_user_profile_extras(&transport, &client, &workspace_session, user.clone()),
+        async {
+            if needs_fields {
+                api::fetch_team_profile_fields(&transport, &client, &workspace_session).await
+            } else {
+                Ok(Vec::new())
+            }
+        },
+    );
+    if state.read().profile_user.as_deref() != Some(&user) {
+        return;
+    }
+    let profile_emojis = profile
+        .as_ref()
+        .ok()
+        .map(profile_emoji_names)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|name| !super_platinum_core::state::is_standard_emoji(name))
+        .filter(|name| {
+            state
+                .read()
+                .core
+                .workspaces
+                .get(&team)
+                .is_some_and(|workspace| !workspace.custom_emoji.contains_key(name))
+        })
+        .take(100)
+        .collect::<Vec<_>>();
+    let missing_dm_ids = extras
+        .as_ref()
+        .map(|extras| {
+            extras
+                .im_mpim_ids
+                .iter()
+                .filter(|id| {
+                    state
+                        .read()
+                        .core
+                        .workspaces
+                        .get(&team)
+                        .is_none_or(|workspace| !workspace.channels.contains_key(*id))
+                })
+                .cloned()
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    let (recent_channels, hydrated_emojis) = tokio::join!(
+        async {
+            if missing_dm_ids.is_empty() {
+                Vec::new()
+            } else {
+                api::fetch_channels_info(&transport, &client, &workspace_session, missing_dm_ids)
+                    .await
+                    .unwrap_or_default()
+            }
+        },
+        async {
+            if profile_emojis.is_empty() {
+                Ok(Vec::new())
+            } else {
+                api::fetch_emojis_info(
+                    &transport,
+                    &client,
+                    &workspace_session,
+                    profile_emojis.clone(),
+                )
+                .await
+            }
+        },
     );
     if state.read().profile_user.as_deref() != Some(&user) {
         return;
     }
     let mut shell = state.write();
+    let profile_error = profile.as_ref().err().map(ToString::to_string);
+    if hydrated_emojis.is_ok() {
+        shell.core.emoji_hydrated.extend(
+            profile_emojis
+                .iter()
+                .map(|name| (team.clone(), name.clone())),
+        );
+    }
     if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
         let member = workspace.users.entry(user.clone()).or_insert_with(|| {
             super_platinum_core::slack::models::User {
@@ -196,6 +285,21 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
             member.im_mpim_ids = extras.im_mpim_ids;
             member.has_more_mpims = extras.has_more_mpims;
         }
+        for channel in recent_channels {
+            workspace.channels.insert(channel.id.clone(), channel);
+        }
+        if let Ok(emojis) = hydrated_emojis {
+            workspace.apply_emojis(emojis);
+        }
+    }
+    if needs_fields && let Ok(fields) = fields {
+        shell.core.profile_fields.insert(team.clone(), fields);
+    }
+    if let Some(pane) = shell.core.profile_pane.as_mut()
+        && pane.user == user
+    {
+        pane.loading = false;
+        pane.error = profile_error;
     }
     if let Some(url) = shell
         .core
@@ -211,7 +315,156 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
     dioxus::prelude::spawn(refresh_media(state, transport));
 }
 
+fn profile_emoji_names(
+    profile: &super_platinum_core::slack::models::UserProfile,
+) -> std::collections::HashSet<String> {
+    let mut names = std::collections::HashSet::new();
+    let mut collect = |text: &str| {
+        names.extend(super_platinum_core::state::emoji_names_in_text(text));
+    };
+    if let Some(status) = profile.status_emoji.as_deref() {
+        collect(status);
+    }
+    for value in profile.fields.values() {
+        if let Some(alt) = value.alt.as_deref() {
+            collect(alt);
+        }
+        visit_profile_field_strings(&value.value, &mut collect);
+    }
+    names
+}
+
+fn visit_profile_field_strings(value: &serde_json::Value, visit: &mut impl FnMut(&str)) {
+    match value {
+        serde_json::Value::String(value) => visit(value),
+        serde_json::Value::Array(values) => {
+            for value in values {
+                visit_profile_field_strings(value, visit);
+            }
+        }
+        serde_json::Value::Object(values) => {
+            for value in values.values() {
+                visit_profile_field_strings(value, visit);
+            }
+        }
+        _ => {}
+    }
+}
+
+pub async fn open_profile_dm(mut state: Signal<ShellState>, user: String) {
+    let existing =
+        {
+            state.read().channels.iter().position(|channel| {
+                channel.is_im && channel.user_id.as_deref() == Some(user.as_str())
+            })
+        };
+    if let Some(index) = existing {
+        state.write().select_channel(index);
+        state.write().close_profile();
+        super::history::refresh_selected_channel(state).await;
+        return;
+    }
+    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+        state.write().toast = Some("No direct message channel is loaded yet.".into());
+        return;
+    }
+    let Some((transport, client, workspaces)) = credentials(&state) else {
+        return;
+    };
+    let Some(team) = state.read().core.active_team.clone() else {
+        return;
+    };
+    let Some(workspace_session) = workspaces
+        .into_iter()
+        .find(|workspace| workspace.team_id == team)
+    else {
+        return;
+    };
+    match api::open_dm(&transport, &client, &workspace_session, user.clone()).await {
+        Ok(channel_id) => {
+            let mut shell = state.write();
+            if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
+                workspace
+                    .channels
+                    .entry(channel_id.clone())
+                    .or_insert_with(|| super_platinum_core::slack::models::Channel {
+                        id: channel_id.clone(),
+                        is_im: true,
+                        user: Some(user),
+                        ..Default::default()
+                    });
+            }
+            shell.refresh_from_core();
+            if let Some(index) = shell
+                .channels
+                .iter()
+                .position(|channel| channel.id == channel_id)
+            {
+                shell.select_channel(index);
+                shell.close_profile();
+                drop(shell);
+                super::history::refresh_selected_channel(state).await;
+            } else {
+                shell.toast = Some("Slack opened the DM, but it is not available yet.".into());
+            }
+        }
+        Err(error) => state.write().toast = Some(format!("Could not open message: {error}")),
+    }
+}
+
+pub async fn toggle_profile_vip(mut state: Signal<ShellState>, user: String) {
+    if state.read().profile_vip_loading {
+        return;
+    }
+    let Some((transport, client, workspaces)) = credentials(&state) else {
+        return;
+    };
+    let Some(team) = state.read().core.active_team.clone() else {
+        return;
+    };
+    let Some(workspace_session) = workspaces
+        .into_iter()
+        .find(|workspace| workspace.team_id == team)
+    else {
+        return;
+    };
+    let is_vip = state
+        .read()
+        .core
+        .workspaces
+        .get(&team)
+        .is_some_and(|workspace| workspace.vip_users.contains(&user));
+    state.write().profile_vip_loading = true;
+    let result = if is_vip {
+        api::remove_priority_user(&transport, &client, &workspace_session, user.clone()).await
+    } else {
+        api::add_priority_user(&transport, &client, &workspace_session, user.clone()).await
+    };
+    let mut shell = state.write();
+    shell.profile_vip_loading = false;
+    match result {
+        Ok(()) => {
+            if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
+                if is_vip {
+                    workspace.vip_users.remove(&user);
+                } else {
+                    workspace.vip_users.insert(user);
+                }
+            }
+            shell.toast = Some(if is_vip {
+                "Removed from VIPs".into()
+            } else {
+                "Added to VIPs".into()
+            });
+            drop(shell);
+            persist_workspace(&state, &team);
+        }
+        Err(error) => shell.toast = Some(format!("Could not update VIP: {error}")),
+    }
+}
+
 pub async fn open_thread(mut state: Signal<ShellState>, channel: String, root_ts: String) {
+    state.write().close_profile();
     state.write().thread_root = Some(root_ts.clone());
     let Some((transport, client, workspaces)) = credentials(&state) else {
         return;
@@ -444,4 +697,27 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
         }
     }
     super::session::hydrate_current_surface(state).await;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::profile_emoji_names;
+
+    #[test]
+    fn profile_emoji_hydration_includes_status_and_nested_custom_fields() {
+        let profile = serde_json::from_value(serde_json::json!({
+            "status_emoji": ":ship:",
+            "fields": {
+                "emoji": {"value": [":sob-pray:", {"choice": ":party-parrot:"}]},
+                "link": {"value": "https://example.com", "alt": "site :sparkles:"}
+            }
+        }))
+        .expect("profile fixture");
+
+        let names = profile_emoji_names(&profile);
+        assert!(names.contains("ship"));
+        assert!(names.contains("sob-pray"));
+        assert!(names.contains("party-parrot"));
+        assert!(names.contains("sparkles"));
+    }
 }

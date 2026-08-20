@@ -11,7 +11,7 @@ use dioxus::prelude::*;
 use crate::overlays::overlay_view;
 use crate::state::{MainView, ShellState};
 
-use chrome::{channel_sidebar, conversation_header, profile_hover_card, rail_view};
+use chrome::{channel_sidebar, conversation_header, rail_view};
 use composer::{composer, load_older_if_needed, measure_timeline};
 use rich::{
     attachment_embeds, message_plain_text, pending_attachment_strip, reactions_row, reply_bar,
@@ -28,6 +28,7 @@ const CSS: &str = concat!(
     include_str!("../styles/blocks.css"),
     include_str!("../styles/composer.css"),
     include_str!("../styles/overlays.css"),
+    include_str!("../styles/profile.css"),
 );
 
 pub fn shell() -> Element {
@@ -254,6 +255,16 @@ pub fn shell() -> Element {
                             } else {
                                 button {
                                     class: "avatar",
+                                    onmouseenter: {
+                                        let user = message.user_id.clone();
+                                        move |event: MouseEvent| {
+                                            if let Some(user) = user.clone() {
+                                                let point = event.data().client_coordinates();
+                                                crate::profile::show_profile_hover(state, user, point.x, point.y);
+                                            }
+                                        }
+                                    },
+                                    onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
                                     onclick: {
                                         let user = message.user_id.clone();
                                         move |_| {
@@ -274,12 +285,14 @@ pub fn shell() -> Element {
                                         strong {
                                             onmouseenter: {
                                                 let user = message.user_id.clone();
-                                                move |_| {
+                                                move |event: MouseEvent| {
                                                     if let Some(user) = user.clone() {
-                                                        state.write().profile_hover = Some(user);
+                                                        let point = event.data().client_coordinates();
+                                                        crate::profile::show_profile_hover(state, user, point.x, point.y);
                                                     }
                                                 }
                                             },
+                                            onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
                                             onclick: {
                                                 let user = message.user_id.clone();
                                                 move |_| {
@@ -422,6 +435,16 @@ pub fn shell() -> Element {
                             article { class: "message thread-message", key: "thread-{message.id}",
                                 button {
                                     class: "avatar",
+                                    onmouseenter: {
+                                        let user = message.user_id.clone();
+                                        move |event: MouseEvent| {
+                                            if let Some(user) = user.clone() {
+                                                let point = event.data().client_coordinates();
+                                                crate::profile::show_profile_hover(state, user, point.x, point.y);
+                                            }
+                                        }
+                                    },
+                                    onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
                                     onclick: {
                                         let user = message.user_id.clone();
                                         move |_| {
@@ -438,7 +461,27 @@ pub fn shell() -> Element {
                                 }
                                 div { class: "message-content",
                                     div { class: "message-meta",
-                                        strong { "{message.author}" }
+                                        strong {
+                                            onmouseenter: {
+                                                let user = message.user_id.clone();
+                                                move |event: MouseEvent| {
+                                                    if let Some(user) = user.clone() {
+                                                        let point = event.data().client_coordinates();
+                                                        crate::profile::show_profile_hover(state, user, point.x, point.y);
+                                                    }
+                                                }
+                                            },
+                                            onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
+                                            onclick: {
+                                                let user = message.user_id.clone();
+                                                move |_| {
+                                                    if let Some(user) = user.clone() {
+                                                        spawn(crate::bootstrap::open_profile(state, user));
+                                                    }
+                                                }
+                                            },
+                                            "{message.author}"
+                                        }
                                         if message.is_app { span { class: "app-badge", "APP" } }
                                         time { "{message.timestamp}" }
                                         if message.edited { span { "(edited)" } }
@@ -490,9 +533,12 @@ pub fn shell() -> Element {
                     }
                 }
             }
+            if snapshot.profile_user.is_some() {
+                {crate::profile::profile_pane(state, &snapshot)}
+            }
             if let Some(overlay) = snapshot.overlay { {overlay_view(state, overlay, &snapshot)} }
-            if let Some(user) = snapshot.profile_hover.as_ref() {
-                {profile_hover_card(state, &snapshot, user)}
+            if let Some(hover) = snapshot.profile_hover.as_ref() {
+                {crate::profile::profile_hover_card(state, &snapshot, hover)}
             }
             if let Some(toast) = snapshot.toast.as_ref() { div { class: "toast", "{toast}" } }
         }

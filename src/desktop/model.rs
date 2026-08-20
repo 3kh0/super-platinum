@@ -19,6 +19,13 @@ pub enum ActivityTab {
     Reactions,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProfileHoverVm {
+    pub user_id: String,
+    pub x: f64,
+    pub y: f64,
+}
+
 impl ActivityTab {
     pub fn label(self) -> &'static str {
         match self {
@@ -420,25 +427,7 @@ pub enum Overlay {
     Palette,
     Search,
     Settings,
-    Profile,
     Viewer,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-#[allow(dead_code)]
-pub struct ProfileVm {
-    pub user_id: String,
-    pub name: String,
-    pub title: String,
-    pub status_text: String,
-    pub status_emoji: String,
-    pub email: String,
-    pub pronouns: String,
-    pub local_time: String,
-    pub presence: PresenceVm,
-    pub avatar: Option<MediaAssetId>,
-    pub avatar_initials: String,
-    pub deactivated: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

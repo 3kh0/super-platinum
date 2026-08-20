@@ -20,72 +20,8 @@ pub fn overlay_view(
             "Search in workspace",
         ),
         Overlay::Settings => ("Settings", "", ""),
-        Overlay::Profile => ("Profile", "", ""),
         Overlay::Viewer => ("Media viewer", "", ""),
     };
-    let workspace = snapshot
-        .core
-        .active_team
-        .as_ref()
-        .and_then(|team| snapshot.core.workspaces.get(team));
-    let profile_user_id = snapshot.profile_user.clone();
-    let profile = profile_user_id
-        .as_ref()
-        .and_then(|user| workspace.and_then(|ws| ws.users.get(user)));
-    let profile_name = profile
-        .and_then(|user| {
-            user.profile.as_ref().and_then(|profile| {
-                profile
-                    .display_name
-                    .clone()
-                    .filter(|name| !name.is_empty())
-                    .or_else(|| profile.real_name.clone())
-            })
-        })
-        .or_else(|| profile.and_then(|user| user.real_name.clone()))
-        .or_else(|| profile_user_id.clone())
-        .unwrap_or_else(|| "Profile details".into());
-    let profile_title = profile
-        .and_then(|user| user.profile.as_ref())
-        .and_then(|profile| profile.title.clone())
-        .unwrap_or_default();
-    let profile_status = profile
-        .and_then(|user| user.profile.as_ref())
-        .and_then(|profile| profile.status_text.clone())
-        .unwrap_or_default();
-    let profile_status_emoji = profile
-        .and_then(|user| user.profile.as_ref())
-        .and_then(|profile| profile.status_emoji.clone())
-        .map(|emoji| emoji.trim_matches(':').to_owned())
-        .filter(|emoji| !emoji.is_empty())
-        .map(|name| super_platinum_core::state::emoji_glyph(&name))
-        .unwrap_or_default();
-    let profile_email = profile
-        .and_then(|user| user.profile.as_ref())
-        .and_then(|profile| profile.email.clone())
-        .unwrap_or_default();
-    let profile_pronouns = profile
-        .and_then(|user| user.profile.as_ref())
-        .and_then(|profile| profile.pronouns.clone())
-        .unwrap_or_default();
-    let presence = profile_user_id
-        .as_ref()
-        .and_then(|user| workspace.and_then(|ws| ws.presence.get(user).copied()))
-        .map(crate::model::PresenceVm::from_core)
-        .unwrap_or_default();
-    let profile_avatar = profile.and_then(|user| {
-        super_platinum_core::state::user_profile_image_url(user)
-            .map(|url| snapshot.media.register_avatar(&user.id, url))
-    });
-    let profile_initials = profile_name
-        .chars()
-        .next()
-        .map(|c| c.to_uppercase().to_string())
-        .unwrap_or_else(|| "S".into());
-    let local_time = profile
-        .and_then(|user| super_platinum_core::state::format_user_local_time(user.tz_offset))
-        .unwrap_or_default();
-    let deactivated = profile.is_some_and(|user| user.deleted);
     rsx! {
         div { class: "scrim", onclick: move |_| state.write().overlay = None }
         section { class: "modal", role: "dialog", "aria-modal": "true",
@@ -272,53 +208,6 @@ pub fn overlay_view(
                         }
                         label { "Surface opacity"
                             input { r#type: "range", min: "0", max: "1", step: "0.05", value: "{background.surface_opacity}", oninput: move |event| if let Ok(value) = event.value().parse() { state.write().set_surface_opacity(value) }, onchange: move |_| { spawn(crate::bootstrap::persist_settings(state)); } }
-                        }
-                    }
-                }
-            } else {
-                div { class: "profile-card",
-                    div { class: "profile-avatar",
-                        if let Some(avatar) = profile_avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
-                            img {
-                                src: "{avatar.uri_at(snapshot.media_epoch)}",
-                                alt: "{profile_name}"
-                            }
-                        } else {
-                            "{profile_initials}"
-                        }
-                    }
-                    h3 { "{profile_name}" }
-                    if deactivated { p { class: "profile-status", "Deactivated account" } }
-                    p { class: "profile-presence", "{presence.label()}" }
-                    if !profile_pronouns.is_empty() { p { "{profile_pronouns}" } }
-                    if !profile_title.is_empty() { p { "{profile_title}" } }
-                    if !profile_status.is_empty() || !profile_status_emoji.is_empty() {
-                        p { class: "profile-status",
-                            if !profile_status_emoji.is_empty() { span { "{profile_status_emoji} " } }
-                            "{profile_status}"
-                        }
-                    }
-                    if !local_time.is_empty() { p { "{local_time}" } }
-                    if !profile_email.is_empty() { span { "{profile_email}" } }
-                    if let Some(user) = profile_user_id.clone() {
-                        button {
-                            class: "primary profile-dm",
-                            onclick: move |_| {
-                                // Prefer opening an existing IM channel with this user.
-                                let index = {
-                                    state.read().channels.iter().position(|channel| {
-                                        channel.is_im && channel.user_id.as_deref() == Some(user.as_str())
-                                    })
-                                };
-                                if let Some(index) = index {
-                                    state.write().select_channel(index);
-                                    state.write().overlay = None;
-                                    spawn(crate::bootstrap::refresh_selected_channel(state));
-                                } else {
-                                    state.write().toast = Some("No direct message channel is loaded yet.".into());
-                                }
-                            },
-                            "Message"
                         }
                     }
                 }

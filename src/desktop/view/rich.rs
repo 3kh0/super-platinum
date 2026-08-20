@@ -39,6 +39,14 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
             rsx! {
                 button {
                     class: "mention-chip",
+                    onmouseenter: {
+                        let user = user_id.clone();
+                        move |event: MouseEvent| {
+                            let point = event.data().client_coordinates();
+                            crate::profile::show_profile_hover(state, user.clone(), point.x, point.y);
+                        }
+                    },
+                    onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
                     onclick: move |_| {
                         spawn(crate::bootstrap::open_profile(state, user.clone()));
                     },
@@ -314,6 +322,16 @@ fn attachment_embed(
                                 button {
                                     class: "attachment-author-name",
                                     disabled: user.is_none(),
+                                    onmouseenter: {
+                                        let user = user.clone();
+                                        move |event: MouseEvent| {
+                                            if let Some(user) = user.clone() {
+                                                let point = event.data().client_coordinates();
+                                                crate::profile::show_profile_hover(state, user, point.x, point.y);
+                                            }
+                                        }
+                                    },
+                                    onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
                                     onclick: move |_| {
                                         if let Some(user) = user.clone() {
                                             spawn(crate::bootstrap::open_profile(state, user));
@@ -398,7 +416,7 @@ fn attachment_embed(
                                     "{footer.lead}"
                                     if let Some(label) = footer.channel_label.as_ref() {
                                         button {
-                                            class: "mention-chip channel-chip",
+                                            class: "attachment-channel-link",
                                             disabled: channel.is_none(),
                                             onclick: move |_| {
                                                 if let Some(channel) = channel.as_deref() {

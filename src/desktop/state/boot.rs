@@ -204,6 +204,8 @@ impl ShellState {
             activity_tab: ActivityTab::default(),
             activity_detail_open: false,
             profile_hover: None,
+            profile_hover_generation: 0,
+            profile_hover_card_active: false,
             overlay: None,
             palette_query: String::new(),
             palette_selected: 0,
@@ -213,6 +215,9 @@ impl ShellState {
             thread_root: None,
             thread_messages: Vec::new(),
             profile_user: None,
+            profile_pane_width: 495.0,
+            profile_menu_open: false,
+            profile_vip_loading: false,
             viewer: None,
             toast: None,
             performance: PerformanceVm::default(),
@@ -254,6 +259,8 @@ impl ShellState {
             activity_tab: ActivityTab::default(),
             activity_detail_open: false,
             profile_hover: None,
+            profile_hover_generation: 0,
+            profile_hover_card_active: false,
             overlay: None,
             palette_query: String::new(),
             palette_selected: 0,
@@ -263,6 +270,9 @@ impl ShellState {
             thread_root: None,
             thread_messages: Vec::new(),
             profile_user: None,
+            profile_pane_width: 495.0,
+            profile_menu_open: false,
+            profile_vip_loading: false,
             viewer: None,
             toast: None,
             performance: PerformanceVm::default(),
@@ -304,6 +314,8 @@ impl ShellState {
             "image/png",
             false,
         );
+        let profile_avatar = media.register_avatar("U1", "https://example.test/maya-lg.png");
+        media.insert(profile_avatar, "image/png", placeholder.as_slice());
         // Filler first so virtualization stays exercised; rich parity messages at
         // the end remain visible when scrolled to bottom.
         let mut messages = Vec::new();
@@ -477,6 +489,8 @@ impl ShellState {
             activity_tab: ActivityTab::default(),
             activity_detail_open: false,
             profile_hover: None,
+            profile_hover_generation: 0,
+            profile_hover_card_active: false,
             overlay: None,
             palette_query: String::new(),
             palette_selected: 0,
@@ -486,6 +500,9 @@ impl ShellState {
             thread_root: None,
             thread_messages: Vec::new(),
             profile_user: None,
+            profile_pane_width: 495.0,
+            profile_menu_open: false,
+            profile_vip_loading: false,
             viewer: None,
             toast: None,
             performance: PerformanceVm::default(),
@@ -530,12 +547,50 @@ impl ShellState {
                 state.sync_fixture_messages();
             }
             "profile-hover-card" => {
-                state.profile_user = Some("U1".into());
-                state.profile_hover = Some("U1".into());
+                state.profile_hover = Some(ProfileHoverVm {
+                    user_id: "U1".into(),
+                    x: 610.0,
+                    y: 120.0,
+                });
             }
-            "profile-pane" | "channel-thread-profile-headers" => {
+            "profile-pane"
+            | "profile-pane-rich-fields"
+            | "profile-pane-min-width"
+            | "channel-thread-profile-headers" => {
                 state.profile_user = Some("U1".into());
-                state.overlay = Some(Overlay::Profile);
+                state.core.profile_pane = Some(super_platinum_core::domain::ProfilePaneState {
+                    user: "U1".into(),
+                    loading: false,
+                    error: None,
+                });
+                if name == "profile-pane-rich-fields" {
+                    state.channels.retain(|channel| {
+                        !(channel.is_im && channel.user_id.as_deref() == Some("U1"))
+                    });
+                    if let Some(workspace) = state.core.workspaces.get_mut("T1") {
+                        if let Some(user) = workspace.users.get_mut("U1") {
+                            user.im_mpim_ids.clear();
+                        }
+                        workspace.apply_emojis(vec![
+                            serde_json::from_value(serde_json::json!({
+                                "name": "sob-pray",
+                                "value": "https://example.test/sob-pray.png"
+                            }))
+                            .expect("fixture emoji"),
+                        ]);
+                    }
+                    let emoji = state
+                        .media
+                        .register_emoji("sob-pray", "https://example.test/sob-pray.png");
+                    state.media.insert(
+                        emoji,
+                        "image/png",
+                        include_bytes!("../../../assets/icons/icon-512.png").as_slice(),
+                    );
+                }
+                if name == "profile-pane-min-width" {
+                    state.profile_pane_width = 200.0;
+                }
             }
             "channel-huddle" => {
                 if let Some(workspace) = state.core.workspaces.get_mut("T1") {
@@ -702,6 +757,14 @@ impl ShellState {
             }
             "message-unfurl-embed" => {
                 keep_recent_messages(&mut state, 3);
+                if let Some(channel) = state
+                    .core
+                    .workspaces
+                    .get_mut("T1")
+                    .and_then(|workspace| workspace.channels.get_mut("C1"))
+                {
+                    channel.name = Some("kc-crashout-corner-that-wraps-naturally".into());
+                }
                 state.append_projected_fixture_messages(&[out_of_context_message()], true);
             }
             "block-kit-layout" => {

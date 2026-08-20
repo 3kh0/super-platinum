@@ -356,3 +356,15 @@ fn team_profile_request_fetches_custom_field_schema() {
     assert!(request.url.contains("/api/team.profile.get?"));
     assert!(form_fields(&request).contains(&("token".into(), "xoxc-test-token".into())));
 }
+
+#[test]
+fn priority_requests_target_user_with_desktop_token() {
+    let add = users_priority_add(&SlackClient::default(), &workspace(), "U_VIP".into());
+    assert!(add.url.contains("/api/users.priority.add?"));
+    assert!(form_fields(&add).contains(&("user".into(), "U_VIP".into())));
+    assert!(form_fields(&add).contains(&("token".into(), "xoxc-test-token".into())));
+
+    let remove = users_priority_remove(&SlackClient::default(), &workspace(), "U_VIP".into());
+    assert!(remove.url.contains("/api/users.priority.remove?"));
+    assert!(form_fields(&remove).contains(&("user".into(), "U_VIP".into())));
+}

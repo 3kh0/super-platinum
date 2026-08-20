@@ -251,6 +251,22 @@ pub fn team_profile_get(client: &SlackClient, workspace: &WorkspaceSession) -> P
     client.rest_form(workspace, "team.profile.get", Vec::new())
 }
 
+pub fn users_priority_add(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    user: UserId,
+) -> PreparedRequest {
+    client.rest_form(workspace, "users.priority.add", vec![("user", user)])
+}
+
+pub fn users_priority_remove(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    user: UserId,
+) -> PreparedRequest {
+    client.rest_form(workspace, "users.priority.remove", vec![("user", user)])
+}
+
 pub fn conversations_open(
     client: &SlackClient,
     workspace: &WorkspaceSession,

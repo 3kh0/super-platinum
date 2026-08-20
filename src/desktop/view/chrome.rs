@@ -2,71 +2,6 @@ use dioxus::prelude::*;
 
 use crate::state::{MainView, Overlay, ShellState};
 
-pub(crate) fn profile_hover_card(
-    mut state: Signal<ShellState>,
-    snapshot: &ShellState,
-    user_id: &str,
-) -> Element {
-    let workspace = snapshot
-        .core
-        .active_team
-        .as_ref()
-        .and_then(|team| snapshot.core.workspaces.get(team));
-    let user = workspace.and_then(|ws| ws.users.get(user_id));
-    let name = user
-        .map(|user| super_platinum_core::state::display_name(Some(user), user_id))
-        .unwrap_or_else(|| user_id.to_owned());
-    let title = user
-        .and_then(|user| user.profile.as_ref())
-        .and_then(|profile| profile.title.clone())
-        .unwrap_or_default();
-    let status = user
-        .and_then(|user| user.profile.as_ref())
-        .and_then(|profile| profile.status_text.clone())
-        .unwrap_or_default();
-    let avatar = user
-        .and_then(super_platinum_core::state::user_avatar_url)
-        .and_then(|url| {
-            // Prefer any already-projected channel avatar for this user.
-            snapshot
-                .channels
-                .iter()
-                .find(|channel| channel.user_id.as_deref() == Some(user_id))
-                .and_then(|channel| channel.avatar.clone())
-                .or_else(|| Some(snapshot.media.register_avatar(user_id, url)))
-        });
-    let initials = name
-        .chars()
-        .next()
-        .map(|c| c.to_uppercase().to_string())
-        .unwrap_or_else(|| "?".into());
-    let user_owned = user_id.to_owned();
-    rsx! {
-        div {
-            class: "profile-hover",
-            onmouseleave: move |_| state.write().profile_hover = None,
-            div { class: "profile-hover-avatar",
-                if let Some(avatar) = avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
-                    img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{name}" }
-                } else {
-                    "{initials}"
-                }
-            }
-            strong { "{name}" }
-            if !title.is_empty() { p { "{title}" } }
-            if !status.is_empty() { p { class: "profile-status", "{status}" } }
-            button {
-                class: "primary profile-dm",
-                onclick: move |_| {
-                    state.write().profile_hover = None;
-                    spawn(crate::bootstrap::open_profile(state, user_owned.clone()));
-                },
-                "View profile"
-            }
-        }
-    }
-}
-
 pub(crate) fn rail_view(
     mut state: Signal<ShellState>,
     active: MainView,
@@ -254,6 +189,8 @@ pub(crate) fn conversation_header(
     let is_dm = channel.is_some_and(|c| c.is_im);
     let dm_user = channel.and_then(|c| c.user_id.clone());
     let dm_user_name = dm_user.clone();
+    let dm_user_hover_avatar = dm_user.clone();
+    let dm_user_hover_name = dm_user.clone();
     let dm_avatar = channel.and_then(|c| c.avatar.clone());
     let dm_initials = channel
         .map(|c| c.avatar_initials.clone())
@@ -263,6 +200,13 @@ pub(crate) fn conversation_header(
         if is_dm {
             button {
                 class: "header-avatar",
+                onmouseenter: move |event: MouseEvent| {
+                    if let Some(user) = dm_user_hover_avatar.clone() {
+                        let point = event.data().client_coordinates();
+                        crate::profile::show_profile_hover(state, user, point.x, point.y);
+                    }
+                },
+                onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
                 onclick: move |_| {
                     if let Some(user) = dm_user.clone() {
                         spawn(crate::bootstrap::open_profile(state, user));
@@ -279,6 +223,13 @@ pub(crate) fn conversation_header(
             if is_dm {
                 button {
                     class: "header-name",
+                    onmouseenter: move |event: MouseEvent| {
+                        if let Some(user) = dm_user_hover_name.clone() {
+                            let point = event.data().client_coordinates();
+                            crate::profile::show_profile_hover(state, user, point.x, point.y);
+                        }
+                    },
+                    onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
                     onclick: move |_| {
                         if let Some(user) = dm_user_name.clone() {
                             spawn(crate::bootstrap::open_profile(state, user));

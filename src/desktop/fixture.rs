@@ -41,7 +41,7 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
     ];
     for user in [
         serde_json::json!({"id":"U0","name":"you","real_name":"You","profile":{"display_name":"You","image_72":"https://example.test/you.png"}}),
-        serde_json::json!({"id":"U1","name":"maya","real_name":"Maya Chen","tz_offset":-25200,"profile":{"display_name":"Maya Chen","title":"Desktop engineer","status_text":"Shipping the migration","status_emoji":":ship:","email":"maya@example.com","pronouns":"she/her","image_72":"https://example.test/maya.png","image_512":"https://example.test/maya-lg.png"}}),
+        serde_json::json!({"id":"U1","name":"maya","real_name":"Maya Chen","tz_offset":-25200,"im_mpim_ids":["D1","G1"],"profile":{"display_name":"Maya Chen","title":"GOI, sd/ft support scout, macondo reviewer, kintsugi org, join #spj","status_text":"Shipping the migration","status_emoji":":ship:","email":"maya@example.com","phone":"+1 415 555 0142","start_date":"2024-03-18","pronouns":"she/her","image_72":"https://example.test/maya.png","image_512":"https://example.test/maya-lg.png","fields":{"X_BIRTHDAY":{"value":"March 2"},"X_TEAM":{"value":"Desktop, systems, and tiny details"},"X_FAVORITE":{"value":["#ship","#design"]},"X_WEBSITE":{"value":"https://example.com/maya","alt":"My tiny corner of the web"},"X_EMOJI":{"value":":joy:, :sob-pray:"}}}}),
         serde_json::json!({"id":"U2","name":"jules","real_name":"Jules","profile":{"display_name":"Jules","image_72":"https://example.test/jules.png"}}),
         // Bot user behind the "Out of Context" app fixture: Slack renders this
         // profile image, not the app's generic `bot_profile.icons` placeholder.
@@ -57,6 +57,16 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
     workspace
         .presence
         .insert("U2".into(), super_platinum_core::state::Presence::Away);
+    core.profile_fields.insert(
+        "T1".into(),
+        vec![
+            serde_json::from_value(serde_json::json!({"id":"X_BIRTHDAY","label":"Birthday","type":"date","ordering":1})).expect("birthday profile field"),
+            serde_json::from_value(serde_json::json!({"id":"X_TEAM","label":"What I work on","type":"text","ordering":2})).expect("work profile field"),
+            serde_json::from_value(serde_json::json!({"id":"X_FAVORITE","label":"Favorite channels","type":"text","ordering":3})).expect("favorite profile field"),
+            serde_json::from_value(serde_json::json!({"id":"X_WEBSITE","label":"Website","type":"link","ordering":4})).expect("website profile field"),
+            serde_json::from_value(serde_json::json!({"id":"X_EMOJI","label":"Favorite Emoji","type":"text","ordering":5})).expect("emoji profile field"),
+        ],
+    );
     let messages = vec![
         super_platinum_core::slack::models::Message {
             user: Some("U1".into()),

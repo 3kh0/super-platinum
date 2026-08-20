@@ -36,7 +36,9 @@ pub struct ShellState {
     pub activity_tab: ActivityTab,
     /// When true, Activity main column shows the opened channel/thread.
     pub activity_detail_open: bool,
-    pub profile_hover: Option<String>,
+    pub profile_hover: Option<ProfileHoverVm>,
+    pub profile_hover_generation: u64,
+    pub profile_hover_card_active: bool,
     pub overlay: Option<Overlay>,
     pub palette_query: String,
     pub palette_selected: usize,
@@ -46,6 +48,9 @@ pub struct ShellState {
     pub thread_root: Option<String>,
     pub thread_messages: Vec<MessageVm>,
     pub profile_user: Option<String>,
+    pub profile_pane_width: f64,
+    pub profile_menu_open: bool,
+    pub profile_vip_loading: bool,
     pub viewer: Option<ViewerVm>,
     pub toast: Option<String>,
     pub performance: PerformanceVm,
@@ -54,6 +59,24 @@ pub struct ShellState {
 }
 
 impl ShellState {
+    pub fn show_profile_hover(&mut self, user_id: String, x: f64, y: f64) {
+        self.profile_hover_generation = self.profile_hover_generation.wrapping_add(1);
+        self.profile_hover_card_active = false;
+        self.profile_hover = Some(ProfileHoverVm { user_id, x, y });
+    }
+
+    pub fn hold_profile_hover(&mut self) {
+        self.profile_hover_generation = self.profile_hover_generation.wrapping_add(1);
+        self.profile_hover_card_active = true;
+    }
+
+    pub fn close_profile(&mut self) {
+        self.profile_user = None;
+        self.profile_menu_open = false;
+        self.profile_vip_loading = false;
+        self.core.profile_pane = None;
+    }
+
     pub fn refresh_from_core(&mut self) {
         let Some(team) = self.core.active_team.clone() else {
             return;
