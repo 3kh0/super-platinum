@@ -30,6 +30,31 @@
   background: var(--bg);
 }
 .results { max-height: 320px; padding: 5px 9px 12px; overflow-y: auto; }
+.modal.compact { width: min(500px, calc(100% - 64px)); top: 10%; }
+.modal.compact > input {
+  width: calc(100% - 16px);
+  margin: 8px 8px 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.modal.compact .results { max-height: 340px; padding: 2px 6px 6px; }
+.modal.compact .palette-section { padding: 5px 8px 3px; font-size: 10px; }
+.modal.compact .palette-result {
+  min-height: 30px;
+  gap: 8px;
+  padding: 3px 8px !important;
+}
+.modal.compact .palette-icon { width: 22px; flex: 0 0 22px; }
+.modal.compact .palette-avatar-wrap,
+.modal.compact .palette-avatar { width: 22px; height: 22px; }
+.modal.compact .palette-avatar.placeholder { font-size: 9px; }
+.modal.compact .palette-presence { width: 8px; height: 8px; }
+.modal.compact .palette-mpdm { width: 20px; height: 20px; font-size: 9px; }
+.modal.compact .palette-hash { font-size: 15px; }
+.modal.compact .palette-name { font-size: 13.5px; }
+.modal.compact .results-empty { padding: 10px; font-size: 13px; }
+
 .results button {
   display: block;
   width: 100%;

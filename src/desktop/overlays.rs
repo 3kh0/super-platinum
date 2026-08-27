@@ -22,16 +22,28 @@ pub fn overlay_view(
         Overlay::Settings => ("Settings", "", ""),
         Overlay::Viewer => ("Media viewer", "", ""),
     };
+    let compact = overlay == Overlay::Palette;
     rsx! {
         div { class: "scrim", onclick: move |_| state.write().overlay = None }
-        section { class: "modal", role: "dialog", "aria-modal": "true",
-            header {
-                h2 { "{title}" }
-                button { onclick: move |_| state.write().overlay = None, "×" }
+        section { class: if compact { "modal compact" } else { "modal" }, role: "dialog", "aria-modal": "true",
+            if !compact {
+                header {
+                    h2 { "{title}" }
+                    button { onclick: move |_| state.write().overlay = None, "×" }
+                }
             }
             if matches!(overlay, Overlay::Palette | Overlay::Search) {
                 input {
+                    id: "overlay-input",
                     autofocus: true,
+                    onmounted: move |_| {
+                        dioxus::document::eval(
+                            r#"requestAnimationFrame(() => {
+                                 const field = document.getElementById('overlay-input');
+                                 if (field) { field.focus(); field.select(); }
+                               });"#,
+                        );
+                    },
                     value: "{input_value}",
                     placeholder: "{placeholder}",
                     oninput: move |event| match overlay {
