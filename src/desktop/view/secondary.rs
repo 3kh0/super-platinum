@@ -507,19 +507,19 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                                     let ts = item.ts().map(str::to_owned);
                                     let root = item.thread_ts().map(str::to_owned);
                                     move |_| {
-                                        {
-                                            let mut shell = state.write();
-                                            shell.activity_detail_open = true;
-                                            shell.core.activity.selected = Some(key.clone());
-                                        }
-                                        if let (Some(channel), Some(ts)) = (channel.clone(), ts.clone())
-                                            && state.write().open_search_result(&channel, &ts)
-                                        {
-                                            if let Some(root) = root.clone() {
-                                                spawn(crate::bootstrap::open_thread(state, channel, root));
-                                            } else {
-                                                spawn(crate::bootstrap::refresh_selected_channel(state));
-                                            }
+                                        let opened = state.write().select_activity_item(
+                                            key.clone(),
+                                            channel.as_deref(),
+                                            ts.as_deref(),
+                                            root.as_deref(),
+                                        );
+                                        let Some(channel) = channel.clone().filter(|_| opened) else {
+                                            return;
+                                        };
+                                        if let Some(root) = root.clone() {
+                                            spawn(crate::bootstrap::open_thread(state, channel, root));
+                                        } else {
+                                            spawn(crate::bootstrap::refresh_selected_channel(state));
                                         }
                                     }
                                 },

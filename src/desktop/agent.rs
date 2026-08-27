@@ -330,12 +330,12 @@ fn dispatch(
             let Some((key, channel, ts, thread_ts)) = target else {
                 return AgentResponse::err(id, format!("no activity item at {index}"));
             };
-            let opened = {
-                let mut shell = state.write();
-                shell.activity_detail_open = true;
-                shell.core.activity.selected = Some(key);
-                shell.open_search_result(&channel, &ts)
-            };
+            let opened = state.write().select_activity_item(
+                key,
+                Some(&channel),
+                Some(&ts),
+                thread_ts.as_deref(),
+            );
             if !opened {
                 return AgentResponse::err(
                     id,

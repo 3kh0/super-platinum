@@ -465,7 +465,12 @@ pub async fn toggle_profile_vip(mut state: Signal<ShellState>, user: String) {
 
 pub async fn open_thread(mut state: Signal<ShellState>, channel: String, root_ts: String) {
     state.write().close_profile();
-    state.write().thread_root = Some(root_ts.clone());
+    {
+        let mut shell = state.write();
+        shell.thread_root = Some(root_ts.clone());
+        // A thread always opens parked on its newest reply, like Slack.
+        shell.thread_at_bottom = true;
+    }
     let Some((transport, client, workspaces)) = credentials(&state) else {
         return;
     };
@@ -485,6 +490,12 @@ pub async fn open_thread(mut state: Signal<ShellState>, channel: String, root_ts
         super_platinum_core::slack::api::RepliesArgs {
             channel: channel.clone(),
             ts: root_ts.clone(),
+            // Slack's own client asks for the *tail* of a thread
+            // (`latest` + `inclusive`), not the first page after the root. A
+            // long thread otherwise opens on replies from hours ago and the
+            // newest reply — the one the notification is about — is missing.
+            latest: Some(format!("{}.999999", super_platinum_core::state::now_secs())),
+            inclusive: true,
             limit: Some(200),
             ..Default::default()
         },

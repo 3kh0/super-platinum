@@ -90,3 +90,47 @@ fn pending_attachments_lookup_by_message_ts() {
     assert!(found[0].uploading);
     assert!(state.pending_attachments_for_message("missing").is_none());
 }
+
+#[test]
+fn activity_channel_item_closes_a_stale_thread_pane() {
+    let media = MediaRegistry::default();
+    let mut state = ShellState::fixture(media);
+    let channel = state.channels.first().expect("fixture channel").id.clone();
+
+    // A thread item opens the thread pane and keeps it.
+    assert!(state.select_activity_item(
+        "thread-1".into(),
+        Some(&channel),
+        Some("1.000100"),
+        Some("1.000000"),
+    ));
+    state.thread_root = Some("1.000000".into());
+    state.thread_at_bottom = false;
+    assert!(state.select_activity_item(
+        "thread-1".into(),
+        Some(&channel),
+        Some("1.000100"),
+        Some("1.000000"),
+    ));
+    assert_eq!(state.thread_root.as_deref(), Some("1.000000"));
+
+    // A channel item takes the pane over: Activity shows one surface, never a
+    // channel next to the previous item's replies.
+    assert!(
+        state.select_activity_item("mention-1".into(), Some(&channel), Some("1.000200"), None,)
+    );
+    assert!(state.thread_root.is_none());
+    assert!(state.thread_messages.is_empty());
+    assert!(state.thread_at_bottom);
+    assert!(state.activity_detail_open);
+    assert_eq!(state.core.activity.selected.as_deref(), Some("mention-1"));
+}
+
+#[test]
+fn activity_item_without_a_message_still_selects() {
+    let media = MediaRegistry::default();
+    let mut state = ShellState::fixture(media);
+    assert!(!state.select_activity_item("orphan-1".into(), None, None, None));
+    assert!(state.activity_detail_open);
+    assert_eq!(state.core.activity.selected.as_deref(), Some("orphan-1"));
+}

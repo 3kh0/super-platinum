@@ -18,7 +18,7 @@
 @media (max-width: 1100px) {
   .app-shell > .sidebar { width: min(var(--sidebar-width, 240px), 212px); }
   .app-shell > .list-panel { width: min(var(--list-panel-width), 300px); }
-  .thread-pane { width: 320px; }
+  .thread-pane:not(.wide) { width: 320px; }
   .profile-pane { width: min(var(--profile-pane-width, 495px), 400px); }
 }
 
@@ -26,7 +26,7 @@
   :root { --density-gap: 4px; }
   .app-shell > .sidebar { width: min(var(--sidebar-width, 240px), 196px); }
   .app-shell > .list-panel { width: min(var(--list-panel-width), 264px); }
-  .thread-pane { width: 288px; }
+  .thread-pane:not(.wide) { width: 288px; }
   .profile-pane { width: min(var(--profile-pane-width, 495px), 340px); }
   /* The shortcut hint is the first thing to stop paying for its width. */
   .jump-to .hint { display: none; }
@@ -42,7 +42,7 @@
   :root { --msg-avatar: 24px; }
   .app-shell > .sidebar { width: min(var(--sidebar-width, 240px), 180px); }
   .app-shell > .list-panel { width: min(var(--list-panel-width), 232px); }
-  .thread-pane, .profile-pane {
+  .thread-pane:not(.wide), .profile-pane {
     position: absolute;
     z-index: 5;
     top: 0;
@@ -50,7 +50,7 @@
     bottom: 0;
     box-shadow: -12px 0 32px rgb(0 0 0 / 45%);
   }
-  .thread-pane { width: min(360px, 60vw); }
+  .thread-pane:not(.wide) { width: min(360px, 60vw); }
   .profile-pane { width: min(var(--profile-pane-width, 495px), 60vw); }
   .profile-resize-handle { display: none; }
   .list-panel-header h2 { font-size: 13px; }

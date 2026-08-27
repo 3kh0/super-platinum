@@ -48,6 +48,9 @@ pub struct ShellState {
     pub search_loading: bool,
     pub thread_root: Option<String>,
     pub thread_messages: Vec<MessageVm>,
+    /// Thread pane scroll anchor: true while the reader is parked at the newest
+    /// reply, so arriving replies keep the pane pinned to the bottom.
+    pub thread_at_bottom: bool,
     pub profile_user: Option<String>,
     pub profile_pane_width: f64,
     pub profile_menu_open: bool,
@@ -60,6 +63,15 @@ pub struct ShellState {
 }
 
 impl ShellState {
+    /// Closes the thread pane. Activity shows one surface at a time, so the
+    /// pane must not linger with the previous item's replies when a channel
+    /// item is opened next.
+    pub fn close_thread(&mut self) {
+        self.thread_root = None;
+        self.thread_messages.clear();
+        self.thread_at_bottom = true;
+    }
+
     pub fn show_profile_hover(&mut self, user_id: String, x: f64, y: f64) {
         self.profile_hover_generation = self.profile_hover_generation.wrapping_add(1);
         self.profile_hover_card_active = false;

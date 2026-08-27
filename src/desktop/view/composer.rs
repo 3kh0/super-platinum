@@ -186,6 +186,22 @@ pub(crate) async fn measure_timeline(mut state: Signal<ShellState>) {
     }
 }
 
+/// Tracks whether the thread pane is parked on its newest reply. The pane only
+/// auto-scrolls while it is, so a reader who scrolled up to read history is not
+/// yanked back down by every arriving reply.
+pub(crate) async fn measure_thread(mut state: Signal<ShellState>) {
+    let at_bottom = dioxus::document::eval(
+        "const body = document.getElementById('thread-body');
+         dioxus.send(Boolean(body && body.scrollHeight - body.scrollTop - body.clientHeight < 48));",
+    )
+    .recv::<bool>()
+    .await
+    .unwrap_or(true);
+    if state.read().thread_at_bottom != at_bottom {
+        state.write().thread_at_bottom = at_bottom;
+    }
+}
+
 pub(crate) async fn load_older_if_needed(state: Signal<ShellState>) {
     let near_top = dioxus::document::eval(
         "const t=document.getElementById('message-timeline'); dioxus.send(Boolean(t && t.scrollTop < 96));",

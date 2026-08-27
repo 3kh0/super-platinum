@@ -221,19 +221,39 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  /* The shell's grid row is `auto`, so a column without an explicit height and
+     `overflow: hidden` grows to its content: the replies then push the
+     composer off the bottom of the window and the body never scrolls. */
+  height: 100%;
+  overflow: hidden;
   border-left: 1px solid var(--border);
   background: var(--surface);
 }
+/* A thread opened from Activity is the whole right side, not a side pane. */
+.thread-pane.wide { width: auto; border-left: 0; }
 .thread-pane header {
   display: flex;
   flex: 0 0 var(--header-height);
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 0 14px;
   border-bottom: 1px solid var(--border);
 }
 .thread-pane h2 { font-size: 15px; margin: 0; }
-.thread-pane header button { background: transparent; font-size: 22px; color: var(--muted); }
+.thread-channel {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.thread-pane header .thread-close {
+  margin-left: auto;
+  background: transparent;
+  font-size: 22px;
+  color: var(--muted);
+}
 .thread-body { flex: 1; min-height: 0; padding: 8px 0; overflow-y: auto; }
 .thread-message { /* reuses .message grid when class combined */ }
 .thread-composer {

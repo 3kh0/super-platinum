@@ -174,6 +174,32 @@ impl ShellState {
         true
     }
 
+    /// Opens one Activity item in the right pane. Returns false when the item's
+    /// channel is not part of the loaded workspace, so the caller can report it.
+    ///
+    /// Activity shows a single surface: a thread item opens the thread, and any
+    /// other item opens the channel around the message — which means the thread
+    /// pane has to go, or it would keep showing the previous item's replies.
+    pub fn select_activity_item(
+        &mut self,
+        key: String,
+        channel: Option<&str>,
+        ts: Option<&str>,
+        thread_ts: Option<&str>,
+    ) -> bool {
+        self.activity_detail_open = true;
+        self.core.activity.selected = Some(key);
+        if thread_ts.is_none() {
+            self.close_thread();
+        }
+        // An item Slack gave us no message for still selects: the row lights up
+        // and the pane stays on its empty state.
+        let (Some(channel), Some(ts)) = (channel, ts) else {
+            return false;
+        };
+        self.open_search_result(channel, ts)
+    }
+
     pub fn open_search_result(&mut self, channel: &str, ts: &str) -> bool {
         let Some(index) = self
             .channels

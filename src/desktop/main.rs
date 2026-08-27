@@ -99,6 +99,25 @@ fn app() -> Element {
         }
         spawn(performance::mark_painted(state));
     });
+    // The thread pane opens on, and stays parked on, its newest reply — the one
+    // the notification is about. `thread_at_bottom` goes false as soon as the
+    // reader scrolls up, so history reading is never yanked back down.
+    let thread_identity = use_memo(move || {
+        let state = state.read();
+        (
+            state.thread_root.clone(),
+            state.thread_messages.len(),
+            state.thread_at_bottom,
+        )
+    });
+    use_effect(move || {
+        let (root, _, at_bottom) = thread_identity();
+        if root.is_some() && at_bottom {
+            dioxus::document::eval(
+                "requestAnimationFrame(() => { const body = document.getElementById('thread-body'); if (body) body.scrollTop = body.scrollHeight; });",
+            );
+        }
+    });
     use_future(move || {
         let desktop = desktop.clone();
         async move {
@@ -149,8 +168,13 @@ fn app() -> Element {
                         shell.close_profile();
                         continue;
                     }
-                    if shell.thread_root.take().is_some() {
-                        shell.thread_messages.clear();
+                    if shell.thread_root.is_some() {
+                        shell.close_thread();
+                        // Esc out of an Activity thread returns to the empty pane.
+                        if shell.main_view == crate::state::MainView::Activity {
+                            shell.activity_detail_open = false;
+                            shell.core.activity.selected = None;
+                        }
                     }
                 }
                 _ => {}
