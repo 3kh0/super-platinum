@@ -47,11 +47,18 @@ pub fn user_avatar_url(user: &User) -> Option<&str> {
         .or_else(|| non_empty(profile.image_original.as_deref()))
 }
 
+/// The picture for the profile pane and hover card, which paint it around
+/// 200 px wide.
+///
+/// `image_512` first, not `image_original`: the original is whatever the user
+/// uploaded — several megabytes of camera JPEG for one pane — and Slack does
+/// not always keep it readable (its S3 copies answer 403 while every sized
+/// variant serves fine).
 pub fn user_profile_image_url(user: &User) -> Option<&str> {
     let profile = user.profile.as_ref()?;
-    non_empty(profile.image_original.as_deref())
-        .or_else(|| non_empty(profile.image_512.as_deref()))
+    non_empty(profile.image_512.as_deref())
         .or_else(|| non_empty(profile.image_192.as_deref()))
+        .or_else(|| non_empty(profile.image_original.as_deref()))
         .or_else(|| non_empty(profile.image_72.as_deref()))
         .or_else(|| non_empty(profile.image_48.as_deref()))
         .or_else(|| non_empty(profile.image_32.as_deref()))

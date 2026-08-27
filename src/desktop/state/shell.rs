@@ -46,6 +46,10 @@ pub struct ShellState {
     pub search_query: String,
     pub search_results: Vec<SearchResultVm>,
     pub search_loading: bool,
+    /// Channel and `last_read` captured when the conversation was opened. The
+    /// unread divider stays on that message for the whole visit, even once the
+    /// read mark has moved `last_read` past it.
+    pub unread_anchor: Option<(String, String)>,
     pub thread_root: Option<String>,
     pub thread_messages: Vec<MessageVm>,
     /// Thread pane scroll anchor: true while the reader is parked at the newest
@@ -63,6 +67,14 @@ pub struct ShellState {
 }
 
 impl ShellState {
+    /// The divider position to project this channel with.
+    pub(crate) fn divider_at(&self, channel_id: &str) -> Option<&str> {
+        self.unread_anchor
+            .as_ref()
+            .filter(|(channel, _)| channel == channel_id)
+            .map(|(_, ts)| ts.as_str())
+    }
+
     /// Closes the thread pane. Activity shows one surface at a time, so the
     /// pane must not linger with the previous item's replies when a channel
     /// item is opened next.
@@ -155,7 +167,12 @@ impl ShellState {
         let active_messages = channels.get(active_channel).map(|channel| {
             (
                 channel.id.clone(),
-                project_messages_for_channel(workspace, &channel.id, &self.media),
+                project_messages_for_channel(
+                    workspace,
+                    &channel.id,
+                    &self.media,
+                    self.divider_at(&channel.id),
+                ),
             )
         });
         let mut messages_by_channel = std::mem::take(&mut self.messages_by_channel);

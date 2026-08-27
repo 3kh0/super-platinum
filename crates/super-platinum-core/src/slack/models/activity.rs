@@ -142,6 +142,13 @@ impl ActivityItem {
         matches!(self.item.kind.as_str(), "dm" | "bot_dm_bundle" | "channel")
     }
 
+    /// Whether this row still counts as a notification: Slack leaves `is_unread`
+    /// false on bundled thread and channel entries and carries the count in the
+    /// entry itself, so either one alone under-reports.
+    pub fn is_pending(&self) -> bool {
+        self.is_unread || self.unread_msg_count() > 0
+    }
+
     pub fn mark_read(&mut self) -> bool {
         let changed = self.is_unread;
         self.is_unread = false;

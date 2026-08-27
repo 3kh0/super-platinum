@@ -73,6 +73,26 @@ fn replies_request_includes_thread_target() {
 }
 
 #[test]
+fn activity_mark_read_sends_type_feed_ts_and_key() {
+    let request = activity_mark_read(
+        &SlackClient::default(),
+        &workspace(),
+        "thread_v2".into(),
+        "1787818475.024439".into(),
+        "thread_v2-C07TM4C0AQ5-1787817119.776049".into(),
+    );
+    let fields = form_fields(&request);
+
+    assert!(request.url.contains("/api/activity.markRead?"));
+    assert!(fields.contains(&("type".into(), "thread_v2".into())));
+    assert!(fields.contains(&("feed_ts".into(), "1787818475.024439".into())));
+    assert!(fields.contains(&(
+        "key".into(),
+        "thread_v2-C07TM4C0AQ5-1787817119.776049".into()
+    )));
+}
+
+#[test]
 fn send_request_includes_channel_and_text() {
     let request = chat_post_message(
         &SlackClient::default(),

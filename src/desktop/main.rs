@@ -89,16 +89,23 @@ fn app() -> Element {
         let (_, _, stick_to_bottom) = timeline_identity();
         if stick_to_bottom {
             dioxus::document::eval(
-                "requestAnimationFrame(() => { const timeline = document.getElementById('message-timeline'); if (timeline) timeline.scrollTop = timeline.scrollHeight; });",
+                "requestAnimationFrame(() => requestAnimationFrame(() => { const timeline = document.getElementById('message-timeline'); if (timeline) timeline.scrollTop = timeline.scrollHeight; }));",
             );
         } else if let Some((_, target)) = state.read().core.pending_scroll_to.clone() {
             spawn(async move {
-                crate::bootstrap::scroll_to_pending(target).await;
-                state.write().core.pending_scroll_to = None;
+                // Spend the anchor only once it lands: on a cold channel the row
+                // it names has not been rendered yet.
+                if crate::bootstrap::scroll_to_pending(target).await {
+                    state.write().core.pending_scroll_to = None;
+                }
             });
         }
         spawn(performance::mark_painted(state));
     });
+    // Two frames, not one: the rows that just landed have to be laid out before
+    // `scrollHeight` means anything, or the pane pins to a height that is about
+    // to grow and the reader is left staring at blank space.
+    //
     // The thread pane opens on, and stays parked on, its newest reply — the one
     // the notification is about. `thread_at_bottom` goes false as soon as the
     // reader scrolls up, so history reading is never yanked back down.
@@ -114,7 +121,7 @@ fn app() -> Element {
         let (root, _, at_bottom) = thread_identity();
         if root.is_some() && at_bottom {
             dioxus::document::eval(
-                "requestAnimationFrame(() => { const body = document.getElementById('thread-body'); if (body) body.scrollTop = body.scrollHeight; });",
+                "requestAnimationFrame(() => requestAnimationFrame(() => { const body = document.getElementById('thread-body'); if (body) body.scrollTop = body.scrollHeight; }));",
             );
         }
     });

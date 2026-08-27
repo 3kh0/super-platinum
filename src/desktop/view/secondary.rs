@@ -206,7 +206,7 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
             }
             input {
                 class: "list-find",
-                value: "{snapshot.dm_query}",
+                initial_value: "{snapshot.dm_query}",
                 placeholder: "Find a DM…",
                 oninput: move |event| state.write().dm_query = event.value()
             }
@@ -403,27 +403,27 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
     let unread_only = snapshot.core.activity.unread_only;
     let tab = snapshot.activity_tab;
     let all_items = &snapshot.core.activity.items;
-    let count_all = all_items.iter().filter(|item| item.is_unread).count();
+    let count_all = all_items.iter().filter(|item| item.is_pending()).count();
     let count_dms = all_items
         .iter()
-        .filter(|item| item.is_unread && ActivityTab::Dms.matches(item))
+        .filter(|item| item.is_pending() && ActivityTab::Dms.matches(item))
         .count();
     let count_mentions = all_items
         .iter()
-        .filter(|item| item.is_unread && ActivityTab::Mentions.matches(item))
+        .filter(|item| item.is_pending() && ActivityTab::Mentions.matches(item))
         .count();
     let count_threads = all_items
         .iter()
-        .filter(|item| item.is_unread && ActivityTab::Threads.matches(item))
+        .filter(|item| item.is_pending() && ActivityTab::Threads.matches(item))
         .count();
     let count_reactions = all_items
         .iter()
-        .filter(|item| item.is_unread && ActivityTab::Reactions.matches(item))
+        .filter(|item| item.is_pending() && ActivityTab::Reactions.matches(item))
         .count();
     let items: Vec<_> = all_items
         .iter()
         .filter(|item| tab.matches(item))
-        .filter(|item| !unread_only || item.is_unread)
+        .filter(|item| !unread_only || item.is_pending())
         .collect();
     // Precompute day headers so we don't mutate inside rsx.
     let mut rows: Vec<(
@@ -499,8 +499,8 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                             }
                             button {
                                 class: if snapshot.core.activity.selected.as_deref() == Some(item.key.as_str()) {
-                                    if item.is_unread { "activity-row active unread" } else { "activity-row active" }
-                                } else if item.is_unread { "activity-row unread" } else { "activity-row" },
+                                    if item.is_pending() { "activity-row active unread" } else { "activity-row active" }
+                                } else if item.is_pending() { "activity-row unread" } else { "activity-row" },
                                 onclick: {
                                     let key = item.key.clone();
                                     let channel = item.channel().map(str::to_owned);
@@ -513,6 +513,7 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                                             ts.as_deref(),
                                             root.as_deref(),
                                         );
+                                        spawn(crate::bootstrap::mark_activity_read(state, key.clone()));
                                         let Some(channel) = channel.clone().filter(|_| opened) else {
                                             return;
                                         };

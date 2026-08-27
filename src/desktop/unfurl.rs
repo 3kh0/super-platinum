@@ -217,27 +217,7 @@ fn file_node(
     ctx: BlockCtx<'_>,
     file: &super_platinum_core::slack::models::File,
 ) -> Option<RichNode> {
-    let name = file
-        .title
-        .clone()
-        .or_else(|| file.name.clone())
-        .unwrap_or_else(|| "Attachment".into());
-    let mime = file
-        .mimetype
-        .clone()
-        .unwrap_or_else(|| "application/octet-stream".into());
-    let url = file
-        .thumb_360
-        .as_deref()
-        .filter(|_| mime.starts_with("image/"))
-        .or(file.url_private.as_deref())?;
-    Some(RichNode::Media {
-        id: ctx
-            .media
-            .register_image(MediaAssetKind::Attachment, url, &mime),
-        name,
-        mime,
-    })
+    Some(crate::message_vm::file_node(ctx.media, file))
 }
 
 fn image(ctx: BlockCtx<'_>, url: &str, kind: MediaAssetKind) -> super_platinum_core::MediaAssetId {

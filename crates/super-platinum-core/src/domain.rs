@@ -135,6 +135,36 @@ pub struct ActivityState {
 }
 
 impl ActivityState {
+    /// Number of feed items still unread — the bell badge.
+    pub fn unread_count(&self) -> u32 {
+        self.items.iter().filter(|item| item.is_pending()).count() as u32
+    }
+
+    /// Clears the item with this key. Returns its `(type, feed_ts)` when the
+    /// item was unread, so the caller can tell Slack about it.
+    pub fn mark_item_read(&mut self, key: &str) -> Option<(String, String)> {
+        let item = self.items.iter_mut().find(|item| item.key == key)?;
+        if !item.is_pending() {
+            return None;
+        }
+        let target = (item.item.kind.clone(), item.feed_ts.clone());
+        item.mark_read();
+        Some(target)
+    }
+
+    /// Clears every item that a channel read covers. Thread items keep their own
+    /// unread state — Slack tracks those against the thread, not the channel.
+    pub fn mark_channel_read(&mut self, channel: &str) -> bool {
+        let mut changed = false;
+        for item in &mut self.items {
+            if item.is_thread() || item.channel() != Some(channel) {
+                continue;
+            }
+            changed |= item.mark_read();
+        }
+        changed
+    }
+
     pub fn upsert(&mut self, item: ActivityItem) {
         let identity = item.identity();
         if let Some(existing) = self.items.iter_mut().find(|i| i.identity() == identity) {
@@ -332,6 +362,111 @@ mod tests {
             state.entries[1].message.as_ref().unwrap().text.as_deref(),
             Some("first")
         );
+    }
+
+    fn activity_item(json: serde_json::Value) -> crate::slack::models::ActivityItem {
+        serde_json::from_value(json).expect("activity item")
+    }
+
+    #[test]
+    fn marking_an_item_read_reports_it_once_and_drops_the_badge() {
+        let mut state = ActivityState {
+            items: vec![activity_item(serde_json::json!({
+                "is_unread": true,
+                "feed_ts": "300.000300",
+                "key": "thread_v2-C1-100.000100",
+                "item": {
+                    "type": "thread_v2",
+                    "bundle_info": {"payload": {"thread_entry": {
+                        "channel_id": "C1",
+                        "thread_ts": "100.000100",
+                        "unread_msg_count": 4
+                    }}}
+                }
+            }))],
+            ..Default::default()
+        };
+        assert_eq!(state.unread_count(), 1);
+
+        let target = state.mark_item_read("thread_v2-C1-100.000100");
+        assert_eq!(
+            target,
+            Some(("thread_v2".to_owned(), "300.000300".to_owned()))
+        );
+        assert_eq!(state.unread_count(), 0);
+        assert_eq!(state.items[0].unread_msg_count(), 0);
+        // A second click has nothing left to tell Slack about.
+        assert_eq!(state.mark_item_read("thread_v2-C1-100.000100"), None);
+    }
+
+    #[test]
+    fn a_bundle_that_only_carries_a_count_still_marks_read() {
+        // Slack leaves `is_unread` false on bundled channel entries and puts the
+        // number in the entry, which is what the row's badge shows.
+        let mut state = ActivityState {
+            items: vec![activity_item(serde_json::json!({
+                "is_unread": false,
+                "feed_ts": "500.000500",
+                "key": "channel-C9",
+                "item": {
+                    "type": "channel",
+                    "bundle_info": {"payload": {"channel_entry": {
+                        "latest_message": {"ts": "500.000500", "channel": "C9"},
+                        "unread_msg_count": 3
+                    }}}
+                }
+            }))],
+            ..Default::default()
+        };
+        assert_eq!(state.unread_count(), 1);
+
+        assert_eq!(
+            state.mark_item_read("channel-C9"),
+            Some(("channel".to_owned(), "500.000500".to_owned()))
+        );
+        assert_eq!(state.unread_count(), 0);
+        assert_eq!(state.items[0].unread_msg_count(), 0);
+    }
+
+    #[test]
+    fn reading_a_channel_leaves_its_thread_items_unread() {
+        let mut state = ActivityState {
+            items: vec![
+                activity_item(serde_json::json!({
+                    "is_unread": true,
+                    "feed_ts": "200.000200",
+                    "key": "at_user-C1-200.000200",
+                    "item": {"type": "at_user", "message": {"ts": "200.000200", "channel": "C1"}}
+                })),
+                activity_item(serde_json::json!({
+                    "is_unread": true,
+                    "feed_ts": "300.000300",
+                    "key": "thread_v2-C1-100.000100",
+                    "item": {
+                        "type": "thread_v2",
+                        "bundle_info": {"payload": {"thread_entry": {
+                            "channel_id": "C1",
+                            "thread_ts": "100.000100",
+                            "unread_msg_count": 4
+                        }}}
+                    }
+                })),
+                activity_item(serde_json::json!({
+                    "is_unread": true,
+                    "feed_ts": "400.000400",
+                    "key": "at_user-C2-400.000400",
+                    "item": {"type": "at_user", "message": {"ts": "400.000400", "channel": "C2"}}
+                })),
+            ],
+            ..Default::default()
+        };
+
+        assert!(state.mark_channel_read("C1"));
+        assert!(!state.items[0].is_unread);
+        assert!(state.items[1].is_unread, "the thread keeps its own unread");
+        assert!(state.items[2].is_unread, "other channels are untouched");
+        assert_eq!(state.unread_count(), 2);
+        assert!(!state.mark_channel_read("C1"));
     }
 
     #[test]

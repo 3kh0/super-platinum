@@ -196,9 +196,14 @@ fn dispatch(
             AgentResponse::ok(id, json!({ "palette_open": false }))
         }
         AgentCommand::SetQuery { query } | AgentCommand::Type { text: query } => {
-            let mut shell = state.write();
-            shell.palette_query = query.clone();
-            shell.palette_selected = 0;
+            {
+                let mut shell = state.write();
+                shell.palette_query = query.clone();
+                shell.palette_selected = 0;
+            }
+            // The field renders `initial_value`, so a driven query has to be
+            // typed into the DOM as well, or screenshots show an empty box.
+            crate::view::composer::set_field_text("overlay-input", &query);
             AgentResponse::ok(id, json!({ "query": query }))
         }
         AgentCommand::Move { delta } => {
@@ -331,11 +336,12 @@ fn dispatch(
                 return AgentResponse::err(id, format!("no activity item at {index}"));
             };
             let opened = state.write().select_activity_item(
-                key,
+                key.clone(),
                 Some(&channel),
                 Some(&ts),
                 thread_ts.as_deref(),
             );
+            dioxus::prelude::spawn(crate::bootstrap::mark_activity_read(*state, key));
             if !opened {
                 return AgentResponse::err(
                     id,
@@ -565,6 +571,15 @@ fn state_snapshot(state: &ShellState) -> Value {
             "channel_count": state.channels.len(),
             "rt_connected": state.core.workspaces.get(&workspace.id).is_some_and(|workspace| matches!(workspace.rt, super_platinum_core::state::RealtimeStatus::Connected(_))),
         })).collect::<Vec<_>>(),
+        // The rendered slice, so a blank transcript can be told apart from an
+        // empty one without a screenshot.
+        "timeline": json!({
+            "messages": state.messages.len(),
+            "start": state.timeline_start,
+            "end": state.timeline_end,
+            "stick_to_bottom": state.stick_to_bottom,
+            "pending_scroll_to": state.core.pending_scroll_to.as_ref().map(|(channel, _)| channel.clone()),
+        }),
         "recent_messages": state.messages.iter().rev().take(12).rev().map(|message| json!({
             "ts": message.id,
             "author": message.author,

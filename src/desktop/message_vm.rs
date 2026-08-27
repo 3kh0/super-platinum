@@ -210,26 +210,51 @@ fn message_body(
         }
     }
     for file in &message.files {
-        let name = file
-            .title
-            .clone()
-            .or_else(|| file.name.clone())
-            .unwrap_or_else(|| "Attachment".into());
-        let mime = file
-            .mimetype
-            .clone()
-            .unwrap_or_else(|| "application/octet-stream".into());
-        let url = file.url_private.as_deref();
-        nodes.push(RichNode::Paragraph(match url {
-            Some(url) => vec![RichNode::Media {
-                id: media.register(MediaAssetKind::Attachment, url, mime.clone(), true),
-                name,
-                mime,
-            }],
-            None => vec![RichNode::Text(name)],
-        }));
+        nodes.push(RichNode::Paragraph(vec![file_node(media, file)]));
     }
     nodes
+}
+
+/// One attached file. What is painted is always a Slack-side thumbnail — the
+/// original is registered alongside it but stays out of the download queue
+/// until the viewer opens it.
+pub(crate) fn file_node(
+    media: &MediaRegistry,
+    file: &super_platinum_core::slack::models::File,
+) -> RichNode {
+    let name = file
+        .title
+        .clone()
+        .or_else(|| file.name.clone())
+        .unwrap_or_else(|| "Attachment".into());
+    let mime = file
+        .mimetype
+        .clone()
+        .unwrap_or_else(|| "application/octet-stream".into());
+    let full = file
+        .full_url()
+        .map(|url| media.register_deferred(MediaAssetKind::Attachment, url, mime.clone()));
+    match file.preview() {
+        Some(preview) => RichNode::Media {
+            // `register_image` picks the cookie by host: an external image must
+            // never be fetched with the session cookie attached.
+            id: Some(media.register_image(MediaAssetKind::Attachment, &preview.url, preview.mime)),
+            full,
+            name,
+            mime,
+            size: preview.size,
+        },
+        // A PDF, or a clip Slack has not finished transcoding: nothing to draw,
+        // and nothing downloaded until the reader opens it.
+        None if full.is_some() => RichNode::Media {
+            id: None,
+            full,
+            name,
+            mime,
+            size: None,
+        },
+        None => RichNode::Text(name),
+    }
 }
 
 #[cfg(test)]

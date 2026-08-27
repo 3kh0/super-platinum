@@ -119,6 +119,7 @@
 .unread-divider span { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 50%, var(--border)); }
 
 .message {
+  position: relative;
   display: grid;
   grid-template-columns: 36px 1fr;
   gap: 10px;
@@ -180,7 +181,22 @@
   letter-spacing: .03em;
 }
 .pending-label { font-style: italic; }
-.message-tools { display: none; gap: 3px; margin-left: auto; }
+/* Floating, like Slack's: a toolbar that takes part in the header row makes
+   the message taller on hover — and in a narrow pane it wraps onto a second
+   line, resizing the block under the pointer. */
+.message-tools {
+  position: absolute;
+  top: -11px;
+  right: 14px;
+  z-index: 2;
+  display: none;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-raised);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 40%);
+}
 .message:hover .message-tools { display: inline-flex; }
 .message-tools button, .message-editor button {
   padding: 2px 6px;
@@ -257,12 +273,37 @@
 }
 .file-link {
   display: inline-block;
+  margin-top: 5px;
   padding: 7px 9px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface-raised);
+  color: inherit;
+  cursor: pointer;
 }
+.file-link:hover { border-color: var(--border-strong); }
 .media-button { display: block; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
+/* A video is drawn as the poster frame Slack already rendered; the movie is
+   only downloaded once the viewer opens it. */
+.media-poster { position: relative; cursor: pointer; }
+.media-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 55%);
+  color: #fff;
+  font-size: 17px;
+  padding-left: 3px;
+  pointer-events: none;
+}
+.viewer-loading { color: var(--muted); }
+.viewer .primary.disabled { opacity: .5; pointer-events: none; }
 .media-preview > button { margin-top: 5px; color: var(--accent); background: transparent; cursor: pointer; }
 .message-actions { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
 .reaction {

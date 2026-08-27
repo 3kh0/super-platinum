@@ -544,6 +544,7 @@ pub async fn open_thread(mut state: Signal<ShellState>, channel: String, root_ts
                 .collect();
             drop(shell);
             super::session::hydrate_current_surface(state).await;
+            super::history::mark_thread_read(state, channel.clone(), root_ts.clone()).await;
             let mut shell = state.write();
             if shell.thread_root.as_deref() == Some(&root_ts) {
                 let key = (team.clone(), channel.clone(), root_ts.clone());
@@ -562,6 +563,49 @@ pub async fn open_thread(mut state: Signal<ShellState>, channel: String, root_ts
             }
         }
         Err(error) => state.write().toast = Some(format!("Thread failed: {error}")),
+    }
+}
+
+/// Clears one Activity item. Slack's client sends `activity.markRead` with the
+/// entry type, the item's `feed_ts`, and its key the moment a row is clicked
+/// (CDP-verified), so the row and the bell badge stop counting it.
+///
+/// The local clear is optimistic: a failed call leaves the item read only until
+/// the next feed fetch, which is the same self-healing Slack relies on.
+pub async fn mark_activity_read(mut state: Signal<ShellState>, key: String) {
+    let target = {
+        let mut shell = state.write();
+        let Some(target) = shell.core.activity.mark_item_read(&key) else {
+            return;
+        };
+        let unread = shell.core.activity.unread_count();
+        if let Some(team) = shell.core.active_team.clone()
+            && let Some(workspace) = shell.core.workspaces.get_mut(&team)
+        {
+            workspace.activity_unread_count = Some(unread);
+        }
+        target
+    };
+    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+        return;
+    }
+    let Some((transport, client, workspaces)) = credentials(&state) else {
+        return;
+    };
+    let Some(team) = state.read().core.active_team.clone() else {
+        return;
+    };
+    let Some(workspace_session) = workspaces
+        .into_iter()
+        .find(|workspace| workspace.team_id == team)
+    else {
+        return;
+    };
+    let (kind, feed_ts) = target;
+    if let Err(error) =
+        api::mark_activity_read(&transport, &client, &workspace_session, kind, feed_ts, key).await
+    {
+        eprintln!("super-platinum: activity mark read failed: {error}");
     }
 }
 
@@ -680,7 +724,7 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
                             .activity
                             .items
                             .iter()
-                            .filter(|item| item.is_unread)
+                            .filter(|item| item.is_pending())
                             .count();
                         page_index += 1;
                         let should_continue = next_cursor.is_some()

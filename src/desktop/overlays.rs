@@ -44,7 +44,7 @@ pub fn overlay_view(
                                });"#,
                         );
                     },
-                    value: "{input_value}",
+                    initial_value: "{input_value}",
                     placeholder: "{placeholder}",
                     oninput: move |event| match overlay {
                         Overlay::Palette => {
@@ -98,15 +98,31 @@ pub fn overlay_view(
                 }
             } else if overlay == Overlay::Viewer {
                 if let Some(viewer) = snapshot.viewer.as_ref() {
-                    div { class: "viewer",
-                        if viewer.mime.starts_with("image/") {
-                            img { src: "{viewer.id.uri()}", alt: "{viewer.name}" }
-                        } else if viewer.mime.starts_with("video/") {
-                            video { src: "{viewer.id.uri()}", controls: true, autoplay: true, "{viewer.name}" }
-                        } else {
-                            p { "This file type cannot be previewed in the system WebView." }
+                    // Full-resolution bytes are fetched on open, so the element
+                    // has to re-request when they land: an unstamped `src` is
+                    // painted once and never asked for again.
+                    {
+                        let uri = viewer.id.uri_at(snapshot.media_epoch);
+                        let ready = snapshot.media.is_ready(&viewer.id);
+                        rsx! {
+                            div { class: "viewer",
+                                if !ready {
+                                    p { class: "viewer-loading", "Loading {viewer.name}…" }
+                                } else if viewer.mime.starts_with("image/") {
+                                    img { key: "viewer-{uri}", src: "{uri}", alt: "{viewer.name}" }
+                                } else if viewer.mime.starts_with("video/") {
+                                    video { key: "viewer-{uri}", src: "{uri}", controls: true, autoplay: true, "{viewer.name}" }
+                                } else {
+                                    p { "This file type cannot be previewed in the system WebView." }
+                                }
+                                a {
+                                    class: if ready { "primary" } else { "primary disabled" },
+                                    href: "{uri}",
+                                    download: "{viewer.name}",
+                                    "Download {viewer.name}"
+                                }
+                            }
                         }
-                        a { class: "primary", href: "{viewer.id.uri()}", download: "{viewer.name}", "Download {viewer.name}" }
                     }
                 }
             } else if overlay == Overlay::Accounts {

@@ -118,9 +118,18 @@ pub enum RichNode {
         name: String,
     },
     Media {
-        id: MediaAssetId,
+        /// What is painted inline: a thumbnail, or a video's poster frame.
+        /// `None` for a file with no preview — a PDF, or a clip Slack has not
+        /// finished transcoding — which renders as a chip instead.
+        id: Option<MediaAssetId>,
+        /// The original, registered but not downloaded until the viewer opens
+        /// it. `None` when the preview already is the full thing.
+        full: Option<MediaAssetId>,
         name: String,
         mime: String,
+        /// Intrinsic size of the preview, so the row holds its height before
+        /// the bytes land.
+        size: Option<(u32, u32)>,
     },
     /// Block Kit `divider`.
     Divider,

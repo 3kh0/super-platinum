@@ -92,6 +92,10 @@ struct MediaSource {
     url: String,
     mime: String,
     authenticated: bool,
+    /// Registered but not queued. Full-resolution originals — a 60 MB video, a
+    /// photo behind a thumbnail — exist as assets so the viewer can open them,
+    /// but nothing downloads them until somebody asks.
+    deferred: bool,
     /// Stable identity for the on-disk cache; see `MediaStore`. Only set for the
     /// small, endlessly reused images (avatars, emoji) worth persisting.
     slot: Option<String>,
@@ -200,6 +204,38 @@ impl MediaRegistry {
         self.register_source(kind, url, mime.into(), authenticated, None)
     }
 
+    /// Registers bytes nobody has asked for yet: the original behind an inline
+    /// thumbnail, or the movie behind a poster frame. `request` is what puts it
+    /// in the download queue.
+    pub fn register_deferred(
+        &self,
+        kind: MediaAssetKind,
+        url: &str,
+        mime: impl Into<String>,
+    ) -> MediaAssetId {
+        self.register_source_inner(kind, url, mime.into(), is_slack_hosted(url), None, true)
+    }
+
+    /// Queues a deferred asset. Called when the viewer opens one.
+    pub fn request(&self, id: &MediaAssetId) {
+        let mut sources = self.sources.write().expect("media registry poisoned");
+        let Some(source) = sources.get_mut(id) else {
+            return;
+        };
+        if !source.deferred {
+            return;
+        }
+        source.deferred = false;
+        drop(sources);
+        // A deferred asset that failed earlier must not stay parked on its
+        // backoff when the reader explicitly asks for it again.
+        self.backoff
+            .write()
+            .expect("media registry poisoned")
+            .remove(id);
+        self.dirty.store(true, Ordering::Relaxed);
+    }
+
     fn register_source(
         &self,
         kind: MediaAssetKind,
@@ -208,14 +244,31 @@ impl MediaRegistry {
         authenticated: bool,
         slot: Option<String>,
     ) -> MediaAssetId {
+        self.register_source_inner(kind, url, mime, authenticated, slot, false)
+    }
+
+    fn register_source_inner(
+        &self,
+        kind: MediaAssetKind,
+        url: &str,
+        mime: String,
+        authenticated: bool,
+        slot: Option<String>,
+        deferred: bool,
+    ) -> MediaAssetId {
         let key = (kind, url.to_owned());
-        if let Some(id) = self
+        let existing = self
             .source_ids
             .read()
             .expect("media registry poisoned")
             .get(&key)
-        {
-            return id.clone();
+            .cloned();
+        if let Some(id) = existing {
+            // The same URL asked for eagerly wins over a deferred registration.
+            if !deferred {
+                self.request(&id);
+            }
+            return id;
         }
         let id = MediaAssetId::new(kind);
         self.source_ids
@@ -231,6 +284,7 @@ impl MediaRegistry {
                     url: url.to_owned(),
                     mime,
                     authenticated,
+                    deferred,
                     slot,
                 },
             );
@@ -259,9 +313,11 @@ impl MediaRegistry {
         self.sources
             .read()
             .expect("media registry poisoned")
-            .keys()
-            .any(|id| {
-                is_due(backoff.get(id), now) && assets.get(id).is_none_or(|asset| asset.provisional)
+            .iter()
+            .any(|(id, source)| {
+                !source.deferred
+                    && is_due(backoff.get(id), now)
+                    && assets.get(id).is_none_or(|asset| asset.provisional)
             })
     }
 
@@ -331,12 +387,15 @@ impl MediaRegistry {
                     self.insert_asset(id, mime.to_owned(), bytes.into(), false);
                 }
                 Err(error) => {
-                    let host = url::Url::parse(&source.url)
+                    // Host plus path, never the query: a signed media URL
+                    // carries its credential there. Without the path a failure
+                    // cannot be told apart from the next one on the same CDN.
+                    let target = url::Url::parse(&source.url)
                         .ok()
-                        .and_then(|url| url.host_str().map(str::to_owned))
+                        .map(|url| format!("{}{}", url.host_str().unwrap_or_default(), url.path()))
                         .unwrap_or_else(|| "invalid-url".into());
                     eprintln!(
-                        "super-platinum: {} media fetch from {host} failed: {error}",
+                        "super-platinum: {} media fetch from {target} failed: {error}",
                         id.kind().as_str()
                     );
                     self.record_failure(&id, is_permanent(&error));
@@ -356,8 +415,9 @@ impl MediaRegistry {
             .read()
             .expect("media registry poisoned")
             .iter()
-            .filter(|(id, _)| {
-                is_due(backoff.get(*id), now)
+            .filter(|(id, source)| {
+                !source.deferred
+                    && is_due(backoff.get(*id), now)
                     && assets.get(*id).is_none_or(|asset| asset.provisional)
             })
             .map(|(id, source)| (id.clone(), source.clone()))
@@ -675,6 +735,36 @@ mod tests {
             assert_eq!(response.status(), StatusCode::OK, "{uri}");
             assert_eq!(response.body().as_ref(), b"png-bytes", "{uri}");
         }
+    }
+
+    #[test]
+    fn a_deferred_source_waits_until_the_viewer_asks_for_it() {
+        let registry = MediaRegistry::default();
+        let id = registry.register_deferred(
+            MediaAssetKind::Attachment,
+            "https://files.slack.com/files-pri/T1-F1/clip.mp4",
+            "video/mp4",
+        );
+
+        // Nothing downloads a 60 MB movie to draw a message.
+        assert!(!registry.has_pending());
+        assert!(registry.pending_sources().is_empty());
+
+        registry.request(&id);
+        assert!(registry.has_pending());
+        assert_eq!(registry.pending_sources().len(), 1);
+    }
+
+    #[test]
+    fn asking_for_a_url_eagerly_promotes_the_deferred_registration() {
+        let registry = MediaRegistry::default();
+        let url = "https://files.slack.com/files-tmb/T1-F1/photo_800.jpg";
+        let deferred = registry.register_deferred(MediaAssetKind::Attachment, url, "image/jpeg");
+        assert!(!registry.has_pending());
+
+        let eager = registry.register_image(MediaAssetKind::Attachment, url, "image/jpeg");
+        assert_eq!(deferred, eager, "the same URL keeps one asset id");
+        assert!(registry.has_pending());
     }
 
     #[test]

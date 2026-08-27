@@ -165,7 +165,7 @@ impl ShellState {
         let (messages_by_channel, messages) = channels
             .get(active_channel)
             .map(|channel| {
-                let messages = project_messages_for_channel(&workspace, &channel.id, &media);
+                let messages = project_messages_for_channel(&workspace, &channel.id, &media, None);
                 (
                     HashMap::from([(channel.id.clone(), messages.clone())]),
                     messages,
@@ -214,6 +214,7 @@ impl ShellState {
             search_query: String::new(),
             search_results: Vec::new(),
             search_loading: false,
+            unread_anchor: None,
             thread_root: None,
             thread_messages: Vec::new(),
             thread_at_bottom: true,
@@ -271,6 +272,7 @@ impl ShellState {
             search_query: String::new(),
             search_results: Vec::new(),
             search_loading: false,
+            unread_anchor: None,
             thread_root: None,
             thread_messages: Vec::new(),
             thread_at_bottom: true,
@@ -508,6 +510,7 @@ impl ShellState {
             search_query: String::new(),
             search_results: Vec::new(),
             search_loading: false,
+            unread_anchor: None,
             thread_root: None,
             thread_messages: Vec::new(),
             thread_at_bottom: true,
@@ -654,9 +657,11 @@ impl ShellState {
                 );
                 if let Some(message) = state.messages.last_mut() {
                     message.body.push(RichNode::Paragraph(vec![RichNode::Media {
-                        id,
+                        id: Some(id),
+                        full: None,
                         name: "celebration.gif".into(),
                         mime: "image/png".into(),
+                        size: None,
                     }]));
                 }
             }

@@ -1,7 +1,7 @@
 //! Typed DOM view for the Dioxus desktop shell.
 
 mod chrome;
-mod composer;
+pub(crate) mod composer;
 pub(crate) mod rich;
 mod secondary;
 pub(crate) mod theme;
@@ -302,6 +302,42 @@ pub fn shell() -> Element {
                                         } else { "{message.avatar_initials}" }
                                     }
                                 }
+                                // Out of flow, and outside `.message-meta`: a
+                                // toolbar that joins the header row on hover
+                                // reflows — and wraps to a second line in a
+                                // narrow pane — resizing the message under the
+                                // pointer. Compact rows get one this way too.
+                                span { class: "message-tools",
+                                    button {
+                                        onclick: {
+                                            let id = message.id.clone();
+                                            let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
+                                            move |_| {
+                                                spawn(crate::bootstrap::open_thread(state, channel.clone(), id.clone()));
+                                            }
+                                        },
+                                        "Reply"
+                                    }
+                                    if message.is_own {
+                                        button {
+                                            onclick: {
+                                                let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
+                                                let ts = message.id.clone();
+                                                let text = message_plain_text(message);
+                                                move |_| state.write().start_edit(channel.clone(), ts.clone(), text.clone())
+                                            },
+                                            "Edit"
+                                        }
+                                        button {
+                                            onclick: {
+                                                let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
+                                                let ts = message.id.clone();
+                                                move |_| { spawn(crate::bootstrap::delete_message(state, channel.clone(), ts.clone())); }
+                                            },
+                                            "Delete"
+                                        }
+                                    }
+                                }
                                 div { class: "message-content",
                                     if !message.compact {
                                         div { class: "message-meta",
@@ -339,43 +375,12 @@ pub fn shell() -> Element {
                                                     }
                                                 }
                                             }
-                                            span { class: "message-tools",
-                                                button {
-                                                    onclick: {
-                                                        let id = message.id.clone();
-                                                        let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
-                                                        move |_| {
-                                                            spawn(crate::bootstrap::open_thread(state, channel.clone(), id.clone()));
-                                                        }
-                                                    },
-                                                    "Reply"
-                                                }
-                                                if message.is_own {
-                                                    button {
-                                                        onclick: {
-                                                            let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
-                                                            let ts = message.id.clone();
-                                                            let text = message_plain_text(message);
-                                                            move |_| state.write().start_edit(channel.clone(), ts.clone(), text.clone())
-                                                        },
-                                                        "Edit"
-                                                    }
-                                                    button {
-                                                        onclick: {
-                                                            let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
-                                                            let ts = message.id.clone();
-                                                            move |_| { spawn(crate::bootstrap::delete_message(state, channel.clone(), ts.clone())); }
-                                                        },
-                                                        "Delete"
-                                                    }
-                                                }
-                                            }
                                         }
                                     }
                                     if snapshot.core.editing.as_ref().is_some_and(|(channel, ts)| snapshot.channels.get(snapshot.active_channel).is_some_and(|c| &c.id == channel) && ts == &message.id) {
                                         div { class: "message-editor",
                                             textarea {
-                                                value: "{snapshot.core.edit_composer.text}",
+                                                initial_value: "{snapshot.core.edit_composer.text}",
                                                 oninput: move |event| {
                                                     let value = event.value();
                                                     let end = value.len();
@@ -556,7 +561,8 @@ pub fn shell() -> Element {
                     }
                     footer { class: "thread-composer",
                         textarea {
-                            value: "{snapshot.core.thread_composer.text}",
+                            id: "thread-composer",
+                            initial_value: "{snapshot.core.thread_composer.text}",
                             placeholder: "Reply…",
                             oninput: move |event| {
                                 let value = event.value();

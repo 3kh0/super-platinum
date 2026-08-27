@@ -51,12 +51,18 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     .await;
     super::session::hydrate_current_surface(state).await;
     persist_workspace(&state, &team);
+    // Re-read the anchor instead of replaying the copy taken before the fetch.
+    // It may already have been applied, or dropped because the reader scrolled
+    // away — replaying it there is what yanked a reader at the bottom of a busy
+    // channel back up to the unread divider seconds after opening it.
+    let pending = state.read().core.pending_scroll_to.clone();
     if let Some((pending_channel, target)) = pending
         && pending_channel == channel
+        && scroll_to_target(&target).await
     {
-        scroll_to_target(&target).await;
         state.write().core.pending_scroll_to = None;
     }
+    mark_visible_read(state).await;
 }
 
 pub async fn load_older(mut state: Signal<ShellState>) {
@@ -115,11 +121,15 @@ pub async fn load_older(mut state: Signal<ShellState>) {
     persist_workspace(&state, &team);
 }
 
-pub async fn scroll_to_pending(target: super_platinum_core::domain::PendingScrollTarget) {
-    scroll_to_target(&target).await;
+/// Returns whether the anchor actually landed on its row. A pending anchor is
+/// only spent once it does: on a cold channel the rows do not exist yet, and
+/// dropping the anchor there would leave the reader wherever the fallback put
+/// them.
+pub async fn scroll_to_pending(target: super_platinum_core::domain::PendingScrollTarget) -> bool {
+    scroll_to_target(&target).await
 }
 
-async fn scroll_to_target(target: &super_platinum_core::domain::PendingScrollTarget) {
+async fn scroll_to_target(target: &super_platinum_core::domain::PendingScrollTarget) -> bool {
     let selector = match target {
         super_platinum_core::domain::PendingScrollTarget::Message(ts)
         | super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(ts) => {
@@ -139,14 +149,20 @@ async fn scroll_to_target(target: &super_platinum_core::domain::PendingScrollTar
         super_platinum_core::domain::PendingScrollTarget::Latest => String::new(),
     };
     let script = if selector.is_empty() {
-        "requestAnimationFrame(() => { const t=document.getElementById('message-timeline'); if(t) t.scrollTop=t.scrollHeight; });".to_owned()
+        "requestAnimationFrame(() => { const t=document.getElementById('message-timeline'); if(t) t.scrollTop=t.scrollHeight; }); dioxus.send(true);".to_owned()
     } else {
         format!(
-            "requestAnimationFrame(() => {{ const el = document.querySelector({}); if (el) el.scrollIntoView({{block:'center'}}); else {{ const t=document.getElementById('message-timeline'); if(t) t.scrollTop=t.scrollHeight; }} }});",
+            "const el = document.querySelector({});
+             if (el) requestAnimationFrame(() => el.scrollIntoView({{block:'center'}}));
+             else requestAnimationFrame(() => {{ const t=document.getElementById('message-timeline'); if(t) t.scrollTop=t.scrollHeight; }});
+             dioxus.send(Boolean(el));",
             serde_json::to_string(&selector).unwrap()
         )
     };
-    dioxus::document::eval(&script);
+    dioxus::document::eval(&script)
+        .recv::<bool>()
+        .await
+        .unwrap_or(false)
 }
 
 async fn document_number(script: &str) -> f64 {
@@ -225,6 +241,19 @@ pub async fn mark_visible_read(mut state: Signal<ShellState>) {
         .remove(&(target, latest.clone()));
     if result.is_ok() {
         let mut shell = state.write();
+        // Pin the divider before the mark moves `last_read` past it. A channel
+        // opened cold had no messages when it was selected, so this is the first
+        // moment its read position is known.
+        if shell.divider_at(&channel).is_none()
+            && let Some(previous) = shell
+                .core
+                .workspaces
+                .get(&team)
+                .and_then(|workspace| workspace.messages.get(&channel))
+                .and_then(|messages| messages.last_read.clone())
+        {
+            shell.unread_anchor = Some((channel.clone(), previous));
+        }
         if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
             if let Some(messages) = workspace.messages.get_mut(&channel) {
                 messages.last_read = Some(latest.clone());
@@ -239,7 +268,75 @@ pub async fn mark_visible_read(mut state: Signal<ShellState>) {
                 channel.mention_count = Some(0);
             }
         }
+        // Reading the channel covers its mentions, keywords and reactions in the
+        // Activity feed. Thread items keep their own unread state.
+        if shell.core.activity.mark_channel_read(&channel) {
+            let unread = shell.core.activity.unread_count();
+            if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
+                workspace.activity_unread_count = Some(unread);
+            }
+        }
         shell.refresh_from_core();
+    }
+}
+
+/// Marks an opened thread read. Slack tracks thread unreads separately from the
+/// channel, so `conversations.mark` never clears a thread's badge — only
+/// `subscriptions.thread.mark` does.
+pub async fn mark_thread_read(mut state: Signal<ShellState>, channel: String, root_ts: String) {
+    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+        return;
+    }
+    let (team, latest) = {
+        let shell = state.read();
+        let Some(team) = shell.core.active_team.clone() else {
+            return;
+        };
+        let Some(latest) = shell
+            .core
+            .threads
+            .get(&(team.clone(), channel.clone(), root_ts.clone()))
+            .and_then(|messages| messages.messages.last())
+            .and_then(|message| message.ts.clone())
+        else {
+            return;
+        };
+        (team, latest)
+    };
+    let target = super_platinum_core::domain::ReadTarget::Thread {
+        team: team.clone(),
+        channel: channel.clone(),
+        root_ts: root_ts.clone(),
+    };
+    let Some((transport, client, workspaces)) = credentials(&state) else {
+        return;
+    };
+    let Some(workspace_session) = workspaces
+        .into_iter()
+        .find(|workspace| workspace.team_id == team)
+    else {
+        return;
+    };
+    if !state
+        .write()
+        .core
+        .pending_marks
+        .insert((target.clone(), latest.clone()))
+    {
+        return;
+    }
+    let result = api::mark_thread(
+        &transport,
+        &client,
+        &workspace_session,
+        channel,
+        root_ts,
+        latest.clone(),
+    )
+    .await;
+    state.write().core.pending_marks.remove(&(target, latest));
+    if let Err(error) = result {
+        eprintln!("super-platinum: thread mark failed: {error}");
     }
 }
 

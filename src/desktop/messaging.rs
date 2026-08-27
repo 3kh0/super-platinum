@@ -14,7 +14,10 @@ pub async fn send_composer(mut state: Signal<ShellState>) {
         send_attachments(state).await;
         return;
     }
-    let Some(pending) = state.write().queue_composer() else {
+    let pending = state.write().queue_composer();
+    // The box renders `initial_value`, so clearing it is our job.
+    crate::view::composer::set_field_text("channel-composer", &state.read().core.composer.text);
+    let Some(pending) = pending else {
         return;
     };
     send_pending(state, pending, "Message").await;
@@ -25,7 +28,12 @@ pub async fn send_thread_composer(mut state: Signal<ShellState>) {
         send_thread_attachments(state).await;
         return;
     }
-    let Some(pending) = state.write().queue_thread_composer() else {
+    let pending = state.write().queue_thread_composer();
+    crate::view::composer::set_field_text(
+        "thread-composer",
+        &state.read().core.thread_composer.text,
+    );
+    let Some(pending) = pending else {
         return;
     };
     send_pending(state, pending, "Thread reply").await;
@@ -256,6 +264,15 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
             upload_cancel,
         }
     };
+    // An upload consumes the caption the same way a send does.
+    crate::view::composer::set_field_text(
+        if in_thread {
+            "thread-composer"
+        } else {
+            "channel-composer"
+        },
+        "",
+    );
 
     let Some(workspace_session) = workspaces
         .into_iter()

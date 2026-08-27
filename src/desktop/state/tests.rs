@@ -134,3 +134,98 @@ fn activity_item_without_a_message_still_selects() {
     assert!(state.activity_detail_open);
     assert_eq!(state.core.activity.selected.as_deref(), Some("orphan-1"));
 }
+
+#[test]
+fn reaching_the_newest_message_drops_a_pending_anchor() {
+    let media = MediaRegistry::default();
+    let mut state = ShellState::fixture(media);
+    state.core.pending_scroll_to = Some((
+        "C1".into(),
+        super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter("1.000100".into()),
+    ));
+
+    // Still reading history: the anchor is what put them there.
+    state.set_timeline_window(0, 1, None::<(String, f64)>, false);
+    assert!(state.core.pending_scroll_to.is_some());
+
+    // Once the reader is at the newest message, a late anchor would teleport
+    // them back up to the unread divider.
+    state.set_timeline_window(0, 1, None::<(String, f64)>, true);
+    assert!(state.core.pending_scroll_to.is_none());
+}
+
+#[test]
+fn a_read_channel_opens_on_its_newest_message() {
+    let media = MediaRegistry::default();
+    let mut state = ShellState::fixture(media);
+    let read = state
+        .channels
+        .iter()
+        .position(|channel| !channel.unread)
+        .expect("a read fixture channel");
+    // Left the previous conversation scrolled up.
+    state.stick_to_bottom = false;
+
+    state.select_channel(read);
+
+    assert!(state.stick_to_bottom);
+    assert!(state.core.pending_scroll_to.is_none());
+}
+
+#[test]
+fn the_unread_divider_survives_the_read_mark() {
+    let media = MediaRegistry::default();
+    let mut state = ShellState::fixture(media);
+    let ship = state
+        .channels
+        .iter()
+        .position(|channel| channel.id == "C2")
+        .expect("ship");
+
+    state.select_channel(ship);
+    let divider = state
+        .messages
+        .iter()
+        .find(|message| message.show_unread_divider)
+        .map(|message| message.id.clone())
+        .expect("fixture ship has unreads");
+
+    // Opening the channel marks it read; the line stays where the reader left
+    // off for the rest of the visit.
+    if let Some(messages) = state
+        .core
+        .workspaces
+        .get_mut("T1")
+        .and_then(|workspace| workspace.messages.get_mut("C2"))
+    {
+        messages.last_read = messages
+            .messages
+            .last()
+            .and_then(|message| message.ts.clone());
+        messages.unread_count = 0;
+    }
+    state.refresh_from_core();
+    assert_eq!(
+        state
+            .messages
+            .iter()
+            .find(|message| message.show_unread_divider)
+            .map(|message| message.id.as_str()),
+        Some(divider.as_str())
+    );
+
+    // Coming back later opens a read channel with no line at all.
+    let general = state
+        .channels
+        .iter()
+        .position(|channel| channel.id == "C1")
+        .expect("general");
+    state.select_channel(general);
+    state.select_channel(ship);
+    assert!(
+        !state
+            .messages
+            .iter()
+            .any(|message| message.show_unread_divider)
+    );
+}

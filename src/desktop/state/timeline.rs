@@ -16,6 +16,11 @@ impl ShellState {
     ) {
         self.row_heights.extend(measurements);
         self.stick_to_bottom = stick_to_bottom;
+        // A reader who has reached the newest message has outrun any anchor we
+        // were still holding; applying it later reads as a random teleport.
+        if stick_to_bottom {
+            self.core.pending_scroll_to = None;
+        }
         if self.selection_pinned || self.messages.is_empty() {
             return;
         }
@@ -47,26 +52,33 @@ impl ShellState {
         if self.main_view == MainView::Activity {
             self.activity_detail_open = true;
         }
-        self.messages = if let Some(messages) = self.messages_by_channel.get(&channel_id) {
-            messages.clone()
-        } else {
-            let messages = self
-                .core
-                .active_team
-                .as_ref()
-                .and_then(|team| self.core.workspaces.get(team))
-                .map(|workspace| {
-                    crate::channel_vm::project_messages_for_channel(
-                        workspace,
-                        &channel_id,
-                        &self.media,
-                    )
-                })
-                .unwrap_or_default();
-            self.messages_by_channel
-                .insert(channel_id.clone(), messages.clone());
-            messages
-        };
+        // Pin the divider before anything marks the conversation read. The
+        // cached projection is not reused here: it was built for the previous
+        // visit and carries that visit's divider.
+        self.unread_anchor = self
+            .core
+            .active_team
+            .as_ref()
+            .and_then(|team| self.core.workspaces.get(team))
+            .and_then(|workspace| workspace.messages.get(&channel_id))
+            .and_then(|messages| messages.last_read.clone())
+            .map(|last_read| (channel_id.clone(), last_read));
+        self.messages = self
+            .core
+            .active_team
+            .as_ref()
+            .and_then(|team| self.core.workspaces.get(team))
+            .map(|workspace| {
+                crate::channel_vm::project_messages_for_channel(
+                    workspace,
+                    &channel_id,
+                    &self.media,
+                    self.divider_at(&channel_id),
+                )
+            })
+            .unwrap_or_default();
+        self.messages_by_channel
+            .insert(channel_id.clone(), self.messages.clone());
         // Prefer first-unread anchoring when the conversation has unreads.
         if unread
             && let Some(message) = self
@@ -90,6 +102,10 @@ impl ShellState {
                 return;
             }
         }
+        // No unread anchor: the conversation opens on its newest message. Without
+        // this the flag carries over from the channel left behind, and leaving a
+        // scrolled-up channel opens the next one at the top of its window.
+        self.stick_to_bottom = true;
         self.core.pending_scroll_to = None;
         self.reset_timeline_window();
     }

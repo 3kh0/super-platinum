@@ -4,6 +4,29 @@ use super_platinum_core::FormatMark;
 use super::rich::attachment_chip;
 use crate::state::ShellState;
 
+/// Writes a value into a live text field.
+///
+/// The text fields render `initial_value`, not `value`: Dioxus marks `value`
+/// volatile, so it is re-written to the DOM on *every* render. A render that
+/// lands while the field is ahead of the signal — fast typing, or any keystroke
+/// during a busy channel's re-render — puts the older text back and drops
+/// characters. The cost of `initial_value` is that changes the app makes itself
+/// (send clears the box, the agent types into the switcher) have to be pushed.
+pub(crate) fn set_field_text(id: &str, text: &str) {
+    let id = serde_json::to_string(id).unwrap_or_else(|_| "\"\"".into());
+    let text = serde_json::to_string(text).unwrap_or_else(|_| "\"\"".into());
+    dioxus::document::eval(&format!(
+        r#"const field = document.getElementById({id});
+           if (field) {{
+             field.value = {text};
+             if (field.tagName === 'TEXTAREA') {{
+               field.style.height = 'auto';
+               field.style.height = Math.min(160, Math.max(28, field.scrollHeight)) + 'px';
+             }}
+           }}"#
+    ));
+}
+
 pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: &str) -> Element {
     let plus_src = crate::icons::plus_uri();
     let send_src = crate::icons::send_uri();
@@ -41,7 +64,7 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
                 }
                 textarea {
                     id: "channel-composer",
-                    value: "{text}",
+                    initial_value: "{text}",
                     placeholder: "{placeholder}",
                     onmounted: move |_| {
                         dioxus::document::eval(
@@ -62,13 +85,9 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
                         state.core.composer.text = value;
                         state.core.composer.set_selection(end, end);
                         state.notify_typing();
-                        dioxus::document::eval(
-                            r#"const editor = document.getElementById('channel-composer');
-                               if (editor) {
-                                 editor.style.height = 'auto';
-                                 editor.style.height = Math.min(160, Math.max(28, editor.scrollHeight)) + 'px';
-                               }"#,
-                        );
+                        // Autosizing runs off the DOM's own `input` listener
+                        // registered at mount — one IPC round trip per keystroke
+                        // is exactly what makes typing feel gluey.
                     },
                     onkeydown: move |event| {
                         if event.key() == Key::Enter && !event.modifiers().shift() {
@@ -178,7 +197,7 @@ pub(crate) async fn measure_timeline(mut state: Signal<ShellState>) {
         .set_timeline_window(first, last, measurements, stick_to_bottom);
     if first_measurement {
         dioxus::document::eval(
-            "requestAnimationFrame(() => { const timeline = document.getElementById('message-timeline'); if (timeline) timeline.scrollTop = timeline.scrollHeight; });",
+            "requestAnimationFrame(() => requestAnimationFrame(() => { const timeline = document.getElementById('message-timeline'); if (timeline) timeline.scrollTop = timeline.scrollHeight; }));",
         );
     }
     if stick_to_bottom || first_measurement {

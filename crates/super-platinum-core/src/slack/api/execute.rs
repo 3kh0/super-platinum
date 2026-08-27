@@ -46,6 +46,20 @@ pub async fn mark_channel(
     Ok(())
 }
 
+pub async fn mark_activity_read(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    kind: String,
+    feed_ts: MessageTs,
+    key: String,
+) -> Result<(), Error> {
+    transport
+        .execute(activity_mark_read(client, workspace, kind, feed_ts, key))
+        .await?;
+    Ok(())
+}
+
 pub async fn mark_thread(
     transport: &Transport,
     client: &SlackClient,

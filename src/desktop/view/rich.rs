@@ -75,6 +75,13 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
             span { class: "custom-emoji", title: ":{name}:", "{glyph}" }
         },
         RichNode::EmojiImage { id, name } => {
+            // Custom emoji paint over a transparent placeholder, so a message
+            // that is nothing but one emoji reads as an empty row until the
+            // bytes land — or forever, if that download never succeeds. Show
+            // the shortcode until there is a picture to put in its place.
+            if !state.read().media.is_ready(id) {
+                return rsx! { span { class: "custom-emoji", title: ":{name}:", ":{name}:" } };
+            }
             let uri = id.uri_at(media_epoch);
             rsx! {
                 img {
@@ -86,16 +93,75 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                 }
             }
         }
-        RichNode::Media { id, name, mime } => {
+        RichNode::Media {
+            id,
+            full,
+            name,
+            mime,
+            size,
+        } => {
+            // The box the preview will fill, declared before its bytes land:
+            // without it every arriving image shoves the transcript around
+            // under the reader.
+            let sizing = size
+                .filter(|(width, height)| *width > 0 && *height > 0)
+                .map(|(width, height)| {
+                    format!("width: {width}px; aspect-ratio: {width} / {height}")
+                })
+                .unwrap_or_default();
+            let Some(target) = full.as_ref().or(id.as_ref()) else {
+                return rsx! { span { class: "file-link", "📎 {name}" } };
+            };
+            let viewer = viewer_vm(target, name, mime);
+            let Some(id) = id.as_ref() else {
+                return rsx! {
+                    button {
+                        class: "file-link",
+                        onclick: move |_| open_viewer(state, viewer.clone()),
+                        "📎 {name}"
+                    }
+                };
+            };
             let uri = id.uri_at(media_epoch);
             if mime.starts_with("image/") {
-                let viewer = viewer_vm(id, name, mime);
-                rsx! { button { class: "media-button", onclick: move |_| open_viewer(state, viewer.clone()), img { key: "media-{media_epoch}-{uri}", class: "message-media", src: "{uri}", alt: "{name}" } } }
+                rsx! {
+                    button {
+                        class: "media-button",
+                        onclick: move |_| open_viewer(state, viewer.clone()),
+                        img {
+                            key: "media-{media_epoch}-{uri}",
+                            class: "message-media",
+                            src: "{uri}",
+                            alt: "{name}",
+                            style: "{sizing}",
+                        }
+                    }
+                }
             } else if mime.starts_with("video/") {
-                let viewer = viewer_vm(id, name, mime);
-                rsx! { div { class: "media-preview", video { key: "media-{media_epoch}-{uri}", class: "message-video", src: "{uri}", controls: true, "{name}" } button { onclick: move |_| open_viewer(state, viewer.clone()), "Open viewer" } } }
+                // Inline is the poster frame Slack already rendered; the movie
+                // itself downloads only once the viewer opens it.
+                rsx! {
+                    button {
+                        class: "media-button media-poster",
+                        onclick: move |_| open_viewer(state, viewer.clone()),
+                        img {
+                            key: "media-{media_epoch}-{uri}",
+                            class: "message-media",
+                            src: "{uri}",
+                            alt: "{name}",
+                            style: "{sizing}",
+                        }
+                        span { class: "media-play", "▶" }
+                    }
+                }
             } else {
-                rsx! { a { class: "file-link", href: "{uri}", download: "{name}", "📎 {name}" } }
+                rsx! {
+                    button {
+                        class: "file-link",
+                        onclick: move |_| open_viewer(state, viewer.clone()),
+                        "📎 {name}"
+                    }
+                }
             }
         }
 
@@ -246,6 +312,8 @@ fn viewer_vm(
 
 fn open_viewer(mut state: Signal<ShellState>, viewer: crate::state::ViewerVm) {
     let mut shell = state.write();
+    // Full-resolution bytes are deferred until exactly this moment.
+    shell.media.request(&viewer.id);
     shell.viewer = Some(viewer);
     shell.overlay = Some(Overlay::Viewer);
 }

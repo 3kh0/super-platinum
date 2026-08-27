@@ -299,3 +299,34 @@ fn snooze_covers_manual_snooze_and_the_open_dnd_window() {
 
     assert!(!DndInfo::default().is_snoozed(100));
 }
+
+#[test]
+fn profile_pane_avatar_prefers_a_sized_variant_over_the_upload() {
+    let user = User {
+        id: "U1".into(),
+        profile: Some(UserProfile {
+            image_72: Some("https://example.test/72.png".into()),
+            image_512: Some("https://example.test/512.png".into()),
+            image_original: Some("https://example.test/original.png".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    assert_eq!(
+        user_profile_image_url(&user),
+        Some("https://example.test/512.png")
+    );
+
+    let upload_only = User {
+        id: "U2".into(),
+        profile: Some(UserProfile {
+            image_original: Some("https://example.test/original.png".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    assert_eq!(
+        user_profile_image_url(&upload_only),
+        Some("https://example.test/original.png")
+    );
+}

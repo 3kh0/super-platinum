@@ -99,6 +99,10 @@ pub(crate) fn project_messages_for_channel(
     workspace: &super_platinum_core::state::Workspace,
     channel_id: &str,
     media: &MediaRegistry,
+    // Where the unread divider belongs, when the conversation is open. Reading
+    // the channel moves `last_read` to the newest message within a second of
+    // opening it, and Slack still keeps the line on screen for the visit.
+    divider_at: Option<&str>,
 ) -> Vec<crate::model::MessageVm> {
     let Some(bag) = workspace.messages.get(channel_id) else {
         return Vec::new();
@@ -112,6 +116,10 @@ pub(crate) fn project_messages_for_channel(
         .iter()
         .map(|message| crate::message_vm::message_vm(workspace, message, media))
         .collect::<Vec<_>>();
-    crate::message_vm::annotate_timeline(&mut messages, &raw, bag.last_read.as_deref());
+    crate::message_vm::annotate_timeline(
+        &mut messages,
+        &raw,
+        divider_at.or(bag.last_read.as_deref()),
+    );
     messages
 }

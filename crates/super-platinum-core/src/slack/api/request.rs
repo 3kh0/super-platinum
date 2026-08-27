@@ -198,6 +198,22 @@ pub fn activity_feed(
     client.rest_form(workspace, "activity.feed", fields)
 }
 
+/// Clears one Activity feed item. Slack's client sends exactly this on a click:
+/// the entry type, the item's `feed_ts`, and its `key` (CDP-verified).
+pub fn activity_mark_read(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    kind: String,
+    feed_ts: MessageTs,
+    key: String,
+) -> PreparedRequest {
+    client.rest_form(
+        workspace,
+        "activity.markRead",
+        vec![("type", kind), ("feed_ts", feed_ts), ("key", key)],
+    )
+}
+
 pub fn sidebar_dms(client: &SlackClient, workspace: &WorkspaceSession) -> PreparedRequest {
     client.rest_form(workspace, "sidebar.dms", Vec::new())
 }
