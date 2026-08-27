@@ -15,6 +15,10 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
             } => {
                 if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
                     workspace.rt_generation = generation;
+                    let self_user = workspace.self_user_id.clone();
+                    connection.send(super_platinum_core::slack::realtime::presence_sub_frame(
+                        std::slice::from_ref(&self_user),
+                    ));
                     workspace.rt =
                         super_platinum_core::state::RealtimeStatus::Connected(connection);
                 }
@@ -133,10 +137,17 @@ fn apply(
         RtEvent::UserTyping { channel, user } => {
             workspace.set_typing(&channel, user, std::time::Instant::now())
         }
-        RtEvent::PresenceChange { user, presence } => workspace.set_presence(
-            user,
-            super_platinum_core::state::Presence::from_slack(&presence),
-        ),
+        RtEvent::PresenceChange { users, presence } => {
+            let presence = super_platinum_core::state::Presence::from_slack(&presence);
+            for user in users {
+                workspace.set_presence(user, presence);
+            }
+        }
+        RtEvent::DndUpdated { user, dnd } => {
+            if user == workspace.self_user_id {
+                workspace.self_dnd = dnd;
+            }
+        }
         RtEvent::ReactionAdded {
             channel,
             ts,

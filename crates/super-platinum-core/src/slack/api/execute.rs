@@ -146,6 +146,15 @@ pub async fn fetch_messages_list(
     decode(value, "messages.list")
 }
 
+pub async fn fetch_dnd_info(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+) -> Result<DndInfo, Error> {
+    let value = transport.execute(dnd_info(client, workspace)).await?;
+    decode(value, "dnd.info")
+}
+
 pub async fn set_presence(
     transport: &Transport,
     client: &SlackClient,

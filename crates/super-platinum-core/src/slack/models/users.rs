@@ -151,3 +151,36 @@ where
 {
     Ok(Option::<T>::deserialize(deserializer)?.unwrap_or_default())
 }
+
+/// `dnd.info` for the signed-in user: the manual snooze plus the scheduled
+/// Do Not Disturb window. Slack reports both independently, and the rail badge
+/// only cares whether either one is muting notifications right now.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DndInfo {
+    #[serde(default)]
+    pub dnd_enabled: bool,
+    #[serde(default)]
+    pub next_dnd_start_ts: Option<i64>,
+    #[serde(default)]
+    pub next_dnd_end_ts: Option<i64>,
+    #[serde(default)]
+    pub snooze_enabled: bool,
+    #[serde(default)]
+    pub snooze_endtime: Option<i64>,
+    #[serde(default)]
+    pub snooze_remaining: Option<i64>,
+}
+
+impl DndInfo {
+    /// True while notifications are actually suppressed. `dnd_enabled` alone is
+    /// not enough: the scheduled window is reported even when it is still in
+    /// the future, so it only counts once `now` is inside it.
+    pub fn is_snoozed(&self, now: i64) -> bool {
+        if self.snooze_enabled && self.snooze_endtime.is_none_or(|end| end > now) {
+            return true;
+        }
+        self.dnd_enabled
+            && self.next_dnd_start_ts.is_some_and(|start| start <= now)
+            && self.next_dnd_end_ts.is_some_and(|end| end > now)
+    }
+}

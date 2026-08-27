@@ -53,6 +53,9 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
     }
     workspace
         .presence
+        .insert("U0".into(), super_platinum_core::state::Presence::Active);
+    workspace
+        .presence
         .insert("U1".into(), super_platinum_core::state::Presence::Active);
     workspace
         .presence

@@ -529,9 +529,23 @@ fn placeholder_for(kind: MediaAssetKind) -> &'static [u8] {
     }
 }
 
+/// The floor the real client enforces on macOS, measured against Slack 4.51
+/// over CDP: any smaller and its own layout starts colliding. `styles/
+/// responsive.css` is written to hold together down to exactly this size.
+const WINDOW_MIN_INNER_SIZE: dioxus::desktop::tao::dpi::LogicalSize<f64> =
+    dioxus::desktop::tao::dpi::LogicalSize::new(668.0, 400.0);
+
+const WINDOW_DEFAULT_INNER_SIZE: dioxus::desktop::tao::dpi::LogicalSize<f64> =
+    dioxus::desktop::tao::dpi::LogicalSize::new(1280.0, 800.0);
+
 pub fn desktop_config(media: MediaRegistry) -> Config {
     Config::new()
-        .with_window(WindowBuilder::new().with_title("Super Platinum"))
+        .with_window(
+            WindowBuilder::new()
+                .with_title("Super Platinum")
+                .with_inner_size(WINDOW_DEFAULT_INNER_SIZE)
+                .with_min_inner_size(WINDOW_MIN_INNER_SIZE),
+        )
         .with_custom_head(format!(
             r#"<meta http-equiv="Content-Security-Policy" content="{CSP}">"#
         ))

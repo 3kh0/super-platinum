@@ -117,10 +117,10 @@
 
 .profile-pane {
   position: relative;
-  width: var(--profile-pane-width, 495px);
-  min-width: 200px;
+  width: min(var(--profile-pane-width, 495px), var(--profile-pane-max, 495px));
+  min-width: 0;
   max-width: calc(100vw - var(--rail-width));
-  flex: 0 0 var(--profile-pane-width, 495px);
+  flex: 0 0 auto;
   height: 100%;
   display: flex;
   flex-direction: column;

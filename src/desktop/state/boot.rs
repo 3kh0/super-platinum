@@ -173,6 +173,7 @@ impl ShellState {
             })
             .unwrap_or_default();
         let timeline_end = messages.len();
+        let self_account = crate::state::project_self_account(&workspace, &media);
 
         Ok(Self {
             core,
@@ -182,6 +183,7 @@ impl ShellState {
             signed_in: true,
             loading: channels.is_empty(),
             accounts: account_vms(&accounts),
+            self_account,
             workspaces,
             active_workspace: 0,
             channels,
@@ -237,6 +239,7 @@ impl ShellState {
             signed_in: false,
             loading: false,
             accounts: Vec::new(),
+            self_account: SelfAccountVm::default(),
             workspaces: Vec::new(),
             active_workspace: 0,
             channels: Vec::new(),
@@ -444,6 +447,11 @@ impl ShellState {
             }],
         );
         let timeline_end = messages.len();
+        let self_fixture_account = core
+            .workspaces
+            .get("T1")
+            .map(|workspace| crate::state::project_self_account(workspace, &media))
+            .unwrap_or_default();
         Self {
             core,
             media,
@@ -456,6 +464,7 @@ impl ShellState {
                 label: "Fixture account".into(),
                 active: true,
             }],
+            self_account: self_fixture_account,
             workspaces: vec![
                 WorkspaceVm {
                     id: "T1".into(),
@@ -514,6 +523,12 @@ impl ShellState {
     pub(crate) fn fixture_variant(media: MediaRegistry, name: &str) -> Self {
         let mut state = Self::fixture(media);
         match name {
+            // Rail account button with notifications snoozed: the avatar notch
+            // and the "Z" presence glyph only appear in this state.
+            "rail-account-snoozed" => {
+                state.self_account.snoozed = true;
+                state.self_account.presence = PresenceVm::Away;
+            }
             "unreads" => state.main_view = MainView::Unreads,
             "dms" => state.main_view = MainView::Dms,
             "dm-header-compact" => {

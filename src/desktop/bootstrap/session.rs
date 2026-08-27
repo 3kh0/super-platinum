@@ -37,6 +37,11 @@ pub async fn refresh(mut state: Signal<ShellState>) {
         {
             workspace.apply_counts(counts);
         }
+        if let Ok(dnd) = api::fetch_dnd_info(&transport, &client, &workspace_session).await
+            && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
+        {
+            workspace.self_dnd = dnd;
+        }
         if let Ok(dms) = api::fetch_sidebar_dms(&transport, &client, &workspace_session).await
             && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
         {

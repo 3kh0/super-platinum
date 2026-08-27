@@ -1,0 +1,65 @@
+/* ── Narrow windows ──────────────────────────────────────
+   The window cannot be dragged below WINDOW_MIN_INNER_SIZE (668×400, the floor
+   the real client enforces), so these steps only have to carry the layout from
+   a comfortable width down to that floor. Loaded last so it overrides the
+   per-surface modules above.
+
+   Two rules this file has to keep:
+
+   - Column widths are plain lengths, never `vw`. The shell is a grid whose
+     side columns are `auto` tracks; a proportional width makes the track and
+     its item disagree, and the column then paints over its neighbour.
+   - Widths are set on the element (`.app-shell > .sidebar`), not by
+     redefining the token on `:root`. The theme `<style>` is injected after
+     this sheet and re-declares `--sidebar-width` at the same specificity, so a
+     token override here would silently lose. `min()` keeps a user who chose a
+     narrower sidebar at their own width. */
+
+@media (max-width: 1100px) {
+  .app-shell > .sidebar { width: min(var(--sidebar-width, 240px), 212px); }
+  .app-shell > .list-panel { width: min(var(--list-panel-width), 300px); }
+  .thread-pane { width: 320px; }
+  .profile-pane { width: min(var(--profile-pane-width, 495px), 400px); }
+}
+
+@media (max-width: 900px) {
+  :root { --density-gap: 4px; }
+  .app-shell > .sidebar { width: min(var(--sidebar-width, 240px), 196px); }
+  .app-shell > .list-panel { width: min(var(--list-panel-width), 264px); }
+  .thread-pane { width: 288px; }
+  .profile-pane { width: min(var(--profile-pane-width, 495px), 340px); }
+  /* The shortcut hint is the first thing to stop paying for its width. */
+  .jump-to .hint { display: none; }
+  .sidebar-title { padding: 8px 10px 4px; font-size: 14px; }
+  .conversation-header { padding: 0 10px; gap: 8px; }
+  .conversation-header h2 { font-size: 14px; }
+}
+
+/* Down here a fourth column would leave the transcript unreadably narrow, so
+   the thread and profile panes stop being columns and slide over the
+   transcript instead. 180px is the sidebar floor the real client stops at. */
+@media (max-width: 780px) {
+  :root { --msg-avatar: 24px; }
+  .app-shell > .sidebar { width: min(var(--sidebar-width, 240px), 180px); }
+  .app-shell > .list-panel { width: min(var(--list-panel-width), 232px); }
+  .thread-pane, .profile-pane {
+    position: absolute;
+    z-index: 5;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    box-shadow: -12px 0 32px rgb(0 0 0 / 45%);
+  }
+  .thread-pane { width: min(360px, 60vw); }
+  .profile-pane { width: min(var(--profile-pane-width, 495px), 60vw); }
+  .profile-resize-handle { display: none; }
+  .list-panel-header h2 { font-size: 13px; }
+  .list-panel-header .toggle { display: none; }
+  .huddle-button { display: none; }
+}
+
+/* Any column that can hold long unbreakable text needs an explicit floor of
+   zero, or its content sets a min-content width the grid cannot undercut and
+   the neighbouring column is pushed off-screen. */
+.app-shell > * { min-width: 0; }
+.conversation, .timeline, .message-content, .composer { min-width: 0; }

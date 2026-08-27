@@ -199,9 +199,3 @@
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 820px) {
-  .app-shell { grid-template-columns: var(--rail-width) minmax(180px, 200px) minmax(280px, 1fr); }
-  .list-panel { width: 260px; }
-  .thread-pane { position: absolute; right: 0; top: 0; bottom: 0; z-index: 5; }
-}

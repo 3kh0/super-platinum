@@ -290,6 +290,8 @@ pub struct Workspace {
     pub messages: HashMap<ChannelId, ChannelMessages>,
     pub typing: HashMap<ChannelId, Vec<(UserId, Instant)>>,
     pub presence: HashMap<UserId, Presence>,
+    /// `dnd.info` for the signed-in user: drives the rail's snooze badge.
+    pub self_dnd: crate::slack::models::DndInfo,
     /// Active huddles keyed by channel id. A channel has at most one live huddle.
     pub active_huddles: HashMap<ChannelId, Room>,
     pub rt: RealtimeStatus,
@@ -320,6 +322,7 @@ impl Workspace {
             messages: HashMap::new(),
             typing: HashMap::new(),
             presence: HashMap::new(),
+            self_dnd: Default::default(),
             active_huddles: HashMap::new(),
             rt: RealtimeStatus::default(),
             rt_generation: 0,
@@ -635,6 +638,21 @@ impl Workspace {
 
     pub fn active_huddle(&self, channel: &str) -> Option<&Room> {
         self.active_huddles.get(channel)
+    }
+
+    /// Presence for the signed-in user. Slack answers `presence_query` for
+    /// your own id like anyone else's, so this reads the same map.
+    pub fn self_presence(&self) -> Presence {
+        self.presence
+            .get(&self.self_user_id)
+            .copied()
+            .unwrap_or(Presence::Unknown)
+    }
+
+    /// True while the signed-in user's notifications are suppressed by a
+    /// manual snooze or an open scheduled Do Not Disturb window.
+    pub fn self_snoozed(&self) -> bool {
+        self.self_dnd.is_snoozed(now_secs())
     }
 
     pub fn presence_for_channel(&self, channel: &Channel) -> Presence {

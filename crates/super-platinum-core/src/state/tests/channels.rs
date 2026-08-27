@@ -70,6 +70,7 @@ fn is_vip_channel_from_vip_users_and_metadata() {
         messages: HashMap::new(),
         typing: HashMap::new(),
         presence: HashMap::new(),
+        self_dnd: Default::default(),
         active_huddles: HashMap::new(),
         rt: RealtimeStatus::default(),
         rt_generation: 0,

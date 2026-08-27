@@ -14,7 +14,8 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 7px 0;
+  /* The account badge overhangs its button, so the rail keeps room below it. */
+  padding: 7px 0 11px;
   background: var(--rail);
   border-right: 1px solid var(--border);
 }
@@ -46,23 +47,62 @@
   text-align: center;
 }
 .rail-spacer { flex: 1; }
+/* Account button: the signed-in user's picture with a presence badge sitting in
+   a notch cut out of the picture, the way the real client masks its own avatar.
+   The button itself is not clipped — the badge overhangs it. */
 .rail-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  overflow: hidden;
-  background: var(--surface-raised);
-  display: grid;
-  place-items: center;
+  position: relative;
+  width: 26px;
+  height: 26px;
+  display: block;
+  flex: 0 0 26px;
+  /* A button carries the platform's own padding, which would squeeze the
+     picture inside the border box and stretch it out of square. */
+  padding: 0;
   font-size: 11px;
   font-weight: 700;
+  line-height: 1;
 }
-.rail-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.rail-avatar-image,
+.rail-avatar-initials {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--avatar-bg);
+  clip-path: url(#rail-avatar-mask);
+}
+.rail-avatar.snoozed .rail-avatar-image,
+.rail-avatar.snoozed .rail-avatar-initials {
+  clip-path: url(#rail-avatar-mask-snoozed);
+}
+.rail-avatar-image { display: block; object-fit: cover; aspect-ratio: 1; }
+.rail-avatar:hover .rail-avatar-image,
+.rail-avatar:hover .rail-avatar-initials { box-shadow: 0 0 0 2px var(--border-strong); }
+.rail-avatar-initials { display: grid; place-items: center; color: var(--text); }
+.avatar-mask-defs { position: absolute; width: 0; height: 0; }
+.rail-presence {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  /* 0.75 × the avatar, offset the way the real client offsets its own: the
+     glyph then lands exactly in the hole the clip path cuts. */
+  width: 19.5px;
+  height: 19.5px;
+  color: var(--muted);
+  pointer-events: none;
+  transform: translate(43.333%, 23.333%);
+}
+.rail-presence svg { width: 100%; height: 100%; display: block; }
+.rail-presence.active { color: var(--success); }
 
 /* ── Sidebar (channel tree under Home) ───────────────── */
 .sidebar {
+  /* Stepped by `responsive.css` rather than sized proportionally: an `auto`
+     grid track only agrees with its item when that item's width is a plain
+     length, and a mismatch here is what let the sidebar paint over the
+     transcript. */
   width: var(--sidebar-width, 240px);
-  min-width: 200px;
+  min-width: 0;
   max-width: 360px;
   display: flex;
   flex-direction: column;

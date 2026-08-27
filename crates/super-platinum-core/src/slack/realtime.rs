@@ -61,6 +61,14 @@ pub fn presence_query_frame(ids: &[String]) -> String {
     serde_json::json!({ "type": "presence_query", "ids": ids }).to_string()
 }
 
+/// Standing presence subscription. Captured from the real client over CDP: the
+/// first frame it sends after a connect is `presence_sub` for its own user id,
+/// and flannel answers with a `presence_change` naming the ids under `users`.
+/// Unlike `presence_query` this keeps pushing, so the badge stays live.
+pub fn presence_sub_frame(ids: &[String]) -> String {
+    serde_json::json!({ "type": "presence_sub", "ids": ids }).to_string()
+}
+
 /// Spawn a renderer-independent realtime supervisor.
 ///
 /// The receiver closes when its consumer is dropped. Each connection attempt
@@ -215,17 +223,39 @@ pub fn parse_event(text: &str) -> Option<RtEvent> {
             channel: value.get("channel").and_then(Value::as_str)?.to_owned(),
             user: value.get("user").and_then(Value::as_str)?.to_owned(),
         }),
-        "presence_change" => Some(RtEvent::PresenceChange {
-            user: value
-                .get("user")
-                .and_then(Value::as_str)
-                .unwrap_or("")
-                .to_owned(),
-            presence: value
-                .get("presence")
-                .and_then(Value::as_str)
-                .unwrap_or("")
-                .to_owned(),
+        "presence_change" => {
+            let mut users: Vec<String> = value
+                .get("users")
+                .and_then(Value::as_array)
+                .map(|ids| {
+                    ids.iter()
+                        .filter_map(Value::as_str)
+                        .map(str::to_owned)
+                        .collect()
+                })
+                .unwrap_or_default();
+            if let Some(user) = value.get("user").and_then(Value::as_str) {
+                users.push(user.to_owned());
+            }
+            if users.is_empty() {
+                return None;
+            }
+            Some(RtEvent::PresenceChange {
+                users,
+                presence: value
+                    .get("presence")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_owned(),
+            })
+        }
+        "dnd_updated" | "dnd_updated_user" => Some(RtEvent::DndUpdated {
+            user: value.get("user").and_then(Value::as_str)?.to_owned(),
+            dnd: value
+                .get("dnd_status")
+                .cloned()
+                .and_then(|status| serde_json::from_value(status).ok())
+                .unwrap_or_default(),
         }),
         "reaction_added" => parse_reaction_event(value, true),
         "reaction_removed" => parse_reaction_event(value, false),
@@ -372,6 +402,52 @@ mod tests {
     }
 
     #[test]
+    fn parses_batched_and_single_presence_change() {
+        // Flannel answers a `presence_query` with a batched `users` array; the
+        // classic single-`user` shape still shows up on some frames.
+        let batched = r#"{"type":"presence_change","users":["U1","U2"],"presence":"active"}"#;
+        match parse_event(batched) {
+            Some(RtEvent::PresenceChange { users, presence }) => {
+                assert_eq!(users, vec!["U1".to_owned(), "U2".to_owned()]);
+                assert_eq!(presence, "active");
+            }
+            other => panic!("unexpected event: {other:?}"),
+        }
+        let single = r#"{"type":"presence_change","user":"U3","presence":"away"}"#;
+        match parse_event(single) {
+            Some(RtEvent::PresenceChange { users, presence }) => {
+                assert_eq!(users, vec!["U3".to_owned()]);
+                assert_eq!(presence, "away");
+            }
+            other => panic!("unexpected event: {other:?}"),
+        }
+        let empty = r#"{"type":"presence_change","presence":"away"}"#;
+        assert!(parse_event(empty).is_none());
+    }
+
+    #[test]
+    fn parses_dnd_updated_for_self_and_others() {
+        let own = r#"{"type":"dnd_updated","user":"U0","dnd_status":{"dnd_enabled":true,"next_dnd_start_ts":10,"next_dnd_end_ts":20,"snooze_enabled":true,"snooze_endtime":99}}"#;
+        match parse_event(own) {
+            Some(RtEvent::DndUpdated { user, dnd }) => {
+                assert_eq!(user, "U0");
+                assert!(dnd.snooze_enabled);
+                assert_eq!(dnd.snooze_endtime, Some(99));
+            }
+            other => panic!("unexpected event: {other:?}"),
+        }
+        // Other members arrive without the snooze half of the payload.
+        let other_user = r#"{"type":"dnd_updated_user","user":"U1","dnd_status":{"dnd_enabled":false}}"#;
+        match parse_event(other_user) {
+            Some(RtEvent::DndUpdated { user, dnd }) => {
+                assert_eq!(user, "U1");
+                assert!(!dnd.dnd_enabled);
+            }
+            other => panic!("unexpected event: {other:?}"),
+        }
+    }
+
+    #[test]
     fn parses_reaction_events_for_messages() {
         let added = r#"{"type":"reaction_added","user":"U1","reaction":"thumbsup","item":{"type":"message","channel":"C1","ts":"1.2"}}"#;
         match parse_event(added) {
@@ -492,6 +568,14 @@ mod tests {
             user_typing_frame("C1"),
             r#"{"type":"user_typing","channel":"C1"}"#
         );
+    }
+
+    #[test]
+    fn presence_sub_frame_contains_ids() {
+        let frame = presence_sub_frame(&["U1".into()]);
+        let value: serde_json::Value = serde_json::from_str(&frame).unwrap();
+        assert_eq!(value["type"], "presence_sub");
+        assert_eq!(value["ids"], serde_json::json!(["U1"]));
     }
 
     #[test]

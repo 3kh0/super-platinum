@@ -1,5 +1,5 @@
 use super::super::*;
-use crate::slack::models::{BootData, BootSelf, BotProfile, MessageIcons, UserProfile};
+use crate::slack::models::{BootData, BootSelf, BotProfile, DndInfo, MessageIcons, UserProfile};
 
 #[test]
 fn display_name_fallback_chain() {
@@ -197,6 +197,7 @@ fn boot_self_user_provides_self_avatar_url() {
         messages: HashMap::new(),
         typing: HashMap::new(),
         presence: HashMap::new(),
+        self_dnd: Default::default(),
         active_huddles: HashMap::new(),
         rt: RealtimeStatus::default(),
         rt_generation: 0,
@@ -271,4 +272,30 @@ fn partial_boot_user_preserves_cached_profile_identity_and_avatar() {
         user.profile.as_ref().unwrap().status_text.as_deref(),
         Some("")
     );
+}
+
+#[test]
+fn snooze_covers_manual_snooze_and_the_open_dnd_window() {
+    // A scheduled window is reported even when it has not started yet, so
+    // `dnd_enabled` on its own must not light the badge.
+    let scheduled = DndInfo {
+        dnd_enabled: true,
+        next_dnd_start_ts: Some(200),
+        next_dnd_end_ts: Some(300),
+        ..Default::default()
+    };
+    assert!(!scheduled.is_snoozed(100));
+    assert!(scheduled.is_snoozed(250));
+    assert!(!scheduled.is_snoozed(300));
+
+    // A manual snooze stands on its own, and expires with its end time.
+    let snoozed = DndInfo {
+        snooze_enabled: true,
+        snooze_endtime: Some(150),
+        ..Default::default()
+    };
+    assert!(snoozed.is_snoozed(100));
+    assert!(!snoozed.is_snoozed(150));
+
+    assert!(!DndInfo::default().is_snoozed(100));
 }

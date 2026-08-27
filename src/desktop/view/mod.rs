@@ -29,6 +29,7 @@ const CSS: &str = concat!(
     include_str!("../styles/composer.css"),
     include_str!("../styles/overlays.css"),
     include_str!("../styles/profile.css"),
+    include_str!("../styles/responsive.css"),
 );
 
 pub fn shell() -> Element {
@@ -178,11 +179,12 @@ pub fn shell() -> Element {
         MainView::Dms => active_is_dm,
         _ => false,
     };
-    let account_initial = snapshot
-        .workspaces
-        .get(snapshot.active_workspace)
-        .map(|workspace| workspace.initials.as_str())
-        .unwrap_or("S");
+    let account = &snapshot.self_account;
+    let account_avatar = account
+        .avatar
+        .as_ref()
+        .filter(|avatar| snapshot.media.is_ready(avatar))
+        .map(|avatar| avatar.uri_at(snapshot.media_epoch));
 
     rsx! {
         style { {CSS} }
@@ -194,7 +196,7 @@ pub fn shell() -> Element {
                 event.prevent_default();
                 state.write().add_attachments(event.data_transfer().files().into_iter().map(|file| file.path()));
             },
-            {rail_view(state, snapshot.main_view, dm_unread_total, activity_unread_total, account_initial)}
+            {rail_view(state, snapshot.main_view, dm_unread_total, activity_unread_total, account, account_avatar)}
             if show_channel_sidebar {
                 {channel_sidebar(state, &snapshot, workspace_name, shortcut)}
             }

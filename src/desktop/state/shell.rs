@@ -14,6 +14,7 @@ pub struct ShellState {
     pub loading: bool,
     pub accounts: Vec<AccountVm>,
     pub workspaces: Vec<WorkspaceVm>,
+    pub self_account: SelfAccountVm,
     pub active_workspace: usize,
     pub channels: Vec<ChannelVm>,
     pub sidebar_sections: Vec<SidebarSectionVm>,
@@ -84,6 +85,7 @@ impl ShellState {
         let Some(workspace) = self.core.workspaces.get(&team) else {
             return;
         };
+        self.self_account = project_self_account(workspace, &self.media);
         let preferred_active = self.core.active_channel.clone();
         let (mut channels, sidebar_sections, default_active, _) =
             project_channels(workspace, &self.media);
@@ -172,6 +174,33 @@ impl ShellState {
         if let Some(channel) = self.channels.get(active_channel) {
             self.core.active_channel = Some(channel.id.clone());
         }
+    }
+}
+
+/// Projects the signed-in user for the rail button. Falls back to the user id
+/// when the boot payload has not named them yet, so the button never renders
+/// blank.
+pub(crate) fn project_self_account(
+    workspace: &super_platinum_core::state::Workspace,
+    media: &MediaRegistry,
+) -> SelfAccountVm {
+    let user_id = workspace.self_user_id.clone();
+    let name = workspace.display_name(&user_id);
+    let avatar = workspace
+        .avatar_url(&user_id)
+        .map(|url| media.register_avatar(&user_id, &url));
+    let initials = name
+        .chars()
+        .find(|ch| ch.is_alphanumeric())
+        .map(|ch| ch.to_uppercase().to_string())
+        .unwrap_or_else(|| "?".into());
+    SelfAccountVm {
+        user_id,
+        name,
+        avatar,
+        initials,
+        presence: PresenceVm::from_core(workspace.self_presence()),
+        snoozed: workspace.self_snoozed(),
     }
 }
 

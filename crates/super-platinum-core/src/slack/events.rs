@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::models::{ActivityItem, ChannelId, Message, MessageTs, Room, UserId};
+use super::models::{ActivityItem, ChannelId, DndInfo, Message, MessageTs, Room, UserId};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RawEvent {
@@ -28,9 +28,15 @@ pub enum RtEvent {
         channel: ChannelId,
         user: UserId,
     },
+    /// Flannel batches presence for several ids into one frame, so this
+    /// carries every id the frame named rather than a single user.
     PresenceChange {
-        user: UserId,
+        users: Vec<UserId>,
         presence: String,
+    },
+    DndUpdated {
+        user: UserId,
+        dnd: DndInfo,
     },
     ReactionAdded {
         channel: ChannelId,

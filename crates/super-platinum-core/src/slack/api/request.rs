@@ -219,6 +219,10 @@ pub fn client_dms(
     client.rest_form(workspace, "client.dms", fields)
 }
 
+pub fn dnd_info(client: &SlackClient, workspace: &WorkspaceSession) -> PreparedRequest {
+    client.rest_form(workspace, "dnd.info", Vec::new())
+}
+
 pub fn users_set_presence(
     client: &SlackClient,
     workspace: &WorkspaceSession,

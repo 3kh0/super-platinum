@@ -1,13 +1,47 @@
 use dioxus::prelude::*;
 
-use crate::state::{MainView, Overlay, ShellState};
+use crate::state::{MainView, Overlay, PresenceVm, SelfAccountVm, ShellState};
+
+/// Presence glyphs traced from the real client (`status-member*`, viewBox
+/// `0 0 20 20`): a ring when away, a filled disc when active, each gaining the
+/// "Z" mark while notifications are snoozed.
+fn presence_path(presence: PresenceVm, snoozed: bool) -> &'static str {
+    match (presence, snoozed) {
+        (PresenceVm::Active, false) => "M14.5 10a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0",
+        (PresenceVm::Active, true) => {
+            "M11.25 3.5a.75.75 0 0 0 0 1.5h1.847l-2.411 2.756A.75.75 0 0 0 11.25 9h3.5a.75.75 0 0 0 0-1.5h-1.847l2.411-2.756A.75.75 0 0 0 14.75 3.5zM9.557 6.768C10.18 6.055 10 5.5 9.406 5.54a4.5 4.5 0 1 0 5.067 4.96H11.25a2.25 2.25 0 0 1-1.693-3.73"
+        }
+        (_, false) => "M7 10a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-4.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9",
+        (_, true) => {
+            "M11.25 3.5a.75.75 0 0 0 0 1.5h1.847l-2.411 2.756A.75.75 0 0 0 11.25 9h3.5a.75.75 0 0 0 0-1.5h-1.847l2.411-2.756A.75.75 0 0 0 14.75 3.5zM7 10a3 3 0 0 1 3-3V5.5a4.5 4.5 0 1 0 4.5 4.5H13a3 3 0 1 1-6 0"
+        }
+    }
+}
+
+/// The rail avatar is notched so the presence badge sits in a hole rather than
+/// on top of the picture, exactly as the real client masks its own avatar.
+/// Both cut-outs are object-bounding-box paths lifted from Slack's
+/// `mask__small-member` / `mask__small-member-dnd` clip paths.
+fn avatar_mask_defs() -> Element {
+    rsx! {
+        svg { class: "avatar-mask-defs", "aria-hidden": "true",
+            clipPath { id: "rail-avatar-mask", clip_path_units: "objectBoundingBox",
+                path { d: "M1,0 H0 V1 H0.752 C0.701,0.949,0.669,0.878,0.669,0.8 C0.669,0.645,0.795,0.519,0.95,0.519 C0.967,0.519,0.984,0.52,1,0.523 V0" }
+            }
+            clipPath { id: "rail-avatar-mask-snoozed", clip_path_units: "objectBoundingBox",
+                path { d: "M1,0 H0 V1 H0.752 C0.701,0.949,0.669,0.878,0.669,0.8 C0.669,0.674,0.752,0.567,0.867,0.531 C0.888,0.48,0.938,0.444,0.997,0.444 H1 V0" }
+            }
+        }
+    }
+}
 
 pub(crate) fn rail_view(
     mut state: Signal<ShellState>,
     active: MainView,
     dm_unread: usize,
     activity_unread: usize,
-    account_initial: &str,
+    account: &SelfAccountVm,
+    avatar_uri: Option<String>,
 ) -> Element {
     let home_active = matches!(
         active,
@@ -48,10 +82,29 @@ pub(crate) fn rail_view(
             }
             div { class: "rail-spacer" }
             button {
-                class: "rail-avatar",
-                title: "Accounts",
+                class: if account.snoozed { "rail-avatar snoozed" } else { "rail-avatar" },
+                title: "{account.name} — {account.status_label()}",
+                "aria-label": "{account.name}, {account.status_label()}",
                 onclick: move |_| state.write().overlay = Some(Overlay::Accounts),
-                "{account_initial}"
+                {avatar_mask_defs()}
+                // Initials until the bytes land: an `img` with nothing behind
+                // it paints the platform's broken-image icon.
+                if let Some(uri) = avatar_uri {
+                    img { class: "rail-avatar-image", src: "{uri}", alt: "" }
+                } else {
+                    span { class: "rail-avatar-initials", "{account.initials}" }
+                }
+                span {
+                    class: match (account.presence, account.snoozed) {
+                        (PresenceVm::Active, true) => "rail-presence active snoozed",
+                        (PresenceVm::Active, false) => "rail-presence active",
+                        (_, true) => "rail-presence snoozed",
+                        (_, false) => "rail-presence",
+                    },
+                    svg { view_box: "0 0 20 20", "aria-hidden": "true",
+                        path { fill: "currentColor", fill_rule: "evenodd", clip_rule: "evenodd", d: presence_path(account.presence, account.snoozed) }
+                    }
+                }
             }
         }
     }

@@ -375,6 +375,34 @@ pub struct SidebarSectionVm {
     pub channel_indices: Vec<usize>,
 }
 
+/// The signed-in user as the rail paints them: avatar, presence, and whether
+/// notifications are snoozed right now.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SelfAccountVm {
+    pub user_id: String,
+    pub name: String,
+    pub avatar: Option<MediaAssetId>,
+    pub initials: String,
+    pub presence: PresenceVm,
+    pub snoozed: bool,
+}
+
+impl SelfAccountVm {
+    /// Matches the real client's tooltip: "Active", "Away, notifications
+    /// snoozed", and so on.
+    pub fn status_label(&self) -> String {
+        let presence = match self.presence {
+            PresenceVm::Active => "Active",
+            PresenceVm::Away | PresenceVm::Unknown => "Away",
+        };
+        if self.snoozed {
+            format!("{presence}, notifications snoozed")
+        } else {
+            presence.to_owned()
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WorkspaceVm {
     pub id: String,
