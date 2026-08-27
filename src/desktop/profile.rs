@@ -669,7 +669,7 @@ fn copy_text(mut state: Signal<ShellState>, text: String, toast: &'static str) {
     dioxus::document::eval(&format!("navigator.clipboard.writeText({value});"));
     let mut shell = state.write();
     shell.profile_menu_open = false;
-    shell.toast = Some(toast.into());
+    shell.show_toast(toast);
 }
 
 #[cfg(test)]

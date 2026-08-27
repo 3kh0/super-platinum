@@ -70,7 +70,7 @@ impl ShellState {
                 .push(message);
         }
         self.core.composer = super_platinum_core::ComposerState::default();
-        self.toast = Some("Message queued by the fixture dispatcher".into());
+        self.show_toast("Message queued by the fixture dispatcher");
         None
     }
 

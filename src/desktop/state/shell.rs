@@ -64,13 +64,58 @@ pub struct ShellState {
     pub self_menu_notifications_open: bool,
     pub profile_vip_loading: bool,
     pub viewer: Option<ViewerVm>,
-    pub toast: Option<String>,
+    pub toast: Option<ToastVm>,
+    /// What the rail says about the link to Slack.
+    pub connection: ConnectionVm,
     pub performance: PerformanceVm,
     pub channel_switch_started: Option<std::time::Instant>,
     pub realtime_insert_started: Option<std::time::Instant>,
 }
 
+/// How long a status line stays on screen. Long enough to read, short enough
+/// that a failure the reader has moved on from cannot outlive their interest.
+pub const TOAST_LIFE: std::time::Duration = std::time::Duration::from_secs(5);
+
 impl ShellState {
+    /// Shows a transient status line, replacing whatever is on screen and
+    /// restarting its five-second life.
+    pub fn show_toast(&mut self, text: impl Into<String>) {
+        self.toast = Some(ToastVm::new(text));
+    }
+
+    /// Routes a failed Slack call.
+    ///
+    /// A dropped link is the connection indicator's story, not a toast's: the
+    /// raw transport error is a signed Slack URL the reader can do nothing
+    /// with, and every call in flight produces one. `offline` is the short line
+    /// to show instead when the reader asked for this themselves; an empty one
+    /// keeps a background refresh silent, since the rail is already saying it.
+    pub fn report_failure(
+        &mut self,
+        error: &impl super_platinum_core::error::NetworkFailure,
+        offline: &str,
+        detail: impl FnOnce() -> String,
+    ) {
+        if error.is_offline() {
+            if !offline.is_empty() {
+                self.show_toast(offline);
+            }
+            return;
+        }
+        self.show_toast(detail());
+    }
+
+    /// Retires a status line that has had its five seconds.
+    pub fn expire_toast(&mut self, now: std::time::Instant) {
+        if self
+            .toast
+            .as_ref()
+            .is_some_and(|toast| now.duration_since(toast.shown_at) >= TOAST_LIFE)
+        {
+            self.toast = None;
+        }
+    }
+
     /// The divider position to project this channel with.
     pub(crate) fn divider_at(&self, channel_id: &str) -> Option<&str> {
         self.unread_anchor

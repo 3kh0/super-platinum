@@ -216,7 +216,7 @@ pub fn shell() -> Element {
                 event.prevent_default();
                 state.write().add_attachments(event.data_transfer().files().into_iter().map(|file| file.path()));
             },
-            {rail_view(state, snapshot.main_view, dm_unread_total, activity_unread_total, account, account_avatar, snapshot.overlay == Some(Overlay::SelfMenu))}
+            {rail_view(state, snapshot.main_view, dm_unread_total, activity_unread_total, account, account_avatar, snapshot.overlay == Some(Overlay::SelfMenu), snapshot.connection.indicator())}
             if show_channel_sidebar {
                 {channel_sidebar(state, &snapshot, workspace_name, shortcut)}
             }
@@ -590,7 +590,17 @@ pub fn shell() -> Element {
             if let Some(hover) = snapshot.profile_hover.as_ref() {
                 {crate::profile::profile_hover_card(state, &snapshot, hover)}
             }
-            if let Some(toast) = snapshot.toast.as_ref() { div { class: "toast", "{toast}" } }
+            // Click dismisses: a status line the reader has already read must
+            // never be the thing standing between them and the window.
+            if let Some(toast) = snapshot.toast.as_ref() {
+                div {
+                    class: "toast",
+                    role: "status",
+                    title: "{toast.text}",
+                    onclick: move |_| state.write().toast = None,
+                    span { class: "toast-text", "{toast.text}" }
+                }
+            }
         }
     }
 }

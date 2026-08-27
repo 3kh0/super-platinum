@@ -380,7 +380,11 @@ pub async fn mark_all_read(mut state: Signal<ShellState>) {
         )
         .await
         {
-            state.write().toast = Some(format!("Mark read failed: {error}"));
+            // Offline is silent: the read mark is retried on the next visit,
+            // and the rail is already saying why nothing is landing.
+            state
+                .write()
+                .report_failure(&error, "", || format!("Mark read failed: {error}"));
             return;
         }
     }

@@ -94,7 +94,9 @@ pub(super) async fn refresh_history_at(
                 messages.history_failed = true;
                 messages.history_refreshing = false;
             }
-            shell.toast = Some(format!("History refresh failed: {error}"));
+            // Silent while offline: the rail already says so, and the cached
+            // transcript the reader is looking at is still the right one.
+            shell.report_failure(&error, "", || format!("History refresh failed: {error}"));
         }
     }
 }

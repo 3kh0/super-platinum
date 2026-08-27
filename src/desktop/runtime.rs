@@ -18,6 +18,13 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         tick = tick.wrapping_add(1);
         let now = std::time::Instant::now();
         let mut shell = state.write();
+        // Both of these are time-driven rather than event-driven, and neither
+        // earns a timer of its own.
+        let mut probe_connection = false;
+        if !crate::fixture::is_fixture() {
+            shell.expire_toast(now);
+            probe_connection = crate::connection::evaluate(&mut shell, now);
+        }
         let typing_changed = shell
             .core
             .workspaces
@@ -57,6 +64,9 @@ pub async fn ticks(mut state: Signal<ShellState>) {
             tick % MEDIA_SWEEP_TICKS == 1 && shell.media.has_pending() && !shell.media.is_loading();
         let transport = sweep.then(|| shell.core.transport.clone()).flatten();
         drop(shell);
+        if probe_connection {
+            dioxus::prelude::spawn(crate::connection::probe(state));
+        }
         if let Some(transport) = transport {
             let media = state.read().media.clone();
             dioxus::prelude::spawn(async move { media.load_pending(transport).await });

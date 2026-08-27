@@ -28,6 +28,19 @@ pub enum Error {
     },
     #[error("transport error: {0}")]
     Transport(String),
+    /// The request never reached Slack: no route, no DNS, a refused connect, or
+    /// a socket that died mid-flight. Held apart from `Transport` because the
+    /// shell answers it with the rail's connection indicator instead of pasting
+    /// a signed Slack URL into a toast the reader cannot act on.
+    #[error("network unavailable: {0}")]
+    Offline(String),
     #[error("transport not up")]
     TransportNotConfigured,
+}
+
+impl Error {
+    /// True when the failure is the machine's own link, not anything Slack said.
+    pub fn is_offline(&self) -> bool {
+        matches!(self, Self::Offline(_))
+    }
 }

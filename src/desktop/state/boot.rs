@@ -227,6 +227,7 @@ impl ShellState {
             profile_vip_loading: false,
             viewer: None,
             toast: None,
+            connection: ConnectionVm::default(),
             performance: PerformanceVm::default(),
             channel_switch_started: None,
             realtime_insert_started: None,
@@ -292,6 +293,7 @@ impl ShellState {
             profile_vip_loading: false,
             viewer: None,
             toast: None,
+            connection: ConnectionVm::default(),
             performance: PerformanceVm::default(),
             channel_switch_started: None,
             realtime_insert_started: None,
@@ -537,6 +539,7 @@ impl ShellState {
             profile_vip_loading: false,
             viewer: None,
             toast: None,
+            connection: ConnectionVm::default(),
             performance: PerformanceVm::default(),
             channel_switch_started: None,
             realtime_insert_started: None,
@@ -814,14 +817,31 @@ impl ShellState {
                     .unwrap_or_else(|| "m-rich-1".into());
                 state.start_edit("C2".into(), target, "Editing this message in place".into())
             }
+            // The rail's connection indicator, in both of the states it has.
+            "connection-connecting" => {
+                state.connection.status = ConnectionStatus::Connecting;
+            }
+            "connection-no-network" => {
+                state.connection.status = ConnectionStatus::NoNetwork;
+                state.connection.routable = false;
+            }
+            // A raw transport failure, the shape that used to paint itself off
+            // the left edge of the window.
+            "toast-long-error" => {
+                state.show_toast(
+                    "Direct messages failed: error sending request for uri \
+                     (https://hackclub.enterprise.slack.com/api/client.dms?_x_app_name=client\
+                     &_x_csid=038245db49464d279e52d53891556fe6&_x_desktop_ia=true\
+                     &_x_foreground=true&slack_route=default): client error (Connect)",
+                );
+            }
             "dm-history-failed" => {
                 state.main_view = MainView::Dms;
-                state.toast = Some("History refresh failed; cached messages remain visible".into());
+                state.show_toast("History refresh failed; cached messages remain visible");
             }
             "dm-cached-refresh-failed" => {
                 state.main_view = MainView::Dms;
-                state.toast =
-                    Some("Workspace refresh failed; showing cached direct messages".into());
+                state.show_toast("Workspace refresh failed; showing cached direct messages");
             }
             "main-dev" => {
                 if let Some(index) = state

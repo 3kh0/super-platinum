@@ -107,6 +107,12 @@ Slack-facing behavior needs defensive handling.
 - Respect rate limits and `Retry-After` behavior.
 - Preserve realtime generation guards and stale-event protection.
 - Keep warm-boot/cache paths working when network calls fail.
+- A request that never reached Slack is `slack::Error::Offline`, not
+  `Transport`. `Transport` keeps a shared `Health` cell so every clone agrees
+  about the link, and `connection.rs` folds that together with realtime status
+  into the rail indicator. Report failures through `ShellState::report_failure`
+  rather than toasting `{error}` directly: a dropped link produces one of these
+  per call in flight, each carrying a signed URL the reader cannot act on.
 - Do not assume all Slack messages are plain text; Block Kit, files, reactions, threads, edits, deletes, and notifications already exist in the product surface.
 
 ## Testing Guidance

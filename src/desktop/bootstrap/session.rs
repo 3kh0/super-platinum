@@ -28,7 +28,7 @@ pub async fn refresh(mut state: Signal<ShellState>) {
             Err(error) => {
                 let mut shell = state.write();
                 shell.loading = false;
-                shell.toast = Some(format!("Workspace refresh failed: {error}"));
+                shell.report_failure(&error, "", || format!("Workspace refresh failed: {error}"));
                 continue;
             }
         }
@@ -537,7 +537,9 @@ pub async fn sign_in(mut state: Signal<ShellState>) {
     let media = state.read().media.clone();
     state.write().loading = true;
     let Ok(executable) = std::env::current_exe() else {
-        state.write().toast = Some("Could not locate the Super Platinum executable".into());
+        state
+            .write()
+            .show_toast("Could not locate the Super Platinum executable");
         return;
     };
     let status = tokio::process::Command::new(executable)
@@ -553,12 +555,12 @@ pub async fn sign_in(mut state: Signal<ShellState>) {
         Ok(_) => {
             let mut shell = state.write();
             shell.loading = false;
-            shell.toast = Some("Slack sign-in was not completed".into());
+            shell.show_toast("Slack sign-in was not completed");
         }
         Err(error) => {
             let mut shell = state.write();
             shell.loading = false;
-            shell.toast = Some(format!("Could not start Slack sign-in: {error}"));
+            shell.show_toast(format!("Could not start Slack sign-in: {error}"));
         }
     }
 }
@@ -570,8 +572,12 @@ pub async fn switch_account(mut state: Signal<ShellState>, account_id: String) {
     .await;
     match result {
         Ok(Ok(())) => reload_account(state).await,
-        Ok(Err(error)) => state.write().toast = Some(format!("Account switch failed: {error}")),
-        Err(error) => state.write().toast = Some(format!("Account switch stopped: {error}")),
+        Ok(Err(error)) => state
+            .write()
+            .show_toast(format!("Account switch failed: {error}")),
+        Err(error) => state
+            .write()
+            .show_toast(format!("Account switch stopped: {error}")),
     }
 }
 
@@ -582,8 +588,12 @@ pub async fn remove_account(mut state: Signal<ShellState>, account_id: String) {
     .await;
     match result {
         Ok(Ok(_)) => reload_account(state).await,
-        Ok(Err(error)) => state.write().toast = Some(format!("Account removal failed: {error}")),
-        Err(error) => state.write().toast = Some(format!("Account removal stopped: {error}")),
+        Ok(Err(error)) => state
+            .write()
+            .show_toast(format!("Account removal failed: {error}")),
+        Err(error) => state
+            .write()
+            .show_toast(format!("Account removal stopped: {error}")),
     }
 }
 

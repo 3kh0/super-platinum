@@ -22,7 +22,8 @@ FIXTURES=(
   appearance-blue-steel appearance-paper-bag appearance-custom-background
   image-viewer-upload image-viewer-embed-compact gif-picker-attachment
   video-viewer search palette activity-unread activity-channel-post dms
-  dm-history-failed dm-cached-refresh-failed composer-multiline
+  dm-history-failed dm-cached-refresh-failed toast-long-error
+  connection-connecting connection-no-network composer-multiline
   composer-upload-progress
   edit-message-composer accounts self-menu self-menu-notifications
   multi-paragraph-custom-emoji message-unfurl-embed block-kit-layout

@@ -133,7 +133,9 @@ pub async fn search(mut state: Signal<ShellState>) {
         Err(error) => {
             let mut shell = state.write();
             shell.search_loading = false;
-            shell.toast = Some(format!("Search failed: {error}"));
+            shell.report_failure(&error, "Search needs a connection", || {
+                format!("Search failed: {error}")
+            });
         }
     }
 }
@@ -365,7 +367,9 @@ pub async fn open_profile_dm(mut state: Signal<ShellState>, user: String) {
         return;
     }
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
-        state.write().toast = Some("No direct message channel is loaded yet.".into());
+        state
+            .write()
+            .show_toast("No direct message channel is loaded yet.");
         return;
     }
     let Some((transport, client, workspaces)) = credentials(&state) else {
@@ -405,10 +409,16 @@ pub async fn open_profile_dm(mut state: Signal<ShellState>, user: String) {
                 drop(shell);
                 super::history::refresh_selected_channel(state).await;
             } else {
-                shell.toast = Some("Slack opened the DM, but it is not available yet.".into());
+                shell.show_toast("Slack opened the DM, but it is not available yet.");
             }
         }
-        Err(error) => state.write().toast = Some(format!("Could not open message: {error}")),
+        Err(error) => {
+            state
+                .write()
+                .report_failure(&error, "Cannot open that message while offline", || {
+                    format!("Could not open message: {error}")
+                })
+        }
     }
 }
 
@@ -451,15 +461,17 @@ pub async fn toggle_profile_vip(mut state: Signal<ShellState>, user: String) {
                     workspace.vip_users.insert(user);
                 }
             }
-            shell.toast = Some(if is_vip {
-                "Removed from VIPs".into()
+            shell.show_toast(if is_vip {
+                "Removed from VIPs"
             } else {
-                "Added to VIPs".into()
+                "Added to VIPs"
             });
             drop(shell);
             persist_workspace(&state, &team);
         }
-        Err(error) => shell.toast = Some(format!("Could not update VIP: {error}")),
+        Err(error) => shell.report_failure(&error, "VIP change needs a connection", || {
+            format!("Could not update VIP: {error}")
+        }),
     }
 }
 
@@ -562,7 +574,13 @@ pub async fn open_thread(mut state: Signal<ShellState>, channel: String, root_ts
                 }
             }
         }
-        Err(error) => state.write().toast = Some(format!("Thread failed: {error}")),
+        Err(error) => {
+            state
+                .write()
+                .report_failure(&error, "Replies cannot load while offline", || {
+                    format!("Thread failed: {error}")
+                })
+        }
     }
 }
 
@@ -655,7 +673,7 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
                 Err(error) => {
                     let mut shell = state.write();
                     shell.core.dms.loading = false;
-                    shell.toast = Some(format!("Direct messages failed: {error}"));
+                    shell.report_failure(&error, "", || format!("Direct messages failed: {error}"));
                 }
             }
         }
@@ -678,7 +696,7 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
                 Err(error) => {
                     let mut shell = state.write();
                     shell.core.threads_view.loading = false;
-                    shell.toast = Some(format!("Threads failed: {error}"));
+                    shell.report_failure(&error, "", || format!("Threads failed: {error}"));
                 }
             }
         }
@@ -740,7 +758,8 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
                     Err(error) => {
                         let mut shell = state.write();
                         if page_index == 0 {
-                            shell.toast = Some(format!("Activity failed: {error}"));
+                            shell
+                                .report_failure(&error, "", || format!("Activity failed: {error}"));
                         } else {
                             eprintln!("super-platinum: older activity page failed: {error}");
                         }

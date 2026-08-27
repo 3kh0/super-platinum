@@ -47,7 +47,11 @@ pub async fn set_self_presence(mut state: Signal<ShellState>, away: bool) {
     };
     let value = if away { "away" } else { "auto" };
     if let Err(error) = api::set_presence(&transport, &client, &workspace, value.into()).await {
-        state.write().toast = Some(format!("Could not update presence: {error}"));
+        state
+            .write()
+            .report_failure(&error, "Presence needs a connection", || {
+                format!("Could not update presence: {error}")
+            });
     }
 }
 
@@ -65,7 +69,11 @@ pub async fn pause_notifications(mut state: Signal<ShellState>, minutes: u32) {
     };
     match api::set_snooze(&transport, &client, &workspace, minutes).await {
         Ok(dnd) => state.write().merge_self_snooze(dnd),
-        Err(error) => state.write().toast = Some(format!("Could not pause notifications: {error}")),
+        Err(error) => state
+            .write()
+            .report_failure(&error, "Snooze needs a connection", || {
+                format!("Could not pause notifications: {error}")
+            }),
     }
 }
 
@@ -83,9 +91,11 @@ pub async fn resume_notifications(mut state: Signal<ShellState>) {
     };
     match api::end_snooze(&transport, &client, &workspace).await {
         Ok(dnd) => state.write().merge_self_dnd(dnd),
-        Err(error) => {
-            state.write().toast = Some(format!("Could not resume notifications: {error}"))
-        }
+        Err(error) => state
+            .write()
+            .report_failure(&error, "Snooze needs a connection", || {
+                format!("Could not resume notifications: {error}")
+            }),
     }
 }
 
@@ -114,7 +124,13 @@ pub async fn clear_self_status(mut state: Signal<ShellState>) {
                 user.profile = Some(profile);
             }
         }
-        Err(error) => state.write().toast = Some(format!("Could not clear status: {error}")),
+        Err(error) => {
+            state
+                .write()
+                .report_failure(&error, "Status change needs a connection", || {
+                    format!("Could not clear status: {error}")
+                })
+        }
     }
 }
 
@@ -139,11 +155,13 @@ pub async fn sign_out_workspace(mut state: Signal<ShellState>) {
         shell.self_menu_notifications_open = false;
     }
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
-        state.write().toast = Some(format!("Signed out of {name}"));
+        state.write().show_toast(format!("Signed out of {name}"));
         return;
     }
     let Some(account_id) = account_id else {
-        state.write().toast = Some(format!("Could not sign out of {name}"));
+        state
+            .write()
+            .show_toast(format!("Could not sign out of {name}"));
         return;
     };
     remove_account(state, account_id).await;

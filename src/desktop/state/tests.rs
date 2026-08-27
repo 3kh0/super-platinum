@@ -321,3 +321,48 @@ fn the_unread_divider_survives_the_read_mark() {
             .any(|message| message.show_unread_divider)
     );
 }
+
+#[test]
+fn a_toast_retires_after_its_five_seconds() {
+    let mut state = ShellState::fixture(MediaRegistry::default());
+    state.show_toast("Reaction failed");
+    let shown = state.toast.as_ref().expect("toast").shown_at;
+    state.expire_toast(shown + TOAST_LIFE - std::time::Duration::from_millis(1));
+    assert!(state.toast.is_some(), "still readable inside its window");
+    state.expire_toast(shown + TOAST_LIFE);
+    assert!(state.toast.is_none());
+}
+
+#[test]
+fn a_dropped_link_never_reaches_the_toast_strip() {
+    let mut state = ShellState::fixture(MediaRegistry::default());
+    let offline = super_platinum_core::slack::Error::Offline(
+        "error sending request for uri (https://example.test/api/client.dms?token=secret)".into(),
+    );
+
+    // Background refresh: the rail is already saying it.
+    state.report_failure(&offline, "", || {
+        format!("Direct messages failed: {offline}")
+    });
+    assert!(state.toast.is_none());
+
+    // Something the reader asked for gets a short line, never the raw URL.
+    state.report_failure(&offline, "Reaction not saved — you are offline", || {
+        format!("Reaction failed: {offline}")
+    });
+    let text = state.toast.as_ref().map(|toast| toast.text.clone());
+    assert_eq!(
+        text.as_deref(),
+        Some("Reaction not saved — you are offline")
+    );
+
+    // Anything Slack actually said still reaches the reader verbatim.
+    let refused = super_platinum_core::slack::Error::Api("channel_not_found".into());
+    state.report_failure(&refused, "You are offline", || {
+        format!("Thread failed: {refused}")
+    });
+    assert_eq!(
+        state.toast.as_ref().map(|toast| toast.text.as_str()),
+        Some("Thread failed: Slack API returned error: channel_not_found")
+    );
+}

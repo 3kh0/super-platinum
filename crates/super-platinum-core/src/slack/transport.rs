@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
 use std::time::Duration;
 
 use serde_json::Value;
@@ -9,10 +9,46 @@ use wreq_util::Emulation;
 use super::Error;
 use super::client::{PreparedRequest, RequestBody, redact_secrets};
 
+/// What the last Slack API call said about the link to Slack.
+///
+/// This is the shell's recovery signal as much as its failure signal: a request
+/// that lands clears the offline mark without anything having to poll for it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Health {
+    /// Nothing has been attempted yet.
+    #[default]
+    Unknown,
+    /// Slack answered — even with an error, which still means the link is up.
+    Online,
+    /// The request never reached Slack.
+    Offline,
+}
+
+impl Health {
+    fn code(self) -> u8 {
+        match self {
+            Self::Unknown => 0,
+            Self::Online => 1,
+            Self::Offline => 2,
+        }
+    }
+
+    fn from_code(code: u8) -> Self {
+        match code {
+            1 => Self::Online,
+            2 => Self::Offline,
+            _ => Self::Unknown,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Transport {
     http: wreq::Client,
     d_cookie: String,
+    /// Shared with every clone: the shell holds one and the workers hold others,
+    /// and all of them have to agree about whether the network is up.
+    health: Arc<AtomicU8>,
 }
 
 impl std::fmt::Debug for Transport {
@@ -37,7 +73,19 @@ impl Transport {
         Ok(Self {
             http,
             d_cookie: d_cookie.into(),
+            health: Arc::new(AtomicU8::new(Health::Unknown.code())),
         })
+    }
+
+    /// What the last Slack API call said about the link.
+    pub fn health(&self) -> Health {
+        Health::from_code(self.health.load(Ordering::Relaxed))
+    }
+
+    /// Records a verdict about the link. Media fetches deliberately do not call
+    /// this: a third-party image host that is down says nothing about Slack.
+    pub fn set_health(&self, health: Health) {
+        self.health.store(health.code(), Ordering::Relaxed);
     }
 
     pub fn http(&self) -> &wreq::Client {
@@ -89,7 +137,7 @@ impl Transport {
             .body(wreq::Body::wrap_stream(stream))
             .send()
             .await
-            .map_err(|error| Error::Transport(format!("upload: {error}")))?;
+            .map_err(send_error)?;
         if response.status().is_success() {
             Ok(())
         } else {
@@ -121,10 +169,16 @@ impl Transport {
             RequestBody::Json(value) => builder.json(value),
         };
 
-        let response = builder
-            .send()
-            .await
-            .map_err(|e| Error::Transport(format!("send: {e}")))?;
+        let response = builder.send().await.map_err(|error| {
+            let error = send_error(error);
+            if error.is_offline() {
+                self.set_health(Health::Offline);
+            }
+            error
+        })?;
+        // Slack answered. Even a 500 or a rate limit means the link is up, so
+        // the rail stops saying "connecting" as soon as anything lands.
+        self.set_health(Health::Online);
 
         let status = response.status();
         let retry_after_secs = retry_after_secs(response.headers());
@@ -175,7 +229,7 @@ impl Transport {
             .header("Cookie", self.cookie())
             .send()
             .await
-            .map_err(|e| Error::Transport(format!("send: {e}")))?;
+            .map_err(send_error)?;
         response
             .text()
             .await
@@ -220,10 +274,7 @@ impl Transport {
         if authenticated {
             request = request.header("Cookie", self.cookie());
         }
-        let response = request
-            .send()
-            .await
-            .map_err(|e| Error::Transport(format!("send: {e}")))?;
+        let response = request.send().await.map_err(send_error)?;
 
         let status = response.status();
         let retry_after_secs = retry_after_secs(response.headers());
@@ -256,6 +307,21 @@ pub fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
         .get("retry-after")
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.trim().parse::<u64>().ok())
+}
+
+/// A dropped link surfaces the same way on every call in flight: a refused or
+/// unroutable connect, a name that will not resolve, a timeout, or a socket the
+/// peer reset. Naming that class here is what lets the shell answer it with the
+/// connection indicator rather than a toast full of signed URL.
+fn send_error(error: wreq::Error) -> Error {
+    if error.is_connect()
+        || error.is_timeout()
+        || error.is_connection_reset()
+        || error.is_request()
+    {
+        return Error::Offline(error.without_uri().to_string());
+    }
+    Error::Transport(format!("send: {error}"))
 }
 
 fn retryable_error(error: &Error) -> bool {
@@ -326,6 +392,34 @@ mod tests {
             status: 404,
             retry_after_secs: None
         }));
+    }
+
+    /// A refused connect is the shell's offline signal, and the transport has
+    /// to leave the health cell saying so — that mark is what keeps a raw URL
+    /// out of the toast strip and puts a spinner on the rail instead.
+    #[tokio::test]
+    async fn a_refused_connect_reads_as_offline_and_marks_the_health_cell() {
+        // Bound and immediately dropped: nothing is listening on this port, so
+        // the connect is refused rather than left hanging.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        drop(listener);
+
+        let transport = Transport::new("secret-cookie").unwrap();
+        assert_eq!(transport.health(), Health::Unknown);
+        let request = PreparedRequest {
+            method: "POST",
+            url: format!("http://{address}/api/client.dms?token=secret"),
+            headers: Vec::new(),
+            body: RequestBody::Form(Vec::new()),
+        };
+
+        let error = transport.execute(request).await.unwrap_err();
+        assert!(error.is_offline(), "{error}");
+        assert_eq!(transport.health(), Health::Offline);
+
+        // And the signed URL never rides along in the message.
+        assert!(!error.to_string().contains("token=secret"), "{error}");
     }
 
     async fn captured_image_request(public: bool, gif: bool) -> String {

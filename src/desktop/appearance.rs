@@ -18,7 +18,7 @@ pub async fn import_background(mut state: Signal<ShellState>, path: PathBuf) {
             }
             crate::bootstrap::persist_settings(state).await;
         }
-        Err(error) => state.write().toast = Some(error),
+        Err(error) => state.write().show_toast(error),
     }
 }
 

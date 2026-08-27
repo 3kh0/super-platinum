@@ -94,6 +94,32 @@
 }
 .rail-presence svg { width: 100%; height: 100%; display: block; }
 .rail-presence.active { color: var(--success); }
+/* Connection indicator: a small ring above the account picture, present only
+   while the link is down. Fixed box so its arrival does not shift the rail. */
+.rail-connection {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 18px;
+  flex: 0 0 18px;
+  color: var(--muted);
+}
+.rail-connection-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .9s linear infinite;
+}
+/* No route off the machine at all: nothing is being retried this second, so a
+   spinning ring would be a lie. */
+.rail-connection.stalled .rail-connection-spinner {
+  border-color: var(--border-strong);
+  border-top-color: var(--muted);
+  animation: none;
+  opacity: .8;
+}
 
 /* ── Sidebar (channel tree under Home) ───────────────── */
 .sidebar {

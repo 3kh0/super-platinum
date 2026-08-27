@@ -384,6 +384,92 @@ pub struct SidebarSectionVm {
     pub channel_indices: Vec<usize>,
 }
 
+/// What the rail says about the link to Slack.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ConnectionStatus {
+    /// A live realtime socket and a transport that is landing its requests.
+    #[default]
+    Online,
+    /// The machine has a route out; Slack is simply not answering yet.
+    Connecting,
+    /// No route off the machine at all — a closed lid, a dropped Wi-Fi link.
+    NoNetwork,
+}
+
+impl ConnectionStatus {
+    /// Hover text on the rail indicator.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Online => "Connected to Slack",
+            Self::Connecting => "Connecting…",
+            Self::NoNetwork => "Waiting for network",
+        }
+    }
+
+    /// The agent protocol's name for this state.
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Online => "online",
+            Self::Connecting => "connecting",
+            Self::NoNetwork => "no_network",
+        }
+    }
+}
+
+/// The rail's connection indicator, and the bookkeeping that keeps it honest.
+///
+/// `status` is deliberately slow to leave `Online`: a socket that reconnects
+/// inside the grace window must not blink a spinner at the reader, and a boot
+/// that lands normally must never show one at all.
+#[derive(Debug, Clone)]
+pub struct ConnectionVm {
+    pub status: ConnectionStatus,
+    /// When the shell first noticed it was not live, or `None` while it is.
+    pub unstable_since: Option<std::time::Instant>,
+    /// Last answer from the route probe. Optimistic until something says
+    /// otherwise, so a healthy shell never asks.
+    pub routable: bool,
+    /// A probe is in flight; ticks must not pile more on top of it.
+    pub probing: bool,
+    pub probed_at: Option<std::time::Instant>,
+}
+
+impl Default for ConnectionVm {
+    fn default() -> Self {
+        Self {
+            status: ConnectionStatus::Online,
+            unstable_since: None,
+            routable: true,
+            probing: false,
+            probed_at: None,
+        }
+    }
+}
+
+impl ConnectionVm {
+    /// What the rail should paint, or `None` while the link is healthy.
+    pub fn indicator(&self) -> Option<ConnectionStatus> {
+        (self.status != ConnectionStatus::Online).then_some(self.status)
+    }
+}
+
+/// A transient status line. Toasts carry their own age so a failure the reader
+/// has already read cannot sit on the window for the rest of the session.
+#[derive(Debug, Clone)]
+pub struct ToastVm {
+    pub text: String,
+    pub shown_at: std::time::Instant,
+}
+
+impl ToastVm {
+    pub fn new(text: impl Into<String>) -> Self {
+        Self {
+            text: text.into(),
+            shown_at: std::time::Instant::now(),
+        }
+    }
+}
+
 /// The signed-in user as the rail paints them: avatar, presence, and whether
 /// notifications are snoozed right now.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

@@ -306,7 +306,7 @@ fn dispatch(
             AgentResponse::ok(id, json!({ "sent": true }))
         }
         AgentCommand::Toast { text } => {
-            state.write().toast = Some(text.clone());
+            state.write().show_toast(text.clone());
             AgentResponse::ok(id, json!({ "toast": text }))
         }
         AgentCommand::MainView { view } => {
@@ -611,7 +611,8 @@ fn state_snapshot(state: &ShellState) -> Value {
             "author": message.author,
             "text": message_preview_text(message),
         })).collect::<Vec<_>>(),
-        "toasts": state.toast.iter().collect::<Vec<_>>(),
+        "toasts": state.toast.iter().map(|toast| toast.text.clone()).collect::<Vec<_>>(),
+        "connection": state.connection.status.key(),
         "allow_destructive": allow_destructive(),
         "performance": {
             "channel_switch_ms": state.performance.channel_switch_ms,

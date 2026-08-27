@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::state::{MainView, Overlay, PresenceVm, SelfAccountVm, ShellState};
+use crate::state::{ConnectionStatus, MainView, Overlay, PresenceVm, SelfAccountVm, ShellState};
 
 /// Presence glyphs traced from the real client (`status-member*`, viewBox
 /// `0 0 20 20`): a ring when away, a filled disc when active, each gaining the
@@ -43,6 +43,7 @@ pub(crate) fn rail_view(
     account: &SelfAccountVm,
     avatar_uri: Option<String>,
     self_menu_open: bool,
+    connection: Option<ConnectionStatus>,
 ) -> Element {
     let home_active = matches!(
         active,
@@ -82,6 +83,21 @@ pub(crate) fn rail_view(
                 }
             }
             div { class: "rail-spacer" }
+            // Sits above the account picture, the way Telegram parks its own
+            // connection spinner: present only while something is wrong, so the
+            // rail does not gain a permanent widget that means nothing.
+            if let Some(connection) = connection {
+                div {
+                    class: match connection {
+                        ConnectionStatus::NoNetwork => "rail-connection stalled",
+                        _ => "rail-connection",
+                    },
+                    role: "status",
+                    title: "{connection.label()}",
+                    "aria-label": "{connection.label()}",
+                    span { class: "rail-connection-spinner" }
+                }
+            }
             button {
                 class: if account.snoozed { "rail-avatar snoozed" } else { "rail-avatar" },
                 title: "{account.name} — {account.status_label()}",
@@ -306,7 +322,7 @@ pub(crate) fn conversation_header(
                         if let Some(link) = link.as_ref()
                             && let Err(error) = crate::media::open_external(link)
                         {
-                            state.write().toast = Some(format!("Could not open huddle: {error}"));
+                            state.write().show_toast(format!("Could not open huddle: {error}"));
                         }
                     }
                 },

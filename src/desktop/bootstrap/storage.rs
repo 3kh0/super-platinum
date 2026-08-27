@@ -54,7 +54,7 @@ pub async fn clear_picture_cache(mut state: Signal<ShellState>) {
         return;
     }
     let Some(store) = state.read().media.store() else {
-        state.write().toast = Some("Picture cache is unavailable.".into());
+        state.write().show_toast("Picture cache is unavailable.");
         return;
     };
     let purge_kinds = kinds.clone();
@@ -69,7 +69,7 @@ pub async fn clear_picture_cache(mut state: Signal<ShellState>) {
         if shell.media.take_dirty() {
             shell.media_epoch = shell.media_epoch.wrapping_add(1);
         }
-        shell.toast = Some(format!(
+        shell.show_toast(format!(
             "Cleared {}",
             super_platinum_core::state::format_file_size(removed)
         ));
@@ -96,7 +96,7 @@ pub async fn clear_workspace_cache(mut state: Signal<ShellState>) {
     if let Some(team) = team {
         persist_workspace(&state, &team);
     }
-    state.write().toast = Some("Cleared cached history.".into());
+    state.write().show_toast("Cleared cached history.");
     refresh_storage(state).await;
 }
 

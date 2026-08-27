@@ -41,14 +41,18 @@ pub async fn send_thread_composer(mut state: Signal<ShellState>) {
 
 async fn send_pending(mut state: Signal<ShellState>, pending: PendingSend, label: &str) {
     let Some((transport, client, workspaces)) = credentials(&state) else {
-        state.write().toast = Some("Message is queued until Slack reconnects".into());
+        state
+            .write()
+            .show_toast("Message is queued until Slack reconnects");
         return;
     };
     let Some(workspace_session) = workspaces
         .into_iter()
         .find(|workspace| workspace.team_id == pending.team)
     else {
-        state.write().toast = Some("Active workspace session is unavailable".into());
+        state
+            .write()
+            .show_toast("Active workspace session is unavailable");
         return;
     };
     match api::send_message(
@@ -110,7 +114,11 @@ async fn send_pending(mut state: Signal<ShellState>, pending: PendingSend, label
                 messages.remove(&pending.optimistic_ts);
             }
             shell.refresh_from_core();
-            shell.toast = Some(format!("{label} failed: {error}"));
+            shell.report_failure(
+                &error,
+                &format!("{label} not sent — you are offline"),
+                || format!("{label} failed: {error}"),
+            );
         }
     }
 }
@@ -125,7 +133,9 @@ async fn send_thread_attachments(state: Signal<ShellState>) {
 
 async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
     let Some((transport, client, workspaces)) = credentials(&state) else {
-        state.write().toast = Some("File upload unavailable while offline".into());
+        state
+            .write()
+            .show_toast("File upload unavailable while offline");
         return;
     };
     let prepared = {
@@ -152,7 +162,7 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
             .get(&team)
             .map(|workspace| workspace.self_user_id.clone())
         else {
-            shell.toast = Some("File upload unavailable for this workspace".into());
+            shell.show_toast("File upload unavailable for this workspace");
             return;
         };
         let attachments_empty = if in_thread {
@@ -279,7 +289,9 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
         .find(|workspace| workspace.team_id == prepared.team)
     else {
         restore_failed_upload(&mut state, &prepared.client_msg_id, None);
-        state.write().toast = Some("Active workspace session is unavailable".into());
+        state
+            .write()
+            .show_toast("Active workspace session is unavailable");
         return;
     };
 
@@ -361,7 +373,11 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
                 prepared.thread_ts.as_ref(),
             );
             if !canceled {
-                state.write().toast = Some(format!("Upload failed: {error}"));
+                state
+                    .write()
+                    .report_failure(&error, "Upload needs a connection", || {
+                        format!("Upload failed: {error}")
+                    });
             }
         }
     }
@@ -489,7 +505,9 @@ pub async fn toggle_reaction(
             messages.apply_reaction(&ts, &user, &name, removing);
         }
         shell.refresh_from_core();
-        shell.toast = Some(format!("Reaction failed: {error}"));
+        shell.report_failure(&error, "Reaction not saved — you are offline", || {
+            format!("Reaction failed: {error}")
+        });
     } else {
         persist_workspace(&state, &team);
     }
@@ -554,7 +572,13 @@ pub async fn save_edit(mut state: Signal<ShellState>) {
             drop(shell);
             persist_workspace(&state, &team);
         }
-        Err(error) => state.write().toast = Some(format!("Edit failed: {error}")),
+        Err(error) => {
+            state
+                .write()
+                .report_failure(&error, "Edit not saved — you are offline", || {
+                    format!("Edit failed: {error}")
+                })
+        }
     }
 }
 
@@ -601,7 +625,13 @@ pub async fn delete_message(mut state: Signal<ShellState>, channel: String, ts: 
             drop(shell);
             persist_workspace(&state, &team);
         }
-        Err(error) => state.write().toast = Some(format!("Delete failed: {error}")),
+        Err(error) => {
+            state
+                .write()
+                .report_failure(&error, "Delete not saved — you are offline", || {
+                    format!("Delete failed: {error}")
+                })
+        }
     }
 }
 

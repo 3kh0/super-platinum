@@ -7,6 +7,7 @@ mod blocks;
 mod bootstrap;
 mod channel_vm;
 mod clipboard;
+mod connection;
 mod fixture;
 mod icons;
 mod interactions;

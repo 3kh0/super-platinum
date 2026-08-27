@@ -1,3 +1,11 @@
+/// Fixture windows are captured, not lived in: their toasts and connection
+/// indicator are part of the picture the harness is asserting on, so nothing
+/// time-driven is allowed to age them out mid-screenshot.
+pub(crate) fn is_fixture() -> bool {
+    static FIXTURE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *FIXTURE.get_or_init(|| std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some())
+}
+
 pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
     let mut core =
         super_platinum_core::CoreAppState::new(super_platinum_core::config::Settings::default());
