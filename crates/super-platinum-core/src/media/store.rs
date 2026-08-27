@@ -12,16 +12,18 @@
 //! cached bytes are still authoritative (skip the network entirely) or merely
 //! the last known good picture for that slot (paint now, refetch).
 
+use std::collections::HashSet;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use crate::error::AppError;
 
 const MAGIC: &[u8] = b"SPM1\n";
 
-/// Avatars and emoji run around 10 KiB, so this bounds the directory near
-/// 40 MiB — small enough to never matter, large enough that an active
-/// workspace's faces effectively never get evicted.
-const MAX_ENTRIES: usize = 4_096;
+/// File-count safety net for “no limit”. Typical avatars are ~10 KiB, so this
+/// is a few hundred megabytes in practice. The user-facing byte cap lives in
+/// Settings and is applied by [`MediaStore::prune_to`].
+const MAX_ENTRIES: usize = 16_384;
 
 /// This cache exists for images the UI paints at icon size. Refusing larger
 /// entries keeps a caller from turning it into a general image cache, whatever
@@ -37,6 +39,84 @@ pub struct CachedImage {
     /// false they are the slot's previous picture: still worth painting, but the
     /// caller must go on to fetch the new one.
     pub current: bool,
+}
+
+/// On-disk picture kinds the Storage panel can list and clear independently.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MediaCacheKind {
+    Avatars,
+    Emoji,
+    Icons,
+    Other,
+}
+
+impl MediaCacheKind {
+    pub const ALL: [Self; 4] = [Self::Avatars, Self::Emoji, Self::Icons, Self::Other];
+
+    pub fn from_slot(slot: &str) -> Self {
+        if slot.starts_with("avatar/") {
+            Self::Avatars
+        } else if slot.starts_with("emoji/") {
+            Self::Emoji
+        } else if slot.starts_with("icon/") {
+            Self::Icons
+        } else {
+            Self::Other
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Avatars => "Avatars",
+            Self::Emoji => "Emoji",
+            Self::Icons => "Icons",
+            Self::Other => "Other",
+        }
+    }
+
+    pub fn index(self) -> usize {
+        match self {
+            Self::Avatars => 0,
+            Self::Emoji => 1,
+            Self::Icons => 2,
+            Self::Other => 3,
+        }
+    }
+}
+
+/// Byte totals for the on-disk picture cache, grouped by slot prefix.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct MediaCacheUsage {
+    pub avatars: u64,
+    pub emoji: u64,
+    pub icons: u64,
+    pub other: u64,
+    pub entries: usize,
+}
+
+impl MediaCacheUsage {
+    pub fn total(self) -> u64 {
+        self.avatars + self.emoji + self.icons + self.other
+    }
+
+    pub fn bytes(self, kind: MediaCacheKind) -> u64 {
+        match kind {
+            MediaCacheKind::Avatars => self.avatars,
+            MediaCacheKind::Emoji => self.emoji,
+            MediaCacheKind::Icons => self.icons,
+            MediaCacheKind::Other => self.other,
+        }
+    }
+
+    fn add(&mut self, kind: MediaCacheKind, bytes: u64) {
+        match kind {
+            MediaCacheKind::Avatars => self.avatars += bytes,
+            MediaCacheKind::Emoji => self.emoji += bytes,
+            MediaCacheKind::Icons => self.icons += bytes,
+            MediaCacheKind::Other => self.other += bytes,
+        }
+        self.entries += 1;
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -109,22 +189,100 @@ impl MediaStore {
 
     /// Drops the oldest entries once the directory grows past [`MAX_ENTRIES`].
     pub fn prune(&self) {
+        self.prune_to(None);
+    }
+
+    /// Byte totals grouped by slot prefix. Peeks headers only; does not load
+    /// image bytes. Staging files and other non-entries are ignored.
+    pub fn usage(&self) -> MediaCacheUsage {
+        let mut usage = MediaCacheUsage::default();
+        let Ok(entries) = std::fs::read_dir(&self.root) else {
+            return usage;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !is_entry_file(&path) {
+                continue;
+            }
+            let Ok(meta) = entry.metadata() else {
+                continue;
+            };
+            let kind = peek_slot(&path)
+                .map(|slot| MediaCacheKind::from_slot(&slot))
+                .unwrap_or(MediaCacheKind::Other);
+            usage.add(kind, meta.len());
+        }
+        usage
+    }
+
+    /// Deletes every entry whose slot maps to one of `kinds`. Returns bytes
+    /// actually removed.
+    pub fn purge(&self, kinds: &[MediaCacheKind]) -> u64 {
+        if kinds.is_empty() {
+            return 0;
+        }
+        let want: HashSet<MediaCacheKind> = kinds.iter().copied().collect();
+        let Ok(entries) = std::fs::read_dir(&self.root) else {
+            return 0;
+        };
+        let mut removed = 0;
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !is_entry_file(&path) {
+                continue;
+            }
+            let Ok(meta) = entry.metadata() else {
+                continue;
+            };
+            let kind = peek_slot(&path)
+                .map(|slot| MediaCacheKind::from_slot(&slot))
+                .unwrap_or(MediaCacheKind::Other);
+            if want.contains(&kind) && std::fs::remove_file(&path).is_ok() {
+                removed += meta.len();
+            }
+        }
+        removed
+    }
+
+    /// Drops oldest files (by mtime) until the directory is under `max_bytes`
+    /// when set, and never keeps more than [`MAX_ENTRIES`] files. Staging
+    /// leftovers are included so they cannot accumulate.
+    pub fn prune_to(&self, max_bytes: Option<u64>) {
         let Ok(entries) = std::fs::read_dir(&self.root) else {
             return;
         };
         let mut files = entries
             .flatten()
             .filter_map(|entry| {
-                let modified = entry.metadata().ok()?.modified().ok()?;
-                Some((modified, entry.path()))
+                let path = entry.path();
+                if path.is_dir() {
+                    return None;
+                }
+                let meta = entry.metadata().ok()?;
+                let modified = meta.modified().ok()?;
+                Some((modified, meta.len(), path))
             })
             .collect::<Vec<_>>();
-        if files.len() <= MAX_ENTRIES {
+        let mut remaining_bytes: u64 = files.iter().map(|(_, size, _)| *size).sum();
+        let mut remaining_count = files.len();
+        let over_count = remaining_count > MAX_ENTRIES;
+        let over_bytes = max_bytes.is_some_and(|max| remaining_bytes > max);
+        if !over_count && !over_bytes {
             return;
         }
-        files.sort_by_key(|(modified, _)| *modified);
-        for (_, path) in files.iter().take(files.len() - MAX_ENTRIES) {
-            let _ = std::fs::remove_file(path);
+        files.sort_by_key(|(modified, _, _)| *modified);
+        for (_, size, path) in files {
+            let count_ok = remaining_count <= MAX_ENTRIES;
+            let bytes_ok = max_bytes
+                .map(|max| remaining_bytes <= max)
+                .unwrap_or(true);
+            if count_ok && bytes_ok {
+                break;
+            }
+            if std::fs::remove_file(&path).is_ok() {
+                remaining_count -= 1;
+                remaining_bytes = remaining_bytes.saturating_sub(size);
+            }
         }
     }
 
@@ -135,6 +293,35 @@ impl MediaStore {
     pub fn root(&self) -> &Path {
         &self.root
     }
+}
+
+fn is_entry_file(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.len() == 16 && name.bytes().all(|byte| byte.is_ascii_hexdigit()))
+}
+
+/// Reads just enough of an entry to recover its slot, so inventory does not
+/// load image bytes.
+fn peek_slot(path: &Path) -> Option<String> {
+    let mut file = std::fs::File::open(path).ok()?;
+    let mut buf = Vec::with_capacity(512);
+    let mut chunk = [0u8; 256];
+    loop {
+        let n = file.read(&mut chunk).ok()?;
+        if n == 0 {
+            break;
+        }
+        buf.extend_from_slice(&chunk[..n]);
+        if buf.iter().filter(|byte| **byte == b'\n').count() >= 2 || buf.len() > 8 * 1024 {
+            break;
+        }
+    }
+    let body = buf.strip_prefix(MAGIC)?;
+    let split = body.iter().position(|byte| *byte == b'\n')?;
+    std::str::from_utf8(&body[..split])
+        .ok()
+        .map(str::to_owned)
 }
 
 fn split_entry(raw: &[u8]) -> Option<(&str, &str, &[u8])> {
@@ -273,5 +460,127 @@ mod tests {
             format!("{:016x}", slot_hash("avatar/U1")),
             "cd2038f301dc7f07"
         );
+    }
+
+    fn set_mtime(path: &Path, secs: u64) {
+        let file = std::fs::File::options()
+            .write(true)
+            .open(path)
+            .expect("open");
+        file.set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(secs))
+            .expect("mtime");
+    }
+
+    #[test]
+    fn usage_groups_entries_by_slot_prefix() {
+        let store = temp_store("usage");
+        store
+            .store("avatar/U1", "https://cdn.test/a", b"avatar-bytes")
+            .expect("avatar");
+        store
+            .store("emoji/party", "https://cdn.test/e", b"emoji-bytes")
+            .expect("emoji");
+        store
+            .store(
+                "icon/https://cdn.test/bot.png",
+                "https://cdn.test/bot.png",
+                b"icon-bytes",
+            )
+            .expect("icon");
+        std::fs::write(store.path("nope/x"), b"not a media entry").expect("garbage");
+
+        let usage = store.usage();
+        assert_eq!(usage.entries, 4);
+        assert!(usage.avatars > 0);
+        assert!(usage.emoji > 0);
+        assert!(usage.icons > 0);
+        assert!(usage.other > 0);
+        assert_eq!(
+            usage.total(),
+            usage.avatars + usage.emoji + usage.icons + usage.other
+        );
+        let _ = std::fs::remove_dir_all(store.root());
+    }
+
+    #[test]
+    fn purge_deletes_only_the_requested_kinds() {
+        let store = temp_store("purge");
+        store
+            .store("avatar/U1", "https://cdn.test/a", b"avatar-bytes")
+            .expect("avatar");
+        store
+            .store("emoji/party", "https://cdn.test/e", b"emoji-bytes")
+            .expect("emoji");
+        store
+            .store(
+                "icon/https://cdn.test/bot.png",
+                "https://cdn.test/bot.png",
+                b"icon-bytes",
+            )
+            .expect("icon");
+
+        let removed = store.purge(&[MediaCacheKind::Avatars, MediaCacheKind::Emoji]);
+        assert!(removed > 0);
+        let usage = store.usage();
+        assert_eq!(usage.avatars, 0);
+        assert_eq!(usage.emoji, 0);
+        assert!(usage.icons > 0);
+        assert_eq!(usage.entries, 1);
+        let _ = std::fs::remove_dir_all(store.root());
+    }
+
+    #[test]
+    fn purge_other_removes_unreadable_files() {
+        let store = temp_store("purge-other");
+        std::fs::write(store.path("avatar/U1"), b"not a media entry").expect("garbage");
+        store
+            .store("emoji/party", "https://cdn.test/e", b"keep")
+            .expect("emoji");
+        let removed = store.purge(&[MediaCacheKind::Other]);
+        assert!(removed > 0);
+        let usage = store.usage();
+        assert_eq!(usage.other, 0);
+        assert!(usage.emoji > 0);
+        let _ = std::fs::remove_dir_all(store.root());
+    }
+
+    #[test]
+    fn prune_to_drops_oldest_files_until_under_budget() {
+        let store = temp_store("prune-bytes");
+        store
+            .store("avatar/U1", "https://cdn.test/a", b"one-bytes-xx")
+            .expect("first");
+        store
+            .store("avatar/U2", "https://cdn.test/b", b"two-bytes-xx")
+            .expect("second");
+        store
+            .store("avatar/U3", "https://cdn.test/c", b"three-bytes-x")
+            .expect("third");
+        let p1 = store.path("avatar/U1");
+        let p2 = store.path("avatar/U2");
+        let p3 = store.path("avatar/U3");
+        set_mtime(&p1, 10);
+        set_mtime(&p2, 20);
+        set_mtime(&p3, 30);
+        let keep = std::fs::metadata(&p2).expect("p2").len() + std::fs::metadata(&p3).expect("p3").len();
+
+        store.prune_to(Some(keep));
+
+        assert!(!p1.exists(), "oldest entry should be evicted");
+        assert!(p2.exists());
+        assert!(p3.exists());
+        assert!(store.usage().total() <= keep);
+        let _ = std::fs::remove_dir_all(store.root());
+    }
+
+    #[test]
+    fn prune_to_none_keeps_files_under_the_count_cap() {
+        let store = temp_store("prune-none");
+        store
+            .store("avatar/U1", "https://cdn.test/a", b"keep-me")
+            .expect("store");
+        store.prune_to(None);
+        assert_eq!(store.usage().entries, 1);
+        let _ = std::fs::remove_dir_all(store.root());
     }
 }

@@ -4,12 +4,13 @@ mod chrome;
 pub(crate) mod composer;
 pub(crate) mod rich;
 mod secondary;
+pub(crate) mod settings;
 pub(crate) mod theme;
 
 use dioxus::prelude::*;
 
 use crate::overlays::overlay_view;
-use crate::state::{MainView, ShellState};
+use crate::state::{MainView, Overlay, ShellState};
 
 use chrome::{channel_sidebar, conversation_header, rail_view};
 use composer::{composer, load_older_if_needed, measure_thread, measure_timeline};
@@ -28,6 +29,7 @@ const CSS: &str = concat!(
     include_str!("../styles/blocks.css"),
     include_str!("../styles/composer.css"),
     include_str!("../styles/overlays.css"),
+    include_str!("../styles/settings.css"),
     include_str!("../styles/profile.css"),
     include_str!("../styles/responsive.css"),
 );
@@ -214,7 +216,7 @@ pub fn shell() -> Element {
                 event.prevent_default();
                 state.write().add_attachments(event.data_transfer().files().into_iter().map(|file| file.path()));
             },
-            {rail_view(state, snapshot.main_view, dm_unread_total, activity_unread_total, account, account_avatar)}
+            {rail_view(state, snapshot.main_view, dm_unread_total, activity_unread_total, account, account_avatar, snapshot.overlay == Some(Overlay::SelfMenu))}
             if show_channel_sidebar {
                 {channel_sidebar(state, &snapshot, workspace_name, shortcut)}
             }

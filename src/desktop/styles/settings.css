@@ -1,0 +1,210 @@
+/* Settings overlay: Appearance grid plus Storage usage. */
+
+.settings-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 0 18px 8px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.settings-tab {
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 650;
+}
+.settings-tab.active {
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.storage-panel {
+  --storage-avatars: #2f8cff;
+  --storage-emoji: #f5b942;
+  --storage-icons: #42d392;
+  --storage-other: #6b7c90;
+  --storage-workspace: #b382da;
+  display: grid;
+  max-height: 68vh;
+  gap: 10px;
+  padding: 0 18px 16px;
+  overflow-y: auto;
+}
+.storage-hero {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 2px 0 0;
+}
+.storage-donut {
+  display: grid;
+  width: 118px;
+  height: 118px;
+  place-items: center;
+  border-radius: 50%;
+}
+.storage-donut.empty {
+  background: conic-gradient(var(--border-strong) 0 100%);
+}
+.storage-donut-hole {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-content: center;
+  border-radius: 50%;
+  background: var(--surface);
+  text-align: center;
+  gap: 1px;
+}
+.storage-donut-hole strong {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.storage-donut-hole span {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.storage-caption, .storage-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+.storage-hint { text-align: left; }
+
+.storage-list {
+  display: grid;
+  gap: 1px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+.storage-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 32px;
+  width: 100%;
+  padding: 4px 8px;
+  border-radius: 7px;
+  text-align: left;
+  color: var(--text);
+}
+.storage-row.workspace {
+  grid-template-columns: 22px minmax(0, 1fr) auto auto;
+}
+.storage-row:hover { background: var(--hover-overlay); }
+.storage-swatch {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  background: var(--muted-2);
+}
+.storage-row.avatars .storage-swatch { background: var(--storage-avatars); }
+.storage-row.emoji .storage-swatch { background: var(--storage-emoji); }
+.storage-row.icons .storage-swatch { background: var(--storage-icons); }
+.storage-row.other .storage-swatch { background: var(--storage-other); }
+.storage-row.workspace .storage-swatch {
+  background: var(--storage-workspace);
+  border: 0;
+  color: transparent;
+}
+.storage-row:not(.selected):not(.workspace) .storage-swatch {
+  background: transparent;
+  border: 2px solid var(--muted-2);
+  color: transparent;
+}
+.storage-row.avatars:not(.selected) .storage-swatch { border-color: var(--storage-avatars); }
+.storage-row.emoji:not(.selected) .storage-swatch { border-color: var(--storage-emoji); }
+.storage-row.icons:not(.selected) .storage-swatch { border-color: var(--storage-icons); }
+.storage-row.other:not(.selected) .storage-swatch { border-color: var(--storage-other); }
+.storage-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.storage-pct { color: var(--muted); font-weight: 500; }
+.storage-size {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.storage-clear {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  margin-top: 4px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 650;
+}
+.storage-inline-clear {
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: var(--accent);
+  font-weight: 650;
+  font-size: 12px;
+}
+.storage-clear {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.storage-clear.disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.storage-list .storage-hint { padding: 4px 8px 6px; }
+
+.storage-limit {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+.storage-limit-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.storage-limit input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.storage-limit-stops {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  color: var(--muted-2);
+  font-size: 11px;
+}
+.storage-limit-stops span:nth-child(1) { text-align: left; }
+.storage-limit-stops span:nth-child(2),
+.storage-limit-stops span:nth-child(3),
+.storage-limit-stops span:nth-child(4) { text-align: center; }
+.storage-limit-stops span:nth-child(5) { text-align: right; }
+.storage-limit-stops .active { color: var(--text); font-weight: 650; }

@@ -75,6 +75,98 @@ fn empty_palette_does_not_dump_all_channels_without_recents() {
 }
 
 #[test]
+fn self_menu_fixture_matches_the_away_status_card() {
+    let media = MediaRegistry::default();
+    let state = ShellState::fixture_variant(media, "self-menu");
+    assert_eq!(state.overlay, Some(Overlay::SelfMenu));
+    assert_eq!(state.self_account.presence, PresenceVm::Away);
+    assert_eq!(state.self_account.user_id, "U0");
+    let profile = state
+        .core
+        .workspaces
+        .get("T1")
+        .and_then(|workspace| workspace.users.get("U0"))
+        .and_then(|user| user.profile.as_ref())
+        .expect("self profile");
+    assert_eq!(
+        profile.status_text.as_deref(),
+        Some("You Could Be - MII...")
+    );
+}
+
+#[test]
+fn self_menu_actions_open_profile_and_preferences() {
+    let media = MediaRegistry::default();
+    let mut state = ShellState::fixture_variant(media, "self-menu");
+    state.open_preferences();
+    assert_eq!(state.overlay, Some(Overlay::Settings));
+    assert_eq!(state.settings_section, SettingsSection::Appearance);
+
+    let mut state = ShellState::fixture_variant(MediaRegistry::default(), "self-menu");
+    state.apply_self_presence(PresenceVm::Active);
+    assert_eq!(state.self_account.presence, PresenceVm::Active);
+    state.apply_self_snooze_minutes(Some(60));
+    assert!(state.self_account.snoozed);
+    state.clear_self_status();
+    let profile = state
+        .core
+        .workspaces
+        .get("T1")
+        .and_then(|workspace| workspace.users.get("U0"))
+        .and_then(|user| user.profile.as_ref())
+        .expect("self profile");
+    assert_eq!(profile.status_text.as_deref(), Some(""));
+}
+
+#[test]
+fn settings_storage_fixture_locks_usage() {
+    let media = MediaRegistry::default();
+    let state = ShellState::fixture_variant(media, "settings-storage");
+    assert_eq!(state.overlay, Some(Overlay::Settings));
+    assert_eq!(state.settings_section, SettingsSection::Storage);
+    assert!(state.storage.fixture);
+    assert!(state.storage.usage.total() > 0);
+    assert_eq!(
+        state.storage.selected_picture_bytes(),
+        state.storage.usage.pictures()
+    );
+}
+
+#[test]
+fn trim_cached_history_keeps_the_open_conversation() {
+    let media = MediaRegistry::default();
+    let mut state = ShellState::fixture(media);
+    let active = state.core.active_channel.clone().expect("active channel");
+    let other = state
+        .channels
+        .iter()
+        .map(|channel| channel.id.clone())
+        .find(|id| id != &active)
+        .expect("another channel");
+    if let Some(workspace) = state.core.workspaces.get_mut("T1") {
+        let mut messages = super_platinum_core::state::ChannelMessages::default();
+        messages.loaded = true;
+        messages.upsert(super_platinum_core::slack::models::Message {
+            ts: Some("9.0".into()),
+            text: Some("stale cache".into()),
+            channel: Some(other.clone()),
+            ..Default::default()
+        });
+        workspace.messages.insert(other.clone(), messages);
+    }
+    state
+        .messages_by_channel
+        .insert(other.clone(), vec![MessageVm::default()]);
+    state.trim_cached_history();
+
+    let workspace = state.core.workspaces.get("T1").expect("fixture workspace");
+    let other_messages = workspace.messages.get(&other).expect("other channel");
+    assert!(!other_messages.loaded);
+    assert!(other_messages.messages.is_empty());
+    assert!(!state.messages_by_channel.contains_key(&other));
+}
+
+#[test]
 fn pending_attachments_lookup_by_message_ts() {
     let media = MediaRegistry::default();
     let state = ShellState::fixture_variant(media, "composer-upload-progress");

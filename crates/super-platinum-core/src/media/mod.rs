@@ -3,7 +3,7 @@ mod store;
 use std::fmt;
 use std::str::FromStr;
 
-pub use store::{CachedImage, MediaStore};
+pub use store::{CachedImage, MediaCacheKind, MediaCacheUsage, MediaStore};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MediaAssetKind {

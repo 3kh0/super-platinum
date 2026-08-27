@@ -194,6 +194,68 @@ pub struct BackgroundSettings {
     pub surface_opacity: f32,
 }
 
+/// User-facing cap on the on-disk picture cache.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CacheSizeLimit {
+    #[serde(rename = "50mb")]
+    Mb50,
+    #[serde(rename = "200mb")]
+    Mb200,
+    #[serde(rename = "500mb")]
+    Mb500,
+    #[serde(rename = "1gb")]
+    Gb1,
+    Unlimited,
+}
+
+impl Default for CacheSizeLimit {
+    fn default() -> Self {
+        Self::Mb200
+    }
+}
+
+impl CacheSizeLimit {
+    pub const ALL: [Self; 5] = [
+        Self::Mb50,
+        Self::Mb200,
+        Self::Mb500,
+        Self::Gb1,
+        Self::Unlimited,
+    ];
+
+    pub fn bytes(self) -> Option<u64> {
+        match self {
+            Self::Mb50 => Some(50 * 1024 * 1024),
+            Self::Mb200 => Some(200 * 1024 * 1024),
+            Self::Mb500 => Some(500 * 1024 * 1024),
+            Self::Gb1 => Some(1024 * 1024 * 1024),
+            Self::Unlimited => None,
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Mb50 => "50 MB",
+            Self::Mb200 => "200 MB",
+            Self::Mb500 => "500 MB",
+            Self::Gb1 => "1 GB",
+            Self::Unlimited => "No limit",
+        }
+    }
+
+    pub fn index(self) -> u8 {
+        Self::ALL
+            .iter()
+            .position(|limit| *limit == self)
+            .unwrap_or(1) as u8
+    }
+
+    pub fn from_index(index: u8) -> Self {
+        Self::ALL.get(index as usize).copied().unwrap_or_default()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
     #[serde(default)]
@@ -215,6 +277,9 @@ pub struct Settings {
     /// Channel sidebar width in px (user-draggable).
     #[serde(default = "default_sidebar_width")]
     pub sidebar_width: f32,
+    /// Cap on the on-disk picture cache. Missing in older settings files.
+    #[serde(default)]
+    pub cache_limit: CacheSizeLimit,
 }
 
 fn default_gap() -> f32 {
@@ -247,6 +312,7 @@ impl Default for Settings {
             panel_radius: default_panel_radius(),
             border_thickness: default_border_thickness(),
             sidebar_width: default_sidebar_width(),
+            cache_limit: CacheSizeLimit::default(),
         }
     }
 }

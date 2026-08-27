@@ -60,6 +60,150 @@ impl ShellState {
         }
     }
 
+    pub fn set_settings_section(&mut self, section: crate::state::SettingsSection) {
+        self.settings_section = section;
+    }
+
+    pub fn toggle_self_menu(&mut self) {
+        if self.overlay == Some(crate::state::Overlay::SelfMenu) {
+            self.overlay = None;
+            self.self_menu_notifications_open = false;
+        } else {
+            self.overlay = Some(crate::state::Overlay::SelfMenu);
+            self.self_menu_notifications_open = false;
+        }
+    }
+
+    pub fn open_preferences(&mut self) {
+        self.self_menu_notifications_open = false;
+        self.settings_section = crate::state::SettingsSection::Appearance;
+        self.overlay = Some(crate::state::Overlay::Settings);
+    }
+
+    pub fn toggle_self_menu_notifications(&mut self) {
+        self.self_menu_notifications_open = !self.self_menu_notifications_open;
+    }
+
+    pub fn apply_self_presence(&mut self, presence: crate::state::PresenceVm) {
+        let user = self.self_account.user_id.clone();
+        if let Some(team) = self.core.active_team.clone()
+            && let Some(workspace) = self.core.workspaces.get_mut(&team)
+        {
+            workspace.set_presence(
+                user,
+                match presence {
+                    crate::state::PresenceVm::Active => {
+                        super_platinum_core::state::Presence::Active
+                    }
+                    _ => super_platinum_core::state::Presence::Away,
+                },
+            );
+        }
+        self.self_account.presence = presence;
+    }
+
+    pub fn apply_self_snooze_minutes(&mut self, minutes: Option<u32>) {
+        let now = super_platinum_core::state::now_secs();
+        if let Some(team) = self.core.active_team.clone()
+            && let Some(workspace) = self.core.workspaces.get_mut(&team)
+        {
+            match minutes {
+                Some(minutes) => {
+                    workspace.self_dnd.snooze_enabled = true;
+                    workspace.self_dnd.snooze_endtime = Some(now + i64::from(minutes) * 60);
+                }
+                None => {
+                    workspace.self_dnd.snooze_enabled = false;
+                    workspace.self_dnd.snooze_endtime = None;
+                    workspace.self_dnd.snooze_remaining = None;
+                }
+            }
+            self.self_account.snoozed = workspace.self_snoozed();
+        } else {
+            self.self_account.snoozed = minutes.is_some();
+        }
+    }
+
+    pub fn merge_self_dnd(&mut self, dnd: super_platinum_core::slack::models::DndInfo) {
+        if let Some(team) = self.core.active_team.clone()
+            && let Some(workspace) = self.core.workspaces.get_mut(&team)
+        {
+            workspace.self_dnd = dnd;
+            self.self_account.snoozed = workspace.self_snoozed();
+        } else {
+            self.self_account.snoozed = dnd.is_snoozed(super_platinum_core::state::now_secs());
+        }
+    }
+
+    pub fn merge_self_snooze(&mut self, snooze: super_platinum_core::slack::models::DndInfo) {
+        if let Some(team) = self.core.active_team.clone()
+            && let Some(workspace) = self.core.workspaces.get_mut(&team)
+        {
+            workspace.self_dnd.snooze_enabled = snooze.snooze_enabled;
+            workspace.self_dnd.snooze_endtime = snooze.snooze_endtime;
+            workspace.self_dnd.snooze_remaining = snooze.snooze_remaining;
+            self.self_account.snoozed = workspace.self_snoozed();
+        } else {
+            self.self_account.snoozed = snooze.snooze_enabled;
+        }
+    }
+
+    pub fn clear_self_status(&mut self) {
+        let user = self.self_account.user_id.clone();
+        if let Some(team) = self.core.active_team.clone()
+            && let Some(workspace) = self.core.workspaces.get_mut(&team)
+            && let Some(profile) = workspace
+                .users
+                .get_mut(&user)
+                .and_then(|user| user.profile.as_mut())
+        {
+            profile.status_text = Some(String::new());
+            profile.status_emoji = Some(String::new());
+            profile.status_expiration = Some(0);
+        }
+    }
+
+    pub fn toggle_cache_kind(&mut self, kind: super_platinum_core::MediaCacheKind) {
+        let index = kind.index();
+        self.storage.selected[index] = !self.storage.selected[index];
+    }
+
+    pub fn set_cache_limit(&mut self, limit: super_platinum_core::config::CacheSizeLimit) {
+        self.core.settings.cache_limit = limit;
+        self.media.set_cache_limit(limit.bytes());
+    }
+
+    /// Drops cached history for every conversation except the one on screen so
+    /// a Storage clear actually shrinks the sqlite file on the next persist.
+    pub fn trim_cached_history(&mut self) {
+        let active = self.core.active_channel.clone();
+        let active_thread = self.core.active_thread.clone();
+        for workspace in self.core.workspaces.values_mut() {
+            for (id, messages) in workspace.messages.iter_mut() {
+                if active.as_deref() == Some(id.as_str()) {
+                    continue;
+                }
+                messages.messages.clear();
+                messages.pending.clear();
+                messages.loaded = false;
+                messages.has_more_older = true;
+            }
+        }
+        if let Some((channel, ts)) = &active_thread {
+            self.core
+                .threads
+                .retain(|(_, thread_channel, thread_ts), _| {
+                    thread_channel == channel && thread_ts == ts
+                });
+        } else {
+            self.core.threads.clear();
+        }
+        match active {
+            Some(channel) => self.messages_by_channel.retain(|id, _| id == &channel),
+            None => self.messages_by_channel.clear(),
+        }
+    }
+
     pub fn notify_typing(&mut self) {
         let (Some(team), Some(channel)) = (
             self.core.active_team.clone(),

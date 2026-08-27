@@ -181,6 +181,40 @@ pub async fn set_presence(
     Ok(())
 }
 
+pub async fn set_snooze(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    minutes: u32,
+) -> Result<DndInfo, Error> {
+    let value = transport
+        .execute(dnd_set_snooze(client, workspace, minutes))
+        .await?;
+    decode(value, "dnd.setSnooze")
+}
+
+pub async fn end_snooze(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+) -> Result<DndInfo, Error> {
+    let value = transport.execute(dnd_end_snooze(client, workspace)).await?;
+    decode(value, "dnd.endSnooze")
+}
+
+pub async fn set_user_profile(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    profile: String,
+) -> Result<UserProfile, Error> {
+    let value = transport
+        .execute(users_profile_set(client, workspace, profile))
+        .await?;
+    let page: UserProfilePage = decode(value, "users.profile.set")?;
+    Ok(page.profile)
+}
+
 pub async fn fetch_users_info(
     transport: &Transport,
     client: &SlackClient,

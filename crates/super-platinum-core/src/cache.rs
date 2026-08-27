@@ -56,6 +56,19 @@ impl Cache {
         }
     }
 
+    /// Size of the on-disk workspace cache, or 0 when the file is missing.
+    pub fn usage_bytes(account_id: &str) -> u64 {
+        if uuid::Uuid::parse_str(account_id).is_err() {
+            return 0;
+        }
+        let Ok(dir) = crate::config::data_dir() else {
+            return 0;
+        };
+        std::fs::metadata(dir.join(format!("cache-{account_id}.sqlite")))
+            .map(|meta| meta.len())
+            .unwrap_or(0)
+    }
+
     pub fn open(path: impl AsRef<Path>) -> Result<Self, AppError> {
         let conn = Connection::open(path)?;
         let cache = Self { conn };
@@ -360,6 +373,15 @@ mod tests {
             url: "https://test.slack.com".into(),
             token: "xoxc-test".into(),
         }
+    }
+
+    #[test]
+    fn usage_bytes_is_zero_when_the_file_is_missing() {
+        assert_eq!(Cache::usage_bytes("not-a-uuid"), 0);
+        assert_eq!(
+            Cache::usage_bytes("00000000-0000-0000-0000-000000000000"),
+            0
+        );
     }
 
     #[test]

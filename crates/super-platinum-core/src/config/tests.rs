@@ -101,6 +101,32 @@ fn legacy_accent_migrates_to_role_overrides() {
         settings.colors.hover.expect("migrated hover").as_hex(),
         "#C9A4E6"
     );
+    assert_eq!(settings.cache_limit, CacheSizeLimit::Mb200);
+}
+
+#[test]
+fn cache_limit_roundtrips_and_defaults_when_missing() {
+    let _guard = test_lock();
+    reset();
+    let mut settings = Settings::default();
+    settings.cache_limit = CacheSizeLimit::Gb1;
+    save_settings(&settings).expect("save");
+    let loaded = load_settings();
+    assert_eq!(loaded.cache_limit, CacheSizeLimit::Gb1);
+    assert_eq!(loaded.cache_limit.bytes(), Some(1024 * 1024 * 1024));
+    let serialized =
+        std::fs::read_to_string(settings_path().expect("settings path")).expect("settings");
+    assert!(serialized.contains("\"cache_limit\": \"1gb\""));
+
+    std::fs::write(
+        settings_path().expect("settings path"),
+        br#"{"preset":"countertop","gap":8,"panel_radius":8,"border_thickness":1,"sidebar_width":240}"#,
+    )
+    .expect("write without cache_limit");
+    assert_eq!(load_settings().cache_limit, CacheSizeLimit::Mb200);
+    assert_eq!(CacheSizeLimit::from_index(0), CacheSizeLimit::Mb50);
+    assert_eq!(CacheSizeLimit::Unlimited.index(), 4);
+    assert_eq!(CacheSizeLimit::default().bytes(), Some(200 * 1024 * 1024));
 }
 
 #[test]

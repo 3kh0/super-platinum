@@ -352,6 +352,32 @@ fn set_presence_request_includes_presence_value() {
 }
 
 #[test]
+fn set_snooze_request_sends_minutes() {
+    let request = dnd_set_snooze(&SlackClient::default(), &workspace(), 60);
+    let fields = form_fields(&request);
+    assert!(request.url.contains("/api/dnd.setSnooze?"));
+    assert!(fields.contains(&("num_minutes".into(), "60".into())));
+    assert!(fields.contains(&("token".into(), "xoxc-test-token".into())));
+}
+
+#[test]
+fn end_snooze_request_is_a_bare_form_post() {
+    let request = dnd_end_snooze(&SlackClient::default(), &workspace());
+    assert!(request.url.contains("/api/dnd.endSnooze?"));
+    assert!(form_fields(&request).contains(&("token".into(), "xoxc-test-token".into())));
+}
+
+#[test]
+fn profile_set_request_posts_the_profile_json() {
+    let profile = r#"{"status_text":"","status_emoji":"","status_expiration":0}"#;
+    let request = users_profile_set(&SlackClient::default(), &workspace(), profile.into());
+    let fields = form_fields(&request);
+    assert!(request.url.contains("/api/users.profile.set?"));
+    assert!(fields.contains(&("profile".into(), profile.into())));
+    assert!(fields.contains(&("token".into(), "xoxc-test-token".into())));
+}
+
+#[test]
 fn profile_request_targets_user_with_desktop_token() {
     let request = users_profile_get(&SlackClient::default(), &workspace(), "U_PROFILE".into());
     let fields = form_fields(&request);

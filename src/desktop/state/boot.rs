@@ -175,7 +175,7 @@ impl ShellState {
         let timeline_end = messages.len();
         let self_account = crate::state::project_self_account(&workspace, &media);
 
-        Ok(Self {
+        let state = Self {
             core,
             media,
             media_epoch: 0,
@@ -209,6 +209,8 @@ impl ShellState {
             profile_hover_generation: 0,
             profile_hover_card_active: false,
             overlay: None,
+            settings_section: SettingsSection::Appearance,
+            storage: StoragePanel::default(),
             palette_query: String::new(),
             palette_selected: 0,
             search_query: String::new(),
@@ -221,19 +223,24 @@ impl ShellState {
             profile_user: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
+            self_menu_notifications_open: false,
             profile_vip_loading: false,
             viewer: None,
             toast: None,
             performance: PerformanceVm::default(),
             channel_switch_started: None,
             realtime_insert_started: None,
-        })
+        };
+        state
+            .media
+            .set_cache_limit(state.core.settings.cache_limit.bytes());
+        Ok(state)
     }
 
     pub fn login(media: MediaRegistry) -> Self {
         let core =
             super_platinum_core::CoreAppState::new(super_platinum_core::config::load_settings());
-        Self {
+        let state = Self {
             core,
             media,
             media_epoch: 0,
@@ -267,6 +274,8 @@ impl ShellState {
             profile_hover_generation: 0,
             profile_hover_card_active: false,
             overlay: None,
+            settings_section: SettingsSection::Appearance,
+            storage: StoragePanel::default(),
             palette_query: String::new(),
             palette_selected: 0,
             search_query: String::new(),
@@ -279,13 +288,18 @@ impl ShellState {
             profile_user: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
+            self_menu_notifications_open: false,
             profile_vip_loading: false,
             viewer: None,
             toast: None,
             performance: PerformanceVm::default(),
             channel_switch_started: None,
             realtime_insert_started: None,
-        }
+        };
+        state
+            .media
+            .set_cache_limit(state.core.settings.cache_limit.bytes());
+        state
     }
 
     pub fn fixture(media: MediaRegistry) -> Self {
@@ -505,6 +519,8 @@ impl ShellState {
             profile_hover_generation: 0,
             profile_hover_card_active: false,
             overlay: None,
+            settings_section: SettingsSection::Appearance,
+            storage: StoragePanel::default(),
             palette_query: String::new(),
             palette_selected: 0,
             search_query: String::new(),
@@ -517,6 +533,7 @@ impl ShellState {
             profile_user: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
+            self_menu_notifications_open: false,
             profile_vip_loading: false,
             viewer: None,
             toast: None,
@@ -549,6 +566,43 @@ impl ShellState {
             }
             "activity-channel-post" => state.main_view = MainView::Activity,
             "accounts" => state.overlay = Some(Overlay::Accounts),
+            "self-menu" => {
+                state.overlay = Some(Overlay::SelfMenu);
+                state.self_account.presence = PresenceVm::Away;
+                if let Some(workspace) = state.core.workspaces.get_mut("T1") {
+                    workspace
+                        .presence
+                        .insert("U0".into(), super_platinum_core::state::Presence::Away);
+                    if let Some(profile) = workspace
+                        .users
+                        .get_mut("U0")
+                        .and_then(|user| user.profile.as_mut())
+                    {
+                        profile.status_text = Some("You Could Be - MII...".into());
+                        profile.status_emoji = Some(":musical_note:".into());
+                    }
+                }
+            }
+            "self-menu-notifications" => {
+                state.overlay = Some(Overlay::SelfMenu);
+                state.self_menu_notifications_open = true;
+            }
+            "settings-storage" => {
+                state.overlay = Some(Overlay::Settings);
+                state.settings_section = SettingsSection::Storage;
+                state.storage = StoragePanel {
+                    usage: StorageUsageVm {
+                        avatars: 12_484_608,
+                        emoji: 3_250_176,
+                        icons: 1_258_496,
+                        other: 0,
+                        workspace: 19_505_152,
+                    },
+                    selected: [true; 4],
+                    scanning: false,
+                    fixture: true,
+                };
+            }
             "palette" => state.overlay = Some(Overlay::Palette),
             "animated-reaction" => {
                 keep_recent_messages(&mut state, 8);

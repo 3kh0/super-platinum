@@ -41,6 +41,8 @@ pub struct ShellState {
     pub profile_hover_generation: u64,
     pub profile_hover_card_active: bool,
     pub overlay: Option<Overlay>,
+    pub settings_section: SettingsSection,
+    pub storage: StoragePanel,
     pub palette_query: String,
     pub palette_selected: usize,
     pub search_query: String,
@@ -58,6 +60,8 @@ pub struct ShellState {
     pub profile_user: Option<String>,
     pub profile_pane_width: f64,
     pub profile_menu_open: bool,
+    /// Nested pause-notifications list inside the signed-in user's menu.
+    pub self_menu_notifications_open: bool,
     pub profile_vip_loading: bool,
     pub viewer: Option<ViewerVm>,
     pub toast: Option<String>,
@@ -230,6 +234,7 @@ pub(crate) fn project_self_account(
         initials,
         presence: PresenceVm::from_core(workspace.self_presence()),
         snoozed: workspace.self_snoozed(),
+        workspace_name: workspace.name.clone(),
     }
 }
 

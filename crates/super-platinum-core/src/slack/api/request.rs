@@ -239,12 +239,36 @@ pub fn dnd_info(client: &SlackClient, workspace: &WorkspaceSession) -> PreparedR
     client.rest_form(workspace, "dnd.info", Vec::new())
 }
 
+pub fn dnd_set_snooze(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    minutes: u32,
+) -> PreparedRequest {
+    client.rest_form(
+        workspace,
+        "dnd.setSnooze",
+        vec![("num_minutes", minutes.to_string())],
+    )
+}
+
+pub fn dnd_end_snooze(client: &SlackClient, workspace: &WorkspaceSession) -> PreparedRequest {
+    client.rest_form(workspace, "dnd.endSnooze", Vec::new())
+}
+
 pub fn users_set_presence(
     client: &SlackClient,
     workspace: &WorkspaceSession,
     presence: String,
 ) -> PreparedRequest {
     client.rest_form(workspace, "users.setPresence", vec![("presence", presence)])
+}
+
+pub fn users_profile_set(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    profile: String,
+) -> PreparedRequest {
+    client.rest_form(workspace, "users.profile.set", vec![("profile", profile)])
 }
 
 pub fn users_profile_get(

@@ -28,6 +28,7 @@ pub use dispatcher::{AppDispatcher, DispatchHandle, Reducer, UiCommandExecutor};
 pub use events::{ConversationMessage, DiscoveryMessage, RuntimeMessage, WorkspaceMessage};
 pub use geometry::{Point, Size, Vector};
 pub use media::{
-    CachedImage, MediaAssetId, MediaAssetIdError, MediaAssetKind, MediaStore, detect_image_mime,
+    CachedImage, MediaAssetId, MediaAssetIdError, MediaAssetKind, MediaCacheKind, MediaCacheUsage,
+    MediaStore, detect_image_mime,
 };
 pub use supervisor::{Generation, RealtimeSupervisor, SupervisorContext};

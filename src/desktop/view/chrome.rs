@@ -42,6 +42,7 @@ pub(crate) fn rail_view(
     activity_unread: usize,
     account: &SelfAccountVm,
     avatar_uri: Option<String>,
+    self_menu_open: bool,
 ) -> Element {
     let home_active = matches!(
         active,
@@ -85,7 +86,9 @@ pub(crate) fn rail_view(
                 class: if account.snoozed { "rail-avatar snoozed" } else { "rail-avatar" },
                 title: "{account.name} — {account.status_label()}",
                 "aria-label": "{account.name}, {account.status_label()}",
-                onclick: move |_| state.write().overlay = Some(Overlay::Accounts),
+                "aria-haspopup": "menu",
+                "aria-expanded": if self_menu_open { "true" } else { "false" },
+                onclick: move |_| state.write().toggle_self_menu(),
                 {avatar_mask_defs()}
                 // Initials until the bytes land: an `img` with nothing behind
                 // it paints the platform's broken-image icon.

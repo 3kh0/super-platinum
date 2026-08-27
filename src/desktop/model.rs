@@ -394,6 +394,7 @@ pub struct SelfAccountVm {
     pub initials: String,
     pub presence: PresenceVm,
     pub snoozed: bool,
+    pub workspace_name: String,
 }
 
 impl SelfAccountVm {
@@ -461,10 +462,81 @@ pub struct PerformanceVm {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Overlay {
     Accounts,
+    SelfMenu,
     Palette,
     Search,
     Settings,
     Viewer,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SettingsSection {
+    #[default]
+    Appearance,
+    Storage,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct StorageUsageVm {
+    pub avatars: u64,
+    pub emoji: u64,
+    pub icons: u64,
+    pub other: u64,
+    pub workspace: u64,
+}
+
+impl StorageUsageVm {
+    pub fn pictures(self) -> u64 {
+        self.avatars + self.emoji + self.icons + self.other
+    }
+
+    pub fn total(self) -> u64 {
+        self.pictures() + self.workspace
+    }
+
+    pub fn kind(self, kind: super_platinum_core::MediaCacheKind) -> u64 {
+        match kind {
+            super_platinum_core::MediaCacheKind::Avatars => self.avatars,
+            super_platinum_core::MediaCacheKind::Emoji => self.emoji,
+            super_platinum_core::MediaCacheKind::Icons => self.icons,
+            super_platinum_core::MediaCacheKind::Other => self.other,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct StoragePanel {
+    pub usage: StorageUsageVm,
+    pub selected: [bool; 4],
+    pub scanning: bool,
+    /// Offline fixtures inject canned numbers; live scans must not overwrite them.
+    pub fixture: bool,
+}
+
+impl Default for StoragePanel {
+    fn default() -> Self {
+        Self {
+            usage: StorageUsageVm::default(),
+            selected: [true; 4],
+            scanning: false,
+            fixture: false,
+        }
+    }
+}
+
+impl StoragePanel {
+    pub fn selected_picture_bytes(&self) -> u64 {
+        super_platinum_core::MediaCacheKind::ALL
+            .iter()
+            .map(|kind| {
+                if self.selected[kind.index()] {
+                    self.usage.kind(*kind)
+                } else {
+                    0
+                }
+            })
+            .sum()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

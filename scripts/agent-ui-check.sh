@@ -18,13 +18,13 @@ FIXTURES=(
   animated-reaction profile-hover-card profile-pane profile-pane-rich-fields
   profile-pane-min-width dm-header-compact
   channel-thread-profile-headers channel-huddle chat-paused-pill
-  thread-unread-divider main-dev settings appearance-countertop
+  thread-unread-divider main-dev settings settings-storage appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background
   image-viewer-upload image-viewer-embed-compact gif-picker-attachment
   video-viewer search palette activity-unread activity-channel-post dms
   dm-history-failed dm-cached-refresh-failed composer-multiline
   composer-upload-progress
-  edit-message-composer accounts
+  edit-message-composer accounts self-menu self-menu-notifications
   multi-paragraph-custom-emoji message-unfurl-embed block-kit-layout
   media-loading-state
 )

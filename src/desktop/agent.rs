@@ -271,7 +271,11 @@ fn dispatch(
             AgentResponse::ok(id, json!({ "search_active": false }))
         }
         AgentCommand::OpenSettings => {
-            state.write().overlay = Some(Overlay::Settings);
+            let mut shell = state.write();
+            if shell.overlay != Some(Overlay::Settings) {
+                shell.settings_section = crate::state::SettingsSection::Appearance;
+            }
+            shell.overlay = Some(Overlay::Settings);
             AgentResponse::ok(id, json!({ "settings_open": true }))
         }
         AgentCommand::CloseSettings => {
@@ -528,6 +532,24 @@ fn state_snapshot(state: &ShellState) -> Value {
             "pane_width": state.profile_pane_width,
         })
     });
+    let settings_section = match state.settings_section {
+        crate::state::SettingsSection::Appearance => "appearance",
+        crate::state::SettingsSection::Storage => "storage",
+    };
+    let storage = {
+        let usage = state.storage.usage;
+        json!({
+            "scanning": state.storage.scanning,
+            "avatars": usage.avatars,
+            "emoji": usage.emoji,
+            "icons": usage.icons,
+            "other": usage.other,
+            "workspace": usage.workspace,
+            "pictures": usage.pictures(),
+            "total": usage.total(),
+            "selected_pictures": state.storage.selected_picture_bytes(),
+        })
+    };
     json!({
         "screen": screen,
         "signed_in": state.signed_in,
@@ -551,7 +573,11 @@ fn state_snapshot(state: &ShellState) -> Value {
                 "selected": selection == state.palette_selected,
             })).collect::<Vec<_>>()
         })),
+        "self_menu_open": state.overlay == Some(Overlay::SelfMenu),
+        "accounts_open": state.overlay == Some(Overlay::Accounts),
         "settings_open": state.overlay == Some(Overlay::Settings),
+        "settings_section": settings_section,
+        "storage": storage,
         "search_input": state.search_query,
         "search": (state.overlay == Some(Overlay::Search)).then(|| json!({
             "query": state.search_query,

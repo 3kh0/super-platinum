@@ -1,13 +1,15 @@
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
 use dioxus::desktop::wry::http::{Request, Response, StatusCode};
 use dioxus::desktop::{Config, WindowBuilder};
 use super_platinum_core::slack::Transport;
-use super_platinum_core::{MediaAssetId, MediaAssetKind, MediaStore, detect_image_mime};
+use super_platinum_core::{
+    MediaAssetId, MediaAssetKind, MediaCacheKind, MediaStore, detect_image_mime,
+};
 
 const CSP: &str = "default-src 'none'; img-src 'self' super-platinum-media: data:; media-src super-platinum-media:; style-src 'unsafe-inline'; script-src dioxus: 'unsafe-inline' 'unsafe-eval'; connect-src dioxus: ipc: ws: wss:; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
 
@@ -61,7 +63,9 @@ pub struct MediaRegistry {
     /// bump, which is what actually makes painted `img` elements re-request.
     dirty: Arc<AtomicBool>,
     store: Option<Arc<MediaStore>>,
-    pruned: Arc<AtomicBool>,
+    /// 0 means unlimited (count-cap only). Settings push the user-facing byte
+    /// limit here so persist can prune without reading shell state.
+    cache_limit: Arc<AtomicU64>,
 }
 
 /// What to do about a source that failed to download.
@@ -115,6 +119,52 @@ impl MediaRegistry {
             store,
             ..Self::default()
         }
+    }
+
+    pub fn store(&self) -> Option<Arc<MediaStore>> {
+        self.store.clone()
+    }
+
+    pub fn set_cache_limit(&self, bytes: Option<u64>) {
+        self.cache_limit
+            .store(bytes.unwrap_or(0), Ordering::Release);
+    }
+
+    fn current_limit(&self) -> Option<u64> {
+        match self.cache_limit.load(Ordering::Acquire) {
+            0 => None,
+            n => Some(n),
+        }
+    }
+
+    /// Drops painted bytes for slots matching `kind` so the WebView refetches
+    /// after a Storage clear. Sources stay registered.
+    pub fn evict_kind(&self, kind: MediaCacheKind) {
+        let sources = self.sources.read().expect("media registry poisoned");
+        let ids: Vec<_> = sources
+            .iter()
+            .filter_map(|(id, source)| {
+                let slot = source.slot.as_deref()?;
+                (MediaCacheKind::from_slot(slot) == kind).then(|| id.clone())
+            })
+            .collect();
+        drop(sources);
+        if ids.is_empty() {
+            return;
+        }
+        let mut assets = self.assets.write().expect("media registry poisoned");
+        for id in ids {
+            assets.remove(&id);
+        }
+        self.dirty.store(true, Ordering::Release);
+    }
+
+    pub async fn prune_now(&self) {
+        let Some(store) = self.store.clone() else {
+            return;
+        };
+        let limit = self.current_limit();
+        let _ = tokio::task::spawn_blocking(move || store.prune_to(limit)).await;
     }
 
     pub fn insert(&self, id: MediaAssetId, mime: impl Into<String>, bytes: impl Into<Arc<[u8]>>) {
@@ -479,16 +529,14 @@ impl MediaRegistry {
         if entries.is_empty() {
             return;
         }
-        let prune = !self.pruned.swap(true, Ordering::AcqRel);
+        let limit = self.current_limit();
         let _ = tokio::task::spawn_blocking(move || {
             for (slot, url, bytes) in entries {
                 if let Err(error) = store.store(&slot, &url, &bytes) {
                     eprintln!("super-platinum: could not cache {slot}: {error}");
                 }
             }
-            if prune {
-                store.prune();
-            }
+            store.prune_to(limit);
         })
         .await;
     }
@@ -877,6 +925,21 @@ mod tests {
             retry_after_secs: Some(5)
         }));
         assert!(!is_permanent(&Error::Transport("send: timeout".into())));
+    }
+
+    #[test]
+    fn evict_kind_drops_painted_bytes_but_keeps_the_source() {
+        let registry = MediaRegistry::default();
+        let id = registry.register_avatar("U1", "https://ca.slack-edge.com/T1-U1-48");
+        registry.insert(id.clone(), "image/png", b"face".as_slice());
+        assert!(registry.is_ready(&id));
+        registry.evict_kind(MediaCacheKind::Avatars);
+        assert!(!registry.is_ready(&id), "cleared pictures must refetch");
+        assert!(
+            registry.sources.read().unwrap().contains_key(&id),
+            "the source stays so load_pending can refill it"
+        );
+        assert!(registry.take_dirty());
     }
 
     #[test]

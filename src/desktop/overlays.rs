@@ -1,13 +1,18 @@
 use dioxus::prelude::*;
+use super_platinum_core::MediaAssetId;
 
-use crate::state::{Overlay, ShellState};
+use crate::state::{Overlay, PresenceVm, SettingsSection, ShellState};
 
 pub fn overlay_view(
     mut state: Signal<ShellState>,
     overlay: Overlay,
     snapshot: &ShellState,
 ) -> Element {
+    if overlay == Overlay::SelfMenu {
+        return self_menu_view(state, snapshot);
+    }
     let (title, input_value, placeholder) = match overlay {
+        Overlay::SelfMenu => unreachable!("self menu renders as a rail popover"),
         Overlay::Accounts => ("Accounts", "", ""),
         Overlay::Palette => (
             "Jump to…",
@@ -150,98 +155,221 @@ pub fn overlay_view(
                         }
                     }
                     button {
+                        class: "settings-open",
+                        onclick: move |_| {
+                            let mut shell = state.write();
+                            shell.settings_section = SettingsSection::Appearance;
+                            shell.overlay = Some(Overlay::Settings);
+                        },
+                        "Settings"
+                    }
+                    button {
                         class: "primary",
                         onclick: move |_| { spawn(crate::bootstrap::sign_in(state)); },
                         "Add another account"
                     }
                 }
             } else if overlay == Overlay::Settings {
-                div { class: "settings-grid",
-                    label { "Theme"
-                        select {
-                            value: match snapshot.core.settings.preset { super_platinum_core::config::ThemePreset::Countertop => "countertop", super_platinum_core::config::ThemePreset::BlueSteel => "blue_steel", super_platinum_core::config::ThemePreset::PaperBag => "paper_bag" },
-                            onchange: move |event| {
-                                state.write().set_theme_preset(&event.value());
-                                spawn(crate::bootstrap::persist_settings(state));
-                            },
-                            option { value: "countertop", "Jet Black" }
-                            option { value: "blue_steel", "Midnight Blue" }
-                            option { value: "paper_bag", "Obsidian" }
-                        }
-                    }
-                    label { "Density"
-                        select {
-                            value: if snapshot.core.settings.gap <= 6.0 { "compact" } else { "comfortable" },
-                            onchange: move |event| {
-                                state.write().set_density(&event.value());
-                                spawn(crate::bootstrap::persist_settings(state));
-                            },
-                            option { value: "comfortable", "Comfortable" }
-                            option { value: "compact", "Compact" }
-                        }
-                    }
-                    label { "Sidebar width"
-                        input {
-                            r#type: "range",
-                            min: "180",
-                            max: "520",
-                            value: "{snapshot.core.settings.sidebar_width}",
-                            oninput: move |event| {
-                                if let Ok(width) = event.value().parse() { state.write().set_sidebar_width(width); }
-                            },
-                            onchange: move |_| { spawn(crate::bootstrap::persist_settings(state)); }
-                        }
-                    }
-                    label { "Panel radius"
-                        input { r#type: "range", min: "0", max: "20", step: "1", value: "{snapshot.core.settings.panel_radius}", oninput: move |event| if let Ok(value) = event.value().parse() { state.write().set_panel_radius(value) }, onchange: move |_| { spawn(crate::bootstrap::persist_settings(state)); } }
-                    }
-                    label { "Border thickness"
-                        input { r#type: "range", min: "0", max: "4", step: "0.5", value: "{snapshot.core.settings.border_thickness}", oninput: move |event| if let Ok(value) = event.value().parse() { state.write().set_border_thickness(value) }, onchange: move |_| { spawn(crate::bootstrap::persist_settings(state)); } }
-                    }
-                    for role in super_platinum_core::config::ColorRole::ALL {
-                        label { key: "role-{role:?}", "{role.label()} color"
-                            input {
-                                r#type: "color",
-                                value: "{role_color(snapshot, role)}",
-                                onchange: move |event| { state.write().set_role_color(role, &event.value()); spawn(crate::bootstrap::persist_settings(state)); }
-                            }
-                        }
-                    }
-                    button { onclick: move |_| { state.write().reset_role_colors(); spawn(crate::bootstrap::persist_settings(state)); }, "Reset custom colors" }
-                    label { "Background"
-                        span { class: "background-actions",
-                            label { class: "background-picker",
-                                "Choose image"
-                                input {
-                                    r#type: "file",
-                                    accept: "image/png,image/jpeg,image/webp",
-                                    onchange: move |event| {
-                                        if let Some(file) = event.files().into_iter().next() {
-                                            spawn(crate::appearance::import_background(state, file.path()));
-                                        }
-                                    }
-                                }
-                            }
-                            if snapshot.core.settings.background.is_some() {
-                                button { onclick: move |_| { spawn(crate::appearance::clear_background(state)); }, "Remove" }
-                            }
-                        }
-                    }
-                    if let Some(background) = snapshot.core.settings.background.as_ref() {
-                        label { "Background fit"
-                            select { value: if background.fit == super_platinum_core::config::BackgroundFit::Contain { "contain" } else { "cover" }, onchange: move |event| { state.write().set_background_fit(&event.value()); spawn(crate::bootstrap::persist_settings(state)); }, option { value: "cover", "Cover" } option { value: "contain", "Contain" } }
-                        }
-                        label { "Background dim"
-                            input { r#type: "range", min: "0", max: "1", step: "0.05", value: "{background.dim}", oninput: move |event| if let Ok(value) = event.value().parse() { state.write().set_background_dim(value) }, onchange: move |_| { spawn(crate::bootstrap::persist_settings(state)); } }
-                        }
-                        label { "Surface opacity"
-                            input { r#type: "range", min: "0", max: "1", step: "0.05", value: "{background.surface_opacity}", oninput: move |event| if let Ok(value) = event.value().parse() { state.write().set_surface_opacity(value) }, onchange: move |_| { spawn(crate::bootstrap::persist_settings(state)); } }
-                        }
-                    }
-                }
+                {crate::view::settings::settings_view(state, snapshot)}
             }
         }
     }
+}
+
+struct SelfStatusVm {
+    text: String,
+    glyph: String,
+    image: Option<MediaAssetId>,
+}
+
+fn self_menu_view(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
+    let account = &snapshot.self_account;
+    let currently_active = account.presence == PresenceVm::Active;
+    let presence_target = if currently_active { "away" } else { "active" };
+    let set_away = currently_active;
+    let workspace_name = if account.workspace_name.is_empty() {
+        "this workspace".to_owned()
+    } else {
+        account.workspace_name.clone()
+    };
+    let self_user = account.user_id.clone();
+    let avatar_ready = account
+        .avatar
+        .as_ref()
+        .is_some_and(|avatar| snapshot.media.is_ready(avatar));
+    let status = self_status(snapshot);
+    let tz_offset = snapshot
+        .core
+        .active_team
+        .as_ref()
+        .and_then(|team| snapshot.core.workspaces.get(team))
+        .and_then(|workspace| workspace.users.get(&account.user_id))
+        .and_then(|user| user.tz_offset)
+        .unwrap_or(0);
+    let until_tomorrow = crate::bootstrap::minutes_until_local_hour(
+        super_platinum_core::state::now_secs(),
+        tz_offset,
+        8,
+    );
+    let notifications_label = if account.snoozed { "Paused" } else { "On" };
+    let presence_label = if currently_active { "Active" } else { "Away" };
+    rsx! {
+        div { class: "scrim", onclick: move |_| {
+            let mut shell = state.write();
+            shell.overlay = None;
+            shell.self_menu_notifications_open = false;
+        } }
+        section {
+            class: "self-menu",
+            role: "menu",
+            "aria-label": "Account menu",
+            div { class: "self-menu-identity",
+                span { class: "self-menu-avatar",
+                    if let Some(avatar) = account.avatar.as_ref().filter(|_| avatar_ready) {
+                        img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "" }
+                    } else {
+                        "{account.initials}"
+                    }
+                }
+                div { class: "self-menu-who",
+                    strong { "{account.name}" }
+                    span { class: "self-menu-presence",
+                        span {
+                            class: if currently_active { "profile-presence-dot active" } else { "profile-presence-dot away" },
+                            "aria-label": "{presence_label}"
+                        }
+                        "{presence_label}"
+                    }
+                }
+            }
+            if let Some(status) = status {
+                div { class: "self-menu-status",
+                    if let Some(image) = status.image.as_ref().filter(|image| snapshot.media.is_ready(image)) {
+                        img { class: "profile-status-emoji", src: "{image.uri_at(snapshot.media_epoch)}", alt: "" }
+                    } else if !status.glyph.is_empty() {
+                        span { class: "profile-status-glyph", "{status.glyph}" }
+                    }
+                    span { class: "self-menu-status-text", "{status.text}" }
+                    button {
+                        class: "self-menu-status-clear",
+                        title: "Clear status",
+                        "aria-label": "Clear status",
+                        onclick: move |_| { spawn(crate::bootstrap::clear_self_status(state)); },
+                        "×"
+                    }
+                }
+            }
+            button {
+                class: "self-menu-item",
+                role: "menuitem",
+                onclick: move |_| { spawn(crate::bootstrap::set_self_presence(state, set_away)); },
+                span { "Set yourself as " strong { "{presence_target}" } }
+            }
+            button {
+                class: "self-menu-item",
+                role: "menuitem",
+                "aria-haspopup": "true",
+                "aria-expanded": if snapshot.self_menu_notifications_open { "true" } else { "false" },
+                onclick: move |_| state.write().toggle_self_menu_notifications(),
+                span { "Notifications" }
+                span { class: "self-menu-item-meta",
+                    "{notifications_label}"
+                    span { class: "self-menu-chevron", "›" }
+                }
+            }
+            if snapshot.self_menu_notifications_open {
+                if account.snoozed {
+                    button {
+                        class: "self-menu-item sub",
+                        role: "menuitem",
+                        onclick: move |_| { spawn(crate::bootstrap::resume_notifications(state)); },
+                        "Resume notifications"
+                    }
+                }
+                button {
+                    class: "self-menu-item sub",
+                    role: "menuitem",
+                    onclick: move |_| { spawn(crate::bootstrap::pause_notifications(state, 30)); },
+                    "Pause for 30 minutes"
+                }
+                button {
+                    class: "self-menu-item sub",
+                    role: "menuitem",
+                    onclick: move |_| { spawn(crate::bootstrap::pause_notifications(state, 60)); },
+                    "Pause for 1 hour"
+                }
+                button {
+                    class: "self-menu-item sub",
+                    role: "menuitem",
+                    onclick: move |_| { spawn(crate::bootstrap::pause_notifications(state, 120)); },
+                    "Pause for 2 hours"
+                }
+                button {
+                    class: "self-menu-item sub",
+                    role: "menuitem",
+                    onclick: move |_| { spawn(crate::bootstrap::pause_notifications(state, until_tomorrow)); },
+                    "Pause until tomorrow"
+                }
+            }
+            hr { class: "self-menu-rule" }
+            button {
+                class: "self-menu-item",
+                role: "menuitem",
+                onclick: move |_| {
+                    {
+                        let mut shell = state.write();
+                        shell.overlay = None;
+                        shell.self_menu_notifications_open = false;
+                    }
+                    spawn(crate::bootstrap::open_profile(state, self_user.clone()));
+                },
+                "Profile"
+            }
+            button {
+                class: "self-menu-item",
+                role: "menuitem",
+                onclick: move |_| state.write().open_preferences(),
+                "Preferences"
+            }
+            hr { class: "self-menu-rule" }
+            button {
+                class: "self-menu-item",
+                role: "menuitem",
+                onclick: move |_| { spawn(crate::bootstrap::sign_out_workspace(state)); },
+                "Sign out of {workspace_name}"
+            }
+        }
+    }
+}
+
+fn self_status(snapshot: &ShellState) -> Option<SelfStatusVm> {
+    let team = snapshot.core.active_team.as_ref()?;
+    let workspace = snapshot.core.workspaces.get(team)?;
+    let user = workspace.users.get(&snapshot.self_account.user_id)?;
+    let profile = user.profile.as_ref()?;
+    let current = profile.status_expiration.unwrap_or(0) == 0
+        || profile.status_expiration.unwrap_or(0) > super_platinum_core::state::now_secs();
+    if !current {
+        return None;
+    }
+    let text = profile.status_text.clone().unwrap_or_default();
+    let status_name = profile
+        .status_emoji
+        .as_deref()
+        .unwrap_or_default()
+        .trim_matches(':');
+    let image = workspace
+        .custom_emoji_url(status_name)
+        .map(|url| snapshot.media.register_emoji(status_name, url));
+    let glyph = if image.is_none() && super_platinum_core::state::is_standard_emoji(status_name) {
+        super_platinum_core::state::emoji_glyph(status_name)
+    } else {
+        String::new()
+    };
+    if text.trim().is_empty() && glyph.is_empty() && image.is_none() {
+        return None;
+    }
+    Some(SelfStatusVm { text, glyph, image })
 }
 
 fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
@@ -335,16 +463,4 @@ fn palette_row_class(unread: bool, selected: bool) -> &'static str {
         (false, true) => "palette-result selected",
         (false, false) => "palette-result",
     }
-}
-
-fn role_color(snapshot: &ShellState, role: super_platinum_core::config::ColorRole) -> String {
-    snapshot
-        .core
-        .settings
-        .colors
-        .get(role)
-        .map(|color| color.as_hex())
-        .unwrap_or_else(|| {
-            crate::view::theme::preset_role_color(snapshot.core.settings.preset, role).into()
-        })
 }
