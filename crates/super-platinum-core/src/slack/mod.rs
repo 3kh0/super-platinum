@@ -8,7 +8,7 @@ pub mod realtime;
 pub mod transport;
 pub mod xparams;
 
-pub use client::{PreparedRequest, SlackClient, SlackClientConfig};
+pub use client::{PreparedRequest, SlackClient, SlackClientConfig, api_host};
 pub use transport::Transport;
 
 #[derive(Debug, Clone, thiserror::Error)]

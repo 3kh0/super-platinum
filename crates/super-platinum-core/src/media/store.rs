@@ -273,9 +273,7 @@ impl MediaStore {
         files.sort_by_key(|(modified, _, _)| *modified);
         for (_, size, path) in files {
             let count_ok = remaining_count <= MAX_ENTRIES;
-            let bytes_ok = max_bytes
-                .map(|max| remaining_bytes <= max)
-                .unwrap_or(true);
+            let bytes_ok = max_bytes.map(|max| remaining_bytes <= max).unwrap_or(true);
             if count_ok && bytes_ok {
                 break;
             }
@@ -319,9 +317,7 @@ fn peek_slot(path: &Path) -> Option<String> {
     }
     let body = buf.strip_prefix(MAGIC)?;
     let split = body.iter().position(|byte| *byte == b'\n')?;
-    std::str::from_utf8(&body[..split])
-        .ok()
-        .map(str::to_owned)
+    std::str::from_utf8(&body[..split]).ok().map(str::to_owned)
 }
 
 fn split_entry(raw: &[u8]) -> Option<(&str, &str, &[u8])> {
@@ -562,7 +558,8 @@ mod tests {
         set_mtime(&p1, 10);
         set_mtime(&p2, 20);
         set_mtime(&p3, 30);
-        let keep = std::fs::metadata(&p2).expect("p2").len() + std::fs::metadata(&p3).expect("p3").len();
+        let keep =
+            std::fs::metadata(&p2).expect("p2").len() + std::fs::metadata(&p3).expect("p3").len();
 
         store.prune_to(Some(keep));
 

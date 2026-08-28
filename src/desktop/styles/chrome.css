@@ -112,14 +112,8 @@
   border-radius: 50%;
   animation: spin .9s linear infinite;
 }
-/* No route off the machine at all: nothing is being retried this second, so a
-   spinning ring would be a lie. */
-.rail-connection.stalled .rail-connection-spinner {
-  border-color: var(--border-strong);
-  border-top-color: var(--muted);
-  animation: none;
-  opacity: .8;
-}
+/* Both states spin: the shell keeps probing either way, and the tooltip is what
+   separates "connecting" from "waiting for network". */
 
 /* ── Sidebar (channel tree under Home) ───────────────── */
 .sidebar {

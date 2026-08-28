@@ -1,6 +1,8 @@
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
+
+use tokio::sync::watch;
 
 use serde_json::Value;
 use wreq::header::HeaderMap;
@@ -24,31 +26,14 @@ pub enum Health {
     Offline,
 }
 
-impl Health {
-    fn code(self) -> u8 {
-        match self {
-            Self::Unknown => 0,
-            Self::Online => 1,
-            Self::Offline => 2,
-        }
-    }
-
-    fn from_code(code: u8) -> Self {
-        match code {
-            1 => Self::Online,
-            2 => Self::Offline,
-            _ => Self::Unknown,
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct Transport {
     http: wreq::Client,
     d_cookie: String,
     /// Shared with every clone: the shell holds one and the workers hold others,
-    /// and all of them have to agree about whether the network is up.
-    health: Arc<AtomicU8>,
+    /// and all of them have to agree about whether the network is up. A watch
+    /// rather than a flag, because held requests wait on it changing.
+    health: Arc<watch::Sender<Health>>,
 }
 
 impl std::fmt::Debug for Transport {
@@ -59,6 +44,21 @@ impl std::fmt::Debug for Transport {
 
 /// Upper bound on a single media fetch (avatars, emoji, unfurl images, files).
 const MEDIA_FETCH_TIMEOUT: Duration = Duration::from_secs(20);
+
+/// How long a call waits for a downed link to come back before giving up.
+///
+/// The shell confirms recovery by reaching the workspace host, so this is a
+/// backstop for the case where that confirmation never arrives — a wait with no
+/// end is the hang this whole path exists to remove.
+const OFFLINE_HOLD: Duration = Duration::from_secs(60);
+
+/// Upper bound on a single Slack API call.
+///
+/// Without one, a link that disappears mid-flight leaves the request hanging
+/// forever — the pane keeps saying "Loading replies…" and nothing ever reports
+/// the failure that would put the connection indicator on the rail. Generous
+/// enough for a cold `client.userBoot`, which is the largest of these by far.
+const API_TIMEOUT: Duration = Duration::from_secs(30);
 
 impl Transport {
     pub fn new(d_cookie: impl Into<String>) -> Result<Self, Error> {
@@ -73,19 +73,53 @@ impl Transport {
         Ok(Self {
             http,
             d_cookie: d_cookie.into(),
-            health: Arc::new(AtomicU8::new(Health::Unknown.code())),
+            health: Arc::new(watch::Sender::new(Health::Unknown)),
         })
     }
 
     /// What the last Slack API call said about the link.
     pub fn health(&self) -> Health {
-        Health::from_code(self.health.load(Ordering::Relaxed))
+        *self.health.borrow()
+    }
+
+    /// A view of the link's health for anything that has to react to it rather
+    /// than ask — the realtime supervisor, which must not sit on a dead socket
+    /// or dial into a link that is known to be gone.
+    pub fn health_watch(&self) -> watch::Receiver<Health> {
+        self.health.subscribe()
     }
 
     /// Records a verdict about the link. Media fetches deliberately do not call
     /// this: a third-party image host that is down says nothing about Slack.
     pub fn set_health(&self, health: Health) {
-        self.health.store(health.code(), Ordering::Relaxed);
+        self.health.send_replace(health);
+    }
+
+    /// Resolves when the shell decides the link has gone.
+    async fn link_dropped(&self) {
+        let mut health = self.health.subscribe();
+        let _ = health.wait_for(|health| *health == Health::Offline).await;
+    }
+
+    /// Parks a call while the link is known to be down.
+    ///
+    /// Firing into a dead link is how the shell used to end up with panes stuck
+    /// on "Loading…" behind requests that could never land, so a call waits for
+    /// the link to be confirmed back instead. Bounded: past the hold it fails
+    /// like any other offline call, and the caller's own error path runs.
+    async fn await_link(&self) -> Result<(), Error> {
+        if self.health() != Health::Offline {
+            return Ok(());
+        }
+        let mut health = self.health.subscribe();
+        let back = health.wait_for(|health| *health != Health::Offline);
+        match tokio::time::timeout(OFFLINE_HOLD, back).await {
+            Ok(Ok(_)) => Ok(()),
+            _ => Err(Error::Offline(format!(
+                "held {}s waiting for the network",
+                OFFLINE_HOLD.as_secs()
+            ))),
+        }
     }
 
     pub fn http(&self) -> &wreq::Client {
@@ -103,7 +137,26 @@ impl Transport {
     pub async fn execute(&self, req: PreparedRequest) -> Result<Value, Error> {
         let mut attempt = 0;
         loop {
-            match self.execute_once(&req).await {
+            self.await_link().await?;
+            // A call already on the wire when the link goes has nothing to wait
+            // for but its own timeout. Cutting it loose the moment the shell
+            // says the network is gone is what keeps a pane from sitting on
+            // "Loading…" for half a minute; the retry below re-enters the hold
+            // and goes out again once the link is confirmed back. Only for
+            // calls that are safe to repeat — a send that may have landed must
+            // not be fired twice.
+            let attempted = if req.retry_safe() {
+                tokio::select! {
+                    biased;
+                    result = self.execute_once(&req) => result,
+                    () = self.link_dropped() => {
+                        Err(Error::Offline("link dropped mid-call".into()))
+                    }
+                }
+            } else {
+                self.execute_once(&req).await
+            };
+            match attempted {
                 Ok(value) => return Ok(value),
                 Err(e) if req.retry_safe() && retryable_error(&e) && attempt < 2 => {
                     attempt += 1;
@@ -155,6 +208,7 @@ impl Transport {
             "GET" => self.http.get(&req.url),
             other => return Err(Error::Transport(format!("unsupported method {other}"))),
         };
+        builder = builder.timeout(API_TIMEOUT);
 
         for (key, value) in &req.headers {
             if key.eq_ignore_ascii_case("content-type") {
@@ -260,6 +314,12 @@ impl Transport {
         authenticated: bool,
         accept: Option<&str>,
     ) -> Result<Vec<u8>, Error> {
+        // Media never waits: loads are serialized behind one lock, so holding
+        // here would park every later image behind a link that may be gone for
+        // minutes. Failing now is free — the loader retries on its own delay.
+        if self.health() == Health::Offline {
+            return Err(Error::Offline("network is down".into()));
+        }
         // Media hosts are third-party and occasionally never answer. Without a
         // bound, one stalled avatar or unfurl image wedges the whole media
         // refresh (and every later one, since loads are serialized).
@@ -314,10 +374,7 @@ pub fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
 /// peer reset. Naming that class here is what lets the shell answer it with the
 /// connection indicator rather than a toast full of signed URL.
 fn send_error(error: wreq::Error) -> Error {
-    if error.is_connect()
-        || error.is_timeout()
-        || error.is_connection_reset()
-        || error.is_request()
+    if error.is_connect() || error.is_timeout() || error.is_connection_reset() || error.is_request()
     {
         return Error::Offline(error.without_uri().to_string());
     }
@@ -325,7 +382,12 @@ fn send_error(error: wreq::Error) -> Error {
 }
 
 fn retryable_error(error: &Error) -> bool {
-    matches!(error, Error::RateLimited { .. })
+    // A link that just came back hands out one more failure before it settles:
+    // the pooled socket is dead, or DNS has not caught up. Retrying re-enters
+    // the hold, so the second attempt waits for the link to be confirmed again
+    // rather than firing into the same gap.
+    error.is_offline()
+        || matches!(error, Error::RateLimited { .. })
         || matches!(
             error,
             Error::HttpStatus {
@@ -392,6 +454,9 @@ mod tests {
             status: 404,
             retry_after_secs: None
         }));
+        assert!(retryable_error(&Error::Offline(
+            "client error (Connect)".into()
+        )));
     }
 
     /// A refused connect is the shell's offline signal, and the transport has
@@ -420,6 +485,149 @@ mod tests {
 
         // And the signed URL never rides along in the message.
         assert!(!error.to_string().contains("token=secret"), "{error}");
+    }
+
+    /// Requests are held, not fired, while the link is known to be down — and
+    /// released the moment recovery is confirmed. Firing anyway is what left
+    /// panes stuck on "Loading…" behind a request that could never land.
+    #[tokio::test]
+    async fn a_call_is_held_while_the_link_is_down_and_released_when_it_returns() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = vec![0; 8192];
+            socket.read(&mut request).await.unwrap();
+            socket
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 13\r\n\r\n{\"ok\":true}\r\n",
+                )
+                .await
+                .unwrap();
+        });
+
+        let transport = Transport::new("secret-cookie").unwrap();
+        transport.set_health(Health::Offline);
+        let held = tokio::spawn({
+            let transport = transport.clone();
+            async move {
+                transport
+                    .execute(PreparedRequest {
+                        method: "POST",
+                        url: format!("http://{address}/api/client.dms"),
+                        headers: Vec::new(),
+                        body: RequestBody::Form(Vec::new()),
+                    })
+                    .await
+            }
+        });
+
+        // Nothing has been sent: the server is still waiting to be accepted.
+        tokio::time::sleep(Duration::from_millis(150)).await;
+        assert!(!held.is_finished(), "the call went out over a dead link");
+
+        // The shell confirms the network is back.
+        transport.set_health(Health::Unknown);
+        let value = tokio::time::timeout(Duration::from_secs(5), held)
+            .await
+            .expect("released")
+            .unwrap()
+            .unwrap();
+        assert_eq!(value.get("ok").and_then(Value::as_bool), Some(true));
+        server.await.unwrap();
+    }
+
+    /// The whole cycle a dropped link puts a call through: cut loose mid-flight
+    /// rather than left to time out, held until recovery is confirmed, then
+    /// sent again. The pane behind it fills in instead of staying on "Loading…".
+    #[tokio::test]
+    async fn a_call_cut_loose_by_a_drop_is_held_and_then_sent_again() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            // The first connection is the one the drop cuts loose: read the
+            // request, answer nothing.
+            let (mut dead, _) = listener.accept().await.unwrap();
+            dead.read(&mut vec![0; 8192]).await.unwrap();
+            let (mut socket, _) = listener.accept().await.unwrap();
+            socket.read(&mut vec![0; 8192]).await.unwrap();
+            socket
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 13\r\n\r\n{\"ok\":true}\r\n",
+                )
+                .await
+                .unwrap();
+        });
+
+        let transport = Transport::new("secret-cookie").unwrap();
+        let call = tokio::spawn({
+            let transport = transport.clone();
+            async move {
+                transport
+                    .execute(PreparedRequest {
+                        method: "GET",
+                        url: format!("http://{address}/api/conversations.history?"),
+                        headers: Vec::new(),
+                        body: RequestBody::Form(Vec::new()),
+                    })
+                    .await
+            }
+        });
+
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        transport.set_health(Health::Offline);
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        assert!(!call.is_finished(), "gave up instead of holding");
+
+        transport.set_health(Health::Unknown);
+        let value = tokio::time::timeout(Duration::from_secs(5), call)
+            .await
+            .expect("released well inside the request timeout")
+            .unwrap()
+            .unwrap();
+        assert_eq!(value.get("ok").and_then(Value::as_bool), Some(true));
+        server.await.unwrap();
+    }
+
+    /// The hold is bounded. A confirmation that never comes must not turn into
+    /// the very hang this path exists to remove.
+    #[tokio::test(start_paused = true)]
+    async fn a_held_call_gives_up_rather_than_hanging_forever() {
+        let transport = Transport::new("secret-cookie").unwrap();
+        transport.set_health(Health::Offline);
+        let error = transport
+            .execute(PreparedRequest {
+                method: "POST",
+                url: "http://127.0.0.1:1/api/client.dms".to_owned(),
+                headers: Vec::new(),
+                body: RequestBody::Form(Vec::new()),
+            })
+            .await
+            .unwrap_err();
+        assert!(error.is_offline(), "{error}");
+    }
+
+    /// Media is the exception: loads are serialized, so holding one would park
+    /// every later image behind it. It fails immediately instead, without
+    /// putting a doomed request on the wire.
+    #[tokio::test]
+    async fn a_media_fetch_fails_immediately_instead_of_holding_the_loader() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+
+        let transport = Transport::new("secret-cookie").unwrap();
+        transport.set_health(Health::Offline);
+        let error = transport
+            .get_bytes(
+                &format!("http://{address}/avatar.png"),
+                "super-platinum-test",
+            )
+            .await
+            .unwrap_err();
+        assert!(error.is_offline(), "{error}");
+
+        let accepted = tokio::time::timeout(Duration::from_millis(150), listener.accept()).await;
+        assert!(accepted.is_err(), "a doomed fetch still went out");
     }
 
     async fn captured_image_request(public: bool, gif: bool) -> String {

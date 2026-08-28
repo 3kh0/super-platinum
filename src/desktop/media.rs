@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 use dioxus::desktop::wry::http::{Request, Response, StatusCode};
 use dioxus::desktop::{Config, WindowBuilder};
 use super_platinum_core::slack::Transport;
+use super_platinum_core::slack::transport::Health;
 use super_platinum_core::{
     MediaAssetId, MediaAssetKind, MediaCacheKind, MediaStore, detect_image_mime,
 };
@@ -448,7 +449,13 @@ impl MediaRegistry {
                         "super-platinum: {} media fetch from {target} failed: {error}",
                         id.kind().as_str()
                     );
-                    self.record_failure(&id, is_permanent(&error));
+                    // A machine-level outage is not this URL's fault. Recording
+                    // a failure would double its backoff on every sweep, and
+                    // the picture would stay blank for minutes after the
+                    // network came back.
+                    if transport.health() != Health::Offline {
+                        self.record_failure(&id, is_permanent(&error));
+                    }
                 }
             }
         }

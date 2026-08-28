@@ -1,10 +1,19 @@
 use std::time::Duration;
 
 use serde_json::Value;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, watch};
+
+use super::transport::Health;
 
 use super::events::{RawEvent, RtEvent};
 use super::models::{Message as SlackMessage, TeamId};
+
+/// How often the client pings flannel.
+const PING_EVERY: Duration = Duration::from_secs(15);
+
+/// How long the socket may stay silent before it is declared dead. Three ping
+/// rounds: long enough that a slow network is not mistaken for a dropped one.
+const SILENCE_LIMIT: Duration = Duration::from_secs(50);
 
 #[derive(Debug, Clone)]
 pub enum RtUpdate {
@@ -74,18 +83,35 @@ pub fn presence_sub_frame(ids: &[String]) -> String {
 /// The receiver closes when its consumer is dropped. Each connection attempt
 /// receives a monotonically increasing generation so reducers can reject stale
 /// events after a reconnect.
-pub fn connect(params: ConnectParams) -> mpsc::Receiver<(TeamId, RtUpdate)> {
+pub fn connect(
+    params: ConnectParams,
+    health: Option<watch::Receiver<Health>>,
+) -> mpsc::Receiver<(TeamId, RtUpdate)> {
     let (output, receiver) = mpsc::channel(64);
-    tokio::spawn(run_supervisor(params, output));
+    tokio::spawn(run_supervisor(params, health, output));
     receiver
 }
 
-async fn run_supervisor(params: ConnectParams, output: mpsc::Sender<(TeamId, RtUpdate)>) {
+async fn run_supervisor(
+    params: ConnectParams,
+    mut health: Option<watch::Receiver<Health>>,
+    output: mpsc::Sender<(TeamId, RtUpdate)>,
+) {
     let mut backoff = Duration::from_secs(1);
     let mut generation = 0;
     loop {
+        // Never dial into a link the shell has already declared gone. Waiting
+        // for it to be confirmed back means the socket returns as soon as the
+        // network does, rather than sitting out a backoff that grew to half a
+        // minute while nothing could possibly connect.
+        if let Some(health) = health.as_mut()
+            && *health.borrow_and_update() == Health::Offline
+        {
+            let _ = health.wait_for(|health| *health != Health::Offline).await;
+            backoff = Duration::from_secs(1);
+        }
         generation += 1;
-        match run_connection(&params, generation, &output).await {
+        match run_connection(&params, generation, &health, &output).await {
             Ok(()) => backoff = Duration::from_secs(1),
             Err(e) => {
                 tracing::warn!(team = %params.team, error = %e, "flannel connection ended");
@@ -106,6 +132,7 @@ async fn run_supervisor(params: ConnectParams, output: mpsc::Sender<(TeamId, RtU
 async fn run_connection(
     params: &ConnectParams,
     generation: u64,
+    health: &Option<watch::Receiver<Health>>,
     output: &mpsc::Sender<(TeamId, RtUpdate)>,
 ) -> Result<(), String> {
     let http = wreq::Client::builder()
@@ -141,13 +168,24 @@ async fn run_connection(
     }
 
     let mut ping_id: u64 = 0;
-    let mut ping = tokio::time::interval(Duration::from_secs(15));
+    let mut ping = tokio::time::interval(PING_EVERY);
     ping.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    // A link that goes away under an established socket does not error: writes
+    // keep landing in the kernel buffer and reads simply never return. Slack
+    // answers every ping, so silence past a few of them is the only honest
+    // evidence the connection is gone.
+    let mut last_seen = tokio::time::Instant::now();
+    // The shell notices a dropped link in seconds; the socket on its own would
+    // take the silence limit to work it out. Watching that verdict is what
+    // turns a minute of believing in a dead connection into a few seconds.
+    let mut link = health.clone();
 
     loop {
         tokio::select! {
+            () = link_dropped(&mut link) => return Err("link dropped".into()),
             incoming = socket.recv() => match incoming {
                 Some(Ok(wreq::ws::message::Message::Text(text))) => {
+                    last_seen = tokio::time::Instant::now();
                     if let Some(event) = parse_event(text.as_str())
                         && output
                             .send((
@@ -164,7 +202,7 @@ async fn run_connection(
                     }
                 }
                 Some(Ok(wreq::ws::message::Message::Close(_))) | None => return Ok(()),
-                Some(Ok(_)) => {}
+                Some(Ok(_)) => last_seen = tokio::time::Instant::now(),
                 Some(Err(e)) => return Err(format!("recv: {e}")),
             },
             outbound = rx.recv() => match outbound {
@@ -176,6 +214,12 @@ async fn run_connection(
                 None => return Ok(()),
             },
             _ = ping.tick() => {
+                if last_seen.elapsed() >= SILENCE_LIMIT {
+                    return Err(format!(
+                        "no frame in {}s; treating the socket as dead",
+                        SILENCE_LIMIT.as_secs()
+                    ));
+                }
                 ping_id += 1;
                 let frame = format!(r#"{{"type":"ping","id":{ping_id}}}"#);
                 if let Err(e) = socket.send(wreq::ws::message::Message::text(frame)).await {
@@ -183,6 +227,17 @@ async fn run_connection(
                 }
             }
         }
+    }
+}
+
+/// Resolves when the shell declares the link gone, or never when nothing is
+/// watching it.
+async fn link_dropped(health: &mut Option<watch::Receiver<Health>>) {
+    match health {
+        Some(health) => {
+            let _ = health.wait_for(|health| *health == Health::Offline).await;
+        }
+        None => std::future::pending().await,
     }
 }
 
@@ -437,7 +492,8 @@ mod tests {
             other => panic!("unexpected event: {other:?}"),
         }
         // Other members arrive without the snooze half of the payload.
-        let other_user = r#"{"type":"dnd_updated_user","user":"U1","dnd_status":{"dnd_enabled":false}}"#;
+        let other_user =
+            r#"{"type":"dnd_updated_user","user":"U1","dnd_status":{"dnd_enabled":false}}"#;
         match parse_event(other_user) {
             Some(RtEvent::DndUpdated { user, dnd }) => {
                 assert_eq!(user, "U1");

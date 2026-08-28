@@ -4543,6 +4543,7 @@ dependencies = [
  "futures",
  "image",
  "keyring",
+ "libc",
  "rusqlite",
  "serde",
  "serde_json",

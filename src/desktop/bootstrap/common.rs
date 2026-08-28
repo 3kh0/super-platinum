@@ -143,3 +143,28 @@ fn persistence_worker() -> &'static std::sync::mpsc::SyncSender<PersistenceJob> 
         sender
     })
 }
+
+/// Re-drives whatever the reader is looking at, after the link comes back.
+///
+/// Every load that fired during an outage failed, and nothing else would ever
+/// ask again: the channel keeps whatever the cache held, the thread pane keeps
+/// saying "Loading replies…", and the reader is left with a screen that quietly
+/// stopped being true. Only reached on the transition back to connected, so
+/// this costs one round of the same calls the surface makes on arrival.
+pub async fn reload_after_outage(state: Signal<ShellState>) {
+    let (view, thread) = {
+        let shell = state.read();
+        (
+            shell.main_view,
+            shell
+                .thread_root
+                .clone()
+                .zip(shell.core.active_channel.clone()),
+        )
+    };
+    super::load_main_view(state, view).await;
+    super::refresh_selected_channel(state).await;
+    if let Some((root, channel)) = thread {
+        super::open_thread(state, channel, root).await;
+    }
+}

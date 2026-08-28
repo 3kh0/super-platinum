@@ -42,6 +42,9 @@ wreq = { version = "6.0.0-rc.29", features = [
 ] }
 wreq-util = "3.0.0-rc.13"
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { version = "3", features = ["apple-native"] }
 
@@ -50,3 +53,6 @@ keyring = { version = "3", features = ["sync-secret-service"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "3", features = ["windows-native"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["test-util"] }

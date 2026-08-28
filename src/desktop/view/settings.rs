@@ -139,9 +139,6 @@ fn storage_panel(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elemen
         div { class: "storage-panel",
             div { class: "storage-hero",
                 {storage_donut(usage, snapshot.storage.scanning, hole)}
-                p { class: "storage-caption",
-                    "Pictures Super Platinum keeps on this device so faces and emoji paint instantly."
-                }
             }
             div { class: "storage-list",
                 for kind in MediaCacheKind::ALL {
@@ -179,7 +176,7 @@ fn storage_panel(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elemen
                     "{clear_label}"
                 }
                 p { class: "storage-hint",
-                    "Cached pictures stay on Slack and download again when you need them."
+                    "All media will stay on Slack and can be re-downloaded if you need them again."
                 }
             }
             div { class: "storage-list",
@@ -196,12 +193,9 @@ fn storage_panel(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elemen
                         "Clear"
                     }
                 }
-                p { class: "storage-hint",
-                    "Recent messages are kept so channels open faster. They stay on Slack."
-                }
             }
             div { class: "storage-limit",
-                p { class: "storage-limit-label", "Maximum picture cache size" }
+                p { class: "storage-limit-label", "Maximum cache size" }
                 input {
                     r#type: "range",
                     min: "0",
@@ -225,7 +219,7 @@ fn storage_panel(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elemen
                     }
                 }
                 p { class: "storage-hint",
-                    "If the cache grows past this limit, the oldest unused pictures are removed."
+                    "If your cache exceeds this limit, the oldest unused media will be removed from your device."
                 }
             }
         }

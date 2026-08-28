@@ -88,10 +88,7 @@ pub(crate) fn rail_view(
             // rail does not gain a permanent widget that means nothing.
             if let Some(connection) = connection {
                 div {
-                    class: match connection {
-                        ConnectionStatus::NoNetwork => "rail-connection stalled",
-                        _ => "rail-connection",
-                    },
+                    class: "rail-connection",
                     role: "status",
                     title: "{connection.label()}",
                     "aria-label": "{connection.label()}",

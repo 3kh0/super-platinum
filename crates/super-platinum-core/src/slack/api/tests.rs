@@ -414,3 +414,20 @@ fn priority_requests_target_user_with_desktop_token() {
     assert!(remove.url.contains("/api/users.priority.remove?"));
     assert!(form_fields(&remove).contains(&("user".into(), "U_VIP".into())));
 }
+
+/// The reachability probe that releases held requests has to aim at the host
+/// those requests are going to, which on a grid is not `slack.com`.
+#[test]
+fn the_probe_host_follows_the_workspace_to_its_grid() {
+    assert_eq!(
+        crate::slack::api_host(&workspace()),
+        "hackclub.enterprise.slack.com"
+    );
+
+    let plain = WorkspaceSession {
+        enterprise_id: None,
+        url: "https://echonet.slack.com/".into(),
+        ..workspace()
+    };
+    assert_eq!(crate::slack::api_host(&plain), "echonet.slack.com");
+}

@@ -110,9 +110,26 @@ Slack-facing behavior needs defensive handling.
 - A request that never reached Slack is `slack::Error::Offline`, not
   `Transport`. `Transport` keeps a shared `Health` cell so every clone agrees
   about the link, and `connection.rs` folds that together with realtime status
-  into the rail indicator. Report failures through `ShellState::report_failure`
+  into the rail indicator, alongside `net::has_usable_link()` — the fast path,
+  since a link that goes away under an established socket does not error, it
+  goes quiet. That check asks the interface list as well as the routing table:
+  a VPN tunnel keeps its own default route long after the Wi-Fi under it is
+  switched off. Report failures through `ShellState::report_failure`
   rather than toasting `{error}` directly: a dropped link produces one of these
   per call in flight, each carrying a signed URL the reader cannot act on.
+- Nothing is fired into a link that is known to be down. `Transport::execute`
+  holds a call until the shell confirms the network is back (it probes the
+  workspace's own host), cuts an in-flight retry-safe call loose the moment the
+  verdict flips, and bounds both the hold and the request itself. The realtime
+  supervisor watches the same verdict, so a dead socket is dropped in seconds
+  instead of waiting out its silence limit, and its reconnect waits for
+  confirmation rather than dialling into nothing. Media is the exception: loads
+  are serialized, so a fetch fails immediately instead of holding the queue, and
+  the sweep is skipped entirely while offline so no picture burns its retry
+  backoff during an outage.
+- Coming back is a state change, not just a colour: `bootstrap::reload_after_outage`
+  re-drives the visible surface, because every load that fired during the outage
+  failed and nothing else would ask again.
 - Do not assume all Slack messages are plain text; Block Kit, files, reactions, threads, edits, deletes, and notifications already exist in the product surface.
 
 ## Testing Guidance

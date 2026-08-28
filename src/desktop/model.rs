@@ -426,10 +426,12 @@ pub struct ConnectionVm {
     pub status: ConnectionStatus,
     /// When the shell first noticed it was not live, or `None` while it is.
     pub unstable_since: Option<std::time::Instant>,
-    /// Last answer from the route probe. Optimistic until something says
-    /// otherwise, so a healthy shell never asks.
+    /// Whether the machine has a route off itself at all. Polled on a cadence
+    /// rather than inferred from a failed request: switching Wi-Fi off is not a
+    /// request failure, and nothing else notices it for tens of seconds.
     pub routable: bool,
-    /// A probe is in flight; ticks must not pile more on top of it.
+    pub routed_at: Option<std::time::Instant>,
+    /// A reachability probe is in flight; ticks must not pile more on top of it.
     pub probing: bool,
     pub probed_at: Option<std::time::Instant>,
 }
@@ -440,6 +442,7 @@ impl Default for ConnectionVm {
             status: ConnectionStatus::Online,
             unstable_since: None,
             routable: true,
+            routed_at: None,
             probing: false,
             probed_at: None,
         }

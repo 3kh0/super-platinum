@@ -136,6 +136,18 @@ pub enum RequestBody {
     Json(Value),
 }
 
+/// The host every REST call for this workspace goes to.
+///
+/// The reachability probe aims here rather than at `slack.com`: an enterprise
+/// grid answers on its own host, and that is the one that has to be up before
+/// held requests are worth releasing.
+pub fn api_host(workspace: &WorkspaceSession) -> String {
+    rest_base(workspace)
+        .trim_start_matches("https://")
+        .trim_end_matches('/')
+        .to_owned()
+}
+
 fn rest_base(workspace: &WorkspaceSession) -> String {
     let url = workspace.url.trim_end_matches('/');
     if workspace.enterprise_id.is_none() {

@@ -36,7 +36,9 @@ mod tests {
 
     #[test]
     fn only_a_dropped_link_reads_as_offline() {
-        let offline = AppError::Slack(crate::slack::Error::Offline("client error (Connect)".into()));
+        let offline = AppError::Slack(crate::slack::Error::Offline(
+            "client error (Connect)".into(),
+        ));
         assert!(offline.is_offline());
 
         let refused = AppError::Slack(crate::slack::Error::Api("channel_not_found".into()));

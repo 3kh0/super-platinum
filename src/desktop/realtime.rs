@@ -1,11 +1,20 @@
-use dioxus::prelude::{Signal, WritableExt};
+use dioxus::prelude::{ReadableExt, Signal, WritableExt};
 use super_platinum_core::slack::events::RtEvent;
 use super_platinum_core::slack::realtime::{self, ConnectParams, RtUpdate};
 
 use crate::state::ShellState;
 
 pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
-    let mut updates = realtime::connect(params);
+    // The supervisor watches the same link verdict the shell paints on the
+    // rail, so a dead socket is dropped in seconds and the reconnect waits for
+    // the network to be confirmed back instead of dialling into nothing.
+    let health = state
+        .read()
+        .core
+        .transport
+        .as_ref()
+        .map(|transport| transport.health_watch());
+    let mut updates = realtime::connect(params, health);
     while let Some((team, update)) = updates.recv().await {
         let mut shell = state.write();
         match update {

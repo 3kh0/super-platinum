@@ -1,4 +1,5 @@
 use dioxus::prelude::{ReadableExt, Signal, WritableExt};
+use super_platinum_core::slack::transport::Health;
 
 use crate::state::ShellState;
 
@@ -20,10 +21,10 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         let mut shell = state.write();
         // Both of these are time-driven rather than event-driven, and neither
         // earns a timer of its own.
-        let mut probe_connection = false;
+        let mut connection = crate::connection::Next::Nothing;
         if !crate::fixture::is_fixture() {
             shell.expire_toast(now);
-            probe_connection = crate::connection::evaluate(&mut shell, now);
+            connection = crate::connection::evaluate(&mut shell, now);
         }
         let typing_changed = shell
             .core
@@ -31,9 +32,11 @@ pub async fn ticks(mut state: Signal<ShellState>) {
             .values_mut()
             .any(|workspace| workspace.prune_typing(now, std::time::Duration::from_secs(4)));
         let before = shell.message_arrivals.len();
-        shell.message_arrivals.retain(|_, started| {
-            now.duration_since(*started) < std::time::Duration::from_millis(450)
-        });
+        shell
+            .message_arrivals
+            .retain(|_, started: &mut std::time::Instant| {
+                now.duration_since(*started) < std::time::Duration::from_millis(450)
+            });
         let uploading = shell
             .core
             .composer_attachments
@@ -60,12 +63,27 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         if shell.media.take_dirty() {
             shell.media_epoch = shell.media_epoch.wrapping_add(1);
         }
-        let sweep =
-            tick % MEDIA_SWEEP_TICKS == 1 && shell.media.has_pending() && !shell.media.is_loading();
+        // Nothing is swept into a link that is known to be down: every fetch
+        // would fail, and the loader would spend the outage burning through
+        // each picture's retry backoff.
+        let sweep = tick % MEDIA_SWEEP_TICKS == 1
+            && shell.media.has_pending()
+            && !shell.media.is_loading()
+            && shell
+                .core
+                .transport
+                .as_ref()
+                .is_none_or(|transport| transport.health() != Health::Offline);
         let transport = sweep.then(|| shell.core.transport.clone()).flatten();
         drop(shell);
-        if probe_connection {
-            dioxus::prelude::spawn(crate::connection::probe(state));
+        match connection {
+            crate::connection::Next::Nothing => {}
+            crate::connection::Next::Probe => {
+                dioxus::prelude::spawn(crate::connection::probe(state));
+            }
+            crate::connection::Next::Reload => {
+                dioxus::prelude::spawn(crate::bootstrap::reload_after_outage(state));
+            }
         }
         if let Some(transport) = transport {
             let media = state.read().media.clone();
