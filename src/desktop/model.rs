@@ -1,12 +1,46 @@
 use super_platinum_core::MediaAssetId;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MainView {
     Home,
     Unreads,
     Threads,
     Activity,
     Dms,
+}
+
+impl MainView {
+    /// Whether this surface keeps its own list beside the conversation. Home
+    /// hands the whole window to the channel; DMs and Activity keep a list on
+    /// the left and open the conversation next to it.
+    pub fn has_own_list(self) -> bool {
+        matches!(self, Self::Dms | Self::Activity)
+    }
+}
+
+/// How a conversation was asked for, which decides where it opens.
+///
+/// Slack's rail tabs each own a surface (CDP-verified against the real client):
+/// a row inside a surface's own list opens beside that list, while global
+/// navigation — the quick switcher, a search hit, a channel mention, "message
+/// this person" — always lands in Home, sidebar and all.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChannelOpen {
+    /// Quick switcher, search results, channel links, profile actions.
+    Global,
+    /// A row in the current surface's own list.
+    InSurface,
+}
+
+/// What one surface has open in its conversation column.
+///
+/// Each rail tab remembers its own, the way Slack does: leaving Activity for a
+/// channel and coming back shows the item that was being read, not the channel
+/// it was left for.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SurfaceTarget {
+    pub channel: String,
+    pub thread_root: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

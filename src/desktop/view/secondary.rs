@@ -76,7 +76,7 @@ pub(crate) fn secondary_view(mut state: Signal<ShellState>, snapshot: &ShellStat
                             };
                             rsx! {
                                 button { class: "secondary-row unread", key: "unread-{channel.id}",
-                                    onclick: { let id = channel.id.clone(); move |_| { let index = { state.read().channels.iter().position(|channel| channel.id == id) }; if let Some(index) = index { state.write().select_channel(index); spawn(crate::bootstrap::refresh_selected_channel(state)); } } },
+                                    onclick: { let id = channel.id.clone(); move |_| { let index = { state.read().channels.iter().position(|channel| channel.id == id) }; if let Some(index) = index { state.write().select_channel(index, crate::state::ChannelOpen::Global); spawn(crate::bootstrap::refresh_selected_channel(state)); } } },
                                     span { class: "secondary-avatar", "{icon}" }
                                     div { class: "secondary-copy",
                                         strong { "{title}" }
@@ -278,7 +278,7 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                                             state.read().channels.iter().position(|candidate| candidate.id == channel)
                                         };
                                         if let Some(index) = index {
-                                            state.write().select_channel(index);
+                                            state.write().select_channel(index, crate::state::ChannelOpen::InSurface);
                                             spawn(crate::bootstrap::refresh_selected_channel(state));
                                         }
                                     }

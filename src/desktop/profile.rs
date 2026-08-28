@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use serde_json::Value;
 
-use crate::state::{PresenceVm, ProfileHoverVm, ShellState};
+use crate::state::{ChannelOpen, PresenceVm, ProfileHoverVm, ShellState};
 use super_platinum_core::MediaAssetId;
 
 #[derive(Clone)]
@@ -641,7 +641,7 @@ fn open_recent_dm(mut state: Signal<ShellState>, channel: String) {
             .position(|item| item.id == channel)
     };
     if let Some(index) = index {
-        state.write().select_channel(index);
+        state.write().select_channel(index, ChannelOpen::Global);
         state.write().close_profile();
         spawn(crate::bootstrap::refresh_selected_channel(state));
     }

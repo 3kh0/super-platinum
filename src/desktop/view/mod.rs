@@ -2,6 +2,7 @@
 
 mod chrome;
 pub(crate) mod composer;
+mod message;
 pub(crate) mod rich;
 mod secondary;
 pub(crate) mod settings;
@@ -14,10 +15,7 @@ use crate::state::{MainView, Overlay, ShellState};
 
 use chrome::{channel_sidebar, conversation_header, rail_view};
 use composer::{composer, load_older_if_needed, measure_thread, measure_timeline};
-use rich::{
-    attachment_embeds, message_plain_text, pending_attachment_strip, reactions_row, reply_bar,
-    rich_node,
-};
+use message::{RowSurface, message_row};
 use secondary::{activity_list_panel, dm_list_panel, secondary_view};
 use theme::theme_css;
 
@@ -164,10 +162,6 @@ pub fn shell() -> Element {
     );
     let show_dm_panel = snapshot.main_view == MainView::Dms;
     let show_activity_panel = snapshot.main_view == MainView::Activity;
-    let active_is_dm = snapshot
-        .channels
-        .get(snapshot.active_channel)
-        .is_some_and(|channel| channel.is_im || channel.is_mpim);
     // The thread pane names its conversation next to the "Thread" title, the
     // way Slack does, so a thread opened from Activity still says where it is.
     let thread_channel_label = snapshot
@@ -186,19 +180,17 @@ pub fn shell() -> Element {
     // the channel around the message.
     let activity_thread_focus =
         snapshot.main_view == MainView::Activity && snapshot.thread_root.is_some();
+    // Unreads and Threads are lists, not conversations. Every other surface
+    // shows the conversation it has open — and DMs and Activity stay on their
+    // empty state until a row in their own list opens one.
     let show_timeline = match snapshot.main_view {
-        MainView::Home => true,
-        MainView::Dms => active_is_dm,
-        // Activity's main column stays empty until an item is opened.
-        MainView::Activity => snapshot.activity_detail_open && !activity_thread_focus,
         MainView::Unreads | MainView::Threads => false,
+        _ => snapshot.detail_open() && !activity_thread_focus,
     };
-    // Activity keeps list + optional main channel/thread; composer only for real chats.
-    let show_composer = match snapshot.main_view {
-        MainView::Home => true,
-        MainView::Dms => active_is_dm,
-        _ => false,
-    };
+    // A conversation is a conversation wherever it is shown: Slack's Activity
+    // and DMs panes carry a composer exactly like the channel view does, so a
+    // message opened from a notification can be answered where it is read.
+    let show_composer = show_timeline;
     let account = &snapshot.self_account;
     let account_avatar = account
         .avatar
@@ -253,171 +245,17 @@ pub fn shell() -> Element {
                             div {
                                 key: "{message.id}",
                                 class: "message-block",
-                            if let Some(label) = message.date_label.as_ref() {
-                                div { class: "date-separator",
-                                    span { "{label}" }
-                                }
-                            }
-                            if message.show_unread_divider {
-                                div { class: "unread-divider",
-                                    span { "New" }
-                                }
-                            }
-                            article {
-                                class: if snapshot.message_arrivals.contains_key(&message.id) {
-                                    if message.compact { "message compact entering" } else { "message entering" }
-                                } else if message.compact {
-                                    "message compact"
-                                } else if message.pending {
-                                    "message pending"
-                                } else {
-                                    "message"
-                                },
-                                "data-message-index": "{timeline_start + offset}",
-                                "data-message-id": "{message.id}",
-                                if message.compact {
-                                    div { class: "compact-gutter", title: "{message.timestamp}", "{message.timestamp}" }
-                                } else {
-                                    button {
-                                        class: "avatar",
-                                        onmouseenter: {
-                                            let user = message.user_id.clone();
-                                            move |event: MouseEvent| {
-                                                if let Some(user) = user.clone() {
-                                                    let point = event.data().client_coordinates();
-                                                    crate::profile::show_profile_hover(state, user, point.x, point.y);
-                                                }
-                                            }
-                                        },
-                                        onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
-                                        onclick: {
-                                            let user = message.user_id.clone();
-                                            move |_| {
-                                                if let Some(user) = user.clone() { spawn(crate::bootstrap::open_profile(state, user)); }
-                                            }
-                                        },
-                                        // Initials until the bytes land: an `img`
-                                        // with nothing behind it paints the
-                                        // platform's broken-image icon.
-                                        if let Some(avatar) = message.avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
-                                            img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{message.author}" }
-                                        } else { "{message.avatar_initials}" }
+                                if let Some(label) = message.date_label.as_ref() {
+                                    div { class: "date-separator",
+                                        span { "{label}" }
                                     }
                                 }
-                                // Out of flow, and outside `.message-meta`: a
-                                // toolbar that joins the header row on hover
-                                // reflows — and wraps to a second line in a
-                                // narrow pane — resizing the message under the
-                                // pointer. Compact rows get one this way too.
-                                span { class: "message-tools",
-                                    button {
-                                        onclick: {
-                                            let id = message.id.clone();
-                                            let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
-                                            move |_| {
-                                                spawn(crate::bootstrap::open_thread(state, channel.clone(), id.clone()));
-                                            }
-                                        },
-                                        "Reply"
-                                    }
-                                    if message.is_own {
-                                        button {
-                                            onclick: {
-                                                let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
-                                                let ts = message.id.clone();
-                                                let text = message_plain_text(message);
-                                                move |_| state.write().start_edit(channel.clone(), ts.clone(), text.clone())
-                                            },
-                                            "Edit"
-                                        }
-                                        button {
-                                            onclick: {
-                                                let channel = snapshot.channels.get(snapshot.active_channel).map(|c| c.id.clone()).unwrap_or_default();
-                                                let ts = message.id.clone();
-                                                move |_| { spawn(crate::bootstrap::delete_message(state, channel.clone(), ts.clone())); }
-                                            },
-                                            "Delete"
-                                        }
+                                if message.show_unread_divider {
+                                    div { class: "unread-divider",
+                                        span { "New" }
                                     }
                                 }
-                                div { class: "message-content",
-                                    if !message.compact {
-                                        div { class: "message-meta",
-                                            strong {
-                                                onmouseenter: {
-                                                    let user = message.user_id.clone();
-                                                    move |event: MouseEvent| {
-                                                        if let Some(user) = user.clone() {
-                                                            let point = event.data().client_coordinates();
-                                                            crate::profile::show_profile_hover(state, user, point.x, point.y);
-                                                        }
-                                                    }
-                                                },
-                                                onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
-                                                onclick: {
-                                                    let user = message.user_id.clone();
-                                                    move |_| {
-                                                        if let Some(user) = user.clone() {
-                                                            state.write().profile_hover = None;
-                                                            spawn(crate::bootstrap::open_profile(state, user));
-                                                        }
-                                                    }
-                                                },
-                                                "{message.author}"
-                                            }
-                                            if message.is_app { span { class: "app-badge", "APP" } }
-                                            time { "{message.timestamp}" }
-                                            if message.edited { span { "(edited)" } }
-                                            if message.pending {
-                                                span { class: "pending-label",
-                                                    if snapshot.pending_attachments_for_message(&message.id).is_some() {
-                                                        "Uploading…"
-                                                    } else {
-                                                        "Sending…"
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if snapshot.core.editing.as_ref().is_some_and(|(channel, ts)| snapshot.channels.get(snapshot.active_channel).is_some_and(|c| &c.id == channel) && ts == &message.id) {
-                                        div { class: "message-editor",
-                                            textarea {
-                                                initial_value: "{snapshot.core.edit_composer.text}",
-                                                oninput: move |event| {
-                                                    let value = event.value();
-                                                    let end = value.len();
-                                                    let mut shell = state.write();
-                                                    shell.core.edit_composer.text = value;
-                                                    shell.core.edit_composer.set_selection(end, end);
-                                                }
-                                            }
-                                            button {
-                                                onclick: move |_| { spawn(crate::bootstrap::save_edit(state)); },
-                                                "Save"
-                                            }
-                                            button { onclick: move |_| state.write().cancel_edit(), "Cancel" }
-                                        }
-                                    } else {
-                                        div { class: "message-body",
-                                            for node in &message.body { {rich_node(node, snapshot.media_epoch, state)} }
-                                        }
-                                        if !message.attachments.is_empty() {
-                                            {attachment_embeds(state, snapshot.media_epoch, &message.attachments)}
-                                        }
-                                        if let Some(attachments) = snapshot.pending_attachments_for_message(&message.id) {
-                                            {pending_attachment_strip(attachments, snapshot.upload_ui_epoch)}
-                                        }
-                                    }
-                                    if !message.reactions.is_empty() {
-                                        div { class: "message-actions",
-                                            {reactions_row(state, &snapshot.media, snapshot.media_epoch, active_channel_id, message)}
-                                        }
-                                    }
-                                    if message.reply_count > 0 {
-                                        {reply_bar(state, &snapshot.media, snapshot.media_epoch, active_channel_id, message)}
-                                    }
-                                }
-                            }
+                                {message_row(state, &snapshot, message, active_channel_id, Some(timeline_start + offset), RowSurface::Timeline)}
                             }
                         }
                         div { class: "timeline-spacer", style: "height: {bottom_height}px" }
@@ -465,12 +303,14 @@ pub fn shell() -> Element {
                             class: "thread-close",
                             onclick: move |_| {
                                 let mut shell = state.write();
-                                shell.close_thread();
-                                // Closing a thread opened from Activity returns to
-                                // the empty pane, not to the channel behind it.
+                                // In Activity the thread *is* the surface, so
+                                // closing it returns the pane to its empty
+                                // state. Everywhere else the thread is a side
+                                // panel and the conversation behind it stays.
                                 if shell.main_view == MainView::Activity {
-                                    shell.activity_detail_open = false;
-                                    shell.core.activity.selected = None;
+                                    shell.forget_surface();
+                                } else {
+                                    shell.close_thread();
                                 }
                             },
                             "×"
@@ -481,82 +321,8 @@ pub fn shell() -> Element {
                         class: "thread-body",
                         onscroll: move |_| { spawn(measure_thread(state)); },
                         for message in &snapshot.thread_messages {
-                            article { class: "message thread-message", key: "thread-{message.id}",
-                                button {
-                                    class: "avatar",
-                                    onmouseenter: {
-                                        let user = message.user_id.clone();
-                                        move |event: MouseEvent| {
-                                            if let Some(user) = user.clone() {
-                                                let point = event.data().client_coordinates();
-                                                crate::profile::show_profile_hover(state, user, point.x, point.y);
-                                            }
-                                        }
-                                    },
-                                    onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
-                                    onclick: {
-                                        let user = message.user_id.clone();
-                                        move |_| {
-                                            if let Some(user) = user.clone() {
-                                                spawn(crate::bootstrap::open_profile(state, user));
-                                            }
-                                        }
-                                    },
-                                    if let Some(avatar) = message.avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
-                                        img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{message.author}" }
-                                    } else {
-                                        "{message.avatar_initials}"
-                                    }
-                                }
-                                div { class: "message-content",
-                                    div { class: "message-meta",
-                                        strong {
-                                            onmouseenter: {
-                                                let user = message.user_id.clone();
-                                                move |event: MouseEvent| {
-                                                    if let Some(user) = user.clone() {
-                                                        let point = event.data().client_coordinates();
-                                                        crate::profile::show_profile_hover(state, user, point.x, point.y);
-                                                    }
-                                                }
-                                            },
-                                            onmouseleave: move |_| crate::profile::schedule_profile_hover_close(state),
-                                            onclick: {
-                                                let user = message.user_id.clone();
-                                                move |_| {
-                                                    if let Some(user) = user.clone() {
-                                                        spawn(crate::bootstrap::open_profile(state, user));
-                                                    }
-                                                }
-                                            },
-                                            "{message.author}"
-                                        }
-                                        if message.is_app { span { class: "app-badge", "APP" } }
-                                        time { "{message.timestamp}" }
-                                        if message.edited { span { "(edited)" } }
-                                        if message.pending {
-                                            span { class: "pending-label",
-                                                if snapshot.pending_attachments_for_message(&message.id).is_some() {
-                                                    "Uploading…"
-                                                } else {
-                                                    "Sending…"
-                                                }
-                                            }
-                                        }
-                                    }
-                                    div { class: "message-body", for node in &message.body { {rich_node(node, snapshot.media_epoch, state)} } }
-                                    if !message.attachments.is_empty() {
-                                        {attachment_embeds(state, snapshot.media_epoch, &message.attachments)}
-                                    }
-                                    if let Some(attachments) = snapshot.pending_attachments_for_message(&message.id) {
-                                        {pending_attachment_strip(attachments, snapshot.upload_ui_epoch)}
-                                    }
-                                    if !message.reactions.is_empty() {
-                                        div { class: "message-actions",
-                                            {reactions_row(state, &snapshot.media, snapshot.media_epoch, active_channel_id, message)}
-                                        }
-                                    }
-                                }
+                            div { key: "thread-{message.id}",
+                                {message_row(state, &snapshot, message, active_channel_id, None, RowSurface::Thread)}
                             }
                         }
                         if snapshot.thread_messages.is_empty() { p { "Loading replies to {root}…" } }

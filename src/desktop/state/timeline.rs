@@ -16,9 +16,17 @@ impl ShellState {
     ) {
         self.row_heights.extend(measurements);
         self.stick_to_bottom = stick_to_bottom;
-        // A reader who has reached the newest message has outrun any anchor we
-        // were still holding; applying it later reads as a random teleport.
-        if stick_to_bottom {
+        // A reader who has reached the newest message has outrun the unread
+        // divider we were still holding; applying it later reads as a random
+        // teleport. A `Latest` anchor is left alone — it asks for the bottom,
+        // which is where they already are, and dropping it early loses the
+        // scroll a cold conversation still owes.
+        if stick_to_bottom
+            && !matches!(
+                self.core.pending_scroll_to,
+                Some((_, super_platinum_core::domain::PendingScrollTarget::Latest))
+            )
+        {
             self.core.pending_scroll_to = None;
         }
         if self.selection_pinned || self.messages.is_empty() {
@@ -31,27 +39,43 @@ impl ShellState {
         }
     }
 
-    pub fn select_channel(&mut self, index: usize) {
+    /// Opens a conversation in the surface the request came from.
+    ///
+    /// `ChannelOpen::Global` is the quick switcher, a search hit, a channel
+    /// mention, "message this person" — navigation that belongs to no surface.
+    /// Slack lands all of it in Home with the channel sidebar (CDP-verified),
+    /// rather than cramming the channel into whichever list panel happened to
+    /// be open, where it would have had no composer and left the row that is
+    /// still highlighted pointing at something else entirely.
+    pub fn select_channel(&mut self, index: usize, open: ChannelOpen) {
         let Some(channel) = self.channels.get(index) else {
             return;
         };
         let channel_id = channel.id.clone();
         let unread = channel.unread;
+        if open == ChannelOpen::Global {
+            // Record the surface being left before anything moves, so that rail
+            // tab still has its own conversation to come back to.
+            self.remember_surface();
+            self.close_thread();
+            self.main_view = MainView::Home;
+        }
         self.active_channel = index;
         self.channel_switch_started = Some(std::time::Instant::now());
+        self.channel_generation = self.channel_generation.wrapping_add(1);
         self.core.active_channel = Some(channel_id.clone());
         if let Some(team) = self.core.active_team.clone()
             && let Some(workspace) = self.core.workspaces.get_mut(&team)
         {
             workspace.remember_visit(&channel_id);
         }
-        // Keep DMs / Activity list panels open when opening a conversation.
-        if !matches!(self.main_view, MainView::Dms | MainView::Activity) {
-            self.main_view = MainView::Home;
-        }
-        if self.main_view == MainView::Activity {
-            self.activity_detail_open = true;
-        }
+        self.surfaces.insert(
+            self.main_view,
+            SurfaceTarget {
+                channel: channel_id.clone(),
+                thread_root: self.thread_root.clone(),
+            },
+        );
         // Pin the divider before anything marks the conversation read. The
         // cached projection is not reused here: it was built for the previous
         // visit and carries that visit's divider.
@@ -102,11 +126,17 @@ impl ShellState {
                 return;
             }
         }
-        // No unread anchor: the conversation opens on its newest message. Without
-        // this the flag carries over from the channel left behind, and leaving a
-        // scrolled-up channel opens the next one at the top of its window.
+        // No unread anchor: the conversation opens on its newest message. The
+        // flag alone is not enough — the scroll container keeps the offset of
+        // the channel left behind, so a shorter transcript opens parked below
+        // its last row, showing an empty pane. The anchor is what actually
+        // moves it; `refresh_selected_channel` spends it as soon as the rows
+        // exist, and again after history lands for a cold conversation.
         self.stick_to_bottom = true;
-        self.core.pending_scroll_to = None;
+        self.core.pending_scroll_to = Some((
+            channel_id,
+            super_platinum_core::domain::PendingScrollTarget::Latest,
+        ));
         self.reset_timeline_window();
     }
 

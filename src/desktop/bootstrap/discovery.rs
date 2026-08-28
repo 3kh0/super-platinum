@@ -1,8 +1,9 @@
-use dioxus::prelude::{ReadableExt, Signal, WritableExt};
+use dioxus::prelude::{ReadableExt, Signal, WritableExt, spawn};
 use super_platinum_core::slack::api;
 
 use super::common::{credentials, persist_workspace};
 use super::session::refresh_media;
+use crate::state::ChannelOpen;
 use crate::state::MainView;
 use crate::state::ShellState;
 
@@ -361,7 +362,7 @@ pub async fn open_profile_dm(mut state: Signal<ShellState>, user: String) {
             })
         };
     if let Some(index) = existing {
-        state.write().select_channel(index);
+        state.write().select_channel(index, ChannelOpen::Global);
         state.write().close_profile();
         super::history::refresh_selected_channel(state).await;
         return;
@@ -404,7 +405,7 @@ pub async fn open_profile_dm(mut state: Signal<ShellState>, user: String) {
                 .iter()
                 .position(|channel| channel.id == channel_id)
             {
-                shell.select_channel(index);
+                shell.select_channel(index, ChannelOpen::Global);
                 shell.close_profile();
                 drop(shell);
                 super::history::refresh_selected_channel(state).await;
@@ -628,13 +629,32 @@ pub async fn mark_activity_read(mut state: Signal<ShellState>, key: String) {
 }
 
 pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
-    {
+    // Each rail tab keeps its own conversation, the way Slack's does: leaving
+    // Activity for a channel and coming back shows the item that was being
+    // read, not the channel it was left for.
+    let restore = {
         let mut shell = state.write();
+        shell.remember_surface();
         shell.main_view = target;
-        if target != MainView::Activity {
-            shell.activity_detail_open = false;
-        }
         shell.profile_hover = None;
+        shell.close_thread();
+        let restore = shell.surfaces.get(&target).cloned();
+        if let Some(surface) = restore.as_ref()
+            && let Some(index) = shell
+                .channels
+                .iter()
+                .position(|channel| channel.id == surface.channel)
+        {
+            shell.select_channel(index, crate::state::ChannelOpen::InSurface);
+        }
+        restore
+    };
+    if let Some(surface) = restore {
+        let signal = state;
+        spawn(super::history::refresh_selected_channel(signal));
+        if let Some(root) = surface.thread_root {
+            spawn(open_thread(signal, surface.channel, root));
+        }
     }
     if target == MainView::Home || std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         return;

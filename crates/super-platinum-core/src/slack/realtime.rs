@@ -186,6 +186,7 @@ async fn run_connection(
             incoming = socket.recv() => match incoming {
                 Some(Ok(wreq::ws::message::Message::Text(text))) => {
                     last_seen = tokio::time::Instant::now();
+                    trace_frame(text.as_str());
                     if let Some(event) = parse_event(text.as_str())
                         && output
                             .send((
@@ -228,6 +229,37 @@ async fn run_connection(
             }
         }
     }
+}
+
+/// Prints the shape of every frame the socket delivers when
+/// `SUPER_PLATINUM_RT_TRACE` is set: the event type, and the channel and
+/// timestamp it names. Only structural fields — never message text, tokens, or
+/// cookies — so the trace can be pasted into a bug report as-is.
+fn trace_frame(text: &str) {
+    static TRACING: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    if !TRACING.get_or_init(|| std::env::var_os("SUPER_PLATINUM_RT_TRACE").is_some()) {
+        return;
+    }
+    let Ok(value) = serde_json::from_str::<Value>(text) else {
+        eprintln!("rt: unparsable frame ({} bytes)", text.len());
+        return;
+    };
+    let field = |value: &Value, key: &str| {
+        value
+            .get(key)
+            .and_then(Value::as_str)
+            .unwrap_or("-")
+            .to_owned()
+    };
+    let kind = field(&value, "type");
+    let item = value.get("item").unwrap_or(&value);
+    eprintln!(
+        "rt: {kind} channel={} ts={} subtype={} parsed={}",
+        field(item, "channel"),
+        field(item, "ts"),
+        field(&value, "subtype"),
+        parse_event(text).is_some(),
+    );
 }
 
 /// Resolves when the shell declares the link gone, or never when nothing is

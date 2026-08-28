@@ -177,11 +177,13 @@ fn app() -> Element {
                         continue;
                     }
                     if shell.thread_root.is_some() {
-                        shell.close_thread();
-                        // Esc out of an Activity thread returns to the empty pane.
+                        // Esc out of an Activity thread returns to the empty
+                        // pane; elsewhere the thread is a side panel and the
+                        // conversation behind it stays.
                         if shell.main_view == crate::state::MainView::Activity {
-                            shell.activity_detail_open = false;
-                            shell.core.activity.selected = None;
+                            shell.forget_surface();
+                        } else {
+                            shell.close_thread();
                         }
                     }
                 }

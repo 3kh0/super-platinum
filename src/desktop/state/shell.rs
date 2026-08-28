@@ -35,8 +35,10 @@ pub struct ShellState {
     pub dm_query: String,
     pub dm_unread_only: bool,
     pub activity_tab: ActivityTab,
-    /// When true, Activity main column shows the opened channel/thread.
-    pub activity_detail_open: bool,
+    /// What each surface has open in its conversation column, keyed by the
+    /// surface. Home is in here too, so a rail switch restores the channel that
+    /// tab was last showing rather than inheriting another surface's.
+    pub surfaces: HashMap<MainView, SurfaceTarget>,
     pub profile_hover: Option<ProfileHoverVm>,
     pub profile_hover_generation: u64,
     pub profile_hover_card_active: bool,
@@ -69,6 +71,11 @@ pub struct ShellState {
     pub connection: ConnectionVm,
     pub performance: PerformanceVm,
     pub channel_switch_started: Option<std::time::Instant>,
+    /// Bumped on every conversation open. Async work started for one channel
+    /// checks it after each await and drops out when the reader has already
+    /// moved on, so a slow history fetch cannot scroll or mark the conversation
+    /// that replaced it.
+    pub channel_generation: u64,
     pub realtime_insert_started: Option<std::time::Instant>,
 }
 
@@ -131,6 +138,45 @@ impl ShellState {
         self.thread_root = None;
         self.thread_messages.clear();
         self.thread_at_bottom = true;
+    }
+
+    /// Whether the current surface has a conversation to show.
+    ///
+    /// Home always does — it is the channel. DMs and Activity keep a list and
+    /// stay on their empty state until a row is opened, so a channel the quick
+    /// switcher opened elsewhere never leaks into their column.
+    pub fn detail_open(&self) -> bool {
+        !self.main_view.has_own_list() || self.surfaces.contains_key(&self.main_view)
+    }
+
+    /// Records what the current surface is showing, so returning to this rail
+    /// tab restores it rather than inheriting whatever another surface opened.
+    pub fn remember_surface(&mut self) {
+        if !self.detail_open() {
+            return;
+        }
+        let Some(channel) = self.core.active_channel.clone() else {
+            return;
+        };
+        self.surfaces.insert(
+            self.main_view,
+            SurfaceTarget {
+                channel,
+                thread_root: self.thread_root.clone(),
+            },
+        );
+    }
+
+    /// Clears the conversation the current surface was showing, returning it to
+    /// its empty state. Home has no empty state, so it keeps its channel.
+    pub fn forget_surface(&mut self) {
+        if self.main_view.has_own_list() {
+            self.surfaces.remove(&self.main_view);
+        }
+        self.close_thread();
+        if self.main_view == MainView::Activity {
+            self.core.activity.selected = None;
+        }
     }
 
     pub fn show_profile_hover(&mut self, user_id: String, x: f64, y: f64) {

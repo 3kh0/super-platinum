@@ -1,4 +1,4 @@
-use crate::state::ShellState;
+use crate::state::{ChannelOpen, MainView, ShellState};
 
 impl ShellState {
     pub fn set_theme_preset(&mut self, value: &str) {
@@ -313,7 +313,7 @@ impl ShellState {
         let Some(index) = matches.get(self.palette_selected).copied() else {
             return false;
         };
-        self.select_channel(index);
+        self.select_channel(index, ChannelOpen::Global);
         self.overlay = None;
         true
     }
@@ -331,20 +331,28 @@ impl ShellState {
         ts: Option<&str>,
         thread_ts: Option<&str>,
     ) -> bool {
-        self.activity_detail_open = true;
         self.core.activity.selected = Some(key);
         if thread_ts.is_none() {
             self.close_thread();
         }
         // An item Slack gave us no message for still selects: the row lights up
-        // and the pane stays on its empty state.
+        // and the pane returns to its empty state rather than keeping the last
+        // item's conversation, which the highlight no longer points at.
         let (Some(channel), Some(ts)) = (channel, ts) else {
+            self.surfaces.remove(&MainView::Activity);
             return false;
         };
-        self.open_search_result(channel, ts)
+        self.open_message(channel, ts, crate::state::ChannelOpen::InSurface)
     }
 
+    /// Opens a search hit. Search is global navigation, so like Slack's own
+    /// client it lands in Home rather than inside whichever list was open.
     pub fn open_search_result(&mut self, channel: &str, ts: &str) -> bool {
+        self.open_message(channel, ts, ChannelOpen::Global)
+    }
+
+    /// Opens one conversation anchored on a specific message.
+    fn open_message(&mut self, channel: &str, ts: &str, open: ChannelOpen) -> bool {
         let Some(index) = self
             .channels
             .iter()
@@ -352,7 +360,7 @@ impl ShellState {
         else {
             return false;
         };
-        self.select_channel(index);
+        self.select_channel(index, open);
         self.core.pending_scroll_to = Some((
             channel.to_owned(),
             super_platinum_core::domain::PendingScrollTarget::Message(ts.to_owned()),

@@ -35,7 +35,7 @@ fn select_channel_records_recent_visit() {
         .iter()
         .position(|channel| channel.id == "C1")
         .expect("general");
-    state.select_channel(index);
+    state.select_channel(index, ChannelOpen::Global);
     let workspace = state.core.workspaces.get("T1").expect("fixture workspace");
     assert_eq!(workspace.last_active_channel.as_deref(), Some("C1"));
     assert_eq!(
@@ -214,7 +214,7 @@ fn activity_channel_item_closes_a_stale_thread_pane() {
     assert!(state.thread_root.is_none());
     assert!(state.thread_messages.is_empty());
     assert!(state.thread_at_bottom);
-    assert!(state.activity_detail_open);
+    assert!(state.detail_open());
     assert_eq!(state.core.activity.selected.as_deref(), Some("mention-1"));
 }
 
@@ -223,7 +223,7 @@ fn activity_item_without_a_message_still_selects() {
     let media = MediaRegistry::default();
     let mut state = ShellState::fixture(media);
     assert!(!state.select_activity_item("orphan-1".into(), None, None, None));
-    assert!(state.activity_detail_open);
+    assert!(state.detail_open());
     assert_eq!(state.core.activity.selected.as_deref(), Some("orphan-1"));
 }
 
@@ -258,10 +258,15 @@ fn a_read_channel_opens_on_its_newest_message() {
     // Left the previous conversation scrolled up.
     state.stick_to_bottom = false;
 
-    state.select_channel(read);
+    state.select_channel(read, ChannelOpen::Global);
 
     assert!(state.stick_to_bottom);
-    assert!(state.core.pending_scroll_to.is_none());
+    // The anchor is what actually moves the shared scroll container off the
+    // offset the previous conversation left in it.
+    assert!(matches!(
+        state.core.pending_scroll_to.as_ref(),
+        Some((_, super_platinum_core::domain::PendingScrollTarget::Latest))
+    ));
 }
 
 #[test]
@@ -274,7 +279,7 @@ fn the_unread_divider_survives_the_read_mark() {
         .position(|channel| channel.id == "C2")
         .expect("ship");
 
-    state.select_channel(ship);
+    state.select_channel(ship, ChannelOpen::Global);
     let divider = state
         .messages
         .iter()
@@ -312,8 +317,8 @@ fn the_unread_divider_survives_the_read_mark() {
         .iter()
         .position(|channel| channel.id == "C1")
         .expect("general");
-    state.select_channel(general);
-    state.select_channel(ship);
+    state.select_channel(general, ChannelOpen::Global);
+    state.select_channel(ship, ChannelOpen::Global);
     assert!(
         !state
             .messages
@@ -365,4 +370,82 @@ fn a_dropped_link_never_reaches_the_toast_strip() {
         state.toast.as_ref().map(|toast| toast.text.as_str()),
         Some("Thread failed: Slack API returned error: channel_not_found")
     );
+}
+
+#[test]
+fn the_quick_switcher_lands_in_home_not_inside_a_list_surface() {
+    let media = MediaRegistry::default();
+    let mut state = ShellState::fixture(media);
+    let channel = state.channels.first().expect("fixture channel").id.clone();
+    let ship = state
+        .channels
+        .iter()
+        .position(|candidate| candidate.id == "C2")
+        .expect("ship");
+
+    // Reading a notification: Activity has a thread open beside its list.
+    state.main_view = MainView::Activity;
+    assert!(state.select_activity_item(
+        "thread-1".into(),
+        Some(&channel),
+        Some("1.000100"),
+        Some("1.000000"),
+    ));
+    state.thread_root = Some("1.000000".into());
+
+    // Jumping somewhere from the quick switcher is global navigation: Slack
+    // opens it in Home with the sidebar, rather than dropping the channel into
+    // the Activity pane where it would have no composer and leave a highlighted
+    // row pointing at something else.
+    state.select_channel(ship, ChannelOpen::Global);
+
+    assert_eq!(state.main_view, MainView::Home);
+    assert!(state.thread_root.is_none());
+    assert!(state.detail_open());
+    assert_eq!(state.core.active_channel.as_deref(), Some("C2"));
+
+    // Activity kept its own conversation for when the reader goes back to it.
+    let remembered = state
+        .surfaces
+        .get(&MainView::Activity)
+        .expect("activity keeps what it was showing");
+    assert_eq!(remembered.channel, channel);
+    assert_eq!(remembered.thread_root.as_deref(), Some("1.000000"));
+}
+
+#[test]
+fn a_list_surface_opens_beside_its_list_and_stays_there() {
+    let media = MediaRegistry::default();
+    let mut state = ShellState::fixture(media);
+    let dm = state
+        .channels
+        .iter()
+        .position(|channel| channel.is_im)
+        .expect("fixture dm");
+
+    state.main_view = MainView::Dms;
+    // The DMs list starts on its empty state: a conversation another surface
+    // opened must not leak into this column.
+    assert!(!state.detail_open());
+
+    state.select_channel(dm, ChannelOpen::InSurface);
+    assert_eq!(state.main_view, MainView::Dms);
+    assert!(state.detail_open());
+}
+
+#[test]
+fn an_activity_item_with_no_message_leaves_the_pane_empty() {
+    let media = MediaRegistry::default();
+    let mut state = ShellState::fixture(media);
+    let channel = state.channels.first().expect("fixture channel").id.clone();
+    state.main_view = MainView::Activity;
+    assert!(state.select_activity_item("mention-1".into(), Some(&channel), Some("1.000200"), None));
+    assert!(state.detail_open());
+
+    // An item Slack gave us no message for selects the row and returns the pane
+    // to its empty state, rather than leaving the previous item's conversation
+    // under a highlight that no longer points at it.
+    assert!(!state.select_activity_item("orphan-1".into(), None, None, None));
+    assert!(!state.detail_open());
+    assert_eq!(state.core.activity.selected.as_deref(), Some("orphan-1"));
 }

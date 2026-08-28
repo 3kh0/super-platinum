@@ -331,7 +331,9 @@ fn open_channel(mut state: Signal<ShellState>, channel: &str) {
         .iter()
         .position(|candidate| candidate.id == channel);
     if let Some(index) = index {
-        state.write().select_channel(index);
+        state
+            .write()
+            .select_channel(index, crate::state::ChannelOpen::Global);
         spawn(crate::bootstrap::refresh_selected_channel(state));
     }
 }

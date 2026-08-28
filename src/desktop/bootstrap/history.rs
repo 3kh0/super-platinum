@@ -5,13 +5,7 @@ use super::common::{credentials, persist_workspace, refresh_history_at};
 use crate::state::ShellState;
 
 pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
-    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
-        return;
-    }
-    let Some((transport, client, workspaces)) = credentials(&state) else {
-        return;
-    };
-    let (team, channel) = {
+    let (team, channel, generation) = {
         let state = state.read();
         let (Some(team), Some(channel)) = (
             state.core.active_team.clone(),
@@ -19,8 +13,29 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
         ) else {
             return;
         };
-        (team, channel)
+        (team, channel, state.channel_generation)
     };
+    // Park the conversation before any network work. The scroll container is
+    // shared, so a newly opened channel otherwise keeps the offset of the one
+    // left behind — on a shorter transcript that is an empty pane, and on a
+    // longer one it is a random position in the middle of history.
+    let opening = state.read().core.pending_scroll_to.clone();
+    if let Some((pending_channel, target)) = opening
+        && pending_channel == channel
+        && scroll_to_target(&target).await
+        && state.read().channel_generation == generation
+    {
+        state.write().core.pending_scroll_to = None;
+    }
+    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+        return;
+    }
+    let Some((transport, client, workspaces)) = credentials(&state) else {
+        return;
+    };
+    if state.read().channel_generation != generation {
+        return;
+    }
     let Some(workspace_session) = workspaces
         .into_iter()
         .find(|workspace| workspace.team_id == team)
@@ -49,6 +64,12 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
         latest,
     )
     .await;
+    // The reader moved on while this was in flight; the conversation on screen
+    // now has its own refresh, and scrolling or marking it here would act on the
+    // wrong one.
+    if state.read().channel_generation != generation {
+        return;
+    }
     super::session::hydrate_current_surface(state).await;
     persist_workspace(&state, &team);
     // Re-read the anchor instead of replaying the copy taken before the fetch.
@@ -59,8 +80,12 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     if let Some((pending_channel, target)) = pending
         && pending_channel == channel
         && scroll_to_target(&target).await
+        && state.read().channel_generation == generation
     {
         state.write().core.pending_scroll_to = None;
+    }
+    if state.read().channel_generation != generation {
+        return;
     }
     mark_visible_read(state).await;
 }
@@ -149,7 +174,13 @@ async fn scroll_to_target(target: &super_platinum_core::domain::PendingScrollTar
         super_platinum_core::domain::PendingScrollTarget::Latest => String::new(),
     };
     let script = if selector.is_empty() {
-        "requestAnimationFrame(() => { const t=document.getElementById('message-timeline'); if(t) t.scrollTop=t.scrollHeight; }); dioxus.send(true);".to_owned()
+        // A cold conversation has no rows yet, and scrolling an empty container
+        // settles nothing: report failure so the anchor survives to be spent
+        // again once history lands.
+        "const t=document.getElementById('message-timeline');
+         if (t) requestAnimationFrame(() => { t.scrollTop = t.scrollHeight; });
+         dioxus.send(Boolean(t && t.querySelector('[data-message-id]')));"
+            .to_owned()
     } else {
         format!(
             "const el = document.querySelector({});

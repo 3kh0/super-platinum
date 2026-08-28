@@ -405,7 +405,7 @@ fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
                             class: "{class}",
                             key: "palette-{row_key}",
                             onclick: move |_| {
-                                state.write().select_channel(index);
+                                state.write().select_channel(index, crate::state::ChannelOpen::Global);
                                 state.write().overlay = None;
                                 spawn(crate::bootstrap::refresh_selected_channel(state));
                             },

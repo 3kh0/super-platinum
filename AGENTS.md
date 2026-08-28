@@ -100,6 +100,34 @@ Super Platinum should feel like a focused desktop Slack client, not a marketing 
 - Keep controls stable in size; avoid layout shifts on hover, loading, or text changes.
 - Do not add decorative chrome that competes with channels, messages, threads, and search.
 
+### Surfaces
+
+Each rail tab owns a surface, the way Slack's does (CDP-verified against the
+real client). `ShellState::surfaces` keys one `SurfaceTarget` per `MainView`, so
+a tab remembers its own conversation instead of inheriting whatever another one
+opened.
+
+- `select_channel` takes a `ChannelOpen`. `Global` is navigation that belongs to
+  no surface — the quick switcher, a search hit, a channel mention, "message
+  this person" — and always lands in Home with the channel sidebar. `InSurface`
+  is a row in the surface's own list (the DM list, an Activity item) and opens
+  beside it.
+- DMs and Activity hold their empty state until a row in their own list opens
+  something (`ShellState::detail_open`); Home is always its channel.
+- A conversation is a conversation wherever it is shown. Activity's and DMs'
+  panes carry the same header, transcript, hover toolbar, and composer as Home.
+  One `view::message::message_row` renders every message row so the surfaces
+  cannot drift apart; `RowSurface` decides only what a row can *do* (a thread
+  reply has no "Reply", and no reply bar).
+- Opening a conversation sets a `pending_scroll_to` — the unread divider, or
+  `Latest`. The scroll container is shared, so without it a new channel keeps
+  the offset of the one left behind and opens on blank space.
+  `refresh_selected_channel` spends the anchor before its fetch and again after,
+  since a cold conversation has no rows the first time.
+- `ShellState::channel_generation` is bumped by every open. Async work started
+  for one conversation checks it after each await, so a slow history fetch
+  cannot scroll or mark the conversation that replaced it.
+
 ## Slack Behavior
 
 Slack-facing behavior needs defensive handling.
@@ -130,6 +158,18 @@ Slack-facing behavior needs defensive handling.
 - Coming back is a state change, not just a colour: `bootstrap::reload_after_outage`
   re-drives the visible surface, because every load that fired during the outage
   failed and nothing else would ask again.
+- Realtime message frames are **partials, and must be merged, never assigned**.
+  `message_replied` re-sends the parent with its text and reply counts but no
+  `reactions` key at all, so overwriting the stored copy with it wipes every
+  pill off a message the moment someone replies to it. `merge_update` is the
+  reducer for anything off the socket; wholesale replacement belongs to
+  `conversations.history`, whose payload really is the whole message.
+- A message is held in more than one place: the channel transcript, and a thread
+  bag per open thread (root and replies both). An event that changes a message —
+  a reaction above all, since no later frame repeats it — has to reach every
+  copy, or the thread pane keeps showing the state before it. `SUPER_PLATINUM_RT_TRACE=1`
+  prints the type, channel, and ts of every frame the socket delivers (structure
+  only, no message text) when a live update is not landing.
 - Do not assume all Slack messages are plain text; Block Kit, files, reactions, threads, edits, deletes, and notifications already exist in the product surface.
 
 ## Testing Guidance
@@ -240,7 +280,7 @@ Useful commands (full list: `scripts/agentctl.sh help` or `agentctl help`):
 
 - After `submit` / channel open, **wait or poll `state`** — `active_channel` can lag the submit response by a frame or network history load.
 - Prefer `state` for structural checks; use `screenshot` when layout/typography matters, then **read the PNG**.
-- Recent messages in `state` are text snippets only; full Block Kit layout needs a screenshot or an offline fixture built from known blocks.
+- Recent messages in `state` are text snippets only, plus their reactions; full Block Kit layout needs a screenshot or an offline fixture built from known blocks.
 - Do not assume the viewport shows a particular historical message — the live list is scrolled to recent. For a fixed layout repro, use `multi_paragraph_emoji_app` offline rather than scrolling the live client.
 - Destructive actions (`send`) require `SUPER_PLATINUM_AGENT_ALLOW_DESTRUCTIVE=1` or `scripts/agentctl.sh allow-destructive true`. Never enable that casually.
 - Live mode uses the real Slack session. Never print tokens, cookies, or secrets.

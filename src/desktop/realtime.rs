@@ -31,6 +31,25 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     workspace.rt =
                         super_platinum_core::state::RealtimeStatus::Connected(connection);
                 }
+                // Nothing replays the frames that arrived while the socket was
+                // down, so whatever happened to the open conversation meanwhile
+                // — a reaction above all, which no later frame mentions again —
+                // would stay missing until it was left and reopened. Refetching
+                // what is on screen is how the reader stops being the last to
+                // know. The first connect needs none of this: the conversation
+                // it opens fetches itself.
+                let reconnected = generation > 1;
+                let thread = shell
+                    .thread_root
+                    .clone()
+                    .zip(shell.core.active_channel.clone());
+                drop(shell);
+                if reconnected {
+                    dioxus::prelude::spawn(crate::bootstrap::refresh_selected_channel(state));
+                    if let Some((root, channel)) = thread {
+                        dioxus::prelude::spawn(crate::bootstrap::open_thread(state, channel, root));
+                    }
+                }
             }
             RtUpdate::Event { generation, event } => {
                 let needs_user_hydration = match event.as_ref() {
@@ -107,16 +126,23 @@ fn apply(
                 core.threads
                     .entry((team.to_owned(), channel.clone(), root))
                     .or_default()
-                    .upsert(super_platinum_core::state::visible_message(message.clone()));
+                    .merge_update(super_platinum_core::state::visible_message(message.clone()));
                 if message.subtype.as_deref() != Some("thread_broadcast") {
                     return;
                 }
             }
+            // Merged, not replaced. A frame that re-sends a message we already
+            // hold is a partial: `message_replied` carries the parent's text and
+            // reply counts but no `reactions` at all, so overwriting the stored
+            // copy with it wiped every pill off a message the moment anyone
+            // replied to it. Slack merges these frames field by field, and so
+            // must we; a wholesale replacement is what `conversations.history`
+            // is for, where the payload really is the whole message.
             workspace
                 .messages
                 .entry(channel)
                 .or_default()
-                .upsert(super_platinum_core::state::visible_message(message));
+                .merge_update(super_platinum_core::state::visible_message(message));
         }
         RtEvent::MessageChanged { channel, message } => {
             workspace
@@ -162,23 +188,13 @@ fn apply(
             ts,
             user,
             reaction,
-        } => {
-            workspace
-                .messages
-                .entry(channel)
-                .or_default()
-                .apply_reaction(&ts, &user, &reaction, true);
-        }
+        } => apply_reaction(core, team, &channel, &ts, &user, &reaction, true),
         RtEvent::ReactionRemoved {
             channel,
             ts,
             user,
             reaction,
-        } => {
-            if let Some(messages) = workspace.messages.get_mut(&channel) {
-                messages.apply_reaction(&ts, &user, &reaction, false);
-            }
-        }
+        } => apply_reaction(core, team, &channel, &ts, &user, &reaction, false),
         RtEvent::ActivityUpdated(item) => {
             if core.active_team.as_deref() == Some(team) {
                 core.activity.upsert(item);
@@ -211,5 +227,197 @@ fn apply(
             }
         }
         RtEvent::Unknown(_) => {}
+    }
+}
+
+/// Puts a reaction on every copy of the message the app holds.
+///
+/// The transcript is not the only place a message is rendered from: a thread
+/// bag holds its own copy of the root and of every reply, and that is what the
+/// thread pane draws — the pane Activity opens beside its list included. Only
+/// updating the channel meant a pill added while a thread was open never
+/// appeared there, which is exactly where a reacted message is read from.
+///
+/// A channel with no transcript loaded is left alone rather than given an empty
+/// one: the reaction is already on the server copy, and the history fetch that
+/// opens the conversation brings it in.
+fn apply_reaction(
+    core: &mut super_platinum_core::CoreAppState,
+    team: &str,
+    channel: &str,
+    ts: &str,
+    user: &str,
+    name: &str,
+    added: bool,
+) {
+    if let Some(messages) = core
+        .workspaces
+        .get_mut(team)
+        .and_then(|workspace| workspace.messages.get_mut(channel))
+    {
+        messages.apply_reaction(ts, user, name, added);
+    }
+    for ((thread_team, thread_channel, _), messages) in &mut core.threads {
+        if thread_team == team && thread_channel == channel {
+            messages.apply_reaction(ts, user, name, added);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super_platinum_core::slack::models::{Message as SlackMessage, Reaction};
+    use super_platinum_core::state::Workspace;
+
+    const TEAM: &str = "T1";
+    const CHANNEL: &str = "C1";
+    const ROOT: &str = "1.0";
+
+    fn message(ts: &str, thread_ts: Option<&str>) -> SlackMessage {
+        SlackMessage {
+            ts: Some(ts.into()),
+            channel: Some(CHANNEL.into()),
+            user: Some("U1".into()),
+            text: Some("hello".into()),
+            thread_ts: thread_ts.map(str::to_owned),
+            ..Default::default()
+        }
+    }
+
+    /// A workspace holding one reacted root message, with the thread open on it
+    /// and carrying its own copy of the root and one reply — the shape the
+    /// thread pane draws from.
+    fn core() -> super_platinum_core::CoreAppState {
+        let mut core = super_platinum_core::CoreAppState::new(
+            super_platinum_core::config::Settings::default(),
+        );
+        let mut workspace =
+            Workspace::from_session(&super_platinum_core::config::WorkspaceSession {
+                team_id: TEAM.into(),
+                enterprise_id: None,
+                user_id: "USELF".into(),
+                name: "test".into(),
+                url: "https://t".into(),
+                token: String::new(),
+            });
+        let mut root = message(ROOT, Some(ROOT));
+        root.reactions = vec![Reaction {
+            name: "tada".into(),
+            users: vec!["U2".into()],
+            count: 1,
+            ..Default::default()
+        }];
+        workspace
+            .messages
+            .entry(CHANNEL.into())
+            .or_default()
+            .upsert(root.clone());
+        core.workspaces.insert(TEAM.into(), workspace);
+        let thread = core
+            .threads
+            .entry((TEAM.into(), CHANNEL.into(), ROOT.into()))
+            .or_default();
+        thread.upsert(root);
+        thread.upsert(message("2.0", Some(ROOT)));
+        core
+    }
+
+    fn reactions(core: &super_platinum_core::CoreAppState, ts: &str) -> Vec<String> {
+        core.workspaces[TEAM].messages[CHANNEL]
+            .messages
+            .iter()
+            .find(|message| message.ts.as_deref() == Some(ts))
+            .map(|message| message.reactions.iter().map(|r| r.name.clone()).collect())
+            .unwrap_or_default()
+    }
+
+    fn thread_reactions(core: &super_platinum_core::CoreAppState, ts: &str) -> Vec<String> {
+        core.threads[&(TEAM.into(), CHANNEL.into(), ROOT.into())]
+            .messages
+            .iter()
+            .find(|message| message.ts.as_deref() == Some(ts))
+            .map(|message| message.reactions.iter().map(|r| r.name.clone()).collect())
+            .unwrap_or_default()
+    }
+
+    #[test]
+    fn a_thread_reply_does_not_wipe_the_parents_reactions() {
+        let mut core = core();
+        // What Slack sends the moment someone replies in a thread: the parent,
+        // complete except that it names no reactions at all.
+        let mut parent = message(ROOT, Some(ROOT));
+        parent.reply_count = Some(1);
+        apply(&mut core, TEAM, 0, RtEvent::Message(parent));
+        assert_eq!(reactions(&core, ROOT), ["tada"]);
+    }
+
+    #[test]
+    fn a_reaction_reaches_the_thread_copy_of_a_message() {
+        let mut core = core();
+        apply(
+            &mut core,
+            TEAM,
+            0,
+            RtEvent::ReactionAdded {
+                channel: CHANNEL.into(),
+                ts: "2.0".into(),
+                user: "U2".into(),
+                reaction: "eyes".into(),
+            },
+        );
+        assert_eq!(thread_reactions(&core, "2.0"), ["eyes"]);
+    }
+
+    #[test]
+    fn a_reaction_on_a_root_shows_in_both_the_channel_and_the_thread() {
+        let mut core = core();
+        apply(
+            &mut core,
+            TEAM,
+            0,
+            RtEvent::ReactionAdded {
+                channel: CHANNEL.into(),
+                ts: ROOT.into(),
+                user: "U3".into(),
+                reaction: "eyes".into(),
+            },
+        );
+        assert_eq!(reactions(&core, ROOT), ["tada", "eyes"]);
+        assert_eq!(thread_reactions(&core, ROOT), ["tada", "eyes"]);
+        apply(
+            &mut core,
+            TEAM,
+            0,
+            RtEvent::ReactionRemoved {
+                channel: CHANNEL.into(),
+                ts: ROOT.into(),
+                user: "U3".into(),
+                reaction: "eyes".into(),
+            },
+        );
+        assert_eq!(reactions(&core, ROOT), ["tada"]);
+        assert_eq!(thread_reactions(&core, ROOT), ["tada"]);
+    }
+
+    #[test]
+    fn a_reaction_in_an_unloaded_channel_creates_no_transcript() {
+        let mut core = core();
+        apply(
+            &mut core,
+            TEAM,
+            0,
+            RtEvent::ReactionAdded {
+                channel: "C-NEVER-OPENED".into(),
+                ts: "9.0".into(),
+                user: "U2".into(),
+                reaction: "eyes".into(),
+            },
+        );
+        assert!(
+            !core.workspaces[TEAM]
+                .messages
+                .contains_key("C-NEVER-OPENED")
+        );
     }
 }

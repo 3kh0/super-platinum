@@ -206,7 +206,7 @@ pub(crate) fn channel_sidebar(
                                 },
                                 key: "channel-{channel.id}",
                                 onclick: move |_| {
-                                    state.write().select_channel(index);
+                                    state.write().select_channel(index, crate::state::ChannelOpen::InSurface);
                                     spawn(crate::bootstrap::refresh_selected_channel(state));
                                 },
                                 span { class: "channel-icon",

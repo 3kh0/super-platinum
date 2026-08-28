@@ -221,7 +221,9 @@ fn dispatch(
         AgentCommand::SelectEntry { index } => {
             let channel_index = state.read().palette_matches().get(index).copied();
             if let Some(channel_index) = channel_index {
-                state.write().select_channel(channel_index);
+                state
+                    .write()
+                    .select_channel(channel_index, crate::state::ChannelOpen::Global);
                 dioxus::prelude::spawn(crate::bootstrap::refresh_selected_channel(*state));
                 AgentResponse::ok(id, json!({ "index": index }))
             } else {
@@ -234,7 +236,9 @@ fn dispatch(
             });
             match index {
                 Some(index) => {
-                    state.write().select_channel(index);
+                    state
+                        .write()
+                        .select_channel(index, crate::state::ChannelOpen::Global);
                     dioxus::prelude::spawn(crate::bootstrap::refresh_selected_channel(*state));
                     AgentResponse::ok(id, json!({ "channel": channel }))
                 }
@@ -610,6 +614,14 @@ fn state_snapshot(state: &ShellState) -> Value {
             "ts": message.id,
             "author": message.author,
             "text": message_preview_text(message),
+            // Reactions ride along so a live check can tell "the pill is not on
+            // screen" from "the reaction never reached the state".
+            "reactions": message.reactions.iter().map(|reaction| format!(
+                ":{}:x{}{}",
+                reaction.name,
+                reaction.count,
+                if reaction.own { " (own)" } else { "" },
+            )).collect::<Vec<_>>(),
         })).collect::<Vec<_>>(),
         "toasts": state.toast.iter().map(|toast| toast.text.clone()).collect::<Vec<_>>(),
         "connection": state.connection.status.key(),

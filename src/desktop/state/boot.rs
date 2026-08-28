@@ -204,7 +204,7 @@ impl ShellState {
             dm_query: String::new(),
             dm_unread_only: false,
             activity_tab: ActivityTab::default(),
-            activity_detail_open: false,
+            surfaces: HashMap::new(),
             profile_hover: None,
             profile_hover_generation: 0,
             profile_hover_card_active: false,
@@ -230,6 +230,7 @@ impl ShellState {
             connection: ConnectionVm::default(),
             performance: PerformanceVm::default(),
             channel_switch_started: None,
+            channel_generation: 0,
             realtime_insert_started: None,
         };
         state
@@ -270,7 +271,7 @@ impl ShellState {
             dm_query: String::new(),
             dm_unread_only: false,
             activity_tab: ActivityTab::default(),
-            activity_detail_open: false,
+            surfaces: HashMap::new(),
             profile_hover: None,
             profile_hover_generation: 0,
             profile_hover_card_active: false,
@@ -296,6 +297,7 @@ impl ShellState {
             connection: ConnectionVm::default(),
             performance: PerformanceVm::default(),
             channel_switch_started: None,
+            channel_generation: 0,
             realtime_insert_started: None,
         };
         state
@@ -516,7 +518,7 @@ impl ShellState {
             dm_query: String::new(),
             dm_unread_only: false,
             activity_tab: ActivityTab::default(),
-            activity_detail_open: false,
+            surfaces: HashMap::new(),
             profile_hover: None,
             profile_hover_generation: 0,
             profile_hover_card_active: false,
@@ -542,6 +544,7 @@ impl ShellState {
             connection: ConnectionVm::default(),
             performance: PerformanceVm::default(),
             channel_switch_started: None,
+            channel_generation: 0,
             realtime_insert_started: None,
         }
     }
@@ -560,14 +563,62 @@ impl ShellState {
             "dm-header-compact" => {
                 state.main_view = MainView::Dms;
                 if let Some(index) = state.channels.iter().position(|channel| channel.id == "D1") {
-                    state.select_channel(index);
+                    state.select_channel(index, ChannelOpen::InSurface);
                 }
             }
             "activity-unread" => {
                 state.main_view = MainView::Activity;
                 state.core.activity.unread_only = true;
             }
-            "activity-channel-post" => state.main_view = MainView::Activity,
+            // A channel item opened from Activity: the conversation gets the
+            // whole right side, composer and all, the way Slack's does.
+            "activity-channel-post" => {
+                state.main_view = MainView::Activity;
+                state.select_activity_item(
+                    "mention-1".into(),
+                    Some("C2"),
+                    Some("1719800400.000200"),
+                    None,
+                );
+            }
+            // A thread item opened from Activity. The reply is the signed-in
+            // user's, so the row carries the same Edit/Delete toolbar the
+            // channel timeline gives it.
+            "activity-thread-tools" => {
+                state.main_view = MainView::Activity;
+                state.select_activity_item(
+                    "thread-1".into(),
+                    Some("C2"),
+                    Some("1719801000.000400"),
+                    Some("1719800000.000100"),
+                );
+                state.thread_root = Some("m2".into());
+                state.thread_messages = vec![
+                    MessageVm {
+                        id: "m2".into(),
+                        ts: "3.0".into(),
+                        author: "Jules".into(),
+                        timestamp: "9:47 AM".into(),
+                        avatar_initials: "JU".into(),
+                        body: vec![RichNode::Text(
+                            "I measured the warm path: cache, render, then refresh.".into(),
+                        )],
+                        ..Default::default()
+                    },
+                    MessageVm {
+                        id: "m2-r1".into(),
+                        ts: "3.1".into(),
+                        author: "You".into(),
+                        timestamp: "9:52 AM".into(),
+                        avatar_initials: "YO".into(),
+                        is_own: true,
+                        body: vec![RichNode::Text(
+                            "Confirmed offline too; cached content remains visible.".into(),
+                        )],
+                        ..Default::default()
+                    },
+                ];
+            }
             "accounts" => state.overlay = Some(Overlay::Accounts),
             "self-menu" => {
                 state.overlay = Some(Overlay::SelfMenu);
@@ -849,7 +900,7 @@ impl ShellState {
                     .iter()
                     .position(|channel| channel.id == "C3" || channel.name == "design")
                 {
-                    state.select_channel(index);
+                    state.select_channel(index, ChannelOpen::Global);
                 }
             }
             "message-unfurl-embed" => {
