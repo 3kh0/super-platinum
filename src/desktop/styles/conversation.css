@@ -151,7 +151,8 @@
   width: var(--msg-avatar);
   height: var(--msg-avatar);
   padding: 0;
-  overflow: hidden;
+  position: relative;
+  overflow: visible;
   border-radius: 6px;
   background: var(--avatar-bg);
   font-size: 11px;
@@ -160,7 +161,25 @@
   place-items: center;
   cursor: pointer;
 }
-.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.avatar > img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.avatar-team-icon {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 12px;
+  height: 12px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--bg);
+  color: var(--text);
+  font-size: 7px;
+  font-weight: 800;
+  line-height: 1;
+}
+.avatar-team-icon img { width: 100%; height: 100%; object-fit: cover; }
 .message-content { min-width: 0; }
 .message-meta {
   display: flex;

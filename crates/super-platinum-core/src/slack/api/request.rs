@@ -136,6 +136,19 @@ pub fn conversations_info(
     )
 }
 
+/// The workspace metadata Slack uses for per-avatar badges in Connect channels.
+pub fn conversations_team_connections(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    channel: ChannelId,
+) -> PreparedRequest {
+    client.rest_form(
+        workspace,
+        "conversations.teamConnections",
+        vec![("channel", channel)],
+    )
+}
+
 pub fn client_counts(client: &SlackClient, workspace: &WorkspaceSession) -> PreparedRequest {
     client.rest_form(workspace, "client.counts", Vec::new())
 }

@@ -827,6 +827,29 @@ impl ShellState {
                 }
                 state.sync_fixture_messages();
             }
+            "slack-connect-avatar" => {
+                keep_recent_messages(&mut state, 3);
+                let placeholder = include_bytes!("../../../assets/icons/icon-512.png");
+                for url in [
+                    "https://ca.slack-edge.com/E_VERCEL-U5-12fe3fbf9a8c-48",
+                    "https://example.test/vercel-team.png",
+                ] {
+                    let id = state
+                        .media
+                        .register(MediaAssetKind::Avatar, url, "image/png", false);
+                    state.media.insert(id, "image/png", placeholder.as_slice());
+                }
+                state.append_projected_fixture_messages(
+                    &[serde_json::json!({
+                        "type": "message",
+                        "ts": "1719801200.000500",
+                        "user": "U5",
+                        "channel": "C2",
+                        "text": "Slack Connect avatars retain their external workspace badge."
+                    })],
+                    true,
+                );
+            }
             "composer-multiline" => {
                 state.core.composer = super_platinum_core::ComposerState::with_text(
                     "First line\nSecond line with more detail\nThird line ready to send",

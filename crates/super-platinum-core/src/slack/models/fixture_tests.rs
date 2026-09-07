@@ -579,3 +579,33 @@ fn deserialize_link_unfurl_and_numeric_attachment_ts() {
     assert_eq!(attachment.service_name.as_deref(), Some("Stardance"));
     assert!(!attachment.is_msg_unfurl);
 }
+
+#[test]
+fn deserialize_slack_connect_team_icons() {
+    let page: ChannelTeamConnectionsPage = serde_json::from_str(
+        r#"{
+            "ok": true,
+            "connections": [{
+                "team": {
+                    "id": "E0AR02RR6V6",
+                    "name": "Vercel",
+                    "icon": {
+                        "image_34": "https://avatars.slack-edge.com/vercel_34.png"
+                    }
+                }
+            }]
+        }"#,
+    )
+    .unwrap();
+
+    assert_eq!(page.connections[0].team.id, "E0AR02RR6V6");
+    assert_eq!(page.connections[0].team.name.as_deref(), Some("Vercel"));
+    assert_eq!(
+        page.connections[0]
+            .team
+            .icon
+            .as_ref()
+            .and_then(|icon| icon.image_34.as_deref()),
+        Some("https://avatars.slack-edge.com/vercel_34.png")
+    );
+}

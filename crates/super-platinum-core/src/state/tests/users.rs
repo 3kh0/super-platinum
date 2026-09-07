@@ -132,7 +132,10 @@ fn user_avatar_url_prefers_profile_image_48() {
         }),
         ..Default::default()
     };
-    assert_eq!(user_avatar_url(&user), Some("https://example.test/48.png"));
+    assert_eq!(
+        user_avatar_url(&user).as_deref(),
+        Some("https://example.test/48.png")
+    );
 
     let fallback = User {
         id: "U2".into(),
@@ -144,7 +147,7 @@ fn user_avatar_url_prefers_profile_image_48() {
         ..Default::default()
     };
     assert_eq!(
-        user_avatar_url(&fallback),
+        user_avatar_url(&fallback).as_deref(),
         Some("https://example.test/32.png")
     );
 
@@ -157,7 +160,7 @@ fn user_avatar_url_prefers_profile_image_48() {
         ..Default::default()
     };
     assert_eq!(
-        user_avatar_url(&original_only),
+        user_avatar_url(&original_only).as_deref(),
         Some("https://example.test/original.png")
     );
 
@@ -170,7 +173,14 @@ fn user_avatar_url_prefers_profile_image_48() {
         }),
         ..Default::default()
     };
-    assert_eq!(user_avatar_url(&hash_only), None);
+    assert_eq!(
+        user_avatar_url(&hash_only).as_deref(),
+        Some("https://ca.slack-edge.com/E1-U4-31dc9a4e9298-48")
+    );
+    assert_eq!(
+        user_profile_image_url(&hash_only).as_deref(),
+        Some("https://ca.slack-edge.com/E1-U4-31dc9a4e9298-512")
+    );
 }
 
 #[test]
@@ -266,7 +276,7 @@ fn partial_boot_user_preserves_cached_profile_identity_and_avatar() {
     let user = ws.users.get("U1").expect("merged user");
     assert_eq!(display_name(Some(user), "U1"), "Cached Display");
     assert_eq!(
-        user_avatar_url(user),
+        user_avatar_url(user).as_deref(),
         Some("https://example.test/avatar.png")
     );
     assert_eq!(
@@ -314,7 +324,7 @@ fn profile_pane_avatar_prefers_a_sized_variant_over_the_upload() {
         ..Default::default()
     };
     assert_eq!(
-        user_profile_image_url(&user),
+        user_profile_image_url(&user).as_deref(),
         Some("https://example.test/512.png")
     );
 
@@ -327,7 +337,7 @@ fn profile_pane_avatar_prefers_a_sized_variant_over_the_upload() {
         ..Default::default()
     };
     assert_eq!(
-        user_profile_image_url(&upload_only),
+        user_profile_image_url(&upload_only).as_deref(),
         Some("https://example.test/original.png")
     );
 }

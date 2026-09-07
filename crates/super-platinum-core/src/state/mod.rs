@@ -572,7 +572,7 @@ impl Workspace {
     }
 
     pub fn avatar_url(&self, user_id: &str) -> Option<String> {
-        user_avatar_url(self.users.get(user_id)?).map(str::to_owned)
+        user_avatar_url(self.users.get(user_id)?)
     }
 
     pub fn message_author_name(&self, msg: &SlackMessage) -> String {

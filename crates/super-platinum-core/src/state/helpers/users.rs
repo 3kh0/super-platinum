@@ -36,7 +36,7 @@ pub fn display_name(user: Option<&User>, user_id: &str) -> String {
     user_id.to_owned()
 }
 
-pub fn user_avatar_url(user: &User) -> Option<&str> {
+pub fn user_avatar_url(user: &User) -> Option<String> {
     let profile = user.profile.as_ref()?;
     non_empty(profile.image_48.as_deref())
         .or_else(|| non_empty(profile.image_72.as_deref()))
@@ -44,7 +44,9 @@ pub fn user_avatar_url(user: &User) -> Option<&str> {
         .or_else(|| non_empty(profile.image_24.as_deref()))
         .or_else(|| non_empty(profile.image_192.as_deref()))
         .or_else(|| non_empty(profile.image_512.as_deref()))
-        .or_else(|| non_empty(profile.image_original.as_deref()))
+        .map(str::to_owned)
+        .or_else(|| synthesized_avatar_url(user, 48))
+        .or_else(|| non_empty(profile.image_original.as_deref()).map(str::to_owned))
 }
 
 /// The picture for the profile pane and hover card, which paint it around
@@ -54,15 +56,53 @@ pub fn user_avatar_url(user: &User) -> Option<&str> {
 /// uploaded — several megabytes of camera JPEG for one pane — and Slack does
 /// not always keep it readable (its S3 copies answer 403 while every sized
 /// variant serves fine).
-pub fn user_profile_image_url(user: &User) -> Option<&str> {
+pub fn user_profile_image_url(user: &User) -> Option<String> {
     let profile = user.profile.as_ref()?;
     non_empty(profile.image_512.as_deref())
         .or_else(|| non_empty(profile.image_192.as_deref()))
-        .or_else(|| non_empty(profile.image_original.as_deref()))
-        .or_else(|| non_empty(profile.image_72.as_deref()))
-        .or_else(|| non_empty(profile.image_48.as_deref()))
-        .or_else(|| non_empty(profile.image_32.as_deref()))
-        .or_else(|| non_empty(profile.image_24.as_deref()))
+        .map(str::to_owned)
+        .or_else(|| synthesized_avatar_url(user, 512))
+        .or_else(|| {
+            non_empty(profile.image_original.as_deref())
+                .or_else(|| non_empty(profile.image_72.as_deref()))
+                .or_else(|| non_empty(profile.image_48.as_deref()))
+                .or_else(|| non_empty(profile.image_32.as_deref()))
+                .or_else(|| non_empty(profile.image_24.as_deref()))
+                .map(str::to_owned)
+        })
+}
+
+/// Slack Connect user records can contain only `team` and
+/// `avatar_hash`; the desktop client derives the sized CDN URL from them.
+fn synthesized_avatar_url(user: &User, size: u16) -> Option<String> {
+    let profile = user.profile.as_ref()?;
+    let team = non_empty(profile.team.as_deref())?;
+    let hash = non_empty(profile.avatar_hash.as_deref())?;
+    Some(format!(
+        "https://ca.slack-edge.com/{team}-{}-{hash}-{size}",
+        user.id
+    ))
+}
+
+pub fn external_team_for_user<'a>(
+    ws: &'a Workspace,
+    user_id: &str,
+) -> Option<&'a crate::slack::models::Team> {
+    let team_id = ws.users.get(user_id)?.profile.as_ref()?.team.as_deref()?;
+    if team_id == ws.team_id {
+        return None;
+    }
+    ws.channels
+        .values()
+        .flat_map(|channel| &channel.connected_teams)
+        .find(|team| team.id == team_id)
+}
+
+pub fn team_icon_url(team: &crate::slack::models::Team) -> Option<&str> {
+    let icon = team.icon.as_ref()?;
+    non_empty(icon.image_34.as_deref())
+        .or_else(|| non_empty(icon.image_44.as_deref()))
+        .or_else(|| non_empty(icon.image_68.as_deref()))
 }
 
 pub fn message_author_name(ws: &Workspace, msg: &SlackMessage) -> String {

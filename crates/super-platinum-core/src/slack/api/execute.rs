@@ -268,6 +268,23 @@ pub async fn fetch_users_info(
     Ok(page.results)
 }
 
+pub async fn fetch_conversation_teams(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    channel: ChannelId,
+) -> Result<Vec<Team>, Error> {
+    let value = transport
+        .execute(conversations_team_connections(client, workspace, channel))
+        .await?;
+    let page: ChannelTeamConnectionsPage = decode(value, "conversations.teamConnections")?;
+    Ok(page
+        .connections
+        .into_iter()
+        .map(|connection| connection.team)
+        .collect())
+}
+
 pub async fn fetch_user_profile(
     transport: &Transport,
     client: &SlackClient,

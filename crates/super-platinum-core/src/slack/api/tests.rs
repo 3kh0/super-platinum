@@ -73,6 +73,16 @@ fn replies_request_includes_thread_target() {
 }
 
 #[test]
+fn team_connections_request_includes_channel() {
+    let request =
+        conversations_team_connections(&SlackClient::default(), &workspace(), "C0ANA97M17Y".into());
+    let fields = form_fields(&request);
+
+    assert!(request.url.contains("/api/conversations.teamConnections?"));
+    assert!(fields.contains(&("channel".into(), "C0ANA97M17Y".into())));
+}
+
+#[test]
 fn activity_mark_read_sends_type_feed_ts_and_key() {
     let request = activity_mark_read(
         &SlackClient::default(),

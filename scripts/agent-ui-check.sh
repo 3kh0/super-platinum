@@ -27,7 +27,7 @@ FIXTURES=(
   connection-connecting connection-no-network composer-multiline
   composer-upload-progress
   edit-message-composer accounts self-menu self-menu-notifications
-  multi-paragraph-custom-emoji message-unfurl-embed block-kit-layout
+  multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout
   media-loading-state
   usergroup-members usergroup-channels
 )

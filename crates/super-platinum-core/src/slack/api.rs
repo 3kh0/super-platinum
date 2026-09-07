@@ -7,10 +7,11 @@ use crate::config::WorkspaceSession;
 use super::Error;
 use super::client::{PreparedRequest, SlackClient};
 use super::models::{
-    ActivityFeedPage, BootData, Channel, ChannelId, ChannelSectionsPage, ClientDmsPage, CountsPage,
-    DndInfo, EdgeResults, Emoji, HistoryPage, MessageTs, MessagesListPage, OpenedConversation,
-    ProfileExtrasPage, SearchInlinePage, SearchMessagesPage, SentMessage, SidebarDmsPage,
-    TeamProfileField, TeamProfilePage, ThreadsViewPage, User, UserId, UserProfile, UserProfilePage,
+    ActivityFeedPage, BootData, Channel, ChannelId, ChannelSectionsPage,
+    ChannelTeamConnectionsPage, ClientDmsPage, CountsPage, DndInfo, EdgeResults, Emoji,
+    HistoryPage, MessageTs, MessagesListPage, OpenedConversation, ProfileExtrasPage,
+    SearchInlinePage, SearchMessagesPage, SentMessage, SidebarDmsPage, Team, TeamProfileField,
+    TeamProfilePage, ThreadsViewPage, User, UserId, UserProfile, UserProfilePage,
 };
 use super::transport::Transport;
 mod execute;

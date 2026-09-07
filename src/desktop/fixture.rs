@@ -30,7 +30,7 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
         serde_json::json!({"id":"C3","name":"design","is_channel":true}),
         serde_json::json!({"id":"C4","name":"random","is_channel":true}),
         serde_json::json!({"id":"C5","name":"ops-private","is_channel":true,"is_private":true,"is_group":true}),
-        serde_json::json!({"id":"C6","name":"vercel-embassy","is_channel":true,"is_ext_shared":true}),
+        serde_json::json!({"id":"C6","name":"vercel-embassy","is_channel":true,"is_ext_shared":true,"connected_teams":[{"id":"E_VERCEL","name":"Vercel","icon":{"image_34":"https://example.test/vercel-team.png"}}]}),
         serde_json::json!({"id":"D1","name":"Maya Chen","is_im":true,"user":"U1","has_unreads":true,"unread_count":1,"unread_count_display":1}),
         serde_json::json!({"id":"D2","name":"Jules","is_im":true,"user":"U2"}),
         serde_json::json!({"id":"G1","name":"mpdm-maya--jules--you-1","is_mpim":true,"is_group":true,"is_private":true}),
@@ -54,6 +54,7 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
         // Bot user behind the "Out of Context" app fixture: Slack renders this
         // profile image, not the app's generic `bot_profile.icons` placeholder.
         serde_json::json!({"id":"U4","name":"outofcontext","real_name":"Out of Context","profile":{"display_name":"Out of Context","image_72":"https://example.test/bot.png"}}),
+        serde_json::json!({"id":"U5","name":"external","real_name":"External Teammate","profile":{"display_name":"External Teammate","team":"E_VERCEL","avatar_hash":"12fe3fbf9a8c"}}),
     ] {
         let user: super_platinum_core::slack::models::User =
             serde_json::from_value(user).expect("fixture user");

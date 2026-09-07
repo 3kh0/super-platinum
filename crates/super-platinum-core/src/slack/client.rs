@@ -246,6 +246,7 @@ impl PreparedRequest {
                 "/api/client.counts?",
                 "/api/conversations.history?",
                 "/api/conversations.replies?",
+                "/api/conversations.teamConnections?",
                 "/api/conversations.mark?",
                 "/api/subscriptions.thread.mark?",
                 "/api/subscriptions.thread.getView?",
@@ -367,9 +368,12 @@ mod tests {
         let client = SlackClient::default();
         let workspace = workspace();
         let history = client.rest_form(&workspace, "conversations.history", Vec::new());
+        let team_connections =
+            client.rest_form(&workspace, "conversations.teamConnections", Vec::new());
         let send = client.rest_form(&workspace, "chat.postMessage", Vec::new());
 
         assert!(history.retry_safe());
+        assert!(team_connections.retry_safe());
         assert!(!send.retry_safe());
     }
 }

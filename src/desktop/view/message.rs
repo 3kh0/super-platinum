@@ -166,6 +166,18 @@ fn message_avatar(
             } else {
                 "{message.avatar_initials}"
             }
+            if let Some(team) = &message.external_team {
+                span {
+                    class: "avatar-team-icon",
+                    title: "{team.name}",
+                    "aria-label": "{team.name}",
+                    if let Some(icon) = team.icon.as_ref().filter(|icon| snapshot.media.is_ready(icon)) {
+                        img { src: "{icon.uri_at(snapshot.media_epoch)}", alt: "" }
+                    } else {
+                        "{team.initials}"
+                    }
+                }
+            }
         }
     }
 }

@@ -202,7 +202,7 @@ pub(crate) fn pane(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
                         for user in members {
                             {let id = user.clone(); let name = workspace.display_name(user); let profile = workspace.users.get(user).and_then(|u| u.profile.as_ref());
                             let title = profile.and_then(|p| p.title.as_deref()).unwrap_or_default();
-                            let avatar = workspace.users.get(user).and_then(super_platinum_core::state::user_avatar_url).map(|url| snapshot.media.register_avatar(user, url));
+                            let avatar = workspace.users.get(user).and_then(super_platinum_core::state::user_avatar_url).map(|url| snapshot.media.register_avatar(user, &url));
                             rsx! { button { class: "group-row", onclick: move |_| { spawn(crate::bootstrap::open_profile(state, id.clone())); },
                                 span { class: "group-avatar",
                                     if let Some(avatar) = avatar.filter(|a| snapshot.media.is_ready(a)) { img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "" } }

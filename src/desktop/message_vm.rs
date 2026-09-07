@@ -2,7 +2,7 @@ use super_platinum_core::MediaAssetKind;
 
 use crate::blocks::{BlockCtx, block_nodes, custom_emoji_media, plain_inline_nodes};
 use crate::media::MediaRegistry;
-use crate::model::{MessageVm, ReactionVm, RichNode};
+use crate::model::{ExternalTeamVm, MessageVm, ReactionVm, RichNode};
 use crate::unfurl::attachment_vms;
 
 pub(crate) fn message_vm(
@@ -28,6 +28,25 @@ pub(crate) fn message_vm(
     let avatar = avatar_url
         .as_deref()
         .map(|url| media.register_avatar(identity.as_deref().unwrap_or(url), url));
+    let external_team = message.user.as_deref().and_then(|user| {
+        let team = super_platinum_core::state::external_team_for_user(workspace, user)?;
+        let name = team
+            .name
+            .clone()
+            .unwrap_or_else(|| "External workspace".into());
+        let initials = name
+            .chars()
+            .find(char::is_ascii_alphanumeric)
+            .map(|c| c.to_ascii_uppercase().to_string())
+            .unwrap_or_else(|| "↗".into());
+        let icon = super_platinum_core::state::team_icon_url(team)
+            .map(|url| media.register_icon(MediaAssetKind::Avatar, url));
+        Some(ExternalTeamVm {
+            name,
+            initials,
+            icon,
+        })
+    });
     let raw_ts = message
         .ts
         .clone()
@@ -62,6 +81,7 @@ pub(crate) fn message_vm(
         timestamp,
         avatar_initials: initials,
         avatar,
+        external_team,
         body: message_body(workspace, message, media),
         edited: message.edited.is_some(),
         is_own: message.user.as_deref() == Some(workspace.self_user_id.as_str()),
@@ -348,6 +368,51 @@ mod tests {
             url.as_deref(),
             Some("https://a.slack-edge.com/img/plugins/app/bot_48.png")
         );
+    }
+
+    #[test]
+    fn slack_connect_members_get_their_avatar_and_workspace_badge() {
+        let (mut core, message) = workspace_message(serde_json::json!({
+            "ts": "1.0",
+            "user": "U_EXT",
+            "text": "hello from outside"
+        }));
+        let workspace = core.workspaces.get_mut("T1").expect("fixture workspace");
+        workspace.users.insert(
+            "U_EXT".into(),
+            serde_json::from_value(serde_json::json!({
+                "id": "U_EXT",
+                "name": "external",
+                "profile": {
+                    "team": "E_VERCEL",
+                    "avatar_hash": "12fe3fbf9a8c"
+                }
+            }))
+            .expect("external user"),
+        );
+        workspace
+            .channels
+            .values_mut()
+            .next()
+            .expect("fixture channel")
+            .connected_teams
+            .push(
+                serde_json::from_value(serde_json::json!({
+                    "id": "E_VERCEL",
+                    "name": "Vercel",
+                    "icon": {"image_34": "https://avatars.slack-edge.com/vercel_34.png"}
+                }))
+                .expect("connected team"),
+            );
+
+        let media = MediaRegistry::default();
+        let vm = message_vm(workspace, &message, &media);
+
+        assert!(vm.avatar.is_some());
+        let team = vm.external_team.expect("external team badge");
+        assert_eq!(team.name, "Vercel");
+        assert_eq!(team.initials, "V");
+        assert!(team.icon.is_some());
     }
 
     #[test]

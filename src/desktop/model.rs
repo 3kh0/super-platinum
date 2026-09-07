@@ -352,6 +352,7 @@ pub struct MessageVm {
     pub timestamp: String,
     pub avatar_initials: String,
     pub avatar: Option<MediaAssetId>,
+    pub external_team: Option<ExternalTeamVm>,
     pub body: Vec<RichNode>,
     pub edited: bool,
     pub is_own: bool,
@@ -367,6 +368,13 @@ pub struct MessageVm {
     pub reply_avatars: Vec<(String, Option<MediaAssetId>, String)>,
     /// Relative stamp for the newest reply (`14h ago`).
     pub last_reply: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExternalTeamVm {
+    pub name: String,
+    pub initials: String,
+    pub icon: Option<MediaAssetId>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

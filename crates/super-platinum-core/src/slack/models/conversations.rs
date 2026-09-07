@@ -21,6 +21,13 @@ pub struct Channel {
     pub is_starred: bool,
     #[serde(default)]
     pub is_ext_shared: bool,
+    /// Workspaces participating in this Slack Connect conversation.
+    ///
+    /// `conversations.teamConnections` hydrates these records. Keeping them on
+    /// the channel makes the team icon available on warm boot without adding a
+    /// second persistence path.
+    #[serde(default)]
+    pub connected_teams: Vec<Team>,
     #[serde(default, deserialize_with = "deserialize_optional_u64")]
     pub updated: Option<u64>,
     #[serde(default)]
@@ -111,6 +118,35 @@ pub struct Team {
     pub url: Option<String>,
     #[serde(default)]
     pub enterprise_id: Option<String>,
+    #[serde(default)]
+    pub icon: Option<TeamIcon>,
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct TeamIcon {
+    #[serde(default)]
+    pub image_34: Option<String>,
+    #[serde(default)]
+    pub image_44: Option<String>,
+    #[serde(default)]
+    pub image_68: Option<String>,
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ChannelTeamConnectionsPage {
+    #[serde(default)]
+    pub connections: Vec<ChannelTeamConnection>,
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ChannelTeamConnection {
+    pub team: Team,
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
 }

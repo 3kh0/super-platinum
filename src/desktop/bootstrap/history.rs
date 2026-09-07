@@ -70,6 +70,44 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     if state.read().channel_generation != generation {
         return;
     }
+    let is_connect = state
+        .read()
+        .core
+        .workspaces
+        .get(&team)
+        .and_then(|workspace| workspace.channels.get(&channel))
+        .is_some_and(|channel| channel.is_ext_shared);
+    if is_connect {
+        let result =
+            api::fetch_conversation_teams(&transport, &client, &workspace_session, channel.clone())
+                .await;
+        // Do not hold a signal read guard in a match guard and then acquire a
+        // write guard in its arm. Dioxus keeps that temporary alive for the
+        // whole arm, which deadlocks the serial UI dispatcher.
+        if state.read().channel_generation != generation {
+            return;
+        }
+        match result {
+            Ok(teams) => {
+                let mut shell = state.write();
+                if let Some(channel) = shell
+                    .core
+                    .workspaces
+                    .get_mut(&team)
+                    .and_then(|workspace| workspace.channels.get_mut(&channel))
+                {
+                    channel.connected_teams = teams;
+                }
+                shell.refresh_from_core();
+            }
+            Err(error) => {
+                eprintln!("super-platinum: Slack Connect team hydration failed: {error}");
+            }
+        }
+    }
+    if state.read().channel_generation != generation {
+        return;
+    }
     super::session::hydrate_current_surface(state).await;
     persist_workspace(&state, &team);
     // Re-read the anchor instead of replaying the copy taken before the fetch.

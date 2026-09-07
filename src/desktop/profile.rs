@@ -395,7 +395,7 @@ fn profile_display(snapshot: &ShellState, user_id: &str) -> Option<ProfileDispla
             String::new()
         };
     let avatar = super_platinum_core::state::user_profile_image_url(user)
-        .map(|url| snapshot.media.register_avatar(user_id, url));
+        .map(|url| snapshot.media.register_avatar(user_id, &url));
     let presence = workspace
         .presence
         .get(user_id)
