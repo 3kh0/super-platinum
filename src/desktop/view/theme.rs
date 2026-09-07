@@ -38,7 +38,8 @@ pub(crate) fn theme_css(
             background.dim.clamp(0.0, 1.0),
             background.surface_opacity.clamp(0.0, 1.0),
         )).unwrap_or(("cover", 0.45, 0.88));
-        format!(".conversation {{ background-image: linear-gradient(rgba(0,0,0,{dim}), rgba(0,0,0,{dim})), url('{uri}'); background-size:{fit}; background-position:center; }} .conversation-header, .composer-wrap {{ background-color: color-mix(in srgb, var(--surface) {}%, transparent); }}", opacity * 100.0)
+        let timeline_opacity = opacity.max(0.64);
+        format!(".conversation {{ background-image: linear-gradient(rgba(0,0,0,{dim}), rgba(0,0,0,{dim})), url('{uri}'); background-size:{fit}; background-position:center; background-repeat:no-repeat; }} .timeline {{ background-color: color-mix(in srgb, var(--bg) {}%, transparent); }} .conversation-header, .composer-wrap {{ background-color: color-mix(in srgb, var(--surface) {}%, transparent); }}", timeline_opacity * 100.0, opacity * 100.0)
     }).unwrap_or_default();
     format!(
         ":root {{ color-scheme:dark; --bg:{}; --surface:{}; --surface-raised:{}; --panel:{}; --sidebar:{}; --rail:{}; --border:{}; --border-strong:{}; --text:{}; --muted:{}; --muted-2:{}; --accent:{accent}; --accent-soft:{hover}; --accent-faint:{}; --mention:{mention}; --success:{success}; --warning:{warning}; --danger:{danger}; --link:{}; --avatar-bg:{}; --hover-overlay:rgb(47 140 255 / 9%); --on-accent:#FFFFFF; --on-warning:#07111D; --sidebar-width:{}px; --density-gap:{}px; --panel-radius:{}px; --border-thickness:{}px; }}",
@@ -105,21 +106,21 @@ struct ThemePalette {
 fn preset_palette(preset: super_platinum_core::config::ThemePreset) -> ThemePalette {
     match preset {
         super_platinum_core::config::ThemePreset::Countertop => ThemePalette {
-            bg: "#020305",
-            surface: "#070A0F",
-            raised: "#0C1119",
-            panel: "#090D14",
-            sidebar: "#05070B",
-            rail: "#010204",
-            border: "#162231",
-            border_strong: "#28435F",
-            text: "#F3F7FC",
-            muted: "#93A4B7",
-            muted_2: "#60758C",
-            accent: "#2F8CFF",
-            soft: "#0B2848",
-            faint: "#071A2C",
-            mention: "#42A5FF",
+            bg: "#030405",
+            surface: "#080A0D",
+            raised: "#0D1117",
+            panel: "#0A0D12",
+            sidebar: "#06080B",
+            rail: "#010203",
+            border: "#1B222C",
+            border_strong: "#344153",
+            text: "#F4F7FB",
+            muted: "#9AA7B6",
+            muted_2: "#697789",
+            accent: "#328CFF",
+            soft: "#102B4D",
+            faint: "#091B2F",
+            mention: "#52A3FF",
             success: "#42D392",
             warning: "#F5B942",
             danger: "#FF647C",
@@ -188,5 +189,22 @@ mod tests {
             assert!(!css.contains("#E9E4DA"));
             assert!(!css.contains("#E8875B"));
         }
+    }
+
+    #[test]
+    fn custom_background_keeps_a_readable_timeline_surface() {
+        let mut settings = super_platinum_core::config::Settings::default();
+        settings.background = Some(super_platinum_core::config::BackgroundSettings {
+            file_name: "wallpaper.png".into(),
+            fit: super_platinum_core::config::BackgroundFit::Cover,
+            dim: 0.0,
+            surface_opacity: 0.0,
+        });
+
+        let css = theme_css(&settings, Some("super-platinum-media://background"));
+
+        assert!(css.contains(".timeline { background-color:"));
+        assert!(css.contains("var(--bg) 64%"));
+        assert!(css.contains("background-repeat:no-repeat"));
     }
 }

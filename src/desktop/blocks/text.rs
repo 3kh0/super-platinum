@@ -219,6 +219,9 @@ pub(crate) fn plain_inline_nodes(ctx: BlockCtx<'_>, text: &str) -> Vec<RichNode>
                 user_id: user_id.into(),
                 label: format!("@{}", ctx.workspace.display_name(user_id)),
             });
+        } else if let Some(group) = token.strip_prefix("!subteam^") {
+            let (id, fallback) = group.split_once('|').unwrap_or((group, "group"));
+            nodes.push(super::group_mention(ctx, id, fallback));
         } else if let Some(channel) = token.strip_prefix('#') {
             let (channel_id, fallback) = channel.split_once('|').unwrap_or((channel, channel));
             nodes.push(channel_mention(ctx, channel_id, fallback));
@@ -352,6 +355,35 @@ mod tests {
             nodes.iter().any(
                 |node| matches!(node, RichNode::StyledText { text, .. } if text == "@channel")
             )
+        );
+    }
+
+    #[test]
+    fn group_mentions_resolve_text_and_blocks_to_the_same_clickable_chip() {
+        let mut core = crate::fixture::fixture_core();
+        let workspace = core.workspaces.get_mut("T1").unwrap();
+        workspace.usergroups.insert(
+            "S1".into(),
+            super_platinum_core::slack::models::UserGroup {
+                id: "S1".into(),
+                handle: "crew".into(),
+                users: vec![workspace.self_user_id.clone()],
+                ..Default::default()
+            },
+        );
+        let media = MediaRegistry::default();
+        let ctx = ctx_with(&core, &media);
+        let plain = plain_inline_nodes(ctx, "<!subteam^S1|@old-name>");
+        let blocks = crate::blocks::block_nodes(
+            ctx,
+            &serde_json::json!({"type":"usergroup", "usergroup_id":"S1"}),
+        );
+        assert_eq!(plain, blocks);
+        assert!(
+            matches!(&plain[0], RichNode::GroupMention { label, member: true, .. } if label == "@crew")
+        );
+        assert!(
+            matches!(&plain_inline_nodes(ctx, "<!subteam^missing|@fallback>")[0], RichNode::GroupMention { label, member: false, .. } if label == "@fallback")
         );
     }
 

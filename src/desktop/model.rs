@@ -135,6 +135,11 @@ pub enum RichNode {
         user_id: String,
         label: String,
     },
+    GroupMention {
+        group_id: String,
+        label: String,
+        member: bool,
+    },
     ChannelMention {
         channel_id: String,
         label: String,
@@ -230,6 +235,7 @@ impl RichNode {
             }
             Self::Link { label, .. }
             | Self::UserMention { label, .. }
+            | Self::GroupMention { label, .. }
             | Self::ChannelMention { label, .. }
             | Self::Button { label, .. } => output.push_str(label),
             Self::Emoji { glyph, .. } => output.push_str(glyph),

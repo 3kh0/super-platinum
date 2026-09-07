@@ -54,6 +54,20 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                 }
             }
         }
+        RichNode::GroupMention {
+            group_id,
+            label,
+            member,
+        } => {
+            let id = group_id.clone();
+            rsx! {
+                button {
+                    class: if *member { "mention-chip group-mention member" } else { "mention-chip group-mention" },
+                    onclick: move |_| { spawn(crate::usergroups::open(state, id.clone())); },
+                    "{label}"
+                }
+            }
+        }
         RichNode::ChannelMention { channel_id, label } => {
             let channel = channel_id.clone();
             rsx! {
@@ -485,6 +499,7 @@ fn attachment_embed(
                                 span { class: "attachment-footer-origin",
                                     "{footer.lead}"
                                     if let Some(label) = footer.channel_label.as_ref() {
+                                        " "
                                         button {
                                             class: "attachment-channel-link",
                                             disabled: channel.is_none(),

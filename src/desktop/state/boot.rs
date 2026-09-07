@@ -221,6 +221,7 @@ impl ShellState {
             thread_messages: Vec::new(),
             thread_at_bottom: true,
             profile_user: None,
+            group_panel: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
             self_menu_notifications_open: false,
@@ -288,6 +289,7 @@ impl ShellState {
             thread_messages: Vec::new(),
             thread_at_bottom: true,
             profile_user: None,
+            group_panel: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
             self_menu_notifications_open: false,
@@ -535,6 +537,7 @@ impl ShellState {
             thread_messages: Vec::new(),
             thread_at_bottom: true,
             profile_user: None,
+            group_panel: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
             self_menu_notifications_open: false,
@@ -552,6 +555,36 @@ impl ShellState {
     pub(crate) fn fixture_variant(media: MediaRegistry, name: &str) -> Self {
         let mut state = Self::fixture(media);
         match name {
+            "usergroup-members" | "usergroup-channels" => {
+                let workspace = state.core.workspaces.values_mut().next().unwrap();
+                let group = super_platinum_core::slack::models::UserGroup {
+                    id: "S1".into(),
+                    members_loaded: true,
+                    name: "Desktop crew".into(),
+                    handle: "desktop-crew".into(),
+                    description: "Making a focused, fast desktop client together.".into(),
+                    users: workspace.users.keys().cloned().collect(),
+                    prefs: super_platinum_core::slack::models::UserGroupPrefs {
+                        channels: vec!["C2".into()],
+                        groups: vec![],
+                    },
+                    ..Default::default()
+                };
+                workspace.usergroups.insert(group.id.clone(), group);
+                for messages in workspace.messages.values_mut() {
+                    if let Some(message) = messages.messages.last_mut() {
+                        message.text = Some("<!subteam^S1> let’s ship this!".into());
+                        message.blocks.clear();
+                    }
+                }
+                state.refresh_from_core();
+                state.group_panel = Some(crate::usergroups::GroupPanel {
+                    id: "S1".into(),
+                    loading: false,
+                    error: false,
+                    channels: name == "usergroup-channels",
+                });
+            }
             // Rail account button with notifications snoozed: the avatar notch
             // and the "Z" presence glyph only appear in this state.
             "rail-account-snoozed" => {

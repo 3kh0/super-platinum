@@ -294,6 +294,10 @@ fn dispatch(
             dioxus::prelude::spawn(crate::bootstrap::open_profile(*state, user.clone()));
             AgentResponse::ok(id, json!({ "profile_user": user }))
         }
+        AgentCommand::OpenUsergroup { group } => {
+            dioxus::prelude::spawn(crate::usergroups::open(*state, group.clone()));
+            AgentResponse::ok(id, json!({ "usergroup": group }))
+        }
         AgentCommand::Screenshot { path } => match capture_window(path, desktop) {
             Ok((path, width, height)) => AgentResponse::ok(
                 id,
@@ -564,6 +568,10 @@ fn state_snapshot(state: &ShellState) -> Value {
         "thread_open": state.thread_root.is_some(),
         "active_thread": state.thread_root,
         "profile": profile,
+        "usergroup": state.group_panel.as_ref().map(|panel| json!({
+            "id": panel.id, "loading": panel.loading, "error": panel.error,
+            "members": state.core.active_team.as_ref().and_then(|team| state.core.workspaces.get(team)).and_then(|w|w.usergroups.get(&panel.id)).filter(|g|g.members_loaded).map(|g|g.users.len()),
+        })),
         "profile_hover": state.profile_hover.as_ref().map(|hover| &hover.user_id),
         "palette_open": state.overlay == Some(Overlay::Palette),
         "palette": (state.overlay == Some(Overlay::Palette)).then(|| json!({
@@ -677,7 +685,7 @@ fn help_data() -> Value {
             {"cmd": "ping"}, {"cmd": "state"}, {"cmd": "open-palette"},
             {"cmd": "set-query"}, {"cmd": "submit"}, {"cmd": "select-channel"},
             {"cmd": "search"}, {"cmd": "open-settings"}, {"cmd": "screenshot"},
-            {"cmd": "open-profile"}, {"cmd": "close-profile"},
+            {"cmd": "open-profile"}, {"cmd": "close-profile"}, {"cmd": "open-usergroup"},
             {"cmd": "allow-destructive"}, {"cmd": "send"}
         ]
     })

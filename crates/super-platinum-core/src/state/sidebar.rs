@@ -287,6 +287,7 @@ mod tests {
             vip_users: std::collections::HashSet::new(),
             sidebar: Default::default(),
             users: HashMap::new(),
+            usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
             messages,
             typing: HashMap::new(),

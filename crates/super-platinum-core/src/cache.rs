@@ -128,6 +128,7 @@ impl Cache {
             vip_users: std::collections::HashSet::new(),
             sidebar: Default::default(),
             users: HashMap::new(),
+            usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
             messages: HashMap::new(),
             typing: HashMap::new(),
@@ -137,6 +138,14 @@ impl Cache {
             rt: RealtimeStatus::default(),
             rt_generation: 0,
         };
+
+        let mut groups = self
+            .conn
+            .prepare("select json from usergroups where team_id = ?1")?;
+        for row in groups.query_map(params![session.team_id], |row| row.get::<_, String>(0))? {
+            let group: crate::slack::models::UserGroup = serde_json::from_str(&row?)?;
+            ws.usergroups.insert(group.id.clone(), group);
+        }
 
         let mut stmt = self
             .conn
@@ -226,6 +235,7 @@ impl Cache {
         )?;
 
         for channel in ws.channels.values() {
+            // Channel writes and group metadata share the same transaction.
             tx.execute(
                 "insert into channels (team_id, channel_id, json) values (?1, ?2, ?3)
                  on conflict(team_id, channel_id) do update set json = excluded.json",
@@ -233,6 +243,16 @@ impl Cache {
             )?;
         }
 
+        tx.execute(
+            "delete from usergroups where team_id = ?1",
+            params![ws.team_id],
+        )?;
+        for group in ws.usergroups.values() {
+            tx.execute(
+                "insert into usergroups (team_id, group_id, json) values (?1, ?2, ?3)",
+                params![ws.team_id, group.id, serde_json::to_string(group)?],
+            )?;
+        }
         for user in ws.users.values() {
             let json = serde_json::to_string(&serde_json::to_value(user)?)?;
             tx.execute(
@@ -315,6 +335,12 @@ impl Cache {
                 channel_id text not null,
                 json text not null,
                 primary key (team_id, channel_id)
+            );
+            create table if not exists usergroups (
+                team_id text not null,
+                group_id text not null,
+                json text not null,
+                primary key (team_id, group_id)
             );
             create table if not exists users (
                 team_id text not null,
@@ -411,6 +437,15 @@ mod tests {
         ws.last_active_channel = Some("C1".into());
         ws.touch_recent(&"C1".into());
         ws.record_visit(&"C1".into(), 1_000_000);
+        ws.usergroups.insert(
+            "S1".into(),
+            crate::slack::models::UserGroup {
+                id: "S1".into(),
+                handle: "crew".into(),
+                users: vec![ws.self_user_id.clone()],
+                ..Default::default()
+            },
+        );
 
         cache.save_workspace(&ws).unwrap();
         let loaded = cache.load_workspace(&session).unwrap().unwrap();
@@ -424,6 +459,18 @@ mod tests {
         assert_eq!(loaded.last_active_channel.as_deref(), Some("C1"));
         assert_eq!(loaded.recent_channels, vec!["C1".to_string()]);
         assert_eq!(loaded.frecency_score("C1", 1_000_000), 1.0);
+        assert_eq!(loaded.usergroups["S1"].handle, "crew");
+        assert!(loaded.usergroups["S1"].includes(&ws.self_user_id));
+        ws.usergroups.clear();
+        cache.save_workspace(&ws).unwrap();
+        assert!(
+            cache
+                .load_workspace(&session)
+                .unwrap()
+                .unwrap()
+                .usergroups
+                .is_empty()
+        );
     }
 
     #[test]

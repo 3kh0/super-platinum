@@ -199,10 +199,10 @@
 }
 .activity-row {
   display: grid;
-  grid-template-columns: 3px 36px 1fr;
+  grid-template-columns: 36px 1fr;
   gap: 8px;
   width: 100%;
-  padding: 8px 10px 8px 0;
+  padding: 8px 10px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -210,9 +210,9 @@
   cursor: pointer;
 }
 .activity-row:hover { background: var(--hover-overlay); }
+.activity-bar { display: none; }
+.activity-row.unread { background: var(--accent-faint); }
 .activity-row.active { background: var(--accent-soft); }
-.activity-bar { border-radius: 0 2px 2px 0; background: transparent; }
-.activity-row.unread .activity-bar { background: var(--accent); }
 .activity-copy { min-width: 0; }
 .activity-head {
   display: flex;

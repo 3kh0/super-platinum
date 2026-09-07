@@ -31,7 +31,13 @@ pub fn for_event(
         .channels
         .get(channel_id)
         .is_some_and(|channel| channel.is_im || channel.is_mpim);
-    if !direct && !mentions(message, &workspace.self_user_id) {
+    if !direct
+        && !mentions(message, &workspace.self_user_id)
+        && !workspace
+            .usergroups
+            .values()
+            .any(|group| group.includes(&workspace.self_user_id) && group.mentioned_in(message))
+    {
         return None;
     }
     let author = super_platinum_core::state::message_author_name(workspace, message);

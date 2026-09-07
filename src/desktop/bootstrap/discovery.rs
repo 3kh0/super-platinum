@@ -145,6 +145,7 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
     {
         let mut shell = state.write();
         shell.profile_user = Some(user.clone());
+        shell.group_panel = None;
         shell.profile_hover = None;
         shell.profile_menu_open = false;
         shell.thread_root = None;

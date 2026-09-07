@@ -48,6 +48,9 @@ pub enum AgentCommand {
     OpenProfile {
         user: String,
     },
+    OpenUsergroup {
+        group: String,
+    },
     CloseProfile,
     Screenshot {
         #[serde(default)]

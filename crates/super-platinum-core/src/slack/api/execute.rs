@@ -1,5 +1,45 @@
 use super::*;
 
+pub async fn fetch_usergroups_info(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    ids: Vec<String>,
+) -> Result<Vec<super::super::models::UserGroup>, Error> {
+    let request = client
+        .edge_json(
+            workspace,
+            "usergroups/info",
+            serde_json::json!({"ids": ids}),
+        )
+        .map_err(|e| Error::Transport(e.to_string()))?;
+    let page: super::super::models::UserGroupsPage =
+        decode(transport.execute(request).await?, "usergroups/info")?;
+    Ok(page.results)
+}
+
+pub async fn fetch_usergroup_members(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    group: &super::super::models::UserGroup,
+) -> Result<Vec<String>, Error> {
+    #[derive(serde::Deserialize)]
+    struct Members {
+        users: Vec<String>,
+    }
+    let request = client.rest_form(
+        workspace,
+        "usergroups.users.list",
+        vec![
+            ("usergroup", group.id.clone()),
+            ("team_id", group.team_id.clone()),
+        ],
+    );
+    let page: Members = decode(transport.execute(request).await?, "usergroups.users.list")?;
+    Ok(page.users)
+}
+
 pub async fn fetch_user_boot(
     transport: &Transport,
     client: &SlackClient,

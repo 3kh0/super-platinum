@@ -60,6 +60,7 @@ pub struct ShellState {
     /// reply, so arriving replies keep the pane pinned to the bottom.
     pub thread_at_bottom: bool,
     pub profile_user: Option<String>,
+    pub group_panel: Option<crate::usergroups::GroupPanel>,
     pub profile_pane_width: f64,
     pub profile_menu_open: bool,
     /// Nested pause-notifications list inside the signed-in user's menu.
@@ -192,6 +193,7 @@ impl ShellState {
 
     pub fn close_profile(&mut self) {
         self.profile_user = None;
+        self.group_panel = None;
         self.profile_menu_open = false;
         self.profile_vip_loading = false;
         self.core.profile_pane = None;

@@ -193,19 +193,11 @@ pub(crate) fn block_nodes(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {
                 .get("usergroup_id")
                 .and_then(Value::as_str)
                 .unwrap_or_default();
-            vec![RichNode::StyledText {
-                text: format!(
-                    "@{}",
-                    value
-                        .get("name")
-                        .and_then(Value::as_str)
-                        .unwrap_or_else(|| group_handle(group))
-                ),
-                bold: true,
-                italic: false,
-                strike: false,
-                code: false,
-            }]
+            vec![group_mention(
+                ctx,
+                group,
+                value.get("name").and_then(Value::as_str).unwrap_or("group"),
+            )]
         }
         Some("channel") => {
             let channel = value
@@ -249,9 +241,20 @@ fn placeholder_label(kind: &str) -> &'static str {
     }
 }
 
-/// Slack sends only the id for user groups; show a stable short handle.
-fn group_handle(group: &str) -> &str {
-    if group.is_empty() { "group" } else { group }
+fn group_mention(ctx: BlockCtx<'_>, id: &str, fallback: &str) -> RichNode {
+    let group = ctx.workspace.usergroups.get(id);
+    RichNode::GroupMention {
+        group_id: id.into(),
+        label: format!(
+            "@{}",
+            group
+                .map(|g| g.handle.as_str())
+                .filter(|s| !s.is_empty())
+                .unwrap_or(fallback)
+                .trim_start_matches('@')
+        ),
+        member: group.is_some_and(|g| g.includes(&ctx.workspace.self_user_id)),
+    }
 }
 
 fn image_block(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {

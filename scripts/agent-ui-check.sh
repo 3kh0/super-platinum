@@ -29,6 +29,7 @@ FIXTURES=(
   edit-message-composer accounts self-menu self-menu-notifications
   multi-paragraph-custom-emoji message-unfurl-embed block-kit-layout
   media-loading-state
+  usergroup-members usergroup-channels
 )
 
 echo "agent-ui-check: building the locked Dioxus desktop shell…"

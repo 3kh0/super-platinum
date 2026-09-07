@@ -193,6 +193,7 @@ fn boot_self_user_provides_self_avatar_url() {
         vip_users: HashSet::new(),
         sidebar: SidebarConfig::default(),
         users: HashMap::new(),
+        usergroups: HashMap::new(),
         custom_emoji: HashMap::new(),
         messages: HashMap::new(),
         typing: HashMap::new(),

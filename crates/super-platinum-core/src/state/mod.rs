@@ -286,6 +286,7 @@ pub struct Workspace {
     pub vip_users: HashSet<UserId>,
     pub sidebar: SidebarConfig,
     pub users: HashMap<UserId, User>,
+    pub usergroups: HashMap<String, crate::slack::models::UserGroup>,
     pub custom_emoji: HashMap<String, Emoji>,
     pub messages: HashMap<ChannelId, ChannelMessages>,
     pub typing: HashMap<ChannelId, Vec<(UserId, Instant)>>,
@@ -318,6 +319,7 @@ impl Workspace {
             vip_users: HashSet::new(),
             sidebar: SidebarConfig::default(),
             users: HashMap::new(),
+            usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
             messages: HashMap::new(),
             typing: HashMap::new(),
@@ -330,6 +332,25 @@ impl Workspace {
     }
 
     pub fn apply_boot(&mut self, boot: crate::slack::models::BootData) {
+        if let Some(groups) = boot
+            .extra
+            .get("subteams")
+            .and_then(|v| v.get("self"))
+            .and_then(|v| v.as_array())
+        {
+            for group in self.usergroups.values_mut() {
+                group.users.retain(|user| user != &self.self_user_id);
+            }
+            for id in groups.iter().filter_map(|v| v.as_str()) {
+                let group = self.usergroups.entry(id.into()).or_insert_with(|| {
+                    crate::slack::models::UserGroup {
+                        id: id.into(),
+                        ..Default::default()
+                    }
+                });
+                group.users.push(self.self_user_id.clone());
+            }
+        }
         let self_user = if boot.self_user.id.is_empty() {
             None
         } else {

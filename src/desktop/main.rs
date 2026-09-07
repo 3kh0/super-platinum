@@ -23,6 +23,7 @@ mod realtime;
 mod runtime;
 mod state;
 mod unfurl;
+mod usergroups;
 mod view;
 
 use state::ShellState;
@@ -172,7 +173,7 @@ fn app() -> Element {
                     if shell.overlay.take().is_some() {
                         continue;
                     }
-                    if shell.profile_user.is_some() {
+                    if shell.profile_user.is_some() || shell.group_panel.is_some() {
                         shell.close_profile();
                         continue;
                     }

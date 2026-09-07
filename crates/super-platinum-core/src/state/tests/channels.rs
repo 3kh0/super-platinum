@@ -66,6 +66,7 @@ fn is_vip_channel_from_vip_users_and_metadata() {
         vip_users: HashSet::new(),
         sidebar: SidebarConfig::default(),
         users: HashMap::new(),
+        usergroups: HashMap::new(),
         custom_emoji: HashMap::new(),
         messages: HashMap::new(),
         typing: HashMap::new(),

@@ -29,6 +29,7 @@ const CSS: &str = concat!(
     include_str!("../styles/overlays.css"),
     include_str!("../styles/settings.css"),
     include_str!("../styles/profile.css"),
+    include_str!("../styles/design-system.css"),
     include_str!("../styles/responsive.css"),
 );
 
@@ -352,6 +353,9 @@ pub fn shell() -> Element {
             if snapshot.profile_user.is_some() {
                 {crate::profile::profile_pane(state, &snapshot)}
             }
+            if snapshot.group_panel.is_some() {
+                {crate::usergroups::pane(state, &snapshot)}
+            }
             if let Some(overlay) = snapshot.overlay { {overlay_view(state, overlay, &snapshot)} }
             if let Some(hover) = snapshot.profile_hover.as_ref() {
                 {crate::profile::profile_hover_card(state, &snapshot, hover)}
@@ -365,6 +369,13 @@ pub fn shell() -> Element {
                     title: "{toast.text}",
                     onclick: move |_| state.write().toast = None,
                     span { class: "toast-text", "{toast.text}" }
+                    button {
+                        class: "toast-dismiss",
+                        title: "Dismiss",
+                        "aria-label": "Dismiss notification",
+                        onclick: move |_| state.write().toast = None,
+                        "×"
+                    }
                 }
             }
         }

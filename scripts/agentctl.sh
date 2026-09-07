@@ -57,6 +57,7 @@ Commands:
   activity-select <index>         Open activity item in right panel
   close-settings
   open-profile <user_id>
+  open-usergroup <group_id>
   close-profile
   screenshot [path]
   toast <text>
@@ -153,6 +154,10 @@ case "$cmd" in
   open-profile)
     [[ $# -ge 1 ]] || { echo "usage: agentctl.sh open-profile <user_id>" >&2; exit 2; }
     JSON=$(python3 -c 'import json,sys; print(json.dumps({"id": int(sys.argv[1]), "cmd":"open-profile", "user": sys.argv[2]}))' "$REQ_ID" "$1")
+    ;;
+  open-usergroup)
+    [[ $# -ge 1 ]] || { echo "usage: agentctl.sh open-usergroup <group_id>" >&2; exit 2; }
+    JSON=$(python3 -c 'import json,sys; print(json.dumps({"id": int(sys.argv[1]), "cmd":"open-usergroup", "group": sys.argv[2]}))' "$REQ_ID" "$1")
     ;;
   close-profile)
     JSON=$(printf '{"id":%s,"cmd":"close-profile"}' "$REQ_ID")

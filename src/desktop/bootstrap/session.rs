@@ -32,6 +32,7 @@ pub async fn refresh(mut state: Signal<ShellState>) {
                 continue;
             }
         }
+        crate::usergroups::hydrate(state, &team).await;
         if let Ok(counts) = api::fetch_counts(&transport, &client, &workspace_session).await
             && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
         {
@@ -401,6 +402,7 @@ async fn hydrate_surface_users(
     workspace_session: &super_platinum_core::config::WorkspaceSession,
     team: &str,
 ) {
+    crate::usergroups::hydrate(*state, team).await;
     let requested = {
         let shell = state.read();
         let Some(workspace) = shell.core.workspaces.get(team) else {

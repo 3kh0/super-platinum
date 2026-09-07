@@ -94,6 +94,10 @@ This is intended to feel fast in dev and release builds.
 
 Super Platinum should feel like a focused desktop Slack client, not a marketing page.
 
+The visual source of truth is `docs/design-system.md`. Read it before changing UI
+styles or adding a component, and reuse the tokens and interaction states defined
+in `src/desktop/styles/base.css` and `design-system.css`.
+
 - Keep the UI quiet, dense, and readable.
 - Use the existing CSS custom properties and appearance helpers.
 - Prefer existing Dioxus components over one-off presentation logic.

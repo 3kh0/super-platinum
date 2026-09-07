@@ -52,6 +52,19 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
             }
             RtUpdate::Event { generation, event } => {
+                let needs_group_hydration = match event.as_ref() {
+                    RtEvent::Message(message) | RtEvent::MessageChanged { message, .. } => {
+                        let mut ids = std::collections::HashSet::new();
+                        super_platinum_core::slack::models::collect_group_ids(message, &mut ids);
+                        ids.iter().any(|id| {
+                            shell.core.workspaces.get(&team).is_some_and(|w| {
+                                w.usergroups.get(id).is_none_or(|g| g.handle.is_empty())
+                            })
+                        })
+                    }
+                    RtEvent::Unknown(raw) => raw.kind.starts_with("subteam_"),
+                    _ => false,
+                };
                 let needs_user_hydration = match event.as_ref() {
                     RtEvent::Message(message) => message.user.as_deref().is_some_and(|user| {
                         shell
@@ -82,6 +95,12 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 drop(shell);
                 if needs_user_hydration {
                     dioxus::prelude::spawn(crate::bootstrap::hydrate_current_surface(state));
+                }
+                if needs_group_hydration {
+                    let team = team.clone();
+                    dioxus::prelude::spawn(async move {
+                        crate::usergroups::hydrate(state, &team).await;
+                    });
                 }
                 if let Some(notification) = notification {
                     dioxus::prelude::spawn(crate::notification::show(notification));
@@ -129,6 +148,41 @@ fn apply(
                     .merge_update(super_platinum_core::state::visible_message(message.clone()));
                 if message.subtype.as_deref() != Some("thread_broadcast") {
                     return;
+                }
+            }
+            let group_ping = message.user.as_deref() != Some(&workspace.self_user_id)
+                && workspace.usergroups.values().any(|group| {
+                    group.includes(&workspace.self_user_id) && group.mentioned_in(&message)
+                });
+            let channel_read = workspace
+                .channels
+                .get(&channel)
+                .and_then(|c| c.last_read.clone());
+            let initial_mentions = workspace
+                .channels
+                .get(&channel)
+                .and_then(|c| c.mention_count)
+                .unwrap_or(0);
+            let messages = workspace.messages.entry(channel.clone()).or_default();
+            if group_ping
+                && message.ts.as_deref().is_some_and(|ts| {
+                    !messages
+                        .messages
+                        .iter()
+                        .any(|m| m.ts.as_deref() == Some(ts))
+                        && super_platinum_core::state::cmp_ts(
+                            Some(ts),
+                            messages.last_read.as_deref().or(channel_read.as_deref()),
+                        ) == std::cmp::Ordering::Greater
+                })
+            {
+                messages.mention_count = messages
+                    .mention_count
+                    .max(initial_mentions)
+                    .saturating_add(1);
+                if let Some(channel) = workspace.channels.get_mut(&channel) {
+                    channel.has_unreads = true;
+                    channel.mention_count = Some(messages.mention_count);
                 }
             }
             // Merged, not replaced. A frame that re-sends a message we already
@@ -226,7 +280,11 @@ fn apply(
                 channel.has_unreads = unread_count > 0 || mention_count > 0;
             }
         }
-        RtEvent::Unknown(_) => {}
+        RtEvent::Unknown(raw) => super_platinum_core::slack::models::apply_group_event(
+            &mut workspace.usergroups,
+            &workspace.self_user_id,
+            &raw,
+        ),
     }
 }
 
@@ -350,6 +408,28 @@ mod tests {
         parent.reply_count = Some(1);
         apply(&mut core, TEAM, 0, RtEvent::Message(parent));
         assert_eq!(reactions(&core, ROOT), ["tada"]);
+    }
+
+    #[test]
+    fn unread_group_ping_badges_once_and_ignores_stale_events() {
+        let mut core = core();
+        let workspace = core.workspaces.get_mut(TEAM).unwrap();
+        workspace.usergroups.insert(
+            "S1".into(),
+            super_platinum_core::slack::models::UserGroup {
+                id: "S1".into(),
+                users: vec![workspace.self_user_id.clone()],
+                ..Default::default()
+            },
+        );
+        let mut ping = message("99.0", None);
+        ping.user = Some("another-user".into());
+        ping.text = Some("<!subteam^S1> hello".into());
+        apply(&mut core, TEAM, 1, RtEvent::Message(ping.clone()));
+        assert_eq!(core.workspaces[TEAM].messages[CHANNEL].mention_count, 0);
+        apply(&mut core, TEAM, 0, RtEvent::Message(ping.clone()));
+        apply(&mut core, TEAM, 0, RtEvent::Message(ping));
+        assert_eq!(core.workspaces[TEAM].messages[CHANNEL].mention_count, 1);
     }
 
     #[test]

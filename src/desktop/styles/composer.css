@@ -182,7 +182,7 @@
   cursor: pointer;
 }
 .secondary-row:hover { background: var(--hover-overlay); }
-.secondary-row.unread { border-left: 3px solid var(--accent); }
+.secondary-row.unread { background: var(--accent-faint); }
 .secondary-avatar {
   display: grid;
   place-items: center;

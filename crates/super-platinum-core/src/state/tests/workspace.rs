@@ -20,6 +20,7 @@ fn prune_typing_drops_stale() {
         vip_users: HashSet::new(),
         sidebar: SidebarConfig::default(),
         users: HashMap::new(),
+        usergroups: HashMap::new(),
         custom_emoji: HashMap::new(),
         messages: HashMap::new(),
         typing: HashMap::new(),

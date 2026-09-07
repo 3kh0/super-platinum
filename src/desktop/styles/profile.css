@@ -1,4 +1,22 @@
 /* Slack-shaped profile preview and persistent secondary pane. */
+.usergroup-pane { width: 360px; min-width: 260px; display: flex; flex-direction: column; }
+.group-summary { padding: 20px; overflow-wrap: anywhere; }
+.group-summary h2 { font-size: 20px; margin: 0 0 8px; }
+.group-summary p { margin: 6px 0; }
+.group-tabs { display: flex; border-bottom: 1px solid var(--border); }
+.group-tabs button { flex: 1; padding: 12px; border-bottom: 2px solid transparent; }
+.group-tabs button[aria-selected="true"] { border-bottom-color: var(--accent); }
+.group-list { overflow-y: auto; min-height: 0; flex: 1; }
+.group-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 66px; padding: 12px 18px; text-align: left; border-bottom: 1px solid var(--border); }
+.group-row:hover { background: var(--hover-overlay); }
+.group-avatar { flex: 0 0 38px; height: 38px; border-radius: 7px; overflow: hidden; display: grid; place-items: center; background: var(--avatar-bg); }
+.group-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.group-identity { display: grid; gap: 4px; min-width: 0; }
+.group-identity > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.group-identity span, .group-notice { color: var(--muted); }
+.group-notice { padding: 12px 20px; }
+.group-notice button { margin-left: 8px; color: var(--link); }
+.group-mention.member { background: var(--accent-soft); color: var(--mention); box-shadow: inset 0 -1px var(--mention); }
 .profile-hover {
   position: fixed;
   z-index: 15;
