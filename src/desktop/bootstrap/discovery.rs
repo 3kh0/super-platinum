@@ -185,10 +185,44 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
             std::slice::from_ref(&user),
         ));
     }
-    let needs_fields = !state.read().core.profile_fields.contains_key(&team);
+    // `users.profile.get` only resolves members of the current workspace. Slack
+    // Connect members are already represented in the workspace user map, but
+    // must be refreshed through the org-aware edge endpoint instead.
+    let use_users_info = state
+        .read()
+        .core
+        .workspaces
+        .get(&team)
+        .and_then(|workspace| workspace.users.get(&user))
+        .is_some_and(profile_uses_users_info);
+    let needs_fields = !use_users_info && !state.read().core.profile_fields.contains_key(&team);
     let (profile, extras, fields) = tokio::join!(
-        api::fetch_user_profile(&transport, &client, &workspace_session, user.clone()),
-        api::fetch_user_profile_extras(&transport, &client, &workspace_session, user.clone()),
+        async {
+            if use_users_info {
+                api::fetch_users_info(&transport, &client, &workspace_session, vec![user.clone()])
+                    .await?
+                    .into_iter()
+                    .find(|member| member.id == user)
+                    .and_then(|member| member.profile)
+                    .ok_or_else(|| super_platinum_core::slack::Error::Api("user_not_found".into()))
+            } else {
+                api::fetch_user_profile(&transport, &client, &workspace_session, user.clone()).await
+            }
+        },
+        async {
+            if use_users_info {
+                Ok(None)
+            } else {
+                api::fetch_user_profile_extras(
+                    &transport,
+                    &client,
+                    &workspace_session,
+                    user.clone(),
+                )
+                .await
+                .map(Some)
+            }
+        },
         async {
             if needs_fields {
                 api::fetch_team_profile_fields(&transport, &client, &workspace_session).await
@@ -219,6 +253,8 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
         .collect::<Vec<_>>();
     let missing_dm_ids = extras
         .as_ref()
+        .ok()
+        .and_then(Option::as_ref)
         .map(|extras| {
             extras
                 .im_mpim_ids
@@ -285,7 +321,7 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
                 .or_else(|| member.real_name.clone());
             member.profile = Some(profile);
         }
-        if let Ok(extras) = extras {
+        if let Ok(Some(extras)) = extras {
             member.im_mpim_ids = extras.im_mpim_ids;
             member.has_more_mpims = extras.has_more_mpims;
         }
@@ -317,6 +353,10 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
     drop(shell);
     persist_workspace(&state, &team);
     dioxus::prelude::spawn(refresh_media(state, transport));
+}
+
+fn profile_uses_users_info(user: &super_platinum_core::slack::models::User) -> bool {
+    user.is_stranger
 }
 
 fn profile_emoji_names(
@@ -796,7 +836,7 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
 
 #[cfg(test)]
 mod tests {
-    use super::profile_emoji_names;
+    use super::{profile_emoji_names, profile_uses_users_info};
 
     #[test]
     fn profile_emoji_hydration_includes_status_and_nested_custom_fields() {
@@ -814,5 +854,23 @@ mod tests {
         assert!(names.contains("sob-pray"));
         assert!(names.contains("party-parrot"));
         assert!(names.contains("sparkles"));
+    }
+
+    #[test]
+    fn slack_connect_profiles_use_the_org_aware_user_endpoint() {
+        let external = serde_json::from_value(serde_json::json!({
+            "id": "U_EXTERNAL",
+            "is_stranger": true,
+            "profile": {"display_name": "External teammate"}
+        }))
+        .expect("external user fixture");
+        let local = serde_json::from_value(serde_json::json!({
+            "id": "U_LOCAL",
+            "profile": {"display_name": "Local teammate"}
+        }))
+        .expect("local user fixture");
+
+        assert!(profile_uses_users_info(&external));
+        assert!(!profile_uses_users_info(&local));
     }
 }
