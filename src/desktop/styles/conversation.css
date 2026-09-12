@@ -291,7 +291,9 @@
   border-radius: 7px;
 }
 .file-link {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-top: 5px;
   padding: 7px 9px;
   border: 1px solid var(--border);
@@ -317,10 +319,9 @@
   border-radius: 999px;
   background: rgb(0 0 0 / 55%);
   color: #fff;
-  font-size: 17px;
-  padding-left: 3px;
   pointer-events: none;
 }
+.media-play-icon { width: 24px; height: 24px; }
 .viewer-loading { color: var(--muted); }
 .viewer .primary.disabled { opacity: .5; pointer-events: none; }
 .media-preview > button { margin-top: 5px; color: var(--accent); background: transparent; cursor: pointer; }

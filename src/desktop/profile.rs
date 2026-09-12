@@ -63,9 +63,6 @@ pub(crate) fn profile_hover_card(
     let user_for_vip = profile.user_id.clone();
     let can_vip = !profile.is_self && !profile.deactivated;
     let vip_label = if profile.is_vip { "Remove VIP" } else { "VIP" };
-    let message_icon = crate::icons::message_uri();
-    let vip_icon = crate::icons::user_add_uri();
-    let clock_icon = crate::icons::clock_uri();
     rsx! {
         div {
             class: "profile-hover",
@@ -105,7 +102,7 @@ pub(crate) fn profile_hover_card(
                 }
                 if !profile.local_time.is_empty() {
                     div { class: "profile-info-row",
-                        img { class: "profile-row-icon", src: "{clock_icon}", alt: "" }
+                        {crate::icons::icon(crate::icons::Icon::Schedule, "profile-row-icon")}
                         span { "{profile.local_time}" }
                     }
                 }
@@ -113,7 +110,7 @@ pub(crate) fn profile_hover_card(
                     button {
                         class: "profile-action profile-action-message",
                         onclick: move |_| { spawn(crate::bootstrap::open_profile_dm(state, user_for_message.clone())); },
-                        img { src: "{message_icon}", alt: "" }
+                        {crate::icons::icon(crate::icons::Icon::Message, "profile-action-icon")}
                         span { "Message" }
                     }
                     if can_vip {
@@ -121,7 +118,7 @@ pub(crate) fn profile_hover_card(
                             class: if profile.is_vip { "profile-action active" } else { "profile-action" },
                             disabled: snapshot.profile_vip_loading,
                             onclick: move |_| { spawn(crate::bootstrap::toggle_profile_vip(state, user_for_vip.clone())); },
-                            img { src: "{vip_icon}", alt: "" }
+                            {crate::icons::icon(crate::icons::Icon::PersonAdd, "profile-action-icon")}
                             span { "{vip_label}" }
                         }
                     }
@@ -168,10 +165,6 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
     let share_link = profile_link.clone();
     let can_vip = !profile.is_self && !profile.deactivated;
     let vip_label = if profile.is_vip { "Remove VIP" } else { "VIP" };
-    let message_icon = crate::icons::message_uri();
-    let vip_icon = crate::icons::user_add_uri();
-    let more_icon = crate::icons::more_uri();
-    let clock_icon = crate::icons::clock_uri();
     let pane_width = snapshot.profile_pane_width.max(200.0);
     let pane_style = format!("--profile-pane-width:{pane_width}px");
     rsx! {
@@ -197,7 +190,7 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
                     title: "Close profile",
                     "aria-label": "Close profile",
                     onclick: move |_| state.write().close_profile(),
-                    "×"
+                    {crate::icons::icon(crate::icons::Icon::Close, "icon")}
                 }
             }
             div {
@@ -232,7 +225,7 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
                     }
                     if !profile.local_time.is_empty() {
                         div { class: "profile-info-row",
-                            img { class: "profile-row-icon", src: "{clock_icon}", alt: "" }
+                            {crate::icons::icon(crate::icons::Icon::Schedule, "profile-row-icon")}
                             span { "{profile.local_time}" }
                         }
                     }
@@ -244,7 +237,7 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
                                 event.stop_propagation();
                                 spawn(crate::bootstrap::open_profile_dm(state, user_for_message.clone()));
                             },
-                            img { src: "{message_icon}", alt: "" }
+                            {crate::icons::icon(crate::icons::Icon::Message, "profile-action-icon")}
                             span { "Message" }
                         }
                         if can_vip {
@@ -255,7 +248,7 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
                                     event.stop_propagation();
                                     spawn(crate::bootstrap::toggle_profile_vip(state, user_for_vip.clone()));
                                 },
-                                img { src: "{vip_icon}", alt: "" }
+                                {crate::icons::icon(crate::icons::Icon::PersonAdd, "profile-action-icon")}
                                 span { "{vip_label}" }
                             }
                         }
@@ -269,7 +262,7 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
                                     let open = state.read().profile_menu_open;
                                     state.write().profile_menu_open = !open;
                                 },
-                                img { src: "{more_icon}", alt: "" }
+                                {crate::icons::icon(crate::icons::Icon::More, "profile-action-icon")}
                             }
                             if snapshot.profile_menu_open {
                                 div { class: "profile-more-menu", role: "menu", onclick: move |event| event.stop_propagation(),

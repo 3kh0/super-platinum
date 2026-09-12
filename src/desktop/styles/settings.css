@@ -117,6 +117,7 @@
   line-height: 1;
   background: var(--muted-2);
 }
+.storage-check-icon { width: 13px; height: 13px; }
 .storage-row.avatars .storage-swatch { background: var(--storage-avatars); }
 .storage-row.emoji .storage-swatch { background: var(--storage-emoji); }
 .storage-row.icons .storage-swatch { background: var(--storage-icons); }

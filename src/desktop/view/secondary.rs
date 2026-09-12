@@ -64,20 +64,23 @@ pub(crate) fn secondary_view(mut state: Signal<ShellState>, snapshot: &ShellStat
                                         .collect::<Vec<_>>()
                                 })
                                 .unwrap_or_default();
-                            let icon = if channel.is_im || channel.is_mpim {
-                                name.chars()
-                                    .next()
-                                    .map(|c| c.to_uppercase().to_string())
-                                    .unwrap_or_else(|| "D".into())
-                            } else if channel.is_private {
-                                "🔒".into()
-                            } else {
-                                "#".into()
-                            };
+                            let initials = name
+                                .chars()
+                                .next()
+                                .map(|c| c.to_uppercase().to_string())
+                                .unwrap_or_else(|| "D".into());
                             rsx! {
                                 button { class: "secondary-row unread", key: "unread-{channel.id}",
                                     onclick: { let id = channel.id.clone(); move |_| { let index = { state.read().channels.iter().position(|channel| channel.id == id) }; if let Some(index) = index { state.write().select_channel(index, crate::state::ChannelOpen::Global); spawn(crate::bootstrap::refresh_selected_channel(state)); } } },
-                                    span { class: "secondary-avatar", "{icon}" }
+                                    span { class: "secondary-avatar",
+                                        if channel.is_im || channel.is_mpim {
+                                            "{initials}"
+                                        } else if channel.is_private {
+                                            {crate::icons::icon(crate::icons::Icon::Lock, "channel-kind-icon")}
+                                        } else {
+                                            {crate::icons::icon(crate::icons::Icon::Tag, "channel-kind-icon")}
+                                        }
+                                    }
                                     div { class: "secondary-copy",
                                         strong { "{title}" }
                                         for snippet in snippets {
@@ -178,7 +181,6 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
         .active_team
         .as_ref()
         .and_then(|team| snapshot.core.workspaces.get(team));
-    let compose_src = crate::icons::compose_uri();
     let active_id = snapshot
         .channels
         .get(snapshot.active_channel)
@@ -201,7 +203,7 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                     class: "icon-btn",
                     title: "Compose",
                     onclick: move |_| state.write().overlay = Some(Overlay::Palette),
-                    img { class: "icon sm", src: "{compose_src}", alt: "Compose" }
+                    {crate::icons::icon(crate::icons::Icon::Compose, "icon sm")}
                 }
             }
             input {
@@ -529,7 +531,7 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                                     if let Some((uri, label)) = avatar.as_ref() {
                                         img { src: "{uri}", alt: "{label}" }
                                     } else {
-                                        "{event_icon}"
+                                        {crate::icons::icon(event_icon, "activity-kind-icon")}
                                     }
                                 }
                                 div { class: "activity-copy",
@@ -579,15 +581,16 @@ pub(crate) fn activity_tab_btn(
 
 pub(crate) fn activity_event_glyph(
     item: &super_platinum_core::slack::models::ActivityItem,
-) -> &'static str {
+) -> crate::icons::Icon {
     match item.item.kind.as_str() {
-        "message_reaction" => "♥",
-        "thread_v2" | "thread_reply" => "↩",
-        "at_user" | "mention" | "at_user_group" => "@",
-        "at_channel" | "at_everyone" => "@",
-        "dm" | "bot_dm_bundle" => "💬",
-        "channel" => "#",
-        _ => "•",
+        "message_reaction" => crate::icons::Icon::Favorite,
+        "thread_v2" | "thread_reply" => crate::icons::Icon::Reply,
+        "at_user" | "mention" | "at_user_group" | "at_channel" | "at_everyone" => {
+            crate::icons::Icon::AlternateEmail
+        }
+        "dm" | "bot_dm_bundle" => crate::icons::Icon::Message,
+        "channel" => crate::icons::Icon::Tag,
+        _ => crate::icons::Icon::Circle,
     }
 }
 

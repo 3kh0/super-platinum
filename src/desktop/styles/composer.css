@@ -196,6 +196,7 @@
   font-weight: 700;
 }
 .secondary-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.channel-kind-icon { width: 18px; height: 18px; color: var(--muted); }
 .secondary-copy { min-width: 0; flex: 1; }
 .secondary-row p {
   margin: 3px 0;

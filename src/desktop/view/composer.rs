@@ -28,8 +28,6 @@ pub(crate) fn set_field_text(id: &str, text: &str) {
 }
 
 pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: &str) -> Element {
-    let plus_src = crate::icons::plus_uri();
-    let send_src = crate::icons::send_uri();
     let is_dm_like = state
         .read()
         .channels
@@ -53,7 +51,7 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
             }
             div { class: "composer-row",
                 label { class: "composer-icon-btn", title: "Attach files",
-                    img { class: "icon sm", src: "{plus_src}", alt: "+" }
+                    {crate::icons::icon(crate::icons::Icon::Add, "icon sm")}
                     input {
                         r#type: "file",
                         multiple: true,
@@ -100,7 +98,7 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
                     class: "composer-icon-btn",
                     title: "Send",
                     onclick: move |_| { spawn(crate::bootstrap::send_composer(state)); },
-                    img { class: "icon sm", src: "{send_src}", alt: "Send" }
+                    {crate::icons::icon(crate::icons::Icon::Send, "icon sm")}
                 }
             }
         }

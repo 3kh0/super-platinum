@@ -74,8 +74,9 @@ button, input, textarea, select { font: inherit; color: inherit; }
 button { border: 0; background: transparent; cursor: pointer; letter-spacing: inherit; }
 ::selection { background: color-mix(in srgb, var(--accent) 42%, transparent); color: var(--text); }
 :focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 88%, white); outline-offset: 2px; }
-img.icon { display: block; width: 18px; height: 18px; opacity: 0.78; }
-img.icon.sm { width: 15px; height: 15px; }
-button:hover img.icon, .active img.icon, .nav-row.active img.icon { opacity: 1; }
+.material-icon { display: block; flex: 0 0 auto; }
+.icon { width: 18px; height: 18px; opacity: 0.78; }
+.icon.sm { width: 15px; height: 15px; }
+button:hover .icon, .active .icon, .nav-row.active .icon { opacity: 1; }
 
 * { scrollbar-color: var(--border-strong) transparent; scrollbar-width: thin; }

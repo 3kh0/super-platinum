@@ -49,22 +49,19 @@ pub(crate) fn rail_view(
         active,
         MainView::Home | MainView::Unreads | MainView::Threads
     );
-    let home_src = crate::icons::home_uri();
-    let dms_src = crate::icons::dms_uri();
-    let bell_src = crate::icons::bell_uri();
     rsx! {
         nav { class: "rail",
             button {
                 class: if home_active { "rail-btn active" } else { "rail-btn" },
                 title: "Home",
                 onclick: move |_| { spawn(crate::bootstrap::load_main_view(state, MainView::Home)); },
-                img { class: "icon", src: "{home_src}", alt: "Home" }
+                {crate::icons::icon(crate::icons::Icon::Home, "icon")}
             }
             button {
                 class: if active == MainView::Dms { "rail-btn active" } else { "rail-btn" },
                 title: "Direct messages",
                 onclick: move |_| { spawn(crate::bootstrap::load_main_view(state, MainView::Dms)); },
-                img { class: "icon", src: "{dms_src}", alt: "DMs" }
+                {crate::icons::icon(crate::icons::Icon::DirectMessages, "icon")}
                 if dm_unread > 0 {
                     span { class: "rail-badge",
                         if dm_unread > 99 { "99+" } else { "{dm_unread}" }
@@ -75,7 +72,7 @@ pub(crate) fn rail_view(
                 class: if active == MainView::Activity { "rail-btn active" } else { "rail-btn" },
                 title: "Activity",
                 onclick: move |_| { spawn(crate::bootstrap::load_main_view(state, MainView::Activity)); },
-                img { class: "icon", src: "{bell_src}", alt: "Activity" }
+                {crate::icons::icon(crate::icons::Icon::Notifications, "icon")}
                 if activity_unread > 0 {
                     span { class: "rail-badge",
                         if activity_unread > 99 { "99+" } else { "{activity_unread}" }
@@ -132,10 +129,6 @@ pub(crate) fn channel_sidebar(
     workspace_name: &str,
     shortcut: &str,
 ) -> Element {
-    let search_src = crate::icons::search_uri();
-    let unreads_src = crate::icons::unreads_uri();
-    let reply_src = crate::icons::reply_uri();
-    let lock_src = crate::icons::lock_uri();
     let has_unreads = snapshot.channels.iter().any(|channel| channel.unread);
     rsx! {
         aside { class: "sidebar",
@@ -150,7 +143,7 @@ pub(crate) fn channel_sidebar(
                 class: "jump-to",
                 title: "Jump to…",
                 onclick: move |_| state.write().overlay = Some(Overlay::Palette),
-                img { class: "icon sm", src: "{search_src}", alt: "" }
+                {crate::icons::icon(crate::icons::Icon::Search, "icon sm")}
                 span { "Jump to…" }
                 span { class: "hint", "{shortcut}" }
             }
@@ -164,13 +157,13 @@ pub(crate) fn channel_sidebar(
                         "nav-row"
                     },
                     onclick: move |_| { spawn(crate::bootstrap::load_main_view(state, MainView::Unreads)); },
-                    img { class: "icon sm", src: "{unreads_src}", alt: "" }
+                    {crate::icons::icon(crate::icons::Icon::Unreads, "icon sm")}
                     span { "Unreads" }
                 }
                 button {
                     class: if snapshot.main_view == MainView::Threads { "nav-row active" } else { "nav-row" },
                     onclick: move |_| { spawn(crate::bootstrap::load_main_view(state, MainView::Threads)); },
-                    img { class: "icon sm", src: "{reply_src}", alt: "" }
+                    {crate::icons::icon(crate::icons::Icon::Reply, "icon sm")}
                     span { "Threads" }
                 }
             }
@@ -219,9 +212,9 @@ pub(crate) fn channel_sidebar(
                                     } else if channel.is_mpim {
                                         span { class: "mpdm-count", "{channel.member_count.unwrap_or(0)}" }
                                     } else if channel.is_private {
-                                        img { class: "icon sm", src: "{lock_src}", alt: "private" }
+                                        {crate::icons::icon(crate::icons::Icon::Lock, "icon sm")}
                                     } else {
-                                        span { "#" }
+                                        {crate::icons::icon(crate::icons::Icon::Tag, "icon sm")}
                                     }
                                 }
                                 span { class: "channel-name", "{channel.name}" }

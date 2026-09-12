@@ -130,7 +130,7 @@
 .profile-action:hover { background: var(--hover-overlay); }
 .profile-action:disabled { opacity: .55; cursor: wait; }
 .profile-action.active { border-color: color-mix(in srgb, var(--accent) 60%, var(--border-strong)); background: var(--accent-faint); }
-.profile-action img { width: 18px; height: 18px; }
+.profile-action img, .profile-action-icon { width: 18px; height: 18px; }
 .profile-action-message { flex: 1; }
 
 .profile-pane {

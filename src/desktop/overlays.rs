@@ -34,7 +34,7 @@ pub fn overlay_view(
             if !compact {
                 header {
                     h2 { "{title}" }
-                    button { onclick: move |_| state.write().overlay = None, "×" }
+                    button { "aria-label": "Close", onclick: move |_| state.write().overlay = None, {crate::icons::icon(crate::icons::Icon::Close, "icon")} }
                 }
             }
             if matches!(overlay, Overlay::Palette | Overlay::Search) {
@@ -255,7 +255,7 @@ fn self_menu_view(mut state: Signal<ShellState>, snapshot: &ShellState) -> Eleme
                         title: "Clear status",
                         "aria-label": "Clear status",
                         onclick: move |_| { spawn(crate::bootstrap::clear_self_status(state)); },
-                        "×"
+                        {crate::icons::icon(crate::icons::Icon::Close, "icon sm")}
                     }
                 }
             }
@@ -274,7 +274,7 @@ fn self_menu_view(mut state: Signal<ShellState>, snapshot: &ShellState) -> Eleme
                 span { "Notifications" }
                 span { class: "self-menu-item-meta",
                     "{notifications_label}"
-                    span { class: "self-menu-chevron", "›" }
+                    span { class: "self-menu-chevron", {crate::icons::icon(crate::icons::Icon::ChevronRight, "icon sm")} }
                 }
             }
             if snapshot.self_menu_notifications_open {
@@ -377,7 +377,6 @@ fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
     let query_empty = snapshot.palette_query.trim().is_empty();
     let empty = matches.is_empty();
     let show_recents = query_empty && !empty;
-    let lock_src = crate::icons::lock_uri();
     rsx! {
         if show_recents {
             div { class: "palette-section", "Recent" }
@@ -426,9 +425,9 @@ fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
                                 } else if is_mpim {
                                     span { class: "palette-mpdm", "{member_count.unwrap_or(0)}" }
                                 } else if is_private {
-                                    img { class: "icon sm", src: "{lock_src}", alt: "private" }
+                                    {crate::icons::icon(crate::icons::Icon::Lock, "icon sm")}
                                 } else {
-                                    span { class: "palette-hash", "#" }
+                                    span { class: "palette-hash", {crate::icons::icon(crate::icons::Icon::Tag, "icon sm")} }
                                 }
                             }
                             span { class: "palette-name", "{name}" }

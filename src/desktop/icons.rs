@@ -1,137 +1,133 @@
-//! Google Material Design icon path data for the desktop shell.
-//! Rendered as inline SVG so the WebView does not need external assets.
+//! Lightweight, offline Material Symbols Rounded icons for the desktop shell.
+//!
+//! Paths are the default 24 px assets from Google's `material-design-icons`
+//! repository. Keeping only the symbols used by the app is smaller than shipping
+//! the icon font (or a crate containing the complete catalog), requires no network
+//! access, and lets every icon inherit `currentColor`.
 
-const VIEW: &str = "0 0 24 24";
+use dioxus::prelude::*;
 
-fn svg_data_uri(path: &str) -> String {
-    // currentColor via CSS fill on the img is unreliable for data URIs; use a
-    // neutral light fill that matches dark-theme chrome icons.
-    let raw = format!(
-        r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="{VIEW}" fill="#c8c9cf"><path d="{path}"/></svg>"##
-    );
-    format!("data:image/svg+xml;utf8,{}", urlencoding_lite(&raw))
+const VIEW_BOX: &str = "0 -960 960 960";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Icon {
+    Home,
+    DirectMessages,
+    Notifications,
+    Search,
+    Unreads,
+    Reply,
+    Lock,
+    Add,
+    Send,
+    Compose,
+    Message,
+    Schedule,
+    PersonAdd,
+    More,
+    Tag,
+    Close,
+    ChevronRight,
+    Favorite,
+    AlternateEmail,
+    Circle,
+    AttachFile,
+    Play,
+    Check,
 }
 
-fn urlencoding_lite(input: &str) -> String {
-    let mut out = String::with_capacity(input.len() * 2);
-    for byte in input.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
-                out.push(byte as char)
+impl Icon {
+    fn path(self) -> &'static str {
+        match self {
+            Self::Home => {
+                "M240-200h120v-200q0-17 11.5-28.5T400-440h160q17 0 28.5 11.5T600-400v200h120v-360L480-740 240-560v360Zm-80 0v-360q0-19 8.5-36t23.5-28l240-180q21-16 48-16t48 16l240 180q15 11 23.5 28t8.5 36v360q0 33-23.5 56.5T720-120H560q-17 0-28.5-11.5T520-160v-200h-80v200q0 17-11.5 28.5T400-120H240q-33 0-56.5-23.5T160-200Zm320-270Z"
             }
-            b' ' => out.push_str("%20"),
-            b'"' => out.push_str("%22"),
-            b'#' => out.push_str("%23"),
-            b'<' => out.push_str("%3C"),
-            b'>' => out.push_str("%3E"),
-            b'{' | b'}' | b'|' | b'\\' | b'^' | b'`' => {
-                out.push('%');
-                out.push_str(&format!("{byte:02X}"));
+            Self::DirectMessages => {
+                "M280-240q-17 0-28.5-11.5T240-280v-80h520v-360h80q17 0 28.5 11.5T880-680v503q0 27-24.5 37.5T812-148l-92-92H280Zm-40-200-92 92q-19 19-43.5 8.5T80-377v-463q0-17 11.5-28.5T120-880h520q17 0 28.5 11.5T680-840v360q0 17-11.5 28.5T640-440H240Zm360-80v-280H160v280h440Zm-440 0v-280 280Z"
             }
-            _ => {
-                out.push('%');
-                out.push_str(&format!("{byte:02X}"));
+            Self::Notifications => {
+                "M200-200q-17 0-28.5-11.5T160-240q0-17 11.5-28.5T200-280h40v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h40q17 0 28.5 11.5T800-240q0 17-11.5 28.5T760-200H200Zm280-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z"
+            }
+            Self::Search => {
+                "M380-320q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l224 224q11 11 11 28t-11 28q-11 11-28 11t-28-11L532-372q-30 24-69 38t-83 14Zm0-80q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+            }
+            Self::Unreads => {
+                "m240-240-92 92q-19 19-43.5 8.5T80-177v-623q0-33 23.5-56.5T160-880h360q17 0 28.5 11.5T560-840q0 17-11.5 28.5T520-800H160v525l46-45h594v-280q0-17 11.5-28.5T840-640q17 0 28.5 11.5T880-600v280q0 33-23.5 56.5T800-240H240Zm520-480q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35Zm-600-80v480-480Z"
+            }
+            Self::Reply => {
+                "m273-480 116 116q12 12 11.5 28T388-308q-12 11-28 11.5T332-308L148-492q-12-12-12-28t12-28l184-184q11-11 27.5-11t28.5 11q12 12 12 28.5T388-675L273-560h367q83 0 141.5 58.5T840-360v120q0 17-11.5 28.5T800-200q-17 0-28.5-11.5T760-240v-120q0-50-35-85t-85-35H273Z"
+            }
+            Self::Lock => {
+                "M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80ZM240-160v-400 400Z"
+            }
+            Self::Add => {
+                "M440-440H240q-17 0-28.5-11.5T200-480q0-17 11.5-28.5T240-520h200v-200q0-17 11.5-28.5T480-760q17 0 28.5 11.5T520-720v200h200q17 0 28.5 11.5T760-480q0 17-11.5 28.5T720-440H520v200q0 17-11.5 28.5T480-200q-17 0-28.5-11.5T440-240v-200Z"
+            }
+            Self::Send => {
+                "M792-443 176-183q-20 8-38-3.5T120-220v-520q0-22 18-33.5t38-3.5l616 260q25 11 25 37t-25 37ZM200-280l474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"
+            }
+            Self::Compose => {
+                "M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h261q20 0 30 12.5t10 27.5q0 15-10.5 27.5T460-760H200v560h560v-261q0-20 12.5-30t27.5-10q15 0 27.5 10t12.5 30v261q0 33-23.5 56.5T760-120H200Zm280-360Zm-120 80v-97q0-16 6-30.5t17-25.5l344-344q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L553-384q-11 11-25.5 17.5T497-360h-97q-17 0-28.5-11.5T360-400Zm481-384-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"
+            }
+            Self::Message => {
+                "m240-240-92 92q-19 19-43.5 8.5T80-177v-623q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240Zm-34-80h594v-480H160v525l46-45Zm-46 0v-480 480Z"
+            }
+            Self::Schedule => {
+                "M520-496v-144q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640v159q0 8 3 15.5t9 13.5l132 132q11 11 28 11t28-11q11-11 11-28t-11-28L520-496ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-400Zm0 320q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Z"
+            }
+            Self::PersonAdd => {
+                "M720-520h-80q-17 0-28.5-11.5T600-560q0-17 11.5-28.5T640-600h80v-80q0-17 11.5-28.5T760-720q17 0 28.5 11.5T800-680v80h80q17 0 28.5 11.5T920-560q0 17-11.5 28.5T880-520h-80v80q0 17-11.5 28.5T760-400q-17 0-28.5-11.5T720-440v-80Zm-360 40q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-240v-32q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v32q0 33-23.5 56.5T600-160H120q-33 0-56.5-23.5T40-240Zm80 0h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0-80Zm0 400Z"
+            }
+            Self::More => {
+                "M480-160q-33 0-56.5-23.5T400-240q0-33 23.5-56.5T480-320q33 0 56.5 23.5T560-240q0 33-23.5 56.5T480-160Zm0-240q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-240q-33 0-56.5-23.5T400-720q0-33 23.5-56.5T480-800q33 0 56.5 23.5T560-720q0 33-23.5 56.5T480-640Z"
+            }
+            Self::Tag => {
+                "m360-320-33 131q-3 13-13 21t-24 8q-19 0-31-15t-7-33l28-112H171q-20 0-32-15.5t-7-34.5q3-14 14-22t25-8h129l40-160H231q-20 0-32-15.5t-7-34.5q3-14 14-22t25-8h129l33-131q3-13 13-21t24-8q19 0 31 15t7 33l-28 112h160l33-131q3-13 13-21t24-8q19 0 31 15t7 33l-28 112h109q20 0 32 15.5t7 34.5q-3 14-14 22t-25 8H660l-40 160h109q20 0 32 15.5t7 34.5q-3 14-14 22t-25 8H600l-33 131q-3 13-13 21t-24 8q-19 0-31-15t-7-33l28-112H360Zm20-80h160l40-160H420l-40 160Z"
+            }
+            Self::Close => {
+                "M480-424 284-228q-11 11-28 11t-28-11q-11-11-11-28t11-28l196-196-196-196q-11-11-11-28t11-28q11-11 28-11t28 11l196 196 196-196q11-11 28-11t28 11q11 11 11 28t-11 28L536-480l196 196q11 11 11 28t-11 28q-11 11-28 11t-28-11L480-424Z"
+            }
+            Self::ChevronRight => {
+                "M504-480 348-636q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q6 6 8.5 13t2.5 15q0 8-2.5 15t-8.5 13L404-268q-11 11-28 11t-28-11q-11-11-11-28t11-28l156-156Z"
+            }
+            Self::Favorite => {
+                "M480-147q-14 0-28.5-5T426-168l-69-63q-106-97-191.5-192.5T80-634q0-94 63-157t157-63q53 0 100 22.5t80 61.5q33-39 80-61.5T660-854q94 0 157 63t63 157q0 115-85 211T602-230l-68 62q-11 11-25.5 16t-28.5 5Zm-38-543q-29-41-62-62.5T300-774q-60 0-100 40t-40 100q0 52 37 110.5T285.5-410q51.5 55 106 103t88.5 79q34-31 88.5-79t106-103Q726-465 763-523.5T800-634q0-60-40-100t-100-40q-47 0-80 21.5T518-690q-7 10-17 15t-21 5q-11 0-21-5t-17-15Zm38 189Z"
+            }
+            Self::AlternateEmail => {
+                "M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480v58q0 59-40.5 100.5T740-280q-35 0-66-15t-52-43q-29 29-65.5 43.5T480-280q-83 0-141.5-58.5T280-480q0-83 58.5-141.5T480-680q83 0 141.5 58.5T680-480v58q0 26 17 44t43 18q26 0 43-18t17-44v-58q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93h160q17 0 28.5 11.5T680-120q0 17-11.5 28.5T640-80H480Zm0-280q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Z"
+            }
+            Self::Circle => {
+                "M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+            }
+            Self::AttachFile => {
+                "M720-330q0 104-73 177T470-80q-104 0-177-73t-73-177v-370q0-75 52.5-127.5T400-880q75 0 127.5 52.5T580-700v350q0 46-32 78t-78 32q-46 0-78-32t-32-78v-330q0-17 11.5-28.5T400-720q17 0 28.5 11.5T440-680v330q0 13 8.5 21.5T470-320q13 0 21.5-8.5T500-350v-350q-1-42-29.5-71T400-800q-42 0-71 29t-29 71v370q-1 71 49 120.5T470-160q70 0 119-49.5T640-330v-350q0-17 11.5-28.5T680-720q17 0 28.5 11.5T720-680v350Z"
+            }
+            Self::Play => {
+                "M320-273v-414q0-17 12-28.5t28-11.5q5 0 10.5 1.5T381-721l326 207q9 6 13.5 15t4.5 19q0 10-4.5 19T707-446L381-239q-5 3-10.5 4.5T360-233q-16 0-28-11.5T320-273Zm80-207Zm0 134 210-134-210-134v268Z"
+            }
+            Self::Check => {
+                "m382-354 339-339q12-12 28-12t28 12q12 12 12 28.5T777-636L410-268q-12 12-28 12t-28-12L182-440q-12-12-11.5-28.5T183-497q12-12 28.5-12t28.5 12l142 143Z"
             }
         }
     }
-    out
 }
 
-fn svg_markup(path: &str, class: &str) -> String {
-    format!(
-        r##"<svg class="{class}" xmlns="http://www.w3.org/2000/svg" viewBox="{VIEW}" aria-hidden="true"><path fill="currentColor" d="{path}"/></svg>"##
-    )
-}
-
-pub const HOME: &str = "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z";
-pub const DMS: &str = "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 3.3c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7S9.3 9.49 9.3 8s1.21-2.7 2.7-2.7zM18 16H6v-.9c0-2 4-3.1 6-3.1s6 1.1 6 3.1v.9z";
-pub const BELL: &str = "M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z";
-pub const SEARCH: &str = "M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z";
-pub const UNREADS: &str = "M19 3h-4.2A3 3 0 0 0 12 1a3 3 0 0 0-2.8 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7H5V5h4.2A3 3 0 0 0 12 7a3 3 0 0 0 2.8-2H19v4h2V5a2 2 0 0 0-2-2zm-7 2a1 1 0 1 1 0-2 1 1 0 0 1 0 2z";
-pub const REPLY: &str = "M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z";
-#[allow(dead_code)]
-pub const TAG: &str =
-    "M20 10V8h-4V4h-2v4h-4V4H8v4H4v2h4v4H4v2h4v4h2v-4h4v4h2v-4h4v-2h-4v-4h4zm-6 4h-4v-4h4v4z";
-pub const LOCK: &str = "M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z";
-pub const PLUS: &str = "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z";
-// Filled triangle — matches the pre-migration send control in the composer.
-pub const SEND: &str = "M8 5v14l11-7z";
-pub const COMPOSE: &str = "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z";
-pub const MESSAGE: &str =
-    "M4 3h16c1.1 0 2 .9 2 2v11c0 1.1-.9 2-2 2H7l-5 4V5c0-1.1.9-2 2-2zm0 2v12.83L6.3 16H20V5H4z";
-pub const CLOCK: &str = "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-13h-2v6l5.25 3.15 1-1.64-4.25-2.51V7z";
-pub const USER_ADD: &str = "M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z";
-pub const MORE: &str = "M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z";
-#[allow(dead_code)]
-pub const AT: &str = "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10h5v-2h-5c-4.34 0-8-3.66-8-8s3.66-8 8-8 8 3.66 8 8v1.43c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57V12c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.38 0 2.64-.56 3.54-1.47.65.89 1.77 1.47 2.96 1.47 1.97 0 3.5-1.6 3.5-3.57V12c0-5.52-4.48-10-10-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z";
-
-pub fn home_uri() -> String {
-    svg_data_uri(HOME)
-}
-pub fn dms_uri() -> String {
-    svg_data_uri(DMS)
-}
-pub fn bell_uri() -> String {
-    svg_data_uri(BELL)
-}
-pub fn search_uri() -> String {
-    svg_data_uri(SEARCH)
-}
-pub fn unreads_uri() -> String {
-    svg_data_uri(UNREADS)
-}
-pub fn reply_uri() -> String {
-    svg_data_uri(REPLY)
-}
-#[allow(dead_code)]
-pub fn tag_uri() -> String {
-    svg_data_uri(TAG)
-}
-pub fn lock_uri() -> String {
-    svg_data_uri(LOCK)
-}
-pub fn plus_uri() -> String {
-    svg_data_uri(PLUS)
-}
-pub fn send_uri() -> String {
-    svg_data_uri(SEND)
-}
-pub fn compose_uri() -> String {
-    svg_data_uri(COMPOSE)
-}
-pub fn message_uri() -> String {
-    svg_data_uri(MESSAGE)
-}
-pub fn clock_uri() -> String {
-    svg_data_uri(CLOCK)
-}
-pub fn user_add_uri() -> String {
-    svg_data_uri(USER_ADD)
-}
-pub fn more_uri() -> String {
-    svg_data_uri(MORE)
-}
-#[allow(dead_code)]
-pub fn at_uri() -> String {
-    svg_data_uri(AT)
-}
-
-/// Inline SVG markup for cases where currentColor theming is needed.
-#[allow(dead_code)]
-pub fn icon_html(path: &str) -> String {
-    svg_markup(path, "mat-icon")
+/// Render one decorative icon. Accessible names belong on the containing button;
+/// this keeps repeated SVGs out of the accessibility tree.
+pub fn icon(kind: Icon, class: &'static str) -> Element {
+    rsx! {
+        svg {
+            class: "material-icon {class}",
+            view_box: VIEW_BOX,
+            "aria-hidden": "true",
+            path { fill: "currentColor", d: kind.path() }
+        }
+    }
 }
 
 /// The Super Platinum mark: a faceted rhombus with the "S" cut out of it.
-///
-/// Geometry matches `assets/icons/mark-flat.svg`, so the in-app mark and the
-/// bundled app icon stay in sync. Filled with a platinum gradient rather than
-/// the 12-facet chrome of the full icon, which turns to mud below ~64px.
 const MARK: &str = "M498.87,112.09Q505.92,105.00 513.10,111.96L904.58,491.15Q911.76,498.11 904.92,505.40L523.76,911.71Q516.92,919.00 509.97,911.81L119.19,507.61Q112.24,500.42 119.29,493.33L498.87,112.09ZM482.97,312.94Q491.45,307.63 500.47,311.95L881.32,494.36Q890.34,498.68 881.18,502.69L769.82,551.41Q760.66,555.42 751.57,551.25L385.91,383.59Q376.82,379.42 385.29,374.11L482.97,312.94ZM248.29,450.93Q257.55,447.16 266.51,451.61L627.81,631.44Q636.76,635.89 628.58,641.65L543.63,701.35Q535.45,707.11 526.59,702.45L144.25,501.60Q135.39,496.95 144.66,493.17L248.29,450.93Z";
 
-/// The app icon, inline: platinum mark on the same dark plate the bundled icon
-/// uses. The plate is what makes this readable on both themes — bare platinum
-/// disappears into a light background.
 pub fn brand_mark_html() -> String {
     format!(
         r##"<svg class="brand-mark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" aria-hidden="true"><defs><linearGradient id="spp" x1="512" y1="0" x2="512" y2="1024" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#20242E"/><stop offset="1" stop-color="#0D1014"/></linearGradient><linearGradient id="spm" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#FDFDFE"/><stop offset="0.45" stop-color="#D2D5DB"/><stop offset="0.7" stop-color="#9BA1AC"/><stop offset="1" stop-color="#C9CDD4"/></linearGradient></defs><rect width="1024" height="1024" rx="228" ry="228" fill="url(#spp)"/><path fill="url(#spm)" fill-rule="evenodd" d="{MARK}"/></svg>"##

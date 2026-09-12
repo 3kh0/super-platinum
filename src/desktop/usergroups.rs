@@ -164,7 +164,7 @@ pub(crate) fn pane(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
         aside { class: "profile-pane usergroup-pane", role: "dialog", "aria-label": "User group",
             header { class: "profile-pane-header",
                 h2 { "User group" }
-                button { "aria-label": "Close user group", onclick: move |_| state.write().group_panel = None, "×" }
+                button { "aria-label": "Close user group", onclick: move |_| state.write().group_panel = None, {crate::icons::icon(crate::icons::Icon::Close, "icon")} }
             }
             if panel.loading { p { class: "group-notice", role: "status", "Loading group…" } }
             if panel.error {

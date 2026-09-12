@@ -158,7 +158,7 @@ fn storage_panel(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elemen
                                 "aria-checked": selected.to_string(),
                                 onclick: move |_| state.write().toggle_cache_kind(kind),
                                 span { class: "storage-swatch", "aria-hidden": "true",
-                                    if selected { "✓" }
+                                    if selected { {crate::icons::icon(crate::icons::Icon::Check, "storage-check-icon")} }
                                 }
                                 span { class: "storage-name",
                                     "{kind.label()} "

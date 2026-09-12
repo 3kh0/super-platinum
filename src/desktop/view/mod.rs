@@ -314,7 +314,7 @@ pub fn shell() -> Element {
                                     shell.close_thread();
                                 }
                             },
-                            "×"
+                            {crate::icons::icon(crate::icons::Icon::Close, "icon")}
                         }
                     }
                     div {
@@ -374,7 +374,7 @@ pub fn shell() -> Element {
                         title: "Dismiss",
                         "aria-label": "Dismiss notification",
                         onclick: move |_| state.write().toast = None,
-                        "×"
+                        {crate::icons::icon(crate::icons::Icon::Close, "icon sm")}
                     }
                 }
             }

@@ -30,7 +30,7 @@
 }
 .rail-btn:hover { background: var(--hover-overlay); color: var(--text); }
 .rail-btn.active { background: var(--accent-soft); color: var(--text); }
-.rail-btn.active img.icon { opacity: 1; filter: none; }
+.rail-btn.active .icon { opacity: 1; }
 .rail-badge {
   position: absolute;
   top: -2px;
@@ -227,7 +227,7 @@
   color: inherit;
   font-size: 12px;
 }
-.channel-icon img.icon { width: 15px; height: 15px; }
+.channel-icon .icon { width: 15px; height: 15px; }
 .channel-name {
   flex: 1;
   min-width: 0;

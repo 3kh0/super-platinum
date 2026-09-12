@@ -186,10 +186,8 @@
   color: var(--text);
   border-color: transparent;
 }
-.activity-event-icon {
-  font-size: 14px !important;
-  background: var(--surface-raised) !important;
-}
+.activity-event-icon { background: var(--surface-raised) !important; }
+.activity-kind-icon { width: 17px; height: 17px; color: var(--muted); }
 .activity-day {
   padding: 10px 12px 4px;
   text-align: center;

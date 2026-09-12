@@ -124,7 +124,7 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                 })
                 .unwrap_or_default();
             let Some(target) = full.as_ref().or(id.as_ref()) else {
-                return rsx! { span { class: "file-link", "📎 {name}" } };
+                return rsx! { span { class: "file-link", {crate::icons::icon(crate::icons::Icon::AttachFile, "file-link-icon")} "{name}" } };
             };
             let viewer = viewer_vm(target, name, mime);
             let Some(id) = id.as_ref() else {
@@ -132,7 +132,8 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                     button {
                         class: "file-link",
                         onclick: move |_| open_viewer(state, viewer.clone()),
-                        "📎 {name}"
+                        {crate::icons::icon(crate::icons::Icon::AttachFile, "file-link-icon")}
+                        "{name}"
                     }
                 };
             };
@@ -165,7 +166,7 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                             alt: "{name}",
                             style: "{sizing}",
                         }
-                        span { class: "media-play", "▶" }
+                        span { class: "media-play", {crate::icons::icon(crate::icons::Icon::Play, "media-play-icon")} }
                     }
                 }
             } else {
@@ -173,7 +174,8 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                     button {
                         class: "file-link",
                         onclick: move |_| open_viewer(state, viewer.clone()),
-                        "📎 {name}"
+                        {crate::icons::icon(crate::icons::Icon::AttachFile, "file-link-icon")}
+                        "{name}"
                     }
                 }
             }
@@ -665,7 +667,7 @@ pub(crate) fn attachment_chip(
                 class: "attachment-remove",
                 title: "Remove",
                 onclick: move |_| state.write().remove_attachment(id),
-                "×"
+                {crate::icons::icon(crate::icons::Icon::Close, "icon sm")}
             }
         }
     }

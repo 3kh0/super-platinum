@@ -104,6 +104,18 @@ in `src/desktop/styles/base.css` and `design-system.css`.
 - Keep controls stable in size; avoid layout shifts on hover, loading, or text changes.
 - Do not add decorative chrome that competes with channels, messages, threads, and search.
 
+### Icons — Hard Rule
+
+**Any and all interface icons must come from Google Material Symbols Rounded.**
+Do not use text glyphs or emoji as interface icons, hand-drawn SVG paths, another
+icon family, or platform-specific symbols. Render icons through the typed,
+zero-dependency helper in `src/desktop/icons.rs`, which keeps the official rounded
+24 px SVG paths inline, offline, and `currentColor`-aware. When a needed symbol is
+missing, add its official `materialsymbolsrounded` 24 px path from Google's
+`material-design-icons` repository to that module and reuse it from there. Brand
+marks, user-authored emoji, workspace custom emoji, avatars, and message content
+are content rather than interface icons and are the only exceptions.
+
 ### Surfaces
 
 Each rail tab owns a surface, the way Slack's does (CDP-verified against the

@@ -38,7 +38,7 @@ pub(crate) fn message_vm(
             .chars()
             .find(char::is_ascii_alphanumeric)
             .map(|c| c.to_ascii_uppercase().to_string())
-            .unwrap_or_else(|| "↗".into());
+            .unwrap_or_else(|| "E".into());
         let icon = super_platinum_core::state::team_icon_url(team)
             .map(|url| media.register_icon(MediaAssetKind::Avatar, url));
         Some(ExternalTeamVm {
