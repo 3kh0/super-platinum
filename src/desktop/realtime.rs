@@ -75,6 +75,12 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     }),
                     _ => false,
                 };
+                let self_profile_changed = matches!(
+                    event.as_ref(),
+                    RtEvent::UserChanged(user)
+                        if shell.core.workspaces.get(&team)
+                            .is_some_and(|workspace| user.id == workspace.self_user_id)
+                );
                 let notification =
                     crate::notification::for_event(&shell.core, &team, generation, &event);
                 let arrival = match event.as_ref() {
@@ -93,7 +99,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
                 shell.refresh_from_core();
                 drop(shell);
-                if needs_user_hydration {
+                if needs_user_hydration || self_profile_changed {
                     dioxus::prelude::spawn(crate::bootstrap::hydrate_current_surface(state));
                 }
                 if needs_group_hydration {
@@ -232,6 +238,7 @@ fn apply(
                 workspace.set_presence(user, presence);
             }
         }
+        RtEvent::UserChanged(user) => workspace.apply_user_update(user),
         RtEvent::DndUpdated { user, dnd } => {
             if user == workspace.self_user_id {
                 workspace.self_dnd = dnd;
@@ -397,6 +404,48 @@ mod tests {
             .find(|message| message.ts.as_deref() == Some(ts))
             .map(|message| message.reactions.iter().map(|r| r.name.clone()).collect())
             .unwrap_or_default()
+    }
+
+    #[test]
+    fn user_change_updates_self_status_without_dropping_existing_identity() {
+        let mut core = core();
+        core.workspaces.get_mut(TEAM).unwrap().users.insert(
+            "USELF".into(),
+            super_platinum_core::slack::models::User {
+                id: "USELF".into(),
+                name: Some("Taylor".into()),
+                profile: Some(super_platinum_core::slack::models::UserProfile {
+                    image_72: Some("https://example.test/avatar.png".into()),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        );
+
+        apply(
+            &mut core,
+            TEAM,
+            0,
+            RtEvent::UserChanged(super_platinum_core::slack::models::User {
+                id: "USELF".into(),
+                profile: Some(super_platinum_core::slack::models::UserProfile {
+                    status_text: Some("Reviewing".into()),
+                    status_emoji: Some(":ship:".into()),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+        );
+
+        let user = &core.workspaces[TEAM].users["USELF"];
+        assert_eq!(user.name.as_deref(), Some("Taylor"));
+        let profile = user.profile.as_ref().unwrap();
+        assert_eq!(
+            profile.image_72.as_deref(),
+            Some("https://example.test/avatar.png")
+        );
+        assert_eq!(profile.status_text.as_deref(), Some("Reviewing"));
+        assert_eq!(profile.status_emoji.as_deref(), Some(":ship:"));
     }
 
     #[test]

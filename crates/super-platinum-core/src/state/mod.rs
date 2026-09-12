@@ -432,6 +432,15 @@ impl Workspace {
         }
     }
 
+    /// Merge a realtime user update without discarding fields omitted by the
+    /// event. Status fields that are explicitly empty remain empty, allowing a
+    /// `user_change` frame to clear the signed-in user's status immediately.
+    pub fn apply_user_update(&mut self, user: User) {
+        let existing = self.users.remove(&user.id);
+        self.users
+            .insert(user.id.clone(), merge_boot_user(existing, user));
+    }
+
     pub fn apply_counts(&mut self, counts: crate::slack::models::CountsPage) {
         if let Some(unread_count) = counts.activity_unread_count() {
             self.activity_unread_count = Some(unread_count);

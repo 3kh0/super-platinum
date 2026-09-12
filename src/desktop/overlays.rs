@@ -372,6 +372,36 @@ fn self_status(snapshot: &ShellState) -> Option<SelfStatusVm> {
     Some(SelfStatusVm { text, glyph, image })
 }
 
+#[cfg(test)]
+mod tests {
+    use super::self_status;
+    use crate::media::MediaRegistry;
+    use crate::state::ShellState;
+
+    #[test]
+    fn self_menu_status_resolves_custom_emoji_to_an_image() {
+        let mut state = ShellState::fixture_variant(MediaRegistry::default(), "self-menu");
+        let workspace = state.core.workspaces.get_mut("T1").unwrap();
+        workspace.apply_emojis(vec![super_platinum_core::slack::models::Emoji {
+            name: "ship".into(),
+            value: "https://example.test/ship.png".into(),
+            ..Default::default()
+        }]);
+        let profile = workspace
+            .users
+            .get_mut("U0")
+            .unwrap()
+            .profile
+            .as_mut()
+            .unwrap();
+        profile.status_emoji = Some(":ship:".into());
+
+        let status = self_status(&state).expect("status");
+        assert!(status.image.is_some());
+        assert!(status.glyph.is_empty());
+    }
+}
+
 fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
     let matches = snapshot.palette_matches();
     let query_empty = snapshot.palette_query.trim().is_empty();

@@ -336,6 +336,9 @@ pub fn parse_event(text: &str) -> Option<RtEvent> {
                     .to_owned(),
             })
         }
+        "user_change" => serde_json::from_value(value.get("user")?.clone())
+            .ok()
+            .map(RtEvent::UserChanged),
         "dnd_updated" | "dnd_updated_user" => Some(RtEvent::DndUpdated {
             user: value.get("user").and_then(Value::as_str)?.to_owned(),
             dnd: value
@@ -486,6 +489,20 @@ mod tests {
             parse_event(frame),
             Some(RtEvent::UserTyping { .. })
         ));
+    }
+
+    #[test]
+    fn parses_user_change() {
+        let frame = r#"{"type":"user_change","user":{"id":"U1","profile":{"status_text":"Reviewing","status_emoji":":ship:"}}}"#;
+        match parse_event(frame) {
+            Some(RtEvent::UserChanged(user)) => {
+                assert_eq!(user.id, "U1");
+                let profile = user.profile.expect("profile");
+                assert_eq!(profile.status_text.as_deref(), Some("Reviewing"));
+                assert_eq!(profile.status_emoji.as_deref(), Some(":ship:"));
+            }
+            other => panic!("expected UserChanged, got {other:?}"),
+        }
     }
 
     #[test]

@@ -181,6 +181,18 @@ async fn hydrate_surface_emojis(
         visit_surface_messages(&shell, team, &mut |message| {
             super_platinum_core::state::collect_message_emoji_names(message, &mut names);
         });
+        if let Some(status) = workspace
+            .users
+            .get(&workspace.self_user_id)
+            .and_then(|user| user.profile.as_ref())
+            .and_then(|profile| profile.status_emoji.as_deref())
+        {
+            names.extend(
+                super_platinum_core::state::emoji_names_in_text(status)
+                    .into_iter()
+                    .filter(|name| !super_platinum_core::state::is_standard_emoji(name)),
+            );
+        }
         names.retain(|name| {
             !workspace.custom_emoji.contains_key(name)
                 // Names Slack has already told us it does not know must not be
