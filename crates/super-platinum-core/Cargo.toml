@@ -29,7 +29,7 @@ tokio = { version = "1", features = [
 ] }
 tracing = "0.1"
 uuid = { version = "1", features = ["v4"] }
-wreq = { version = "6.0.0-rc.29", features = [
+wreq = { version = "6.0.0-rc.31", features = [
     "json",
     "form",
     "cookies",
@@ -40,19 +40,19 @@ wreq = { version = "6.0.0-rc.29", features = [
     "stream",
     "ws",
 ] }
-wreq-util = "3.0.0-rc.13"
+wreq-util = "3.0.0-rc.14"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-keyring = { version = "3", features = ["apple-native"] }
+keyring = "4"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-keyring = { version = "3", features = ["sync-secret-service"] }
+keyring = "4"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-keyring = { version = "3", features = ["windows-native"] }
+keyring = "4"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["test-util"] }
