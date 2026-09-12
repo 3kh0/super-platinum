@@ -669,6 +669,76 @@ pub async fn mark_activity_read(mut state: Signal<ShellState>, key: String) {
     }
 }
 
+pub async fn load_more_dms(mut state: Signal<ShellState>) {
+    let Some((transport, client, workspaces)) = credentials(&state) else {
+        return;
+    };
+    let Some((team, cursor, load_seq)) = ({
+        let mut shell = state.write();
+        if shell.main_view != MainView::Dms || shell.core.dms.loading {
+            None
+        } else if let (Some(team), Some(cursor)) = (
+            shell.core.active_team.clone(),
+            shell.core.dms.next_cursor.take(),
+        ) {
+            shell.core.dms.loading = true;
+            shell.core.dms.load_seq = shell.core.dms.load_seq.wrapping_add(1);
+            Some((team, cursor, shell.core.dms.load_seq))
+        } else {
+            None
+        }
+    }) else {
+        return;
+    };
+    let Some(workspace_session) = workspaces
+        .into_iter()
+        .find(|workspace| workspace.team_id == team)
+    else {
+        let mut shell = state.write();
+        if shell.core.dms.load_seq == load_seq {
+            shell.core.dms.loading = false;
+            shell.core.dms.next_cursor = Some(cursor);
+        }
+        return;
+    };
+
+    match api::fetch_client_dms(
+        &transport,
+        &client,
+        &workspace_session,
+        100,
+        Some(cursor.clone()),
+    )
+    .await
+    {
+        Ok(page) => {
+            let mut shell = state.write();
+            if shell.core.dms.load_seq != load_seq {
+                return;
+            }
+            for entry in page.dms {
+                shell.core.dms.upsert(entry);
+            }
+            shell.core.dms.next_cursor = page
+                .response_metadata
+                .and_then(|metadata| metadata.next_cursor)
+                .filter(|cursor| !cursor.is_empty());
+            shell.core.dms.loading = false;
+        }
+        Err(error) => {
+            let mut shell = state.write();
+            if shell.core.dms.load_seq != load_seq {
+                return;
+            }
+            shell.core.dms.loading = false;
+            shell.core.dms.next_cursor = Some(cursor);
+            shell.report_failure(&error, "", || {
+                format!("More direct messages failed: {error}")
+            });
+        }
+    }
+}
+
 pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
     // Each rail tab keeps its own conversation, the way Slack's does: leaving
     // Activity for a channel and coming back shows the item that was being
@@ -716,10 +786,18 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
         MainView::Home => {}
         MainView::Unreads => {}
         MainView::Dms => {
-            state.write().core.dms.loading = true;
+            let load_seq = {
+                let mut shell = state.write();
+                shell.core.dms.loading = true;
+                shell.core.dms.load_seq = shell.core.dms.load_seq.wrapping_add(1);
+                shell.core.dms.load_seq
+            };
             match api::fetch_client_dms(&transport, &client, &workspace_session, 100, None).await {
                 Ok(page) => {
                     let mut shell = state.write();
+                    if shell.core.dms.load_seq != load_seq {
+                        return;
+                    }
                     shell.core.dms.entries.clear();
                     for entry in page.dms {
                         shell.core.dms.upsert(entry);
@@ -733,6 +811,9 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
                 }
                 Err(error) => {
                     let mut shell = state.write();
+                    if shell.core.dms.load_seq != load_seq {
+                        return;
+                    }
                     shell.core.dms.loading = false;
                     shell.report_failure(&error, "", || format!("Direct messages failed: {error}"));
                 }

@@ -60,6 +60,13 @@
   color: var(--muted);
   font-size: 13px;
 }
+.list-loading {
+  margin: 0;
+  padding: 10px 16px 14px;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
 
 /* DM row */
 .dm-row {

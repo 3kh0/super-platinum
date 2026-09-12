@@ -175,6 +175,19 @@ pub(crate) fn activity_channel_label(
     }
 }
 
+async fn load_more_dms_if_needed(state: Signal<ShellState>) {
+    let near_bottom = dioxus::document::eval(
+        "const list=document.getElementById('dm-list');
+         dioxus.send(Boolean(list && list.scrollHeight - list.scrollTop - list.clientHeight < 160));",
+    )
+    .recv::<bool>()
+    .await
+    .unwrap_or(false);
+    if near_bottom {
+        crate::bootstrap::load_more_dms(state).await;
+    }
+}
+
 pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
     let workspace = snapshot
         .core
@@ -212,8 +225,13 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                 placeholder: "Find a DM…",
                 oninput: move |event| state.write().dm_query = event.value()
             }
-            div { class: "list-body",
-                if snapshot.core.dms.loading {
+            div {
+                id: "dm-list",
+                class: "list-body",
+                onscroll: move |_| {
+                    spawn(load_more_dms_if_needed(state));
+                },
+                if snapshot.core.dms.loading && snapshot.core.dms.entries.is_empty() {
                     p { class: "list-empty", "Loading direct messages…" }
                 }
                 for entry in snapshot.core.dms.entries.iter().filter(|entry| {
@@ -316,6 +334,9 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                             }
                         }
                     }
+                }
+                if snapshot.core.dms.loading && !snapshot.core.dms.entries.is_empty() {
+                    p { class: "list-loading", "Loading older conversations…" }
                 }
             }
         }
