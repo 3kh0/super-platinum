@@ -10,6 +10,19 @@ pub(crate) fn message_vm(
     message: &super_platinum_core::slack::models::Message,
     media: &MediaRegistry,
 ) -> MessageVm {
+    let pending = message
+        .ts
+        .as_deref()
+        .is_some_and(|ts| workspace.messages.values().any(|bag| bag.is_pending(ts)));
+    message_vm_with_pending(workspace, message, media, pending)
+}
+
+pub(crate) fn message_vm_with_pending(
+    workspace: &super_platinum_core::state::Workspace,
+    message: &super_platinum_core::slack::models::Message,
+    media: &MediaRegistry,
+    pending: bool,
+) -> MessageVm {
     let author = super_platinum_core::state::message_author_name(workspace, message);
     let initials = author
         .split_whitespace()
@@ -69,10 +82,6 @@ pub(crate) fn message_vm(
                 String::new()
             }
         });
-    let pending = message
-        .ts
-        .as_deref()
-        .is_some_and(|ts| workspace.messages.values().any(|bag| bag.is_pending(ts)));
     MessageVm {
         id: raw_ts.clone(),
         ts: message.ts.clone().unwrap_or_else(|| raw_ts.clone()),

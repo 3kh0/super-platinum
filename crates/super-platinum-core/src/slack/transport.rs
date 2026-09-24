@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
+use futures::StreamExt;
 use tokio::sync::watch;
 
 use serde_json::Value;
@@ -44,6 +45,8 @@ impl std::fmt::Debug for Transport {
 
 /// Upper bound on a single media fetch (avatars, emoji, unfurl images, files).
 const MEDIA_FETCH_TIMEOUT: Duration = Duration::from_secs(20);
+/// Large enough for a requested original, but never buffer an unbounded CDN response.
+const MAX_MEDIA_BYTES: usize = 64 * 1024 * 1024;
 
 /// How long a call waits for a downed link to come back before giving up.
 ///
@@ -354,12 +357,27 @@ impl Transport {
             });
         }
 
-        response
-            .bytes()
-            .await
-            .map(|bytes| bytes.to_vec())
-            .map_err(|e| Error::Transport(format!("read body: {e}")))
+        read_media_body(response, MAX_MEDIA_BYTES).await
     }
+}
+
+async fn read_media_body(response: wreq::Response, limit: usize) -> Result<Vec<u8>, Error> {
+    if response
+        .content_length()
+        .is_some_and(|length| length > limit as u64)
+    {
+        return Err(Error::Transport("media body exceeds size limit".into()));
+    }
+    let mut bytes = Vec::new();
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| Error::Transport(format!("read body: {e}")))?;
+        if chunk.len() > limit - bytes.len() {
+            return Err(Error::Transport("media body exceeds size limit".into()));
+        }
+        bytes.extend_from_slice(&chunk);
+    }
+    Ok(bytes)
 }
 
 pub fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
@@ -659,6 +677,36 @@ mod tests {
         .unwrap();
         assert_eq!(bytes, b"ok");
         server.await.unwrap()
+    }
+
+    #[tokio::test]
+    async fn media_read_rejects_large_declared_and_streamed_bodies() {
+        for (headers, body) in [
+            ("Content-Length: 1000\r\n", ""),
+            (
+                "Transfer-Encoding: chunked\r\n",
+                "4\r\nabcd\r\n4\r\nefgh\r\n0\r\n\r\n",
+            ),
+        ] {
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let reply = format!("HTTP/1.1 200 OK\r\n{headers}Connection: close\r\n\r\n{body}");
+            let server = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                socket.read(&mut [0; 8192]).await.unwrap();
+                let _ = socket.write_all(reply.as_bytes()).await;
+            });
+            let transport = Transport::new("cookie").unwrap();
+            let response = transport
+                .http()
+                .get(format!("http://{address}/image"))
+                .send()
+                .await
+                .unwrap();
+            let error = read_media_body(response, 5).await.unwrap_err();
+            assert!(error.to_string().contains("size limit"), "{error}");
+            server.await.unwrap();
+        }
     }
 
     #[tokio::test]

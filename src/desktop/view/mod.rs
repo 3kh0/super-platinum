@@ -15,7 +15,7 @@ use crate::overlays::overlay_view;
 use crate::state::{MainView, Overlay, ShellState};
 
 use chrome::{channel_sidebar, conversation_header, rail_view};
-use composer::{composer, load_older_if_needed, measure_thread, measure_timeline};
+use composer::{composer, load_older_if_needed, measure_thread, schedule_timeline_measure};
 use message::{RowSurface, message_row};
 use secondary::{activity_list_panel, dm_list_panel, secondary_view};
 use theme::theme_css;
@@ -37,6 +37,8 @@ const CSS: &str = concat!(
 
 pub fn shell() -> Element {
     let mut state = consume_context::<Signal<ShellState>>();
+    let measurement_pending = use_signal(|| false);
+    let measurement_queued = use_signal(|| false);
     let theme_style = theme_css(
         &state.read().core.settings,
         state.read().background_uri.as_deref(),
@@ -234,14 +236,14 @@ pub fn shell() -> Element {
                             class: "timeline",
                             onscroll: move |_| {
                                 if !state.read().selection_pinned {
-                                    spawn(measure_timeline(state));
+                                    schedule_timeline_measure(state, measurement_pending, measurement_queued);
                                     spawn(load_older_if_needed(state));
                                 }
                             },
                             onselectstart: move |_| state.write().pin_selection(),
                             onmouseup: move |_| {
                                 state.write().unpin_selection();
-                                spawn(measure_timeline(state));
+                                schedule_timeline_measure(state, measurement_pending, measurement_queued);
                             },
                         div { class: "timeline-spacer", style: "height: {top_height}px" }
                         for (offset, message) in snapshot.messages[timeline_start..timeline_end].iter().enumerate() {

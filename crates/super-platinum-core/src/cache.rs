@@ -222,7 +222,9 @@ impl Cache {
                self_user_id = excluded.self_user_id,
                last_active_channel = excluded.last_active_channel,
                recent_channels = excluded.recent_channels,
-               frecency = excluded.frecency",
+               frecency = excluded.frecency
+             where (name, url, self_user_id, last_active_channel, recent_channels, frecency)
+               is not (excluded.name, excluded.url, excluded.self_user_id, excluded.last_active_channel, excluded.recent_channels, excluded.frecency)",
             params![
                 ws.team_id,
                 ws.name,
@@ -238,18 +240,30 @@ impl Cache {
             // Channel writes and group metadata share the same transaction.
             tx.execute(
                 "insert into channels (team_id, channel_id, json) values (?1, ?2, ?3)
-                 on conflict(team_id, channel_id) do update set json = excluded.json",
+                 on conflict(team_id, channel_id) do update set json = excluded.json
+                 where json != excluded.json",
                 params![ws.team_id, channel.id, serde_json::to_string(channel)?],
             )?;
         }
 
-        tx.execute(
-            "delete from usergroups where team_id = ?1",
-            params![ws.team_id],
-        )?;
+        {
+            let mut stmt = tx.prepare("select group_id from usergroups where team_id = ?1")?;
+            let ids = stmt.query_map(params![ws.team_id], |row| row.get::<_, String>(0))?;
+            for id in ids {
+                let id = id?;
+                if !ws.usergroups.contains_key(&id) {
+                    tx.execute(
+                        "delete from usergroups where team_id = ?1 and group_id = ?2",
+                        params![ws.team_id, id],
+                    )?;
+                }
+            }
+        }
         for group in ws.usergroups.values() {
             tx.execute(
-                "insert into usergroups (team_id, group_id, json) values (?1, ?2, ?3)",
+                "insert into usergroups (team_id, group_id, json) values (?1, ?2, ?3)
+                 on conflict(team_id, group_id) do update set json = excluded.json
+                 where json != excluded.json",
                 params![ws.team_id, group.id, serde_json::to_string(group)?],
             )?;
         }
@@ -257,7 +271,8 @@ impl Cache {
             let json = serde_json::to_string(&serde_json::to_value(user)?)?;
             tx.execute(
                 "insert into users (team_id, user_id, json) values (?1, ?2, ?3)
-                 on conflict(team_id, user_id) do update set json = excluded.json",
+                 on conflict(team_id, user_id) do update set json = excluded.json
+                 where json != excluded.json",
                 params![ws.team_id, user.id, json],
             )?;
         }
@@ -269,7 +284,9 @@ impl Cache {
                  on conflict(team_id, channel_id) do update set
                    last_read = excluded.last_read,
                    unread_count = excluded.unread_count,
-                   mention_count = excluded.mention_count",
+                   mention_count = excluded.mention_count
+                 where (last_read, unread_count, mention_count)
+                   is not (excluded.last_read, excluded.unread_count, excluded.mention_count)",
                 params![
                     ws.team_id,
                     channel_id,
@@ -281,32 +298,52 @@ impl Cache {
             if !cm.loaded && cm.messages.is_empty() && cm.pending.is_empty() {
                 continue;
             }
-            tx.execute(
-                "delete from messages where team_id = ?1 and channel_id = ?2",
-                params![ws.team_id, channel_id],
-            )?;
-            let mut cached_messages: Vec<_> = cm
+            let cached_messages: Vec<_> = cm
                 .messages
                 .iter()
                 .rev()
                 .take(MAX_CACHED_MESSAGES_PER_CHANNEL)
-                .collect();
-            cached_messages.reverse();
-            for msg in cached_messages {
-                let Some(ts) = msg.ts.as_deref() else {
-                    continue;
-                };
-                tx.execute(
-                    "insert into messages (team_id, channel_id, ts, json, pending)
-                     values (?1, ?2, ?3, ?4, ?5)",
-                    params![
-                        ws.team_id,
-                        channel_id,
-                        ts,
-                        serde_json::to_string(msg)?,
-                        cm.is_pending(ts)
-                    ],
+                .filter_map(|msg| {
+                    msg.ts.as_deref().map(|ts| {
+                        Ok((
+                            ts.to_owned(),
+                            serde_json::to_string(msg)?,
+                            cm.is_pending(ts),
+                        ))
+                    })
+                })
+                .collect::<Result<_, serde_json::Error>>()?;
+            // Most saves only change one channel. Avoid deleting and reinserting
+            // every transcript when the cached window is already identical.
+            let unchanged = {
+                let mut stmt = tx.prepare(
+                    "select ts, json, pending from messages
+                     where team_id = ?1 and channel_id = ?2",
                 )?;
+                let stored: HashMap<String, (String, bool)> = stmt
+                    .query_map(params![ws.team_id, channel_id], |row| {
+                        Ok((row.get(0)?, (row.get(1)?, row.get(2)?)))
+                    })?
+                    .collect::<Result<_, _>>()?;
+                stored.len() == cached_messages.len()
+                    && cached_messages.iter().all(|(ts, json, pending)| {
+                        stored
+                            .get(ts)
+                            .is_some_and(|(old, was_pending)| old == json && was_pending == pending)
+                    })
+            };
+            if !unchanged {
+                tx.execute(
+                    "delete from messages where team_id = ?1 and channel_id = ?2",
+                    params![ws.team_id, channel_id],
+                )?;
+                for (ts, json, pending) in cached_messages {
+                    tx.execute(
+                        "insert into messages (team_id, channel_id, ts, json, pending)
+                         values (?1, ?2, ?3, ?4, ?5)",
+                        params![ws.team_id, channel_id, ts, json, pending],
+                    )?;
+                }
             }
         }
 
@@ -461,6 +498,74 @@ mod tests {
         assert_eq!(loaded.frecency_score("C1", 1_000_000), 1.0);
         assert_eq!(loaded.usergroups["S1"].handle, "crew");
         assert!(loaded.usergroups["S1"].includes(&ws.self_user_id));
+        ws.usergroups.clear();
+        cache.save_workspace(&ws).unwrap();
+        assert!(
+            cache
+                .load_workspace(&session)
+                .unwrap()
+                .unwrap()
+                .usergroups
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn unchanged_save_does_not_write_rows_but_changed_snapshots_do() {
+        let cache = Cache::open(":memory:").unwrap();
+        let session = session();
+        let mut ws = Workspace::from_session(&session);
+        ws.channels.insert(
+            "C1".into(),
+            Channel {
+                id: "C1".into(),
+                ..Default::default()
+            },
+        );
+        ws.users.insert(
+            "U1".into(),
+            User {
+                id: "U1".into(),
+                ..Default::default()
+            },
+        );
+        let mut cm = ChannelMessages::default();
+        cm.loaded = true;
+        cm.upsert(SlackMessage {
+            ts: Some("1.000001".into()),
+            text: Some("old".into()),
+            ..Default::default()
+        });
+        ws.messages.insert("C1".into(), cm);
+        cache.save_workspace(&ws).unwrap();
+        let writes = cache.conn.total_changes();
+        cache.save_workspace(&ws).unwrap();
+        assert_eq!(cache.conn.total_changes(), writes);
+
+        ws.messages.get_mut("C1").unwrap().messages[0].text = Some("new".into());
+        ws.messages
+            .get_mut("C1")
+            .unwrap()
+            .pending
+            .push("1.000001".into());
+        ws.usergroups.insert(
+            "S1".into(),
+            crate::slack::models::UserGroup {
+                id: "S1".into(),
+                ..Default::default()
+            },
+        );
+        cache.save_workspace(&ws).unwrap();
+        assert!(cache.conn.total_changes() > writes);
+        let loaded = cache.load_workspace(&session).unwrap().unwrap();
+        assert_eq!(
+            loaded.messages["C1"].messages[0].text.as_deref(),
+            Some("new")
+        );
+        assert_eq!(loaded.messages["C1"].pending, ["1.000001"]);
+        let writes = cache.conn.total_changes();
+        cache.save_workspace(&ws).unwrap();
+        assert_eq!(cache.conn.total_changes(), writes);
         ws.usergroups.clear();
         cache.save_workspace(&ws).unwrap();
         assert!(

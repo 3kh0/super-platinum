@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 
 use dioxus::desktop::wry::http::{Request, Response, StatusCode};
@@ -59,6 +59,11 @@ const TRANSPARENT_PNG: &[u8] = &[
 /// Ceiling on the retry backoff, reached after eight consecutive failures.
 const MAX_RETRY_BACKOFF: Duration = Duration::from_secs(256);
 
+// Keep enough for an opened original plus the visible transcript, but do not
+// retain every image ever visited for the lifetime of the process.
+const MAX_RESIDENT_BYTES: usize = 128 * 1024 * 1024;
+const MAX_RESIDENT_ASSETS: usize = 1024;
+
 /// Hosts Slack serves its own assets from, which require the session cookie.
 fn is_slack_hosted(url: &str) -> bool {
     url.contains("slack-edge.com") || url.contains("slack.com")
@@ -66,7 +71,7 @@ fn is_slack_hosted(url: &str) -> bool {
 
 #[derive(Clone, Default)]
 pub struct MediaRegistry {
-    assets: Arc<RwLock<HashMap<MediaAssetId, MediaAsset>>>,
+    assets: Arc<Mutex<AssetCache>>,
     sources: Arc<RwLock<HashMap<MediaAssetId, MediaSource>>>,
     source_ids: Arc<RwLock<HashMap<(MediaAssetKind, String), MediaAssetId>>>,
     backoff: Arc<RwLock<HashMap<MediaAssetId, Backoff>>>,
@@ -101,6 +106,56 @@ struct MediaAsset {
     /// previous picture, recovered from disk. They stay pending so the current
     /// image replaces them once it downloads.
     provisional: bool,
+    last_used: u64,
+}
+
+#[derive(Default)]
+struct AssetCache {
+    entries: HashMap<MediaAssetId, MediaAsset>,
+    // Evicted sources must not be re-fetched by the periodic sweep until a
+    // viewer/render explicitly needs them again.
+    evicted: HashSet<MediaAssetId>,
+    bytes: usize,
+    clock: u64,
+}
+
+impl AssetCache {
+    fn get(&mut self, id: &MediaAssetId) -> Option<&MediaAsset> {
+        self.clock = self.clock.wrapping_add(1);
+        let asset = self.entries.get_mut(id)?;
+        asset.last_used = self.clock;
+        Some(asset)
+    }
+
+    fn insert(&mut self, id: MediaAssetId, mut asset: MediaAsset) {
+        if let Some(old) = self.entries.remove(&id) {
+            self.bytes -= old.bytes.len();
+        }
+        self.evicted.remove(&id);
+        self.clock = self.clock.wrapping_add(1);
+        asset.last_used = self.clock;
+        self.bytes += asset.bytes.len();
+        self.entries.insert(id, asset);
+        while self.bytes > MAX_RESIDENT_BYTES || self.entries.len() > MAX_RESIDENT_ASSETS {
+            let oldest = self
+                .entries
+                .iter()
+                .min_by_key(|(_, asset)| asset.last_used)
+                .map(|(id, _)| id.clone())
+                .expect("cache is not empty");
+            self.bytes -= self
+                .entries
+                .remove(&oldest)
+                .expect("asset exists")
+                .bytes
+                .len();
+            self.evicted.insert(oldest);
+        }
+    }
+
+    fn wanted(&self, id: &MediaAssetId) -> bool {
+        !self.evicted.contains(id) && self.entries.get(id).is_none_or(|asset| asset.provisional)
+    }
 }
 
 #[derive(Clone)]
@@ -164,9 +219,12 @@ impl MediaRegistry {
         if ids.is_empty() {
             return;
         }
-        let mut assets = self.assets.write().expect("media registry poisoned");
+        let mut assets = self.assets.lock().expect("media registry poisoned");
         for id in ids {
-            assets.remove(&id);
+            if let Some(asset) = assets.entries.remove(&id) {
+                assets.bytes -= asset.bytes.len();
+            }
+            assets.evicted.remove(&id);
         }
         self.dirty.store(true, Ordering::Release);
     }
@@ -184,17 +242,15 @@ impl MediaRegistry {
     }
 
     fn insert_asset(&self, id: MediaAssetId, mime: String, bytes: Arc<[u8]>, provisional: bool) {
-        self.assets
-            .write()
-            .expect("media registry poisoned")
-            .insert(
-                id,
-                MediaAsset {
-                    mime,
-                    bytes,
-                    provisional,
-                },
-            );
+        self.assets.lock().expect("media registry poisoned").insert(
+            id,
+            MediaAsset {
+                mime,
+                bytes,
+                provisional,
+                last_used: 0,
+            },
+        );
         self.dirty.store(true, Ordering::Release);
     }
 
@@ -284,11 +340,14 @@ impl MediaRegistry {
         let Some(source) = sources.get_mut(id) else {
             return;
         };
-        if !source.deferred {
-            return;
-        }
         source.deferred = false;
         drop(sources);
+        // A viewer can reopen an original after its bytes were evicted.
+        self.assets
+            .lock()
+            .expect("media registry poisoned")
+            .evicted
+            .remove(id);
         // A deferred asset that failed earlier must not stay parked on its
         // backoff when the reader explicitly asks for it again.
         self.backoff
@@ -327,7 +386,14 @@ impl MediaRegistry {
             .cloned();
         if let Some(id) = existing {
             // The same URL asked for eagerly wins over a deferred registration.
-            if !deferred {
+            let promote = !deferred
+                && self
+                    .sources
+                    .read()
+                    .expect("media registry poisoned")
+                    .get(&id)
+                    .is_some_and(|source| source.deferred);
+            if promote {
                 self.request(&id);
             }
             return id;
@@ -359,10 +425,12 @@ impl MediaRegistry {
     /// that instead of an `img` whose bytes have not landed. The placeholder the
     /// protocol serves is only for images with nothing better to show.
     pub fn is_ready(&self, id: &MediaAssetId) -> bool {
-        self.assets
-            .read()
-            .expect("media registry poisoned")
-            .contains_key(id)
+        let mut assets = self.assets.lock().expect("media registry poisoned");
+        let ready = assets.get(id).is_some();
+        if !ready {
+            assets.evicted.remove(id);
+        }
+        ready
     }
 
     /// Whether any registered source still needs bytes. Sources are also
@@ -370,16 +438,14 @@ impl MediaRegistry {
     /// call follows, so the UI tick polls this to kick a load.
     pub fn has_pending(&self) -> bool {
         let now = Instant::now();
-        let assets = self.assets.read().expect("media registry poisoned");
+        let assets = self.assets.lock().expect("media registry poisoned");
         let backoff = self.backoff.read().expect("media registry poisoned");
         self.sources
             .read()
             .expect("media registry poisoned")
             .iter()
             .any(|(id, source)| {
-                !source.deferred
-                    && is_due(backoff.get(id), now)
-                    && assets.get(id).is_none_or(|asset| asset.provisional)
+                !source.deferred && is_due(backoff.get(id), now) && assets.wanted(id)
             })
     }
 
@@ -476,7 +542,7 @@ impl MediaRegistry {
     /// Sources with no current bytes, cheapest and most noticeable first.
     fn pending_sources(&self) -> Vec<(MediaAssetId, MediaSource)> {
         let now = Instant::now();
-        let assets = self.assets.read().expect("media registry poisoned");
+        let assets = self.assets.lock().expect("media registry poisoned");
         let backoff = self.backoff.read().expect("media registry poisoned");
         let mut pending = self
             .sources
@@ -484,9 +550,7 @@ impl MediaRegistry {
             .expect("media registry poisoned")
             .iter()
             .filter(|(id, source)| {
-                !source.deferred
-                    && is_due(backoff.get(*id), now)
-                    && assets.get(*id).is_none_or(|asset| asset.provisional)
+                !source.deferred && is_due(backoff.get(*id), now) && assets.wanted(id)
             })
             .map(|(id, source)| (id.clone(), source.clone()))
             .collect::<Vec<_>>();
@@ -596,12 +660,14 @@ impl MediaRegistry {
                 "no-store",
             );
         };
-        let asset = self
-            .assets
-            .read()
-            .expect("media registry poisoned")
-            .get(&id)
-            .cloned();
+        let asset = {
+            let mut assets = self.assets.lock().expect("media registry poisoned");
+            let asset = assets.get(&id).cloned();
+            if asset.is_none() {
+                assets.evicted.remove(&id);
+            }
+            asset
+        };
         match asset {
             Some(asset) => response(
                 StatusCode::OK,
@@ -748,6 +814,79 @@ mod tests {
         assert!(validated_external_url("file:///etc/passwd").is_err());
         assert!(validated_external_url("https://").is_err());
         assert!(validated_external_url("https://example.com/path").is_ok());
+    }
+
+    #[test]
+    fn resident_assets_are_lru_bounded_without_background_refetch() {
+        let registry = MediaRegistry::default();
+        let first = registry.register_image(
+            MediaAssetKind::Attachment,
+            "https://example.test/first",
+            "image/png",
+        );
+        registry.insert(first.clone(), "image/png", b"first".as_slice());
+        for n in 0..MAX_RESIDENT_ASSETS {
+            let id = registry.register_image(
+                MediaAssetKind::Attachment,
+                &format!("https://example.test/{n}"),
+                "image/png",
+            );
+            registry.insert(id, "image/png", b"image".as_slice());
+        }
+        assert_eq!(
+            registry.assets.lock().unwrap().entries.len(),
+            MAX_RESIDENT_ASSETS
+        );
+        assert!(
+            !registry.has_pending(),
+            "eviction must not cause a refetch loop"
+        );
+        assert_eq!(
+            get(&registry, &first.uri()).body().as_ref(),
+            PLACEHOLDER_PNG
+        );
+        assert!(
+            registry.has_pending(),
+            "a renewed view can reload the evicted asset"
+        );
+        registry.insert(first.clone(), "image/png", b"restored".as_slice());
+        assert_eq!(get(&registry, &first.uri()).body().as_ref(), b"restored");
+    }
+
+    #[test]
+    fn resident_byte_budget_evicts_oldest_and_keeps_requested_original() {
+        let registry = MediaRegistry::default();
+        let a = registry.register_deferred(
+            MediaAssetKind::Attachment,
+            "https://example.test/a",
+            "image/png",
+        );
+        let b = registry.register_deferred(
+            MediaAssetKind::Attachment,
+            "https://example.test/b",
+            "image/png",
+        );
+        let c = registry.register_deferred(
+            MediaAssetKind::Attachment,
+            "https://example.test/c",
+            "image/png",
+        );
+        let image: Arc<[u8]> = vec![1; 48 * 1024 * 1024].into();
+        registry.insert(a.clone(), "image/png", image.clone());
+        registry.insert(b.clone(), "image/png", image.clone());
+        assert!(registry.is_ready(&a)); // Recently viewed, so b is evicted first.
+        registry.insert(c.clone(), "image/png", image);
+        let assets = registry.assets.lock().unwrap();
+        assert!(assets.bytes <= MAX_RESIDENT_BYTES);
+        assert!(assets.entries.contains_key(&a));
+        assert!(!assets.entries.contains_key(&b));
+        assert!(assets.entries.contains_key(&c));
+        drop(assets);
+        registry.request(&b);
+        assert!(
+            registry.has_pending(),
+            "reopening a deferred original reloads it"
+        );
     }
 
     #[test]

@@ -114,7 +114,10 @@ pub(crate) fn project_messages_for_channel(
         .collect();
     let mut messages = raw
         .iter()
-        .map(|message| crate::message_vm::message_vm(workspace, message, media))
+        .map(|message| {
+            let pending = message.ts.as_deref().is_some_and(|ts| bag.is_pending(ts));
+            crate::message_vm::message_vm_with_pending(workspace, message, media, pending)
+        })
         .collect::<Vec<_>>();
     crate::message_vm::annotate_timeline(
         &mut messages,

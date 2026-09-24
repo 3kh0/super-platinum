@@ -106,13 +106,18 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     }
                     _ => None,
                 };
+                // Typing names are read directly from the workspace by the view;
+                // no channel or transcript projection changes for this event.
+                let typing_only = matches!(event.as_ref(), RtEvent::UserTyping { .. });
                 apply(&mut shell.core, &team, generation, *event);
                 if let Some(arrival) = arrival {
                     let now = std::time::Instant::now();
                     shell.message_arrivals.insert(arrival, now);
                     shell.realtime_insert_started = Some(now);
                 }
-                shell.refresh_from_core();
+                if !typing_only {
+                    shell.refresh_from_core();
+                }
                 drop(shell);
                 if needs_user_hydration || self_profile_changed {
                     dioxus::prelude::spawn(crate::bootstrap::hydrate_current_surface(state));

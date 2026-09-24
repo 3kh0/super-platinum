@@ -142,11 +142,55 @@ async fn format_composer_dom(mut state: Signal<ShellState>, mark: FormatMark) {
     ));
 }
 
-pub(crate) async fn measure_timeline(mut state: Signal<ShellState>) {
-    let first_measurement = state.read().row_heights.is_empty();
+pub(crate) fn schedule_timeline_measure(
+    state: Signal<ShellState>,
+    mut pending: Signal<bool>,
+    mut queued: Signal<bool>,
+) {
+    if *pending.read() {
+        queued.set(true);
+        return;
+    }
+    pending.set(true);
+    queued.set(false);
+    let source = {
+        let shell = state.read();
+        (
+            shell.channel_generation,
+            shell.core.active_team.clone(),
+            shell.core.active_channel.clone(),
+        )
+    };
+    spawn(async move {
+        measure_timeline(state).await;
+        pending.set(false);
+        let shell = state.read();
+        let changed = source
+            != (
+                shell.channel_generation,
+                shell.core.active_team.clone(),
+                shell.core.active_channel.clone(),
+            );
+        drop(shell);
+        if changed || *queued.read() {
+            schedule_timeline_measure(state, pending, queued);
+        }
+    });
+}
+
+async fn measure_timeline(mut state: Signal<ShellState>) {
+    let (generation, team, channel, first_measurement) = {
+        let shell = state.read();
+        (
+            shell.channel_generation,
+            shell.core.active_team.clone(),
+            shell.core.active_channel.clone(),
+            shell.row_heights.is_empty() && shell.stick_to_bottom,
+        )
+    };
     let Ok(value) = dioxus::document::eval(
         r#"const timeline = document.getElementById('message-timeline');
-            if (!timeline) { dioxus.send({first: 0, last: 0, rows: []}); }
+            if (!timeline) { dioxus.send(null); }
             else {
               const bounds = timeline.getBoundingClientRect();
               const rows = [...timeline.querySelectorAll('[data-message-index]')].map(row => ({
@@ -168,6 +212,9 @@ pub(crate) async fn measure_timeline(mut state: Signal<ShellState>) {
     else {
         return;
     };
+    if value.is_null() {
+        return;
+    }
     let first = value
         .get("first")
         .and_then(serde_json::Value::as_u64)
@@ -185,14 +232,30 @@ pub(crate) async fn measure_timeline(mut state: Signal<ShellState>) {
             let row = row.as_array()?;
             Some((row.first()?.as_str()?.to_owned(), row.get(1)?.as_f64()?))
         })
+        .filter(|(_, height)| height.is_finite() && *height > 0.0)
         .collect::<Vec<_>>();
     let stick_to_bottom = value
         .get("atBottom")
         .and_then(serde_json::Value::as_bool)
         .unwrap_or(false);
-    state
-        .write()
-        .set_timeline_window(first, last, measurements, stick_to_bottom);
+    // A queued eval may complete after the user has opened another channel.
+    {
+        let shell = state.read();
+        if shell.channel_generation != generation
+            || shell.core.active_team != team
+            || shell.core.active_channel != channel
+        {
+            return;
+        }
+    }
+    if state
+        .read()
+        .timeline_window_changed(first, last, &measurements, stick_to_bottom)
+    {
+        state
+            .write()
+            .set_timeline_window(first, last, measurements, stick_to_bottom);
+    }
     if first_measurement {
         dioxus::document::eval(
             "requestAnimationFrame(() => requestAnimationFrame(() => { const timeline = document.getElementById('message-timeline'); if (timeline) timeline.scrollTop = timeline.scrollHeight; }));",

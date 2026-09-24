@@ -7,6 +7,41 @@ impl ShellState {
         self.timeline_start = self.timeline_end.saturating_sub(100);
     }
 
+    /// Avoid notifying the renderer when a scroll reports the same window and
+    /// measured heights. Keep the pending unread anchor in the comparison too.
+    pub fn timeline_window_changed(
+        &self,
+        first: usize,
+        last: usize,
+        measurements: &[(String, f64)],
+        stick_to_bottom: bool,
+    ) -> bool {
+        if self.stick_to_bottom != stick_to_bottom
+            || (stick_to_bottom
+                && self.core.pending_scroll_to.is_some()
+                && !matches!(
+                    self.core.pending_scroll_to,
+                    Some((_, super_platinum_core::domain::PendingScrollTarget::Latest))
+                ))
+            || measurements
+                .iter()
+                .any(|(id, height)| self.row_heights.get(id) != Some(height))
+        {
+            return true;
+        }
+        if self.selection_pinned || self.messages.is_empty() {
+            return false;
+        }
+        let start = first.saturating_sub(12).min(self.messages.len());
+        let end = last.saturating_add(13).min(self.messages.len());
+        if end <= start {
+            self.timeline_start != self.messages.len().saturating_sub(100)
+                || self.timeline_end != self.messages.len()
+        } else {
+            self.timeline_start != start || self.timeline_end != end
+        }
+    }
+
     pub fn set_timeline_window(
         &mut self,
         first: usize,
@@ -14,7 +49,11 @@ impl ShellState {
         measurements: impl IntoIterator<Item = (String, f64)>,
         stick_to_bottom: bool,
     ) {
-        self.row_heights.extend(measurements);
+        self.row_heights.extend(
+            measurements
+                .into_iter()
+                .filter(|(_, height)| height.is_finite() && *height > 0.0),
+        );
         self.stick_to_bottom = stick_to_bottom;
         // A reader who has reached the newest message has outrun the unread
         // divider we were still holding; applying it later reads as a random
@@ -36,6 +75,23 @@ impl ShellState {
         self.timeline_end = last.saturating_add(13).min(self.messages.len());
         if self.timeline_end <= self.timeline_start {
             self.reset_timeline_window();
+        }
+        // Keep the neighborhood of the current viewport for reverse scrolling,
+        // plus the newest rows for returning to the bottom. IDs are timestamps,
+        // not channel-qualified, so never keep heights across conversations.
+        if self.row_heights.len() > 600 {
+            let start = self.timeline_start.saturating_sub(200);
+            let end = self
+                .timeline_end
+                .saturating_add(200)
+                .min(self.messages.len());
+            let nearby = self.messages[start..end.min(start.saturating_add(500))]
+                .iter()
+                .chain(self.messages[self.messages.len().saturating_sub(100)..].iter())
+                .map(|message| message.id.as_str())
+                .collect::<std::collections::HashSet<_>>();
+            self.row_heights
+                .retain(|id, _| nearby.contains(id.as_str()));
         }
     }
 
@@ -59,6 +115,11 @@ impl ShellState {
             self.remember_surface();
             self.close_thread();
             self.main_view = MainView::Home;
+        }
+        if self.active_channel != index
+            || self.core.active_channel.as_deref() != Some(channel_id.as_str())
+        {
+            self.row_heights.clear();
         }
         self.active_channel = index;
         self.channel_switch_started = Some(std::time::Instant::now());
@@ -151,6 +212,9 @@ impl ShellState {
         let Some(workspace) = self.core.workspaces.get(&team) else {
             return false;
         };
+        if self.core.active_team.as_deref() != Some(team.as_str()) {
+            self.row_heights.clear();
+        }
         self.active_workspace = index;
         self.core.active_team = Some(team);
         self.core.active_channel = workspace
@@ -160,5 +224,46 @@ impl ShellState {
         self.main_view = MainView::Home;
         self.refresh_from_core();
         true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::media::MediaRegistry;
+
+    #[test]
+    fn unchanged_measurements_do_not_require_a_write() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        let rows = vec![(shell.messages[0].id.clone(), 72.0)];
+        shell.set_timeline_window(0, 0, rows.clone(), false);
+        assert!(!shell.timeline_window_changed(0, 0, &rows, false));
+        assert!(shell.timeline_window_changed(0, 0, &[(rows[0].0.clone(), 74.0)], false));
+        assert!(shell.timeline_window_changed(1, 1, &rows, false));
+    }
+
+    #[test]
+    fn heights_are_bounded_and_cleared_for_another_conversation() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        let original = shell.messages[0].clone();
+        shell.messages = (0..800)
+            .map(|index| {
+                let mut message = original.clone();
+                message.id = format!("row-{index}");
+                message
+            })
+            .collect();
+        shell.set_timeline_window(
+            400,
+            410,
+            (0..800).map(|index| (format!("row-{index}"), 70.0)),
+            false,
+        );
+        assert!(shell.row_heights.len() <= 600);
+        assert!(shell.row_heights.contains_key("row-399"));
+        assert!(shell.row_heights.contains_key("row-799"));
+        let other = if shell.active_channel == 0 { 1 } else { 0 };
+        shell.select_channel(other, ChannelOpen::Global);
+        assert!(shell.row_heights.is_empty());
     }
 }

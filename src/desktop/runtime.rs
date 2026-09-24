@@ -18,14 +18,22 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         interval.tick().await;
         tick = tick.wrapping_add(1);
         let now = std::time::Instant::now();
-        let mut shell = state.write();
-        // Both of these are time-driven rather than event-driven, and neither
-        // earns a timer of its own.
+        // Bookkeeping (probe deadlines, route checks, etc.) must not repaint the
+        // entire shell five times a second. Notify only for visible changes.
+        // The timer owns private deadlines as well as UI state; a normal write
+        // below explicitly notifies when any visible field actually changes.
+        #[allow(deprecated)]
+        let mut shell = state.write_silent();
         let mut connection = crate::connection::Next::Nothing;
+        let mut changed = false;
         if !crate::fixture::is_fixture() {
+            let had_toast = shell.toast.is_some();
             shell.expire_toast(now);
+            changed |= had_toast && shell.toast.is_none();
+            let previous_status = shell.connection.status;
             connection = crate::connection::evaluate(&mut shell, now);
-            shell
+            changed |= previous_status != shell.connection.status;
+            changed |= shell
                 .core
                 .huddle
                 .expire_invites(now, crate::huddle::INVITE_RING);
@@ -56,16 +64,19 @@ pub async fn ticks(mut state: Signal<ShellState>) {
             .any(|attachment| attachment.uploading);
         // Writing the signal re-renders attachment progress rings from AtomicU64 values.
         if typing_changed || shell.message_arrivals.len() != before || uploading {
-            if typing_changed {
-                shell.refresh_from_core();
+            // Typing names are read directly from core during render; no channel
+            // or message projection needs rebuilding when a typing entry expires.
+            if uploading {
+                shell.upload_ui_epoch = shell.upload_ui_epoch.wrapping_add(1);
             }
-            shell.upload_ui_epoch = shell.upload_ui_epoch.wrapping_add(1);
+            changed = true;
         }
         // Bumping the generation is what re-stamps painted `src` attributes, so
         // images swap from their placeholder as soon as any bytes land — one
         // slow host cannot hold back the whole batch.
         if shell.media.take_dirty() {
             shell.media_epoch = shell.media_epoch.wrapping_add(1);
+            changed = true;
         }
         // Nothing is swept into a link that is known to be down: every fetch
         // would fail, and the loader would spend the outage burning through
@@ -80,6 +91,10 @@ pub async fn ticks(mut state: Signal<ShellState>) {
                 .is_none_or(|transport| transport.health() != Health::Offline);
         let transport = sweep.then(|| shell.core.transport.clone()).flatten();
         drop(shell);
+        if changed {
+            // A normal write notifies readers of the changes made above.
+            drop(state.write());
+        }
         match connection {
             crate::connection::Next::Nothing => {}
             crate::connection::Next::Probe => {

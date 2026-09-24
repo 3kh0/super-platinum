@@ -113,22 +113,49 @@ pub(crate) fn persist_workspace(state: &Signal<ShellState>, team: &str) {
         return;
     };
     drop(state);
-    let _ = persistence_worker().try_send((account, workspace));
+    persistence_worker().enqueue(account, workspace);
 }
 
-type PersistenceJob = (String, super_platinum_core::state::Workspace);
+// Only the newest unsaved snapshot per account/team is needed. Never discard a
+// new snapshot just because a previous save is still on disk.
+struct PersistenceQueue {
+    pending: std::sync::Mutex<
+        std::collections::HashMap<(String, String), super_platinum_core::state::Workspace>,
+    >,
+    ready: std::sync::Condvar,
+}
 
-fn persistence_worker() -> &'static std::sync::mpsc::SyncSender<PersistenceJob> {
-    static WORKER: std::sync::OnceLock<std::sync::mpsc::SyncSender<PersistenceJob>> =
-        std::sync::OnceLock::new();
+impl PersistenceQueue {
+    fn enqueue(&self, account: String, workspace: super_platinum_core::state::Workspace) {
+        let mut pending = self.pending.lock().unwrap();
+        pending.insert((account, workspace.team_id.clone()), workspace);
+        self.ready.notify_one();
+    }
+
+    fn next(&self) -> (String, super_platinum_core::state::Workspace) {
+        let mut pending = self.pending.lock().unwrap();
+        loop {
+            if let Some(key) = pending.keys().next().cloned() {
+                let workspace = pending.remove(&key).unwrap();
+                return (key.0, workspace);
+            }
+            pending = self.ready.wait(pending).unwrap();
+        }
+    }
+}
+
+fn persistence_worker() -> &'static PersistenceQueue {
+    static WORKER: std::sync::OnceLock<PersistenceQueue> = std::sync::OnceLock::new();
     WORKER.get_or_init(|| {
-        // Keep at most one follow-up snapshot while a save is active. Realtime
-        // bursts then coalesce instead of building an unbounded disk queue.
-        let (sender, receiver) = std::sync::mpsc::sync_channel::<PersistenceJob>(1);
+        let queue = PersistenceQueue {
+            pending: std::sync::Mutex::new(std::collections::HashMap::new()),
+            ready: std::sync::Condvar::new(),
+        };
         std::thread::Builder::new()
             .name("super-platinum-cache".into())
-            .spawn(move || {
-                while let Ok((account, workspace)) = receiver.recv() {
+            .spawn(|| {
+                loop {
+                    let (account, workspace) = persistence_worker().next();
                     let result = super_platinum_core::cache::Cache::open_default(&account, false)
                         .and_then(|cache| cache.save_workspace(&workspace));
                     if let Err(error) = result {
@@ -140,8 +167,45 @@ fn persistence_worker() -> &'static std::sync::mpsc::SyncSender<PersistenceJob> 
                 }
             })
             .expect("cache persistence worker starts");
-        sender
+        queue
     })
+}
+
+#[cfg(test)]
+mod persistence_tests {
+    use super::*;
+
+    #[test]
+    fn pending_snapshots_keep_latest_per_account_and_team() {
+        let queue = PersistenceQueue {
+            pending: std::sync::Mutex::new(std::collections::HashMap::new()),
+            ready: std::sync::Condvar::new(),
+        };
+        let mut first = super_platinum_core::state::Workspace::from_session(
+            &super_platinum_core::config::WorkspaceSession {
+                team_id: "T".into(),
+                enterprise_id: None,
+                user_id: "U".into(),
+                name: "old".into(),
+                url: "https://example.slack.com".into(),
+                token: String::new(),
+            },
+        );
+        queue.enqueue("account".into(), first.clone());
+        first.name = "new".into();
+        queue.enqueue("account".into(), first.clone());
+        queue.enqueue("other".into(), first);
+        assert_eq!(queue.pending.lock().unwrap().len(), 2);
+        let jobs = [queue.next(), queue.next()];
+        assert!(
+            jobs.iter()
+                .any(|(account, ws)| account == "account" && ws.name == "new")
+        );
+        assert!(
+            jobs.iter()
+                .any(|(account, ws)| account == "other" && ws.name == "new")
+        );
+    }
 }
 
 /// Re-drives whatever the reader is looking at, after the link comes back.

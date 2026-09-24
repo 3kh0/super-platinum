@@ -85,11 +85,15 @@ pub fn grouped_sidebar_sections(ws: &Workspace, active: Option<&str>) -> Vec<Sid
 }
 
 fn sort_recent_section(channels: &mut [&Channel], ws: &Workspace) {
-    channels.sort_by(|a, b| {
-        ws.channel_recency(b)
-            .cmp(&ws.channel_recency(a))
-            .then_with(|| name_cmp(ws, a, b))
-    });
+    // Computing latest_ts during each comparison repeatedly scans a transcript.
+    let mut ranked: Vec<_> = channels
+        .iter()
+        .map(|c| (ws.channel_recency(c), *c))
+        .collect();
+    ranked.sort_by(|(a_time, a), (b_time, b)| b_time.cmp(a_time).then_with(|| name_cmp(ws, a, b)));
+    for (slot, (_, channel)) in channels.iter_mut().zip(ranked) {
+        *slot = channel;
+    }
 }
 
 fn sort_priority_section(channels: &mut [&Channel], ws: &Workspace) {
@@ -372,6 +376,36 @@ mod tests {
         let sections = grouped_sidebar_sections(&ws, None);
 
         assert_eq!(section_ids(&sections, "Direct messages"), ["D_UNREAD"]);
+    }
+
+    #[test]
+    fn recent_sort_uses_latest_message_then_natural_name_ties() {
+        let mut ws = workspace(
+            vec![
+                channel("C10", "room10"),
+                channel("C2", "room2"),
+                channel("C_NEW", "new"),
+            ],
+            &[],
+        );
+        for id in ["C10", "C2"] {
+            ws.messages
+                .entry(id.into())
+                .or_default()
+                .upsert(crate::slack::models::Message {
+                    ts: Some("100.000001".into()),
+                    ..Default::default()
+                });
+        }
+        ws.messages
+            .entry("C_NEW".into())
+            .or_default()
+            .upsert(crate::slack::models::Message {
+                ts: Some("200.000001".into()),
+                ..Default::default()
+            });
+        let sections = grouped_sidebar_sections(&ws, None);
+        assert_eq!(section_ids(&sections, "Channels"), ["C_NEW", "C2", "C10"]);
     }
 
     #[test]
