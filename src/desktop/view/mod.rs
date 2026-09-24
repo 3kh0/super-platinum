@@ -2,6 +2,7 @@
 
 mod chrome;
 pub(crate) mod composer;
+mod huddle;
 mod message;
 pub(crate) mod rich;
 mod secondary;
@@ -29,6 +30,7 @@ const CSS: &str = concat!(
     include_str!("../styles/overlays.css"),
     include_str!("../styles/settings.css"),
     include_str!("../styles/profile.css"),
+    include_str!("../styles/huddle.css"),
     include_str!("../styles/design-system.css"),
     include_str!("../styles/responsive.css"),
 );

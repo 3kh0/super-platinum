@@ -83,6 +83,21 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 );
                 let notification =
                     crate::notification::for_event(&shell.core, &team, generation, &event);
+                // A room that ended takes this user's call with it.
+                let huddle_teardown = match event.as_ref() {
+                    RtEvent::RoomJoin { room, .. }
+                    | RtEvent::RoomLeave { room, .. }
+                    | RtEvent::RoomUpdate { room }
+                        if shell
+                            .core
+                            .workspaces
+                            .get(&team)
+                            .is_some_and(|workspace| workspace.rt_generation == generation) =>
+                    {
+                        shell.core.huddle.apply_room(&team, room)
+                    }
+                    _ => None,
+                };
                 let arrival = match event.as_ref() {
                     RtEvent::Message(message)
                         if message.channel.as_deref() == shell.core.active_channel.as_deref() =>
@@ -110,6 +125,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
                 if let Some(notification) = notification {
                     dioxus::prelude::spawn(crate::notification::show(notification));
+                }
+                if let Some(teardown) = huddle_teardown {
+                    dioxus::prelude::spawn(crate::huddle::finish(state, teardown));
                 }
             }
             RtUpdate::Disconnected { generation } => {
@@ -266,6 +284,13 @@ fn apply(
         | RtEvent::RoomLeave { room, .. }
         | RtEvent::RoomUpdate { room } => {
             workspace.apply_room(room);
+        }
+        RtEvent::HuddleInvite(invite) => {
+            core.huddle
+                .add_invite(team.to_owned(), invite, std::time::Instant::now());
+        }
+        RtEvent::HuddleInviteCancel { channel } => {
+            core.huddle.cancel_invite(team, &channel);
         }
         RtEvent::ChannelMarked {
             channel,

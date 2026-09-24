@@ -313,6 +313,43 @@ fn dispatch(
             dioxus::prelude::spawn(crate::bootstrap::send_composer(*state));
             AgentResponse::ok(id, json!({ "sent": true }))
         }
+        AgentCommand::HuddleJoin { channel } => {
+            let target = {
+                let shell = state.read();
+                match channel.as_deref() {
+                    Some(channel) => shell
+                        .channels
+                        .iter()
+                        .find(|candidate| {
+                            candidate.id == channel || candidate.name.eq_ignore_ascii_case(channel)
+                        })
+                        .map(|candidate| candidate.id.clone()),
+                    None => shell.core.active_channel.clone(),
+                }
+            };
+            match target {
+                Some(channel) => {
+                    dioxus::prelude::spawn(crate::huddle::join(*state, channel.clone()));
+                    AgentResponse::ok(id, json!({ "joining": channel }))
+                }
+                None => AgentResponse::err(id, "no such conversation"),
+            }
+        }
+        AgentCommand::HuddleLeave => {
+            crate::huddle::leave(*state);
+            AgentResponse::ok(id, json!({ "left": true }))
+        }
+        AgentCommand::HuddleMute => {
+            crate::huddle::toggle_mute(*state);
+            let muted = state
+                .read()
+                .core
+                .huddle
+                .call
+                .as_ref()
+                .map(|call| call.muted);
+            AgentResponse::ok(id, json!({ "muted": muted }))
+        }
         AgentCommand::Toast { text } => {
             state.write().show_toast(text.clone());
             AgentResponse::ok(id, json!({ "toast": text }))
@@ -631,6 +668,7 @@ fn state_snapshot(state: &ShellState) -> Value {
                 if reaction.own { " (own)" } else { "" },
             )).collect::<Vec<_>>(),
         })).collect::<Vec<_>>(),
+        "huddle": huddle_snapshot(&state.core.huddle),
         "toasts": state.toast.iter().map(|toast| toast.text.clone()).collect::<Vec<_>>(),
         "connection": state.connection.status.key(),
         "allow_destructive": allow_destructive(),
@@ -640,6 +678,31 @@ fn state_snapshot(state: &ShellState) -> Value {
             "scroll_frame_ms": state.performance.scroll_frame_ms,
         },
         "agent_socket": agent_endpoint(),
+    })
+}
+
+/// The call as the shell sees it. Never includes Chime credentials: the join
+/// token only ever travels from `rooms.join` straight into the WebView.
+fn huddle_snapshot(huddle: &super_platinum_core::huddle::HuddleState) -> Value {
+    json!({
+        "call": huddle.call.as_ref().map(|call| json!({
+            "team": call.team,
+            "channel": call.channel,
+            "phase": format!("{:?}", call.phase).to_lowercase(),
+            "room": call.room,
+            "muted": call.muted,
+            "participants": call.participants.iter().map(|row| json!({
+                "user": row.user,
+                "speaking": row.speaking,
+                "muted": row.muted,
+            })).collect::<Vec<_>>(),
+        })),
+        "invites": huddle.invites.iter().map(|pending| json!({
+            "team": pending.team,
+            "channel": pending.invite.channel_id,
+            "room": pending.invite.call_id,
+            "sender": pending.invite.sender_user_id,
+        })).collect::<Vec<_>>(),
     })
 }
 
@@ -686,7 +749,8 @@ fn help_data() -> Value {
             {"cmd": "set-query"}, {"cmd": "submit"}, {"cmd": "select-channel"},
             {"cmd": "search"}, {"cmd": "open-settings"}, {"cmd": "screenshot"},
             {"cmd": "open-profile"}, {"cmd": "close-profile"}, {"cmd": "open-usergroup"},
-            {"cmd": "allow-destructive"}, {"cmd": "send"}
+            {"cmd": "allow-destructive"}, {"cmd": "send"},
+            {"cmd": "huddle-join"}, {"cmd": "huddle-leave"}, {"cmd": "huddle-mute"}
         ]
     })
 }

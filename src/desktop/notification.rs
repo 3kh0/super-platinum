@@ -12,6 +12,9 @@ pub fn for_event(
     generation: u64,
     event: &RtEvent,
 ) -> Option<DesktopNotification> {
+    if let RtEvent::HuddleInvite(invite) = event {
+        return huddle_invite(core, team, generation, invite);
+    }
     let RtEvent::Message(message) = event else {
         return None;
     };
@@ -59,6 +62,42 @@ pub fn for_event(
         } else {
             body
         },
+    })
+}
+
+/// A ring gets a notification wherever the reader is: unlike a message, it
+/// is gone in half a minute, and the app may be behind another window.
+fn huddle_invite(
+    core: &super_platinum_core::CoreAppState,
+    team: &str,
+    generation: u64,
+    invite: &super_platinum_core::slack::models::HuddleInvite,
+) -> Option<DesktopNotification> {
+    let workspace = core.workspaces.get(team)?;
+    if generation != workspace.rt_generation || core.huddle.is_in(team, &invite.channel_id) {
+        return None;
+    }
+    let caller = invite
+        .sender_user_id
+        .as_deref()
+        .map(|user| workspace.display_name(user))
+        .unwrap_or_else(|| "Someone".into());
+    let place = workspace
+        .channels
+        .get(&invite.channel_id)
+        .filter(|channel| !channel.is_im)
+        .map(|channel| {
+            let name = super_platinum_core::state::channel_display_name(workspace, channel);
+            if channel.is_mpim {
+                format!(" with {name}")
+            } else {
+                format!(" in #{name}")
+            }
+        })
+        .unwrap_or_default();
+    Some(DesktopNotification {
+        title: format!("{caller} is inviting you to a huddle"),
+        body: format!("Join the huddle{place} from Super Platinum"),
     })
 }
 

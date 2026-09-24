@@ -63,6 +63,10 @@ Commands:
   toast <text>
   allow-destructive [true|false]
   send                          Requires allow-destructive
+  huddle-join [channel]         Start/join a huddle (open conversation by default).
+                                Visible to everyone in it; requires allow-destructive
+  huddle-leave                  Leave the current huddle
+  huddle-mute                   Toggle the microphone in the current huddle
   wait <predicate> [--timeout N]
                                 Poll state until predicate matches.
                                 Predicates: screen=main|login|loading
@@ -188,6 +192,19 @@ case "$cmd" in
     ;;
   send)
     JSON=$(printf '{"id":%s,"cmd":"send"}' "$REQ_ID")
+    ;;
+  huddle-join)
+    if [[ $# -ge 1 ]]; then
+      JSON=$(python3 -c 'import json,sys; print(json.dumps({"id": int(sys.argv[1]), "cmd":"huddle-join", "channel": sys.argv[2]}))' "$REQ_ID" "$1")
+    else
+      JSON=$(printf '{"id":%s,"cmd":"huddle-join"}' "$REQ_ID")
+    fi
+    ;;
+  huddle-leave)
+    JSON=$(printf '{"id":%s,"cmd":"huddle-leave"}' "$REQ_ID")
+    ;;
+  huddle-mute)
+    JSON=$(printf '{"id":%s,"cmd":"huddle-mute"}' "$REQ_ID")
     ;;
   raw)
     [[ $# -ge 1 ]] || { echo "usage: agentctl.sh raw '<json>'" >&2; exit 2; }

@@ -3,7 +3,9 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::models::{ActivityItem, ChannelId, DndInfo, Message, MessageTs, Room, User, UserId};
+use super::models::{
+    ActivityItem, ChannelId, DndInfo, HuddleInvite, Message, MessageTs, Room, User, UserId,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RawEvent {
@@ -62,6 +64,12 @@ pub enum RtEvent {
     },
     RoomUpdate {
         room: Room,
+    },
+    /// Somebody rang this user into a huddle.
+    HuddleInvite(HuddleInvite),
+    /// The ring was withdrawn (the caller hung up, or it timed out).
+    HuddleInviteCancel {
+        channel: ChannelId,
     },
     ChannelMarked {
         channel: ChannelId,

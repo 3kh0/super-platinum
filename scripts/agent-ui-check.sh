@@ -17,7 +17,8 @@ FIXTURES=(
   rail-account-snoozed
   animated-reaction profile-hover-card profile-pane profile-pane-rich-fields
   profile-pane-min-width dm-header-compact
-  channel-thread-profile-headers channel-huddle chat-paused-pill
+  channel-thread-profile-headers channel-huddle huddle-connected huddle-invite
+  chat-paused-pill
   thread-unread-divider main-dev settings settings-storage appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background
   image-viewer-upload image-viewer-embed-compact gif-picker-attachment

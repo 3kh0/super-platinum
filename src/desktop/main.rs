@@ -9,6 +9,7 @@ mod channel_vm;
 mod clipboard;
 mod connection;
 mod fixture;
+mod huddle;
 mod icons;
 mod interactions;
 mod media;
@@ -135,6 +136,8 @@ fn app() -> Element {
             }
         }
     });
+    dioxus::desktop::use_asset_handler(huddle::ASSET_ROUTE, huddle::serve_asset);
+    use_future(move || huddle::bridge(state));
     use_future(move || bootstrap::refresh(state));
     use_future(move || clipboard::watch(state));
     use_future(move || runtime::ticks(state));

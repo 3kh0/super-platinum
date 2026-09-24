@@ -37,6 +37,8 @@
   </array>
   <key>LSMinimumSystemVersion</key>
   <string>13.0</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Super Platinum uses your microphone when you join a Slack huddle.</string>
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>NSSupportsAutomaticGraphicsSwitching</key>

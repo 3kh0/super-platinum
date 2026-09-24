@@ -10,6 +10,8 @@
 .icon-btn,
 .composer-icon-btn,
 .huddle-button,
+.huddle-control,
+.huddle-text-btn,
 .reaction,
 .settings-tab,
 .self-menu-item,
@@ -30,6 +32,8 @@
 .icon-btn:active,
 .composer-icon-btn:active,
 .huddle-button:active,
+.huddle-control:active,
+.huddle-text-btn:active,
 .primary:active { transform: scale(.96); }
 
 /* ── Chrome: quiet planes, strong orientation ───────── */
@@ -421,6 +425,8 @@
   .icon-btn,
   .composer-icon-btn,
   .huddle-button,
+  .huddle-control,
+  .huddle-text-btn,
   .reaction,
   .settings-tab,
   .self-menu-item,

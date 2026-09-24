@@ -1,0 +1,10 @@
+{
+  "name": "super-platinum-chime-bundle",
+  "private": true,
+  "description": "Builds assets/huddle/chime-sdk.min.js. Run scripts/build-chime-sdk.sh.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "amazon-chime-sdk-js": "3.32.0",
+    "esbuild": "0.28.2"
+  }
+}

@@ -21,3 +21,4 @@
 # OS
 .DS_Store
 Thumbs.db
+/vendor/chime/node_modules/

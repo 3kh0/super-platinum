@@ -69,6 +69,12 @@ pub enum AgentCommand {
     ActivitySelect {
         index: usize,
     },
+    HuddleJoin {
+        #[serde(default)]
+        channel: Option<String>,
+    },
+    HuddleLeave,
+    HuddleMute,
 }
 
 fn default_move_delta() -> isize {
@@ -77,7 +83,7 @@ fn default_move_delta() -> isize {
 
 impl AgentCommand {
     pub fn is_destructive(&self) -> bool {
-        matches!(self, AgentCommand::Send)
+        matches!(self, AgentCommand::Send | AgentCommand::HuddleJoin { .. })
     }
 }
 

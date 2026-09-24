@@ -339,6 +339,7 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                     p { class: "list-loading", "Loading older conversations…" }
                 }
             }
+            {super::huddle::huddle_dock(state, snapshot)}
         }
     }
 }
@@ -578,6 +579,7 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                     }
                 }
             }
+            {super::huddle::huddle_dock(state, snapshot)}
         }
     }
 }

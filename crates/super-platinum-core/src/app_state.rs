@@ -73,6 +73,8 @@ pub struct CoreAppState {
     pub settings: config::Settings,
     pub settings_color_drafts: HashMap<config::ColorRole, String>,
     pub settings_color_errors: HashMap<config::ColorRole, String>,
+    /// The huddle this user is in (at most one) and rings waiting on an answer.
+    pub huddle: crate::huddle::HuddleState,
 }
 
 impl CoreAppState {
@@ -140,6 +142,7 @@ impl CoreAppState {
             settings,
             settings_color_drafts,
             settings_color_errors: HashMap::new(),
+            huddle: Default::default(),
         }
     }
 }

@@ -188,6 +188,35 @@ Slack-facing behavior needs defensive handling.
   only, no message text) when a live update is not landing.
 - Do not assume all Slack messages are plain text; Block Kit, files, reactions, threads, edits, deletes, and notifications already exist in the product surface.
 
+### Huddles
+
+A huddle is a Slack room plus an **Amazon Chime SDK** meeting
+(`media_backend_type: "free_willy"`). Method names and arguments were read
+from the official web client's bundle, not guessed:
+
+- `rooms.join` (`channel_id`, `regions`, `multidevice=false`, optional `id` to
+  answer a ring) returns `call.call_id` and `call.free_willy.{meeting,attendee}`.
+  `regions` comes from `https://nearest-media-region.l.chime.aws` and is sent
+  only when **starting** a huddle; joining a running one sends `""`.
+- `rooms.leave` needs `channel_id`, `call_id`, `attendee_id` (Chime's
+  `AttendeeId`), and `reason=user_initiated`. Never call
+  `huddles.external.end` — that ends the huddle for everyone.
+- Mute is Chime-only. Accepting a `huddle_invite` is a `rooms.join` naming the
+  room; only declining goes through `rooms.inviteResponse`. The invite frame's
+  own `free_willy` pair is deliberately not kept.
+- `rooms.join` joins a real call, visibly. Never call it without a human in the
+  loop; the agent's `huddle-join` is gated behind `allow-destructive`.
+
+The media runs in the main WebView: `src/desktop/huddle/bridge.js` drives the
+vendored SDK (`assets/huddle/chime-sdk.min.js`, rebuilt by
+`scripts/build-chime-sdk.sh`, served lazily at `/huddle/chime-sdk.js`). The
+state machine is `super_platinum_core::huddle`; every command and event carries
+the call generation, so a late event from a call already left is dropped. The
+Chime join token is a secret — it goes from the `rooms.join` response straight
+into the WebView and is never logged, cached, or put in agent state. macOS needs
+`NSMicrophoneUsageDescription` (in `assets/macos/Info.plist`); Windows needs the
+secure-origin browser flag in `media.rs`.
+
 ## Testing Guidance
 
 Add focused tests when changing:

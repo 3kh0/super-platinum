@@ -382,6 +382,12 @@ pub fn parse_event(text: &str) -> Option<RtEvent> {
                 _ => RtEvent::RoomUpdate { room },
             })
         }
+        "huddle_invite" => serde_json::from_value(value)
+            .ok()
+            .map(RtEvent::HuddleInvite),
+        "huddle_invite_cancel" => Some(RtEvent::HuddleInviteCancel {
+            channel: value.get("channel_id").and_then(Value::as_str)?.to_owned(),
+        }),
         _ => {
             let raw: RawEvent = serde_json::from_value(value).ok()?;
             Some(RtEvent::Unknown(raw))
@@ -645,6 +651,26 @@ mod tests {
             }
             other => panic!("expected RoomUpdate, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_huddle_invite_without_keeping_its_credentials() {
+        let invite = r#"{"type":"huddle_invite","team_id":"T1","channel_id":"D1","call_id":"R1","sender_user_id":"U2","event_ts":"1.0","free_willy":{"meeting":{"MeetingId":"m"},"attendee":{"AttendeeId":"a","JoinToken":"secret-token"}}}"#;
+        match parse_event(invite) {
+            Some(RtEvent::HuddleInvite(invite)) => {
+                assert_eq!(invite.channel_id, "D1");
+                assert_eq!(invite.call_id, "R1");
+                assert_eq!(invite.sender_user_id.as_deref(), Some("U2"));
+                assert!(!format!("{invite:?}").contains("secret-token"));
+            }
+            other => panic!("expected HuddleInvite, got {other:?}"),
+        }
+
+        let cancel = r#"{"type":"huddle_invite_cancel","channel_id":"D1","call_id":"R1"}"#;
+        assert!(matches!(
+            parse_event(cancel),
+            Some(RtEvent::HuddleInviteCancel { channel }) if channel == "D1"
+        ));
     }
 
     #[test]

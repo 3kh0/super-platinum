@@ -759,6 +759,43 @@ impl ShellState {
                     workspace.apply_room(serde_json::from_value(serde_json::json!({"id":"R1","channels":["C2"],"huddle_link":"https://app.slack.com/huddle/T1/C2","participants":["U1","U2"]})).expect("fixture room"));
                 }
             }
+            // In the call: the dock with one person talking and one muted,
+            // the reader's own mic off, and the header showing the live call.
+            "huddle-connected" => {
+                use super_platinum_core::huddle::MediaEvent;
+                if let Some(workspace) = state.core.workspaces.get_mut("T1") {
+                    workspace.apply_room(serde_json::from_value(serde_json::json!({"id":"R1","channels":["C2"],"participants":["U0","U1","U2"]})).expect("fixture room"));
+                }
+                let huddle = &mut state.core.huddle;
+                if let Some((generation, _)) = huddle.begin_join("T1".into(), "C2".into()) {
+                    huddle.joined(generation, "R1".into(), "a-0".into());
+                    huddle.apply_media(generation, MediaEvent::Started);
+                    huddle.apply_media(generation, MediaEvent::Muted(true));
+                    huddle.apply_media(
+                        generation,
+                        MediaEvent::Roster(vec![
+                            ("T1-R1-U0".into(), false, true),
+                            ("T1-R1-U1".into(), true, false),
+                            ("T1-R1-U2".into(), false, true),
+                        ]),
+                    );
+                }
+            }
+            // Maya is ringing from her DM while a huddle runs in #general.
+            "huddle-invite" => {
+                if let Some(workspace) = state.core.workspaces.get_mut("T1") {
+                    workspace.apply_room(serde_json::from_value(serde_json::json!({"id":"R1","channels":["C2"],"participants":["U1","U2"]})).expect("fixture room"));
+                }
+                state.core.huddle.add_invite(
+                    "T1".into(),
+                    super_platinum_core::slack::models::HuddleInvite {
+                        channel_id: "D1".into(),
+                        call_id: "R2".into(),
+                        sender_user_id: Some("U1".into()),
+                    },
+                    std::time::Instant::now(),
+                );
+            }
             "chat-paused-pill" => state.chat_paused = true,
             "appearance-countertop" => {
                 state.core.settings.preset = super_platinum_core::config::ThemePreset::Countertop

@@ -1,12 +1,20 @@
 //! Slack huddle ("rooms") API surface.
 //!
-//! Huddles are undocumented. Realtime `sh_room_*` frames report
-//! `media_backend_type: "free_willy"` — Slack's in-house WebRTC media backend
-//! (not Amazon Chime) — and the media server/signaling credentials come from
-//! `rooms.join`. The request builders here follow the same shape as
-//! [`super::api`]; join/leave/info response bodies are intentionally left as
-//! raw JSON until captured live (see [`capture_rooms_join`]). Do not add
-//! speculative response structs before then.
+//! A huddle is two systems. Slack owns the room: who is in it, the channel it
+//! belongs to, the `sh_room_*` realtime frames. The audio is an Amazon Chime
+//! SDK meeting (`media_backend_type: "free_willy"`), which the client joins
+//! directly with the credential pair `rooms.join` returns; no media passes
+//! through Slack. Mute is purely a Chime operation — the official client makes
+//! no Slack call for it.
+//!
+//! Method names, arguments, and `_x_reason` tags below are the ones the official
+//! web client sends (read from its bundle, build 132707, Chime SDK 3.32.0).
+//! Two things it does that this client deliberately does not:
+//!
+//! - It reuses the `free_willy` pair from a `huddle_invite` frame ("quick
+//!   join"). Accepting here always goes through `rooms.join` with the room id.
+//! - "End huddle for all" (`huddles.external.end`) is never called. Leaving is
+//!   `rooms.leave`, which only ever removes this attendee.
 
 use std::time::Duration;
 
@@ -15,393 +23,192 @@ use serde_json::Value;
 use crate::config::WorkspaceSession;
 
 use super::Error;
-use super::client::{PreparedRequest, SlackClient, redact_secrets};
-use super::models::{ChannelId, Room};
+use super::client::{PreparedRequest, SlackClient};
+use super::models::{ChannelId, RoomJoinResponse};
 use super::transport::Transport;
 
-/// `rooms.info` — details for an existing huddle/room.
+/// Chime's own region locator; the official client asks it before starting a
+/// huddle and sends the answer as `regions`. Government workspaces use a
+/// different host, which this client does not support.
+const NEAREST_MEDIA_REGION_URL: &str = "https://nearest-media-region.l.chime.aws";
+const REGION_LOOKUP_TIMEOUT: Duration = Duration::from_secs(3);
+
+/// Errors `rooms.leave` answers when this attendee is already gone — the room
+/// ended, or the server dropped the seat first. The official client logs them
+/// as benign; a leave that finds nothing to leave has still done its job.
+const BENIGN_LEAVE_ERRORS: [&str; 4] = [
+    "channel_not_found",
+    "room_not_found",
+    "invalid_channel_id",
+    "attendee_not_found",
+];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct JoinArgs {
+    pub channel: ChannelId,
+    /// The room being answered (`R…`), when joining from an invite.
+    pub room: Option<String>,
+    /// Media region for a **new** huddle; empty when one is already running,
+    /// since the room's region was fixed by whoever started it.
+    pub regions: String,
+}
+
+/// `rooms.join` — start a huddle in a channel, or join the one running there.
 ///
-/// Parameter names are provisional until confirmed by a live capture; the
-/// unit tests only pin the endpoint + token so a corrected field name later
-/// does not silently break the request shape.
+/// Registers this user as a visible participant. `multidevice` stays false:
+/// true is the official client's explicit "use both devices" choice, and
+/// false moves the seat here from any other device instead of doubling it.
+pub fn rooms_join(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    args: JoinArgs,
+) -> PreparedRequest {
+    let mut fields = vec![("channel_id", args.channel)];
+    if let Some(room) = args.room {
+        fields.push(("id", room));
+    }
+    fields.push(("regions", args.regions));
+    fields.push(("multidevice", "false".to_owned()));
+    fields.push(("_x_reason", "calls-api/joinRoom".to_owned()));
+    client.rest_form(workspace, "rooms.join", fields)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LeaveArgs {
+    pub channel: ChannelId,
+    /// The room id (`R…`) from `call.call_id`.
+    pub call: String,
+    /// Chime's `Attendee.AttendeeId` for this seat.
+    pub attendee: String,
+}
+
+/// `rooms.leave` — remove this attendee from the room. Never ends the huddle
+/// for anyone else.
+pub fn rooms_leave(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    args: LeaveArgs,
+) -> PreparedRequest {
+    client.rest_form(
+        workspace,
+        "rooms.leave",
+        vec![
+            ("channel_id", args.channel),
+            ("call_id", args.call),
+            ("attendee_id", args.attendee),
+            ("reason", "user_initiated".to_owned()),
+            ("_x_reason", "calls-api/leaveRoom".to_owned()),
+        ],
+    )
+}
+
+/// `screenhero.rooms.info` — a room's current state. ("Screenhero" is the old
+/// name of Slack's calls subsystem; there is no `rooms.info`.)
 pub fn rooms_info(
     client: &SlackClient,
     workspace: &WorkspaceSession,
     room: String,
 ) -> PreparedRequest {
-    client.rest_form(workspace, "rooms.info", vec![("room", room)])
+    client.rest_form(
+        workspace,
+        "screenhero.rooms.info",
+        vec![
+            ("room", room),
+            ("_x_reason", "all-calls-store/conditional-fetch".to_owned()),
+        ],
+    )
 }
 
-/// `rooms.join` — join an existing huddle. Returns the assigned media server +
-/// signaling credentials for the `free_willy` backend.
-///
-/// Confirmed live: this method requires `channel_id` (huddles are joined by
-/// channel, not room id).
-pub fn rooms_join(
+/// `rooms.inviteResponse` with `response=decline`. Accepting is not a response
+/// at all — it is a `rooms.join` naming the room.
+pub fn decline_invite_request(
     client: &SlackClient,
     workspace: &WorkspaceSession,
-    channel_id: String,
-) -> PreparedRequest {
-    client.rest_form(workspace, "rooms.join", vec![("channel_id", channel_id)])
-}
-
-/// Leaving a huddle: the method name is **not yet identified** — `rooms.leave`
-/// returns `unknown_method`. Do not call a guessed leave/close method: some
-/// (`rooms.close`) may end the huddle for everyone. The real method must be
-/// captured from the official client before a live join is safe.
-pub fn rooms_leave_unknown(
-    client: &SlackClient,
-    workspace: &WorkspaceSession,
+    channel: ChannelId,
     room: String,
 ) -> PreparedRequest {
-    client.rest_form(workspace, "rooms.leave", vec![("room", room)])
+    client.rest_form(
+        workspace,
+        "rooms.inviteResponse",
+        vec![
+            ("response", "decline".to_owned()),
+            ("channel_id", channel),
+            ("room_id", room),
+            ("_x_reason", "respond-to-huddle-invite".to_owned()),
+        ],
+    )
 }
 
-/// Read-only Phase 0 capture: dump the raw JSON that reveals the huddle wire
-/// format, with all secrets redacted. Safe to run against a live workspace —
-/// it never joins or mutates a huddle.
-///
-/// `conversations.info` on a channel with an active huddle carries the huddle
-/// / room object (super-platinum currently drops it into `Channel::extra`). If that
-/// object exposes a room id, we also fetch `rooms.info` for it.
-pub async fn capture_channel_huddle(
+pub async fn join(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    args: JoinArgs,
+) -> Result<RoomJoinResponse, Error> {
+    let value = transport
+        .execute(rooms_join(client, workspace, args))
+        .await?;
+    serde_json::from_value(value).map_err(|e| Error::Transport(format!("decode rooms.join: {e}")))
+}
+
+pub async fn leave(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    args: LeaveArgs,
+) -> Result<(), Error> {
+    match transport
+        .execute(rooms_leave(client, workspace, args))
+        .await
+    {
+        Ok(_) => Ok(()),
+        Err(Error::Api(code)) if BENIGN_LEAVE_ERRORS.contains(&code.as_str()) => Ok(()),
+        Err(error) => Err(error),
+    }
+}
+
+pub async fn decline_invite(
     transport: &Transport,
     client: &SlackClient,
     workspace: &WorkspaceSession,
     channel: ChannelId,
-) -> Result<Value, Error> {
-    let info = transport
-        .execute(super::api::conversations_info(
-            client,
-            workspace,
-            channel.clone(),
-        ))
-        .await?;
-    dump("conversations.info", &info);
-    report_huddle_mentions("conversations.info", &info);
-
-    // Huddle presence is not reliably on conversations.info; the boot payload
-    // and counts are the other REST surfaces that can carry active-huddle
-    // rooms. Scan both for anything huddle/room-shaped so we learn where it
-    // lives without guessing a field path.
-    match transport
-        .execute(super::api::user_boot(client, workspace))
+    room: String,
+) -> Result<(), Error> {
+    transport
+        .execute(decline_invite_request(client, workspace, channel, room))
         .await
-    {
-        Ok(boot) => report_huddle_mentions("client.userBoot", &boot),
-        Err(e) => tracing::warn!(error = %e, "client.userBoot capture failed"),
-    }
-    match transport
-        .execute(super::api::client_counts(client, workspace))
-        .await
-    {
-        Ok(counts) => report_huddle_mentions("client.counts", &counts),
-        Err(e) => tracing::warn!(error = %e, "client.counts capture failed"),
-    }
+        .map(|_| ())
+}
 
-    if let Some(room) = extract_room_id(&info) {
-        tracing::info!(%room, "found active huddle room id; capturing rooms.info");
-        match transport
-            .execute(rooms_info(client, workspace, room.clone()))
+/// The Chime media region closest to this machine, or `""` when the locator
+/// does not answer quickly — Slack then picks one itself, which is exactly
+/// what the official client falls back to.
+pub async fn nearest_media_region(transport: &Transport, user_agent: &str) -> String {
+    let lookup = async {
+        let response = transport
+            .http()
+            .get(NEAREST_MEDIA_REGION_URL)
+            .timeout(REGION_LOOKUP_TIMEOUT)
+            .header("User-Agent", user_agent)
+            .send()
             .await
-        {
-            Ok(room_info) => dump("rooms.info", &room_info),
-            Err(e) => tracing::warn!(%room, error = %e, "rooms.info capture failed"),
-        }
-    } else {
-        tracing::info!(
-            "no huddle room id found in REST payloads; if a huddle is active, its \
-             state is likely only on the realtime websocket (see SUPER_PLATINUM_HUDDLE_TRACE)"
-        );
-    }
-
-    Ok(info)
-}
-
-/// Walk a JSON payload and print any subtree whose key mentions a huddle/room,
-/// or any string that looks like a room id (`R…`). Redacts secrets. This is a
-/// discovery aid for Phase 0 — it tells us which endpoint carries huddle state.
-fn report_huddle_mentions(source: &str, value: &Value) {
-    fn walk(path: &str, value: &Value, hits: &mut Vec<(String, Value)>) {
-        match value {
-            Value::Object(map) => {
-                for (key, child) in map {
-                    let child_path = if path.is_empty() {
-                        key.clone()
-                    } else {
-                        format!("{path}.{key}")
-                    };
-                    let lower = key.to_ascii_lowercase();
-                    if lower.contains("huddle") || lower.contains("room") || lower == "calls" {
-                        hits.push((child_path.clone(), child.clone()));
-                    }
-                    walk(&child_path, child, hits);
-                }
-            }
-            Value::Array(items) => {
-                for (i, item) in items.iter().enumerate() {
-                    walk(&format!("{path}[{i}]"), item, hits);
-                }
-            }
-            Value::String(s) if is_room_id(s) => {
-                hits.push((format!("{path} (room-id?)"), value.clone()));
-            }
-            _ => {}
-        }
-    }
-    let mut hits = Vec::new();
-    walk("", value, &mut hits);
-    if hits.is_empty() {
-        println!("----- {source}: no huddle/room mentions -----");
-        return;
-    }
-    println!("----- {source}: huddle/room mentions -----");
-    for (path, subtree) in hits {
-        let pretty = serde_json::to_string(&subtree).unwrap_or_else(|_| subtree.to_string());
-        // Cap noisy subtrees so a whole channel list does not flood the log.
-        let pretty = if pretty.len() > 600 {
-            format!("{}… ({} bytes)", &pretty[..600], pretty.len())
-        } else {
-            pretty
-        };
-        println!("  {path} = {}", redact_secrets(&pretty));
-    }
-    println!("----- end {source} mentions -----");
-}
-
-fn is_room_id(s: &str) -> bool {
-    s.len() >= 8 && s.starts_with('R') && s[1..].bytes().all(|b| b.is_ascii_alphanumeric())
-}
-
-/// Phase 0 realtime capture: connect to the flannel websocket exactly like
-/// [`super::realtime`] and print incoming frames for `duration`, highlighting
-/// any huddle/room/call events (their shapes are what Phase 1/2 must parse).
-///
-/// Run this while a huddle is toggled in the official client — start it *after*
-/// the trace connects so the `room`/huddle start event is captured live.
-pub async fn trace_realtime(
-    workspace: &WorkspaceSession,
-    d_cookie: &str,
-    user_agent: &str,
-    duration: Duration,
-) -> Result<(), Error> {
-    use wreq::ws::message::Message as WsMessage;
-
-    let ws_url = super::realtime::flannel_url(&workspace.token, &workspace.team_id);
-    let http = wreq::Client::builder()
-        .emulation(wreq_util::Emulation::Chrome140)
-        .build()
-        .map_err(|e| Error::Transport(format!("client build: {e}")))?;
-    let response = http
-        .websocket(&ws_url)
-        .header("User-Agent", user_agent)
-        .header("Cookie", format!("d={d_cookie}"))
-        .send()
-        .await
-        .map_err(|e| Error::Transport(format!("ws handshake: {e}")))?;
-    let mut socket = response
-        .into_websocket()
-        .await
-        .map_err(|e| Error::Transport(format!("ws upgrade: {e}")))?;
-
-    println!(
-        "===== realtime trace connected ({}s) — start/stop a huddle now =====",
-        duration.as_secs()
-    );
-
-    let sleep = tokio::time::sleep(duration);
-    tokio::pin!(sleep);
-    let mut seen_types: std::collections::BTreeMap<String, u32> = std::collections::BTreeMap::new();
-
-    loop {
-        tokio::select! {
-            _ = &mut sleep => break,
-            incoming = socket.recv() => match incoming {
-                Some(Ok(WsMessage::Text(text))) => inspect_frame(text.as_str(), &mut seen_types),
-                Some(Ok(WsMessage::Close(_))) | None => {
-                    println!("===== realtime trace: socket closed =====");
-                    break;
-                }
-                Some(Ok(_)) => {}
-                Some(Err(e)) => return Err(Error::Transport(format!("recv: {e}"))),
-            }
-        }
-    }
-
-    println!("===== realtime trace event-type histogram =====");
-    for (kind, count) in &seen_types {
-        println!("  {kind}: {count}");
-    }
-    println!("===== end realtime trace =====");
-    Ok(())
-}
-
-/// Audio-gate capture (CONSENTED, outward-facing): discover the active huddle
-/// room for `channel`, call `rooms.join` (by `channel_id`) and dump the
-/// media-server/signaling response. `room_override` skips discovery.
-///
-/// WARNING: the correct leave method is not yet known (`rooms.leave` is
-/// `unknown_method`), so this can leave you visibly in the huddle. It prints a
-/// loud reminder to leave manually in the official client. Do not run this
-/// unless you can manually leave.
-// Wide signature by design: this is a hand-invoked capture probe whose inputs
-// are the raw credential/target set an operator types at the call site. Grouping
-// them into a struct would add an indirection with no other user.
-#[allow(clippy::too_many_arguments)]
-pub async fn capture_rooms_join(
-    transport: &Transport,
-    client: &SlackClient,
-    workspace: &WorkspaceSession,
-    d_cookie: &str,
-    user_agent: &str,
-    channel: &str,
-    room_override: Option<String>,
-    discover_timeout: Duration,
-) -> Result<(), Error> {
-    let room_id = match room_override {
-        Some(room) => room,
-        None => {
-            discover_active_room(workspace, d_cookie, user_agent, channel, discover_timeout).await?
-        }
+            .ok()?;
+        let body: Value = response.json().await.ok()?;
+        region_from_locator(&body)
     };
-
-    println!("===== joining huddle in {channel} (room {room_id}) =====");
-    match transport
-        .execute(rooms_join(client, workspace, channel.to_owned()))
-        .await
-    {
-        Ok(body) => {
-            dump("rooms.join", &body);
-            println!(
-                "!!! joined successfully and there is NO known leave method — \
-                 leave the huddle MANUALLY in the official Slack client now !!!"
-            );
-        }
-        // ok:false bodies surface as Api(error); the error string still tells us
-        // whether the endpoint/params are right (e.g. invalid_arguments).
-        Err(e) => println!("rooms.join error: {e}"),
-    }
-    Ok(())
+    lookup.await.unwrap_or_default()
 }
 
-/// Connect to flannel and wait until an active huddle room appears for `channel`.
-async fn discover_active_room(
-    workspace: &WorkspaceSession,
-    d_cookie: &str,
-    user_agent: &str,
-    channel: &str,
-    timeout: Duration,
-) -> Result<String, Error> {
-    use wreq::ws::message::Message as WsMessage;
-
-    let ws_url = super::realtime::flannel_url(&workspace.token, &workspace.team_id);
-    let http = wreq::Client::builder()
-        .emulation(wreq_util::Emulation::Chrome140)
-        .build()
-        .map_err(|e| Error::Transport(format!("client build: {e}")))?;
-    let response = http
-        .websocket(&ws_url)
-        .header("User-Agent", user_agent)
-        .header("Cookie", format!("d={d_cookie}"))
-        .send()
-        .await
-        .map_err(|e| Error::Transport(format!("ws handshake: {e}")))?;
-    let mut socket = response
-        .into_websocket()
-        .await
-        .map_err(|e| Error::Transport(format!("ws upgrade: {e}")))?;
-
-    println!("===== waiting for an active huddle in {channel} — start one now =====");
-    let sleep = tokio::time::sleep(timeout);
-    tokio::pin!(sleep);
-    loop {
-        tokio::select! {
-            _ = &mut sleep => {
-                return Err(Error::Transport("no active huddle seen before timeout".into()));
-            }
-            incoming = socket.recv() => match incoming {
-                Some(Ok(WsMessage::Text(text))) => {
-                    if let Some(room) = room_for_channel(text.as_str(), channel) {
-                        println!("discovered active room {room}");
-                        return Ok(room);
-                    }
-                }
-                Some(Ok(WsMessage::Close(_))) | None => {
-                    return Err(Error::Transport("socket closed before a huddle appeared".into()));
-                }
-                Some(Ok(_)) => {}
-                Some(Err(e)) => return Err(Error::Transport(format!("recv: {e}"))),
-            }
-        }
-    }
-}
-
-fn room_for_channel(text: &str, channel: &str) -> Option<String> {
-    let value: Value = serde_json::from_str(text).ok()?;
-    let room: Room = serde_json::from_value(value.get("room")?.clone()).ok()?;
-    (room.is_active() && room.channel().map(String::as_str) == Some(channel)).then_some(room.id)
-}
-
-fn inspect_frame(text: &str, seen: &mut std::collections::BTreeMap<String, u32>) {
-    let value: Value = match serde_json::from_str(text) {
-        Ok(value) => value,
-        Err(_) => return,
-    };
-    let kind = value
-        .get("type")
+fn region_from_locator(body: &Value) -> Option<String> {
+    body.get("region")
         .and_then(Value::as_str)
-        .unwrap_or("<no-type>")
-        .to_owned();
-    *seen.entry(kind.clone()).or_default() += 1;
-
-    let lower = text.to_ascii_lowercase();
-    let huddle_ish = kind.contains("room")
-        || kind.contains("huddle")
-        || kind.contains("call")
-        || lower.contains("huddle")
-        || lower.contains("\"room\"")
-        || lower.contains("room_id");
-    if huddle_ish {
-        let pretty = serde_json::to_string_pretty(&value).unwrap_or_else(|_| text.to_owned());
-        println!("----- huddle-ish frame: type={kind} -----");
-        println!("{}", redact_secrets(&pretty));
-        println!("----- end frame -----");
-    }
-}
-
-/// Best-effort scan for a room id anywhere in the channel payload, so we do not
-/// depend on a guessed key path before the shape is confirmed.
-fn extract_room_id(value: &Value) -> Option<String> {
-    fn walk(value: &Value, out: &mut Option<String>) {
-        if out.is_some() {
-            return;
-        }
-        match value {
-            Value::Object(map) => {
-                for (key, child) in map {
-                    if (key == "room_id" || key == "room" || key == "id")
-                        && child.as_str().is_some_and(|s| s.starts_with('R'))
-                    {
-                        *out = child.as_str().map(str::to_owned);
-                        return;
-                    }
-                    walk(child, out);
-                }
-            }
-            Value::Array(items) => items.iter().for_each(|item| walk(item, out)),
-            _ => {}
-        }
-    }
-    let mut out = None;
-    walk(value, &mut out);
-    out
-}
-
-fn dump(label: &str, value: &Value) {
-    let pretty = serde_json::to_string_pretty(value).unwrap_or_else(|_| value.to_string());
-    println!("===== {label} (redacted) =====");
-    println!("{}", redact_secrets(&pretty));
-    println!("===== end {label} =====");
+        .filter(|region| {
+            !region.is_empty()
+                && region
+                    .bytes()
+                    .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+        })
+        .map(str::to_owned)
 }
 
 #[cfg(test)]
@@ -427,34 +234,122 @@ mod tests {
         }
     }
 
+    fn has(req: &PreparedRequest, key: &str, value: &str) -> bool {
+        form_fields(req).contains(&(key.into(), value.into()))
+    }
+
     #[test]
-    fn rooms_info_targets_endpoint_with_room() {
-        let request = rooms_info(&SlackClient::default(), &workspace(), "R123".into());
-        let fields = form_fields(&request);
-        assert!(request.url.contains("/api/rooms.info?"));
-        assert!(fields.contains(&("room".into(), "R123".into())));
-        assert!(fields.contains(&("token".into(), "xoxc-test-token".into())));
+    fn rooms_join_starts_by_channel_with_a_region() {
+        let request = rooms_join(
+            &SlackClient::default(),
+            &workspace(),
+            JoinArgs {
+                channel: "C123".into(),
+                room: None,
+                regions: "us-east-1".into(),
+            },
+        );
+        assert!(request.url.contains("/api/rooms.join?"));
+        assert!(has(&request, "channel_id", "C123"));
+        assert!(has(&request, "regions", "us-east-1"));
+        assert!(has(&request, "multidevice", "false"));
+        assert!(!form_fields(&request).iter().any(|(key, _)| key == "id"));
+        assert!(has(&request, "token", "xoxc-test-token"));
         assert!(!request.redacted_debug().contains("xoxc-test-token"));
     }
 
     #[test]
-    fn rooms_join_targets_endpoint_with_channel_id() {
-        let request = rooms_join(&SlackClient::default(), &workspace(), "C123".into());
-        assert!(request.url.contains("/api/rooms.join?"));
-        assert!(form_fields(&request).contains(&("channel_id".into(), "C123".into())));
+    fn rooms_join_answers_an_invite_by_room_id() {
+        let request = rooms_join(
+            &SlackClient::default(),
+            &workspace(),
+            JoinArgs {
+                channel: "C123".into(),
+                room: Some("R9".into()),
+                regions: String::new(),
+            },
+        );
+        assert!(has(&request, "id", "R9"));
+        assert!(has(&request, "regions", ""));
     }
 
     #[test]
-    fn extract_room_id_finds_prefixed_id_anywhere() {
-        let value = serde_json::json!({
-            "channel": { "huddle": { "room": { "id": "R09ABCDEF" } } }
-        });
-        assert_eq!(extract_room_id(&value), Some("R09ABCDEF".into()));
+    fn joining_and_leaving_are_never_retried() {
+        let join = rooms_join(
+            &SlackClient::default(),
+            &workspace(),
+            JoinArgs {
+                channel: "C1".into(),
+                room: None,
+                regions: String::new(),
+            },
+        );
+        let leave = rooms_leave(
+            &SlackClient::default(),
+            &workspace(),
+            LeaveArgs {
+                channel: "C1".into(),
+                call: "R1".into(),
+                attendee: "a-1".into(),
+            },
+        );
+        assert!(!join.retry_safe());
+        assert!(!leave.retry_safe());
     }
 
     #[test]
-    fn extract_room_id_ignores_non_room_ids() {
-        let value = serde_json::json!({ "channel": { "id": "C123", "name": "general" } });
-        assert_eq!(extract_room_id(&value), None);
+    fn rooms_leave_names_the_seat_it_gives_up() {
+        let request = rooms_leave(
+            &SlackClient::default(),
+            &workspace(),
+            LeaveArgs {
+                channel: "C123".into(),
+                call: "R1".into(),
+                attendee: "a-1".into(),
+            },
+        );
+        assert!(request.url.contains("/api/rooms.leave?"));
+        assert!(has(&request, "channel_id", "C123"));
+        assert!(has(&request, "call_id", "R1"));
+        assert!(has(&request, "attendee_id", "a-1"));
+        assert!(has(&request, "reason", "user_initiated"));
+    }
+
+    #[test]
+    fn room_info_uses_the_screenhero_method() {
+        let request = rooms_info(&SlackClient::default(), &workspace(), "R123".into());
+        assert!(request.url.contains("/api/screenhero.rooms.info?"));
+        assert!(has(&request, "room", "R123"));
+    }
+
+    #[test]
+    fn declining_an_invite_names_channel_and_room() {
+        let request = decline_invite_request(
+            &SlackClient::default(),
+            &workspace(),
+            "C1".into(),
+            "R1".into(),
+        );
+        assert!(request.url.contains("/api/rooms.inviteResponse?"));
+        assert!(has(&request, "response", "decline"));
+        assert!(has(&request, "channel_id", "C1"));
+        assert!(has(&request, "room_id", "R1"));
+    }
+
+    #[test]
+    fn region_locator_accepts_only_region_names() {
+        assert_eq!(
+            region_from_locator(&serde_json::json!({"region": "us-east-1"})),
+            Some("us-east-1".into())
+        );
+        assert_eq!(
+            region_from_locator(&serde_json::json!({"region": ""})),
+            None
+        );
+        assert_eq!(
+            region_from_locator(&serde_json::json!({"region": "us east&x=1"})),
+            None
+        );
+        assert_eq!(region_from_locator(&serde_json::json!({})), None);
     }
 }

@@ -55,7 +55,9 @@
   .profile-resize-handle { display: none; }
   .list-panel-header h2 { font-size: 13px; }
   .list-panel-header .toggle { display: none; }
-  .huddle-button { display: none; }
+  /* The header keeps the huddle control but drops its label. */
+  .huddle-button span { display: none; }
+  .huddle-button.live, .huddle-button.active { width: 28px; padding: 0; justify-content: center; }
 }
 
 /* Any column that can hold long unbreakable text needs an explicit floor of

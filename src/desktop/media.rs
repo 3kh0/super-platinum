@@ -12,7 +12,18 @@ use super_platinum_core::{
     MediaAssetId, MediaAssetKind, MediaCacheKind, MediaStore, detect_image_mime,
 };
 
-const CSP: &str = "default-src 'none'; img-src 'self' super-platinum-media: data:; media-src super-platinum-media:; style-src 'unsafe-inline'; script-src dioxus: 'unsafe-inline' 'unsafe-eval'; connect-src dioxus: ipc: ws: wss:; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+/// Huddles add three things: the Chime SDK is a same-origin script (`'self'`
+/// covers Windows' `http://dioxus.index.html`), it spins workers up from
+/// `blob:` URLs, and its optional telemetry posts to `*.chime.aws`. Signalling
+/// and TURN ride the existing `wss:` allowance.
+const CSP: &str = "default-src 'none'; img-src 'self' super-platinum-media: data:; media-src super-platinum-media:; style-src 'unsafe-inline'; script-src 'self' dioxus: 'unsafe-inline' 'unsafe-eval'; worker-src blob:; child-src blob:; connect-src dioxus: ipc: ws: wss: https://*.chime.aws; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+
+/// WebView2 serves the app from `http://dioxus.index.html`, which is not a
+/// secure context, so the microphone and WebRTC are unavailable there. This
+/// flag marks that one origin secure. It replaces wry's default arguments
+/// rather than adding to them, so those are repeated first.
+#[cfg(target_os = "windows")]
+const WINDOWS_BROWSER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required --unsafely-treat-insecure-origin-as-secure=http://dioxus.index.html";
 
 /// A 64×64 translucent grey skeleton box.
 ///
@@ -654,7 +665,10 @@ const WINDOW_DEFAULT_INNER_SIZE: dioxus::desktop::tao::dpi::LogicalSize<f64> =
     dioxus::desktop::tao::dpi::LogicalSize::new(1280.0, 800.0);
 
 pub fn desktop_config(media: MediaRegistry) -> Config {
-    Config::new()
+    let config = Config::new();
+    #[cfg(target_os = "windows")]
+    let config = config.with_windows_browser_args(WINDOWS_BROWSER_ARGS);
+    config
         .with_window(
             WindowBuilder::new()
                 .with_title("Super Platinum")

@@ -252,6 +252,7 @@ impl PreparedRequest {
                 "/api/subscriptions.thread.getView?",
                 "/api/search.modules.messages?",
                 "/api/search.inline?",
+                "/api/screenhero.rooms.info?",
             ]
             .iter()
             .any(|endpoint| self.url.contains(endpoint))

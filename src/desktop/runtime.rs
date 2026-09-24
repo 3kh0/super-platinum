@@ -25,6 +25,10 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         if !crate::fixture::is_fixture() {
             shell.expire_toast(now);
             connection = crate::connection::evaluate(&mut shell, now);
+            shell
+                .core
+                .huddle
+                .expire_invites(now, crate::huddle::INVITE_RING);
         }
         let typing_changed = shell
             .core

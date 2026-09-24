@@ -230,12 +230,13 @@ pub(crate) fn channel_sidebar(
                     }
                 }
             }
+            {super::huddle::huddle_dock(state, snapshot)}
         }
     }
 }
 
 pub(crate) fn conversation_header(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     snapshot: &ShellState,
     channel_name: &str,
     huddle: Option<&super_platinum_core::slack::models::Room>,
@@ -257,7 +258,6 @@ pub(crate) fn conversation_header(
     let dm_initials = channel
         .map(|c| c.avatar_initials.clone())
         .unwrap_or_else(|| "?".into());
-    let huddle_count = huddle.map(|h| h.participants.len()).unwrap_or(0);
     rsx! {
         if is_dm {
             button {
@@ -303,25 +303,6 @@ pub(crate) fn conversation_header(
                 "{title}"
             }
         }
-        if let Some(huddle) = huddle {
-            button {
-                class: "huddle-button",
-                onclick: {
-                    let link = huddle.huddle_link.clone();
-                    move |_| {
-                        if let Some(link) = link.as_ref()
-                            && let Err(error) = crate::media::open_external(link)
-                        {
-                            state.write().show_toast(format!("Could not open huddle: {error}"));
-                        }
-                    }
-                },
-                if huddle_count > 0 {
-                    "Huddle · {huddle_count}"
-                } else {
-                    "Huddle"
-                }
-            }
-        }
+        {super::huddle::huddle_header_button(state, snapshot, channel.map(|c| c.id.as_str()).unwrap_or_default(), huddle)}
     }
 }
