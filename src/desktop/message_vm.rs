@@ -2,7 +2,10 @@ use super_platinum_core::MediaAssetKind;
 
 use crate::blocks::{BlockCtx, block_nodes, custom_emoji_media, plain_inline_nodes};
 use crate::media::MediaRegistry;
-use crate::model::{ExternalTeamVm, MessageVm, ReactionVm, RichNode};
+use crate::model::{
+    ExternalTeamVm, MessageVm, REACTOR_AVATARS_SHOWN, REACTOR_NAMES_SHOWN, ReactionVm, ReactorVm,
+    RichNode,
+};
 use crate::unfurl::attachment_vms;
 
 pub(crate) fn message_vm(
@@ -122,18 +125,64 @@ fn reaction_vms(
         .reactions
         .iter()
         .map(|reaction| {
-            let media = custom_emoji_media(ctx, &reaction.name);
+            let emoji = custom_emoji_media(ctx, &reaction.name);
             ReactionVm {
-                glyph: media
+                glyph: emoji
                     .is_none()
                     .then(|| super_platinum_core::state::emoji_glyph(&reaction.name)),
-                media,
+                media: emoji,
                 name: reaction.name.clone(),
                 count: reaction.count.max(1),
                 own: super_platinum_core::state::reaction_has_user(
                     reaction,
                     &workspace.self_user_id,
                 ),
+                reactors: reactor_vms(workspace, reaction, media),
+            }
+        })
+        .collect()
+}
+
+/// The people behind one reaction, viewer first, as Slack lists them. Only the
+/// handful the hover card shows are resolved; a busy reaction can name hundreds.
+fn reactor_vms(
+    workspace: &super_platinum_core::state::Workspace,
+    reaction: &super_platinum_core::slack::models::Reaction,
+    media: &MediaRegistry,
+) -> Vec<ReactorVm> {
+    let me = workspace.self_user_id.as_str();
+    let mut users = reaction
+        .users
+        .iter()
+        .filter(|user| !user.is_empty())
+        .collect::<Vec<_>>();
+    // Stable sort: the viewer first, everyone else keeps Slack's order.
+    users.sort_by_key(|user| me.is_empty() || user.as_str() != me);
+    users
+        .into_iter()
+        .take(REACTOR_NAMES_SHOWN)
+        .enumerate()
+        .map(|(index, user)| {
+            let name = if user == me {
+                "You".to_owned()
+            } else {
+                workspace.display_name(user)
+            };
+            let initials = workspace
+                .display_name(user)
+                .chars()
+                .next()
+                .map(|first| first.to_uppercase().to_string())
+                .unwrap_or_else(|| "?".into());
+            let avatar = (index < REACTOR_AVATARS_SHOWN)
+                .then(|| workspace.avatar_url(user))
+                .flatten()
+                .map(|url| media.register_avatar(user, &url));
+            ReactorVm {
+                user_id: user.clone(),
+                name,
+                initials,
+                avatar,
             }
         })
         .collect()
@@ -332,6 +381,80 @@ mod tests {
         assert_eq!(
             vm.reactions[2].glyph.as_deref(),
             Some(":gone-from-workspace:")
+        );
+    }
+
+    #[test]
+    fn reactions_name_who_reacted_viewer_first() {
+        let (core, message) = workspace_message(serde_json::json!({
+            "ts": "1.0",
+            "user": "U1",
+            "reactions": [
+                {"name": "eyes", "count": 3, "users": ["U1", "U2", "U0"]},
+                // Slack truncates `users` on busy reactions; `count` stays true.
+                {"name": "tada", "count": 40, "users": ["U2", "U1"]},
+                {"name": "not-an-emoji", "count": 2, "users": []}
+            ]
+        }));
+        let media = MediaRegistry::default();
+        let vm = message_vm(&core.workspaces["T1"], &message, &media);
+
+        let eyes = &vm.reactions[0];
+        let names = eyes
+            .reactors
+            .iter()
+            .map(|reactor| reactor.name.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(names, ["You", "Maya Chen", "Jules"]);
+        assert!(eyes.reactors.iter().all(|reactor| reactor.avatar.is_some()));
+        assert_eq!(
+            eyes.reactors_label(),
+            "You, Maya Chen and Jules reacted with :eyes:"
+        );
+        assert_eq!(
+            vm.reactions[1].reactors_label(),
+            "Jules, Maya Chen and 38 others reacted with :tada:"
+        );
+        assert_eq!(
+            vm.reactions[2].reactors_label(),
+            "2 people reacted with :not-an-emoji:"
+        );
+        // An unknown shortcode: no art to put on the card.
+        assert_eq!(vm.reactions[2].resolved_glyph(), None);
+        assert_eq!(vm.reactions[0].resolved_glyph(), Some("👀"));
+    }
+
+    #[test]
+    fn reaction_label_caps_names_and_faces() {
+        let users = (0..12).map(|n| format!("UX{n}")).collect::<Vec<_>>();
+        let (core, message) = workspace_message(serde_json::json!({
+            "ts": "1.0",
+            "user": "U1",
+            "reactions": [{"name": "fire", "count": 12, "users": users}]
+        }));
+        let media = MediaRegistry::default();
+        let vm = message_vm(&core.workspaces["T1"], &message, &media);
+        let fire = &vm.reactions[0];
+        assert_eq!(fire.reactors.len(), crate::model::REACTOR_NAMES_SHOWN);
+        assert!(
+            fire.reactors_label()
+                .contains(" and 6 others reacted with :fire:")
+        );
+
+        let single = ReactionVm {
+            name: "wave".into(),
+            count: 1,
+            reactors: vec![ReactorVm {
+                name: "Jules".into(),
+                ..ReactorVm::default()
+            }],
+            ..ReactionVm::default()
+        };
+        assert_eq!(single.reactors_label(), "Jules reacted with :wave:");
+        let plus_one = ReactionVm { count: 2, ..single };
+        assert_eq!(
+            plus_one.reactors_label(),
+            "Jules and 1 other reacted with :wave:"
         );
     }
 

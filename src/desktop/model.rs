@@ -290,12 +290,75 @@ pub struct ReactionVm {
     pub glyph: Option<String>,
     /// Custom workspace emoji image, when one resolved.
     pub media: Option<MediaAssetId>,
+    /// Who reacted, in Slack's order with the viewer moved first. Slack caps
+    /// `users` below `count` on busy reactions, so this can be shorter.
+    pub reactors: Vec<ReactorVm>,
 }
+
+/// One person behind a reaction, for the pill's hover card.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ReactorVm {
+    pub user_id: String,
+    /// `You` for the viewer, else their display name.
+    pub name: String,
+    pub initials: String,
+    /// Only the first few reactors carry a face; the rest are named only.
+    pub avatar: Option<MediaAssetId>,
+}
+
+/// Names spelled out on a reaction's hover card before "and N others".
+pub const REACTOR_NAMES_SHOWN: usize = 6;
+/// Faces shown inside a reaction pill, beside the count.
+pub const REACTOR_AVATARS_SHOWN: usize = 3;
 
 impl ReactionVm {
     /// Text shown when neither a glyph nor an image resolved.
     pub fn fallback(&self) -> String {
         format!(":{}:", self.name)
+    }
+
+    /// The standard glyph, if one resolved. `glyph` falls back to the
+    /// `:shortcode:` itself, which is text, not art to show large.
+    pub fn resolved_glyph(&self) -> Option<&str> {
+        self.glyph
+            .as_deref()
+            .filter(|glyph| *glyph != self.fallback())
+    }
+
+    /// Slack's hover line: `Ana, Ben and 3 others reacted with :tada:`.
+    pub fn reactors_label(&self) -> String {
+        format!("{} reacted with {}", self.reactors_who(), self.fallback())
+    }
+
+    /// The names half of the hover line, set in bold on the card.
+    pub fn reactors_who(&self) -> String {
+        let names = self
+            .reactors
+            .iter()
+            .take(REACTOR_NAMES_SHOWN)
+            .map(|reactor| reactor.name.as_str())
+            .collect::<Vec<_>>();
+        let others = (self.count as usize).saturating_sub(names.len());
+        match (names.as_slice(), others) {
+            ([], _) => {
+                let count = self.count.max(1);
+                if count == 1 {
+                    "1 person".to_owned()
+                } else {
+                    format!("{count} people")
+                }
+            }
+            ([only], 0) => (*only).to_owned(),
+            (names, 0) => {
+                let (last, rest) = names.split_last().expect("non-empty");
+                format!("{} and {last}", rest.join(", "))
+            }
+            (names, others) => format!(
+                "{} and {others} {}",
+                names.join(", "),
+                if others == 1 { "other" } else { "others" }
+            ),
+        }
     }
 }
 

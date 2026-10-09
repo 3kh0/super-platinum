@@ -565,28 +565,77 @@ fn reaction_pill(
     let ts = ts.to_owned();
     let name = reaction.name.clone();
     let own = reaction.own;
+    let label = reaction.reactors_label();
+    let who = reaction.reactors_who();
+    let faces = reaction
+        .reactors
+        .iter()
+        .take(crate::model::REACTOR_AVATARS_SHOWN);
+    // The card shows art only: a custom emoji (or its loading box) or a
+    // standard glyph. An unresolved `:shortcode:` is already in the line below.
+    let card_art = reaction.media.is_some() || reaction.resolved_glyph().is_some();
     rsx! {
         button {
             key: "reaction-{reaction.name}",
             class: if own { "reaction own" } else { "reaction" },
-            title: ":{reaction.name}:",
+            "aria-label": "{label}",
             onclick: move |_| {
                 spawn(crate::bootstrap::toggle_reaction(state, channel.clone(), ts.clone(), name.clone(), own));
             },
-            if let Some(emoji) = reaction.media.as_ref().filter(|emoji| media.is_ready(emoji)) {
-                img {
-                    class: "reaction-emoji",
-                    src: "{emoji.uri_at(media_epoch)}",
-                    alt: ":{reaction.name}:",
-                }
-            } else if reaction.media.is_some() {
-                // A custom emoji still downloading. Hold the pill's shape rather
-                // than leaving a gap where the art will be.
-                span { class: "reaction-emoji pending" }
-            } else {
-                span { class: "reaction-glyph", "{reaction.glyph.clone().unwrap_or_else(|| reaction.fallback())}" }
-            }
+            {reaction_emoji(media, media_epoch, reaction, "reaction-emoji", "reaction-glyph")}
             span { class: "reaction-count", "{reaction.count}" }
+            if !reaction.reactors.is_empty() {
+                span { class: "reaction-faces",
+                    for reactor in faces {
+                        span { key: "reactor-{reactor.user_id}", class: "reaction-face",
+                            if let Some(avatar) = reactor.avatar.as_ref().filter(|avatar| media.is_ready(avatar)) {
+                                img { src: "{avatar.uri_at(media_epoch)}", alt: "" }
+                            } else {
+                                "{reactor.initials}"
+                            }
+                        }
+                    }
+                }
+            }
+            // CSS-only hover card: no state write, so hovering a pill never
+            // re-renders the transcript.
+            span { class: "reaction-card", "aria-hidden": "true",
+                if card_art {
+                    span { class: "reaction-card-emoji",
+                        {reaction_emoji(media, media_epoch, reaction, "reaction-card-image", "reaction-card-glyph")}
+                    }
+                }
+                span { class: "reaction-card-label",
+                    strong { "{who}" }
+                    " reacted with {reaction.fallback()}"
+                }
+            }
+        }
+    }
+}
+
+/// A reaction's emoji at either size: custom art, a held gap while it loads,
+/// or the standard glyph.
+fn reaction_emoji(
+    media: &crate::media::MediaRegistry,
+    media_epoch: u64,
+    reaction: &ReactionVm,
+    image_class: &str,
+    glyph_class: &str,
+) -> Element {
+    rsx! {
+        if let Some(emoji) = reaction.media.as_ref().filter(|emoji| media.is_ready(emoji)) {
+            img {
+                class: "{image_class}",
+                src: "{emoji.uri_at(media_epoch)}",
+                alt: ":{reaction.name}:",
+            }
+        } else if reaction.media.is_some() {
+            // A custom emoji still downloading. Hold the pill's shape rather
+            // than leaving a gap where the art will be.
+            span { class: "{image_class} pending" }
+        } else {
+            span { class: "{glyph_class}", "{reaction.glyph.clone().unwrap_or_else(|| reaction.fallback())}" }
         }
     }
 }

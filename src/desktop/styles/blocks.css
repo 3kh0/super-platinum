@@ -250,6 +250,100 @@
 .reaction-count { font-variant-numeric: tabular-nums; }
 .reaction:hover { border-color: var(--border-strong); }
 
+/* Up to three reactor faces sit inside the pill, after the count. Initials
+   hold the tile's size until the picture lands. */
+.reaction-faces { display: inline-flex; gap: 2px; }
+.reaction-face {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--avatar-bg);
+  color: var(--text);
+  font-size: 9px;
+  font-weight: 680;
+  line-height: 1;
+}
+.reaction-face img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Who reacted: a card floating above the pill, with a caret pointing at it.
+   Pure CSS, so hovering never writes shell state. It opens after a short dwell
+   (Slack's tooltip timing) and closes at once; the base rules carry no
+   transition, so leaving is instant. The card is anchored to the pill's left
+   edge rather than centred: the timeline clips sideways, and a centred card
+   would lose its left side on the first pill of a row. */
+.reaction { position: relative; }
+.reaction-card,
+.reaction::after {
+  position: absolute;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+.reaction-card {
+  z-index: 12;
+  bottom: calc(100% + 8px);
+  left: -4px;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  width: max-content;
+  min-width: 96px;
+  max-width: 240px;
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-popover);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 560;
+  line-height: var(--leading-copy);
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.reaction::after {
+  content: "";
+  z-index: 13;
+  bottom: calc(100% + 4px);
+  left: calc(50% - 4px);
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  transform: rotate(45deg);
+}
+.reaction:hover .reaction-card,
+.reaction:focus-visible .reaction-card,
+.reaction:hover::after,
+.reaction:focus-visible::after {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity var(--duration-fast) ease 350ms, visibility 0s linear 350ms;
+}
+/* Slack sets the emoji on a light plate so dark custom art stays legible. */
+.reaction-card-emoji {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  background: var(--text);
+}
+.reaction-card-image { width: 48px; height: 48px; object-fit: contain; }
+.reaction-card-image.pending {
+  display: inline-block;
+  border-radius: var(--radius-sm);
+  background: var(--border-strong);
+  opacity: 0.6;
+}
+.reaction-card-glyph { font-size: 44px; line-height: 1; }
+.reaction-card-label strong { color: var(--text); font-weight: 680; }
+
 .reply-bar {
   display: flex;
   align-items: center;

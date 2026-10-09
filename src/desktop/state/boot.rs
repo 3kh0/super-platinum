@@ -11,12 +11,26 @@ use crate::model::*;
 
 /// Fixture reaction pill — resolves the glyph the same way live messages do.
 fn reaction(name: &str, count: u32, own: bool) -> ReactionVm {
+    let others = [("U1", "Maya Chen"), ("U2", "Jules")];
+    let reactors = own
+        .then_some(("U0", "You"))
+        .into_iter()
+        .chain(others)
+        .take(count as usize)
+        .map(|(user_id, name)| ReactorVm {
+            user_id: user_id.to_owned(),
+            name: name.to_owned(),
+            initials: name[..1].to_owned(),
+            avatar: None,
+        })
+        .collect();
     ReactionVm {
         glyph: Some(super_platinum_core::state::emoji_glyph(name)),
         media: None,
         name: name.to_owned(),
         count,
         own,
+        reactors,
     }
 }
 
@@ -694,8 +708,13 @@ impl ShellState {
             "animated-reaction" => {
                 keep_recent_messages(&mut state, 8);
                 if let Some(message) = state.messages.last_mut() {
-                    message.reactions =
-                        vec![reaction("rocket", 12, true), reaction("eyes", 4, false)];
+                    message.reactions = vec![
+                        reaction("rocket", 12, true),
+                        reaction("eyes", 4, false),
+                        // A custom emoji whose art never resolved: the card must
+                        // not set its `:shortcode:` at emoji size.
+                        reaction("blunder", 1, false),
+                    ];
                 }
                 state.sync_fixture_messages();
             }
