@@ -3,7 +3,6 @@ use std::collections::{HashMap, HashSet};
 use crate::slack::models::{Channel, ChannelId};
 use crate::state::Workspace;
 
-use super::time::cmp_ts;
 use super::users::dm_user_id;
 use super::util::non_empty;
 
@@ -84,24 +83,6 @@ pub fn dm_label(ws: &Workspace, c: &Channel) -> String {
     channel_label(c).trim_start_matches('#').to_owned()
 }
 
-pub fn is_vip_channel(ws: &Workspace, c: &Channel) -> bool {
-    if ws.priority_sidebar_section && !ws.vip_users.is_empty() {
-        if c.is_im {
-            if dm_user_id(c).is_some_and(|user| ws.vip_users.contains(user)) {
-                return true;
-            }
-        } else if latest_author(ws, &c.id).is_some_and(|user| ws.vip_users.contains(user)) {
-            return true;
-        }
-    }
-    c.extra.iter().any(|(key, value)| {
-        let key = key.to_ascii_lowercase();
-        key.contains("vip")
-            || (key.contains("priority") && value.as_bool().unwrap_or(false))
-            || value_names_vip(value)
-    })
-}
-
 pub(crate) fn linked_list_order(
     sections: &[crate::slack::models::ChannelSection],
 ) -> Vec<&crate::slack::models::ChannelSection> {
@@ -138,28 +119,6 @@ pub(crate) fn linked_list_order(
         }
     }
     out
-}
-
-fn latest_author<'a>(ws: &'a Workspace, channel_id: &str) -> Option<&'a str> {
-    ws.messages
-        .get(channel_id)?
-        .messages
-        .iter()
-        .filter(|m| m.ts.is_some())
-        .max_by(|a, b| cmp_ts(a.ts.as_deref(), b.ts.as_deref()))?
-        .user
-        .as_deref()
-}
-
-fn value_names_vip(value: &serde_json::Value) -> bool {
-    match value {
-        serde_json::Value::String(value) => value.to_ascii_lowercase().contains("vip"),
-        serde_json::Value::Array(values) => values.iter().any(value_names_vip),
-        serde_json::Value::Object(values) => values
-            .iter()
-            .any(|(key, value)| key.to_ascii_lowercase().contains("vip") || value_names_vip(value)),
-        _ => false,
-    }
 }
 
 pub fn mpdm_name_label(name: &str) -> Option<String> {

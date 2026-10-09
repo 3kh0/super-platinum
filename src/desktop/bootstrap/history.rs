@@ -328,6 +328,7 @@ pub async fn mark_visible_read(mut state: Signal<ShellState>) {
                 messages.last_read = Some(latest.clone());
                 messages.unread_count = 0;
                 messages.mention_count = 0;
+                messages.vip_count = 0;
             }
             if let Some(channel) = workspace.channels.get_mut(&channel) {
                 channel.last_read = Some(latest);
@@ -464,6 +465,7 @@ pub async fn mark_all_read(mut state: Signal<ShellState>) {
                 messages.last_read = Some(latest.clone());
                 messages.unread_count = 0;
                 messages.mention_count = 0;
+                messages.vip_count = 0;
             }
             if let Some(channel) = workspace.channels.get_mut(&channel_id) {
                 channel.last_read = Some(latest);

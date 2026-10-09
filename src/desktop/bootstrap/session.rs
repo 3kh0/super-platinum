@@ -38,6 +38,7 @@ pub async fn refresh(mut state: Signal<ShellState>) {
         {
             workspace.apply_counts(counts);
         }
+        refresh_channel_metadata(&mut state, &transport, &client, &workspace_session, &team).await;
         if let Ok(dnd) = api::fetch_dnd_info(&transport, &client, &workspace_session).await
             && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
         {
@@ -241,6 +242,40 @@ async fn hydrate_surface_emojis(
 
 /// Unfurl footers and `#channel` chips print a raw id until the conversation is
 /// known, so pull metadata for the ones the visible messages point at.
+/// Bring cached conversation metadata up to date, the way Slack's client does:
+/// one conditional `conversations.genericInfo` per batch, which only returns
+/// the conversations whose `updated` stamp moved (renamed, archived, gone
+/// dormant). The sidebar's filters read exactly those fields.
+async fn refresh_channel_metadata(
+    state: &mut Signal<ShellState>,
+    transport: &super_platinum_core::slack::Transport,
+    client: &super_platinum_core::slack::SlackClient,
+    workspace_session: &super_platinum_core::config::WorkspaceSession,
+    team: &str,
+) {
+    let batches = state
+        .read()
+        .core
+        .workspaces
+        .get(team)
+        .map(|workspace| workspace.channels_to_refresh())
+        .unwrap_or_default();
+    for batch in batches {
+        match api::fetch_generic_info(transport, client, workspace_session, &batch).await {
+            Ok(page) if !page.channels.is_empty() => {
+                if let Some(workspace) = state.write().core.workspaces.get_mut(team) {
+                    workspace.apply_channel_refresh(page);
+                }
+            }
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("super-platinum: conversations.genericInfo failed: {error}");
+                break;
+            }
+        }
+    }
+}
+
 async fn hydrate_surface_channels(
     state: &mut Signal<ShellState>,
     transport: &super_platinum_core::slack::Transport,

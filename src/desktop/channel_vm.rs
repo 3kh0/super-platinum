@@ -47,15 +47,22 @@ pub(crate) fn channel_vm(
     }
 }
 
+/// Every conversation as a row, plus the sidebar laid out over them. `active`
+/// is the open conversation (falling back to the last one opened); it is
+/// always a row, and the layout keeps it where the reader found it.
 pub(crate) fn project_channels(
     workspace: &super_platinum_core::state::Workspace,
     media: &MediaRegistry,
+    active: Option<&str>,
+    memory: &mut super_platinum_core::state::SidebarMemory,
 ) -> (Vec<ChannelVm>, Vec<SidebarSectionVm>, usize, Option<String>) {
-    let active_id = workspace.last_active_channel.clone();
+    let active_id = active
+        .map(str::to_owned)
+        .or_else(|| workspace.last_active_channel.clone());
     let mut channels = workspace
         .channels
         .values()
-        .filter(|channel| !channel.is_archived)
+        .filter(|channel| !channel.is_archived || active_id.as_deref() == Some(channel.id.as_str()))
         .map(|channel| channel_vm(workspace, channel, media))
         .collect::<Vec<_>>();
     // Stable id → index map for section rows; do not alpha-sort.
@@ -72,26 +79,26 @@ pub(crate) fn project_channels(
     let active_for_grouping = channels
         .get(active_channel)
         .map(|channel| channel.id.as_str());
-    let sidebar_sections =
-        super_platinum_core::state::grouped_sidebar_sections(workspace, active_for_grouping)
-            .into_iter()
-            .filter_map(|section| {
-                let channel_indices = section
-                    .channel_ids
-                    .iter()
-                    .filter_map(|id| index_by_id.get(id.as_str()).copied())
-                    .collect::<Vec<_>>();
-                if channel_indices.is_empty() {
-                    return None;
-                }
-                Some(SidebarSectionVm {
-                    id: section.id,
-                    kind: section.kind,
-                    title: section.title,
-                    channel_indices,
-                })
-            })
-            .collect();
+    // Empty sections stay: Slack keeps a heading for Channels, Direct
+    // messages and the rest even when every row is filtered out.
+    let sidebar_sections = super_platinum_core::state::grouped_sidebar_sections(
+        workspace,
+        active_for_grouping,
+        memory,
+    )
+    .into_iter()
+    .map(|section| SidebarSectionVm {
+        channel_indices: section
+            .channel_ids
+            .iter()
+            .filter_map(|id| index_by_id.get(id.as_str()).copied())
+            .collect(),
+        id: section.id,
+        kind: section.kind,
+        title: section.title,
+        collapsed: section.collapsed,
+    })
+    .collect();
     (channels, sidebar_sections, active_channel, active_id)
 }
 

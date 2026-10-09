@@ -491,6 +491,8 @@ pub struct SidebarSectionVm {
     pub id: String,
     pub kind: String,
     pub title: String,
+    /// Collapsed in Slack's `channel_sections` pref: only unread rows show.
+    pub collapsed: bool,
     /// Indices into `ShellState::channels` for rows in this section.
     pub channel_indices: Vec<usize>,
 }

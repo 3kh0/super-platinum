@@ -23,7 +23,6 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
     let mut workspace = super_platinum_core::state::Workspace::from_session(&session);
     workspace.last_active_channel = Some("C2".into());
     workspace.priority_sidebar_section = true;
-    workspace.hide_read_channels_unless_starred = false;
     for channel in [
         serde_json::json!({"id":"C1","name":"general","is_channel":true,"is_starred":true}),
         serde_json::json!({"id":"C2","name":"ship","is_channel":true,"has_unreads":true,"unread_count":2,"unread_count_display":2,"mention_count":1,"last_read":"1.0","topic":{"value":"Ship the desktop client without losing details."}}),

@@ -141,6 +141,22 @@ pub async fn fetch_counts(
     decode(value, "client.counts")
 }
 
+pub async fn fetch_generic_info(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    updated_channels: &BTreeMap<ChannelId, u64>,
+) -> Result<GenericInfoPage, Error> {
+    let value = transport
+        .execute(conversations_generic_info(
+            client,
+            workspace,
+            updated_channels,
+        ))
+        .await?;
+    decode(value, "conversations.genericInfo")
+}
+
 pub async fn fetch_channel_sections(
     transport: &Transport,
     client: &SlackClient,

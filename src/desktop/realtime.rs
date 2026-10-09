@@ -183,37 +183,9 @@ fn apply(
                 && workspace.usergroups.values().any(|group| {
                     group.includes(&workspace.self_user_id) && group.mentioned_in(&message)
                 });
-            let channel_read = workspace
-                .channels
-                .get(&channel)
-                .and_then(|c| c.last_read.clone());
-            let initial_mentions = workspace
-                .channels
-                .get(&channel)
-                .and_then(|c| c.mention_count)
-                .unwrap_or(0);
-            let messages = workspace.messages.entry(channel.clone()).or_default();
-            if group_ping
-                && message.ts.as_deref().is_some_and(|ts| {
-                    !messages
-                        .messages
-                        .iter()
-                        .any(|m| m.ts.as_deref() == Some(ts))
-                        && super_platinum_core::state::cmp_ts(
-                            Some(ts),
-                            messages.last_read.as_deref().or(channel_read.as_deref()),
-                        ) == std::cmp::Ordering::Greater
-                })
-            {
-                messages.mention_count = messages
-                    .mention_count
-                    .max(initial_mentions)
-                    .saturating_add(1);
-                if let Some(channel) = workspace.channels.get_mut(&channel) {
-                    channel.has_unreads = true;
-                    channel.mention_count = Some(messages.mention_count);
-                }
-            }
+            let viewing = core.active_team.as_deref() == Some(team)
+                && core.active_channel.as_deref() == Some(channel.as_str());
+            workspace.count_incoming_message(&channel, &message, viewing, group_ping);
             // Merged, not replaced. A frame that re-sends a message we already
             // hold is a partial: `message_replied` carries the parent's text and
             // reply counts but no `reactions` at all, so overwriting the stored
@@ -309,6 +281,9 @@ fn apply(
             messages.last_read = Some(ts.clone());
             messages.unread_count = unread_count;
             messages.mention_count = mention_count;
+            if mention_count == 0 {
+                messages.vip_count = 0;
+            }
             if let Some(channel) = workspace.channels.get_mut(&channel) {
                 channel.last_read = Some(ts);
                 channel.unread_count = Some(unread_count);

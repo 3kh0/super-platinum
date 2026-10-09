@@ -153,6 +153,25 @@ pub fn client_counts(client: &SlackClient, workspace: &WorkspaceSession) -> Prep
     client.rest_form(workspace, "client.counts", Vec::new())
 }
 
+/// `conversations.genericInfo`: a conditional batch fetch. Each id carries the
+/// `updated` (ms) of the copy already held; Slack returns full objects only
+/// for the ones that changed. At most a few hundred ids per call
+/// (`too_many_channels` at 500).
+pub fn conversations_generic_info(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    updated_channels: &BTreeMap<ChannelId, u64>,
+) -> PreparedRequest {
+    client.rest_form(
+        workspace,
+        "conversations.genericInfo",
+        vec![(
+            "updated_channels",
+            serde_json::to_string(updated_channels).unwrap_or_default(),
+        )],
+    )
+}
+
 pub fn channel_sections(client: &SlackClient, workspace: &WorkspaceSession) -> PreparedRequest {
     client.rest_form(workspace, "users.channelSections.list", Vec::new())
 }

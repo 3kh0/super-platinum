@@ -188,6 +188,24 @@ Slack-facing behavior needs defensive handling.
   only, no message text) when a live update is not landing.
 - Do not assume all Slack messages are plain text; Block Kit, files, reactions, threads, edits, deletes, and notifications already exist in the product surface.
 
+### Sidebar
+
+`state::sidebar_layout` is a port of the web client's `useCalculateSidebarSections`
+(read from the shipped bundle), and `state::sidebar_prefs` holds every pref it
+reads from `client.userBoot`. Match the client, not intuition:
+
+- VIP unreads takes a conversation only with a `client.counts` `vip_count`, or a
+  badge on a DM/group DM with a VIP. A channel a VIP merely posted in stays put.
+- Routing order: VIP, Starred, custom section, Code channels, External
+  connections, Agents & apps (bot and Slackbot DMs), Direct messages, Channels.
+- Section filters default from `sidebar_behavior`; with dormant filtering on,
+  "show all" means "show all not `properties.is_dormant`". Muted rows hide
+  unless badged and always sort last. Alphabetical is ICU numeric collation.
+- `client.counts` is membership and read state: a channel absent from it was
+  left, a DM absent from it is closed, and `has_unreads: false` clears a count.
+- Cached metadata goes stale (renames, archives, dormancy). Boot refreshes it
+  with conditional `conversations.genericInfo` batches (≤250 ids each).
+
 ### Huddles
 
 A huddle is a Slack room plus an **Amazon Chime SDK** meeting

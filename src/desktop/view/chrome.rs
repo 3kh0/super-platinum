@@ -186,7 +186,17 @@ pub(crate) fn channel_sidebar(
                     }
                 }
                 for section in &snapshot.sidebar_sections {
-                    div { class: "section-label", key: "section-{section.id}", "{section.title}" }
+                    button {
+                        class: if section.collapsed { "section-label section-toggle collapsed" } else { "section-label section-toggle" },
+                        key: "section-{section.id}",
+                        "aria-expanded": if section.collapsed { "false" } else { "true" },
+                        onclick: {
+                            let id = section.id.clone();
+                            move |_| state.write().toggle_sidebar_section(&id)
+                        },
+                        {crate::icons::icon(crate::icons::Icon::ChevronRight, "icon section-caret")}
+                        span { "{section.title}" }
+                    }
                     for index in section.channel_indices.iter().copied() {
                         if let Some(channel) = snapshot.channels.get(index) {
                             button {
@@ -218,9 +228,9 @@ pub(crate) fn channel_sidebar(
                                     }
                                 }
                                 span { class: "channel-name", "{channel.name}" }
-                                if channel.mention_count > 0 {
+                                if sidebar_badge(channel) > 0 {
                                     span { class: "ping-badge",
-                                        if channel.mention_count > 99 { "99+" } else { "{channel.mention_count}" }
+                                        if sidebar_badge(channel) > 99 { "99+" } else { "{sidebar_badge(channel)}" }
                                     }
                                 } else if channel.unread {
                                     i { class: "unread-dot" }
@@ -304,5 +314,14 @@ pub(crate) fn conversation_header(
             }
         }
         {super::huddle::huddle_header_button(state, snapshot, channel.map(|c| c.id.as_str()).unwrap_or_default(), huddle)}
+    }
+}
+
+/// Slack's sidebar badge: mentions for a channel, every unread for a DM.
+fn sidebar_badge(channel: &crate::model::ChannelVm) -> u32 {
+    if channel.is_im || channel.is_mpim {
+        channel.unread_count.max(channel.mention_count)
+    } else {
+        channel.mention_count
     }
 }

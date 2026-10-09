@@ -3,6 +3,7 @@ mod common;
 mod emoji;
 mod files;
 mod messages;
+mod sidebar_layout;
 mod timestamps;
 mod users;
 mod workspace;

@@ -204,6 +204,26 @@
   text-transform: uppercase;
   letter-spacing: .04em;
 }
+.section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding-left: 4px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.section-toggle:hover { color: var(--muted); }
+.section-caret {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  transform: rotate(90deg);
+  transition: transform .12s ease;
+}
+.section-toggle.collapsed .section-caret { transform: none; }
 .channel {
   position: relative;
   display: flex;

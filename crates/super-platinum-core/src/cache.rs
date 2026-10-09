@@ -11,6 +11,28 @@ use crate::state::ChannelMessages;
 use crate::state::{RealtimeStatus, Workspace};
 
 const SCHEMA_VERSION: i64 = 1;
+
+/// Everything the sidebar is laid out from, so a warm boot paints Slack's
+/// sections and order before any request returns.
+#[derive(serde::Deserialize)]
+struct CachedSidebar {
+    #[serde(default)]
+    config: crate::state::SidebarConfig,
+    #[serde(default)]
+    vip_users: std::collections::HashSet<String>,
+    #[serde(default)]
+    priority_section: bool,
+    #[serde(default)]
+    starred_order: Vec<String>,
+}
+
+#[derive(serde::Serialize)]
+struct CachedSidebarRef<'a> {
+    config: &'a crate::state::SidebarConfig,
+    vip_users: &'a std::collections::HashSet<String>,
+    priority_section: bool,
+    starred_order: &'a [String],
+}
 const MAX_CACHED_MESSAGES_PER_CHANNEL: usize = 200;
 
 pub struct Cache {
@@ -80,10 +102,10 @@ impl Cache {
         &self,
         session: &WorkspaceSession,
     ) -> Result<Option<Workspace>, AppError> {
-        let Some((name, url, self_user_id, last_active_channel, recent_channels, frecency)) = self
+        let Some((name, url, self_user_id, last_active_channel, recent_channels, frecency, sidebar)) = self
             .conn
             .query_row(
-                "select name, url, self_user_id, last_active_channel, recent_channels, frecency from workspaces where team_id = ?1",
+                "select name, url, self_user_id, last_active_channel, recent_channels, frecency, sidebar from workspaces where team_id = ?1",
                 params![session.team_id],
                 |row| {
                     Ok((
@@ -93,6 +115,7 @@ impl Cache {
                         row.get::<_, Option<String>>(3)?,
                         row.get::<_, Option<String>>(4)?,
                         row.get::<_, Option<String>>(5)?,
+                        row.get::<_, Option<String>>(6)?,
                     ))
                 },
             )
@@ -123,7 +146,6 @@ impl Cache {
             last_active_channel,
             priority_scores: Default::default(),
             frecency,
-            hide_read_channels_unless_starred: false,
             priority_sidebar_section: false,
             vip_users: std::collections::HashSet::new(),
             sidebar: Default::default(),
@@ -138,6 +160,16 @@ impl Cache {
             rt: RealtimeStatus::default(),
             rt_generation: 0,
         };
+
+        if let Some(sidebar) = sidebar
+            .as_deref()
+            .and_then(|json| serde_json::from_str::<CachedSidebar>(json).ok())
+        {
+            ws.sidebar = sidebar.config;
+            ws.vip_users = sidebar.vip_users;
+            ws.priority_sidebar_section = sidebar.priority_section;
+            ws.starred_order = sidebar.starred_order;
+        }
 
         let mut groups = self
             .conn
@@ -190,7 +222,7 @@ impl Cache {
         }
 
         let mut stmt = self.conn.prepare(
-            "select channel_id, last_read, unread_count, mention_count from channel_state where team_id = ?1",
+            "select channel_id, last_read, unread_count, mention_count, vip_count, latest from channel_state where team_id = ?1",
         )?;
         let rows = stmt.query_map(params![session.team_id], |row| {
             Ok((
@@ -198,14 +230,18 @@ impl Cache {
                 row.get::<_, Option<String>>(1)?,
                 row.get::<_, u32>(2)?,
                 row.get::<_, u32>(3)?,
+                row.get::<_, u32>(4)?,
+                row.get::<_, Option<String>>(5)?,
             ))
         })?;
         for row in rows {
-            let (channel_id, last_read, unread_count, mention_count) = row?;
+            let (channel_id, last_read, unread_count, mention_count, vip_count, latest) = row?;
             let cm = ws.messages.entry(channel_id).or_default();
             cm.last_read = last_read;
             cm.unread_count = unread_count;
             cm.mention_count = mention_count;
+            cm.vip_count = vip_count;
+            cm.latest = latest;
         }
 
         Ok(Some(ws))
@@ -214,17 +250,18 @@ impl Cache {
     pub fn save_workspace(&self, ws: &Workspace) -> Result<(), AppError> {
         let tx = self.conn.unchecked_transaction()?;
         tx.execute(
-            "insert into workspaces (team_id, name, url, self_user_id, last_active_channel, recent_channels, frecency)
-             values (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+            "insert into workspaces (team_id, name, url, self_user_id, last_active_channel, recent_channels, frecency, sidebar)
+             values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
              on conflict(team_id) do update set
                name = excluded.name,
                url = excluded.url,
                self_user_id = excluded.self_user_id,
                last_active_channel = excluded.last_active_channel,
                recent_channels = excluded.recent_channels,
-               frecency = excluded.frecency
-             where (name, url, self_user_id, last_active_channel, recent_channels, frecency)
-               is not (excluded.name, excluded.url, excluded.self_user_id, excluded.last_active_channel, excluded.recent_channels, excluded.frecency)",
+               frecency = excluded.frecency,
+               sidebar = excluded.sidebar
+             where (name, url, self_user_id, last_active_channel, recent_channels, frecency, sidebar)
+               is not (excluded.name, excluded.url, excluded.self_user_id, excluded.last_active_channel, excluded.recent_channels, excluded.frecency, excluded.sidebar)",
             params![
                 ws.team_id,
                 ws.name,
@@ -233,6 +270,12 @@ impl Cache {
                 ws.last_active_channel,
                 serde_json::to_string(&ws.recent_channels)?,
                 serde_json::to_string(&ws.frecency)?,
+                serde_json::to_string(&CachedSidebarRef {
+                    config: &ws.sidebar,
+                    vip_users: &ws.vip_users,
+                    priority_section: ws.priority_sidebar_section,
+                    starred_order: &ws.starred_order,
+                })?,
             ],
         )?;
 
@@ -279,20 +322,24 @@ impl Cache {
 
         for (channel_id, cm) in &ws.messages {
             tx.execute(
-                "insert into channel_state (team_id, channel_id, last_read, unread_count, mention_count)
-                 values (?1, ?2, ?3, ?4, ?5)
+                "insert into channel_state (team_id, channel_id, last_read, unread_count, mention_count, vip_count, latest)
+                 values (?1, ?2, ?3, ?4, ?5, ?6, ?7)
                  on conflict(team_id, channel_id) do update set
                    last_read = excluded.last_read,
                    unread_count = excluded.unread_count,
-                   mention_count = excluded.mention_count
-                 where (last_read, unread_count, mention_count)
-                   is not (excluded.last_read, excluded.unread_count, excluded.mention_count)",
+                   mention_count = excluded.mention_count,
+                   vip_count = excluded.vip_count,
+                   latest = excluded.latest
+                 where (last_read, unread_count, mention_count, vip_count, latest)
+                   is not (excluded.last_read, excluded.unread_count, excluded.mention_count, excluded.vip_count, excluded.latest)",
                 params![
                     ws.team_id,
                     channel_id,
                     cm.last_read,
                     cm.unread_count,
-                    cm.mention_count
+                    cm.mention_count,
+                    cm.vip_count,
+                    cm.latest
                 ],
             )?;
             if !cm.loaded && cm.messages.is_empty() && cm.pending.is_empty() {
@@ -413,6 +460,16 @@ impl Cache {
         let _ = self
             .conn
             .execute("alter table workspaces add column frecency text", []);
+        let _ = self
+            .conn
+            .execute("alter table workspaces add column sidebar text", []);
+        let _ = self.conn.execute(
+            "alter table channel_state add column vip_count integer not null default 0",
+            [],
+        );
+        let _ = self
+            .conn
+            .execute("alter table channel_state add column latest text", []);
         self.conn.execute(
             "insert into meta (key, value) values ('schema_version', ?1)
              on conflict(key) do update set value = excluded.value",
@@ -508,6 +565,71 @@ mod tests {
                 .usergroups
                 .is_empty()
         );
+    }
+
+    #[test]
+    fn roundtrips_sidebar_layout_inputs() {
+        let cache = Cache::open(":memory:").unwrap();
+        let session = session();
+        let mut ws = Workspace::from_session(&session);
+        ws.priority_sidebar_section = true;
+        ws.vip_users.insert("U_VIP".into());
+        ws.sidebar.behavior = "hide_read_channels_unless_starred".into();
+        ws.sidebar.boost_mentions = true;
+        ws.sidebar.muted.insert("C_MUTED".into());
+        ws.sidebar.toggle_collapsed("L_STARS");
+        ws.sidebar
+            .sections
+            .push(crate::slack::models::ChannelSection {
+                channel_section_id: "L_STARS".into(),
+                kind: "stars".into(),
+                ..Default::default()
+            });
+        let cm = ws.messages.entry("C1".into()).or_default();
+        cm.vip_count = 2;
+        cm.latest = Some("5.000001".into());
+        cache.save_workspace(&ws).unwrap();
+
+        let loaded = cache.load_workspace(&session).unwrap().unwrap();
+
+        assert!(loaded.priority_sidebar_section);
+        assert!(loaded.vip_users.contains("U_VIP"));
+        assert_eq!(loaded.sidebar.behavior, "hide_read_channels_unless_starred");
+        assert!(loaded.sidebar.boost_mentions);
+        assert!(loaded.sidebar.is_muted("C_MUTED"));
+        assert!(loaded.sidebar.is_collapsed("L_STARS"));
+        assert_eq!(loaded.sidebar.sections.len(), 1);
+        assert_eq!(loaded.messages["C1"].vip_count, 2);
+        assert_eq!(loaded.messages["C1"].latest.as_deref(), Some("5.000001"));
+    }
+
+    #[test]
+    fn opens_a_cache_written_before_sidebar_columns_existed() {
+        let path = std::env::temp_dir().join(format!(
+            "super-platinum-legacy-sidebar-{}.sqlite",
+            uuid::Uuid::new_v4()
+        ));
+        {
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(
+                "create table workspaces (team_id text primary key, name text not null, url text not null,
+                   self_user_id text not null, last_active_channel text, recent_channels text, frecency text);
+                 create table channel_state (team_id text not null, channel_id text not null, last_read text,
+                   unread_count integer not null default 0, mention_count integer not null default 0,
+                   primary key (team_id, channel_id));
+                 insert into workspaces (team_id, name, url, self_user_id) values ('T1', 'Test', 'https://t', 'U1');
+                 insert into channel_state (team_id, channel_id, last_read, unread_count, mention_count)
+                   values ('T1', 'C1', '1.0', 3, 1);",
+            )
+            .unwrap();
+        }
+        let cache = Cache::open(&path).unwrap();
+        let loaded = cache.load_workspace(&session()).unwrap().unwrap();
+        assert_eq!(loaded.messages["C1"].unread_count, 3);
+        assert_eq!(loaded.messages["C1"].vip_count, 0);
+        assert!(loaded.sidebar.sections.is_empty());
+        drop(cache);
+        let _ = std::fs::remove_file(path);
     }
 
     #[test]

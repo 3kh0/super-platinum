@@ -88,6 +88,18 @@ pub struct ChannelSectionsPage {
     pub extra: BTreeMap<String, Value>,
 }
 
+/// `conversations.genericInfo`: the conversations that changed since the
+/// `updated` stamp sent for them, and the ids that did not.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct GenericInfoPage {
+    #[serde(default)]
+    pub channels: Vec<Channel>,
+    #[serde(default)]
+    pub unchanged_channel_ids: Vec<ChannelId>,
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ChannelSection {
     pub channel_section_id: String,

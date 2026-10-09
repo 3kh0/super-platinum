@@ -171,7 +171,9 @@ impl ShellState {
         core.workspaces = cached_workspaces;
 
         let preferred = core.active_channel.clone();
-        let (channels, sidebar_sections, default_active, _) = project_channels(&workspace, &media);
+        let mut sidebar_memory = super_platinum_core::state::SidebarMemory::default();
+        let (channels, sidebar_sections, default_active, _) =
+            project_channels(&workspace, &media, None, &mut sidebar_memory);
         let active_channel = preferred
             .as_ref()
             .and_then(|id| channels.iter().position(|channel| &channel.id == id))
@@ -202,6 +204,7 @@ impl ShellState {
             active_workspace: 0,
             channels,
             sidebar_sections,
+            sidebar_memory,
             active_channel,
             messages,
             messages_by_channel,
@@ -270,6 +273,7 @@ impl ShellState {
             active_workspace: 0,
             channels: Vec::new(),
             sidebar_sections: Vec::new(),
+            sidebar_memory: Default::default(),
             active_channel: 0,
             messages: Vec::new(),
             messages_by_channel: HashMap::new(),
@@ -464,7 +468,9 @@ impl ShellState {
                 },
             )
         });
-        let (channels, sidebar_sections, default_active, _) = project_channels(&workspace, &media);
+        let mut sidebar_memory = super_platinum_core::state::SidebarMemory::default();
+        let (channels, sidebar_sections, default_active, _) =
+            project_channels(&workspace, &media, None, &mut sidebar_memory);
         let active_channel = channels
             .iter()
             .position(|channel| channel.id == "C2")
@@ -518,6 +524,7 @@ impl ShellState {
             active_workspace: 0,
             channels,
             sidebar_sections,
+            sidebar_memory,
             active_channel,
             messages,
             messages_by_channel,

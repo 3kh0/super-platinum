@@ -95,6 +95,12 @@ pub struct ChannelMessages {
     pub last_read: Option<MessageTs>,
     pub unread_count: u32,
     pub mention_count: u32,
+    /// `client.counts` `vip_count`: unread mentions from a VIP. Any at all puts
+    /// the conversation in VIP unreads.
+    pub vip_count: u32,
+    /// `client.counts` `latest`: the newest message's ts, which the "recent"
+    /// sidebar sort orders by.
+    pub latest: Option<MessageTs>,
 }
 
 impl ChannelMessages {
@@ -233,40 +239,6 @@ impl ChannelMessages {
     }
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct SidebarConfig {
-    pub sections: Vec<crate::slack::models::ChannelSection>,
-    pub section_prefs: HashMap<String, SectionPref>,
-    pub hidden_sections: HashSet<String>,
-}
-
-#[derive(Debug, Clone, Default, serde::Deserialize)]
-pub struct SectionPref {
-    #[serde(default)]
-    pub sort: Option<String>,
-    #[serde(default)]
-    pub sidebar: Option<String>,
-    #[serde(default)]
-    pub c: Option<String>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SectionSort {
-    Alpha,
-    Recent,
-    Priority,
-}
-
-#[derive(Debug, Clone)]
-pub struct ResolvedSection {
-    pub id: String,
-    pub kind: String,
-    pub title: String,
-    pub sort: SectionSort,
-    pub show_all: bool,
-    pub channel_ids: Vec<ChannelId>,
-}
-
 #[derive(Debug, Clone)]
 pub struct Workspace {
     pub team_id: TeamId,
@@ -281,7 +253,6 @@ pub struct Workspace {
     pub last_active_channel: Option<ChannelId>,
     pub priority_scores: BTreeMap<ChannelId, f64>,
     pub frecency: BTreeMap<ChannelId, FrecencyEntry>,
-    pub hide_read_channels_unless_starred: bool,
     pub priority_sidebar_section: bool,
     pub vip_users: HashSet<UserId>,
     pub sidebar: SidebarConfig,
@@ -314,7 +285,6 @@ impl Workspace {
             last_active_channel: None,
             priority_scores: BTreeMap::new(),
             frecency: BTreeMap::new(),
-            hide_read_channels_unless_starred: false,
             priority_sidebar_section: false,
             vip_users: HashSet::new(),
             sidebar: SidebarConfig::default(),
@@ -380,8 +350,6 @@ impl Workspace {
         }
         self.starred_order = boot.starred.clone();
         self.priority_scores = boot.channels_priority.clone();
-        self.hide_read_channels_unless_starred =
-            boot.prefs.sidebar_behavior.as_deref() == Some("hide_read_channels_unless_starred");
         self.priority_sidebar_section = boot.prefs.priority_sidebar_section;
         self.vip_users = boot
             .prefs
@@ -392,22 +360,7 @@ impl Workspace {
             .filter(|id| !id.is_empty())
             .map(str::to_owned)
             .collect();
-        self.sidebar.section_prefs = boot
-            .prefs
-            .channel_sections
-            .as_deref()
-            .and_then(|json| serde_json::from_str(json).ok())
-            .unwrap_or_default();
-        self.sidebar.hidden_sections = boot
-            .prefs
-            .hidden_user_group_sections
-            .as_deref()
-            .unwrap_or_default()
-            .split(',')
-            .filter(|id| !id.is_empty())
-            .map(str::to_owned)
-            .collect();
-
+        self.sidebar.apply_prefs(&boot.prefs);
         for channel in boot.all_channels() {
             if channel.is_im || channel.is_mpim {
                 append_unique(&mut self.dm_order, channel.id.clone());
@@ -445,106 +398,37 @@ impl Workspace {
         if let Some(unread_count) = counts.activity_unread_count() {
             self.activity_unread_count = Some(unread_count);
         }
+        self.apply_counts_membership(&counts);
         for channel in counts.all_channels() {
             self.apply_channel_read_state(&channel);
+            // Counts are the read state, not a hint: a read channel arrives as
+            // `has_unreads: false` with no count at all, and only carries
+            // `vip_count` while it is non-zero.
+            if let Some(cm) = self.messages.get_mut(&channel.id) {
+                if !channel.has_unreads && channel.unread_count.is_none() {
+                    cm.unread_count = 0;
+                }
+                if !channel.extra.contains_key("vip_count") {
+                    cm.vip_count = 0;
+                }
+            }
             if let Some(existing) = self.channels.get_mut(&channel.id) {
                 if channel.is_starred {
                     existing.is_starred = true;
                 }
-                existing.unread_count = channel.unread_count.or(existing.unread_count);
+                let cleared = (!channel.has_unreads).then_some(0);
+                existing.unread_count = channel.unread_count.or(cleared).or(existing.unread_count);
                 existing.unread_count_display = channel
                     .unread_count_display
+                    .or(cleared)
                     .or(existing.unread_count_display);
                 existing.mention_count = channel.mention_count.or(existing.mention_count);
-                existing.has_unreads |= channel.has_unreads;
+                existing.has_unreads = channel.has_unreads;
                 existing.last_read = channel.last_read.or_else(|| existing.last_read.take());
                 existing.updated = channel.updated.max(existing.updated);
             } else {
                 self.channels.insert(channel.id.clone(), channel);
             }
-        }
-    }
-
-    pub fn apply_channel_sections(&mut self, page: crate::slack::models::ChannelSectionsPage) {
-        self.sidebar.sections = page.channel_sections;
-    }
-
-    pub fn resolved_sidebar_sections(&self) -> Vec<ResolvedSection> {
-        let mut out = Vec::new();
-        if self.priority_sidebar_section {
-            out.push(self.resolve_section("priority", "priority", "VIP unreads", &[]));
-        }
-        if self.sidebar.sections.is_empty() {
-            for (kind, title) in [
-                ("slack_connect", "External connections"),
-                ("direct_messages", "Direct messages"),
-                ("stars", "Starred"),
-                ("channels", "Channels"),
-            ] {
-                out.push(self.resolve_section(kind, kind, title, &[]));
-            }
-            return out;
-        }
-        for section in linked_list_order(&self.sidebar.sections) {
-            if section.is_hidden
-                || self
-                    .sidebar
-                    .hidden_sections
-                    .contains(&section.channel_section_id)
-            {
-                continue;
-            }
-            let title: &str = match section.kind.as_str() {
-                "slack_connect" => "External connections",
-                "direct_messages" => "Direct messages",
-                "stars" => "Starred",
-                "channels" => "Channels",
-                _ if section.channel_ids_page.channel_ids.is_empty() => continue,
-                _ => &section.name,
-            };
-            out.push(self.resolve_section(
-                &section.channel_section_id,
-                &section.kind,
-                title,
-                &section.channel_ids_page.channel_ids,
-            ));
-        }
-        for (kind, title) in [
-            ("direct_messages", "Direct messages"),
-            ("channels", "Channels"),
-        ] {
-            if !out.iter().any(|s| s.kind == kind) {
-                out.push(self.resolve_section(kind, kind, title, &[]));
-            }
-        }
-        out
-    }
-
-    fn resolve_section(
-        &self,
-        id: &str,
-        kind: &str,
-        title: &str,
-        channel_ids: &[ChannelId],
-    ) -> ResolvedSection {
-        let pref = self.sidebar.section_prefs.get(id);
-        let sort = match pref.and_then(|p| p.sort.as_deref()) {
-            Some("recent") => SectionSort::Recent,
-            Some("priority") => SectionSort::Priority,
-            Some(_) => SectionSort::Alpha,
-            None if kind == "direct_messages" || kind == "priority" => SectionSort::Recent,
-            None => SectionSort::Alpha,
-        };
-        let show_all = pref.map_or(kind == "stars" || kind == "slack_connect", |p| {
-            p.sidebar.as_deref() == Some("all") || kind == "stars"
-        });
-        ResolvedSection {
-            id: id.to_owned(),
-            kind: kind.to_owned(),
-            title: title.to_owned(),
-            sort,
-            show_all,
-            channel_ids: channel_ids.to_vec(),
         }
     }
 
@@ -746,14 +630,19 @@ impl Workspace {
         self.priority_scores.get(channel_id).copied()
     }
 
+    /// The newest message in a conversation, as Slack's "recent" sort sees it:
+    /// `client.counts` `latest`, or a newer message seen since.
     pub fn channel_recency(&self, channel: &Channel) -> u64 {
-        let seen = self
-            .messages
-            .get(&channel.id)
+        let messages = self.messages.get(&channel.id);
+        let counted = messages
+            .and_then(|cm| cm.latest.as_deref())
+            .map(|ts| ts_key(ts).0)
+            .unwrap_or(0);
+        let seen = messages
             .and_then(ChannelMessages::latest_ts)
             .map(|ts| ts_key(&ts).0)
             .unwrap_or(0);
-        seen.max(channel.updated.unwrap_or(0))
+        counted.max(seen)
     }
 
     pub fn unread_total(&self, channel: &Channel) -> u32 {
@@ -774,10 +663,6 @@ impl Workspace {
             })
     }
 
-    pub fn should_show_unstarred_read_channels(&self) -> bool {
-        !self.hide_read_channels_unless_starred
-    }
-
     fn apply_channel_read_state(&mut self, channel: &Channel) {
         let cm = self.messages.entry(channel.id.clone()).or_default();
         if let Some(last_read) = &channel.last_read {
@@ -788,6 +673,12 @@ impl Workspace {
         }
         if let Some(mentions) = channel.mention_count {
             cm.mention_count = mentions;
+        }
+        if let Some(vip) = channel.extra.get("vip_count") {
+            cm.vip_count = vip.as_u64().map_or(0, |n| n as u32);
+        }
+        if let Some(latest) = channel.extra.get("latest").and_then(latest_ts) {
+            cm.latest = Some(latest);
         }
         if channel.has_unreads && cm.unread_count == 0 && cm.mention_count == 0 {
             cm.unread_count = 1;
@@ -879,6 +770,23 @@ use helpers::{
 
 mod sidebar;
 pub use sidebar::*;
+mod sidebar_layout;
+pub use sidebar_layout::*;
+mod sidebar_prefs;
+pub use sidebar_prefs::*;
+mod channel_sync;
+mod unreads;
+pub use channel_sync::*;
 
 #[cfg(test)]
 mod tests;
+
+/// `latest` is a ts string in `client.counts`, but a whole message object in
+/// `conversations.info`.
+fn latest_ts(value: &serde_json::Value) -> Option<MessageTs> {
+    value
+        .as_str()
+        .or_else(|| value.get("ts").and_then(serde_json::Value::as_str))
+        .filter(|ts| !ts.is_empty())
+        .map(str::to_owned)
+}

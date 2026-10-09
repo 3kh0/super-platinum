@@ -198,7 +198,6 @@ fn boot_self_user_provides_self_avatar_url() {
         last_active_channel: None,
         priority_scores: BTreeMap::new(),
         frecency: BTreeMap::new(),
-        hide_read_channels_unless_starred: false,
         priority_sidebar_section: false,
         vip_users: HashSet::new(),
         sidebar: SidebarConfig::default(),

@@ -18,6 +18,8 @@ pub struct ShellState {
     pub active_workspace: usize,
     pub channels: Vec<ChannelVm>,
     pub sidebar_sections: Vec<SidebarSectionVm>,
+    /// What the sidebar layout carries between passes (see `SidebarMemory`).
+    pub sidebar_memory: super_platinum_core::state::SidebarMemory,
     pub active_channel: usize,
     pub messages: Vec<MessageVm>,
     pub messages_by_channel: HashMap<String, Vec<MessageVm>>,
@@ -199,6 +201,18 @@ impl ShellState {
         self.core.profile_pane = None;
     }
 
+    /// Collapse or expand a sidebar section, as clicking its heading does in
+    /// Slack. Held locally: Slack's own `channel_sections` pref is not written.
+    pub fn toggle_sidebar_section(&mut self, section: &str) {
+        let Some(team) = self.core.active_team.clone() else {
+            return;
+        };
+        if let Some(workspace) = self.core.workspaces.get_mut(&team) {
+            workspace.sidebar.toggle_collapsed(section);
+            self.refresh_from_core();
+        }
+    }
+
     pub fn refresh_from_core(&mut self) {
         let Some(team) = self.core.active_team.clone() else {
             return;
@@ -208,44 +222,16 @@ impl ShellState {
         };
         self.self_account = project_self_account(workspace, &self.media);
         let preferred_active = self.core.active_channel.clone();
-        let (mut channels, sidebar_sections, default_active, _) =
-            project_channels(workspace, &self.media);
+        let (mut channels, sidebar_sections, default_active, _) = project_channels(
+            workspace,
+            &self.media,
+            preferred_active.as_deref(),
+            &mut self.sidebar_memory,
+        );
         let active_channel = preferred_active
             .as_ref()
             .and_then(|id| channels.iter().position(|channel| &channel.id == id))
             .unwrap_or(default_active);
-        // Rebuild sections with the preferred active for visibility.
-        let sidebar_sections = if preferred_active.is_some() {
-            let index_by_id: HashMap<&str, usize> = channels
-                .iter()
-                .enumerate()
-                .map(|(index, channel)| (channel.id.as_str(), index))
-                .collect();
-            super_platinum_core::state::grouped_sidebar_sections(
-                workspace,
-                preferred_active.as_deref(),
-            )
-            .into_iter()
-            .filter_map(|section| {
-                let channel_indices = section
-                    .channel_ids
-                    .iter()
-                    .filter_map(|id| index_by_id.get(id.as_str()).copied())
-                    .collect::<Vec<_>>();
-                if channel_indices.is_empty() {
-                    return None;
-                }
-                Some(SidebarSectionVm {
-                    id: section.id,
-                    kind: section.kind,
-                    title: section.title,
-                    channel_indices,
-                })
-            })
-            .collect()
-        } else {
-            sidebar_sections
-        };
         // Ensure active conversation remains addressable even if filtered out of sections.
         if let Some(active_id) = preferred_active.as_ref()
             && !channels.iter().any(|channel| &channel.id == active_id)

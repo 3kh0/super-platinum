@@ -646,6 +646,16 @@ fn state_snapshot(state: &ShellState) -> Value {
             "channel_count": state.channels.len(),
             "rt_connected": state.core.workspaces.get(&workspace.id).is_some_and(|workspace| matches!(workspace.rt, super_platinum_core::state::RealtimeStatus::Connected(_))),
         })).collect::<Vec<_>>(),
+        // The sidebar as laid out: section order, collapse state, and rows.
+        "sidebar": state.sidebar_sections.iter().map(|section| json!({
+            "id": section.id,
+            "title": section.title,
+            "collapsed": section.collapsed,
+            "rows": section.channel_indices.iter().filter_map(|index| state.channels.get(*index)).map(|channel| json!({
+                "id": channel.id,
+                "name": channel.name,
+            })).collect::<Vec<_>>(),
+        })).collect::<Vec<_>>(),
         // The rendered slice, so a blank transcript can be told apart from an
         // empty one without a screenshot.
         "timeline": json!({
