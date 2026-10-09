@@ -449,3 +449,36 @@ fn an_activity_item_with_no_message_leaves_the_pane_empty() {
     assert!(!state.detail_open());
     assert_eq!(state.core.activity.selected.as_deref(), Some("orphan-1"));
 }
+
+#[test]
+fn attachments_land_in_the_composer_they_were_added_to() {
+    let path = std::env::temp_dir().join(format!(
+        "super-platinum-attach-{}-{:?}.txt",
+        std::process::id(),
+        std::thread::current().id()
+    ));
+    std::fs::write(&path, b"reply").unwrap();
+    let mut state = ShellState::fixture(MediaRegistry::default());
+    state.core.composer_attachments.clear();
+    state.core.thread_composer_attachments.clear();
+
+    // With a thread open, a thread upload is a reply, not a channel post.
+    state.thread_root = Some("1700000000.000100".into());
+    state.add_attachments([path.clone()], ComposerTarget::Thread);
+    assert_eq!(state.core.thread_composer_attachments.len(), 1);
+    assert!(state.core.composer_attachments.is_empty());
+
+    state.add_attachments([path.clone()], ComposerTarget::Channel);
+    assert_eq!(state.core.composer_attachments.len(), 1);
+    assert_eq!(state.core.thread_composer_attachments.len(), 1);
+
+    // No thread pane, no thread composer: the file goes to the channel.
+    state.close_thread();
+    state.core.composer_attachments.clear();
+    state.core.thread_composer_attachments.clear();
+    state.add_attachments([path.clone()], ComposerTarget::Thread);
+    assert_eq!(state.core.composer_attachments.len(), 1);
+    assert!(state.core.thread_composer_attachments.is_empty());
+
+    std::fs::remove_file(path).ok();
+}

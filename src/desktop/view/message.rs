@@ -51,6 +51,7 @@ fn message_tools(
     }
     rsx! {
         span { class: "message-tools",
+            ondoubleclick: |event| event.stop_propagation(),
             if can_reply {
                 button {
                     onclick: {
@@ -95,6 +96,7 @@ fn message_meta(
     rsx! {
         div { class: "message-meta",
             strong {
+                ondoubleclick: |event| event.stop_propagation(),
                 onmouseenter: {
                     let user = message.user_id.clone();
                     move |event: MouseEvent| {
@@ -140,6 +142,7 @@ fn message_avatar(
     rsx! {
         button {
             class: "avatar",
+            ondoubleclick: |event| event.stop_propagation(),
             onmouseenter: {
                 let user = message.user_id.clone();
                 move |event: MouseEvent| {
@@ -216,11 +219,26 @@ pub(crate) fn message_row(
         .editing
         .as_ref()
         .is_some_and(|(channel, ts)| channel == channel_id && ts == &message.id);
+    // Double-clicking a channel message opens its thread with the reply box
+    // focused. A thread reply is already where that would go, a row being
+    // edited needs its clicks for the editor, and a pending message has no
+    // `ts` Slack would recognise as a thread root yet.
+    let opens_thread = !in_thread && !editing && !message.pending;
     rsx! {
         article {
             class: "{class}",
             "data-message-index": if let Some(index) = index { "{index}" },
             "data-message-id": "{message.id}",
+            ondoubleclick: {
+                let channel = channel_id.to_owned();
+                let root = message.id.clone();
+                move |_| {
+                    if opens_thread {
+                        spawn(crate::bootstrap::open_thread(state, channel.clone(), root.clone()));
+                        super::composer::focus_field_when_mounted("thread-composer");
+                    }
+                }
+            },
             if compact {
                 div { class: "compact-gutter", title: "{message.timestamp}", "{message.timestamp}" }
             } else {
@@ -262,6 +280,7 @@ pub(crate) fn message_row(
                 }
                 if !message.reactions.is_empty() {
                     div { class: "message-actions",
+                        ondoubleclick: |event| event.stop_propagation(),
                         {reactions_row(state, &snapshot.media, snapshot.media_epoch, channel_id, message)}
                     }
                 }

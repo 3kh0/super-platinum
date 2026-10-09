@@ -151,7 +151,8 @@
   border-color: transparent;
   box-shadow: 0 0 0 2px rgb(50 140 255 / 55%), 0 8px 24px rgb(0 0 0 / 18%);
 }
-.composer-wrap textarea { line-height: var(--leading-copy); }
+.composer-wrap textarea,
+.thread-composer textarea { line-height: var(--leading-copy); }
 
 /* ── Menus and dialogs: one elevation model ────────── */
 .scrim {

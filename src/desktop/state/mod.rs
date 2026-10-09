@@ -8,4 +8,5 @@ mod timeline;
 #[cfg(test)]
 mod tests;
 
+pub use composer::ComposerTarget;
 pub use shell::*;

@@ -1,7 +1,7 @@
 use base64::Engine;
 use dioxus::prelude::{Signal, WritableExt};
 
-use crate::state::ShellState;
+use crate::state::{ComposerTarget, ShellState};
 
 /// Audited DOM bridge for clipboard file payloads. Browser file objects never
 /// receive Slack credentials; bytes move directly from the WebView event to a
@@ -21,12 +21,19 @@ pub async fn watch(mut state: Signal<ShellState>) {
                }
                payload.push({name: file.name || 'pasted-file', mime: file.type, data: btoa(binary)});
              }
-             dioxus.send(payload);
+             const thread = !!event.target?.closest?.('.thread-pane');
+             dioxus.send({thread, files: payload});
            });"#,
     );
     while let Ok(payload) = bridge.recv::<serde_json::Value>().await {
-        let Some(files) = payload.as_array() else {
+        let Some(files) = payload.get("files").and_then(serde_json::Value::as_array) else {
             continue;
+        };
+        // A paste lands in the composer the reader is typing into.
+        let target = if payload.get("thread").and_then(serde_json::Value::as_bool) == Some(true) {
+            ComposerTarget::Thread
+        } else {
+            ComposerTarget::Channel
         };
         let mut paths = Vec::new();
         for file in files {
@@ -67,7 +74,7 @@ pub async fn watch(mut state: Signal<ShellState>) {
             }
         }
         if !paths.is_empty() {
-            state.write().add_attachments(paths);
+            state.write().add_attachments(paths, target);
         }
     }
 }

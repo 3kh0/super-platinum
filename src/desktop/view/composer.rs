@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use super_platinum_core::FormatMark;
 
 use super::rich::attachment_chip;
-use crate::state::ShellState;
+use crate::state::{ComposerTarget, ShellState};
 
 /// Writes a value into a live text field.
 ///
@@ -24,6 +24,31 @@ pub(crate) fn set_field_text(id: &str, text: &str) {
                field.style.height = Math.min(160, Math.max(28, field.scrollHeight)) + 'px';
              }}
            }}"#
+    ));
+}
+
+/// Focuses a text field that may not be mounted yet, caret at the end.
+///
+/// The thread pane renders a frame after `thread_root` is set, so the field is
+/// looked for on each animation frame for a short while rather than once. The
+/// double-click that got us here also selected a word in the message; that
+/// selection is dropped so it does not linger behind the caret.
+pub(crate) fn focus_field_when_mounted(id: &str) {
+    let id = serde_json::to_string(id).unwrap_or_else(|_| "\"\"".into());
+    dioxus::document::eval(&format!(
+        r#"let frames = 0;
+           const attempt = () => {{
+             const field = document.getElementById({id});
+             if (field) {{
+               window.getSelection()?.removeAllRanges();
+               field.focus();
+               const end = field.value.length;
+               field.setSelectionRange(end, end);
+             }} else if (++frames < 60) {{
+               requestAnimationFrame(attempt);
+             }}
+           }};
+           requestAnimationFrame(attempt);"#
     ));
 }
 
@@ -56,7 +81,7 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
                         r#type: "file",
                         multiple: true,
                         onchange: move |event| {
-                            state.write().add_attachments(event.files().into_iter().map(|file| file.path()));
+                            state.write().add_attachments(event.files().into_iter().map(|file| file.path()), ComposerTarget::Channel);
                         }
                     }
                 }
@@ -98,6 +123,65 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
                     class: "composer-icon-btn",
                     title: "Send",
                     onclick: move |_| { spawn(crate::bootstrap::send_composer(state)); },
+                    {crate::icons::icon(crate::icons::Icon::Send, "icon sm")}
+                }
+            }
+        }
+    }
+}
+
+/// The thread pane's reply box.
+///
+/// Built like the channel composer — attach, field, send — because a reply can
+/// carry files too, and they must be sent into the thread rather than the
+/// channel behind it.
+pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
+    let upload_epoch = snapshot.upload_ui_epoch;
+    rsx! {
+        footer { class: "thread-composer",
+            if !snapshot.core.thread_composer_attachments.is_empty() {
+                div { class: "attachment-chips",
+                    for attachment in snapshot.core.thread_composer_attachments.iter() {
+                        {attachment_chip(state, attachment, upload_epoch)}
+                    }
+                }
+            }
+            div { class: "composer-row",
+                label { class: "composer-icon-btn", title: "Attach files",
+                    {crate::icons::icon(crate::icons::Icon::Add, "icon sm")}
+                    input {
+                        r#type: "file",
+                        multiple: true,
+                        onchange: move |event| {
+                            state.write().add_attachments(
+                                event.files().into_iter().map(|file| file.path()),
+                                ComposerTarget::Thread,
+                            );
+                        }
+                    }
+                }
+                textarea {
+                    id: "thread-composer",
+                    initial_value: "{snapshot.core.thread_composer.text}",
+                    placeholder: "Reply…",
+                    oninput: move |event| {
+                        let value = event.value();
+                        let end = value.len();
+                        let mut shell = state.write();
+                        shell.core.thread_composer.text = value;
+                        shell.core.thread_composer.set_selection(end, end);
+                    },
+                    onkeydown: move |event| {
+                        if event.key() == Key::Enter && !event.modifiers().shift() {
+                            event.prevent_default();
+                            spawn(crate::bootstrap::send_thread_composer(state));
+                        }
+                    }
+                }
+                button {
+                    class: "composer-icon-btn",
+                    title: "Send",
+                    onclick: move |_| { spawn(crate::bootstrap::send_thread_composer(state)); },
                     {crate::icons::icon(crate::icons::Icon::Send, "icon sm")}
                 }
             }

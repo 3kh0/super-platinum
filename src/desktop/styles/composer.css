@@ -24,7 +24,8 @@
 }
 .composer-icon-btn:hover { background: var(--hover-overlay); color: var(--text); }
 .composer-icon-btn input { display: none; }
-.composer-wrap textarea {
+.composer-wrap textarea,
+.thread-composer textarea {
   display: block;
   flex: 1;
   min-width: 0;
@@ -263,16 +264,8 @@
   border-radius: 8px;
   background: var(--bg);
 }
-.thread-composer textarea {
-  display: block;
-  width: 100%;
-  min-height: 40px;
-  padding: 8px;
-  resize: none;
-  border: 0;
-  outline: 0;
-  background: transparent;
-}
+/* The reply box is the channel composer's row in a narrower pane: the same
+   field metrics keep its attach and send buttons level with the text. */
 
 /* Overlays / modals */
 .scrim { position: absolute; inset: 0; z-index: 10; background: rgba(0,0,0,.55); }

@@ -12,10 +12,12 @@ pub(crate) mod theme;
 use dioxus::prelude::*;
 
 use crate::overlays::overlay_view;
-use crate::state::{MainView, Overlay, ShellState};
+use crate::state::{ComposerTarget, MainView, Overlay, ShellState};
 
 use chrome::{channel_sidebar, conversation_header, rail_view};
-use composer::{composer, load_older_if_needed, measure_thread, schedule_timeline_measure};
+use composer::{
+    composer, load_older_if_needed, measure_thread, schedule_timeline_measure, thread_composer,
+};
 use message::{RowSurface, message_row};
 use secondary::{activity_list_panel, dm_list_panel, secondary_view};
 use theme::theme_css;
@@ -211,7 +213,7 @@ pub fn shell() -> Element {
             ondragover: move |event| event.prevent_default(),
             ondrop: move |event| {
                 event.prevent_default();
-                state.write().add_attachments(event.data_transfer().files().into_iter().map(|file| file.path()));
+                state.write().add_attachments(event.data_transfer().files().into_iter().map(|file| file.path()), ComposerTarget::Channel);
             },
             {rail_view(state, snapshot.main_view, dm_unread_total, activity_unread_total, account, account_avatar, snapshot.overlay == Some(Overlay::SelfMenu), snapshot.connection.indicator())}
             if show_channel_sidebar {
@@ -301,6 +303,17 @@ pub fn shell() -> Element {
             if let Some(root) = snapshot.thread_root.as_ref() {
                 aside {
                     class: if activity_thread_focus { "thread-pane wide" } else { "thread-pane" },
+                    // A file dropped on the thread is a reply in it. Stopping
+                    // here keeps the shell's handler from filing it into the
+                    // channel composer as well.
+                    ondrop: move |event| {
+                        event.prevent_default();
+                        event.stop_propagation();
+                        state.write().add_attachments(
+                            event.data_transfer().files().into_iter().map(|file| file.path()),
+                            ComposerTarget::Thread,
+                        );
+                    },
                     header {
                         h2 { "Thread" }
                         span { class: "thread-channel", "{thread_channel_label}" }
@@ -332,26 +345,7 @@ pub fn shell() -> Element {
                         }
                         if snapshot.thread_messages.is_empty() { p { "Loading replies to {root}…" } }
                     }
-                    footer { class: "thread-composer",
-                        textarea {
-                            id: "thread-composer",
-                            initial_value: "{snapshot.core.thread_composer.text}",
-                            placeholder: "Reply…",
-                            oninput: move |event| {
-                                let value = event.value();
-                                let end = value.len();
-                                let mut shell = state.write();
-                                shell.core.thread_composer.text = value;
-                                shell.core.thread_composer.set_selection(end, end);
-                            },
-                            onkeydown: move |event| {
-                                if event.key() == Key::Enter && !event.modifiers().shift() {
-                                    event.prevent_default();
-                                    spawn(crate::bootstrap::send_thread_composer(state));
-                                }
-                            }
-                        }
-                    }
+                    {thread_composer(state, &snapshot)}
                 }
             }
             if snapshot.profile_user.is_some() {

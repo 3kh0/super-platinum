@@ -3,6 +3,17 @@ use super_platinum_core::FormatMark;
 use super::{ShellState, message_vm};
 use crate::model::*;
 
+/// Which composer a file is being attached to.
+///
+/// The channel and the thread pane each send their own attachments, so a file
+/// picked, dropped, or pasted into the thread has to land in the thread's list
+/// — filed into the channel's, it would post as a top-level message.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ComposerTarget {
+    Channel,
+    Thread,
+}
+
 impl ShellState {
     pub fn queue_composer(&mut self) -> Option<PendingSend> {
         let text = self.core.composer.text.trim().to_owned();
@@ -161,38 +172,48 @@ impl ShellState {
         self.core.edit_composer = super_platinum_core::ComposerState::default();
     }
 
-    pub fn add_attachments(&mut self, paths: impl IntoIterator<Item = std::path::PathBuf>) {
+    pub fn add_attachments(
+        &mut self,
+        paths: impl IntoIterator<Item = std::path::PathBuf>,
+        target: ComposerTarget,
+    ) {
+        // With no thread open there is no thread composer to hold the files.
+        let target = if self.thread_root.is_none() {
+            ComposerTarget::Channel
+        } else {
+            target
+        };
         for path in paths {
-            if !path.is_file()
-                || self
-                    .core
-                    .composer_attachments
-                    .iter()
-                    .any(|attachment| attachment.path == path)
-            {
+            let attachments = match target {
+                ComposerTarget::Channel => &self.core.composer_attachments,
+                ComposerTarget::Thread => &self.core.thread_composer_attachments,
+            };
+            if !path.is_file() || attachments.iter().any(|attachment| attachment.path == path) {
                 continue;
             }
             let Ok(metadata) = std::fs::metadata(&path) else {
                 continue;
             };
             self.core.attachment_seq = self.core.attachment_seq.wrapping_add(1);
-            self.core
-                .composer_attachments
-                .push(super_platinum_core::domain::ComposerAttachment {
-                    id: self.core.attachment_seq,
-                    name: path
-                        .file_name()
-                        .and_then(|name| name.to_str())
-                        .unwrap_or("attachment")
-                        .to_owned(),
-                    path,
-                    bytes: metadata.len(),
-                    uploading: false,
-                    upload_started: None,
-                    upload_cancel: None,
-                    upload_progress: None,
-                    preview_path: None,
-                });
+            let attachments = match target {
+                ComposerTarget::Channel => &mut self.core.composer_attachments,
+                ComposerTarget::Thread => &mut self.core.thread_composer_attachments,
+            };
+            attachments.push(super_platinum_core::domain::ComposerAttachment {
+                id: self.core.attachment_seq,
+                name: path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or("attachment")
+                    .to_owned(),
+                path,
+                bytes: metadata.len(),
+                uploading: false,
+                upload_started: None,
+                upload_cancel: None,
+                upload_progress: None,
+                preview_path: None,
+            });
         }
     }
 
