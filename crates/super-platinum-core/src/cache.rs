@@ -17,6 +17,8 @@ const SCHEMA_VERSION: i64 = 1;
 #[derive(serde::Deserialize)]
 struct CachedSidebar {
     #[serde(default)]
+    notifications: crate::state::NotificationConfig,
+    #[serde(default)]
     config: crate::state::SidebarConfig,
     #[serde(default)]
     vip_users: std::collections::HashSet<String>,
@@ -28,6 +30,7 @@ struct CachedSidebar {
 
 #[derive(serde::Serialize)]
 struct CachedSidebarRef<'a> {
+    notifications: &'a crate::state::NotificationConfig,
     config: &'a crate::state::SidebarConfig,
     vip_users: &'a std::collections::HashSet<String>,
     priority_section: bool,
@@ -166,6 +169,7 @@ impl Cache {
             priority_sidebar_section: false,
             vip_users: std::collections::HashSet::new(),
             sidebar: Default::default(),
+            notifications: Default::default(),
             users: HashMap::new(),
             usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
@@ -183,6 +187,7 @@ impl Cache {
             .and_then(|json| serde_json::from_str::<CachedSidebar>(json).ok())
         {
             ws.sidebar = sidebar.config;
+            ws.notifications = sidebar.notifications;
             ws.vip_users = sidebar.vip_users;
             ws.priority_sidebar_section = sidebar.priority_section;
             ws.starred_order = sidebar.starred_order;
@@ -294,6 +299,7 @@ impl Cache {
                 serde_json::to_string(&ws.recent_channels)?,
                 serde_json::to_string(&ws.frecency)?,
                 serde_json::to_string(&CachedSidebarRef {
+                    notifications: &ws.notifications,
                     config: &ws.sidebar,
                     vip_users: &ws.vip_users,
                     priority_section: ws.priority_sidebar_section,
@@ -674,6 +680,15 @@ mod tests {
         ws.sidebar.boost_mentions = true;
         ws.sidebar.muted.insert("C_MUTED".into());
         ws.sidebar.toggle_collapsed("L_STARS");
+        ws.notifications.apply_change(
+            "all_notifications_prefs",
+            serde_json::json!({
+                "global": {"global_desktop_push_enabled":false,"global_keywords":"example"},
+                "channels": {"C_MUTED": {"muted":true,"desktop_push_enabled":false}}
+            }),
+        );
+        ws.notifications
+            .apply_change("mute_sounds", serde_json::json!(true));
         ws.sidebar
             .sections
             .push(crate::slack::models::ChannelSection {
@@ -694,6 +709,10 @@ mod tests {
         assert!(loaded.sidebar.boost_mentions);
         assert!(loaded.sidebar.is_muted("C_MUTED"));
         assert!(loaded.sidebar.is_collapsed("L_STARS"));
+        assert!(loaded.notifications.loaded);
+        assert!(!loaded.notifications.desktop_enabled("C_MUTED"));
+        assert_eq!(loaded.notifications.global["global_keywords"], "example");
+        assert_eq!(loaded.notifications.user["mute_sounds"], true);
         assert_eq!(loaded.sidebar.sections.len(), 1);
         assert_eq!(loaded.messages["C1"].vip_count, 2);
         assert_eq!(loaded.messages["C1"].latest.as_deref(), Some("5.000001"));
@@ -724,6 +743,7 @@ mod tests {
         assert_eq!(loaded.messages["C1"].unread_count, 3);
         assert_eq!(loaded.messages["C1"].vip_count, 0);
         assert!(loaded.sidebar.sections.is_empty());
+        assert!(!loaded.notifications.loaded);
         drop(cache);
         let _ = std::fs::remove_file(path);
     }

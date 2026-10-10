@@ -21,6 +21,11 @@ Install the system WebView development package on Linux (`libwebkit2gtk-4.1-dev`
 cargo run --locked
 ```
 
+On macOS, use `scripts/macos-app.sh --run` to build and launch the signed app
+bundle. Native notifications require this bundle so macOS shows Super Platinum's
+name and icon. Allow Super Platinum when macOS requests notification permission;
+a bare `cargo run` still runs the client but does not deliver macOS notifications.
+
 ## Develop
 
 ```sh

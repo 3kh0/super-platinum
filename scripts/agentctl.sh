@@ -61,6 +61,7 @@ Commands:
   close-profile
   screenshot [path]
   toast <text>
+  notification-preview          Silent local OS banner; sends nothing to Slack
   allow-destructive [true|false]
   send                          Requires allow-destructive
   huddle-join [channel]         Start/join a huddle (open conversation by default).
@@ -113,6 +114,9 @@ case "$cmd" in
     ;;
   close-palette)
     JSON=$(printf '{"id":%s,"cmd":"close-palette"}' "$REQ_ID")
+    ;;
+  notification-preview)
+    JSON=$(printf '{"id":%s,"cmd":"notification-preview"}' "$REQ_ID")
     ;;
   set-query|type)
     [[ $# -ge 1 ]] || { echo "usage: agentctl.sh $cmd <text>" >&2; exit 2; }

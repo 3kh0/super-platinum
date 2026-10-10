@@ -63,6 +63,8 @@ pub enum AgentCommand {
     Toast {
         text: String,
     },
+    /// Local, silent OS banner for verifying app identity; sends nothing to Slack.
+    NotificationPreview,
     MainView {
         view: String,
     },

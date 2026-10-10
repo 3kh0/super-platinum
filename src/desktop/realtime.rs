@@ -15,6 +15,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
         .as_ref()
         .map(|transport| transport.health_watch());
     let mut updates = realtime::connect(params, health);
+    let mut notifications = crate::notification::NotificationTracker::default();
     while let Some((team, update)) = updates.recv().await {
         let mut shell = state.write();
         match update {
@@ -84,8 +85,18 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                         if shell.core.workspaces.get(&team)
                             .is_some_and(|workspace| user.id == workspace.self_user_id)
                 );
-                let notification =
-                    crate::notification::for_event(&shell.core, &team, generation, &event);
+                let prefs_changed = matches!(event.as_ref(), RtEvent::PreferencesChanged { .. });
+                let notification = notifications.for_event_in_view(
+                    &shell.core,
+                    &team,
+                    generation,
+                    &event,
+                    crate::notification::NotificationView {
+                        focused: dioxus::desktop::window().window.is_focused()
+                            && shell.detail_open(),
+                        thread_root: shell.thread_root.as_deref(),
+                    },
+                );
                 // A room that ended takes this user's call with it.
                 let huddle_teardown = match event.as_ref() {
                     RtEvent::RoomJoin { room, .. }
@@ -122,6 +133,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     shell.refresh_from_core();
                 }
                 drop(shell);
+                if prefs_changed {
+                    crate::bootstrap::persist_workspace(&state, &team);
+                }
                 if needs_user_hydration || self_profile_changed {
                     dioxus::prelude::spawn(crate::bootstrap::hydrate_current_surface(state));
                 }
@@ -162,6 +176,33 @@ fn apply(
         return;
     }
     match event {
+        RtEvent::DesktopNotification(_) => {}
+        RtEvent::PreferencesChanged { name, value } => {
+            workspace.notifications.apply_change(&name, value.clone());
+            // Sidebar and notifications share the same mute preference.
+            if name == "all_notifications_prefs" {
+                workspace.sidebar.muted = workspace
+                    .notifications
+                    .channels
+                    .keys()
+                    .filter(|channel| {
+                        workspace
+                            .notifications
+                            .muted(channel, super_platinum_core::state::now_secs())
+                    })
+                    .cloned()
+                    .collect();
+            }
+            if name == "vip_users" {
+                workspace.vip_users = value
+                    .as_str()
+                    .unwrap_or_default()
+                    .split(',')
+                    .filter(|id| !id.is_empty())
+                    .map(str::to_owned)
+                    .collect();
+            }
+        }
         RtEvent::Message(message) => {
             let Some(channel) = message.channel.clone() else {
                 return;
@@ -461,10 +502,38 @@ mod tests {
         let mut core = core();
         // What Slack sends the moment someone replies in a thread: the parent,
         // complete except that it names no reactions at all.
-        let mut parent = message(ROOT, Some(ROOT));
-        parent.reply_count = Some(1);
-        apply(&mut core, TEAM, 0, RtEvent::Message(parent));
+        let parent = super_platinum_core::slack::realtime::parse_event(
+            r#"{"type":"message","subtype":"message_replied","channel":"C1","message":{"ts":"1.0","thread_ts":"1.0","text":"hello","reply_count":1}}"#
+        ).unwrap();
+        apply(&mut core, TEAM, 0, parent);
         assert_eq!(reactions(&core, ROOT), ["tada"]);
+        assert_eq!(thread_reactions(&core, ROOT), ["tada"]);
+        assert_eq!(
+            core.threads[&(TEAM.into(), CHANNEL.into(), ROOT.into())].messages[0].reply_count,
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn live_notification_preferences_update_without_resetting_sidebar_settings() {
+        let mut core = core();
+        core.workspaces.get_mut(TEAM).unwrap().sidebar.behavior =
+            "hide_read_channels_unless_starred".into();
+        let value = serde_json::json!({"global":{"global_desktop_push_enabled":false},"channels":{"C1":{"muted":true}}}).to_string();
+        let event = RtEvent::PreferencesChanged {
+            name: "all_notifications_prefs".into(),
+            value: serde_json::json!(value),
+        };
+        apply(&mut core, TEAM, 1, event.clone());
+        assert!(!core.workspaces[TEAM].notifications.loaded);
+        apply(&mut core, TEAM, 0, event);
+        assert!(core.workspaces[TEAM].notifications.loaded);
+        assert!(!core.workspaces[TEAM].notifications.desktop_enabled(CHANNEL));
+        assert!(core.workspaces[TEAM].sidebar.is_muted("C1"));
+        assert_eq!(
+            core.workspaces[TEAM].sidebar.behavior,
+            "hide_read_channels_unless_starred"
+        );
     }
 
     #[test]

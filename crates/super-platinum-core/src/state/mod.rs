@@ -256,6 +256,7 @@ pub struct Workspace {
     pub priority_sidebar_section: bool,
     pub vip_users: HashSet<UserId>,
     pub sidebar: SidebarConfig,
+    pub notifications: NotificationConfig,
     pub users: HashMap<UserId, User>,
     pub usergroups: HashMap<String, crate::slack::models::UserGroup>,
     pub custom_emoji: HashMap<String, Emoji>,
@@ -288,6 +289,7 @@ impl Workspace {
             priority_sidebar_section: false,
             vip_users: HashSet::new(),
             sidebar: SidebarConfig::default(),
+            notifications: NotificationConfig::default(),
             users: HashMap::new(),
             usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
@@ -361,6 +363,7 @@ impl Workspace {
             .map(str::to_owned)
             .collect();
         self.sidebar.apply_prefs(&boot.prefs);
+        self.notifications.apply_prefs(&boot.prefs);
         for channel in boot.all_channels() {
             if channel.is_im || channel.is_mpim {
                 append_unique(&mut self.dm_order, channel.id.clone());
@@ -770,6 +773,8 @@ use helpers::{
 
 mod sidebar;
 pub use sidebar::*;
+mod notifications;
+pub use notifications::{NotificationConfig, NotificationOptions};
 mod sidebar_layout;
 pub use sidebar_layout::*;
 mod sidebar_prefs;

@@ -18,6 +18,7 @@ fn prune_typing_drops_stale() {
         priority_sidebar_section: false,
         vip_users: HashSet::new(),
         sidebar: SidebarConfig::default(),
+        notifications: NotificationConfig::default(),
         users: HashMap::new(),
         usergroups: HashMap::new(),
         custom_emoji: HashMap::new(),

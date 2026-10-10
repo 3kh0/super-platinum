@@ -36,7 +36,7 @@ fn main() {
         std::process::exit(code);
     }
     if let Err(error) = notification::ensure_identity() {
-        eprintln!("super-platinum: could not register Windows notification identity: {error}");
+        eprintln!("super-platinum: could not register notification identity: {error}");
     }
     let media = media::MediaRegistry::with_persistence();
     let config = media::desktop_config(media.clone());

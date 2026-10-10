@@ -18,6 +18,13 @@ pub struct RawEvent {
 #[derive(Debug, Clone)]
 pub enum RtEvent {
     Message(Message),
+    /// Server-selected thread notifications. Ordinary channel/DM notices also
+    /// arrive here, but the message frame already handles those.
+    DesktopNotification(Message),
+    PreferencesChanged {
+        name: String,
+        value: Value,
+    },
     MessageChanged {
         channel: ChannelId,
         message: Message,

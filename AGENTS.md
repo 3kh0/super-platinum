@@ -310,6 +310,13 @@ SUPER_PLATINUM_AGENT=1 ./target/debug/super-platinum
 # equivalent: SUPER_PLATINUM_AGENT=1 cargo run --locked
 ```
 
+For macOS notification verification, build `scripts/macos-app.sh`, then launch
+`open -n --env SUPER_PLATINUM_AGENT=1 "./target/debug/Super Platinum.app"`.
+Launching through `open` registers the bundle with macOS before authorization.
+Native notifications require the signed app bundle; a bare executable deliberately
+does not fall back to Script Editor. `scripts/agentctl.sh notification-preview`
+requests a silent local test banner without sending a Slack message.
+
 Socket path: `SUPER_PLATINUM_AGENT_SOCK`, else `$TMPDIR/super-platinum-agent.sock` (also written to `$TMPDIR/super-platinum-agent.sock.path` for discovery). If `agentctl` gets `Connection refused`, remove the stale sock and restart with `SUPER_PLATINUM_AGENT=1`.
 
 #### Drive the UI

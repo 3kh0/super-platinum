@@ -45,8 +45,15 @@ fi
 
 cp "$ROOT/assets/macos/Info.plist" "$CONTENTS/Info.plist"
 
+# UserNotifications plays bundled CAF files itself, respecting macOS sound and
+# Focus settings. Slack's preference values still name the original MP3 files.
+for sound in "$ROOT"/assets/notification-sounds/*.mp3; do
+  name="$(basename "$sound" .mp3)"
+  afconvert -f caff -d LEI16 "$sound" "$RES/$name.caf"
+done
+
 if command -v codesign >/dev/null 2>&1; then
-  codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
+  codesign --force --deep --sign - "$APP"
 fi
 
 if command -v touch >/dev/null 2>&1; then

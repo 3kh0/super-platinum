@@ -354,6 +354,10 @@ fn dispatch(
             state.write().show_toast(text.clone());
             AgentResponse::ok(id, json!({ "toast": text }))
         }
+        AgentCommand::NotificationPreview => {
+            dioxus::prelude::spawn(crate::notification::show_preview());
+            AgentResponse::ok(id, json!({ "notification_preview": true }))
+        }
         AgentCommand::MainView { view } => {
             let target = match view.as_str() {
                 "home" => MainView::Home,
@@ -647,6 +651,16 @@ fn state_snapshot(state: &ShellState) -> Value {
             "rt_connected": state.core.workspaces.get(&workspace.id).is_some_and(|workspace| matches!(workspace.rt, super_platinum_core::state::RealtimeStatus::Connected(_))),
         })).collect::<Vec<_>>(),
         // The sidebar as laid out: section order, collapse state, and rows.
+        "notifications": state.core.active_team.as_ref().and_then(|team| state.core.workspaces.get(team)).map(|workspace| json!({
+            "preferences_loaded": workspace.notifications.loaded,
+            "channel_overrides": workspace.notifications.channels.len(),
+            "global_desktop_push_enabled": workspace.notifications.global.get("global_desktop_push_enabled"),
+            "threads_everything": workspace.notifications.global.get("threads_everything"),
+            "no_text_in_notifications": workspace.notifications.global.get("no_text_in_notifications"),
+            "desktop_sound": workspace.notifications.global.get("desktop_sound"),
+            "priority_desktop_sound": workspace.notifications.global.get("priority_desktop_sound"),
+            "mute_sounds": workspace.notifications.user.get("mute_sounds"),
+        })),
         "sidebar": state.sidebar_sections.iter().map(|section| json!({
             "id": section.id,
             "title": section.title,
@@ -772,6 +786,7 @@ fn help_data() -> Value {
             {"cmd": "ping"}, {"cmd": "state"}, {"cmd": "open-palette"},
             {"cmd": "set-query"}, {"cmd": "submit"}, {"cmd": "select-channel"},
             {"cmd": "search"}, {"cmd": "open-settings"}, {"cmd": "screenshot"},
+            {"cmd": "notification-preview"},
             {"cmd": "open-profile"}, {"cmd": "close-profile"}, {"cmd": "open-usergroup"},
             {"cmd": "allow-destructive"}, {"cmd": "send"},
             {"cmd": "huddle-join"}, {"cmd": "huddle-leave"}, {"cmd": "huddle-mute"}
