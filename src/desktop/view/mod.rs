@@ -45,7 +45,7 @@ pub fn shell() -> Element {
         &state.read().core.settings,
         state.read().background_uri.as_deref(),
     );
-    if !state.read().signed_in {
+    if !state.read().signed_in && !state.read().loading {
         return rsx! {
             style { {CSS} }
             style { {theme_style} }

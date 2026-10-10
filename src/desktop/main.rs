@@ -31,6 +31,7 @@ use state::ShellState;
 pub(crate) use super_platinum_core::{config, slack};
 
 fn main() {
+    performance::start();
     if let Some(code) = run_auth_mode() {
         std::process::exit(code);
     }
@@ -77,7 +78,13 @@ fn run_auth_mode() -> Option<i32> {
 
 fn app() -> Element {
     let media = consume_context::<media::MediaRegistry>();
-    let mut state = use_signal(move || ShellState::from_environment(media.clone()));
+    let mut state = use_signal(move || {
+        if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+            ShellState::from_environment(media.clone())
+        } else {
+            ShellState::opening(media.clone())
+        }
+    });
     let desktop = dioxus::desktop::window();
     use_context_provider(|| state);
     let timeline_identity = use_memo(move || {
@@ -86,10 +93,12 @@ fn app() -> Element {
             state.core.active_channel.clone(),
             state.messages.len(),
             state.stick_to_bottom,
+            state.loading,
+            state.signed_in,
         )
     });
     use_effect(move || {
-        let (_, _, stick_to_bottom) = timeline_identity();
+        let (_, _, stick_to_bottom, _, _) = timeline_identity();
         if stick_to_bottom {
             dioxus::document::eval(
                 "requestAnimationFrame(() => requestAnimationFrame(() => { const timeline = document.getElementById('message-timeline'); if (timeline) timeline.scrollTop = timeline.scrollHeight; }));",
@@ -138,7 +147,7 @@ fn app() -> Element {
     });
     dioxus::desktop::use_asset_handler(huddle::ASSET_ROUTE, huddle::serve_asset);
     use_future(move || huddle::bridge(state));
-    use_future(move || bootstrap::refresh(state));
+    use_future(move || bootstrap::initialize(state));
     use_future(move || clipboard::watch(state));
     use_future(move || runtime::ticks(state));
     use_future(move || performance::watch_scroll(state));

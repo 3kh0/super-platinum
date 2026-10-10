@@ -46,6 +46,7 @@ impl ShellState {
         };
         match fixture.as_str() {
             "login" => Self::login(media),
+            "opening" => Self::opening(media),
             "loading" => {
                 let mut state = Self::fixture(media);
                 state.loading = true;
@@ -139,7 +140,7 @@ impl ShellState {
             .values()
             .map(|workspace_session| {
                 let mut workspace =
-                    cache.load_workspace(workspace_session)?.unwrap_or_else(|| {
+                    cache.load_workspace_for_startup(workspace_session)?.unwrap_or_else(|| {
                         super_platinum_core::state::Workspace::from_session(workspace_session)
                     });
                 if workspace.recent_channels.is_empty()
@@ -150,12 +151,6 @@ impl ShellState {
                 Ok((workspace_session.team_id.clone(), workspace))
             })
             .collect::<Result<std::collections::BTreeMap<_, _>, super_platinum_core::error::AppError>>()?;
-        let workspace = cached_workspaces
-            .get(&workspace_session.team_id)
-            .cloned()
-            .unwrap_or_else(|| {
-                super_platinum_core::state::Workspace::from_session(workspace_session)
-            });
         let mut core =
             super_platinum_core::CoreAppState::new(super_platinum_core::config::load_settings());
         core.screen = super_platinum_core::state::Screen::Main;
@@ -167,13 +162,16 @@ impl ShellState {
             .map(Arc::new);
         core.cache = Some(cache);
         core.active_team = Some(workspace_session.team_id.clone());
-        core.active_channel = workspace.last_active_channel.clone();
+        core.active_channel = cached_workspaces
+            .get(&workspace_session.team_id)
+            .and_then(|workspace| workspace.last_active_channel.clone());
         core.workspaces = cached_workspaces;
+        let workspace = core.workspaces.get(&workspace_session.team_id).unwrap();
 
         let preferred = core.active_channel.clone();
         let mut sidebar_memory = super_platinum_core::state::SidebarMemory::default();
         let (channels, sidebar_sections, default_active, _) =
-            project_channels(&workspace, &media, None, &mut sidebar_memory);
+            project_channels(workspace, &media, None, &mut sidebar_memory);
         let active_channel = preferred
             .as_ref()
             .and_then(|id| channels.iter().position(|channel| &channel.id == id))
@@ -181,7 +179,7 @@ impl ShellState {
         let (messages_by_channel, messages) = channels
             .get(active_channel)
             .map(|channel| {
-                let messages = project_messages_for_channel(&workspace, &channel.id, &media, None);
+                let messages = project_messages_for_channel(workspace, &channel.id, &media, None);
                 (
                     HashMap::from([(channel.id.clone(), messages.clone())]),
                     messages,
@@ -189,7 +187,10 @@ impl ShellState {
             })
             .unwrap_or_default();
         let timeline_end = messages.len();
-        let self_account = crate::state::project_self_account(&workspace, &media);
+        let self_account = crate::state::project_self_account(workspace, &media);
+        core.active_channel = channels
+            .get(active_channel)
+            .map(|channel| channel.id.clone());
 
         let state = Self {
             core,
@@ -257,9 +258,22 @@ impl ShellState {
         Ok(state)
     }
 
+    /// No disk or Keychain access on the first render.
+    pub fn opening(media: MediaRegistry) -> Self {
+        let mut shell = Self::login_with_settings(media, Default::default());
+        shell.loading = true;
+        shell
+    }
+
     pub fn login(media: MediaRegistry) -> Self {
-        let core =
-            super_platinum_core::CoreAppState::new(super_platinum_core::config::load_settings());
+        Self::login_with_settings(media, super_platinum_core::config::load_settings())
+    }
+
+    fn login_with_settings(
+        media: MediaRegistry,
+        settings: super_platinum_core::config::Settings,
+    ) -> Self {
+        let core = super_platinum_core::CoreAppState::new(settings);
         let state = Self {
             core,
             media,

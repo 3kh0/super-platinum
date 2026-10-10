@@ -30,3 +30,11 @@ cargo test --locked --manifest-path crates/super-platinum-core/Cargo.toml
 cargo test --locked
 scripts/agent-ui-check.sh
 ```
+
+To inspect startup latency, launch with `SUPER_PLATINUM_STARTUP_TRACE=1`.
+The log reports milliseconds from entry into `main` to the first painted frame,
+initial cache load, usable conversation paint, fresh history paint, and realtime
+connection. Paint markers wait for two WebView animation frames. These timings
+also appear under `performance.startup` in `scripts/agentctl.sh state` when
+`SUPER_PLATINUM_AGENT=1` is enabled. Timing logs contain no session credentials
+or message content.

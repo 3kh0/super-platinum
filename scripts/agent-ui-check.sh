@@ -13,7 +13,7 @@ mkdir -p "$SUPER_PLATINUM_UI_CAPTURE_DIR"
 MANIFEST="Cargo.toml"
 BINARY="target/debug/super-platinum"
 FIXTURES=(
-  login loading channel main-general-new-message-motion unreads threads
+  login opening loading channel main-general-new-message-motion unreads threads
   rail-account-snoozed
   animated-reaction profile-hover-card profile-pane profile-pane-rich-fields
   profile-pane-min-width dm-header-compact

@@ -22,6 +22,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 generation,
                 connection,
             } => {
+                if shell.core.active_team.as_ref() == Some(&team) {
+                    crate::performance::record(crate::performance::StartupStage::RealtimeConnected);
+                }
                 if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
                     workspace.rt_generation = generation;
                     let self_user = workspace.self_user_id.clone();

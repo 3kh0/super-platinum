@@ -9,10 +9,12 @@ pub async fn refresh(mut state: Signal<ShellState>) {
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         return;
     }
-    let Some((transport, client, workspaces)) = credentials(&state) else {
+    let Some((transport, client, mut workspaces)) = credentials(&state) else {
         return;
     };
 
+    let active_team = state.read().core.active_team.clone();
+    workspaces.sort_by_key(|session| Some(&session.team_id) != active_team.as_ref());
     for workspace_session in workspaces {
         let team = workspace_session.team_id.clone();
         match api::fetch_user_boot(&transport, &client, &workspace_session).await {
@@ -32,6 +34,41 @@ pub async fn refresh(mut state: Signal<ShellState>) {
                 continue;
             }
         }
+
+        let params = ConnectParams {
+            team: team.clone(),
+            ws_url: realtime::flannel_url(&workspace_session.token, &team),
+            d_cookie: state
+                .read()
+                .core
+                .session
+                .as_ref()
+                .map(|session| session.d_cookie.clone())
+                .unwrap_or_default(),
+            user_agent: super_platinum_core::slack::xparams::Identity::from_capture().user_agent,
+        };
+        dioxus::prelude::spawn(crate::realtime::worker(state, params));
+
+        let active_channel = {
+            let shell = state.read();
+            (shell.core.active_team.as_ref() == Some(&team))
+                .then(|| shell.core.active_channel.clone())
+                .flatten()
+        };
+        if let Some(channel) = active_channel {
+            refresh_history(
+                &mut state,
+                &transport,
+                &client,
+                &workspace_session,
+                &team,
+                channel,
+            )
+            .await;
+            hydrate_surface_users(&mut state, &transport, &client, &workspace_session, &team).await;
+            dioxus::prelude::spawn(refresh_media(state, transport.clone()));
+        }
+
         crate::usergroups::hydrate(state, &team).await;
         if let Ok(counts) = api::fetch_counts(&transport, &client, &workspace_session).await
             && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
@@ -59,41 +96,7 @@ pub async fn refresh(mut state: Signal<ShellState>) {
         hydrate_surface_users(&mut state, &transport, &client, &workspace_session, &team).await;
         dioxus::prelude::spawn(refresh_media(state, transport.clone()));
 
-        let active_channel = state.read().core.active_channel.clone().or_else(|| {
-            state
-                .read()
-                .channels
-                .first()
-                .map(|channel| channel.id.clone())
-        });
-        if let Some(channel) = active_channel {
-            refresh_history(
-                &mut state,
-                &transport,
-                &client,
-                &workspace_session,
-                &team,
-                channel,
-            )
-            .await;
-            hydrate_surface_users(&mut state, &transport, &client, &workspace_session, &team).await;
-            dioxus::prelude::spawn(refresh_media(state, transport.clone()));
-        }
         persist_workspace(&state, &team);
-
-        let params = ConnectParams {
-            team: team.clone(),
-            ws_url: realtime::flannel_url(&workspace_session.token, &team),
-            d_cookie: state
-                .read()
-                .core
-                .session
-                .as_ref()
-                .map(|session| session.d_cookie.clone())
-                .unwrap_or_default(),
-            user_agent: super_platinum_core::slack::xparams::Identity::from_capture().user_agent,
-        };
-        dioxus::prelude::spawn(crate::realtime::worker(state, params));
     }
 }
 
@@ -598,7 +601,9 @@ pub async fn sign_in(mut state: Signal<ShellState>) {
         .await;
     match status {
         Ok(status) if status.success() => {
-            *state.write() = ShellState::from_environment(media);
+            let loaded = super::startup::load_environment(media).await;
+            *state.write() = loaded;
+            super::startup::restore_transcripts(state).await;
             refresh(state).await;
         }
         Ok(_) => {
@@ -648,7 +653,9 @@ pub async fn remove_account(mut state: Signal<ShellState>, account_id: String) {
 
 async fn reload_account(mut state: Signal<ShellState>) {
     let media = state.read().media.clone();
-    *state.write() = ShellState::from_environment(media);
+    let loaded = super::startup::load_environment(media).await;
+    *state.write() = loaded;
+    super::startup::restore_transcripts(state).await;
     refresh(state).await;
 }
 

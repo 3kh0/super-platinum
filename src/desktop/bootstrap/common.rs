@@ -55,7 +55,8 @@ pub(super) async fn refresh_history_at(
     channel: ChannelId,
     latest: Option<String>,
 ) {
-    match api::fetch_history(
+    let generation = state.read().channel_generation;
+    let result = api::fetch_history(
         transport,
         client,
         workspace_session,
@@ -67,12 +68,23 @@ pub(super) async fn refresh_history_at(
             ..Default::default()
         },
     )
-    .await
+    .await;
+    // Account reloads replace the transport; a late response belongs to the
+    // old account even when the new account has the same team/channel ids.
+    if state
+        .read()
+        .core
+        .transport
+        .as_ref()
+        .is_none_or(|current| !std::ptr::eq(current.as_ref(), transport))
     {
+        return;
+    }
+    match result {
         Ok(page) => {
             let mut shell = state.write();
             if let Some(workspace) = shell.core.workspaces.get_mut(team) {
-                let messages = workspace.messages.entry(channel).or_default();
+                let messages = workspace.messages.entry(channel.clone()).or_default();
                 for message in page.messages {
                     let message = super_platinum_core::state::visible_message(message);
                     if super_platinum_core::state::is_channel_timeline_visible(&message) {
@@ -85,6 +97,13 @@ pub(super) async fn refresh_history_at(
                 messages.has_more_older = page.has_more;
             }
             shell.refresh_from_core();
+            drop(shell);
+            dioxus::prelude::spawn(crate::performance::mark_history_painted(
+                *state,
+                team.to_owned(),
+                channel,
+                generation,
+            ));
         }
         Err(error) => {
             let mut shell = state.write();

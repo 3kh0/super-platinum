@@ -683,6 +683,7 @@ fn state_snapshot(state: &ShellState) -> Value {
         "connection": state.connection.status.key(),
         "allow_destructive": allow_destructive(),
         "performance": {
+            "startup": crate::performance::startup_snapshot(),
             "channel_switch_ms": state.performance.channel_switch_ms,
             "realtime_insert_ms": state.performance.realtime_insert_ms,
             "scroll_frame_ms": state.performance.scroll_frame_ms,

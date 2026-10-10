@@ -102,6 +102,23 @@ impl Cache {
         &self,
         session: &WorkspaceSession,
     ) -> Result<Option<Workspace>, AppError> {
+        self.load_workspace_inner(session, false)
+    }
+
+    /// Loads sidebar/read state and the last-open transcript. Other transcripts
+    /// stay unloaded so saving this snapshot preserves their on-disk rows.
+    pub fn load_workspace_for_startup(
+        &self,
+        session: &WorkspaceSession,
+    ) -> Result<Option<Workspace>, AppError> {
+        self.load_workspace_inner(session, true)
+    }
+
+    fn load_workspace_inner(
+        &self,
+        session: &WorkspaceSession,
+        startup: bool,
+    ) -> Result<Option<Workspace>, AppError> {
         let Some((name, url, self_user_id, last_active_channel, recent_channels, frecency, sidebar)) = self
             .conn
             .query_row(
@@ -198,10 +215,16 @@ impl Cache {
             ws.users.insert(user.id.clone(), user);
         }
 
-        let mut stmt = self.conn.prepare(
-            "select channel_id, ts, json, pending from messages where team_id = ?1 order by channel_id, ts",
-        )?;
-        let rows = stmt.query_map(params![session.team_id], |row| {
+        // The primary key begins with (team_id, channel_id), so the startup
+        // query reads only the selected transcript instead of scanning them all.
+        let sql = if startup {
+            "select channel_id, ts, json, pending from messages where team_id = ?1 and channel_id = ?2 order by ts"
+        } else {
+            "select channel_id, ts, json, pending from messages where team_id = ?1 and ?2 is null order by channel_id, ts"
+        };
+        let channel = startup.then(|| ws.last_active_channel.clone()).flatten();
+        let mut stmt = self.conn.prepare(sql)?;
+        let rows = stmt.query_map(params![session.team_id, channel], |row| {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
@@ -493,6 +516,79 @@ mod tests {
             url: "https://test.slack.com".into(),
             token: "xoxc-test".into(),
         }
+    }
+
+    #[test]
+    fn startup_load_keeps_sidebar_counts_and_pending_but_defers_hidden_transcripts() {
+        let cache = Cache::open(":memory:").unwrap();
+        let session = session();
+        let mut workspace = Workspace::from_session(&session);
+        workspace.last_active_channel = Some("C1".into());
+        for channel in ["C1", "C2"] {
+            workspace.channels.insert(
+                channel.into(),
+                Channel {
+                    id: channel.into(),
+                    name: Some(channel.into()),
+                    ..Default::default()
+                },
+            );
+            workspace.messages.insert(
+                channel.into(),
+                ChannelMessages {
+                    loaded: true,
+                    messages: vec![SlackMessage {
+                        ts: Some("1.0".into()),
+                        text: Some(channel.into()),
+                        ..Default::default()
+                    }],
+                    pending: vec!["1.0".into()],
+                    unread_count: 3,
+                    mention_count: 2,
+                    vip_count: 1,
+                    last_read: Some("0.5".into()),
+                    ..Default::default()
+                },
+            );
+        }
+        cache.save_workspace(&workspace).unwrap();
+        let startup = cache.load_workspace_for_startup(&session).unwrap().unwrap();
+        assert_eq!(startup.channels.len(), 2);
+        assert!(startup.messages["C1"].loaded);
+        assert_eq!(startup.messages["C1"].pending, ["1.0"]);
+        let hidden = &startup.messages["C2"];
+        assert!(!hidden.loaded);
+        assert!(hidden.messages.is_empty());
+        assert_eq!(
+            (hidden.unread_count, hidden.mention_count, hidden.vip_count),
+            (3, 2, 1)
+        );
+        assert_eq!(hidden.last_read.as_deref(), Some("0.5"));
+        // Saving the partial startup snapshot must not erase hidden messages.
+        cache.save_workspace(&startup).unwrap();
+        let full = cache.load_workspace(&session).unwrap().unwrap();
+        assert_eq!(full.messages["C2"].messages.len(), 1);
+        assert_eq!(full.messages["C2"].pending, ["1.0"]);
+    }
+
+    #[test]
+    fn hidden_message_json_is_not_decoded_during_startup() {
+        let cache = Cache::open(":memory:").unwrap();
+        let session = session();
+        cache
+            .save_workspace(&Workspace::from_session(&session))
+            .unwrap();
+        cache.conn.execute(
+            "insert into messages (team_id, channel_id, ts, json, pending) values (?1, 'C_HIDDEN', '1.0', 'invalid json', 0)",
+            params![session.team_id],
+        ).unwrap();
+        assert!(
+            cache
+                .load_workspace_for_startup(&session)
+                .unwrap()
+                .is_some()
+        );
+        assert!(cache.load_workspace(&session).is_err());
     }
 
     #[test]

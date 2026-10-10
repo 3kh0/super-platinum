@@ -6,7 +6,9 @@ mod history;
 mod persist;
 mod self_menu;
 mod session;
+mod startup;
 mod storage;
+pub(crate) use startup::initialize;
 
 pub use crate::messaging::{
     delete_message, save_edit, send_composer, send_thread_composer, toggle_reaction,
