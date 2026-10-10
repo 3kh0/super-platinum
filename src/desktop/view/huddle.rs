@@ -15,7 +15,7 @@ const DOCK_FACES: usize = 6;
 /// The header control for the open conversation's huddle: start one, join the
 /// one running, or show that this is the call the reader is in.
 pub(crate) fn huddle_header_button(
-    state: Signal<ShellState>,
+    mut state: Signal<ShellState>,
     snapshot: &ShellState,
     channel_id: &str,
     room: Option<&Room>,
@@ -28,9 +28,9 @@ pub(crate) fn huddle_header_button(
         return rsx! {
             button {
                 class: "huddle-button active",
-                title: "Leave huddle",
-                "aria-label": "Leave huddle",
-                onclick: move |_| crate::huddle::leave(state),
+                title: "Show huddle window",
+                "aria-label": "Show huddle window",
+                onclick: move |_| state.write().huddle_ui.visible = true,
                 {icon(Icon::Headphones, "icon sm")}
                 span { "In huddle" }
             }
@@ -173,7 +173,6 @@ fn call_panel(mut state: Signal<ShellState>, snapshot: &ShellState, call: &Huddl
             .collect()
     };
     let overflow = people.len().saturating_sub(DOCK_FACES);
-    let muted = call.muted;
     let channel = call.channel.clone();
     let team = call.team.clone();
     rsx! {
@@ -208,27 +207,7 @@ fn call_panel(mut state: Signal<ShellState>, snapshot: &ShellState, call: &Huddl
                         span { class: "huddle-face more", "+{overflow}" }
                     }
                 }
-                div { class: "huddle-controls",
-                    button {
-                        class: if muted { "huddle-control muted" } else { "huddle-control" },
-                        title: if muted { "Unmute microphone" } else { "Mute microphone" },
-                        "aria-label": if muted { "Unmute microphone" } else { "Mute microphone" },
-                        "aria-pressed": if muted { "true" } else { "false" },
-                        onclick: move |_| crate::huddle::toggle_mute(state),
-                        if muted {
-                            {icon(Icon::MicOff, "icon")}
-                        } else {
-                            {icon(Icon::Mic, "icon")}
-                        }
-                    }
-                    button {
-                        class: "huddle-control leave",
-                        title: "Leave huddle",
-                        "aria-label": "Leave huddle",
-                        onclick: move |_| crate::huddle::leave(state),
-                        {icon(Icon::CallEnd, "icon")}
-                    }
-                }
+                {super::huddle_stage::controls(state, snapshot, call)}
             }
         }
     }
@@ -278,7 +257,7 @@ fn face(
 }
 
 /// `#channel` for channels, the person or group for DMs.
-fn conversation_label(workspace: &Workspace, channel_id: &str) -> String {
+pub(super) fn conversation_label(workspace: &Workspace, channel_id: &str) -> String {
     workspace
         .channels
         .get(channel_id)

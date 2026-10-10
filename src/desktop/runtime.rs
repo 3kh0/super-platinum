@@ -27,6 +27,12 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         let mut connection = crate::connection::Next::Nothing;
         let mut changed = false;
         if !crate::fixture::is_fixture() {
+            let reactions = shell.huddle_ui.reactions.len();
+            shell
+                .huddle_ui
+                .reactions
+                .retain(|reaction| now.duration_since(reaction.shown_at).as_secs() < 5);
+            changed |= reactions != shell.huddle_ui.reactions.len();
             let had_toast = shell.toast.is_some();
             shell.expire_toast(now);
             changed |= had_toast && shell.toast.is_none();

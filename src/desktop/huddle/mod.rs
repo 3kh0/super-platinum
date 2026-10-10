@@ -14,14 +14,26 @@ use std::time::Duration;
 
 use dioxus::prelude::{ReadableExt, Signal, WritableExt};
 use serde_json::{Value, json};
-use super_platinum_core::huddle::{MediaEvent, Teardown};
+#[cfg(test)]
+use super_platinum_core::huddle::MediaEvent;
+use super_platinum_core::huddle::Teardown;
 use super_platinum_core::slack::huddle_api::{self, JoinArgs, LeaveArgs};
 use tokio::sync::mpsc;
 
 use crate::bootstrap::credentials;
 use crate::state::ShellState;
 
-const BRIDGE_JS: &str = include_str!("bridge.js");
+mod controls;
+mod events;
+pub use controls::*;
+
+const BRIDGE_JS: &str = concat!(
+    include_str!("video.js"),
+    include_str!("reactions.js"),
+    include_str!("background.js"),
+    include_str!("stage.js"),
+    include_str!("bridge.js")
+);
 const CHIME_SDK: &[u8] = include_bytes!("../../../assets/huddle/chime-sdk.min.js");
 /// The asset-handler name: `dioxus://index.html/huddle/…` routes here.
 pub const ASSET_ROUTE: &str = "huddle";
@@ -92,7 +104,10 @@ pub async fn bridge(mut state: Signal<ShellState>) {
             }
             Next::Command(None) => return,
             Next::Event(Ok(event)) => {
-                let Some((generation, event)) = media_event(&event) else {
+                if events::ui_event(&mut state, &event) {
+                    continue;
+                }
+                let Some((generation, event)) = events::media_event(&event) else {
                     continue;
                 };
                 let teardown = state.write().core.huddle.apply_media(generation, event);
@@ -106,44 +121,6 @@ pub async fn bridge(mut state: Signal<ShellState>) {
             }
         }
     }
-}
-
-fn media_event(value: &Value) -> Option<(u64, MediaEvent)> {
-    let generation = value.get("generation")?.as_u64()?;
-    let event = match value.get("type")?.as_str()? {
-        "started" => MediaEvent::Started,
-        "connecting" => MediaEvent::Connecting {
-            reconnecting: value.get("reconnecting").and_then(Value::as_bool) == Some(true),
-        },
-        "stopped" => MediaEvent::Stopped {
-            status: value.get("status")?.as_str()?.to_owned(),
-        },
-        "muted" => MediaEvent::Muted(value.get("muted")?.as_bool()?),
-        "failed" => MediaEvent::Failed(
-            value
-                .get("reason")
-                .and_then(Value::as_str)
-                .unwrap_or("unknown error")
-                .to_owned(),
-        ),
-        "roster" => MediaEvent::Roster(
-            value
-                .get("attendees")?
-                .as_array()?
-                .iter()
-                .filter_map(|row| {
-                    let row = row.as_array()?;
-                    Some((
-                        row.first()?.as_str()?.to_owned(),
-                        row.get(1)?.as_bool()?,
-                        row.get(2)?.as_bool()?,
-                    ))
-                })
-                .collect(),
-        ),
-        _ => return None,
-    };
-    Some((generation, event))
 }
 
 /// Starts or joins the huddle in `channel` on the active workspace.
@@ -203,6 +180,7 @@ async fn join_in(
     let Some((generation, replaced)) = begun else {
         return;
     };
+    state.write().huddle_ui.begin(generation);
     if let Some(replaced) = replaced {
         dioxus::prelude::spawn(finish(state, replaced));
     }
@@ -222,6 +200,9 @@ async fn join_in(
         media_region(&mut state, &transport).await
     };
 
+    if !state.read().core.huddle.is_current(generation) {
+        return;
+    }
     let joined = huddle_api::join(
         &transport,
         &client,
@@ -281,6 +262,15 @@ async fn join_in(
         .await;
         return;
     }
+    if let Some(canvas) = response.canvas
+        && let Some(root) = canvas.root_thread_ts
+        && let Some(call) = shell.core.huddle.call.as_mut()
+    {
+        call.thread = Some((
+            canvas.thread_channel_id.unwrap_or_else(|| channel.clone()),
+            root,
+        ));
+    }
     if let Some(room) = response.huddle
         && let Some(workspace) = shell.core.workspaces.get_mut(&team)
     {
@@ -298,6 +288,14 @@ async fn join_in(
     command["type"] = json!("join");
     command["generation"] = json!(generation);
     command["muted"] = json!(muted);
+    command["user"] = json!(
+        state
+            .read()
+            .core
+            .workspaces
+            .get(&team)
+            .map(|w| w.self_user_id.clone())
+    );
     send(command);
 }
 
@@ -389,11 +387,13 @@ mod tests {
     #[test]
     fn bridge_events_translate_to_media_events() {
         assert_eq!(
-            media_event(&json!({"generation": 3, "type": "started"})),
+            events::media_event(&json!({"generation": 3, "type": "started"})),
             Some((3, MediaEvent::Started))
         );
         assert_eq!(
-            media_event(&json!({"generation": 3, "type": "stopped", "status": "MeetingEnded"})),
+            events::media_event(
+                &json!({"generation": 3, "type": "stopped", "status": "MeetingEnded"})
+            ),
             Some((
                 3,
                 MediaEvent::Stopped {
@@ -402,13 +402,16 @@ mod tests {
             ))
         );
         assert_eq!(
-            media_event(
+            events::media_event(
                 &json!({"generation": 1, "type": "roster", "attendees": [["T-R-U1", true, false], ["bad"]]})
             ),
             Some((1, MediaEvent::Roster(vec![("T-R-U1".into(), true, false)])))
         );
-        assert_eq!(media_event(&json!({"type": "started"})), None);
-        assert_eq!(media_event(&json!({"generation": 1, "type": "nope"})), None);
+        assert_eq!(events::media_event(&json!({"type": "started"})), None);
+        assert_eq!(
+            events::media_event(&json!({"generation": 1, "type": "nope"})),
+            None
+        );
     }
 
     #[test]

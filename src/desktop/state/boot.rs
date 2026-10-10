@@ -196,6 +196,7 @@ impl ShellState {
             core,
             media,
             media_epoch: 0,
+            huddle_ui: Default::default(),
             background_uri: None,
             signed_in: true,
             loading: channels.is_empty(),
@@ -278,6 +279,7 @@ impl ShellState {
             core,
             media,
             media_epoch: 0,
+            huddle_ui: Default::default(),
             background_uri: None,
             signed_in: false,
             loading: false,
@@ -514,6 +516,7 @@ impl ShellState {
             core,
             media,
             media_epoch: 0,
+            huddle_ui: Default::default(),
             background_uri: None,
             signed_in: true,
             loading: false,
@@ -801,7 +804,12 @@ impl ShellState {
             }
             // In the call: the dock with one person talking and one muted,
             // the reader's own mic off, and the header showing the live call.
-            "huddle-connected" => {
+            "huddle-connected"
+            | "huddle-video"
+            | "huddle-video-expanded"
+            | "huddle-settings"
+            | "huddle-people"
+            | "huddle-captions" => {
                 use super_platinum_core::huddle::MediaEvent;
                 if let Some(workspace) = state.core.workspaces.get_mut("T1") {
                     workspace.apply_room(serde_json::from_value(serde_json::json!({"id":"R1","channels":["C2"],"participants":["U0","U1","U2"]})).expect("fixture room"));
@@ -811,6 +819,75 @@ impl ShellState {
                     huddle.joined(generation, "R1".into(), "a-0".into());
                     huddle.apply_media(generation, MediaEvent::Started);
                     huddle.apply_media(generation, MediaEvent::Muted(true));
+                    state.huddle_ui.begin(generation);
+                    state.huddle_ui.visible = name != "huddle-connected";
+                    state.huddle_ui.expanded = name == "huddle-video-expanded";
+                    state.huddle_ui.settings = name == "huddle-settings";
+                    state.huddle_ui.invite = name == "huddle-people";
+                    state.huddle_ui.rect = Some(super::HuddleRect {
+                        left: 500.0,
+                        top: 250.0,
+                        width: 640.0,
+                        height: 420.0,
+                    });
+                    if name != "huddle-connected" {
+                        use super_platinum_core::huddle::HuddleVideoTile;
+                        huddle.apply_media(
+                            generation,
+                            MediaEvent::Camera {
+                                enabled: true,
+                                pending: false,
+                            },
+                        );
+                        huddle.apply_media(
+                            generation,
+                            MediaEvent::Tiles(vec![
+                                HuddleVideoTile {
+                                    id: 1,
+                                    user: Some("U0".into()),
+                                    local: true,
+                                    content: false,
+                                },
+                                HuddleVideoTile {
+                                    id: 2,
+                                    user: Some("U1".into()),
+                                    local: false,
+                                    content: true,
+                                },
+                            ]),
+                        );
+                        state.huddle_ui.devices = super::HuddleDevices {
+                            microphone: vec![super::HuddleDevice {
+                                id: "mic-1".into(),
+                                label: "MacBook microphone".into(),
+                            }],
+                            camera: vec![super::HuddleDevice {
+                                id: "cam-1".into(),
+                                label: "FaceTime HD camera".into(),
+                            }],
+                            speaker: vec![super::HuddleDevice {
+                                id: "out-1".into(),
+                                label: "Built-in speakers".into(),
+                            }],
+                            output_supported: false,
+                            screen_supported: true,
+                        };
+                    }
+                    if name == "huddle-captions" {
+                        state.huddle_ui.captions_on = true;
+                        state.huddle_ui.caption(super::HuddleCaption {
+                            id: "caption-1".into(),
+                            user: Some("U1".into()),
+                            text: "The release checklist is ready. Let's review the desktop build."
+                                .into(),
+                            partial: false,
+                        });
+                        state.huddle_ui.reactions.push(super::HuddleReaction {
+                            shown_at: std::time::Instant::now(),
+                            user: Some("U2".into()),
+                            emoji: "thumbsup".into(),
+                        });
+                    }
                     huddle.apply_media(
                         generation,
                         MediaEvent::Roster(vec![

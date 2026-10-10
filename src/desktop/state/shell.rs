@@ -7,6 +7,7 @@ pub use crate::model::*;
 
 pub struct ShellState {
     pub core: super_platinum_core::CoreAppState,
+    pub huddle_ui: super::HuddleUi,
     pub media: MediaRegistry,
     pub media_epoch: u64,
     pub background_uri: Option<String>,

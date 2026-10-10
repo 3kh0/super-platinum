@@ -160,7 +160,7 @@ fn app() -> Element {
                    event.preventDefault();
                    dioxus.send({type:'palette'});
                  } else if (event.key === 'Escape') {
-                   dioxus.send({type:'escape'});
+                   dioxus.send({type:'escape', huddle: !!event.target.closest?.('[data-huddle-stage]')});
                  }
                });"#,
         );
@@ -179,6 +179,17 @@ fn app() -> Element {
                 }
                 "escape" => {
                     let mut shell = state.write();
+                    if payload.get("huddle").and_then(serde_json::Value::as_bool) == Some(true) {
+                        if shell.huddle_ui.settings || shell.huddle_ui.invite {
+                            shell.huddle_ui.settings = false;
+                            shell.huddle_ui.invite = false;
+                        } else if shell.huddle_ui.expanded {
+                            shell.huddle_ui.expanded = false;
+                        } else {
+                            shell.huddle_ui.visible = false;
+                        }
+                        continue;
+                    }
                     if shell.profile_hover.take().is_some() {
                         continue;
                     }

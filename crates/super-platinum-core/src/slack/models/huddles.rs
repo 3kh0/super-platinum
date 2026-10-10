@@ -53,6 +53,16 @@ pub struct RoomJoinResponse {
     pub call: JoinedCall,
     #[serde(default)]
     pub huddle: Option<Room>,
+    #[serde(default)]
+    pub canvas: Option<HuddleCanvas>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct HuddleCanvas {
+    #[serde(default)]
+    pub thread_channel_id: Option<ChannelId>,
+    #[serde(default)]
+    pub root_thread_ts: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

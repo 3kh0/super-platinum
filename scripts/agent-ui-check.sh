@@ -18,6 +18,7 @@ FIXTURES=(
   animated-reaction profile-hover-card profile-pane profile-pane-rich-fields
   profile-pane-min-width dm-header-compact
   channel-thread-profile-headers channel-huddle huddle-connected huddle-invite
+  huddle-video huddle-video-expanded huddle-settings huddle-people huddle-captions
   chat-paused-pill
   thread-unread-divider main-dev settings settings-storage appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background
@@ -32,6 +33,9 @@ FIXTURES=(
   media-loading-state
   usergroup-members usergroup-channels
 )
+
+# Optional fixture names allow a focused recheck after the full sweep.
+if [[ "$#" -gt 0 ]]; then FIXTURES=("$@"); fi
 
 echo "agent-ui-check: building the locked Dioxus desktop shell…"
 cargo build --manifest-path "$MANIFEST" --locked

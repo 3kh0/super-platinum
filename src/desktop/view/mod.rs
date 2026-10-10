@@ -3,6 +3,7 @@
 mod chrome;
 pub(crate) mod composer;
 mod huddle;
+mod huddle_stage;
 mod message;
 pub(crate) mod rich;
 mod secondary;
@@ -354,6 +355,7 @@ pub fn shell() -> Element {
             if snapshot.group_panel.is_some() {
                 {crate::usergroups::pane(state, &snapshot)}
             }
+            {huddle_stage::stage(state, &snapshot)}
             if let Some(overlay) = snapshot.overlay { {overlay_view(state, overlay, &snapshot)} }
             if let Some(hover) = snapshot.profile_hover.as_ref() {
                 {crate::profile::profile_hover_card(state, &snapshot, hover)}

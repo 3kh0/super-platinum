@@ -15,6 +15,7 @@ const STOP_TIMEOUT_MS = 3000;
 
 let sdkLoad = null;
 let session = null;
+let requestedGeneration = null;
 
 function emit(generation, event) {
   dioxus.send(Object.assign({ generation }, event));
@@ -85,14 +86,18 @@ async function pickMicrophone(av) {
 }
 
 async function join(command) {
-  await leave();
   const generation = command.generation;
+  await leave();
+  if (requestedGeneration !== generation) return;
   let s = null;
   try {
     const sdk = await loadSdk();
+    if (requestedGeneration !== generation) return;
     const logger = new sdk.ConsoleLogger('huddle', sdk.LogLevel.WARN);
     const devices = new sdk.DefaultDeviceController(logger, { enableWebAudio: false });
     const configuration = new sdk.MeetingSessionConfiguration(command.meeting, command.attendee);
+    s = { generation, logger, devices, roster: new Map(), rosterTimer: null, lastRoster: '' };
+    configureVideo(s, sdk, configuration, command);
     const meeting = new sdk.DefaultMeetingSession(configuration, logger, devices);
     const av = meeting.audioVideo;
     // Outside the Dioxus root, so no re-render can ever replace it.
@@ -101,8 +106,9 @@ async function join(command) {
     audio.hidden = true;
     document.body.appendChild(audio);
 
-    s = { generation, av, devices, audio, roster: new Map(), rosterTimer: null, lastRoster: '' };
+    Object.assign(s, { av, audio });
     session = s;
+    watchVideo(s);
 
     av.addObserver({
       audioVideoDidStart: () => isCurrent(s) && emit(generation, { type: 'started' }),
@@ -121,7 +127,11 @@ async function join(command) {
       if (!isCurrent(s)) return;
       if (present) {
         if (!s.roster.has(attendeeId)) {
-          s.roster.set(attendeeId, { external: externalUserId || '', speaking: false, muted: false });
+          let external = externalUserId || (attendeeId === s.attendeeId ? `local-local-${s.localUser}` : '');
+          // Content uses the same ExternalUserId but a separate attendee seat;
+          // tag it so a share cannot make a muted microphone look unmuted.
+          if (attendeeId.endsWith('#content') && !external.includes('#')) external += '#content';
+          s.roster.set(attendeeId, { external, speaking: false, muted: false });
           av.realtimeSubscribeToVolumeIndicator(attendeeId, (id, volume, muted) => {
             const row = s.roster.get(id);
             if (!row) return;
@@ -144,8 +154,12 @@ async function join(command) {
     // Slack's own profile: full-band speech, mono, with audio redundancy.
     av.setAudioProfile(sdk.AudioProfile.fullbandSpeechMono(true));
     await av.bindAudioElement(audio);
-    await av.startAudioInput(await pickMicrophone(av));
     if (!isCurrent(s)) return;
+    const microphone = await pickMicrophone(av);
+    if (!isCurrent(s)) return;
+    await av.startAudioInput(microphone);
+    if (!isCurrent(s)) { await av.stopAudioInput(); return; }
+    void reportDevices(s);
     if (command.muted) av.realtimeMuteLocalAudio();
     av.start();
   } catch (error) {
@@ -153,7 +167,7 @@ async function join(command) {
       session = null;
       await teardown(s);
     }
-    emit(generation, { type: 'failed', reason: describe(error) });
+    if (requestedGeneration === generation) emit(generation, { type: 'failed', reason: describe(error) });
   }
 }
 
@@ -164,6 +178,7 @@ function release(s) {
   if (session === s) session = null;
   clearTimeout(s.rosterTimer);
   Promise.resolve()
+    .then(() => stopVideo(s))
     .then(() => s.av.stopAudioInput())
     .catch(() => {})
     .then(() => {
@@ -174,9 +189,10 @@ function release(s) {
 }
 
 async function teardown(s) {
+  let timer;
   const stopped = new Promise((resolve) => {
     s.stopped = resolve;
-    setTimeout(resolve, STOP_TIMEOUT_MS);
+    timer = setTimeout(resolve, STOP_TIMEOUT_MS);
   });
   try {
     s.av.realtimeMuteLocalAudio();
@@ -185,6 +201,7 @@ async function teardown(s) {
     s.stopped();
   }
   await stopped;
+  clearTimeout(timer);
   release(s);
 }
 
@@ -220,12 +237,26 @@ for (;;) {
   try {
     switch (command && command.type) {
       case 'join':
-        await join(command);
+        requestedGeneration = command.generation;
+        void join(command);
         break;
       case 'leave':
         // Named by generation: a teardown for an old call must not stop the
         // one that replaced it.
-        if (!session || session.generation === command.generation) await leave();
+        if (requestedGeneration === command.generation) requestedGeneration = null;
+        if (!session || session.generation === command.generation) void leave();
+        break;
+      case 'camera':
+        if (session?.generation === command.generation) void videoControl(session, 'camera', command.enabled);
+        break;
+      case 'device':
+        if (session?.generation === command.generation) void selectDevice(session, command.kind, command.id);
+        break;
+      case 'background':
+        if (session?.generation === command.generation) void setBackground(session, command.effect);
+        break;
+      case 'reaction':
+        if (session?.generation === command.generation) sendReaction(session, command.emoji);
         break;
       case 'mute':
         setMuted(command);

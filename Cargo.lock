@@ -5003,6 +5003,7 @@ dependencies = [
  "base64 0.23.1",
  "dioxus",
  "objc2-app-kit",
+ "serde",
  "serde_json",
  "super-platinum-core",
  "tao",

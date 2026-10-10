@@ -16,7 +16,7 @@ use super_platinum_core::{
 /// covers Windows' `http://dioxus.index.html`), it spins workers up from
 /// `blob:` URLs, and its optional telemetry posts to `*.chime.aws`. Signalling
 /// and TURN ride the existing `wss:` allowance.
-const CSP: &str = "default-src 'none'; img-src 'self' super-platinum-media: data:; media-src super-platinum-media:; style-src 'unsafe-inline'; script-src 'self' dioxus: 'unsafe-inline' 'unsafe-eval'; worker-src blob:; child-src blob:; connect-src dioxus: ipc: ws: wss: https://*.chime.aws; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+const CSP: &str = "default-src 'none'; img-src 'self' super-platinum-media: data: blob:; media-src 'self' super-platinum-media: blob: mediastream:; style-src 'unsafe-inline'; script-src 'self' dioxus: 'unsafe-inline' 'unsafe-eval'; worker-src blob:; child-src blob:; connect-src dioxus: ipc: ws: wss: https://*.chime.aws; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
 
 /// WebView2 serves the app from `http://dioxus.index.html`, which is not a
 /// secure context, so the microphone and WebRTC are unavailable there. This

@@ -139,6 +139,40 @@ pub fn decline_invite_request(
     )
 }
 
+/// Verified against client build 132707: createFetcherNotifyMember sends
+/// channel_id + user_id. This rings one person into the current huddle.
+pub fn notify_member_request(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    channel: String,
+    user: String,
+) -> PreparedRequest {
+    client.rest_form(
+        workspace,
+        "rooms.notifyMember",
+        vec![
+            ("channel_id", channel),
+            ("user_id", user),
+            ("_x_reason", "calls-api/notifyMember".into()),
+        ],
+    )
+}
+
+/// Live captions use startEventLog's generated rooms.startTranscription
+/// fetcher (callId is snake-cased to call_id). Hiding captions is local:
+/// rooms.stopTranscription would stop the service for the whole room.
+pub fn start_captions_request(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    call: String,
+) -> PreparedRequest {
+    client.rest_form(
+        workspace,
+        "rooms.startTranscription",
+        vec![("call_id", call), ("_x_reason", "start-event-log".into())],
+    )
+}
+
 pub async fn join(
     transport: &Transport,
     client: &SlackClient,
@@ -236,6 +270,18 @@ mod tests {
 
     fn has(req: &PreparedRequest, key: &str, value: &str) -> bool {
         form_fields(req).contains(&(key.into(), value.into()))
+    }
+
+    #[test]
+    fn invite_and_caption_requests_match_the_client() {
+        let client = SlackClient::default();
+        let invite = notify_member_request(&client, &workspace(), "C1".into(), "U2".into());
+        assert!(invite.url.contains("/api/rooms.notifyMember?"));
+        assert!(has(&invite, "channel_id", "C1"));
+        assert!(has(&invite, "user_id", "U2"));
+        let captions = start_captions_request(&client, &workspace(), "R1".into());
+        assert!(captions.url.contains("/api/rooms.startTranscription?"));
+        assert!(has(&captions, "call_id", "R1"));
     }
 
     #[test]

@@ -27,7 +27,7 @@
 }
 .huddle-button.live:hover { background: color-mix(in srgb, var(--success) 22%, transparent); }
 .huddle-button.active { background: color-mix(in srgb, var(--success) 24%, transparent); }
-.huddle-button.active:hover { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+.huddle-button.active:hover { background: color-mix(in srgb, var(--success) 30%, transparent); }
 .huddle-button .icon { opacity: 1; }
 
 .huddle-dock {
@@ -150,3 +150,84 @@
 @media (prefers-reduced-motion: reduce) {
   .huddle-face { transition: none; }
 }
+
+/* Keep the dock controls in their own row, including in narrow sidebars. */
+.huddle-call-body { flex-direction: column; align-items: stretch; }
+.huddle-call-body .huddle-controls { justify-content: space-between; }
+.huddle-control { flex: 0 0 var(--control-height); width: var(--control-height); height: var(--control-height); }
+.huddle-control.on { color: var(--accent); background: var(--accent-soft); }
+.huddle-control:disabled { opacity: .5; cursor: default; }
+.huddle-control:focus-visible, .huddle-reaction-picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.huddle-stage-window {
+  position: fixed;
+  left: calc(100% - 580px); top: calc(100% - 430px);
+  width: 560px; height: 360px;
+  z-index: 35;
+  display: flex; flex-direction: column;
+  min-width: 200px; min-height: 150px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-popover);
+  overflow: hidden;
+}
+.huddle-stage-window.expanded {
+  left: calc(var(--rail-width) + var(--sidebar-width) + var(--space-2)) !important;
+  top: calc(var(--header-height) + var(--space-2)) !important;
+  width: calc(100% - var(--rail-width) - var(--sidebar-width) - var(--space-4)) !important;
+  height: calc(100% - var(--header-height) - var(--space-4)) !important;
+}
+.huddle-stage-header {
+  display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-2);
+  height: 40px; padding: var(--space-1) var(--space-2); cursor: move;
+  touch-action: none; user-select: none;
+}
+.huddle-stage-header strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); font-weight: 650; }
+.huddle-stage-status { margin-left: auto; font-size: var(--text-xs); color: var(--muted); white-space: nowrap; }
+.huddle-stage-header .huddle-control { background: transparent; }
+.huddle-stage-content { display: flex; flex: 1; min-height: 0; flex-direction: column; overflow: auto; }
+.huddle-stage-grid { display: flex; flex: 1; min-height: 0; flex-wrap: wrap; justify-content: center; align-content: center; gap: var(--space-2); padding: var(--space-2); overflow: hidden; }
+.huddle-stage-tile { position: relative; flex: 0 0 auto; min-width: 0; margin: 0; border-radius: var(--radius-md); overflow: hidden; background: var(--avatar-bg); width: 140px; height: 110px; }
+.huddle-stage-tile video, .huddle-stage-tile img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.huddle-stage-tile.content video { object-fit: contain; background: var(--bg); }
+.huddle-stage-tile .mirrored { transform: scaleX(-1); }
+.huddle-stage-tile.speaking { outline: 2px solid var(--success); outline-offset: -2px; }
+.huddle-stage-initials { display: grid; place-items: center; width: 100%; height: 100%; font-size: var(--text-lg); font-weight: 650; }
+.huddle-stage-tile figcaption {
+  position: absolute; bottom: var(--space-1); left: var(--space-1); right: var(--space-1);
+  display: flex; align-items: center; gap: var(--space-1); padding: var(--space-1);
+  border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--text);
+  font-size: var(--text-xs); overflow: hidden;
+}
+.huddle-stage-tile figcaption span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.huddle-stage-tile figcaption .icon { flex: 0 0 auto; }
+.huddle-pronouns { color: var(--muted); }
+.huddle-stage-footer { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: center; gap: var(--space-2); padding: var(--space-2); border-top: 1px solid var(--border); }
+.huddle-stage-extra { display: flex; gap: var(--space-1); }
+.huddle-reaction-picker { display: flex; flex: 0 0 auto; justify-content: center; gap: var(--space-2); padding: 0 var(--space-2) var(--space-2); }
+.huddle-reaction-picker button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-sm); }
+.huddle-reaction-picker button:hover { background: var(--hover-overlay); }
+.huddle-reactions { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2); font-size: var(--text-xs); }
+.huddle-reactions button { margin-left: auto; }
+.huddle-captions { flex: 0 0 auto; max-height: 120px; overflow: auto; padding: var(--space-2) var(--space-3); background: var(--surface); font-size: var(--text-sm); }
+.huddle-captions p { margin: 0 0 var(--space-1); }
+.huddle-captions .partial { color: var(--muted); }
+.huddle-settings { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); }
+.huddle-settings h2 { margin: 0; font-size: var(--text-md); font-weight: 650; }
+.huddle-settings p { margin: 0; color: var(--muted); font-size: var(--text-xs); }
+.huddle-setting { display: flex; flex-direction: column; gap: var(--space-1); font-size: var(--text-sm); }
+.huddle-setting select, .huddle-settings input { width: 100%; height: var(--control-height); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); padding: 0 var(--space-2); }
+.huddle-invite-person { display: flex; align-items: center; justify-content: space-between; min-height: var(--control-height); border-radius: var(--radius-sm); text-align: left; font-size: var(--text-sm); padding: var(--space-1) var(--space-2); }
+.huddle-invite-person:hover { background: var(--hover-overlay); }
+.huddle-resize { position: absolute; width: 12px; height: 12px; touch-action: none; z-index: 2; }
+.huddle-resize.top-left { top: 0; left: 0; cursor: nwse-resize; }
+.huddle-resize.top-right { top: 0; right: 0; cursor: nesw-resize; }
+.huddle-resize.bottom-left { bottom: 0; left: 0; cursor: nesw-resize; }
+.huddle-resize.bottom-right { bottom: 0; right: 0; cursor: nwse-resize; }
+@media (max-width: 640px) {
+  .huddle-stage-window.expanded { left: var(--space-2) !important; width: calc(100% - var(--space-4)) !important; }
+  .huddle-stage-status { display: none; }
+}
+.huddle-device-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2) var(--space-3); }
+.huddle-device-settings h2, .huddle-device-settings p { grid-column: 1 / -1; }
+@media (max-width: 480px) { .huddle-device-settings { grid-template-columns: 1fr; } }

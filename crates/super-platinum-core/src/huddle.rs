@@ -31,6 +31,14 @@ pub struct HuddleParticipant {
     pub muted: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HuddleVideoTile {
+    pub id: u32,
+    pub user: Option<UserId>,
+    pub local: bool,
+    pub content: bool,
+}
+
 #[derive(Debug, Clone)]
 pub struct HuddleCall {
     pub generation: u64,
@@ -47,6 +55,12 @@ pub struct HuddleCall {
     /// before then.
     pub participants: Vec<HuddleParticipant>,
     pub connected_at: Option<Instant>,
+    pub camera_on: bool,
+    pub screen_sharing: bool,
+    pub camera_pending: bool,
+    pub share_pending: bool,
+    pub tiles: Vec<HuddleVideoTile>,
+    pub thread: Option<(ChannelId, String)>,
 }
 
 /// What the Chime session reported, translated off the bridge.
@@ -64,6 +78,15 @@ pub enum MediaEvent {
     },
     /// The local microphone state the session actually applied.
     Muted(bool),
+    Camera {
+        enabled: bool,
+        pending: bool,
+    },
+    ScreenShare {
+        enabled: bool,
+        pending: bool,
+    },
+    Tiles(Vec<HuddleVideoTile>),
     /// One entry per attendee: `(ExternalUserId, speaking, muted)`.
     Roster(Vec<(String, bool, bool)>),
     /// The session could not be set up at all (no microphone, bad
@@ -173,6 +196,12 @@ impl HuddleState {
             muted: false,
             participants: Vec::new(),
             connected_at: None,
+            camera_on: false,
+            screen_sharing: false,
+            camera_pending: false,
+            share_pending: false,
+            tiles: Vec::new(),
+            thread: None,
         });
         Some((self.generation, replaced))
     }
@@ -231,6 +260,20 @@ impl HuddleState {
                 }
             }
             MediaEvent::Muted(muted) => call.muted = muted,
+            MediaEvent::Camera { enabled, pending } => {
+                call.camera_on = enabled;
+                call.camera_pending = pending;
+            }
+            MediaEvent::ScreenShare { enabled, pending } => {
+                call.screen_sharing = enabled;
+                call.share_pending = pending;
+            }
+            MediaEvent::Tiles(mut tiles) => {
+                tiles.sort_by_key(|tile| (!tile.content, tile.id));
+                let mut seen = std::collections::HashSet::new();
+                tiles.retain(|tile| seen.insert(tile.id));
+                call.tiles = tiles;
+            }
             MediaEvent::Roster(attendees) => call.participants = merge_roster(attendees),
             MediaEvent::Stopped { status } => {
                 let call = self.call.take()?;
@@ -373,6 +416,68 @@ mod tests {
         assert!(state.joined(generation, room.into(), "a-1".into()));
         assert!(state.apply_media(generation, MediaEvent::Started).is_none());
         generation
+    }
+
+    #[test]
+    fn video_updates_are_generation_guarded_and_do_not_end_audio() {
+        let mut state = HuddleState::default();
+        let old = connected(&mut state, "C1", "R1");
+        state.leave();
+        let current = connected(&mut state, "C2", "R2");
+        state.apply_media(
+            old,
+            MediaEvent::Camera {
+                enabled: true,
+                pending: false,
+            },
+        );
+        assert!(!state.call.as_ref().unwrap().camera_on);
+        state.apply_media(
+            current,
+            MediaEvent::Camera {
+                enabled: false,
+                pending: true,
+            },
+        );
+        assert!(state.call.as_ref().unwrap().camera_pending);
+        state.apply_media(
+            current,
+            MediaEvent::Camera {
+                enabled: false,
+                pending: false,
+            },
+        );
+        assert_eq!(state.call.as_ref().unwrap().phase, HuddlePhase::Connected);
+        state.apply_media(
+            current,
+            MediaEvent::Tiles(vec![
+                HuddleVideoTile {
+                    id: 2,
+                    user: Some("U1".into()),
+                    local: false,
+                    content: false,
+                },
+                HuddleVideoTile {
+                    id: 3,
+                    user: None,
+                    local: false,
+                    content: true,
+                },
+            ]),
+        );
+        assert_eq!(state.call.as_ref().unwrap().tiles[0].id, 3);
+        state.leave();
+        let next = connected(&mut state, "C3", "R3");
+        state.apply_media(
+            current,
+            MediaEvent::ScreenShare {
+                enabled: true,
+                pending: false,
+            },
+        );
+        assert!(state.is_current(next));
+        assert!(state.call.as_ref().unwrap().tiles.is_empty());
+        assert!(!state.call.as_ref().unwrap().screen_sharing);
     }
 
     #[test]
