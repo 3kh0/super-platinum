@@ -796,7 +796,14 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
             | "channel-links-narrow"
             | "channel-files-narrow"
             | "pins-narrow"
-            | "forward-narrow")
+            | "forward-narrow"
+            | "member-add-narrow"
+            | "member-remove-narrow"
+            | "message-marked-unread-narrow"
+            | "thread-marked-unread-narrow"
+            | "thread-counts-narrow"
+            | "thread-feed-narrow"
+            | "thread-follow-narrow")
     ) {
         WINDOW_MIN_INNER_SIZE
     } else {

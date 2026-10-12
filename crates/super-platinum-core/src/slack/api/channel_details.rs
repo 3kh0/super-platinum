@@ -53,6 +53,16 @@ pub struct ConversationMembers {
     cursors: std::collections::BTreeSet<String>,
 }
 impl ConversationMembers {
+    pub fn confirm_member(&mut self, id: &str, present: bool) {
+        if present {
+            if self.seen.insert(id.to_owned()) {
+                self.ids.push(id.to_owned());
+            }
+        } else {
+            self.seen.remove(id);
+            self.ids.retain(|member| member != id);
+        }
+    }
     /// Returns false if Slack repeats a cursor. Keep loaded members and stop
     /// pagination instead of issuing the same request indefinitely.
     pub fn apply(&mut self, page: ConversationMembersPage) -> bool {

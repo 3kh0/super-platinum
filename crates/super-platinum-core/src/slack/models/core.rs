@@ -43,6 +43,8 @@ pub struct HistoryPage {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CountsPage {
     #[serde(default)]
+    pub threads: Option<ThreadCounts>,
+    #[serde(default)]
     pub channels: Vec<Channel>,
     #[serde(default)]
     pub ims: Vec<Channel>,

@@ -93,6 +93,8 @@ pub struct ChannelMessages {
     pub history_failed: bool,
     pub pending: Vec<MessageTs>,
     pub last_read: Option<MessageTs>,
+    /// Local ordering for thread read acknowledgements, including cursor ABA.
+    pub read_revision: u64,
     pub unread_count: u32,
     pub mention_count: u32,
     /// `client.counts` `vip_count`: unread mentions from a VIP. Any at all puts
@@ -250,6 +252,7 @@ pub struct Workspace {
     pub url: String,
     pub self_user_id: UserId,
     pub activity_unread_count: Option<u32>,
+    pub thread_counts: ThreadCountsState,
     pub channels: BTreeMap<ChannelId, Channel>,
     pub starred_order: Vec<ChannelId>,
     pub dm_order: Vec<ChannelId>,
@@ -283,6 +286,7 @@ impl Workspace {
             url: s.url.clone(),
             self_user_id: s.user_id.clone(),
             activity_unread_count: None,
+            thread_counts: Default::default(),
             channels: BTreeMap::new(),
             starred_order: Vec::new(),
             dm_order: Vec::new(),
@@ -407,11 +411,23 @@ impl Workspace {
     }
 
     pub fn apply_counts_since(&mut self, counts: crate::slack::models::CountsPage, since: u64) {
+        self.apply_counts_snapshot(counts, since, self.thread_counts.revision());
+    }
+
+    pub fn apply_counts_snapshot(
+        &mut self,
+        mut counts: crate::slack::models::CountsPage,
+        since: u64,
+        thread_revision: u64,
+    ) {
+        if let Some(threads) = counts.threads.take() {
+            self.thread_counts.apply_snapshot(threads, thread_revision);
+        }
         if let Some(unread_count) = counts.activity_unread_count() {
             self.activity_unread_count = Some(unread_count);
         }
         self.apply_counts_membership(&counts, since);
-        for channel in counts.all_channels() {
+        for mut channel in counts.all_channels() {
             self.apply_channel_read_state(&channel);
             // Counts are the read state, not a hint: a read channel arrives as
             // `has_unreads: false` with no count at all, and only carries
@@ -437,8 +453,13 @@ impl Workspace {
                 existing.mention_count = channel.mention_count.or(existing.mention_count);
                 existing.has_unreads = channel.has_unreads;
                 existing.last_read = channel.last_read.or_else(|| existing.last_read.take());
-                existing.updated = channel.updated.max(existing.updated);
+                // Counts carry the server version, not the metadata itself.
+                // Keep the cached version until genericInfo fetches that body.
             } else {
+                if !channel.is_im && !channel.is_mpim {
+                    channel.extra.insert("is_member".into(), true.into());
+                }
+                self.channel_lifecycle.overlay(&mut channel, since);
                 self.channels.insert(channel.id.clone(), channel);
             }
         }
@@ -794,10 +815,13 @@ pub use sidebar_layout::*;
 mod sidebar_prefs;
 pub use sidebar_prefs::*;
 mod channel_lifecycle;
+mod member_list_changes;
 pub use channel_lifecycle::ChannelLifecycle;
 mod channel_sync;
+mod thread_counts;
 mod unreads;
 pub use channel_sync::*;
+pub use thread_counts::ThreadCountsState;
 
 #[cfg(test)]
 mod tests;

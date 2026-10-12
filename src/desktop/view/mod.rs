@@ -11,6 +11,7 @@ mod huddle_stage;
 mod later;
 mod local_drafts;
 pub(crate) mod media_image;
+mod member_admin;
 mod message;
 mod new_channel;
 mod new_reminder;
@@ -22,6 +23,7 @@ mod secondary;
 pub(crate) mod settings;
 pub(crate) mod theme;
 mod thread_paging;
+mod threads;
 
 use dioxus::prelude::*;
 
@@ -321,6 +323,16 @@ pub fn shell() -> Element {
                             div { class: "chat-paused", "Posting is paused in this conversation" }
                         }
                         if show_composer {
+                            if crate::unread::held(&snapshot) {
+                                div {class:"unread-hold", role:"status",
+                                    span {"Marked unread"}
+                                    button {
+                                        disabled:crate::unread::busy(&snapshot,active_channel_id),
+                                        onclick:{let channel=active_channel_id.to_owned();move |_|crate::unread::change(state,channel.clone(),None)},
+                                        "Mark as read"
+                                    }
+                                }
+                            }
                             {composer(state, &snapshot.core.composer.text, channel_name)}
                         }
                         }
@@ -367,6 +379,7 @@ pub fn shell() -> Element {
                     header {
                         h2 { "Thread" }
                         span { class: "thread-channel", "{thread_channel_label}" }
+                        {crate::thread_subscription::control(state, &snapshot)}
                         button {
                             class: "thread-close",
                             onclick: move |_| {
@@ -399,12 +412,14 @@ pub fn shell() -> Element {
                         {crate::view::thread_paging::page_control(state, &snapshot, super_platinum_core::thread_history::Direction::Earlier)}
                         for message in snapshot.thread_messages.iter().filter(|m| snapshot.thread_history.contains(root, &m.ts)) {
                             div { key: "thread-{message.id}", "data-row-id":"{message.id}",
+                                if message.show_unread_divider { div {class:"unread-divider", span {"New"}} }
                                 {message_row(state, &snapshot, message, active_channel_id, None, RowSurface::Thread)}
                             }
                         }
                         {crate::view::thread_paging::page_control(state, &snapshot, super_platinum_core::thread_history::Direction::Newer)}
                         for message in snapshot.thread_messages.iter().filter(|m| !snapshot.thread_history.contains(root, &m.ts)) {
                             div { key: "thread-{message.id}", "data-row-id":"{message.id}",
+                                if message.show_unread_divider { div {class:"unread-divider", span {"New"}} }
                                 {message_row(state, &snapshot, message, active_channel_id, None, RowSurface::Thread)}
                             }
                         }
@@ -418,6 +433,12 @@ pub fn shell() -> Element {
                             }
                         } else if snapshot.thread_messages.is_empty() && snapshot.thread_loading {
                             p { "Loading replies…" }
+                        }
+                    }
+                    if crate::thread_unread::held(&snapshot) {
+                        div {class:"unread-hold", role:"status",
+                            span {"Marked unread"}
+                            button {disabled:crate::thread_unread::busy(&snapshot),onclick:move |_|crate::thread_unread::change(state,None),"Mark as read"}
                         }
                     }
                     {thread_composer(state, &snapshot)}

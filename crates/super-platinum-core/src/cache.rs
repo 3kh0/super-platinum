@@ -17,6 +17,8 @@ const SCHEMA_VERSION: i64 = 1;
 #[derive(serde::Deserialize)]
 struct CachedSidebar {
     #[serde(default)]
+    thread_counts: Option<crate::slack::models::ThreadCounts>,
+    #[serde(default)]
     notifications: crate::state::NotificationConfig,
     #[serde(default)]
     config: crate::state::SidebarConfig,
@@ -30,6 +32,7 @@ struct CachedSidebar {
 
 #[derive(serde::Serialize)]
 struct CachedSidebarRef<'a> {
+    thread_counts: Option<&'a crate::slack::models::ThreadCounts>,
     notifications: &'a crate::state::NotificationConfig,
     config: &'a crate::state::SidebarConfig,
     vip_users: &'a std::collections::HashSet<String>,
@@ -159,6 +162,7 @@ impl Cache {
             url,
             self_user_id,
             activity_unread_count: None,
+            thread_counts: Default::default(),
             channels: Default::default(),
             starred_order: Vec::new(),
             dm_order: Vec::new(),
@@ -187,6 +191,7 @@ impl Cache {
             .as_deref()
             .and_then(|json| serde_json::from_str::<CachedSidebar>(json).ok())
         {
+            ws.thread_counts = crate::state::ThreadCountsState::from_cache(sidebar.thread_counts);
             ws.sidebar = sidebar.config;
             ws.notifications = sidebar.notifications;
             ws.vip_users = sidebar.vip_users;
@@ -300,6 +305,7 @@ impl Cache {
                 serde_json::to_string(&ws.recent_channels)?,
                 serde_json::to_string(&ws.frecency)?,
                 serde_json::to_string(&CachedSidebarRef {
+                    thread_counts: ws.thread_counts.snapshot.as_ref(),
                     notifications: &ws.notifications,
                     config: &ws.sidebar,
                     vip_users: &ws.vip_users,
@@ -523,6 +529,40 @@ mod tests {
             url: "https://test.slack.com".into(),
             token: "xoxc-test".into(),
         }
+    }
+
+    #[test]
+    fn thread_totals_roundtrip_on_warm_boot_and_old_sidebars_remain_readable() {
+        use crate::slack::models::ThreadCounts;
+        let cache = Cache::open(":memory:").unwrap();
+        let session = session();
+        let mut workspace = Workspace::from_session(&session);
+        let counts = ThreadCounts {
+            has_unreads: true,
+            mention_count: 7,
+            vip_count: 15,
+            unread_count_by_channel: [("C1".into(), 2)].into(),
+            mention_count_by_channel: [("C1".into(), 7)].into(),
+        };
+        workspace.thread_counts.apply_live(counts.clone());
+        cache.save_workspace(&workspace).unwrap();
+        let loaded = cache.load_workspace_for_startup(&session).unwrap().unwrap();
+        assert_eq!(loaded.thread_counts.snapshot, Some(counts));
+        assert_eq!(loaded.thread_counts.revision(), 0);
+        let old: CachedSidebar = serde_json::from_str(r#"{"priority_section":true}"#).unwrap();
+        assert!(old.thread_counts.is_none());
+        assert!(old.priority_section);
+        workspace.thread_counts.apply_live(ThreadCounts::default());
+        cache.save_workspace(&workspace).unwrap();
+        assert_eq!(
+            cache
+                .load_workspace(&session)
+                .unwrap()
+                .unwrap()
+                .thread_counts
+                .snapshot,
+            Some(ThreadCounts::default())
+        );
     }
 
     #[test]

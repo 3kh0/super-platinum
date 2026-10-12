@@ -313,3 +313,5 @@
 .workspace-row:hover { background: var(--hover-overlay); color: var(--text); }
 .ws-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted-2); }
 .ws-dot.on { background: var(--success); }
+
+.nav-row .nav-status { margin-left: auto; }

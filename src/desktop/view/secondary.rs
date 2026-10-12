@@ -95,59 +95,7 @@ pub(crate) fn secondary_view(mut state: Signal<ShellState>, snapshot: &ShellStat
                 }
             }
         }
-        MainView::Threads => rsx! {
-            div { class: "secondary-list",
-                if snapshot.core.threads_view.loading { p { class: "secondary-empty", "Loading threads…" } }
-                for item in &snapshot.core.threads_view.items {
-                    {
-                        let author = workspace
-                            .map(|workspace| super_platinum_core::state::message_author_name(workspace, &item.root_msg))
-                            .unwrap_or_else(|| "Slack".into());
-                        let preview = workspace
-                            .map(|workspace| message_preview(snapshot, workspace, &item.root_msg))
-                            .unwrap_or_default();
-                        let time = item
-                            .root_msg
-                            .ts
-                            .as_deref()
-                            .map(super_platinum_core::state::format_relative_ts)
-                            .unwrap_or_default();
-                        let initials = author
-                            .chars()
-                            .next()
-                            .map(|c| c.to_uppercase().to_string())
-                            .unwrap_or_else(|| "S".into());
-                        let replies = item.replies().len();
-                        let avatar = workspace.and_then(|workspace| {
-                            let user = item.root_msg.user.as_deref()?;
-                            let url = workspace.avatar_url(user)?;
-                            let asset = snapshot.media.register_avatar(user, &url);
-                            snapshot
-                                .media
-                                .is_ready(&asset)
-                                .then(|| asset.uri_at(snapshot.media_epoch))
-                        });
-                        rsx! {
-                            button { class: "secondary-row thread-row", key: "thread-feed-{item.root_ts().cloned().unwrap_or_default()}",
-                                onclick: { let channel = item.channel().cloned(); let root = item.root_ts().cloned(); move |_| if let (Some(channel), Some(root)) = (channel.clone(), root.clone()) { spawn(crate::bootstrap::open_thread(state, channel, root)); } },
-                                span { class: "secondary-avatar",
-                                    if let Some(uri) = avatar.as_ref() {
-                                        img { src: "{uri}", alt: "{author}" }
-                                    } else {
-                                        "{initials}"
-                                    }
-                                }
-                                div { class: "secondary-copy",
-                                    strong { "{author}" }
-                                    p { "{preview}" }
-                                    span { "{replies} replies · {time}" }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
+        MainView::Threads => super::threads::thread_list(state, snapshot),
         MainView::Dms
         | MainView::Activity
         | MainView::Later
@@ -373,7 +321,7 @@ pub(crate) fn dm_preview(
     }
 }
 
-fn message_preview(
+pub(super) fn message_preview(
     snapshot: &ShellState,
     workspace: &super_platinum_core::state::Workspace,
     message: &super_platinum_core::slack::models::Message,

@@ -17,6 +17,85 @@ const COUNTED_SUBTYPES: &[&str] = &[
 ];
 
 impl Workspace {
+    pub fn read_cursor(&self, channel: &str) -> Option<&str> {
+        self.messages
+            .get(channel)
+            .and_then(|list| list.last_read.as_deref())
+            .or_else(|| {
+                self.channels
+                    .get(channel)
+                    .and_then(|row| row.last_read.as_deref())
+            })
+    }
+
+    /// Apply an HTTP acknowledgement only to the read state it started from.
+    /// Socket marks (including manual unread) outrank an older HTTP response.
+    /// Returns true only when no newer messages remain to be acknowledged.
+    pub fn confirm_read(&mut self, channel: &str, ts: &str, previous: Option<&str>) -> bool {
+        if self.read_cursor(channel) != previous || !cmp_ts(Some(ts), previous).is_gt() {
+            return false;
+        }
+        let newer = self.messages.get(channel).is_some_and(|list| {
+            list.latest
+                .as_deref()
+                .into_iter()
+                .chain(
+                    list.messages
+                        .last()
+                        .and_then(|message| message.ts.as_deref()),
+                )
+                .any(|latest| cmp_ts(Some(latest), Some(ts)).is_gt())
+        });
+        if let Some(list) = self.messages.get_mut(channel) {
+            list.last_read = Some(ts.to_owned());
+            if !newer {
+                list.unread_count = 0;
+                list.mention_count = 0;
+                list.vip_count = 0;
+            }
+        }
+        if let Some(row) = self.channels.get_mut(channel) {
+            row.last_read = Some(ts.to_owned());
+            if !newer {
+                row.has_unreads = false;
+                row.unread_count = Some(0);
+                row.unread_count_display = Some(0);
+                row.mention_count = Some(0);
+            }
+        }
+        !newer
+    }
+
+    /// Fallback after an explicit unread acknowledgement, before Slack supplies
+    /// exact counts. Cached history can have gaps, so preserve known counts when
+    /// moving backward and keep at least one unread for the selected message.
+    pub fn mark_unread_locally(&mut self, channel: &str, cursor: &str) {
+        let backward = !cmp_ts(Some(cursor), self.read_cursor(channel)).is_gt();
+        let list = self.messages.entry(channel.to_owned()).or_default();
+        let cached = list
+            .messages
+            .iter()
+            .filter(|message| {
+                cmp_ts(message.ts.as_deref(), Some(cursor)).is_gt()
+                    && message
+                        .subtype
+                        .as_deref()
+                        .is_none_or(|kind| COUNTED_SUBTYPES.contains(&kind))
+            })
+            .count()
+            .min(u32::MAX as usize) as u32;
+        list.unread_count = cached
+            .max(1)
+            .max(if backward { list.unread_count } else { 0 });
+        list.last_read = Some(cursor.into());
+        if let Some(row) = self.channels.get_mut(channel) {
+            row.last_read = Some(cursor.into());
+            row.has_unreads = true;
+            row.unread_count = Some(list.unread_count);
+            row.unread_count_display = Some(list.unread_count);
+        }
+    }
+
     /// Count a newly delivered message the way `client.counts` would: unread
     /// for everyone else's message, a mention for every DM message or a ping
     /// of you, and a VIP mention when a VIP pinged you in a channel.
@@ -185,5 +264,71 @@ mod tests {
         join.subtype = Some("channel_join".into());
         ws.count_incoming_message("C1", &join, false, false);
         assert_eq!(ws.messages.get("C1").map_or(0, |cm| cm.unread_count), 0);
+    }
+
+    #[test]
+    fn read_ack_preserves_messages_that_arrived_during_the_request() {
+        let mut ws = workspace();
+        ws.count_incoming_message("C1", &message("200.0", "U_A", "hi"), false, false);
+        let before = ws.read_cursor("C1").map(str::to_owned);
+        ws.count_incoming_message(
+            "C1",
+            &message("201.0", "U_VIP", "<@U_SELF> later"),
+            false,
+            false,
+        );
+        assert!(!ws.confirm_read("C1", "200.0", before.as_deref()));
+        assert_eq!(ws.read_cursor("C1"), Some("200.0"));
+        assert!(ws.channels["C1"].has_unreads);
+        assert_eq!(ws.messages["C1"].mention_count, 1);
+        assert_eq!(ws.messages["C1"].vip_count, 1);
+        assert!(ws.confirm_read("C1", "201.0", Some("200.0")));
+        assert_eq!(ws.messages["C1"].unread_count, 0);
+        assert!(!ws.channels["C1"].has_unreads);
+    }
+
+    #[test]
+    fn read_ack_does_not_overwrite_a_later_server_mark_or_manual_unread() {
+        for current in ["300.0", "50.0"] {
+            let mut ws = workspace();
+            ws.channels.get_mut("C1").unwrap().last_read = Some(current.into());
+            assert!(!ws.confirm_read("C1", "200.0", Some("100.000000")));
+            assert_eq!(ws.read_cursor("C1"), Some(current));
+        }
+    }
+    #[test]
+    fn explicit_unread_includes_own_messages_and_preserves_known_badges() {
+        let mut ws = workspace();
+        let list = ws.messages.entry("C1".into()).or_default();
+        list.messages = vec![
+            message("200.0", "U_SELF", "mine"),
+            message("201.0", "U_A", "later"),
+        ];
+        list.unread_count = 5; // Cached history is incomplete.
+        list.mention_count = 2;
+        list.vip_count = 1;
+        ws.mark_unread_locally("C1", "50.0");
+        assert_eq!(ws.read_cursor("C1"), Some("50.0"));
+        assert_eq!(
+            (
+                ws.messages["C1"].unread_count,
+                ws.messages["C1"].mention_count,
+                ws.messages["C1"].vip_count
+            ),
+            (5, 2, 1)
+        );
+        assert!(ws.channels["C1"].has_unreads);
+        ws.mark_unread_locally("C1", "200.0");
+        assert_eq!(ws.messages["C1"].unread_count, 1);
+    }
+
+    #[test]
+    fn explicit_unread_survives_a_system_message_or_empty_cache() {
+        let mut ws = workspace();
+        ws.mark_unread_locally("C1", "0.000000");
+        assert_eq!(ws.messages["C1"].unread_count, 1);
+        assert_eq!(ws.channels["C1"].last_read.as_deref(), Some("0.000000"));
+        assert!(ws.confirm_read("C1", "200.0", Some("0.000000")));
+        assert!(!ws.channels["C1"].has_unreads);
     }
 }

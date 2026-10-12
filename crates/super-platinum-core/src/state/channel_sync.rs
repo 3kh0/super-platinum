@@ -18,7 +18,11 @@ impl Workspace {
     /// `client.counts` lists every conversation you are in. A channel missing
     /// from it is one you left; a DM missing from it is closed.
     pub(crate) fn apply_counts_membership(&mut self, counts: &CountsPage, since: u64) {
-        if counts.channels.is_empty() {
+        if counts.channels.is_empty()
+            && counts.groups.is_empty()
+            && counts.mpims.is_empty()
+            && counts.ims.is_empty()
+        {
             return;
         }
         let present: HashSet<&str> = counts
@@ -29,7 +33,14 @@ impl Workspace {
             .chain(&counts.ims)
             .map(|c| c.id.as_str())
             .collect();
+        let mut memberships = Vec::new();
         for channel in self.channels.values_mut() {
+            if self
+                .channel_lifecycle
+                .membership_changed_since(&channel.id, since)
+            {
+                continue;
+            }
             let here = present.contains(channel.id.as_str());
             if !here {
                 // Its unread state is whatever it was when we last saw it.
@@ -47,17 +58,14 @@ impl Workspace {
                 if !here {
                     channel.extra.insert("is_open".into(), false.into());
                 }
-            } else {
-                if !self
-                    .channel_lifecycle
-                    .membership_changed_since(&channel.id, since)
-                {
-                    let before = channel.extra.insert("is_member".into(), here.into());
-                    if before.as_ref().and_then(|v| v.as_bool()) != Some(here) {
-                        self.channel_lifecycle.touch(&channel.id);
-                    }
-                }
+            } else if channel.extra.get("is_member").and_then(|v| v.as_bool()) != Some(here) {
+                memberships.push((channel.id.clone(), here));
             }
+        }
+        for (id, here) in memberships {
+            // Record the authoritative read in the same ledger as mutations,
+            // so an older info request cannot undo this membership result.
+            self.confirm_channel_membership(&id, here, since);
         }
     }
 
@@ -68,7 +76,7 @@ impl Workspace {
         let ids: Vec<(ChannelId, u64)> = self
             .channels
             .values()
-            .filter(|c| !c.is_im && !c.is_archived)
+            .filter(|c| !c.is_im)
             .filter(|c| {
                 c.extra
                     .get("is_member")
@@ -197,5 +205,120 @@ mod tests {
         let c = channel(json!({"id":"C_STUB","updated":1790727499}));
         ws.channels.insert(c.id.clone(), c);
         assert_eq!(ws.channels_to_refresh()[0]["C_STUB"], 0);
+    }
+
+    #[test]
+    fn reconnect_counts_preserve_cached_versions_and_discover_missing_channels() {
+        let mut ws = workspace();
+        for value in [
+            json!({"id":"C_RENAME","name":"old-name","updated":10,"is_member":true}),
+            json!({"id":"C_ARCHIVED","name":"was-archived","updated":11,"is_member":true,"is_archived":true}),
+            json!({"id":"C_LEFT","name":"left-while-offline","is_member":true}),
+        ] {
+            let c = channel(value);
+            ws.channels.insert(c.id.clone(), c);
+        }
+        ws.apply_counts(
+            serde_json::from_value(json!({"channels":[
+                {"id":"C_RENAME","updated":20}, {"id":"C_ARCHIVED","updated":21},
+                {"id":"C_NEW","updated":22}
+            ]}))
+            .unwrap(),
+        );
+        let batches = ws.channels_to_refresh();
+        assert_eq!(
+            batches[0]["C_RENAME"], 10,
+            "counts must not claim we have the new metadata"
+        );
+        assert_eq!(
+            batches[0]["C_ARCHIVED"], 11,
+            "a remotely unarchived channel must be refreshed"
+        );
+        assert_eq!(batches[0]["C_NEW"], 0);
+        assert!(!batches[0].contains_key("C_LEFT"));
+        assert_eq!(ws.channels["C_NEW"].extra["is_member"], true);
+        ws.apply_channel_refresh(
+            serde_json::from_value(json!({"channels":[
+                {"id":"C_RENAME","name":"new-name","updated":20},
+                {"id":"C_ARCHIVED","name":"was-archived","updated":21,"is_archived":false},
+                {"id":"C_NEW","name":"created-while-offline","updated":22,"is_private":true}
+            ]}))
+            .unwrap(),
+        );
+        assert_eq!(ws.channels["C_RENAME"].name.as_deref(), Some("new-name"));
+        assert!(!ws.channels["C_ARCHIVED"].is_archived);
+        assert!(ws.channels["C_NEW"].is_private);
+        assert_eq!(ws.channels["C_NEW"].extra["is_member"], true);
+        assert_eq!(ws.channels_to_refresh()[0]["C_RENAME"], 20);
+    }
+
+    #[test]
+    fn private_only_counts_reconcile_and_protect_older_detail_requests() {
+        let mut ws = workspace();
+        ws.channels.insert(
+            "C_LEFT".into(),
+            channel(json!({"id":"C_LEFT","is_member":true})),
+        );
+        let read_started = ws.channel_lifecycle.revision();
+        ws.apply_counts(
+            serde_json::from_value(json!({"groups":[{"id":"C_PRIVATE","is_group":true}]})).unwrap(),
+        );
+        ws.merge_channel_details(
+            channel(json!({"id":"C_LEFT","is_member":true})),
+            read_started,
+        );
+        assert_eq!(ws.channels["C_LEFT"].extra["is_member"], false);
+        assert_eq!(ws.channels["C_PRIVATE"].extra["is_member"], true);
+    }
+
+    #[test]
+    fn delayed_counts_cannot_resurrect_newly_left_channel_or_clear_new_join() {
+        let mut ws = workspace();
+        ws.channels.insert(
+            "C_JOIN".into(),
+            channel(json!({"id":"C_JOIN","is_member":false,"has_unreads":true,"unread_count":3})),
+        );
+        let started = ws.channel_lifecycle.revision();
+        for (kind, id, stamp) in [
+            ("channel_left", "C_NEW", "20.1"),
+            ("channel_joined", "C_JOIN", "20.2"),
+        ] {
+            let channel = if kind == "channel_joined" {
+                json!({"id":id})
+            } else {
+                json!(id)
+            };
+            ws.apply_channel_event(
+                &crate::slack::realtime::parse_event(
+                    &json!({"type":kind,"channel":channel,"event_ts":stamp}).to_string(),
+                )
+                .unwrap(),
+            );
+        }
+        ws.apply_counts_since(
+            serde_json::from_value(json!({"channels":[{"id":"C_NEW"}]})).unwrap(),
+            started,
+        );
+        assert_eq!(ws.channels["C_NEW"].extra["is_member"], false);
+        assert_eq!(ws.channels["C_JOIN"].extra["is_member"], true);
+        assert!(ws.channels["C_JOIN"].has_unreads);
+        assert_eq!(ws.channels["C_JOIN"].unread_count, Some(3));
+    }
+
+    #[test]
+    fn inventory_refresh_batches_stay_bounded() {
+        let mut ws = workspace();
+        for index in 0..501 {
+            let id = format!("C{index}");
+            ws.channels
+                .insert(id.clone(), channel(json!({"id":id,"is_member":true})));
+        }
+        assert_eq!(
+            ws.channels_to_refresh()
+                .iter()
+                .map(BTreeMap::len)
+                .collect::<Vec<_>>(),
+            [250, 250, 1]
+        );
     }
 }

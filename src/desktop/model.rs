@@ -434,6 +434,7 @@ pub struct MessageVm {
     pub pinned_to: Vec<String>,
     pub is_own: bool,
     pub is_app: bool,
+    pub is_system: bool,
     pub pending: bool,
     pub compact: bool,
     pub date_label: Option<String>,

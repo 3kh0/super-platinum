@@ -153,6 +153,7 @@ impl ShellState {
             Some((
                 _,
                 super_platinum_core::domain::PendingScrollTarget::Message(_)
+                    | super_platinum_core::domain::PendingScrollTarget::Latest
             ))
         ) {
             self.reset_timeline_window();
@@ -319,6 +320,9 @@ impl ShellState {
         self.channel_tab = ChannelTab::Messages;
         self.channel_generation = self.channel_generation.wrapping_add(1);
         self.loading_older = false;
+        self.core
+            .threads_view
+            .ensure_scope(self.core.account_epoch, &team);
         self.core.active_team = Some(team);
         self.core.active_channel = workspace
             .last_active_channel
@@ -495,6 +499,33 @@ mod tests {
         shell.reset_timeline_window();
         assert!(shell.timeline_start <= 30 && shell.timeline_end > 30);
         assert!(shell.timeline_end - shell.timeline_start <= 100);
+    }
+
+    #[test]
+    fn opening_latest_keeps_its_row_mounted_until_navigation_finishes() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        let template = shell.messages[0].clone();
+        shell.messages = (0..240)
+            .map(|n| {
+                let mut row = template.clone();
+                row.id = format!("{n}.0");
+                row.ts = row.id.clone();
+                row
+            })
+            .collect();
+        shell.core.pending_scroll_to = Some((
+            "C2".into(),
+            super_platinum_core::domain::PendingScrollTarget::Latest,
+        ));
+        shell.reset_timeline_window();
+        // The short conversation we just left reports its old top before the
+        // long conversation has painted. It must not evict the latest target.
+        shell.set_timeline_window(0, 0, [], false);
+        assert_eq!((shell.timeline_start, shell.timeline_end), (140, 240));
+        assert!(shell.core.pending_scroll_to.is_some());
+        shell.core.pending_scroll_to = None;
+        shell.set_timeline_window(0, 0, [], false);
+        assert_eq!((shell.timeline_start, shell.timeline_end), (0, 13));
     }
 
     #[test]

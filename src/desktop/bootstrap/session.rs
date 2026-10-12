@@ -77,10 +77,17 @@ pub async fn refresh(mut state: Signal<ShellState>) {
             .get(&team)
             .map(|w| w.channel_lifecycle.revision())
             .unwrap_or_default();
+        let thread_revision = state
+            .peek()
+            .core
+            .workspaces
+            .get(&team)
+            .map(|w| w.thread_counts.revision())
+            .unwrap_or_default();
         if let Ok(counts) = api::fetch_counts(&transport, &client, &workspace_session).await
             && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
         {
-            workspace.apply_counts_since(counts, membership_revision);
+            workspace.apply_counts_snapshot(counts, membership_revision, thread_revision);
         }
         refresh_channel_metadata(&mut state, &transport, &client, &workspace_session, &team).await;
         if let Ok(dnd) = api::fetch_dnd_info(&transport, &client, &workspace_session).await

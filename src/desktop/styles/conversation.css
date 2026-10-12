@@ -244,6 +244,9 @@
   overflow-wrap: anywhere;
   font-size: 14px;
 }
+.message-body.message-system { color: var(--muted); }
+.unread-hold { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 16px 8px; padding: 4px 8px; background: var(--surface-raised); border-radius: var(--radius-md); color: var(--muted); font-size: var(--text-sm); }
+.unread-hold button { min-height: 28px; padding: 4px 8px; border-radius: var(--radius-sm); color: var(--text); background: var(--hover-overlay); cursor: pointer; }
 .message-content p { margin: 0 0 4px; }
 .message-content p:last-child { margin-bottom: 0; }
 .bold { font-weight: 700; }

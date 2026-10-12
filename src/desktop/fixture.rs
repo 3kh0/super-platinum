@@ -6,6 +6,31 @@ pub(crate) fn is_fixture() -> bool {
     *FIXTURE.get_or_init(|| std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some())
 }
 
+pub(crate) fn system_messages(state: &mut crate::state::ShellState) {
+    let workspace = &state.core.workspaces["T1"];
+    state.messages = [
+        (None, "The design review is ready. Regular conversation stays easy to read."),
+        (Some("channel_topic"), "set the channel topic: Design review"),
+        (Some("channel_name"), "renamed the channel from “desktop-review” to “ship”"),
+        (Some("group_purpose"), "cleared the channel description"),
+        (Some("channel_archive"), "archived #ship. The messages and files in this channel are still browsable and available in search. You can unarchive this channel anytime from Channel Details."),
+        (Some("group_unarchive"), "unarchived #ship"),
+        (Some("channel_join"), "joined the channel"),
+        (Some("bot_message"), "Build completed. App messages keep the regular text color."),
+    ].into_iter().enumerate().map(|(index, (subtype, text))| {
+        let message = serde_json::from_value(serde_json::json!({
+            "ts": format!("1719800{:03}.000000", index * 60),
+            "user": "U1", "subtype": subtype, "text": text,
+        })).expect("system activity fixture");
+        crate::message_vm::message_vm(workspace, &message, &state.media)
+    }).collect();
+    state
+        .messages_by_channel
+        .insert("C2".into(), state.messages.clone());
+    state.timeline_start = 0;
+    state.timeline_end = state.messages.len();
+}
+
 pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
     let mut core =
         super_platinum_core::CoreAppState::new(super_platinum_core::config::Settings::default());

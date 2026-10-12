@@ -9,6 +9,9 @@ use super_platinum_core::slack::{
     models::Channel,
 };
 
+mod member_list;
+use member_list::load_members;
+
 #[derive(Default)]
 struct Details {
     info: Option<Channel>,
@@ -18,6 +21,8 @@ struct Details {
     members: ConversationMembers,
     members_loaded: bool,
     members_loading: bool,
+    members_revision: Option<(u64, u64)>,
+    members_snapshot_revision: Option<(u64, u64)>,
 }
 
 #[component]
@@ -29,7 +34,17 @@ pub(super) fn ChannelDetailsButton(
     let mut opened = use_signal(|| {
         matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
-            Ok("channel-details" | "channel-leave" | "channel-leave-last" | "channel-join")
+            Ok("channel-details"
+                | "channel-leave"
+                | "channel-leave-last"
+                | "channel-join"
+                | "member-add"
+                | "member-live-refresh"
+                | "member-add-error"
+                | "member-remove"
+                | "member-add-narrow"
+                | "member-remove-narrow"
+                | "channel-members")
         )
     });
     rsx! {
@@ -91,12 +106,37 @@ fn DetailsDialog(
             details.write().info = Some(info);
         }
     });
-    let mut members = use_signal(|| false);
+    let mut members = use_signal(|| {
+        std::env::var("SUPER_PLATINUM_FIXTURE")
+            .is_ok_and(|name| name.starts_with("member-") || name == "channel-members")
+    });
     let mut query = use_signal(String::new);
+    let mut adding = use_signal(|| false);
     let mut shown = use_signal(|| 100usize);
     let mut editing = use_signal(|| None::<(ChannelTextField, String)>);
     let mut text = use_signal(String::new);
     let mut saving = use_signal(|| false);
+    // Refresh only the open member pane, coalescing socket bursts in the loader.
+    // Keeping AddMembers mounted preserves the query and selected people.
+    let refresh_channel = channel.clone();
+    let refresh_scope = scope.clone();
+    use_effect(move || {
+        let shell = state.read();
+        if (shell.core.account_epoch, shell.core.active_team.clone()) != refresh_scope {
+            return;
+        }
+        let revision = member_list::revision(&shell, &refresh_channel);
+        let data = details.read();
+        if members()
+            && !saving()
+            && !data.members_loading
+            && data
+                .members_revision
+                .is_some_and(|previous| Some(previous) != revision)
+        {
+            spawn(load_members(state, details, refresh_channel.clone(), true));
+        }
+    });
     let focus_request = use_signal(|| (0u64, false));
     use_effect(move || {
         let (revision, editor) = focus_request();
@@ -116,6 +156,7 @@ fn DetailsDialog(
     });
     let mut archive_confirmation = use_signal(|| None::<bool>);
     let mount_channel = channel.clone();
+    let mount_members_channel = channel.clone();
     let members_channel = channel.clone();
     let more_channel = channel.clone();
     let retry_channel = channel.clone();
@@ -170,11 +211,13 @@ fn DetailsDialog(
             onkeydown:move |e|if e.key()==Key::Escape{e.stop_propagation();if !saving(){onclose.call(())}},
             onmounted:move |_|{
                 focus_dialog("channel-details-dialog");
-                spawn(load_info(state,details,mount_channel.clone()));},
+                spawn(load_info(state,details,mount_channel.clone()));
+                if members(){spawn(load_members(state,details,mount_members_channel.clone(),false));}
+            },
             header{h2{id:"channel-details-title","{heading}"}button{"aria-label":"Close channel details",disabled:saving(),onclick:move |_|onclose.call(()),{icon(Icon::Close,"icon")}}}
             div{class:"later-tabs",role:"tablist","aria-label":"Channel details tabs",
                 button{role:"tab",class:if !members(){"active"}else{""},"aria-selected":!members(),disabled:saving(),onclick:move |_|{members.set(false);},"About"}
-                button{role:"tab",class:if members(){"active"}else{""},"aria-selected":members(),disabled:saving(),onclick:move |_|{members.set(true);if !details.peek().members_loaded{spawn(load_members(state,details,members_channel.clone()));}},"Members"}
+                button{role:"tab",class:if members(){"active"}else{""},"aria-selected":members(),disabled:saving(),onclick:move |_|{members.set(true);if !details.peek().members_loaded{spawn(load_members(state,details,members_channel.clone(),false));}},"Members"}
             }
             if data.error.is_empty() && editing.read().as_ref().is_some_and(|(field,expected)|data.info.as_ref().is_some_and(|info|field.value(info)!=*expected)) {
                 p{role:"status",class:"scheduled-hint","This field changed in Slack. Your unsaved edit is preserved; cancel to review the new value."}
@@ -245,21 +288,38 @@ fn DetailsDialog(
 
                 }
             }else{
-                input{class:"list-find",r#type:"search",placeholder:"Search loaded members","aria-label":"Search loaded members",value:"{query}",oninput:move |e|{query.set(e.value());shown.set(100);}}
+                super::member_admin::AddMembers {
+                    state,channel:channel.clone(),private:data.info.as_ref().is_some_and(|info|info.is_private||info.is_group),
+                    members:data.members.ids.clone(),disabled:saving()||data.members_loading||!data.loaded||!data.info.as_ref().is_some_and(api::channel_members_manageable),
+                    onopen:move |value|adding.set(value),
+                    onbusy:move |value|saving.set(value),onchanged:move |(id,present): (String,bool)|details.write().members.confirm_member(&id,present),
+                }
+                if !adding(){
+                input{class:"list-find",r#type:"search",placeholder:"Search loaded members","aria-label":"Search loaded members",value:"{query}",disabled:saving(),oninput:move |e|{query.set(e.value());shown.set(100);}}
                 p{class:"scheduled-hint","{data.members.ids.len()} members loaded"}
                 div{class:"channel-members",for (id,name) in names.iter().take(shown()){
                     {let user=id.clone();
                     let initials=name.chars().next().map(|c|c.to_uppercase().to_string()).unwrap_or_default();
                     let avatar=workspace.and_then(|w|w.avatar_url(id)).and_then(|url|{let asset=shell.media.register_avatar(id,&url);shell.media.is_ready(&asset).then(||asset.uri_at(shell.media_epoch))});
-                    rsx!{button{class:"channel-member",key:"{id}",onclick:move |_|{onclose.call(());dioxus::core::spawn_forever(crate::bootstrap::open_profile(state,user.clone()));},
+                    rsx!{div{class:"channel-member-row",key:"{id}",button{class:"channel-member",disabled:saving(),onclick:move |_|{onclose.call(());dioxus::core::spawn_forever(crate::bootstrap::open_profile(state,user.clone()));},
                         span{class:"channel-member-avatar","aria-hidden":"true",if let Some(uri)=avatar{img{src:"{uri}",alt:""}}else{"{initials}"}}
                         span{"{name}"}
+                    }
+                    if workspace.is_some_and(|w|w.self_user_id!=*id){
+                        super::member_admin::RemoveMember {
+                            state,channel:channel.clone(),user:id.clone(),name:name.clone(),private:data.info.as_ref().is_some_and(|info|info.is_private||info.is_group),
+                            disabled:saving()||data.members_loading||!data.loaded||!data.info.as_ref().is_some_and(|info|api::channel_members_manageable(info)&&info.extra.get("is_general").and_then(|v|v.as_bool())!=Some(true)),
+                            onbusy:move |value|saving.set(value),onchanged:move |(id,present): (String,bool)|details.write().members.confirm_member(&id,present),
+                        }
+                    }
                     }}}
                 }}
-                if names.len()>shown(){button{onclick:move |_|shown.set(shown()+100),"Show more loaded members"}}
+                if names.len()>shown(){button{disabled:saving(),onclick:move |_|shown.set(shown()+100),"Show more loaded members"}}
                 if data.members_loading{p{role:"status","Loading members…"}}
-                if !data.members_loading&&(!data.members_loaded||data.members.cursor.is_some()){button{onclick:move |_|{spawn(load_members(state,details,more_channel.clone()));},if data.members_loaded{"Load more members"}else{"Load members"}}}
+                if !data.members_loading&&(!data.members_loaded||data.members.cursor.is_some()){button{disabled:saving(),onclick:move |_|{spawn(load_members(state,details,more_channel.clone(),false));},if data.members_loaded{"Load more members"}else{"Load members"}}}
+                if data.members_loaded&&!data.members_loading {button{disabled:saving(),onclick:{let channel=channel.clone();move |_|{spawn(load_members(state,details,channel.clone(),true));}},"Reload members"}}
                 if data.members_loaded&&names.is_empty(){p{class:"scheduled-hint","No matching loaded members."}}
+                }
             }
         }
     }
@@ -325,79 +385,6 @@ async fn load_info(state: Signal<ShellState>, mut details: Signal<Details>, chan
             data.info = Some(info);
             data.loaded = true;
             data.error.clear();
-        }
-        Err(error) => details.write().error = failure(&error),
-    }
-}
-async fn load_members(
-    mut state: Signal<ShellState>,
-    mut details: Signal<Details>,
-    channel: String,
-) {
-    let Some(ctx) = Context::get(&state) else {
-        return;
-    };
-    if details.peek().members_loading {
-        return;
-    }
-    let cursor = details.peek().members.cursor.clone();
-    details.write().members_loading = true;
-    details.write().error.clear();
-    let result = api::fetch_conversation_members(
-        &ctx.transport,
-        &ctx.client,
-        &ctx.session,
-        &channel,
-        cursor.as_deref(),
-    )
-    .await;
-    if !ctx.current(&state.peek()) {
-        return;
-    }
-    if let Ok(page) = &result {
-        if let Some(workspace) = state.write().core.workspaces.get_mut(&ctx.session.team_id) {
-            for user in &page.users {
-                workspace.users.insert(user.id.clone(), user.clone());
-            }
-        }
-        let missing = page
-            .members
-            .iter()
-            .filter(|id| {
-                state
-                    .peek()
-                    .core
-                    .workspaces
-                    .get(&ctx.session.team_id)
-                    .is_none_or(|w| !w.users.contains_key(*id))
-            })
-            .cloned()
-            .collect::<Vec<_>>();
-        if !missing.is_empty() {
-            if let Ok(users) =
-                api::fetch_users_info(&ctx.transport, &ctx.client, &ctx.session, missing).await
-            {
-                if !ctx.current(&state.peek()) {
-                    return;
-                }
-                if let Some(workspace) = state.write().core.workspaces.get_mut(&ctx.session.team_id)
-                {
-                    for user in users {
-                        workspace.users.insert(user.id.clone(), user);
-                    }
-                }
-            }
-        }
-    }
-    details.write().members_loading = false;
-    match result {
-        Ok(page) => {
-            let mut data = details.write();
-            data.members_loaded = true;
-            if !data.members.apply(page) {
-                data.error =
-                    "Slack repeated a member page. Reopen channel details to reload.".into();
-            }
         }
         Err(error) => details.write().error = failure(&error),
     }

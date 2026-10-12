@@ -18,7 +18,9 @@ use super::transport::Transport;
 mod channel_admin;
 pub use channel_admin::*;
 mod channel_details;
+mod channel_members_admin;
 mod channel_membership;
+pub use channel_members_admin::*;
 pub use channel_membership::*;
 mod execute;
 mod files;
@@ -27,6 +29,7 @@ mod pins;
 mod request;
 mod saved;
 mod scheduled;
+mod thread_subscriptions;
 
 use request::decode;
 
@@ -38,6 +41,7 @@ pub use pins::*;
 pub use request::*;
 pub use saved::*;
 pub use scheduled::*;
+pub use thread_subscriptions::*;
 
 #[cfg(test)]
 mod tests;

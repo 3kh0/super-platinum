@@ -90,6 +90,17 @@ pub fn subscriptions_thread_mark(
     root_ts: MessageTs,
     ts: MessageTs,
 ) -> PreparedRequest {
+    subscriptions_thread_mark_state(client, workspace, channel, root_ts, ts, true)
+}
+
+pub fn subscriptions_thread_mark_state(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    channel: ChannelId,
+    root_ts: MessageTs,
+    ts: MessageTs,
+    read: bool,
+) -> PreparedRequest {
     client.rest_form(
         workspace,
         "subscriptions.thread.mark",
@@ -97,7 +108,7 @@ pub fn subscriptions_thread_mark(
             ("channel", channel),
             ("thread_ts", root_ts),
             ("ts", ts),
-            ("read", "1".to_owned()),
+            ("read", if read { "1" } else { "0" }.to_owned()),
         ],
     )
 }
@@ -106,7 +117,7 @@ pub fn subscriptions_thread_get_view(
     client: &SlackClient,
     workspace: &WorkspaceSession,
     limit: u32,
-    max_ts: Option<MessageTs>,
+    current_ts: Option<MessageTs>,
     vip_only: bool,
 ) -> PreparedRequest {
     let mut fields = vec![
@@ -117,7 +128,7 @@ pub fn subscriptions_thread_get_view(
             if vip_only { "priority" } else { "all" }.to_owned(),
         ),
     ];
-    push_opt(&mut fields, "max_ts", max_ts);
+    push_opt(&mut fields, "current_ts", current_ts);
     client.rest_form(workspace, "subscriptions.thread.getView", fields)
 }
 

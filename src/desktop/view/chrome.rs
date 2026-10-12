@@ -142,6 +142,21 @@ pub(crate) fn channel_sidebar(
     shortcut: &str,
 ) -> Element {
     let has_unreads = snapshot.channels.iter().any(|channel| channel.unread);
+    let threads = snapshot
+        .core
+        .active_team
+        .as_ref()
+        .and_then(|team| snapshot.core.workspaces.get(team))
+        .and_then(|w| w.thread_counts.snapshot.as_ref());
+    let thread_unread = threads.is_some_and(|counts| counts.has_unreads);
+    let thread_mentions = threads.map_or(0, |counts| counts.mention_count);
+    let thread_label = if thread_mentions > 0 {
+        format!("Threads, {thread_mentions} unread mentions")
+    } else if thread_unread {
+        "Threads, unread activity".into()
+    } else {
+        "Threads".into()
+    };
     rsx! {
         aside { class: "sidebar",
             super::new_channel::WorkspaceHeading {state,workspace_name:workspace_name.to_owned(),key:"new-channel-{snapshot.core.account_epoch}-{snapshot.core.active_team:?}"}
@@ -167,10 +182,20 @@ pub(crate) fn channel_sidebar(
                     span { "Unreads" }
                 }
                 button {
-                    class: if snapshot.main_view == MainView::Threads { "nav-row active" } else { "nav-row" },
+                    class: match (snapshot.main_view == MainView::Threads,thread_unread) {
+                        (true,true)=>"nav-row active unread",(true,false)=>"nav-row active",(false,true)=>"nav-row unread",(false,false)=>"nav-row"
+                    },
+                    "aria-label":"{thread_label}", title:"{thread_label}",
                     onclick: move |_| { spawn(crate::bootstrap::load_main_view(state, MainView::Threads)); },
                     {crate::icons::icon(crate::icons::Icon::Reply, "icon sm")}
                     span { "Threads" }
+                    if thread_mentions > 0 {
+                        span { class:"ping-badge nav-status", "aria-hidden":"true",
+                            if thread_mentions > 99 {"99+"} else {"{thread_mentions}"}
+                        }
+                    } else if thread_unread {
+                        i {class:"unread-dot nav-status", "aria-hidden":"true"}
+                    }
                 }
                 button {
                     class: if snapshot.main_view == MainView::Scheduled { "nav-row active" } else { "nav-row" },

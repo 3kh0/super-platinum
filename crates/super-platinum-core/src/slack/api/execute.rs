@@ -108,9 +108,21 @@ pub async fn mark_thread(
     root_ts: MessageTs,
     ts: MessageTs,
 ) -> Result<(), Error> {
+    set_thread_read(transport, client, workspace, channel, root_ts, ts, true).await
+}
+
+pub async fn set_thread_read(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    channel: ChannelId,
+    root_ts: MessageTs,
+    ts: MessageTs,
+    read: bool,
+) -> Result<(), Error> {
     transport
-        .execute(subscriptions_thread_mark(
-            client, workspace, channel, root_ts, ts,
+        .execute(subscriptions_thread_mark_state(
+            client, workspace, channel, root_ts, ts, read,
         ))
         .await?;
     Ok(())
@@ -121,12 +133,12 @@ pub async fn fetch_threads_view(
     client: &SlackClient,
     workspace: &WorkspaceSession,
     limit: u32,
-    max_ts: Option<MessageTs>,
+    current_ts: Option<MessageTs>,
     vip_only: bool,
 ) -> Result<ThreadsViewPage, Error> {
     let value = transport
         .execute(subscriptions_thread_get_view(
-            client, workspace, limit, max_ts, vip_only,
+            client, workspace, limit, current_ts, vip_only,
         ))
         .await?;
     decode(value, "subscriptions.thread.getView")

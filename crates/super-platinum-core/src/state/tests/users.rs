@@ -191,6 +191,7 @@ fn boot_self_user_provides_self_avatar_url() {
         url: "https://t".into(),
         self_user_id: "U_SESSION".into(),
         activity_unread_count: None,
+        thread_counts: Default::default(),
         channels: BTreeMap::new(),
         starred_order: Vec::new(),
         dm_order: Vec::new(),

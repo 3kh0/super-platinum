@@ -43,3 +43,21 @@
 .channel-membership > button { min-height:32px; padding:6px 12px; border-radius:8px; background:var(--surface-raised); color:var(--text); }
 .channel-membership button:disabled { opacity:.5; cursor:default; }
 .composer-unavailable > p { margin:0 0 8px; }
+
+.member-admin { display:flex; flex-direction:column; gap:8px; }
+.member-admin h3 { margin:0; font-size:var(--text-md); font-weight:600; }
+.member-admin > label { font-size:var(--text-sm); }
+.member-admin-button { align-self:flex-start; min-height:32px; padding:6px 10px; background:var(--surface-raised); border-radius:8px; }
+.member-selection { display:flex; flex-wrap:wrap; gap:6px; }
+.member-selection button { display:flex; align-items:center; gap:6px; min-height:32px; padding:4px 8px; background:var(--surface-raised); border-radius:5px; }
+.member-search-results { max-height:240px; overflow-y:auto; }
+.member-search-result { display:flex; flex-direction:column; width:100%; gap:2px; padding:8px; border-radius:5px; text-align:left; }
+.member-search-result:hover, .member-admin-button:hover { background:var(--hover-overlay); }
+.member-search-result small { font-size:var(--text-xs); color:var(--muted); }
+.channel-member-row { display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
+.channel-member-row > .channel-member { flex:1; min-width:0; }
+.channel-member > span:last-child { overflow:hidden; text-overflow:ellipsis; }
+.member-remove-button { color:var(--muted); min-height:32px; padding:4px 8px; border-radius:5px; }
+.member-remove-button:hover { color:var(--danger); background:var(--hover-overlay); }
+.member-remove:has(.member-remove-confirm) { flex:0 0 100%; }
+.member-remove-confirm { display:flex; flex-direction:column; gap:8px; padding:8px; background:var(--surface-raised); border-radius:8px; font-size:var(--text-sm); }

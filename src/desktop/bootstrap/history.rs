@@ -20,6 +20,12 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     // left behind — on a shorter transcript that is an empty pane, and on a
     // longer one it is a random position in the middle of history.
     let opening = state.read().core.pending_scroll_to.clone();
+    let mark_on_open = opening.as_ref().is_some_and(|(_, target)| {
+        !matches!(
+            target,
+            super_platinum_core::domain::PendingScrollTarget::Message(_)
+        )
+    });
     if let Some((pending_channel, target)) = opening
         && pending_channel == channel
         && scroll_to_target(state, &target).await
@@ -130,7 +136,7 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     if state.read().channel_generation != generation {
         return;
     }
-    mark_visible_read(state).await;
+    mark_channel_read(state, mark_on_open).await;
 }
 
 pub async fn load_older(mut state: Signal<ShellState>) {
@@ -247,20 +253,41 @@ async fn scroll_to_target(
             "latestId":shell.messages.last().map(|message| &message.id),
         })
     };
+    // Keep the evaluation alive through the animation frames. Returning before
+    // the async navigation completes can dispose its result channel too early.
     let script = format!(
-        "{}({args}).then(value => dioxus.send(value));",
+        "return await ({})({args});",
         include_str!("../timeline_navigation.js")
     );
     dioxus::document::eval(&script)
-        .recv::<bool>()
         .await
+        .ok()
+        .and_then(|value| value.as_bool())
         .unwrap_or(false)
 }
 
-pub async fn mark_visible_read(mut state: Signal<ShellState>) {
-    let (team, channel, latest) = {
+pub async fn mark_visible_read(state: Signal<ShellState>) {
+    mark_channel_read(state, false).await;
+}
+
+async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
+    if crate::fixture::is_fixture() {
+        return;
+    }
+    let (team, channel, latest, previous) = {
         let shell = state.read();
-        if !shell.transcript_visible() {
+        let focused = crate::read_visibility::focused();
+        if crate::unread::blocks_auto_read(&shell) {
+            return;
+        }
+        // Opening a conversation retains the existing mark-on-open behavior.
+        // Later refreshes must not consume new messages below a history reader.
+        if !shell.reading_latest(focused)
+            && !(opening
+                && focused
+                && shell.transcript_visible()
+                && shell.core.pending_scroll_to.is_none())
+        {
             return;
         }
         let (Some(team), Some(channel)) = (
@@ -291,7 +318,13 @@ pub async fn mark_visible_read(mut state: Signal<ShellState>) {
         {
             return;
         }
-        (team, channel, latest)
+        let previous = shell
+            .core
+            .workspaces
+            .get(&team)
+            .and_then(|workspace| workspace.read_cursor(&channel))
+            .map(str::to_owned);
+        (team, channel, latest, previous)
     };
     let target = super_platinum_core::domain::ReadTarget::Conversation {
         team: team.clone(),
@@ -300,6 +333,7 @@ pub async fn mark_visible_read(mut state: Signal<ShellState>) {
     let Some((transport, client, workspaces)) = credentials(&state) else {
         return;
     };
+    let epoch = state.read().core.account_epoch;
     let Some(workspace_session) = workspaces
         .into_iter()
         .find(|workspace| workspace.team_id == team)
@@ -322,6 +356,16 @@ pub async fn mark_visible_read(mut state: Signal<ShellState>) {
         latest.clone(),
     )
     .await;
+    if state.peek().core.account_epoch != epoch
+        || !state
+            .peek()
+            .core
+            .transport
+            .as_ref()
+            .is_some_and(|current| std::sync::Arc::ptr_eq(current, &transport))
+    {
+        return;
+    }
     state
         .write()
         .core
@@ -342,24 +386,19 @@ pub async fn mark_visible_read(mut state: Signal<ShellState>) {
         {
             shell.unread_anchor = Some((channel.clone(), previous));
         }
-        if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-            if let Some(messages) = workspace.messages.get_mut(&channel) {
-                messages.last_read = Some(latest.clone());
-                messages.unread_count = 0;
-                messages.mention_count = 0;
-                messages.vip_count = 0;
-            }
-            if let Some(channel) = workspace.channels.get_mut(&channel) {
-                channel.last_read = Some(latest);
-                channel.has_unreads = false;
-                channel.unread_count = Some(0);
-                channel.unread_count_display = Some(0);
-                channel.mention_count = Some(0);
-            }
-        }
+        let fully_read = shell
+            .core
+            .workspaces
+            .get_mut(&team)
+            .is_some_and(|workspace| {
+                workspace.confirm_read(&channel, &latest, previous.as_deref())
+            });
         // Reading the channel covers its mentions, keywords and reactions in the
         // Activity feed. Thread items keep their own unread state.
-        if shell.core.activity.mark_channel_read(&channel) {
+        if fully_read
+            && shell.core.active_team.as_ref() == Some(&team)
+            && shell.core.activity.mark_channel_read(&channel)
+        {
             let unread = shell.core.activity.unread_count();
             if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
                 workspace.activity_unread_count = Some(unread);
@@ -378,20 +417,32 @@ pub async fn mark_thread_read(mut state: Signal<ShellState>, channel: String, ro
     }
     let (team, latest) = {
         let shell = state.read();
+        if !shell.reading_thread(crate::read_visibility::focused(), &channel, &root_ts) {
+            return;
+        }
         let Some(team) = shell.core.active_team.clone() else {
             return;
         };
         let Some(latest) = shell
-            .core
-            .threads
-            .get(&(team.clone(), channel.clone(), root_ts.clone()))
-            .and_then(|messages| messages.messages.last())
-            .and_then(|message| message.ts.clone())
+            .thread_messages
+            .iter()
+            .rev()
+            .find(|message| !message.pending)
+            .map(|message| message.ts.clone())
         else {
             return;
         };
         (team, latest)
     };
+    let key = (team.clone(), channel.clone(), root_ts.clone());
+    let previous = state.peek().core.thread_cursor(&key).map(str::to_owned);
+    let revision = state.peek().core.thread_read_revision(&key);
+    if previous.as_deref().is_some_and(|cursor| {
+        !super_platinum_core::state::cmp_ts(Some(cursor), Some(&latest)).is_lt()
+    }) {
+        return;
+    }
+    crate::thread_unread::remember_anchor(&mut state.write());
     let target = super_platinum_core::domain::ReadTarget::Thread {
         team: team.clone(),
         channel: channel.clone(),
@@ -400,6 +451,7 @@ pub async fn mark_thread_read(mut state: Signal<ShellState>, channel: String, ro
     let Some((transport, client, workspaces)) = credentials(&state) else {
         return;
     };
+    let epoch = state.read().core.account_epoch;
     let Some(workspace_session) = workspaces
         .into_iter()
         .find(|workspace| workspace.team_id == team)
@@ -423,9 +475,23 @@ pub async fn mark_thread_read(mut state: Signal<ShellState>, channel: String, ro
         latest.clone(),
     )
     .await;
-    state.write().core.pending_marks.remove(&(target, latest));
-    if let Err(error) = result {
-        eprintln!("super-platinum: thread mark failed: {error}");
+    if state.peek().core.account_epoch != epoch
+        || !state
+            .peek()
+            .core
+            .transport
+            .as_ref()
+            .is_some_and(|current| std::sync::Arc::ptr_eq(current, &transport))
+    {
+        return;
+    }
+    let mut shell = state.write();
+    shell.core.pending_marks.remove(&(target, latest.clone()));
+    if result.is_ok() {
+        shell.core.confirm_thread_mark(&key, &latest, revision);
+        shell.refresh_from_core();
+    } else if let Err(error) = result {
+        shell.report_failure(&error, "", || "Could not update thread read status.".into());
     }
 }
 
@@ -459,43 +525,82 @@ pub async fn mark_all_read(mut state: Signal<ShellState>) {
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
-    for (channel, latest) in &targets {
-        if let Err(error) = api::mark_channel(
+    let epoch = state.peek().core.account_epoch;
+    for (channel, latest) in targets {
+        // Explicit unread and bulk read operations share the same ordering as
+        // automatic marks. A batch must not overwrite an unread still in flight.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        while crate::unread::busy_in(&state.peek(), epoch, &team, &channel) {
+            if state.peek().core.account_epoch != epoch || std::time::Instant::now() >= deadline {
+                return;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+        let (previous, scope) = {
+            let shell = state.peek();
+            if shell.core.account_epoch != epoch
+                || !shell
+                    .core
+                    .transport
+                    .as_ref()
+                    .is_some_and(|active| std::sync::Arc::ptr_eq(active, &transport))
+            {
+                return;
+            }
+            (
+                shell
+                    .core
+                    .workspaces
+                    .get(&team)
+                    .and_then(|w| w.read_cursor(&channel))
+                    .map(str::to_owned),
+                shell.timeline_scope(),
+            )
+        };
+        let target = super_platinum_core::domain::ReadTarget::Conversation {
+            team: team.clone(),
+            channel: channel.clone(),
+        };
+        if !state
+            .write()
+            .core
+            .pending_marks
+            .insert((target.clone(), latest.clone()))
+        {
+            continue;
+        }
+        let result = api::mark_channel(
             &transport,
             &client,
             &workspace_session,
             channel.clone(),
             latest.clone(),
         )
-        .await
+        .await;
+        let mut shell = state.write();
+        if shell.core.account_epoch != epoch
+            || !shell
+                .core
+                .transport
+                .as_ref()
+                .is_some_and(|active| std::sync::Arc::ptr_eq(active, &transport))
         {
-            // Offline is silent: the read mark is retried on the next visit,
-            // and the rail is already saying why nothing is landing.
-            state
-                .write()
-                .report_failure(&error, "", || format!("Mark read failed: {error}"));
             return;
         }
-    }
-    let mut shell = state.write();
-    if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-        for (channel_id, latest) in targets {
-            if let Some(messages) = workspace.messages.get_mut(&channel_id) {
-                messages.last_read = Some(latest.clone());
-                messages.unread_count = 0;
-                messages.mention_count = 0;
-                messages.vip_count = 0;
-            }
-            if let Some(channel) = workspace.channels.get_mut(&channel_id) {
-                channel.last_read = Some(latest);
-                channel.has_unreads = false;
-                channel.unread_count = Some(0);
-                channel.unread_count_display = Some(0);
-                channel.mention_count = Some(0);
-            }
+        shell.core.pending_marks.remove(&(target, latest.clone()));
+        if let Err(error) = result {
+            shell.report_failure(&error, "", || {
+                "Could not mark conversations as read. Please try again.".into()
+            });
+            return;
         }
+        if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
+            workspace.confirm_read(&channel, &latest, previous.as_deref());
+        }
+        if shell.timeline_scope() == scope && shell.core.active_channel.as_ref() == Some(&channel) {
+            crate::unread::release(&mut shell);
+        }
+        shell.refresh_from_core();
     }
-    shell.refresh_from_core();
-    drop(shell);
     persist_workspace(&state, &team);
 }

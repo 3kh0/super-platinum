@@ -80,6 +80,12 @@ pub async fn open_thread_at(
         target.as_deref(),
         super_platinum_core::state::now_secs(),
     );
+    let thread_key = (team.clone(), channel.clone(), root.clone());
+    dioxus::prelude::spawn(crate::thread_subscription::refresh(
+        state,
+        thread_key.clone(),
+    ));
+    let read_revision = state.peek().core.thread_read_revision(&thread_key);
     let result = api::fetch_replies(
         &visit.transport,
         &client,
@@ -92,6 +98,13 @@ pub async fn open_thread_at(
     }
     match result {
         Ok(page) => {
+            let last_read = page
+                .messages
+                .iter()
+                .find(|m| m.ts.as_ref() == Some(&root))
+                .and_then(|m| m.extra.get("last_read"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned);
             let found = target.as_ref().is_none_or(|target| {
                 page.messages
                     .iter()
@@ -109,6 +122,13 @@ pub async fn open_thread_at(
                     messages.upsert(super_platinum_core::state::visible_message(message));
                 }
                 messages.loaded = true;
+                messages.recount_thread_unreads(&root);
+                if let Some(cursor) = last_read {
+                    shell
+                        .core
+                        .confirm_thread_mark(&thread_key, &cursor, read_revision);
+                }
+                crate::thread_unread::remember_anchor(&mut shell);
                 shell.thread_loading = false;
                 if !found {
                     shell.thread_error =
@@ -151,11 +171,12 @@ pub async fn scroll_thread(state: Signal<ShellState>, target: Option<String>) ->
         })
     };
     dioxus::document::eval(&format!(
-        "{}({args}).then(value => dioxus.send(value));",
+        "return await ({})({args});",
         include_str!("../timeline_navigation.js")
     ))
-    .recv::<bool>()
     .await
+    .ok()
+    .and_then(|value| value.as_bool())
     .unwrap_or(false)
 }
 
@@ -213,10 +234,15 @@ pub async fn load_thread_page(
                 shell
                     .thread_history
                     .apply(direction, &request, &root, &page);
-                let bag = shell.core.threads.entry((team, channel, root)).or_default();
+                let bag = shell
+                    .core
+                    .threads
+                    .entry((team, channel, root.clone()))
+                    .or_default();
                 for message in page.messages {
                     bag.upsert(super_platinum_core::state::visible_message(message));
                 }
+                bag.recount_thread_unreads(&root);
                 shell.refresh_from_core();
             }
             super::session::hydrate_current_surface(state).await;

@@ -38,7 +38,7 @@ data. A passing unit suite is not evidence of live Slack behavior.
 | Later, save/remind, completed items | Native surface, pagination, message actions, personal reminder creation, and cross-client realtime verified privately | Cold target navigation, full saved-index coverage, live preview edits/deletes, narrow-window audit |
 | Pins, bookmarks, channel tabs | Pins and channel Files & links implemented; private bidirectional pin round trip verified | Bookmarks/custom tabs, older thread targets, large lists, offline and permission cases |
 | Forwarding and message links | Rich notes, known conversation selection, and private forward round trip implemented | New DM discovery, scheduled forwarding, multiple destinations/partial errors |
-| Channels, membership, details, management | Native create, About/Members, profile navigation, name/topic/description editing and archive/unarchive verified privately | Join/leave, member administration; large lists, permission/offline cases |
+| Channels, membership, details, management | Native create, About/Members, metadata editing, archive/unarchive, join/leave, people invitations/removal; open member lists refresh on membership events/reconnect; live private discovery, missed-create/rename recovery after socket outage, and people search verified | Successful live add/remove round trip, nonsingleton self join/leave, app/agent invitations; large lists and permission/offline cases |
 | DMs, group DMs, profiles, presence, status | Existing partial surface; audit pending | Private navigation; safe status/draft checks |
 | Threads, Activity, read state, subscriptions | Existing; audit pending | Both-client realtime and read-state reconciliation |
 | Huddles, camera, sharing, device selection | Existing; live media unproven | Controlled private call and media checks |
@@ -1005,3 +1005,424 @@ Keep the full objective active; no full-parity claim is justified.
   clocks and reads in flight, not a server-provided transactional version for
   every HTTP snapshot. Broader boot/account-replacement races and metadata
   hydration paths remain an audit item. Full parity/design/performance is active.
+
+### System-message text contrast — 2026-10-12
+
+- Matched the supplied stock Slack reference: channel activity bodies use the
+  existing `--muted` color; author names retain their normal emphasis. The
+  shared timeline/thread renderer applies the style from an explicit subtype
+  allowlist, covering public/private channel activity and pin notices. Ordinary
+  chat, bot posts, files, and broadcast replies keep the normal body color.
+  Subtype reference: <https://docs.slack.dev/reference/events/message/>.
+- Added a regression test for activity versus authored-message subtypes and a
+  native `system-messages` fixture. Inspected
+  `tmp/system-messages-ui/system-messages.png`: gray activity, bright chat/app
+  text, and a readable wrapped archive notice.
+- Validation: 143 desktop tests passed (`tmp/system-message-tests.log`),
+  `cargo fmt --check`, `git diff --check`, and native fixture capture.
+
+### Realtime channel discovery — 2026-10-12
+
+- Reproduced missing discovery with a new private channel in Slack:
+  `C0C8JGDM202` / `super-platinum-discovery-before-20261012`. Slack sent an
+  unstamped `channel_joined` object followed by timestamped
+  `member_joined_channel`; the native channel count stayed at 2,120.
+- Self-join hints now schedule a deduplicated authoritative details read.
+  Reads are scoped to account, transport, workspace, and socket generation,
+  while allowing the user to navigate elsewhere. Pending discovery retains
+  rename/archive/membership field clocks even before the channel is cached,
+  so an older response cannot resurrect a channel left during the fetch.
+  Unrelated channel-created/other-user join events do not invent membership.
+  References: <https://docs.slack.dev/reference/events/channel_joined/> and
+  <https://docs.slack.dev/reference/events/member_joined_channel/>.
+- Live signed-bundle retest: Slack-created private `C0C8NCPNE5S` /
+  `super-platinum-discovery-after-20261012` increased the native channel count
+  to 2,121 without a refresh or restart. The native quick switcher found its
+  exact name with a lock icon; opening it loaded its join message and enabled
+  the composer. Inspected both native screenshots. Browser archiving then
+  immediately replaced the native composer with archived-channel guidance.
+- Both disposable channels are archived, confirmed by their server socket
+  archive events. No explicit chat messages, invitations, or uploads. Removed
+  the temporary socket observer and restored both clients to #echotestchamber.
+- Gates: 337 independently locked core tests, 143 desktop tests, locked Cargo
+  check, both format checks, diff whitespace check, and signed macOS build.
+  Logs: `tmp/channel-discovery-{core-tests,tests,check,build}.log`.
+- Additional focused native orchestration test passed for stale socket,
+  account/transport replacement, deduplication, and background-workspace
+  navigation (`tmp/channel-discovery-scope-tests.log`). The first test run
+  lacked a synthetic session in its fixture; supplying that isolated session
+  fixed the harness. No production change was needed after the live retest.
+- Limits at this checkpoint: reconnect recovery was not yet implemented.
+  The later reconnect inventory entry below supersedes that gap; external
+  nonsingleton join/leave remains unproven.
+
+
+### Channel member administration — 2026-10-12
+
+- Members now has a compact Add people picker with debounced workspace search,
+  name/handle results, removable selections, private-history disclosure, and
+  per-person results. Removal has an inline confirmation and private/public
+  rejoin guidance. Self-removal stays under Leave channel; general-channel
+  removal is disabled. Slack remains the authority for workspace policy.
+- Invites run one person per request, with a fresh channel preflight and account
+  guard. Confirmed successes leave the selection; failed/unattempted people stay
+  selected. Uncertain, rate, offline, or global errors stop the batch. Requests
+  are not automatically retried. Canonical channel metadata is refreshed after
+  mutations. References: <https://docs.slack.dev/reference/methods/conversations.invite/>
+  and <https://docs.slack.dev/reference/methods/conversations.kick/>.
+- Isolated signed native flow verified: search Jules, select, add, immediate
+  three-person list, preview/cancel removal, then confirmed removal back to two
+  members with focus restored. Mock HTTP tests verify invite/kick request fields,
+  already-present, policy failure, wrong-channel success, and partial error
+  responses. These are fixture/mock checks, not successful live memberships.
+- Read-only live check in private #echotestchamber: John/Rowan loaded; no self
+  removal action; John removal preview showed the private rejoin warning and
+  Cancel preserved both members. Add people searched Maya remotely and returned
+  real names/handles. No result was selected and no invitation/removal submitted.
+  Canceled the picker and closed details; native composer stayed empty.
+- Native captures inspected under `tmp/member-admin-ui-final/`, including add
+  error and narrow add/remove layouts. At the 668×400 minimum window size, native
+  Tab navigation scrolled the removal confirmation and both actions into view.
+- Limits: no successful real add/remove membership round trip. Apps/agents and
+  cross-workspace invite administration remain outside this people picker. Live
+  policy denial, rate limits, and large-channel pagination still need coverage.
+
+### Member-list realtime refresh — 2026-10-12
+
+- Other people's join/leave events now invalidate cached member pages without
+  changing our own channel membership. The open Members pane refreshes on those
+  events and socket-generation changes; About does no member fetch until needed.
+  Refreshes coalesce for 250 ms and wait for pending member mutations. The picker
+  stays mounted so query/selections survive a refresh.
+- A page fetched before a later membership event or reconnect cannot restore
+  stale rows or overwrite the current error state. Failed refreshes retain the
+  existing list for retry. Their old pagination cursor is not reused for a new
+  roster. Successful refresh starts again at the first page, preserving the
+  loaded-member search text. The existing 100-row display limit remains.
+- Added core invalidation coverage for other-user joins/leaves, private/public
+  system messages, unstamped/out-of-order events, malformed events, and unknown
+  channels. Native reducer tests cover stale responses, reconnects, refresh
+  failure, and subsequent pagination. The `member-live-refresh` native fixture
+  opens with Maya/You, injects a synthetic remote leave, and shows Jules/You
+  after authoritative fixture refresh; inspected the actual captured window.
+- Gates: 341 independently locked core tests, 148 desktop tests, locked Cargo
+  check, plus a focused lifecycle recheck after adding the integration assertion.
+  Logs: `tmp/member-refresh-{core-tests,core-scope,tests,final-tests,check}.log`.
+  Native captures: `tmp/member-refresh-ui/{member-live-refresh,member-add,member-remove-narrow}.png`.
+- Built the signed macOS bundle (`tmp/member-refresh-build.log`) and relaunched
+  the real session. #echotestchamber Members loaded John/Rowan; manual Reload
+  members returned the same two rows. Inspected the live screenshot, closed
+  details, and restored header focus. Browser also remains in #echotestchamber
+  with no dialogs. Both format checks and diff whitespace checks pass.
+- Limits: event-driven refresh is native-fixture proven, not a live other-person
+  membership change. A failed read waits for another event or explicit retry;
+  refresh returns large lists to the first server page. No polling loop or
+  background fetch is added for closed member panes. Reconnect discovery of
+  entirely missing channels remains a separate open gap. Full feature parity,
+  design, and performance work remains active.
+
+### Reconnect channel inventory and suspended-frame navigation — 2026-10-12
+
+- A reconnected workspace now fetches `client.counts` and hydrates missing or
+  changed channel metadata in batches of 250. Reads retain account, transport,
+  socket-generation, and channel-revision guards, including for background
+  workspaces. Failures preserve cached data and use the safe error presentation.
+- Counts no longer advance cached metadata versions before full details arrive.
+  Private-only membership inventories reconcile correctly, archived member
+  channels can receive unarchive updates, and membership events newer than a
+  counts request survive its response. Count-confirmed membership also protects
+  against older in-flight detail responses.
+- Core regressions cover missed create/rename/unarchive, private-only counts,
+  stale leave/join responses and unread state, older detail responses, and
+  501-channel batching. 345 independently locked core tests passed:
+  `tmp/reconnect-channel-core-tests.log`.
+- Live socket outage: a temporary loopback HTTP CONNECT proxy passed encrypted
+  traffic unchanged and interrupted only the native Slack websocket. While
+  native was disconnected, browser Slack created singleton private channel
+  `C0C9D9ETVA4` (`super-platinum-reconnect-20261012`). Native retained 2,120
+  channels and could not find it. Unblocking recovered 2,121 channels; the
+  switcher found the private channel and its history/composer opened without
+  restarting. A second interruption covered a browser rename to
+  `super-platinum-reconnect-renamed-20261012`; native recovered the new name
+  while its selected conversation remained #echotestchamber. These checks
+  prove background inventory recovery rather than only active-channel reads.
+- The live switch exposed another bug: navigation awaited animation frames
+  indefinitely while WebKit reported `document.hidden = true`. This also held
+  up the history refresh behind that await. Navigation now races each frame
+  with a 50 ms timer, retains target/scope and user-input checks, and awaits
+  the evaluation result. Both channel and thread navigation use this path.
+  Latest navigation keeps its target mounted until acknowledgement and clears
+  the pending state after success; equal-length history changes also retrigger
+  when the newest message ID changes.
+- Temporary native diagnostics confirmed hidden-window state and were removed.
+  The signed `timeline-latest-opening` fixture visibly reached row 359 and
+  cleared its pending target. After the final timer change, two live short-to-
+  long channel switches reached the latest #echotestchamber rows with
+  `pending_scroll_to = null` and a 180..200 mounted window. Inspected the native
+  screenshots, including gray system activity beside bright authored messages.
+- Seven Playwright navigation checks passed, including deliberately suspended
+  animation frames, stale scope, explicit targets, input cancellation, and
+  thread/channel isolation. 149 desktop tests, both Cargo format checks,
+  `git diff --check`, and the signed macOS build passed. Latest logs:
+  `tmp/navigation-fallback-{tests,build}.log`.
+- Cleanup: the singleton test channel was archived, briefly unarchived for
+  navigation verification, then archived again. No explicit messages or
+  invitations were sent. Both clients returned to #echotestchamber. The proxy
+  processes were stopped and the app relaunched without proxy or fixture
+  variables; no system proxy settings changed.
+- Limits: the controlled outage interrupted the websocket, not the entire
+  machine's network. Full-network recovery, account replacement during a live
+  recovery read, missed nonsingleton membership changes, and permission-error
+  recovery still need separate live coverage.
+
+### Native attention and automatic read marks — 2026-10-12
+
+- Realtime message counting now requires the selected transcript to be focused,
+  at its latest messages, and finished navigating before treating an incoming
+  message as viewed. Background windows, resource panels, pending navigation,
+  and readers in older history retain incoming unread/mention counts.
+- Automatic channel read calls require native focus. Initial conversation
+  opening retains the existing mark-on-open behavior; subsequent history
+  refreshes require the reader to be at the bottom. Returning native focus
+  acknowledges the visible latest conversation and eligible open thread.
+  Thread read calls also check the current channel/root, loaded state, bottom
+  position, and absence of a pending older-reply target.
+- Automatic channel/thread responses are guarded by account epoch and transport
+  identity. Renderer-neutral read acknowledgement bookkeeping rejects changed
+  cursors, including a later manual unread mark, and preserves unread/mention/
+  VIP counters when newer messages arrived while the HTTP request was pending.
+  In that case counts remain conservative until the authoritative server mark
+  reconciles them, rather than clearing unseen arrivals.
+- Added read-only agent diagnostics for native focus, eligibility, current read
+  cursor, and active-channel unread/mention counts. Realtime tests moved into
+  their own module so the implementation stays below 600 lines.
+- Private live check: browser Slack marked the 04:58 test message unread in
+  #echotestchamber. Native, hidden and unfocused, received cursor
+  `1791794800.210959` with one unread. Reopening/refetching the same native
+  conversation finished navigation but preserved that cursor and count.
+  Native focus return advanced to `1791799527.003389` and zero unreads. A
+  temporary browser websocket observer independently captured both
+  `channel_marked` events. Removed that observer after testing.
+- Native scrollback check: scrolling up set `stick_to_bottom = false` and
+  `reading_latest = false`. Another private manual unread mark remained intact.
+  CUA did not reliably restore native focus on that second check, so focused
+  scrollback retention is covered by reducer tests, not claimed as live proof.
+- Gates: 347 independently locked core tests and 152 desktop tests passed,
+  including new acknowledgement-race and attention-state cases. Locked check,
+  both format checks, diff whitespace check, and signed macOS build passed.
+  Logs: `tmp/read-focus-{core-tests,tests,check,build}.log`.
+- Limits: no other person was asked to send messages, so background incoming
+  messages and new thread replies have reducer coverage rather than a new
+  two-person live round trip. Full Mark as Read preference synchronization,
+  explicit mark-unread UI, and comprehensive Activity/read reconciliation are
+  still pending. Slack documents the opening preferences at
+  <https://slack.com/help/articles/360043037853-Manage-your-Mark-as-Read-preference>.
+
+
+### 2026-10-12 — Explicit conversation unread state
+
+- Added a Material Symbols “Mark unread” action to channel message toolbars.
+  It fetches the preceding message from Slack history before moving the read
+  cursor, including a zero-cursor fallback for the first message. Threads retain
+  their separate read model; this does not claim thread-unread parity.
+- A per-visit hold prevents focus, history refresh, and incoming messages from
+  immediately undoing an explicit unread action. A compact status above the
+  composer offers “Mark as read”; reopening the conversation ends the hold.
+- Explicit requests wait for automatic marks already in flight. Account and
+  transport changes invalidate responses; server counts outrank local estimates,
+  and a different intervening cursor supersedes delayed HTTP completion. Failed
+  requests restore the preceding hold without affecting a newer visit.
+- Bulk read acknowledgements now preserve later arrivals and intervening cursors,
+  and coordinate with explicit unread requests. This was code-reviewed and
+  compile-tested; bulk marking was not run on the user's real workspace.
+- Live signed-app proof in private #echotestchamber: marking the existing 04:58
+  test message unread set cursor `1791794243.766559`, unread count 1, and kept the
+  hold while native focus and bottom position were true. The native “Mark as
+  read” button advanced to `1791799527.003389`, count 0, and cleared the hold.
+  Repeated the unread action, then reopened the same native channel: the hold
+  cleared and Slack again confirmed count 0. A temporary browser websocket
+  observer independently captured both unread/read round trips; removed it and
+  the previous request observer after testing. No new messages were sent.
+- Stock Slack chose `1791794800.210959` as its cursor for this same message;
+  native history returned `1791794243.766559`. Both produced the same one-unread
+  boundary. Exact cursor identity for hidden/deleted messages is not established.
+- Visually inspected real native UI and offline `message-marked-unread` and
+  `message-marked-unread-narrow` captures, including the 668×400 minimum client
+  size. The status and composer remain separate and the divider precedes the
+  selected message. Agent live screencapture failed on this display; CUA's native
+  screenshot succeeded and was inspected.
+- Gates: 349 independently locked core tests and 157 desktop tests passed;
+  locked check, both format checks, diff whitespace check, and signed macOS build
+  passed. Logs are under `tmp/manual-unread-*`; fixture PNGs under
+  `tmp/agent-ui/message-marked-unread*.png`.
+- Remaining: thread “Mark unread,” keyboard shortcut parity, opening/read
+  preference synchronization, and comprehensive Activity/read reconciliation.
+  First-message zero-cursor behavior and failure/stale-response isolation have
+  automated coverage, but no additional live first-message or outage test.
+
+
+### 2026-10-12 — Thread unread actions and cross-client read state
+
+- Stock Slack reference in private #echotestchamber: thread “Mark unread” sends
+  `subscriptions.thread.mark` with the selected reply timestamp and `read=0`.
+  The `thread_marked.subscription.last_read` event is one microsecond before that
+  reply. Marking the thread parent uses the same request with the parent timestamp;
+  it does not mark the channel unread. Reading sends `read=1` with the latest reply.
+- Native thread rows now offer “Mark unread,” a New divider, and the same compact
+  “Marked unread / Mark as read” status as channel conversations. Thread holds
+  are scoped to the pane visit, account, workspace, channel, and root. Pending
+  operations block automatic marks and wait for earlier requests to finish.
+- Added typed `thread_marked` decoding and renderer-neutral thread read reducers.
+  Integer microsecond arithmetic preserves timestamp precision. Read revisions
+  prevent a delayed HTTP response from overwriting intervening events even when
+  the cursor changed away and back to the same value. Realtime generations and
+  account/transport guards reject stale work.
+- Thread feed rows display unread counts and update their unread reply sets.
+  Feed requests now carry account, workspace, transport, and request-generation
+  guards and reconcile marks received during the request. Cached thread counts
+  are recomputed on paging and reply arrival without changing cursor ordering.
+- Automatic thread reads use displayed, acknowledged replies and require no
+  unfilled newer-history gap; unseen cached replies and local pending sends do
+  not advance the cursor. Parent `last_read` metadata, when supplied by replies,
+  initializes the read position without superseding newer realtime state.
+- Live verification found and fixed a cross-client issue: browser Slack, with
+  the same thread open, immediately read a native unread mark. The native read
+  cursor updated but the hold banner remained. Realtime reconciliation now
+  removes that stale status and updates the divider.
+- Final signed-app proof: native marking reply `1791795731.106029` unread set
+  thread cursor `1791795731.106028`, count 1, and retained the hold while native
+  focus was true. Native “Mark as read” restored cursor `1791795731.106029`,
+  count 0, and cleared the hold. Repeated unread, opened that thread in browser
+  Slack, and independently observed its `read=1` request and realtime event;
+  native count, hold, and divider cleared. Channel cursor remained
+  `1791799527.003389` with zero unreads throughout. No messages were sent.
+  Restored the test thread to read, closed the browser thread, and removed every
+  temporary request, response, and websocket observer after verification.
+- Inspected native live screenshot and three actual Dioxus fixture captures:
+  `thread-marked-unread`, `thread-marked-unread-narrow` (668×400), and
+  `thread-list-unread`. Controls, divider, and composer remain distinct and
+  readable. The thread feed count uses existing typography and unread fill.
+- Gates: 355 independently locked core tests and 161 desktop tests passed;
+  locked check, both format checks, diff whitespace check, and signed macOS build
+  passed. Logs: `tmp/thread-unread-*`; screenshots: `tmp/agent-ui/thread-*.png`.
+- Remaining parity work includes keyboard shortcuts, synchronized opening/read
+  preferences, global thread badge state, comprehensive Activity reconciliation,
+  and broader thread-feed pagination/live-arrival behavior. New-reply and stale
+  response behavior have reducer coverage; no new two-person reply or outage
+  test was performed. The full Slack parity goal remains open.
+
+### 2026-10-12 — Workspace thread totals and sidebar attention
+
+- Threads now shows Slack's workspace mention total, capped visually at 99+,
+  or a dot for unread activity without mentions. Its accessible name retains
+  the full count. These totals come from `client.counts.threads` and
+  `update_global_thread_state`, independently of the paginated thread feed.
+- Counts survive warm boot. An absent counts field preserves existing knowledge;
+  an explicit cleared snapshot replaces the channel maps. Local revisions reject
+  HTTP snapshots overtaken by realtime, and existing socket generation guards
+  reject old connections. Slack's event `timestamp` may be an older manually
+  selected read cursor, so it is not used to order these events.
+- Realtime totals skip transcript/sidebar reprojection and persist through the
+  existing background cache writer only when the totals change. Added coverage
+  for backward cursors, workspace/connection isolation, stale HTTP snapshots,
+  clearing, old sidebar JSON, and warm-cache round trips.
+- Live signed-app verification in private `#echotestchamber`: initial native
+  totals matched Slack (8 mentions, 17 VIPs). Marking an existing reply unread
+  in browser Slack changed native per-channel thread unreads 0 → 1 while the
+  native app stayed on Home with no thread open. Closing/reopening that thread
+  in Slack restored native count 0. Other workspace unread totals remained
+  intact. No messages were sent; the private thread was restored to read, the
+  browser thread closed, and the temporary observer detached.
+- Inspected four actual native fixtures: mention badge, unread dot, cleared
+  state, and narrow sidebar. Rechecked the `system-messages` fixture and live
+  native screen: activity text is gray and author names remain bright. Captures
+  are in `tmp/thread-counts-ui/`; live inspection used CUA because the agent's
+  `screencapture` returned exit status 1.
+- Gates: 359 independently locked core tests, 162 desktop tests, both format
+  checks, diff whitespace check, and signed macOS bundle build passed. Logs are
+  `tmp/thread-counts-{core-tests,tests,build,ui}.log`.
+- Remaining: keyboard shortcuts/read preferences, Activity reconciliation,
+  broader thread-feed pagination/live-arrival behavior, and two-person incoming
+  reply/outage verification. The overall Slack parity goal remains open.
+
+### 2026-10-12 — Thread-feed pagination and live previews
+
+- Found that the previous Threads view silently stopped at its first page and
+  displayed the count of preview messages instead of the parent's full
+  `reply_count`. Added explicit load-more, retry, loading, empty, and refresh
+  states, conversation names, and the full server reply count.
+- Corrected the request parameter from `max_ts` to `current_ts`. Slack's shipped
+  `getView` fetcher uses `current_ts`; its `processThreads` derives the cursor
+  from the last thread's latest returned reply, with unread threads ordered
+  first. Its response `max_ts` is not the continuation cursor. Read-only live
+  probe: sending `max_ts` repeated all three rows; sending `current_ts` returned
+  three different rows with zero overlap. Reference bundles:
+  `gantry-v2-shared.595441bc725828a9.min.js` and
+  `gantry-v2-async-gantry-v2-shared-boot-async.2aa16ec7da5b5085.min.js`, loaded from
+  Slack's current `a.slack-edge.com` resources.
+- Extracted renderer-neutral feed state and native loading into focused modules.
+  Feed state is account/workspace scoped; workspace switches release pending
+  loads. Duplicate boundaries merge by channel/root, failed requests retain
+  loaded rows and cursor, and repeated/cyclic cursors stop without an automatic
+  request loop. Feed-provided thread totals also respect realtime revisions.
+- Known feed roots/replies receive realtime partial edits, arrivals, deletions,
+  and unsubscriptions. Changes arriving during an HTTP request replay after its
+  snapshot so stale pages cannot undo them. Read marks remain authoritative.
+  New subscription/count activity offers refresh without abruptly replacing the
+  reader's current list. Reconnect reloads a visible Threads feed.
+- Native live proof: the signed app's “Load more threads” expanded 10 rows to
+  20 and advanced the cursor. The private echo thread was shown with five
+  replies and one unread; opening it in browser Slack changed its native feed
+  unread count to zero without a refresh. Sent one authorized test reply in
+  `#echotestchamber`, text “Super Platinum thread feed live-update check ·
+  2026-10-12” (`1791812865.621769`), and verified both Slack's six-reply thread
+  and the native feed's six-reply row without reloading the native list.
+- Inspected six real native fixtures in `tmp/thread-feed-ui/`: normal, empty,
+  failed, loading, new activity, and narrow. The full-count fixture displays
+  147 replies despite holding only a small preview. Final gates: 364 locked
+  core tests, 164 desktop tests, both format checks, diff whitespace check,
+  signed bundle build and signature verification passed. Logs:
+  `tmp/thread-feed-{core-tests,tests,check,build,ui}.log`.
+- Removed temporary browser request/bundle probes. Left the private test thread
+  read and closed in browser Slack. No messages were sent outside the authorized
+  private channel. The single test reply remains as verification evidence.
+- Remaining thread work includes unread/opening preferences, keyboard controls,
+  broad two-person/outage tests, subscription controls in the native UI, and
+  large-feed rendering measurements. Activity reconciliation and the broader
+  Slack parity/design/performance ledger remain open.
+
+### 2026-10-12 — Native thread follow/unfollow
+
+- Added a compact Material Symbols bell in the thread header, with Follow /
+  Unfollow labels, pressed state, and a disabled pending state. The action is
+  captured against its account and thread before spawning, and finishes if its
+  source pane closes. It controls reply notifications independently of read
+  marks. Initial state is checked with `subscriptions.thread.get`; its live
+  response is a `subscriptions` array of thread timestamps.
+- Verified Slack's shipped add/remove fetchers in
+  `gantry-v2-shared.595441bc725828a9.min.js`: both send `channel`, `thread_ts`,
+  and the existing `last_read`. They return only `ok`, so authoritative realtime
+  `thread_subscribed` / `thread_unsubscribed` events update local state and
+  message copies. Revisions prevent old reads/HTTP acknowledgements from
+  reversing a newer change, including a change away and back to the same value.
+  Failed writes preserve the prior setting and release the pending control.
+- Unfollowing removes the item from the workspace Threads feed and journals the
+  change during an in-flight feed fetch; following makes newly available feed
+  activity refreshable. No subscription action locally moves a read cursor.
+- Live signed-app proof in the existing private `#echotestchamber` thread:
+  native Unfollow made Slack offer “Get notified about new replies”; native
+  Follow made Slack offer “Turn off notifications for replies”. Then changed
+  the setting in browser Slack in both directions and observed the open native
+  toggle update without reload. Restored the original followed state. The
+  thread cursor remained `1791812865.621769` with zero unreads throughout.
+  No messages were sent in this pass.
+- Inspected actual native on/off/pending/narrow fixtures in
+  `tmp/thread-subscriptions-ui/` plus the live native screenshot and AX toggle.
+  The bell and close control remain distinct at narrow width. Gates: 368 core
+  tests, 165 desktop tests, locked check, both format checks, diff whitespace
+  check, signed bundle build and signature verification passed. Logs:
+  `tmp/thread-subscriptions-{core-tests,tests,check,build,ui}.log`.
+- Reference observers were removed and the browser thread closed after testing.
+  Remaining: synchronized read/opening preferences and shortcuts, Activity
+  reconciliation, comprehensive outage/multi-person coverage, large-list
+  performance, and the other workflows in the parity ledger.

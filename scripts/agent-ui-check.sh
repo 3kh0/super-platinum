@@ -27,7 +27,10 @@ FIXTURES=(
   channel-thread-profile-headers channel-huddle huddle-connected huddle-invite
   huddle-video huddle-video-expanded huddle-settings huddle-people huddle-captions
   chat-paused-pill
-  thread-unread-divider thread-target thread-error thread-paging thread-paging-error thread-grouped thread-grouped-pending main-dev settings settings-storage appearance-countertop
+  thread-follow-on thread-follow-off thread-follow-pending thread-follow-narrow
+  thread-feed thread-feed-empty thread-feed-error thread-feed-loading thread-feed-updated thread-feed-narrow
+  thread-counts-mentions thread-counts-unread thread-counts-clear thread-counts-narrow
+  thread-unread-divider thread-list-unread thread-marked-unread thread-marked-unread-narrow thread-target thread-error thread-paging thread-paging-error thread-grouped thread-grouped-pending main-dev settings settings-storage appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background
   image-viewer-upload image-viewer-embed-compact gif-picker-attachment
   video-viewer search palette activity-unread activity-channel-post
@@ -37,8 +40,8 @@ FIXTURES=(
   composer-upload-progress
   edit-message-composer accounts self-menu self-menu-notifications
   multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout
-  media-loading-state media-failed timeline-variable-height
-  usergroup-members usergroup-channels
+  media-loading-state media-failed timeline-variable-height timeline-latest-opening
+  usergroup-members usergroup-channels system-messages message-marked-unread message-marked-unread-narrow member-live-refresh channel-members member-add member-add-error member-remove member-add-narrow member-remove-narrow
 )
 
 # Optional fixture names allow a focused recheck after the full sweep.

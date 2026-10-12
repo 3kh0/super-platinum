@@ -365,6 +365,17 @@ pub fn parse_event(text: &str) -> Option<RtEvent> {
         }),
         "reaction_added" => parse_reaction_event(value, true),
         "reaction_removed" => parse_reaction_event(value, false),
+        "update_global_thread_state" => serde_json::from_value(value.clone())
+            .ok()
+            .map(RtEvent::GlobalThreadState),
+        "thread_marked" => {
+            let subscription = value.get("subscription")?;
+            Some(RtEvent::ThreadMarked {
+                channel: subscription.get("channel")?.as_str()?.into(),
+                root_ts: subscription.get("thread_ts")?.as_str()?.into(),
+                last_read: subscription.get("last_read")?.as_str()?.into(),
+            })
+        }
         "channel_marked" | "im_marked" | "group_marked" | "mpim_marked" => {
             Some(RtEvent::ChannelMarked {
                 channel: value.get("channel").and_then(Value::as_str)?.to_owned(),
@@ -451,6 +462,17 @@ fn parse_reaction_event(value: Value, added: bool) -> Option<RtEvent> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_thread_mark_subscription_cursor() {
+        let frame = r#"{"type":"thread_marked","subscription":{"type":"thread","channel":"C1","thread_ts":"100.000000","active":true,"last_read":"101.123455"}}"#;
+        assert!(
+            matches!(parse_event(frame),Some(RtEvent::ThreadMarked {channel,root_ts,last_read}) if channel=="C1" && root_ts=="100.000000" && last_read=="101.123455")
+        );
+        assert!(
+            parse_event(r#"{"type":"thread_marked","subscription":{"channel":"C1"}}"#).is_none()
+        );
+    }
 
     #[test]
     fn parses_plain_message() {

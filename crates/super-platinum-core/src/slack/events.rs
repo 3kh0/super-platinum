@@ -78,6 +78,12 @@ pub enum RtEvent {
     HuddleInviteCancel {
         channel: ChannelId,
     },
+    GlobalThreadState(super::models::ThreadCounts),
+    ThreadMarked {
+        channel: ChannelId,
+        root_ts: MessageTs,
+        last_read: MessageTs,
+    },
     ChannelMarked {
         channel: ChannelId,
         ts: MessageTs,

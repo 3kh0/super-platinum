@@ -25,6 +25,8 @@ pub struct ChannelLifecycle {
     revision: u64,
     channels: BTreeMap<String, BTreeMap<Field, Version>>,
     changed: BTreeMap<String, u64>,
+    pending_discovery: BTreeMap<String, u64>,
+    member_lists: super::member_list_changes::MemberListChanges,
 }
 impl ChannelLifecycle {
     pub(super) fn membership_changed_since(&self, id: &str, since: u64) -> bool {
@@ -32,6 +34,9 @@ impl ChannelLifecycle {
             .get(id)
             .and_then(|f| f.get(&Field::Member))
             .is_some_and(|v| v.revision > since)
+    }
+    pub fn members_revision(&self, id: &str) -> u64 {
+        self.member_lists.revision(id)
     }
     pub fn revision(&self) -> u64 {
         self.revision
@@ -196,13 +201,88 @@ fn set(channel: &mut Channel, field: Field, value: &Value) {
     }
 }
 impl Workspace {
+    /// Join notifications are discovery hints, including Slack's unstamped
+    /// channel_joined frame. Only self membership can initiate a read.
+    pub fn begin_channel_discovery(&mut self, event: &RtEvent) -> Option<(String, u64)> {
+        let id = match event {
+            RtEvent::Unknown(raw) => match raw.kind.as_str() {
+                "channel_joined" | "group_joined" => {
+                    raw.rest.get("channel")?.get("id")?.as_str()?
+                }
+                "member_joined_channel" if raw.rest.get("user")?.as_str()? == self.self_user_id => {
+                    raw.rest.get("channel")?.as_str()?
+                }
+                _ => return None,
+            },
+            RtEvent::Message(message)
+                if message.user.as_deref() == Some(&self.self_user_id)
+                    && matches!(
+                        message.subtype.as_deref(),
+                        Some("channel_join" | "group_join")
+                    ) =>
+            {
+                message.channel.as_deref()?
+            }
+            _ => return None,
+        };
+        if id.is_empty() || self.channel_lifecycle.pending_discovery.contains_key(id) {
+            return None;
+        }
+        let id = id.to_owned();
+        let revision = self.channel_lifecycle.touch(&id);
+        self.channel_lifecycle
+            .pending_discovery
+            .insert(id.clone(), revision);
+        Some((id, revision))
+    }
+
+    /// A replacement socket makes reads scheduled by its predecessor obsolete.
+    pub fn reset_channel_discovery(&mut self) {
+        self.channel_lifecycle.pending_discovery.clear();
+    }
+
+    pub fn finish_channel_discovery(
+        &mut self,
+        id: &str,
+        revision: u64,
+        info: Option<Channel>,
+    ) -> bool {
+        if self.channel_lifecycle.pending_discovery.get(id) != Some(&revision) {
+            return false;
+        }
+        self.channel_lifecycle.pending_discovery.remove(id);
+        let Some(info) = info.filter(|info| info.id == id) else {
+            return false;
+        };
+        self.apply_channel_refresh_since(
+            crate::slack::models::GenericInfoPage {
+                channels: vec![info],
+                ..Default::default()
+            },
+            revision,
+        );
+        true
+    }
+
     pub fn apply_channel_event(&mut self, event: &RtEvent) -> bool {
+        // Other people joining/leaving invalidate member pages without changing
+        // our own membership or inventing a channel from a sparse event.
+        self.channel_lifecycle
+            .member_lists
+            .observe(event, &self.channels);
         let Some(patch) = Patch::from_event(event, &self.self_user_id) else {
             return false;
         };
         // An organization-wide event need not mean membership. Never invent a
         // public/member channel from the sparse rename/archive payload.
-        if !self.channels.contains_key(&patch.channel) {
+        if !self.channels.contains_key(&patch.channel)
+            && !self
+                .channel_lifecycle
+                .pending_discovery
+                .contains_key(&patch.channel)
+            && !self.channel_lifecycle.channels.contains_key(&patch.channel)
+            && patch.field != Field::Member
+        {
             return false;
         }
         if self
@@ -215,11 +295,9 @@ impl Workspace {
             return false;
         }
         let revision = self.channel_lifecycle.touch(&patch.channel);
-        set(
-            self.channels.get_mut(&patch.channel).unwrap(),
-            patch.field,
-            &patch.value,
-        );
+        if let Some(channel) = self.channels.get_mut(&patch.channel) {
+            set(channel, patch.field, &patch.value);
+        }
         self.channel_lifecycle
             .channels
             .entry(patch.channel)
@@ -364,6 +442,97 @@ mod tests {
         assert_eq!(c.connected_teams[0].id, "T_EXTERNAL");
     }
     #[test]
+    fn unstamped_join_discovers_channel_without_inventing_its_privacy() {
+        let mut w = workspace();
+        let joined = event(
+            json!({"type":"channel_joined","channel":{"id":"C_NEW","name":"private-new","is_private":true}}),
+        );
+        let (id, ticket) = w.begin_channel_discovery(&joined).unwrap();
+        assert!(
+            !w.channels.contains_key(&id),
+            "wait for authoritative details"
+        );
+        assert!(
+            w.begin_channel_discovery(&joined).is_none(),
+            "deduplicate pending reads"
+        );
+        let info = serde_json::from_value(
+            json!({"id":"C_NEW","name":"private-new","is_private":true,"is_member":true}),
+        )
+        .unwrap();
+        assert!(w.finish_channel_discovery(&id, ticket, Some(info)));
+        assert!(w.channels[&id].is_private);
+        assert_eq!(w.channels[&id].extra["is_member"], true);
+    }
+
+    #[test]
+    fn discovery_keeps_changes_received_while_details_are_loading() {
+        let mut w = workspace();
+        let joined = event(
+            json!({"type":"member_joined_channel","channel":"C_NEW","user":"U1","event_ts":"50.1"}),
+        );
+        let (id, ticket) = w.begin_channel_discovery(&joined).unwrap();
+        assert!(w.apply_channel_event(&joined));
+        assert!(w.apply_channel_event(&event(json!({"type":"channel_rename","channel":{"id":"C_NEW","name":"renamed"},"event_ts":"50.2"}))));
+        assert!(w.apply_channel_event(&event(
+            json!({"type":"channel_archive","channel":"C_NEW","event_ts":"50.3"})
+        )));
+        assert!(w.apply_channel_event(&event(
+            json!({"type":"member_left_channel","channel":"C_NEW","user":"U1","event_ts":"50.4"})
+        )));
+        let info = serde_json::from_value(json!({"id":"C_NEW","name":"stale","is_member":true,"is_archived":false,"is_private":true})).unwrap();
+        assert!(w.finish_channel_discovery(&id, ticket, Some(info)));
+        let channel = &w.channels[&id];
+        assert_eq!(channel.name.as_deref(), Some("renamed"));
+        assert!(channel.is_archived);
+        assert_eq!(channel.extra["is_member"], false);
+        assert!(
+            !w.apply_channel_event(&joined),
+            "replayed join cannot undo leave"
+        );
+    }
+
+    #[test]
+    fn discovery_ignores_other_members_and_retries_failures_without_accepting_old_reads() {
+        let mut w = workspace();
+        for raw in [
+            json!({"type":"member_joined_channel","channel":"C_NEW","user":"OTHER","event_ts":"50.1"}),
+            json!({"type":"channel_created","channel":{"id":"C_NEW"}}),
+            json!({"type":"group_joined","channel":{"id":""}}),
+        ] {
+            assert!(w.begin_channel_discovery(&event(raw)).is_none());
+        }
+        let joined = event(json!({"type":"group_joined","channel":{"id":"C_NEW"}}));
+        let (id, old) = w.begin_channel_discovery(&joined).unwrap();
+        w.reset_channel_discovery();
+        let (_, newer) = w.begin_channel_discovery(&joined).unwrap();
+        let info = || {
+            Some(Channel {
+                id: id.clone(),
+                name: Some("private-new".into()),
+                ..Default::default()
+            })
+        };
+        assert!(!w.finish_channel_discovery(&id, old, info()));
+        assert!(
+            w.begin_channel_discovery(&joined).is_none(),
+            "old response cannot clear newer request"
+        );
+        assert!(!w.finish_channel_discovery(&id, newer, None));
+        let (_, retry) = w.begin_channel_discovery(&joined).unwrap();
+        assert!(!w.finish_channel_discovery(
+            &id,
+            retry,
+            Some(Channel {
+                id: "WRONG".into(),
+                ..Default::default()
+            })
+        ));
+        assert!(!w.channels.contains_key(&id));
+        assert!(w.begin_channel_discovery(&joined).is_some());
+    }
+
+    #[test]
     fn malformed_or_unknown_updates_cannot_poison_clocks_or_invent_membership() {
         let mut w = workspace();
         assert!(!w.apply_channel_event(&rename(Value::Null, "90.1")));
@@ -421,6 +590,7 @@ mod tests {
             event(json!({"type":kind,"user":user,"channel":"C1","event_ts":stamp}))
         };
         assert!(!w.apply_channel_event(&membership("OTHER", "member_left_channel", "90.1")));
+        assert_eq!(w.channel_lifecycle.members_revision("C1"), 1);
         assert!(w.apply_channel_event(&membership("U1", "member_joined_channel", "20.1")));
         assert!(w.apply_channel_event(&membership("U1", "member_left_channel", "21.1")));
         assert!(!w.apply_channel_event(&membership("U1", "member_joined_channel", "20.9")));

@@ -5,6 +5,7 @@ mod appearance;
 mod auth;
 mod blocks;
 mod bootstrap;
+mod channel_discovery;
 mod channel_resources;
 mod channel_vm;
 mod clipboard;
@@ -28,12 +29,17 @@ mod performance;
 mod pins;
 mod profile;
 mod reaction_picker;
+mod read_visibility;
 mod realtime;
 mod runtime;
 mod scheduled;
 mod state;
+mod thread_feed;
+mod thread_subscription;
+mod thread_unread;
 mod thread_vm;
 mod unfurl;
+mod unread;
 mod usergroups;
 mod view;
 
@@ -97,6 +103,7 @@ fn app() -> Element {
     });
     let desktop = dioxus::desktop::window();
     use_context_provider(|| state);
+    read_visibility::use_focus_read_marks(state);
     let timeline_identity = use_memo(move || {
         let state = state.read();
         (
@@ -105,20 +112,31 @@ fn app() -> Element {
             state.stick_to_bottom,
             state.loading,
             state.signed_in,
+            state.messages.last().map(|message| message.id.clone()),
+            state.core.pending_scroll_to.clone(),
         )
     });
     use_effect(move || {
-        let (scope, _, stick_to_bottom, _, _) = timeline_identity();
+        let (scope, _, stick_to_bottom, _, _, _, pending) = timeline_identity();
         if stick_to_bottom {
             spawn(async move {
                 if state.peek().timeline_scope() != scope || !state.peek().stick_to_bottom {
                     return;
                 }
-                crate::bootstrap::scroll_to_pending(
+                if crate::bootstrap::scroll_to_pending(
                     state,
                     super_platinum_core::domain::PendingScrollTarget::Latest,
                 )
-                .await;
+                .await
+                    && state.peek().timeline_scope() == scope
+                    && state.peek().core.pending_scroll_to == pending
+                    && matches!(
+                        pending,
+                        Some((_, super_platinum_core::domain::PendingScrollTarget::Latest))
+                    )
+                {
+                    state.write().core.pending_scroll_to = None;
+                }
             });
         } else if let Some((_, target)) = state.read().core.pending_scroll_to.clone() {
             let scope = state.peek().timeline_scope();

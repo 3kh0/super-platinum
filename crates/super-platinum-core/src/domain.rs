@@ -7,8 +7,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64};
 use std::time::Instant;
 
 use crate::slack::models::{
-    ActivityItem, ChannelId, DmEntry, HistoryPage, Message, MessageTs, TeamId, ThreadViewItem,
-    UserId,
+    ActivityItem, ChannelId, DmEntry, HistoryPage, Message, MessageTs, TeamId, UserId,
 };
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ComposerTarget {
@@ -203,38 +202,7 @@ pub struct UnreadsState {
     pub load_seq: u64,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct ThreadsState {
-    pub items: Vec<ThreadViewItem>,
-    pub max_ts: Option<MessageTs>,
-    pub has_more: bool,
-    pub load_seq: u64,
-    pub loading: bool,
-    pub loaded: bool,
-    pub vip_only: bool,
-    pub selected: Option<(ChannelId, MessageTs)>,
-}
-
-impl ThreadsState {
-    pub fn upsert(&mut self, item: ThreadViewItem) {
-        let identity = item.channel().cloned().zip(item.root_ts().cloned());
-        if let Some((channel, root_ts)) = identity {
-            if let Some(existing) = self.items.iter_mut().find(|existing| {
-                existing.channel() == Some(&channel) && existing.root_ts() == Some(&root_ts)
-            }) {
-                *existing = item;
-            } else {
-                self.items.push(item);
-            }
-        }
-        self.items.sort_by(|a, b| {
-            crate::state::cmp_ts(
-                b.latest_ts().map(String::as_str),
-                a.latest_ts().map(String::as_str),
-            )
-        });
-    }
-}
+pub use crate::thread_feed::ThreadsState;
 
 #[derive(Debug, Clone, Default)]
 pub struct DmsState {

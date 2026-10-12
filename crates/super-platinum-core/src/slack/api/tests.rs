@@ -63,6 +63,27 @@ fn channel_details_writes_allow_clearing_and_reads_page_explicitly() {
 }
 
 #[test]
+fn member_mutations_preserve_pagination_and_can_remove_then_readd() {
+    let mut members = ConversationMembers::default();
+    members.apply(
+        serde_json::from_value(
+            serde_json::json!({"members":["U1","U2"],"response_metadata":{"next_cursor":"next"}}),
+        )
+        .unwrap(),
+    );
+    members.confirm_member("U2", false);
+    members.confirm_member("U3", true);
+    members.confirm_member("U3", true);
+    assert_eq!(members.ids, vec!["U1", "U3"]);
+    assert_eq!(members.cursor.as_deref(), Some("next"));
+    members.confirm_member("U2", true);
+    assert!(
+        members.apply(serde_json::from_value(serde_json::json!({"members":["U2","U4"]})).unwrap())
+    );
+    assert_eq!(members.ids, vec!["U1", "U3", "U2", "U4"]);
+}
+
+#[test]
 fn history_request_targets_enterprise_host_with_channel_and_limit() {
     let request = conversations_history(
         &SlackClient::default(),
@@ -301,7 +322,7 @@ fn threads_view_request_matches_slack_feed_fields() {
     assert!(fields.contains(&("limit".into(), "20".into())));
     assert!(fields.contains(&("fetch_threads_state".into(), "true".into())));
     assert!(fields.contains(&("priority_mode".into(), "all".into())));
-    assert!(fields.contains(&("max_ts".into(), "1783372400.222222".into())));
+    assert!(fields.contains(&("current_ts".into(), "1783372400.222222".into())));
 
     let vip = subscriptions_thread_get_view(&SlackClient::default(), &workspace(), 20, None, true);
     assert!(form_fields(&vip).contains(&("priority_mode".into(), "priority".into())));
@@ -762,4 +783,53 @@ fn channel_names_preview_normalization_and_reject_empty_invalid_or_long_values()
     }
     assert!(normalize_channel_name(&"é".repeat(80)).is_ok());
     assert!(normalize_channel_name(&"a".repeat(81)).is_err());
+}
+
+#[test]
+fn thread_unread_request_keeps_the_selected_reply_timestamp() {
+    let request = subscriptions_thread_mark_state(
+        &SlackClient::default(),
+        &workspace(),
+        "C1".into(),
+        "100.000000".into(),
+        "101.123456".into(),
+        false,
+    );
+    let fields = form_fields(&request);
+    assert!(fields.contains(&("read".into(), "0".into())));
+    assert!(fields.contains(&("ts".into(), "101.123456".into())));
+    assert!(fields.contains(&("thread_ts".into(), "100.000000".into())));
+}
+
+#[test]
+fn thread_subscription_changes_preserve_the_existing_read_cursor() {
+    for active in [true, false] {
+        let req = thread_subscription_request(
+            &SlackClient::default(),
+            &workspace(),
+            "C1".into(),
+            "10.0".into(),
+            active,
+            Some("20.0".into()),
+        );
+        assert!(req.url.contains(if active {
+            "subscriptions.thread.add"
+        } else {
+            "subscriptions.thread.remove"
+        }));
+        let fields = form_fields(&req);
+        assert!(fields.contains(&("channel".into(), "C1".into())));
+        assert!(fields.contains(&("thread_ts".into(), "10.0".into())));
+        assert!(fields.contains(&("last_read".into(), "20.0".into())));
+        assert!(!fields.iter().any(|(k, _)| k == "read"));
+    }
+    let req = thread_subscription_request(
+        &SlackClient::default(),
+        &workspace(),
+        "C1".into(),
+        "10.0".into(),
+        true,
+        None,
+    );
+    assert!(!form_fields(&req).iter().any(|(k, _)| k == "last_read"));
 }

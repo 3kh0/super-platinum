@@ -250,8 +250,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.thread-pane header .thread-follow { margin-left: auto; flex-shrink: 0; }
+.thread-pane header .thread-follow.active { color: var(--accent); }
 .thread-pane header .thread-close {
-  margin-left: auto;
+  flex-shrink: 0;
   background: transparent;
   font-size: 22px;
   color: var(--muted);

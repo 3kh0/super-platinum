@@ -602,7 +602,7 @@ fn state_snapshot(state: &ShellState) -> Value {
             "selected_pictures": state.storage.selected_picture_bytes(),
         })
     };
-    json!({
+    let mut snapshot = json!({
         "screen": screen,
         "signed_in": state.signed_in,
         "main_view": main_view_label(state.main_view),
@@ -624,6 +624,15 @@ fn state_snapshot(state: &ShellState) -> Value {
         })),
         "active_team": state.workspaces.get(state.active_workspace).map(|workspace| &workspace.id),
         "active_channel": active_channel.map(|channel| &channel.id),
+        "read_state": state.core.active_team.as_ref().and_then(|team|state.core.workspaces.get(team)).and_then(|workspace|state.core.active_channel.as_ref().map(|channel|json!({
+            "focused":crate::read_visibility::focused(),
+            "reading_latest":state.reading_latest(crate::read_visibility::focused()),
+            "manual_unread":crate::unread::held(state),
+            "changing":crate::unread::busy(state, channel),
+            "last_read":workspace.read_cursor(channel),
+            "unread_count":workspace.messages.get(channel).map(|messages|messages.unread_count),
+            "mention_count":workspace.messages.get(channel).map(|messages|messages.mention_count),
+        }))),
         "active_channel_name": active_channel.map(|channel| &channel.name),
         "thread_open": state.thread_root.is_some(),
         "active_thread": state.thread_root,
@@ -743,7 +752,27 @@ fn state_snapshot(state: &ShellState) -> Value {
             "scroll_frame_ms": state.performance.scroll_frame_ms,
         },
         "agent_socket": agent_endpoint(),
-    })
+    });
+    snapshot["thread_read_state"] = crate::thread_unread::key(state)
+        .map(|key| {
+            json!({
+                "last_read":state.core.thread_cursor(&key),
+                "unread_count":state.core.threads.get(&key).map(|bag|bag.unread_count),
+                "manual_unread":crate::thread_unread::held(state),
+                "changing":crate::thread_unread::busy(state),
+                "divider":state.thread_messages.iter().find(|m|m.show_unread_divider).map(|m|&m.ts),
+            })
+        })
+        .unwrap_or(Value::Null);
+    snapshot["thread_subscription"] = json!({"active":crate::thread_subscription::active(state),"pending":crate::thread_subscription::busy(state)});
+    snapshot["thread_feed"] = json!({"items":state.core.threads_view.items.len(),"loading":state.core.threads_view.loading,"loaded":state.core.threads_view.loaded,"has_more":state.core.threads_view.has_more,"failed":state.core.threads_view.failed,"dirty":state.core.threads_view.dirty,"next_cursor":state.core.threads_view.next_cursor,"active_channel_items":state.core.threads_view.items.iter().filter(|i| i.channel()==state.core.active_channel.as_ref()).map(|i|json!({"root":i.root_ts(),"replies":i.root_msg.reply_count,"unread":i.unread_replies.len()})).collect::<Vec<_>>()});
+    snapshot["thread_totals"] = state.core.active_team.as_ref().and_then(|team|state.core.workspaces.get(team)).map(|w|json!({
+        "has_unreads":w.thread_counts.snapshot.as_ref().map(|counts|counts.has_unreads),
+        "mention_count":w.thread_counts.snapshot.as_ref().map(|counts|counts.mention_count),
+        "vip_count":w.thread_counts.snapshot.as_ref().map(|counts|counts.vip_count),
+        "channel_unreads":w.thread_counts.snapshot.as_ref().and_then(|counts|state.core.active_channel.as_ref().map(|channel|counts.unread_count_by_channel.get(channel).copied().unwrap_or(0))),
+    })).unwrap_or(Value::Null);
+    snapshot
 }
 
 /// The call as the shell sees it. Never includes Chime credentials: the join

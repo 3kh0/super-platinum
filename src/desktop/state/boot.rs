@@ -322,6 +322,8 @@ impl ShellState {
             search_loading: false,
             later_open_generation: 0,
             unread_anchor: None,
+            manual_unread: Default::default(),
+            thread_unread: Default::default(),
             thread_root: None,
             thread_messages: Vec::new(),
             thread_at_bottom: true,
@@ -422,6 +424,8 @@ impl ShellState {
             search_loading: false,
             later_open_generation: 0,
             unread_anchor: None,
+            manual_unread: Default::default(),
+            thread_unread: Default::default(),
             thread_root: None,
             thread_messages: Vec::new(),
             thread_at_bottom: true,
@@ -709,6 +713,8 @@ impl ShellState {
             search_loading: false,
             later_open_generation: 0,
             unread_anchor: None,
+            manual_unread: Default::default(),
+            thread_unread: Default::default(),
             thread_root: None,
             thread_messages: Vec::new(),
             thread_at_bottom: true,
@@ -736,6 +742,65 @@ impl ShellState {
     pub(crate) fn fixture_variant(media: MediaRegistry, name: &str) -> Self {
         let mut state = Self::fixture(media);
         match name {
+            "member-add"
+            | "member-live-refresh"
+            | "member-add-error"
+            | "member-remove"
+            | "channel-members"
+            | "member-add-narrow"
+            | "member-remove-narrow" => {
+                let channel = state
+                    .core
+                    .workspaces
+                    .get_mut("T1")
+                    .unwrap()
+                    .channels
+                    .get_mut("C2")
+                    .unwrap();
+                channel.is_private = true;
+            }
+            "thread-marked-unread" | "thread-marked-unread-narrow" => {
+                crate::thread_unread::fixture(&mut state)
+            }
+            "thread-counts-mentions"
+            | "thread-counts-unread"
+            | "thread-counts-clear"
+            | "thread-counts-narrow" => {
+                let counts = super_platinum_core::slack::models::ThreadCounts {
+                    has_unreads: name != "thread-counts-clear",
+                    mention_count: if matches!(
+                        name,
+                        "thread-counts-mentions" | "thread-counts-narrow"
+                    ) {
+                        127
+                    } else {
+                        0
+                    },
+                    ..Default::default()
+                };
+                state
+                    .core
+                    .workspaces
+                    .get_mut("T1")
+                    .unwrap()
+                    .thread_counts
+                    .apply_live(counts);
+            }
+            "thread-feed"
+            | "thread-feed-empty"
+            | "thread-feed-error"
+            | "thread-feed-loading"
+            | "thread-feed-updated"
+            | "thread-feed-narrow" => crate::thread_feed::fixture(&mut state, name),
+            "thread-follow-on"
+            | "thread-follow-off"
+            | "thread-follow-pending"
+            | "thread-follow-narrow" => crate::thread_subscription::fixture(&mut state, name),
+            "thread-list-unread" => crate::thread_unread::list_fixture(&mut state),
+            "system-messages" => crate::fixture::system_messages(&mut state),
+            "message-marked-unread" | "message-marked-unread-narrow" => {
+                crate::unread::fixture(&mut state)
+            }
             "usergroup-members" | "usergroup-channels" => {
                 let workspace = state.core.workspaces.values_mut().next().unwrap();
                 let group = super_platinum_core::slack::models::UserGroup {
@@ -1513,7 +1578,7 @@ impl ShellState {
                 keep_recent_messages(&mut state, 3);
                 state.append_projected_fixture_messages(&[weather_block_kit_message()], true);
             }
-            "timeline-variable-height" => {
+            "timeline-variable-height" | "timeline-latest-opening" => {
                 let template = state.messages.last().cloned().unwrap();
                 state.messages=(0..360).map(|index| {
                     let mut message=template.clone();
@@ -1524,6 +1589,13 @@ impl ShellState {
                     message
                 }).collect();
                 state.sync_fixture_messages();
+                if name == "timeline-latest-opening" {
+                    state.core.pending_scroll_to = Some((
+                        "C2".into(),
+                        super_platinum_core::domain::PendingScrollTarget::Latest,
+                    ));
+                    state.set_timeline_window(0, 0, [], false);
+                }
             }
             "media-failed" => {
                 keep_recent_messages(&mut state, 2);

@@ -49,6 +49,18 @@ window.runTimelineNavigationTests = async (navigate, attach = () => {}) => {
   thread.dataset.timelineScope='thread-two';
   assert(!await obsolete && thread.scrollTop===100,'old thread navigation scrolled a replacement thread');
   results.push('thread navigation cannot move a replacement thread');
+  const nativeFrame = window.requestAnimationFrame;
+  window.requestAnimationFrame = () => 0;
+  try {
+    root.scrollTop=100;
+    assert(await navigate({scope:'new',selector:'',latestId:'later'}),
+      'suspended animation frames blocked mounted-target navigation');
+    assert(root.scrollHeight-root.scrollTop-root.clientHeight < 1,
+      'timer fallback did not reach the latest row');
+    assert(!await navigate({scope:'obsolete',selector:'',latestId:'later'}),
+      'timer fallback accepted a stale scope');
+    results.push('suspended animation frames use a bounded fallback with scope protection');
+  } finally { window.requestAnimationFrame = nativeFrame; }
   thread.remove();
   root.remove();window.superPlatinumTimelineAnchor?.check();return results;
 };

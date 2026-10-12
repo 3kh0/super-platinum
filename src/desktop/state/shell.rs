@@ -63,6 +63,8 @@ pub struct ShellState {
     /// unread divider stays on that message for the whole visit, even once the
     /// read mark has moved `last_read` past it.
     pub unread_anchor: Option<(String, String)>,
+    pub manual_unread: crate::unread::UnreadState,
+    pub thread_unread: crate::thread_unread::ThreadUnreadState,
     pub thread_root: Option<String>,
     pub thread_messages: Vec<MessageVm>,
     /// Thread pane scroll anchor: true while the reader is parked at the newest
@@ -350,6 +352,7 @@ impl ShellState {
                 &self.media,
             );
         }
+        crate::thread_unread::annotate(self);
         if let Some(ids) = held_window {
             self.restore_timeline_window(&ids);
             if self.stick_to_bottom {

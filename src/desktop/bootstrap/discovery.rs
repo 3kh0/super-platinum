@@ -728,29 +728,7 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
                 }
             }
         }
-        MainView::Threads => {
-            state.write().core.threads_view.loading = true;
-            match api::fetch_threads_view(&transport, &client, &workspace_session, 100, None, false)
-                .await
-            {
-                Ok(page) => {
-                    let mut shell = state.write();
-                    shell.core.threads_view.items.clear();
-                    for item in page.threads {
-                        shell.core.threads_view.upsert(item);
-                    }
-                    shell.core.threads_view.max_ts = page.max_ts;
-                    shell.core.threads_view.has_more = page.has_more;
-                    shell.core.threads_view.loading = false;
-                    shell.core.threads_view.loaded = true;
-                }
-                Err(error) => {
-                    let mut shell = state.write();
-                    shell.core.threads_view.loading = false;
-                    shell.report_failure(&error, "", || format!("Threads failed: {error}"));
-                }
-            }
-        }
+        MainView::Threads => crate::thread_feed::load(state, false).await,
         MainView::Activity => {
             state.write().core.activity.loading = true;
             let unread_target = state

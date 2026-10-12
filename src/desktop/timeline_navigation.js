@@ -6,9 +6,16 @@
     if (event.target.closest?.(`#${rootId}`)) cancelled = true;
   };
   for (const type of ['wheel', 'touchmove', 'keydown']) document.addEventListener(type, cancel, {passive:true});
+  // WebKit can suspend animation frames for an occluded native window. Keep
+  // navigation bounded so it also releases the awaiting history refresh.
+  const nextFrame = () => new Promise(resolve => {
+    let frame;
+    const timer = setTimeout(() => { cancelAnimationFrame(frame); resolve(); }, 50);
+    frame = requestAnimationFrame(() => { clearTimeout(timer); resolve(); });
+  });
   try {
     for (let attempt = 0; attempt < 8; attempt++) {
-      await new Promise(resolve => requestAnimationFrame(resolve));
+      await nextFrame();
       if (cancelled) return false;
       const root = document.getElementById(rootId);
       if (!root || root.dataset.timelineScope !== scope) continue;

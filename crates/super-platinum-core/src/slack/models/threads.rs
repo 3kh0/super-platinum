@@ -1,7 +1,25 @@
 use super::*;
 
+/// Complete workspace totals from `client.counts.threads` and
+/// `update_global_thread_state`, independent of the paginated thread feed.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ThreadCounts {
+    #[serde(default)]
+    pub has_unreads: bool,
+    #[serde(default)]
+    pub mention_count: u32,
+    #[serde(default)]
+    pub vip_count: u32,
+    #[serde(default)]
+    pub mention_count_by_channel: BTreeMap<ChannelId, u32>,
+    #[serde(default)]
+    pub unread_count_by_channel: BTreeMap<ChannelId, u32>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ThreadsViewPage {
+    #[serde(default)]
+    pub threads_state: Option<ThreadCounts>,
     #[serde(default)]
     pub total_unread_replies: u32,
     #[serde(default)]

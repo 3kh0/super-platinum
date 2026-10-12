@@ -111,6 +111,7 @@ mod tests {
             url: "https://test.slack.com".into(),
             self_user_id: "U_SELF".into(),
             activity_unread_count: None,
+            thread_counts: Default::default(),
             channels: channels
                 .into_iter()
                 .map(|channel| (channel.id.clone(), channel))

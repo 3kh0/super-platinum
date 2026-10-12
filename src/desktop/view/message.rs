@@ -99,6 +99,21 @@ fn message_tools(
                 onclick:{let channel=channel_id.to_owned();let message=message.clone();move |_|crate::forward::open(state,channel.clone(),message.clone())},
                 {crate::icons::icon(crate::icons::Icon::Forward,"icon sm")}
             }
+            if surface.in_thread() {
+                button {
+                    title:"Mark unread", "aria-label":"Mark unread",
+                    disabled:crate::thread_unread::busy(&state.read()),
+                    onclick:{let ts=message.ts.clone();move |_|crate::thread_unread::change(state,Some(ts.clone()))},
+                    {crate::icons::icon(crate::icons::Icon::Unreads,"icon sm")}
+                }
+            } else {
+                button {
+                    title:"Mark unread", "aria-label":"Mark unread",
+                    disabled:crate::unread::busy(&state.read(), channel_id),
+                    onclick:{let channel=channel_id.to_owned();let ts=message.ts.clone();move |_|crate::unread::change(state, channel.clone(), Some(ts.clone()))},
+                    {crate::icons::icon(crate::icons::Icon::Unreads,"icon sm")}
+                }
+            }
             if message.is_own {
                 button {
                     onclick: {
@@ -318,7 +333,7 @@ pub(crate) fn message_row(
                         button { onclick: move |_| state.write().cancel_edit(), "Cancel" }
                     }
                 } else {
-                    div { class: "message-body",
+                    div { class: if message.is_system { "message-body message-system" } else { "message-body" },
                         for node in &message.body { {rich_node(node, snapshot.media_epoch, state)} }
                         if compact && message.edited {span {class:"message-edited"," (edited)"}}
                     }

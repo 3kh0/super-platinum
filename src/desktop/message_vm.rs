@@ -107,6 +107,30 @@ pub(crate) fn message_vm_with_pending(
             .collect(),
         is_own: message.user.as_deref() == Some(workspace.self_user_id.as_str()),
         is_app: super_platinum_core::state::is_app_message(message),
+        is_system: matches!(
+            message.subtype.as_deref(),
+            Some(
+                "channel_join"
+                    | "channel_leave"
+                    | "channel_name"
+                    | "channel_topic"
+                    | "channel_purpose"
+                    | "channel_archive"
+                    | "channel_unarchive"
+                    | "group_join"
+                    | "group_leave"
+                    | "group_name"
+                    | "group_topic"
+                    | "group_purpose"
+                    | "group_archive"
+                    | "group_unarchive"
+                    | "channel_convert_to_private"
+                    | "channel_convert_to_public"
+                    | "channel_posting_permissions"
+                    | "pinned_item"
+                    | "unpinned_item"
+            )
+        ),
         pending,
         compact: false,
         date_label: None,
@@ -347,6 +371,60 @@ pub(crate) fn file_node(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn system_activity_is_muted_but_authored_message_subtypes_are_not() {
+        for subtype in [
+            "channel_join",
+            "channel_leave",
+            "channel_name",
+            "channel_topic",
+            "channel_purpose",
+            "channel_archive",
+            "channel_unarchive",
+            "group_join",
+            "group_leave",
+            "group_name",
+            "group_topic",
+            "group_purpose",
+            "group_archive",
+            "group_unarchive",
+            "channel_convert_to_private",
+            "channel_convert_to_public",
+            "channel_posting_permissions",
+            "pinned_item",
+            "unpinned_item",
+        ]
+        .into_iter()
+        .map(Some)
+        .chain([
+            None,
+            Some("bot_message"),
+            Some("file_share"),
+            Some("me_message"),
+            Some("thread_broadcast"),
+            Some("reply_broadcast"),
+            Some("unknown"),
+        ]) {
+            let expected = !matches!(
+                subtype,
+                None | Some(
+                    "bot_message"
+                        | "file_share"
+                        | "me_message"
+                        | "thread_broadcast"
+                        | "reply_broadcast"
+                        | "unknown"
+                )
+            );
+            let (core, message) = workspace_message(serde_json::json!({
+                "ts": "1.0", "user": "U1", "subtype": subtype,
+                "text": "set the channel topic: Design review"
+            }));
+            let vm = message_vm(&core.workspaces["T1"], &message, &MediaRegistry::default());
+            assert_eq!(vm.is_system, expected, "subtype: {subtype:?}");
+        }
+    }
 
     fn workspace_message(
         value: serde_json::Value,
