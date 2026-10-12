@@ -1,5 +1,6 @@
 //! Renderer-neutral application primitives shared by Super Platinum desktop shells.
 
+pub mod activity_feed;
 pub mod cache;
 pub mod config;
 pub mod drafts;

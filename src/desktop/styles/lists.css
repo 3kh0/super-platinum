@@ -182,12 +182,17 @@
   padding: 0 12px 8px;
 }
 .activity-toolbar .chip {
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
+  min-height: 32px;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  border: 0;
+  background: var(--hover-overlay);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-sm);
+  cursor: pointer;
 }
+.activity-toolbar .chip:hover:not(:disabled) { color: var(--text); background: var(--surface-raised); }
+.activity-toolbar .chip:disabled { opacity: 0.55; cursor: default; }
 .activity-toolbar .chip.on {
   background: var(--accent-soft);
   color: var(--text);

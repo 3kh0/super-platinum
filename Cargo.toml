@@ -50,15 +50,14 @@ tokio = { version = "1", features = [
 url = "2"
 # Same dialog backend/version already used by the pinned Dioxus desktop crate.
 rfd = { version = "0.17.2", default-features = false, features = ["xdg-portal"] }
-# tao and wry must match the versions dioxus-desktop resolves to. A different
-# version compiles a second copy into the graph, and its traits (for example
-# WindowExtWindows::hwnd) then do not apply to the window dioxus hands us.
-tao = "0.34.8"
-wry = "0.53.5"
+# Use dioxus::desktop::{tao, wry} so native types match Dioxus's versions.
+# Keep Wry's default X11 feature for the standalone Linux login window.
+# Update this pin together with Dioxus's Wry dependency.
+wry = "=0.53.5"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 block2 = "0.6.2"
-objc2 = "0.6.4"
+objc2 = "0.6.5"
 objc2-app-kit = { version = "0.3.2", default-features = false, features = ["NSWindow"] }
 objc2-foundation = { version = "0.3.2", default-features = false, features = ["std", "NSBundle", "NSError", "NSString", "NSObject"] }
 objc2-user-notifications = { version = "0.3.2", default-features = false, features = ["std", "block2", "UNUserNotificationCenter", "UNNotification", "UNNotificationContent", "UNNotificationRequest", "UNNotificationTrigger", "UNNotificationSound"] }

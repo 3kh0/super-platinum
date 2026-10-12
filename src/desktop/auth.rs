@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::sync::mpsc;
 
+use dioxus::desktop::{tao, wry};
 use tao::dpi::LogicalSize;
 use tao::event::{Event, WindowEvent};
 use tao::event_loop::{ControlFlow, EventLoop};

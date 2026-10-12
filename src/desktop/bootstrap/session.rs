@@ -412,8 +412,29 @@ async fn hydrate_activity_messages(
     client: &super_platinum_core::slack::SlackClient,
     workspace_session: &super_platinum_core::config::WorkspaceSession,
 ) {
+    let (epoch, sequence) = {
+        let shell = state.peek();
+        (shell.core.account_epoch, shell.core.activity.load_seq)
+    };
+    let current = |shell: &ShellState| {
+        shell.core.account_epoch == epoch
+            && shell.core.active_team.as_deref() == Some(workspace_session.team_id.as_str())
+            && shell
+                .core
+                .activity
+                .matches_scope(epoch, &workspace_session.team_id)
+            && shell.core.activity.load_seq == sequence
+            && shell
+                .core
+                .transport
+                .as_deref()
+                .is_some_and(|active| std::ptr::eq(active, transport))
+    };
     let message_ids = {
         let shell = state.read();
+        if !current(&shell) || shell.main_view != crate::state::MainView::Activity {
+            return;
+        }
         let mut groups = std::collections::HashMap::<String, Vec<String>>::new();
         for item in &shell.core.activity.items {
             let Some(channel) = item.channel() else {
@@ -443,6 +464,9 @@ async fn hydrate_activity_messages(
     // Slack rejects messages.list requests spanning too many conversations.
     // Activity pages can easily cover dozens, so hydrate them in bounded batches.
     for chunk in message_ids.chunks(20) {
+        if !current(&state.peek()) {
+            return;
+        }
         let page =
             match api::fetch_messages_list(transport, client, workspace_session, chunk.to_vec())
                 .await
@@ -454,6 +478,9 @@ async fn hydrate_activity_messages(
                 }
             };
         let mut shell = state.write();
+        if !current(&shell) {
+            return;
+        }
         for (channel, data) in page.messages_data {
             for message in data.messages {
                 if let Some(ts) = message.ts.clone() {

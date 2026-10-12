@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 
+mod activity_feed;
 mod agent;
 mod appearance;
 mod auth;

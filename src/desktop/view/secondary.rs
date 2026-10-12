@@ -446,10 +446,18 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                     },
                     "Unreads"
                 }
+                button {
+                    class: "chip",
+                    disabled: snapshot.core.activity.loading,
+                    onclick: move |_| { spawn(crate::activity_feed::load(state, false)); },
+                    "Refresh"
+                }
             }
-            div { class: "list-body",
+            div { class: "list-body", "aria-label": "Activity notifications",
                 if snapshot.core.activity.loading && items.is_empty() {
                     p { class: "list-empty", "Loading activity…" }
+                } else if snapshot.core.activity.failed && items.is_empty() {
+                    p { class: "list-empty", role: "status", "Could not load activity. Try refreshing." }
                 } else if items.is_empty() {
                     p { class: "list-empty",
                         if unread_only { "No unread activity." } else { "No activity yet." }
@@ -527,6 +535,20 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                                 }
                             }
                             }
+                        }
+                    }
+                }
+                if snapshot.core.activity.failed && !items.is_empty() {
+                    p { class: "list-empty", role: "status", "Could not load more activity. Your loaded notifications are still available." }
+                }
+                if snapshot.core.activity.next_cursor.is_some() {
+                    div { class: "activity-toolbar",
+                        button {
+                            class: "chip", disabled: snapshot.core.activity.loading,
+                            onclick: move |_| { spawn(crate::activity_feed::load(state, true)); },
+                            if snapshot.core.activity.loading { "Loading activity…" }
+                            else if snapshot.core.activity.failed { "Retry loading more" }
+                            else { "Load older activity" }
                         }
                     }
                 }

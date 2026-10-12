@@ -1058,6 +1058,14 @@ impl ShellState {
                     state.select_channel(index, ChannelOpen::InSurface);
                 }
             }
+            "activity-paging"
+            | "activity-loading"
+            | "activity-error"
+            | "activity-more-error"
+            | "activity-empty"
+            | "activity-narrow" => {
+                crate::activity_feed::fixture(&mut state, name);
+            }
             "activity-unread" => {
                 state.main_view = MainView::Activity;
                 state.core.activity.unread_only = true;

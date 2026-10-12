@@ -525,10 +525,17 @@ pub async fn toggle_profile_vip(mut state: Signal<ShellState>, user: String) {
 pub async fn mark_activity_read(mut state: Signal<ShellState>, key: String) {
     let target = {
         let mut shell = state.write();
+        let previous_unread = shell.core.activity.unread_count();
         let Some(target) = shell.core.activity.mark_item_read(&key) else {
             return;
         };
-        let unread = shell.core.activity.unread_count();
+        let total = shell
+            .core
+            .active_team
+            .as_ref()
+            .and_then(|team| shell.core.workspaces.get(team))
+            .and_then(|w| w.activity_unread_count);
+        let unread = shell.core.activity.total_after_read(total, previous_unread);
         if let Some(team) = shell.core.active_team.clone()
             && let Some(workspace) = shell.core.workspaces.get_mut(&team)
         {
@@ -729,75 +736,7 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
             }
         }
         MainView::Threads => crate::thread_feed::load(state, false).await,
-        MainView::Activity => {
-            state.write().core.activity.loading = true;
-            let unread_target = state
-                .read()
-                .core
-                .workspaces
-                .get(&team)
-                .and_then(|workspace| workspace.activity_unread_count)
-                .unwrap_or(0) as usize;
-            let mut cursor = None;
-            let mut page_index = 0;
-            loop {
-                let requested_cursor = cursor.clone();
-                match api::fetch_activity_feed(
-                    &transport,
-                    &client,
-                    &workspace_session,
-                    20,
-                    requested_cursor,
-                    false,
-                )
-                .await
-                {
-                    Ok(page) => {
-                        let next_cursor = page
-                            .response_metadata
-                            .and_then(|metadata| metadata.next_cursor)
-                            .filter(|cursor| !cursor.is_empty());
-                        let mut shell = state.write();
-                        if page_index == 0 {
-                            shell.core.activity.items.clear();
-                        }
-                        for item in page.items {
-                            shell.core.activity.upsert(item);
-                        }
-                        shell.core.activity.next_cursor = next_cursor.clone();
-                        shell.core.activity.loaded = true;
-                        let loaded_unread = shell
-                            .core
-                            .activity
-                            .items
-                            .iter()
-                            .filter(|item| item.is_pending())
-                            .count();
-                        page_index += 1;
-                        let should_continue = next_cursor.is_some()
-                            && page_index < 5
-                            && unread_target > 0
-                            && loaded_unread < unread_target;
-                        drop(shell);
-                        if !should_continue {
-                            break;
-                        }
-                        cursor = next_cursor;
-                    }
-                    Err(error) => {
-                        let mut shell = state.write();
-                        if page_index == 0 {
-                            shell
-                                .report_failure(&error, "", || format!("Activity failed: {error}"));
-                        } else {
-                            eprintln!("super-platinum: older activity page failed: {error}");
-                        }
-                        break;
-                    }
-                }
-            }
-            state.write().core.activity.loading = false;
-        }
+        MainView::Activity => return crate::activity_feed::load(state, false).await,
     }
     super::session::hydrate_current_surface(state).await;
 }

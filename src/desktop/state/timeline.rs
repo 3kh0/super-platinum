@@ -323,6 +323,9 @@ impl ShellState {
         self.core
             .threads_view
             .ensure_scope(self.core.account_epoch, &team);
+        self.core
+            .activity
+            .ensure_scope(self.core.account_epoch, &team);
         self.core.active_team = Some(team);
         self.core.active_channel = workspace
             .last_active_channel

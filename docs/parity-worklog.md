@@ -1426,3 +1426,36 @@ Keep the full objective active; no full-parity claim is justified.
   Remaining: synchronized read/opening preferences and shortcuts, Activity
   reconciliation, comprehensive outage/multi-person coverage, large-list
   performance, and the other workflows in the parity ledger.
+
+### 2026-10-12 — Dependency refresh
+
+- Updated both independently resolved Cargo lockfiles to current compatible
+  releases, including Tokio 1.53.2, Rustls 0.23.45, and objc2 0.6.5.
+- Diagnosed PR #22: Windows imported Tao traits from a different version than
+  Dioxus's window; its deny job also retained vulnerable Rustls 0.23.44.
+  Removed the direct Tao dependency and used Dioxus's Tao/Wry reexports in
+  authentication and Windows capture. Preserved Wry's X11 feature for the
+  standalone Linux login window and pinned it to Dioxus's 0.53.5 version.
+  Dioxus's git revision is unchanged; the graph has one Tao and one Wry.
+- Validation: 368 core and 165 desktop tests passed, both format checks,
+  locked build, diff check, cargo-deny (advisories/licenses/bans/sources),
+  and Clippy passed (Clippy emits style warnings). Signed bundle and signature
+  verification passed. Relaunched signed in to private #echotestchamber;
+  opened and dismissed the native quick switcher, visually verified it, and
+  left the composer empty. Logs: tmp/dependencies-*.log.
+- Changes remain local; no PR was merged or pushed. Windows/Linux runtime and
+  build verification still need CI. Activity audit found unguarded page and
+  hydration responses; no Activity code changes were made before the user
+  redirected this pass to dependencies.
+
+### 2026-10-12 — Build artifact cleanup
+
+- At the user's request, removed desktop deps/incremental/build/fingerprint/
+  examples caches, flycheck output, and the independent core target directory.
+  No compiler jobs were running. Preserved the current executable and signed
+  app; checked its dynamic dependencies were system libraries/frameworks.
+- Disk free space increased from 2.4 GiB to 68 GiB. Desktop target decreased
+  from 49 GiB to 88 MiB; the separate 16 GiB core target was removed.
+  Source, lockfiles, session data, and validation logs remain intact.
+- Signature verification and the live agent ping passed. Subsequent compilation
+  will rebuild these caches; avoid redundant full builds while continuing UI work.

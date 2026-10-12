@@ -487,6 +487,7 @@ fn apply_in_view(
         } => apply_reaction(core, team, &channel, &ts, &user, &reaction, false),
         RtEvent::ActivityUpdated(item) => {
             if core.active_team.as_deref() == Some(team) {
+                core.activity.ensure_scope(core.account_epoch, team);
                 core.activity.upsert(item);
                 core.activity.loaded = true;
             }

@@ -6,9 +6,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 use std::time::Instant;
 
-use crate::slack::models::{
-    ActivityItem, ChannelId, DmEntry, HistoryPage, Message, MessageTs, TeamId, UserId,
-};
+use crate::slack::models::{ChannelId, DmEntry, HistoryPage, Message, MessageTs, TeamId, UserId};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ComposerTarget {
     Channel,
@@ -121,66 +119,7 @@ pub struct ImageViewerSource {
     pub conversation: String,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct ActivityState {
-    pub items: Vec<ActivityItem>,
-    pub hydrated: HashMap<(ChannelId, MessageTs), Message>,
-    pub next_cursor: Option<String>,
-    pub load_seq: u64,
-    pub loading: bool,
-    pub loaded: bool,
-    pub selected: Option<String>,
-    pub unread_only: bool,
-}
-
-impl ActivityState {
-    /// Number of feed items still unread — the bell badge.
-    pub fn unread_count(&self) -> u32 {
-        self.items.iter().filter(|item| item.is_pending()).count() as u32
-    }
-
-    /// Clears the item with this key. Returns its `(type, feed_ts)` when the
-    /// item was unread, so the caller can tell Slack about it.
-    pub fn mark_item_read(&mut self, key: &str) -> Option<(String, String)> {
-        let item = self.items.iter_mut().find(|item| item.key == key)?;
-        if !item.is_pending() {
-            return None;
-        }
-        let target = (item.item.kind.clone(), item.feed_ts.clone());
-        item.mark_read();
-        Some(target)
-    }
-
-    /// Clears every item that a channel read covers. Thread items keep their own
-    /// unread state — Slack tracks those against the thread, not the channel.
-    pub fn mark_channel_read(&mut self, channel: &str) -> bool {
-        let mut changed = false;
-        for item in &mut self.items {
-            if item.is_thread() || item.channel() != Some(channel) {
-                continue;
-            }
-            changed |= item.mark_read();
-        }
-        changed
-    }
-
-    pub fn upsert(&mut self, item: ActivityItem) {
-        let identity = item.identity();
-        if let Some(existing) = self.items.iter_mut().find(|i| i.identity() == identity) {
-            if crate::state::cmp_ts(Some(&item.feed_ts), Some(&existing.feed_ts)).is_lt() {
-                return;
-            }
-            if self.selected.as_deref() == Some(existing.key.as_str()) {
-                self.selected = Some(item.key.clone());
-            }
-            *existing = item;
-        } else {
-            self.items.push(item);
-        }
-        self.items
-            .sort_by(|a, b| crate::state::cmp_ts(Some(&b.feed_ts), Some(&a.feed_ts)));
-    }
-}
+pub use crate::activity_feed::ActivityState;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum UnreadsSort {

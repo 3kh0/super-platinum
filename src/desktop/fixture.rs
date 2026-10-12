@@ -156,6 +156,7 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
         }))
         .expect("fixture DM"),
     );
+    core.activity.ensure_scope(core.account_epoch, "T1");
     core.activity.upsert(
         serde_json::from_value(serde_json::json!({
             "is_unread":true,"feed_ts":"1719801200.000500","key":"mention-1",

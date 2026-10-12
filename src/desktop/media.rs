@@ -803,7 +803,8 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
             | "thread-marked-unread-narrow"
             | "thread-counts-narrow"
             | "thread-feed-narrow"
-            | "thread-follow-narrow")
+            | "thread-follow-narrow"
+            | "activity-narrow")
     ) {
         WINDOW_MIN_INNER_SIZE
     } else {

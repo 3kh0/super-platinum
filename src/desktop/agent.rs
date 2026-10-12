@@ -501,7 +501,7 @@ fn capture_window(
     path: Option<String>,
     desktop: &dioxus::desktop::DesktopContext,
 ) -> Result<(PathBuf, u32, u32), String> {
-    use tao::platform::windows::WindowExtWindows;
+    use dioxus::desktop::tao::platform::windows::WindowExtWindows;
     let path = resolve_screenshot_path(path);
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
@@ -764,6 +764,16 @@ fn state_snapshot(state: &ShellState) -> Value {
             })
         })
         .unwrap_or(Value::Null);
+    snapshot["activity_feed"] = json!({
+        "items": state.core.activity.items.len(),
+        "unread": state.core.activity.unread_count(),
+        "loading": state.core.activity.loading,
+        "loaded": state.core.activity.loaded,
+        "failed": state.core.activity.failed,
+        "has_more": state.core.activity.next_cursor.is_some(),
+        "sequence": state.core.activity.load_seq,
+        "hydrated": state.core.activity.hydrated.len()
+    });
     snapshot["thread_subscription"] = json!({"active":crate::thread_subscription::active(state),"pending":crate::thread_subscription::busy(state)});
     snapshot["thread_feed"] = json!({"items":state.core.threads_view.items.len(),"loading":state.core.threads_view.loading,"loaded":state.core.threads_view.loaded,"has_more":state.core.threads_view.has_more,"failed":state.core.threads_view.failed,"dirty":state.core.threads_view.dirty,"next_cursor":state.core.threads_view.next_cursor,"active_channel_items":state.core.threads_view.items.iter().filter(|i| i.channel()==state.core.active_channel.as_ref()).map(|i|json!({"root":i.root_ts(),"replies":i.root_msg.reply_count,"unread":i.unread_replies.len()})).collect::<Vec<_>>()});
     snapshot["thread_totals"] = state.core.active_team.as_ref().and_then(|team|state.core.workspaces.get(team)).map(|w|json!({
