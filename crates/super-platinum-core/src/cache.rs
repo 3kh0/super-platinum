@@ -180,6 +180,7 @@ impl Cache {
             active_huddles: HashMap::new(),
             rt: RealtimeStatus::default(),
             rt_generation: 0,
+            channel_lifecycle: Default::default(),
         };
 
         if let Some(sidebar) = sidebar

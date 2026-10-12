@@ -17,7 +17,7 @@ pub const GENERIC_INFO_BATCH: usize = 250;
 impl Workspace {
     /// `client.counts` lists every conversation you are in. A channel missing
     /// from it is one you left; a DM missing from it is closed.
-    pub(crate) fn apply_counts_membership(&mut self, counts: &CountsPage) {
+    pub(crate) fn apply_counts_membership(&mut self, counts: &CountsPage, since: u64) {
         if counts.channels.is_empty() {
             return;
         }
@@ -48,7 +48,15 @@ impl Workspace {
                     channel.extra.insert("is_open".into(), false.into());
                 }
             } else {
-                channel.extra.insert("is_member".into(), here.into());
+                if !self
+                    .channel_lifecycle
+                    .membership_changed_since(&channel.id, since)
+                {
+                    let before = channel.extra.insert("is_member".into(), here.into());
+                    if before.as_ref().and_then(|v| v.as_bool()) != Some(here) {
+                        self.channel_lifecycle.touch(&channel.id);
+                    }
+                }
             }
         }
     }
@@ -80,7 +88,13 @@ impl Workspace {
     /// Take the fresh objects wholesale, keeping only what they never carry:
     /// read state from `client.counts`, the star, and Slack Connect teams.
     pub fn apply_channel_refresh(&mut self, page: GenericInfoPage) {
-        for fresh in page.channels {
+        self.apply_channel_refresh_since(page, self.channel_lifecycle.revision());
+    }
+
+    pub fn apply_channel_refresh_since(&mut self, page: GenericInfoPage, since: u64) {
+        for mut fresh in page.channels {
+            self.channel_lifecycle.overlay(&mut fresh, since);
+            self.channel_lifecycle.touch(&fresh.id);
             let merged = match self.channels.remove(&fresh.id) {
                 Some(old) => keep_local_state(fresh, old),
                 None => fresh,

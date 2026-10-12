@@ -1,0 +1,20 @@
+.modal.forward-dialog {display:flex;flex-direction:column;box-sizing:border-box;top:24px;width:min(520px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:16px;overflow:hidden;}
+.forward-body {min-height:0;overflow-y:auto;padding:4px;}
+.modal.forward-dialog header {flex-shrink:0;min-height:32px;padding:0 4px;margin-bottom:12px;}
+.forward-dialog label {display:block;font-size:var(--text-sm);margin-bottom:8px;}
+.forward-dialog input {box-sizing:border-box;width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;}
+.forward-selected {display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+.forward-chip {max-width:100%;overflow:hidden;display:flex;gap:8px;align-items:center;padding:4px 8px;min-height:28px;border-radius:5px;background:var(--surface-raised);font-size:var(--text-sm);}
+.forward-options {max-height:136px;overflow-y:auto;margin:4px 0 16px;}
+.forward-option {display:flex;width:100%;gap:8px;align-items:center;height:32px;padding:0 8px;text-align:left;border-radius:5px;}
+.forward-option span {overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.forward-option:hover {background:var(--hover-overlay);}
+.forward-option.selected {background:var(--selection-bg);}
+.forward-dialog .rich-reminder-editor {min-height:64px;max-height:136px;margin-bottom:12px;}
+.forward-preview {max-height:160px;overflow:auto;padding:12px;border-radius:8px;background:var(--surface);overflow-wrap:anywhere;}
+.forward-source {display:block;margin:4px 0 8px;font-size:var(--text-xs);color:var(--muted);}
+.forward-hint {font-size:var(--text-sm);color:var(--muted);margin:8px 0;}
+.forward-error {font-size:var(--text-sm);padding:12px;background:var(--surface-raised);border-radius:8px;}
+.forward-dialog footer {flex-shrink:0;display:flex;justify-content:space-between;gap:8px;margin-top:16px;}
+.forward-dialog footer button {min-height:32px;padding:0 12px;border-radius:8px;}
+.forward-dialog button:disabled {opacity:.5;cursor:default;}

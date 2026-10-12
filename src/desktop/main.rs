@@ -5,13 +5,19 @@ mod appearance;
 mod auth;
 mod blocks;
 mod bootstrap;
+mod channel_resources;
 mod channel_vm;
 mod clipboard;
 mod connection;
+mod download;
+mod files;
 mod fixture;
+mod fonts;
+mod forward;
 mod huddle;
 mod icons;
 mod interactions;
+mod later;
 mod media;
 mod message_vm;
 mod messaging;
@@ -19,10 +25,14 @@ mod model;
 mod notification;
 mod overlays;
 mod performance;
+mod pins;
 mod profile;
+mod reaction_picker;
 mod realtime;
 mod runtime;
+mod scheduled;
 mod state;
+mod thread_vm;
 mod unfurl;
 mod usergroups;
 mod view;
@@ -90,7 +100,7 @@ fn app() -> Element {
     let timeline_identity = use_memo(move || {
         let state = state.read();
         (
-            state.core.active_channel.clone(),
+            state.timeline_scope(),
             state.messages.len(),
             state.stick_to_bottom,
             state.loading,
@@ -98,16 +108,35 @@ fn app() -> Element {
         )
     });
     use_effect(move || {
-        let (_, _, stick_to_bottom, _, _) = timeline_identity();
+        let (scope, _, stick_to_bottom, _, _) = timeline_identity();
         if stick_to_bottom {
-            dioxus::document::eval(
-                "requestAnimationFrame(() => requestAnimationFrame(() => { const timeline = document.getElementById('message-timeline'); if (timeline) timeline.scrollTop = timeline.scrollHeight; }));",
-            );
-        } else if let Some((_, target)) = state.read().core.pending_scroll_to.clone() {
             spawn(async move {
+                if state.peek().timeline_scope() != scope || !state.peek().stick_to_bottom {
+                    return;
+                }
+                crate::bootstrap::scroll_to_pending(
+                    state,
+                    super_platinum_core::domain::PendingScrollTarget::Latest,
+                )
+                .await;
+            });
+        } else if let Some((_, target)) = state.read().core.pending_scroll_to.clone() {
+            let scope = state.peek().timeline_scope();
+            let pending = state.peek().core.pending_scroll_to.clone();
+            spawn(async move {
+                if state.peek().timeline_scope() != scope {
+                    return;
+                }
                 // Spend the anchor only once it lands: on a cold channel the row
                 // it names has not been rendered yet.
-                if crate::bootstrap::scroll_to_pending(target).await {
+                if crate::bootstrap::scroll_to_pending(state, target.clone()).await
+                    && state.peek().timeline_scope() == scope
+                    && state.peek().core.pending_scroll_to == pending
+                    && (!matches!(
+                        target,
+                        super_platinum_core::domain::PendingScrollTarget::Message(_)
+                    ) || std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some())
+                {
                     state.write().core.pending_scroll_to = None;
                 }
             });
@@ -125,16 +154,27 @@ fn app() -> Element {
         let state = state.read();
         (
             state.thread_root.clone(),
+            state.thread_scope(),
             state.thread_messages.len(),
             state.thread_at_bottom,
+            state.thread_target.clone(),
         )
     });
     use_effect(move || {
-        let (root, _, at_bottom) = thread_identity();
-        if root.is_some() && at_bottom {
-            dioxus::document::eval(
-                "requestAnimationFrame(() => requestAnimationFrame(() => { const body = document.getElementById('thread-body'); if (body) body.scrollTop = body.scrollHeight; }));",
-            );
+        let (root, scope, _, at_bottom, target) = thread_identity();
+        if root.is_some() && (at_bottom || target.is_some()) {
+            spawn(async move {
+                if state.peek().thread_scope() != scope {
+                    return;
+                }
+                if crate::bootstrap::scroll_thread(state, target.clone()).await
+                    && state.peek().thread_scope() == scope
+                    && state.peek().thread_target == target
+                    && target.is_some()
+                {
+                    state.write().thread_target = None;
+                }
+            });
         }
     });
     use_future(move || {
@@ -146,6 +186,7 @@ fn app() -> Element {
         }
     });
     dioxus::desktop::use_asset_handler(huddle::ASSET_ROUTE, huddle::serve_asset);
+    dioxus::desktop::use_asset_handler("fonts", fonts::serve_asset);
     use_future(move || huddle::bridge(state));
     use_future(move || bootstrap::initialize(state));
     use_future(move || clipboard::watch(state));

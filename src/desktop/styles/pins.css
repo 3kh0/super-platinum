@@ -1,0 +1,16 @@
+.pins-panel {display:flex;flex:1;min-height:0;min-width:0;flex-direction:column;overflow:hidden;background:var(--surface);}
+.pins-results {flex:1;min-height:0;overflow:auto;padding:4px 16px 24px;}
+.pin-card {padding:12px 0;border-bottom:1px solid var(--border);}
+.pin-card:last-child {border-bottom:0;}
+.pin-meta {display:flex;align-items:center;gap:8px;padding:0 8px 8px;color:var(--muted);font-size:var(--text-sm);}
+.pin-meta > span:not(.spacer) {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pin-meta .spacer {flex:1;}
+.pin-meta button,.pin-open,.pin-more {height:32px;padding:0 12px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:inherit;font-size:var(--text-sm);cursor:pointer;}
+.pin-meta button:hover,.pin-open:hover,.pin-more:hover {background:var(--hover-overlay);color:var(--text);}
+.pin-meta button:disabled {opacity:.45;cursor:default;}
+.pin-open {margin-left:52px;color:var(--link);}
+.pin-more {display:block;margin:16px auto;background:var(--surface-raised);}
+.message-pin-label {display:flex;gap:4px;align-items:center;font-size:var(--text-xs);color:var(--muted);margin-bottom:4px;}
+.pins-panel .message-pin-label {display:none;}
+.pin-legacy-comment {white-space:pre-wrap;padding:0 12px;color:var(--muted);}
+@media (max-width:800px) {.pins-results {padding-left:8px;padding-right:8px;}.pins-panel .files-header {padding-left:16px;padding-right:16px;}}

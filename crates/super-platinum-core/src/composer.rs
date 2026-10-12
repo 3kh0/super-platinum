@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct TextRange {
     pub start: usize,
     pub end: usize,
@@ -40,7 +40,7 @@ impl FormatMark {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct ComposerState {
     pub text: String,
     pub selection: TextRange,
@@ -70,6 +70,23 @@ impl ComposerState {
     pub fn apply_format(&mut self, mark: FormatMark) {
         let range = self.valid_range(self.selection);
         let (before, after) = mark.delimiters();
+        if mark == FormatMark::Quote {
+            self.toggle_quote(range);
+            return;
+        }
+        // A toolbar or shortcut is a toggle. Preserve the selection inside the
+        // delimiters so pressing Bold twice restores the original draft.
+        if range.start >= before.len()
+            && self.text[..range.start].ends_with(before)
+            && self.text[range.end..].starts_with(after)
+        {
+            self.text
+                .replace_range(range.end..range.end + after.len(), "");
+            self.text
+                .replace_range(range.start - before.len()..range.start, "");
+            self.selection = TextRange::new(range.start - before.len(), range.end - before.len());
+            return;
+        }
         let selected = self.text[range.start..range.end].to_owned();
         let replacement = format!("{before}{selected}{after}");
         self.text
@@ -79,6 +96,43 @@ impl ComposerState {
             TextRange::new(cursor, cursor)
         } else {
             TextRange::new(range.start + before.len(), range.end + before.len())
+        };
+    }
+
+    fn toggle_quote(&mut self, range: TextRange) {
+        let start = self.text[..range.start].rfind('\n').map_or(0, |i| i + 1);
+        // Selecting through a line break does not include the following line.
+        let selected_end = if range.end > range.start && self.text[..range.end].ends_with('\n') {
+            range.end - 1
+        } else {
+            range.end
+        };
+        let end = self.text[selected_end..]
+            .find('\n')
+            .map_or(self.text.len(), |i| selected_end + i);
+        let lines: Vec<_> = self.text[start..end].split('\n').collect();
+        let remove = lines.iter().all(|line| line.starts_with("> "));
+        let replacement = lines
+            .iter()
+            .map(|line| {
+                if remove {
+                    line[2..].to_owned()
+                } else {
+                    format!("> {line}")
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        self.text.replace_range(start..end, &replacement);
+        self.selection = if range.is_empty() {
+            let cursor = if remove {
+                range.start.saturating_sub(2).max(start)
+            } else {
+                range.start + 2
+            };
+            TextRange::new(cursor, cursor)
+        } else {
+            TextRange::new(start, start + replacement.len())
         };
     }
 
@@ -116,5 +170,44 @@ mod tests {
         assert_eq!(composer.selection, TextRange::new(1, 6));
         composer.replace_selection("!");
         assert_eq!(composer.text, "a!");
+    }
+
+    #[test]
+    fn inline_formats_toggle_without_losing_unicode_or_selection() {
+        for mark in [
+            FormatMark::Bold,
+            FormatMark::Italic,
+            FormatMark::Strike,
+            FormatMark::Code,
+            FormatMark::CodeBlock,
+        ] {
+            let mut composer = ComposerState::with_text("hi 🚀 ship it");
+            composer.set_selection(3, 10);
+            let original = composer.clone();
+            composer.apply_format(mark);
+            composer.apply_format(mark);
+            assert_eq!(composer, original);
+        }
+    }
+
+    #[test]
+    fn empty_format_toggle_keeps_insertion_point() {
+        let mut composer = ComposerState::with_text("hi ");
+        let original = composer.clone();
+        composer.apply_format(FormatMark::Bold);
+        assert_eq!(composer.text, "hi **");
+        assert_eq!(composer.selection, TextRange::new(4, 4));
+        composer.apply_format(FormatMark::Bold);
+        assert_eq!(composer, original);
+    }
+
+    #[test]
+    fn quote_formats_each_selected_line_without_touching_the_next() {
+        let mut composer = ComposerState::with_text("one\ntwo\nthree");
+        composer.set_selection(1, 8);
+        composer.apply_format(FormatMark::Quote);
+        assert_eq!(composer.text, "> one\n> two\nthree");
+        composer.apply_format(FormatMark::Quote);
+        assert_eq!(composer.text, "one\ntwo\nthree");
     }
 }

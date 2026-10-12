@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use crate::channel_vm::{project_channels, project_messages_for_channel};
 use crate::media::MediaRegistry;
-pub(crate) use crate::message_vm::message_vm;
 pub use crate::model::*;
 
 pub struct ShellState {
@@ -35,6 +34,7 @@ pub struct ShellState {
     pub loading_older: bool,
     pub chat_paused: bool,
     pub main_view: MainView,
+    pub channel_tab: ChannelTab,
     pub dm_query: String,
     pub dm_unread_only: bool,
     pub activity_tab: ActivityTab,
@@ -46,6 +46,10 @@ pub struct ShellState {
     pub profile_hover_generation: u64,
     pub profile_hover_card_active: bool,
     pub overlay: Option<Overlay>,
+    pub reaction_target: Option<ReactionTarget>,
+    pub forward_target: Option<crate::forward::ForwardTarget>,
+    /// Successful catalog loads are scoped to the authenticated transport.
+    pub emoji_catalog_loaded: HashMap<String, crate::reaction_picker::CatalogCache>,
     pub settings_section: SettingsSection,
     pub storage: StoragePanel,
     pub palette_query: String,
@@ -53,6 +57,8 @@ pub struct ShellState {
     pub search_query: String,
     pub search_results: Vec<SearchResultVm>,
     pub search_loading: bool,
+    /// Cancels metadata resolution when another saved item is opened.
+    pub later_open_generation: u64,
     /// Channel and `last_read` captured when the conversation was opened. The
     /// unread divider stays on that message for the whole visit, even once the
     /// read mark has moved `last_read` past it.
@@ -62,6 +68,11 @@ pub struct ShellState {
     /// Thread pane scroll anchor: true while the reader is parked at the newest
     /// reply, so arriving replies keep the pane pinned to the bottom.
     pub thread_at_bottom: bool,
+    pub thread_generation: u64,
+    pub thread_target: Option<String>,
+    pub thread_loading: bool,
+    pub thread_error: Option<String>,
+    pub thread_history: super_platinum_core::thread_history::ThreadHistory,
     pub profile_user: Option<String>,
     pub group_panel: Option<crate::usergroups::GroupPanel>,
     pub profile_pane_width: f64,
@@ -139,9 +150,49 @@ impl ShellState {
     /// pane must not linger with the previous item's replies when a channel
     /// item is opened next.
     pub fn close_thread(&mut self) {
+        self.checkpoint_composers();
+        self.thread_generation = self.thread_generation.wrapping_add(1);
         self.thread_root = None;
+        self.sync_composer_drafts();
         self.thread_messages.clear();
         self.thread_at_bottom = true;
+        self.thread_target = None;
+        self.thread_loading = false;
+        self.thread_error = None;
+        self.thread_history = Default::default();
+    }
+
+    pub(crate) fn thread_scope(&self) -> String {
+        format!(
+            "{}-{}-{}",
+            self.timeline_scope(),
+            self.thread_root.as_deref().unwrap_or_default(),
+            self.thread_generation
+        )
+    }
+
+    pub(crate) fn begin_thread(&mut self, root: String, target: Option<String>) {
+        self.close_thread();
+        self.close_profile();
+        self.thread_root = Some(root);
+        self.thread_at_bottom = target.is_none();
+        self.thread_target = target;
+        self.thread_loading = true;
+        self.thread_history
+            .watch_live(super_platinum_core::state::now_secs());
+        self.refresh_from_core();
+    }
+
+    /// A visible resource panel must not consume unread messages behind it.
+    pub fn transcript_visible(&self) -> bool {
+        self.channel_tab == ChannelTab::Messages
+            && matches!(
+                self.main_view,
+                MainView::Home | MainView::Dms | MainView::Activity | MainView::Later
+            )
+            && self.detail_open()
+            && !(matches!(self.main_view, MainView::Activity | MainView::Later)
+                && self.thread_root.is_some())
     }
 
     /// Whether the current surface has a conversation to show.
@@ -150,7 +201,8 @@ impl ShellState {
     /// stay on their empty state until a row is opened, so a channel the quick
     /// switcher opened elsewhere never leaks into their column.
     pub fn detail_open(&self) -> bool {
-        !self.main_view.has_own_list() || self.surfaces.contains_key(&self.main_view)
+        !matches!(self.main_view, MainView::Files | MainView::Scheduled)
+            && (!self.main_view.has_own_list() || self.surfaces.contains_key(&self.main_view))
     }
 
     /// Records what the current surface is showing, so returning to this rail
@@ -215,6 +267,19 @@ impl ShellState {
     }
 
     pub fn refresh_from_core(&mut self) {
+        let held_window = (self.core.pending_scroll_to.is_none()
+            && self.channels.get(self.active_channel).map(|c| &c.id)
+                == self.core.active_channel.as_ref())
+        .then(|| {
+            self.messages[self.timeline_start.min(self.messages.len())
+                ..self
+                    .timeline_end
+                    .min(self.messages.len())
+                    .max(self.timeline_start.min(self.messages.len()))]
+                .iter()
+                .map(|m| m.id.clone())
+                .collect::<Vec<_>>()
+        });
         let Some(team) = self.core.active_team.clone() else {
             return;
         };
@@ -277,16 +342,32 @@ impl ShellState {
                     .threads
                     .get(&(team.clone(), channel.clone(), root.clone()))
         {
-            self.thread_messages = messages
-                .messages
-                .iter()
-                .map(|message| crate::message_vm::message_vm(workspace, message, &self.media))
-                .collect();
+            self.thread_messages = crate::thread_vm::project(
+                workspace,
+                messages,
+                &self.thread_history,
+                root,
+                &self.media,
+            );
         }
-        self.reset_timeline_window();
+        if let Some(ids) = held_window {
+            self.restore_timeline_window(&ids);
+            if self.stick_to_bottom {
+                // Keep the measured bottom neighborhood instead of mounting
+                // 100 rows again on every presence/reaction/metadata refresh.
+                // Include arrivals, with a bound for large history merges.
+                self.timeline_end = self.messages.len();
+                self.timeline_start = self
+                    .timeline_start
+                    .max(self.timeline_end.saturating_sub(100));
+            }
+        } else {
+            self.reset_timeline_window();
+        }
         if let Some(channel) = self.channels.get(active_channel) {
             self.core.active_channel = Some(channel.id.clone());
         }
+        self.sync_composer_drafts();
     }
 }
 

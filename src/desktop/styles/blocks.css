@@ -381,3 +381,21 @@
   object-fit: contain;
   vertical-align: -0.25em;
 }
+.media-unavailable {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 120px;
+  min-height: 64px;
+  padding: var(--space-3);
+  color: var(--muted);
+  background: var(--surface-raised);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+.media-unavailable.compact {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+}

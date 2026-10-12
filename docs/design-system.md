@@ -1,9 +1,11 @@
 # Super Platinum design system
 
-Super Platinum uses **Ink & Signal**: quiet near-black planes, cool-gray structure,
-and one electric-blue interaction language. It should remain recognizably Slack
-in information architecture while feeling as immediate as Telegram and as
-disciplined as Vercel's product UI.
+Super Platinum uses a **Geist-inspired desktop system**: neutral graphite planes,
+clear type, compact controls, and deliberate contrast. The visual reference is
+[Vercel Geist](https://vercel.com/geist/introduction), including its
+[colors](https://vercel.com/geist/colors), [typography](https://vercel.com/geist/typography),
+and [materials](https://vercel.com/geist/materials). Preserve Slack's functional
+workflows while giving the client its own quiet, precise visual identity.
 
 The implementation source of truth is:
 
@@ -15,9 +17,10 @@ The implementation source of truth is:
 ## Principles
 
 1. **Conversation first.** Chrome recedes; messages, people, and unread state lead.
-2. **One signal color.** Blue means selected, focused, linked, or actionable. Red,
+2. **Color has a job.** Selection and hover use neutral contrast. Blue marks links,
+   unread state, and primary actions. Red,
    amber, and green are reserved for destructive, warning, and success/status states.
-3. **Dense, not cramped.** Default body text is 14px. Metadata is 11px. Controls
+3. **Dense, not cramped.** Default body text is 14px. Metadata is 11px. Section labels are sentence-case 12px. Controls
    are 32px high. Use the 4/8/12/16px spacing scale before inventing a value.
 4. **Shape communicates layer.** 5px for rows, 8px for controls, 12px for floating
    surfaces. Pills are only for counts, reactions, and status.
@@ -28,7 +31,11 @@ The implementation source of truth is:
 
 ### Typography
 
-Use `--font-sans` everywhere except code, which uses `--font-mono`.
+Use locally bundled Geist through `--font-sans` everywhere except code, which uses
+Geist Mono through `--font-mono`. Fonts are embedded and served from the native
+app; rendering never waits on an external font host. Preserve the SIL license in
+`assets/fonts/`. The default palette uses neutral grays; alternate presets remain
+user-selectable.
 
 | Role | Token | Use |
 | --- | --- | --- |
@@ -37,7 +44,7 @@ Use `--font-sans` everywhere except code, which uses `--font-mono`.
 | Body | `--text-md` / 14px | messages, navigation, form values |
 | Title | `--text-lg` / 16px | modal and major surface titles only |
 
-Use 560–680 weights for hierarchy. Avoid bold body copy and arbitrary 13px/15px
+Use 500–600 weights for hierarchy. Avoid bold body copy and arbitrary 13px/15px
 sizes. Use tabular numerals for time, storage, and changing counts.
 
 ### Color and elevation
@@ -59,8 +66,8 @@ uses feature-specific class names:
 | Icon button | `.rail-btn`, `.icon-btn`, `.composer-icon-btn` | Fixed square hit area; tint on hover; subtle press scale |
 | Text field | palette/search inputs, `.list-find` | Filled surface at rest; focus ring only while focused |
 | Segmented control | `.settings-tabs` / `.settings-tab` | Shared track fill and active fill; no nested outlines |
-| Floating surface | `.modal`, `.self-menu`, `.message-tools` | Opaque raised fill and shadow; no decorative frame |
-| Composer | `.composer-wrap`, `.thread-composer` | Raised work surface with a focus ring, stable dimensions |
+| Floating surface | `.modal`, `.self-menu`, `.message-tools` | Opaque raised fill, subtle boundary, and shadow |
+| Composer | `.composer-wrap`, `.thread-composer` | Outlined work surface with formatting and input rows, stable dimensions |
 | Status pill | badges and `.reaction` | Reserved for compact state/counts, never general containers |
 | Attachment | `.attachment-body`, `.attachment-chip`, `.pending-file` | One filled surface; progress changes fill, not frame weight |
 | Notice | `.toast` | Raised, bounded copy with an explicit dismiss control; never cover the composer |

@@ -15,13 +15,29 @@ use super::models::{
     TeamProfileField, TeamProfilePage, ThreadsViewPage, User, UserId, UserProfile, UserProfilePage,
 };
 use super::transport::Transport;
+mod channel_admin;
+pub use channel_admin::*;
+mod channel_details;
+mod channel_membership;
+pub use channel_membership::*;
 mod execute;
+mod files;
+mod forward;
+mod pins;
 mod request;
+mod saved;
+mod scheduled;
 
 use request::decode;
 
+pub use channel_details::*;
 pub use execute::*;
+pub use files::*;
+pub use forward::*;
+pub use pins::*;
 pub use request::*;
+pub use saved::*;
+pub use scheduled::*;
 
 #[cfg(test)]
 mod tests;

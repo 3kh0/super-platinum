@@ -1,0 +1,47 @@
+.later-panel { width: clamp(340px, 36vw, 480px); max-width: 480px; flex-shrink: 0; }
+.later-panel .list-panel-header { padding: 16px; }
+.later-panel h2 { font-size: var(--text-lg); font-weight: 600; }
+.later-refresh { font-size: var(--text-sm); color: var(--muted); padding: 6px 8px; border-radius: 5px; }
+.later-refresh:hover { color: var(--text); background: var(--hover-overlay); }
+.later-tabs { display: flex; gap: 4px; padding: 0 12px 12px; border-bottom: 1px solid var(--border); }
+.later-tabs button { flex: 1; padding: 7px 4px; border-radius: 6px; font-size: var(--text-sm); color: var(--muted); white-space: nowrap; }
+.later-tabs button span { margin-left: 5px; font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+.later-tabs button.active { background: var(--selection-bg); color: var(--text); }
+.later-tabs button:hover { background: var(--hover-overlay); }
+.later-item { padding: 12px; border-bottom: 1px solid var(--border); }
+.later-item:focus-within { background: var(--hover-overlay); }
+.later-entry { display: flex; flex-direction: column; width: 100%; gap: 5px; padding: 4px; text-align: left; color: var(--text); }
+.later-entry:hover { background: var(--hover-overlay); border-radius: 6px; }
+.later-entry p { margin: 0; font-size: var(--text-md); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.later-entry strong { font-size: var(--text-sm); font-weight: 600; }
+.later-channel { color: var(--muted); font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; max-width: 100%; white-space: nowrap; }
+.later-actions { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+.later-actions button { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 5px 7px; border-radius: 5px; color: var(--muted); font-size: var(--text-sm); }
+.later-actions button:hover { color: var(--text); background: var(--hover-overlay); }
+.later-actions button:last-child { margin-left: auto; }
+.later-panel button:disabled { opacity: .5; cursor: default; }
+.later-due { display: flex; align-items: center; gap: 4px; font-size: var(--text-xs); color: var(--muted); }
+.later-due.overdue { color: #ff8b80; }
+.later-error { margin: 12px; padding: 10px; background: var(--surface-raised); color: var(--text); border-radius: 6px; font-size: var(--text-sm); overflow-wrap: anywhere; }
+.later-error p { margin: 0 0 8px; }
+.later-status { padding: 12px 16px; color: var(--muted); font-size: var(--text-sm); }
+.later-more { display: block; margin: 16px auto; padding: 8px 16px; border-radius: 6px; background: var(--surface-raised); }
+.later-reminder { width: min(400px, calc(100vw - 32px)); padding: 20px; }
+.reminder-presets { display: flex; gap: 8px; margin: 20px 0; }
+.reminder-presets button { flex: 1; padding: 10px; border-radius: 6px; background: var(--surface); }
+.later-reminder label { display: block; font-size: var(--text-sm); margin-bottom: 8px; }
+.later-reminder input { width: 100%; box-sizing: border-box; background: var(--surface); color: var(--text); padding: 10px; border: 1px solid var(--border); border-radius: 6px; color-scheme: dark; }
+.later-reminder footer { display: flex; justify-content: space-between; gap: 8px; margin-top: 20px; }
+.later-reminder footer button { padding: 8px 12px; border-radius: 6px; }
+.message-tools .is-saved { color: var(--accent); }
+.later-reminder textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 96px; background: var(--surface); color: var(--text); font: inherit; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 16px; }
+.later-reminder header { margin-bottom: 20px; }
+.rich-reminder-editor { min-height: 112px; max-height: 280px; overflow-y: auto; padding: 10px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 0 0 6px 6px; font-size: var(--text-md); white-space: pre-wrap; overflow-wrap: anywhere; }
+.rich-reminder-editor:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+.rich-reminder-editor a { color: var(--accent); text-decoration: underline; }
+.rich-reminder-editor code, .rich-reminder-editor pre { font-family: var(--font-mono); background: var(--surface-raised); }
+.rich-reminder-editor blockquote { margin: 8px 0; padding-left: 12px; border-left: 2px solid var(--border); }
+.rich-reminder-editor ul, .rich-reminder-editor ol { margin: 4px 0; padding-left: 24px; }
+.rich-editor-token { border-radius: 3px; background: var(--selection-bg); }
+.rich-editor .format-toolbar { display: flex; gap: 2px; padding: 4px 6px; background: var(--surface); border: 1px solid var(--border); border-bottom: 0; border-radius: 6px 6px 0 0; }
+.reminder-hint { color: var(--muted); font-size: var(--text-xs); margin-top: 6px; }

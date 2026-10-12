@@ -2,7 +2,78 @@ use super::ShellState;
 use crate::model::*;
 
 impl ShellState {
-    pub(super) fn reset_timeline_window(&mut self) {
+    pub(crate) fn timeline_scope(&self) -> String {
+        format!(
+            "{}-{}-{}-{}",
+            self.core.account_epoch,
+            self.core.active_team.as_deref().unwrap_or_default(),
+            self.core.active_channel.as_deref().unwrap_or_default(),
+            self.channel_generation
+        )
+    }
+
+    pub(crate) fn estimated_row_height(&self, id: &str) -> f64 {
+        self.row_heights.get(id).copied().unwrap_or(66.0)
+    }
+
+    /// Fast wheel/scrollbar jumps can land wholly inside a virtual spacer.
+    /// Select a neighborhood from the same heights used to paint that spacer.
+    pub(crate) fn estimated_timeline_window(&self, top: f64, height: f64) -> (usize, usize) {
+        let top = if top.is_finite() { top.max(0.0) } else { 0.0 };
+        let bottom = top
+            + if height.is_finite() {
+                height.max(0.0)
+            } else {
+                0.0
+            };
+        let last = self.messages.len().saturating_sub(1);
+        let mut first = None;
+        let mut offset = 0.0;
+        for (index, message) in self.messages.iter().enumerate() {
+            offset += self.estimated_row_height(&message.id);
+            if first.is_none() && offset > top {
+                first = Some(index);
+            }
+            if offset >= bottom {
+                return (first.unwrap_or(index), index);
+            }
+        }
+        (first.unwrap_or(last), last)
+    }
+
+    /// A refresh may prepend history, append new messages, or remove a row.
+    /// Keep the same surviving rows mounted while the reader is in history.
+    pub(crate) fn restore_timeline_window(&mut self, ids: &[String]) {
+        let ids = ids
+            .iter()
+            .map(String::as_str)
+            .collect::<std::collections::HashSet<_>>();
+        let mut positions = self
+            .messages
+            .iter()
+            .enumerate()
+            .filter_map(|(index, message)| ids.contains(message.id.as_str()).then_some(index));
+        if let Some(first) = positions.next() {
+            self.timeline_start = first;
+            self.timeline_end = positions.last().unwrap_or(first) + 1;
+        } else {
+            self.reset_timeline_window();
+        }
+    }
+
+    pub(crate) fn reset_timeline_window(&mut self) {
+        if let Some((
+            channel,
+            super_platinum_core::domain::PendingScrollTarget::Message(ts)
+            | super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(ts),
+        )) = &self.core.pending_scroll_to
+            && self.core.active_channel.as_ref() == Some(channel)
+            && let Some(index) = self.messages.iter().position(|message| &message.ts == ts)
+        {
+            self.timeline_start = index.saturating_sub(24);
+            self.timeline_end = (index + 76).min(self.messages.len());
+            return;
+        }
         self.timeline_end = self.messages.len();
         self.timeline_start = self.timeline_end.saturating_sub(100);
     }
@@ -19,9 +90,12 @@ impl ShellState {
         if self.stick_to_bottom != stick_to_bottom
             || (stick_to_bottom
                 && self.core.pending_scroll_to.is_some()
-                && !matches!(
+                && matches!(
                     self.core.pending_scroll_to,
-                    Some((_, super_platinum_core::domain::PendingScrollTarget::Latest))
+                    Some((
+                        _,
+                        super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(_)
+                    ))
                 ))
             || measurements
                 .iter()
@@ -61,12 +135,28 @@ impl ShellState {
         // which is where they already are, and dropping it early loses the
         // scroll a cold conversation still owes.
         if stick_to_bottom
-            && !matches!(
+            && matches!(
                 self.core.pending_scroll_to,
-                Some((_, super_platinum_core::domain::PendingScrollTarget::Latest))
+                Some((
+                    _,
+                    super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(_)
+                ))
             )
         {
             self.core.pending_scroll_to = None;
+        }
+        // A newly mounted/empty timeline can report its bottom before the
+        // requested saved/search message exists. Keep its render neighborhood
+        // and anchor until scroll_to_target confirms the actual row landed.
+        if matches!(
+            self.core.pending_scroll_to,
+            Some((
+                _,
+                super_platinum_core::domain::PendingScrollTarget::Message(_)
+            ))
+        ) {
+            self.reset_timeline_window();
+            return;
         }
         if self.selection_pinned || self.messages.is_empty() {
             return;
@@ -104,11 +194,16 @@ impl ShellState {
     /// be open, where it would have had no composer and left the row that is
     /// still highlighted pointing at something else entirely.
     pub fn select_channel(&mut self, index: usize, open: ChannelOpen) {
+        self.checkpoint_composers();
         let Some(channel) = self.channels.get(index) else {
             return;
         };
+        self.channel_tab = ChannelTab::Messages;
         let channel_id = channel.id.clone();
         let unread = channel.unread;
+        if open != ChannelOpen::Global && self.core.active_channel.as_ref() != Some(&channel_id) {
+            self.close_thread();
+        }
         if open == ChannelOpen::Global {
             // Record the surface being left before anything moves, so that rail
             // tab still has its own conversation to come back to.
@@ -124,7 +219,9 @@ impl ShellState {
         self.active_channel = index;
         self.channel_switch_started = Some(std::time::Instant::now());
         self.channel_generation = self.channel_generation.wrapping_add(1);
+        self.loading_older = false;
         self.core.active_channel = Some(channel_id.clone());
+        self.sync_composer_drafts();
         if let Some(team) = self.core.active_team.clone()
             && let Some(workspace) = self.core.workspaces.get_mut(&team)
         {
@@ -202,6 +299,8 @@ impl ShellState {
     }
 
     pub fn select_workspace(&mut self, index: usize) -> bool {
+        self.checkpoint_composers();
+        self.close_thread();
         let Some(team) = self
             .workspaces
             .get(index)
@@ -214,8 +313,12 @@ impl ShellState {
         };
         if self.core.active_team.as_deref() != Some(team.as_str()) {
             self.row_heights.clear();
+            self.messages.clear();
         }
         self.active_workspace = index;
+        self.channel_tab = ChannelTab::Messages;
+        self.channel_generation = self.channel_generation.wrapping_add(1);
+        self.loading_older = false;
         self.core.active_team = Some(team);
         self.core.active_channel = workspace
             .last_active_channel
@@ -231,6 +334,168 @@ impl ShellState {
 mod tests {
     use super::*;
     use crate::media::MediaRegistry;
+
+    #[test]
+    fn navigation_releases_the_previous_history_load() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        shell.loading_older = true;
+        let previous = shell.channel_generation;
+        shell.select_channel(shell.active_channel, ChannelOpen::Global);
+        assert!(!shell.loading_older);
+        assert_ne!(shell.channel_generation, previous);
+
+        shell.loading_older = true;
+        let previous = shell.channel_generation;
+        assert!(shell.select_workspace(shell.active_workspace));
+        assert!(!shell.loading_older);
+        assert_ne!(shell.channel_generation, previous);
+    }
+
+    #[test]
+    fn a_jump_into_a_spacer_selects_the_estimated_neighborhood_directly() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        let template = shell.messages[0].clone();
+        shell.messages = (0..200)
+            .map(|n| {
+                let mut message = template.clone();
+                message.id = format!("jump-{n}");
+                message
+            })
+            .collect();
+        shell.row_heights.insert("jump-10".into(), 600.0);
+        let (first, last) = shell.estimated_timeline_window(100.0 * 66.0 + 534.0, 132.0);
+        assert_eq!((first, last), (100, 101));
+        shell.core.pending_scroll_to = None;
+        shell.timeline_start = 180;
+        shell.timeline_end = 200;
+        shell.set_timeline_window(first, last, [], false);
+        assert_eq!((shell.timeline_start, shell.timeline_end), (88, 114));
+        assert_eq!(shell.estimated_timeline_window(f64::NAN, 0.0), (0, 0));
+    }
+
+    #[test]
+    fn refresh_keeps_the_reading_window_through_history_insertions_and_deletions() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        let make_message = |n: usize| {
+            serde_json::from_value(serde_json::json!({
+            "type":"message", "user":"U1", "ts":format!("{n}.000001"), "text":"Synthetic history"
+        })).unwrap()
+        };
+        shell
+            .core
+            .workspaces
+            .get_mut("T1")
+            .unwrap()
+            .messages
+            .get_mut("C2")
+            .unwrap()
+            .messages = (100..300).map(make_message).collect();
+        shell.refresh_from_core();
+        shell.stick_to_bottom = false;
+        shell.core.pending_scroll_to = None;
+        shell.timeline_start = 40;
+        shell.timeline_end = 65;
+        let held = shell.messages[40..65]
+            .iter()
+            .map(|m| m.id.clone())
+            .collect::<Vec<_>>();
+        shell.refresh_from_core();
+        assert_eq!((shell.timeline_start, shell.timeline_end), (40, 65));
+        let bag = shell
+            .core
+            .workspaces
+            .get_mut("T1")
+            .unwrap()
+            .messages
+            .get_mut("C2")
+            .unwrap();
+        bag.messages.splice(0..0, (90..100).map(make_message));
+        bag.messages
+            .retain(|m| m.ts.as_deref() != Some(held[0].as_str()));
+        bag.messages.push(make_message(999));
+        shell.refresh_from_core();
+        assert_eq!(
+            shell.messages[shell.timeline_start..shell.timeline_end]
+                .iter()
+                .map(|m| m.id.clone())
+                .collect::<Vec<_>>(),
+            held[1..]
+        );
+        assert!(!shell.stick_to_bottom);
+    }
+
+    #[test]
+    fn bottom_refresh_keeps_its_window_and_includes_bounded_arrivals() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        let message = |n: usize| {
+            serde_json::from_value(serde_json::json!({
+                "type":"message", "user":"U1", "ts":format!("{n}.000001"), "text":"Synthetic history"
+            })).unwrap()
+        };
+        shell
+            .core
+            .workspaces
+            .get_mut("T1")
+            .unwrap()
+            .messages
+            .get_mut("C2")
+            .unwrap()
+            .messages = (100..300).map(message).collect();
+        shell.refresh_from_core();
+        shell.stick_to_bottom = true;
+        shell.core.pending_scroll_to = None;
+        shell.timeline_start = 182;
+        shell.timeline_end = 200;
+        shell.refresh_from_core();
+        assert_eq!((shell.timeline_start, shell.timeline_end), (182, 200));
+        shell
+            .core
+            .workspaces
+            .get_mut("T1")
+            .unwrap()
+            .messages
+            .get_mut("C2")
+            .unwrap()
+            .messages
+            .push(message(300));
+        shell.refresh_from_core();
+        assert_eq!((shell.timeline_start, shell.timeline_end), (182, 201));
+        assert_eq!(shell.messages[shell.timeline_end - 1].id, "300.000001");
+        shell
+            .core
+            .workspaces
+            .get_mut("T1")
+            .unwrap()
+            .messages
+            .get_mut("C2")
+            .unwrap()
+            .messages
+            .extend((301..601).map(message));
+        shell.refresh_from_core();
+        assert_eq!(shell.timeline_end - shell.timeline_start, 100);
+        assert_eq!(shell.timeline_end, shell.messages.len());
+    }
+
+    #[test]
+    fn unread_navigation_renders_its_target_outside_the_newest_window() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        let template = shell.messages[0].clone();
+        shell.messages = (0..240)
+            .map(|n| {
+                let mut message = template.clone();
+                message.id = format!("{n}.000001");
+                message.ts = message.id.clone();
+                message
+            })
+            .collect();
+        shell.core.pending_scroll_to = Some((
+            "C2".into(),
+            super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter("30.000001".into()),
+        ));
+        shell.reset_timeline_window();
+        assert!(shell.timeline_start <= 30 && shell.timeline_end > 30);
+        assert!(shell.timeline_end - shell.timeline_start <= 100);
+    }
 
     #[test]
     fn unchanged_measurements_do_not_require_a_write() {

@@ -366,8 +366,18 @@ fn sort_section(
                 muted: ws.sidebar.is_muted(&c.id),
                 group,
                 name: channel_display_name(ws, c),
-                recency: ws.channel_recency(c),
-                priority: ws.priority_score(&c.id).unwrap_or(-1.0),
+                // Alphabetical/priority order never reads transcript recency.
+                // Scanning warm history here can dominate every realtime paint.
+                recency: if section.sort == SectionSort::Recent {
+                    ws.channel_recency(c)
+                } else {
+                    0
+                },
+                priority: if section.sort == SectionSort::Priority {
+                    ws.priority_score(&c.id).unwrap_or(-1.0)
+                } else {
+                    0.0
+                },
             }
         })
         .collect();

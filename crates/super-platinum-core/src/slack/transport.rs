@@ -264,7 +264,15 @@ impl Transport {
             let err = value
                 .get("error")
                 .and_then(Value::as_str)
-                .unwrap_or("unknown_error")
+                .unwrap_or_else(|| {
+                    if req_url.contains("/api/conversations.leave?")
+                        && value.get("not_in_channel").and_then(Value::as_bool) == Some(true)
+                    {
+                        "not_in_channel"
+                    } else {
+                        "unknown_error"
+                    }
+                })
                 .to_owned();
             tracing::warn!(
                 url = %redact_secrets(&req_url),

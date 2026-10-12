@@ -400,6 +400,29 @@ pub async fn fetch_channels_info(
     Ok(channels)
 }
 
+/// The complete workspace catalog, including aliases. Load on demand, not boot.
+pub async fn fetch_emoji_catalog(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+) -> Result<Vec<Emoji>, Error> {
+    #[derive(serde::Deserialize)]
+    struct Catalog {
+        emoji: BTreeMap<String, String>,
+    }
+    let request = client.rest_form(workspace, "emoji.list", Vec::new());
+    let page: Catalog = decode(transport.execute(request).await?, "emoji.list")?;
+    Ok(page
+        .emoji
+        .into_iter()
+        .map(|(name, value)| Emoji {
+            name,
+            value,
+            ..Default::default()
+        })
+        .collect())
+}
+
 pub async fn fetch_emojis_info(
     transport: &Transport,
     client: &SlackClient,
@@ -478,6 +501,63 @@ pub async fn upload_files(
         canceled,
     } = request;
 
+    let files = stage_files(transport, client, workspace, files_to_upload, &canceled).await?;
+
+    let mut fields = vec![
+        (
+            "files",
+            serde_json::to_string(&files)
+                .map_err(|error| Error::Transport(format!("encode upload files: {error}")))?,
+        ),
+        ("channel_id", channel),
+    ];
+    if !initial_comment.is_empty() {
+        fields.push(("initial_comment", initial_comment));
+    }
+    if let Some(thread_ts) = thread_ts {
+        fields.push(("thread_ts", thread_ts));
+    }
+    if canceled.load(Ordering::Relaxed) {
+        return Err(Error::UploadCanceled);
+    }
+    transport
+        .execute(client.rest_form(workspace, "files.completeUploadExternal", fields))
+        .await?;
+    Ok(())
+}
+
+/// Upload and finalize private files without posting to a conversation.
+/// Scheduling attaches these ids later, so no early file message is created.
+pub async fn upload_unshared_files(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    files_to_upload: Vec<(PathBuf, Arc<AtomicU64>)>,
+    canceled: Arc<AtomicBool>,
+) -> Result<Vec<String>, Error> {
+    let files = stage_files(transport, client, workspace, files_to_upload, &canceled).await?;
+    if canceled.load(Ordering::Relaxed) {
+        return Err(Error::UploadCanceled);
+    }
+    transport
+        .execute(client.rest_form(
+            workspace,
+            "files.completeUploadExternal",
+            vec![("files", serde_json::to_string(&files).unwrap())],
+        ))
+        .await?;
+    Ok(files
+        .iter()
+        .filter_map(|f| f.get("id").and_then(|s| s.as_str()).map(str::to_owned))
+        .collect())
+}
+async fn stage_files(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    files_to_upload: Vec<(PathBuf, Arc<AtomicU64>)>,
+    canceled: &AtomicBool,
+) -> Result<Vec<serde_json::Value>, Error> {
     let mut files = Vec::with_capacity(files_to_upload.len());
     for (path, progress) in files_to_upload {
         if canceled.load(Ordering::Relaxed) {
@@ -511,27 +591,7 @@ pub async fn upload_files(
         files.push(serde_json::json!({ "id": ticket.file_id, "title": filename }));
     }
 
-    let mut fields = vec![
-        (
-            "files",
-            serde_json::to_string(&files)
-                .map_err(|error| Error::Transport(format!("encode upload files: {error}")))?,
-        ),
-        ("channel_id", channel),
-    ];
-    if !initial_comment.is_empty() {
-        fields.push(("initial_comment", initial_comment));
-    }
-    if let Some(thread_ts) = thread_ts {
-        fields.push(("thread_ts", thread_ts));
-    }
-    if canceled.load(Ordering::Relaxed) {
-        return Err(Error::UploadCanceled);
-    }
-    transport
-        .execute(client.rest_form(workspace, "files.completeUploadExternal", fields))
-        .await?;
-    Ok(())
+    Ok(files)
 }
 
 pub async fn fetch_users_search(

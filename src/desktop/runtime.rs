@@ -14,6 +14,7 @@ const MEDIA_SWEEP_TICKS: u32 = 5;
 pub async fn ticks(mut state: Signal<ShellState>) {
     let mut interval = tokio::time::interval(std::time::Duration::from_millis(200));
     let mut tick: u32 = 0;
+    let mut draft_save_error = None;
     loop {
         interval.tick().await;
         tick = tick.wrapping_add(1);
@@ -27,6 +28,19 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         let mut connection = crate::connection::Next::Nothing;
         let mut changed = false;
         if !crate::fixture::is_fixture() {
+            let failed_account = shell
+                .core
+                .active_account
+                .as_ref()
+                .filter(|account| super_platinum_core::drafts::store::save_failed(account))
+                .cloned();
+            if failed_account.is_some() && failed_account != draft_save_error {
+                shell.show_toast(
+                    "Local drafts could not be saved. Keep the app open while saving retries.",
+                );
+                changed = true;
+            }
+            draft_save_error = failed_account;
             let reactions = shell.huddle_ui.reactions.len();
             shell
                 .huddle_ui

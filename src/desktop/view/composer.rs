@@ -4,6 +4,31 @@ use super_platinum_core::FormatMark;
 use super::rich::attachment_chip;
 use crate::state::{ComposerTarget, ShellState};
 
+// Dioxus's implicit `.*` filter is passed as a literal extension on macOS.
+// Calling the native dialog without a filter accepts all ordinary file types.
+async fn choose_attachments(mut state: Signal<ShellState>, target: ComposerTarget) {
+    let scope = {
+        let shell = state.peek();
+        (
+            shell.core.active_account.clone(),
+            shell.composer_key(target),
+        )
+    };
+    let Some(files) = rfd::AsyncFileDialog::new().pick_files().await else {
+        return;
+    };
+    let mut shell = state.write();
+    if (
+        shell.core.active_account.clone(),
+        shell.composer_key(target),
+    ) != scope
+    {
+        shell.show_toast("The conversation changed. Choose the files again to attach them here.");
+        return;
+    }
+    shell.add_attachments(files.into_iter().map(|file| file.path().to_owned()), target);
+}
+
 /// Writes a value into a live text field.
 ///
 /// The text fields render `initial_value`, not `value`: Dioxus marks `value`
@@ -53,6 +78,12 @@ pub(crate) fn focus_field_when_mounted(id: &str) {
 }
 
 pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: &str) -> Element {
+    if let Some(reason) = state.read().composer_unavailable() {
+        let channel = state.read().core.active_channel.clone().unwrap_or_default();
+        return rsx! {footer{class:"composer-unavailable",p{role:"status","{reason}"}
+            super::channel_membership::MembershipControls{state,channel,ready:true,disabled:false,join_only:true,onbusy:move |_|{},onchanged:move |_|{}}
+        }};
+    }
     let is_dm_like = state
         .read()
         .channels
@@ -63,10 +94,14 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
     } else {
         format!("Message #{channel_name}")
     };
+    let destination = state.read().composer_key(ComposerTarget::Channel);
+    let account = state.read().core.active_account.clone();
+    let field_key = format!("{account:?}:{destination:?}");
     let upload_epoch = state.read().upload_ui_epoch;
     let composer_attachments = state.read().core.composer_attachments.clone();
     rsx! {
-        footer { class: "composer-wrap",
+        footer { key: "{field_key}", class: "composer-wrap",
+            {format_toolbar(state, ComposerTarget::Channel)}
             if !composer_attachments.is_empty() {
                 div { class: "attachment-chips",
                     for attachment in composer_attachments.iter() {
@@ -75,56 +110,46 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
                 }
             }
             div { class: "composer-row",
-                label { class: "composer-icon-btn", title: "Attach files",
+                button { class: "composer-icon-btn", title: "Attach files", "aria-label":"Attach files",
+                    onclick:move |_|{spawn(choose_attachments(state,ComposerTarget::Channel));},
                     {crate::icons::icon(crate::icons::Icon::Add, "icon sm")}
-                    input {
-                        r#type: "file",
-                        multiple: true,
-                        onchange: move |event| {
-                            state.write().add_attachments(event.files().into_iter().map(|file| file.path()), ComposerTarget::Channel);
-                        }
-                    }
                 }
                 textarea {
                     id: "channel-composer",
                     initial_value: "{text}",
                     placeholder: "{placeholder}",
-                    onmounted: move |_| {
-                        dioxus::document::eval(
-                            r#"const editor = document.getElementById('channel-composer');
-                               if (!editor) return;
-                               const resize = () => {
-                                 editor.style.height = 'auto';
-                                 editor.style.height = Math.min(160, Math.max(28, editor.scrollHeight)) + 'px';
-                               };
-                               editor.addEventListener('input', resize);
-                               resize();"#,
-                        );
-                    },
+                    onmounted: move |_| mount_autosize("channel-composer"),
                     oninput: move |event| {
                         let value = event.value();
                         let end = value.len();
                         let mut state = state.write();
+                        if state.core.active_account != account || state.composer_key(ComposerTarget::Channel) != destination { return; }
+                        state.sync_composer_drafts();
                         state.core.composer.text = value;
                         state.core.composer.set_selection(end, end);
+                        state.checkpoint_composers();
                         state.notify_typing();
                         // Autosizing runs off the DOM's own `input` listener
                         // registered at mount — one IPC round trip per keystroke
                         // is exactly what makes typing feel gluey.
                     },
                     onkeydown: move |event| {
-                        if event.key() == Key::Enter && !event.modifiers().shift() {
+                        if let Some(mark) = format_shortcut(&event) {
+                            event.prevent_default();
+                            spawn(format_composer_dom(state, ComposerTarget::Channel, mark));
+                        } else if event.key() == Key::Enter && !event.modifiers().shift() {
                             event.prevent_default();
                             spawn(crate::bootstrap::send_composer(state));
                         }
                     },
                 }
                 button {
-                    class: "composer-icon-btn",
+                    class: "composer-icon-btn composer-send-btn",
                     title: "Send",
                     onclick: move |_| { spawn(crate::bootstrap::send_composer(state)); },
                     {crate::icons::icon(crate::icons::Icon::Send, "icon sm")}
                 }
+                super::scheduled::ScheduleButton {state,target:ComposerTarget::Channel}
             }
         }
     }
@@ -136,9 +161,16 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
 /// carry files too, and they must be sent into the thread rather than the
 /// channel behind it.
 pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
+    if let Some(reason) = snapshot.composer_unavailable() {
+        return rsx! {footer{class:"composer-unavailable",role:"status","{reason}"}};
+    }
+    let destination = snapshot.composer_key(ComposerTarget::Thread);
+    let account = snapshot.core.active_account.clone();
+    let field_key = format!("{account:?}:{destination:?}");
     let upload_epoch = snapshot.upload_ui_epoch;
     rsx! {
-        footer { class: "thread-composer",
+        footer { key: "{field_key}", class: "thread-composer",
+            {format_toolbar(state, ComposerTarget::Thread)}
             if !snapshot.core.thread_composer_attachments.is_empty() {
                 div { class: "attachment-chips",
                     for attachment in snapshot.core.thread_composer_attachments.iter() {
@@ -147,82 +179,152 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
                 }
             }
             div { class: "composer-row",
-                label { class: "composer-icon-btn", title: "Attach files",
+                button { class: "composer-icon-btn", title: "Attach files", "aria-label":"Attach files",
+                    onclick:move |_|{spawn(choose_attachments(state,ComposerTarget::Thread));},
                     {crate::icons::icon(crate::icons::Icon::Add, "icon sm")}
-                    input {
-                        r#type: "file",
-                        multiple: true,
-                        onchange: move |event| {
-                            state.write().add_attachments(
-                                event.files().into_iter().map(|file| file.path()),
-                                ComposerTarget::Thread,
-                            );
-                        }
-                    }
                 }
                 textarea {
                     id: "thread-composer",
+                    onmounted: move |_| mount_autosize("thread-composer"),
                     initial_value: "{snapshot.core.thread_composer.text}",
                     placeholder: "Reply…",
                     oninput: move |event| {
                         let value = event.value();
                         let end = value.len();
                         let mut shell = state.write();
+                        if shell.core.active_account != account || shell.composer_key(ComposerTarget::Thread) != destination { return; }
+                        shell.sync_composer_drafts();
                         shell.core.thread_composer.text = value;
                         shell.core.thread_composer.set_selection(end, end);
+                        shell.checkpoint_composers();
                     },
                     onkeydown: move |event| {
-                        if event.key() == Key::Enter && !event.modifiers().shift() {
+                        if let Some(mark) = format_shortcut(&event) {
+                            event.prevent_default();
+                            spawn(format_composer_dom(state, ComposerTarget::Thread, mark));
+                        } else if event.key() == Key::Enter && !event.modifiers().shift() {
                             event.prevent_default();
                             spawn(crate::bootstrap::send_thread_composer(state));
                         }
                     }
                 }
                 button {
-                    class: "composer-icon-btn",
+                    class: "composer-icon-btn composer-send-btn",
                     title: "Send",
                     onclick: move |_| { spawn(crate::bootstrap::send_thread_composer(state)); },
                     {crate::icons::icon(crate::icons::Icon::Send, "icon sm")}
+                }
+                super::scheduled::ScheduleButton {state,target:ComposerTarget::Thread}
+            }
+        }
+    }
+}
+
+fn mount_autosize(id: &str) {
+    let id = serde_json::to_string(id).unwrap();
+    dioxus::document::eval(&format!(
+        r#"const editor = document.getElementById({id});
+           if (!editor) return;
+           const resize = () => {{
+             editor.style.height = 'auto';
+             editor.style.height = Math.min(160, Math.max(28, editor.scrollHeight)) + 'px';
+           }};
+           editor.addEventListener('input', resize);
+           resize();"#,
+    ));
+}
+
+fn format_shortcut(event: &KeyboardEvent) -> Option<FormatMark> {
+    if !(event.modifiers().meta() || event.modifiers().ctrl()) || event.modifiers().alt() {
+        return None;
+    }
+    let Key::Character(key) = event.key() else {
+        return None;
+    };
+    match (key.to_lowercase().as_str(), event.modifiers().shift()) {
+        ("b", false) => Some(FormatMark::Bold),
+        ("i", false) => Some(FormatMark::Italic),
+        ("x", true) => Some(FormatMark::Strike),
+        ("c", true) => Some(FormatMark::Code),
+        _ => None,
+    }
+}
+
+fn format_toolbar(state: Signal<ShellState>, target: ComposerTarget) -> Element {
+    use crate::icons::{Icon, icon};
+    let controls = [
+        (FormatMark::Bold, Icon::FormatBold, "Bold"),
+        (FormatMark::Italic, Icon::FormatItalic, "Italic"),
+        (FormatMark::Strike, Icon::FormatStrike, "Strikethrough"),
+        (FormatMark::Code, Icon::Code, "Inline code"),
+        (FormatMark::CodeBlock, Icon::CodeBlock, "Code block"),
+        (FormatMark::Quote, Icon::Quote, "Quote"),
+    ];
+    rsx! {
+        div { class: "composer-formatting", role: "group", "aria-label": "Text formatting",
+            for (mark, symbol, label) in controls {
+                button {
+                    r#type: "button",
+                    class: "composer-icon-btn",
+                    title: label,
+                    "aria-label": label,
+                    onmousedown: |event| event.prevent_default(),
+                    onclick: move |_| { spawn(format_composer_dom(state, target, mark)); },
+                    {icon(symbol, "icon sm")}
                 }
             }
         }
     }
 }
 
-#[allow(dead_code)]
-async fn format_composer_dom(mut state: Signal<ShellState>, mark: FormatMark) {
-    let selection = dioxus::document::eval(
-        r#"const editor = document.getElementById('channel-composer');
-            dioxus.send(editor ? [editor.selectionStart, editor.selectionEnd] : [0, 0]);"#,
-    )
-    .recv::<Vec<usize>>()
-    .await
-    .unwrap_or_default();
-    let (start_utf16, end_utf16) = match selection.as_slice() {
-        [start, end, ..] => (*start, *end),
-        _ => (0, 0),
+async fn format_composer_dom(state: Signal<ShellState>, target: ComposerTarget, mark: FormatMark) {
+    let id = match target {
+        ComposerTarget::Channel => "channel-composer",
+        ComposerTarget::Thread => "thread-composer",
     };
-    let (selection_start, selection_end, text) = {
-        let mut shell = state.write();
-        let start = utf16_to_byte(&shell.core.composer.text, start_utf16);
-        let end = utf16_to_byte(&shell.core.composer.text, end_utf16);
-        shell.core.composer.set_selection(start, end);
-        shell.format_composer(mark);
+    let identity = {
+        let shell = state.read();
         (
-            byte_to_utf16(
-                &shell.core.composer.text,
-                shell.core.composer.selection.start,
-            ),
-            byte_to_utf16(&shell.core.composer.text, shell.core.composer.selection.end),
-            shell.core.composer.text.clone(),
+            shell.core.active_team.clone(),
+            shell.channel_generation,
+            shell.thread_root.clone(),
         )
     };
-    let text = serde_json::to_string(&text).unwrap_or_else(|_| "\"\"".into());
+    // Read the DOM's current value as well as its selection. A fast keystroke can
+    // be ahead of the Rust signal; formatting must never overwrite it.
+    let Ok((original, start, end)) = dioxus::document::eval(&format!(
+        "const e = document.getElementById('{id}'); dioxus.send(e ? [e.value, e.selectionStart, e.selectionEnd] : null);"
+    )).recv::<(String, usize, usize)>().await else { return; };
+    {
+        let shell = state.read();
+        if identity
+            != (
+                shell.core.active_team.clone(),
+                shell.channel_generation,
+                shell.thread_root.clone(),
+            )
+        {
+            return;
+        }
+    }
+    let mut composer = super_platinum_core::ComposerState::with_text(&original);
+    composer.set_selection(
+        utf16_to_byte(&original, start),
+        utf16_to_byte(&original, end),
+    );
+    composer.apply_format(mark);
+    let selection_start = byte_to_utf16(&composer.text, composer.selection.start);
+    let selection_end = byte_to_utf16(&composer.text, composer.selection.end);
+    let text = serde_json::to_string(&composer.text).unwrap();
+    let original = serde_json::to_string(&original).unwrap();
     dioxus::document::eval(&format!(
-        r#"requestAnimationFrame(() => {{
-              const editor = document.getElementById('channel-composer');
-              if (editor) {{ editor.value = {text}; editor.focus(); editor.setSelectionRange({selection_start}, {selection_end}); }}
-            }});"#
+        r#"const editor = document.getElementById('{id}');
+           if (editor && editor.value === {original} && editor.selectionStart === {start} && editor.selectionEnd === {end}) {{
+             editor.value = {text};
+             editor.focus();
+             editor.setSelectionRange({selection_start}, {selection_end});
+             editor.dispatchEvent(new Event('input', {{ bubbles: true }}));
+           }}"#,
     ));
 }
 
@@ -246,7 +348,7 @@ pub(crate) fn schedule_timeline_measure(
         )
     };
     spawn(async move {
-        measure_timeline(state).await;
+        measure_timeline(state, queued).await;
         pending.set(false);
         let shell = state.read();
         let changed = source
@@ -262,14 +364,22 @@ pub(crate) fn schedule_timeline_measure(
     });
 }
 
-async fn measure_timeline(mut state: Signal<ShellState>) {
+async fn measure_timeline(mut state: Signal<ShellState>, queued: Signal<bool>) {
     let (generation, team, channel, first_measurement) = {
         let shell = state.read();
         (
             shell.channel_generation,
             shell.core.active_team.clone(),
             shell.core.active_channel.clone(),
-            shell.row_heights.is_empty() && shell.stick_to_bottom,
+            shell.row_heights.is_empty()
+                && shell.stick_to_bottom
+                && !matches!(
+                    shell.core.pending_scroll_to,
+                    Some((
+                        _,
+                        super_platinum_core::domain::PendingScrollTarget::Message(_)
+                    ))
+                ),
         )
     };
     let Ok(value) = dioxus::document::eval(
@@ -277,15 +387,20 @@ async fn measure_timeline(mut state: Signal<ShellState>) {
             if (!timeline) { dioxus.send(null); }
             else {
               const bounds = timeline.getBoundingClientRect();
-              const rows = [...timeline.querySelectorAll('[data-message-index]')].map(row => ({
-                index: Number(row.dataset.messageIndex), id: row.dataset.messageId,
+              const rows = [...timeline.querySelectorAll('[data-row-index]')].map(row => ({
+                index: Number(row.dataset.rowIndex), id: row.dataset.rowId,
                 height: row.getBoundingClientRect().height,
                 top: row.getBoundingClientRect().top, bottom: row.getBoundingClientRect().bottom
               }));
               const visible = rows.filter(row => row.bottom >= bounds.top && row.top <= bounds.bottom);
               dioxus.send({
+                visible: visible.length > 0,
+                scrollTop: timeline.scrollTop,
+                viewportHeight: timeline.clientHeight,
                 first: visible.length ? visible[0].index : (rows[0]?.index ?? 0),
                 last: visible.length ? visible[visible.length - 1].index : (rows[rows.length - 1]?.index ?? 0),
+                firstId: visible.length ? visible[0].id : rows[0]?.id,
+                lastId: visible.length ? visible[visible.length - 1].id : rows[rows.length - 1]?.id,
                 rows: rows.map(row => [row.id, row.height]),
                 atBottom: timeline.scrollHeight - timeline.scrollTop - timeline.clientHeight < 48
               });
@@ -296,17 +411,35 @@ async fn measure_timeline(mut state: Signal<ShellState>) {
     else {
         return;
     };
-    if value.is_null() {
+    // A newer scroll has already requested another sample. Applying this one
+    // would move the virtual window back underneath the reader's next gesture.
+    if value.is_null() || *queued.peek() {
         return;
     }
-    let first = value
+    let mut first = value
         .get("first")
         .and_then(serde_json::Value::as_u64)
         .unwrap_or(0) as usize;
-    let last = value
+    let mut last = value
         .get("last")
         .and_then(serde_json::Value::as_u64)
         .unwrap_or(first as u64) as usize;
+    let visible = value
+        .get("visible")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
+    if !visible {
+        (first, last) = state.peek().estimated_timeline_window(
+            value
+                .get("scrollTop")
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or(0.0),
+            value
+                .get("viewportHeight")
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or(0.0),
+        );
+    }
     let measurements = value
         .get("rows")
         .and_then(serde_json::Value::as_array)
@@ -328,6 +461,11 @@ async fn measure_timeline(mut state: Signal<ShellState>) {
         if shell.channel_generation != generation
             || shell.core.active_team != team
             || shell.core.active_channel != channel
+            || (visible
+                && (value.get("firstId").and_then(serde_json::Value::as_str)
+                    != shell.messages.get(first).map(|m| m.id.as_str())
+                    || value.get("lastId").and_then(serde_json::Value::as_str)
+                        != shell.messages.get(last).map(|m| m.id.as_str())))
         {
             return;
         }
@@ -341,9 +479,15 @@ async fn measure_timeline(mut state: Signal<ShellState>) {
             .set_timeline_window(first, last, measurements, stick_to_bottom);
     }
     if first_measurement {
-        dioxus::document::eval(
-            "requestAnimationFrame(() => requestAnimationFrame(() => { const timeline = document.getElementById('message-timeline'); if (timeline) timeline.scrollTop = timeline.scrollHeight; }));",
-        );
+        spawn(async move {
+            if state.peek().channel_generation == generation && state.peek().stick_to_bottom {
+                crate::bootstrap::scroll_to_pending(
+                    state,
+                    super_platinum_core::domain::PendingScrollTarget::Latest,
+                )
+                .await;
+            }
+        });
     }
     if stick_to_bottom || first_measurement {
         spawn(crate::bootstrap::mark_visible_read(state));
@@ -354,6 +498,7 @@ async fn measure_timeline(mut state: Signal<ShellState>) {
 /// auto-scrolls while it is, so a reader who scrolled up to read history is not
 /// yanked back down by every arriving reply.
 pub(crate) async fn measure_thread(mut state: Signal<ShellState>) {
+    let scope = state.peek().thread_scope();
     let at_bottom = dioxus::document::eval(
         "const body = document.getElementById('thread-body');
          dioxus.send(Boolean(body && body.scrollHeight - body.scrollTop - body.clientHeight < 48));",
@@ -361,19 +506,30 @@ pub(crate) async fn measure_thread(mut state: Signal<ShellState>) {
     .recv::<bool>()
     .await
     .unwrap_or(true);
-    if state.read().thread_at_bottom != at_bottom {
+    if state.peek().thread_scope() == scope
+        && state.peek().thread_target.is_none()
+        && state.peek().thread_at_bottom != at_bottom
+    {
         state.write().thread_at_bottom = at_bottom;
     }
 }
 
 pub(crate) async fn load_older_if_needed(state: Signal<ShellState>) {
+    let visit = {
+        let shell = state.read();
+        (shell.core.account_epoch, shell.channel_generation)
+    };
     let near_top = dioxus::document::eval(
         "const t=document.getElementById('message-timeline'); dioxus.send(Boolean(t && t.scrollTop < 96));",
     )
     .recv::<bool>()
     .await
     .unwrap_or(false);
-    if near_top {
+    let current = {
+        let shell = state.read();
+        visit == (shell.core.account_epoch, shell.channel_generation)
+    };
+    if near_top && current {
         crate::bootstrap::load_older(state).await;
     }
 }

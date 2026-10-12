@@ -4,6 +4,29 @@ use crate::slack::models::Emoji;
 
 use super::files::is_browser_url;
 
+#[derive(Debug)]
+pub struct StandardEmoji {
+    pub name: &'static str,
+    pub glyph: &'static str,
+    pub aliases: String,
+}
+
+/// Build the searchable, offline catalog once, only when an emoji UI opens.
+pub fn standard_emoji_catalog() -> &'static [StandardEmoji] {
+    static CATALOG: std::sync::OnceLock<Vec<StandardEmoji>> = std::sync::OnceLock::new();
+    CATALOG.get_or_init(|| {
+        emojis::iter()
+            .filter_map(|emoji| {
+                Some(StandardEmoji {
+                    name: emoji.shortcode()?,
+                    glyph: emoji.as_str(),
+                    aliases: emoji.shortcodes().collect::<Vec<_>>().join(" "),
+                })
+            })
+            .collect()
+    })
+}
+
 pub fn reaction_summary(reaction: &crate::slack::models::Reaction) -> String {
     format!("{} {}", emoji_glyph(&reaction.name), reaction.count.max(1))
 }
@@ -96,22 +119,42 @@ pub fn visit_emoji_names_in_text<'a>(text: &'a str, mut visit: impl FnMut(&'a st
     }
 }
 
-pub(crate) fn custom_emoji_url<'a>(
+#[derive(Debug, PartialEq, Eq)]
+pub enum EmojiSource<'a> {
+    Url(&'a str),
+    Unicode(&'static str),
+}
+
+/// Follow aliases, including standard emoji. Reject cycles and unsafe URLs.
+pub fn custom_emoji_source<'a>(
     emojis: &'a HashMap<String, Emoji>,
     name: &str,
-) -> Option<&'a str> {
+) -> Option<EmojiSource<'a>> {
     let mut current = name;
     let mut seen = std::collections::HashSet::new();
     loop {
         if !seen.insert(current) {
             return None;
         }
-        let emoji = emojis.get(current)?;
+        let Some(emoji) = emojis.get(current) else {
+            return emojis::get_by_shortcode(current)
+                .map(|emoji| EmojiSource::Unicode(emoji.as_str()));
+        };
         if let Some(alias) = emoji.value.strip_prefix("alias:") {
             current = alias;
             continue;
         }
-        return is_browser_url(&emoji.value).then_some(emoji.value.as_str());
+        return is_browser_url(&emoji.value).then_some(EmojiSource::Url(emoji.value.as_str()));
+    }
+}
+
+pub(crate) fn custom_emoji_url<'a>(
+    emojis: &'a HashMap<String, Emoji>,
+    name: &str,
+) -> Option<&'a str> {
+    match custom_emoji_source(emojis, name)? {
+        EmojiSource::Url(url) => Some(url),
+        EmojiSource::Unicode(_) => None,
     }
 }
 

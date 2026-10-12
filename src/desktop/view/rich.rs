@@ -1,3 +1,4 @@
+use super::media_image::MediaImage;
 use dioxus::prelude::*;
 
 use crate::state::{AttachmentVm, MessageVm, Overlay, ReactionVm, RichNode, ShellState};
@@ -96,12 +97,11 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
             if !state.read().media.is_ready(id) {
                 return rsx! { span { class: "custom-emoji", title: ":{name}:", ":{name}:" } };
             }
-            let uri = id.uri_at(media_epoch);
             rsx! {
-                img {
-                    key: "emoji-{media_epoch}-{uri}",
+                MediaImage {
+                    state, id:id.clone(), media_epoch, compact:true,
+                    fallback:rsx! { span {class:"custom-emoji",title:":{name}:",":{name}:"} },
                     class: "emoji-image",
-                    src: "{uri}",
                     alt: ":{name}:",
                     title: ":{name}:",
                 }
@@ -137,16 +137,14 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                     }
                 };
             };
-            let uri = id.uri_at(media_epoch);
             if mime.starts_with("image/") {
                 rsx! {
                     button {
                         class: "media-button",
                         onclick: move |_| open_viewer(state, viewer.clone()),
-                        img {
-                            key: "media-{media_epoch}-{uri}",
+                        MediaImage {
+                            state, id:id.clone(), media_epoch,
                             class: "message-media",
-                            src: "{uri}",
                             alt: "{name}",
                             style: "{sizing}",
                         }
@@ -159,10 +157,9 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                     button {
                         class: "media-button media-poster",
                         onclick: move |_| open_viewer(state, viewer.clone()),
-                        img {
-                            key: "media-{media_epoch}-{uri}",
+                        MediaImage {
+                            state, id:id.clone(), media_epoch,
                             class: "message-media",
-                            src: "{uri}",
                             alt: "{name}",
                             style: "{sizing}",
                         }
@@ -239,12 +236,10 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
             },
         },
         RichNode::InlineImage { id, alt } => {
-            let uri = id.uri_at(media_epoch);
             rsx! {
-                img {
-                    key: "inline-{media_epoch}-{uri}",
+                MediaImage {
+                    state, id:id.clone(), media_epoch, compact:true,
                     class: "block-inline-image",
-                    src: "{uri}",
                     alt: "{alt}",
                     title: "{alt}",
                 }
@@ -256,7 +251,6 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
             title,
             size,
         } => {
-            let uri = id.uri_at(media_epoch);
             let viewer = viewer_vm(id, title.as_deref().unwrap_or(alt), "image/png");
             // Slack draws block images at their declared size, capped; keeping
             // the aspect ratio also stops the row reflowing when bytes land.
@@ -273,10 +267,9 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                     button {
                         class: "media-button",
                         onclick: move |_| open_viewer(state, viewer.clone()),
-                        img {
-                            key: "block-image-{media_epoch}-{uri}",
+                        MediaImage {
+                            state, id:id.clone(), media_epoch,
                             class: "block-image-media",
-                            src: "{uri}",
                             alt: "{alt}",
                             style: "{sizing}",
                         }
@@ -392,7 +385,7 @@ fn attachment_embed(
                 if let Some(service) = attachment.service.as_ref() {
                     div { class: "attachment-service",
                         if let Some(icon) = attachment.service_icon.as_ref() {
-                            img { key: "svc-{icon.uri()}", src: "{icon.uri_at(media_epoch)}", alt: "" }
+                            MediaImage { state, id:icon.clone(), media_epoch, compact:true, fallback:rsx!{span {}} }
                         }
                         span { "{service}" }
                     }
@@ -400,7 +393,7 @@ fn attachment_embed(
                 if let Some(author) = attachment.author.as_ref() {
                     div { class: "attachment-author",
                         if let Some(icon) = author.icon.as_ref() {
-                            img { key: "author-{icon.uri()}", src: "{icon.uri_at(media_epoch)}", alt: "" }
+                            MediaImage { state, id:icon.clone(), media_epoch, compact:true, fallback:rsx!{span {}} }
                         }
                         {
                             let user = author.user_id.clone();
@@ -470,11 +463,10 @@ fn attachment_embed(
                     }
                 }
                 if let Some(thumb) = attachment.thumb.as_ref() {
-                    img { key: "thumb-{thumb.uri()}", class: "attachment-thumb", src: "{thumb.uri_at(media_epoch)}", alt: "" }
+                    MediaImage { state, id:thumb.clone(), media_epoch, class:"attachment-thumb", compact:true }
                 }
                 if let Some((image, size)) = attachment.image.as_ref() {
                     {
-                        let uri = image.uri_at(media_epoch);
                         // Reserve the real aspect ratio so the row does not
                         // reflow when the bytes land.
                         let ratio = size
@@ -485,7 +477,7 @@ fn attachment_embed(
                             button {
                                 class: "media-button attachment-image",
                                 onclick: move |_| open_viewer(state, viewer.clone()),
-                                img { key: "att-img-{media_epoch}-{uri}", src: "{uri}", alt: "", style: "{ratio}" }
+                                MediaImage { state, id:image.clone(), media_epoch, style:ratio }
                             }
                         }
                     }
@@ -493,7 +485,7 @@ fn attachment_embed(
                 if let Some(footer) = attachment.footer.as_ref() {
                     div { class: "attachment-footer",
                         if let Some(icon) = footer.icon.as_ref() {
-                            img { key: "footer-{icon.uri()}", src: "{icon.uri_at(media_epoch)}", alt: "" }
+                            MediaImage { state, id:icon.clone(), media_epoch, compact:true, fallback:rsx!{span {}} }
                         }
                         {
                             let channel = footer.channel_id.clone();
@@ -582,14 +574,14 @@ fn reaction_pill(
             onclick: move |_| {
                 spawn(crate::bootstrap::toggle_reaction(state, channel.clone(), ts.clone(), name.clone(), own));
             },
-            {reaction_emoji(media, media_epoch, reaction, "reaction-emoji", "reaction-glyph")}
+            {reaction_emoji(state, media, media_epoch, reaction, "reaction-emoji", "reaction-glyph")}
             span { class: "reaction-count", "{reaction.count}" }
             if !reaction.reactors.is_empty() {
                 span { class: "reaction-faces",
                     for reactor in faces {
                         span { key: "reactor-{reactor.user_id}", class: "reaction-face",
                             if let Some(avatar) = reactor.avatar.as_ref().filter(|avatar| media.is_ready(avatar)) {
-                                img { src: "{avatar.uri_at(media_epoch)}", alt: "" }
+                                MediaImage {state,id:avatar.clone(),media_epoch,compact:true,fallback:rsx! {"{reactor.initials}"}}
                             } else {
                                 "{reactor.initials}"
                             }
@@ -602,7 +594,7 @@ fn reaction_pill(
             span { class: "reaction-card", "aria-hidden": "true",
                 if card_art {
                     span { class: "reaction-card-emoji",
-                        {reaction_emoji(media, media_epoch, reaction, "reaction-card-image", "reaction-card-glyph")}
+                        {reaction_emoji(state, media, media_epoch, reaction, "reaction-card-image", "reaction-card-glyph")}
                     }
                 }
                 span { class: "reaction-card-label",
@@ -617,6 +609,7 @@ fn reaction_pill(
 /// A reaction's emoji at either size: custom art, a held gap while it loads,
 /// or the standard glyph.
 fn reaction_emoji(
+    state: Signal<ShellState>,
     media: &crate::media::MediaRegistry,
     media_epoch: u64,
     reaction: &ReactionVm,
@@ -625,10 +618,9 @@ fn reaction_emoji(
 ) -> Element {
     rsx! {
         if let Some(emoji) = reaction.media.as_ref().filter(|emoji| media.is_ready(emoji)) {
-            img {
-                class: "{image_class}",
-                src: "{emoji.uri_at(media_epoch)}",
-                alt: ":{reaction.name}:",
+            MediaImage {
+                state, id:emoji.clone(), media_epoch, compact:true,
+                class:image_class.to_owned(), alt:format!(":{}:",reaction.name),
             }
         } else if reaction.media.is_some() {
             // A custom emoji still downloading. Hold the pill's shape rather
@@ -664,7 +656,7 @@ pub(crate) fn reply_bar(
             for (user, avatar, initials) in &message.reply_avatars {
                 span { key: "replier-{user}", class: "reply-avatar",
                     if let Some(avatar) = avatar.as_ref().filter(|avatar| media.is_ready(avatar)) {
-                        img { src: "{avatar.uri_at(media_epoch)}", alt: "" }
+                        MediaImage {state,id:avatar.clone(),media_epoch,compact:true,fallback:rsx! {"{initials}"}}
                     } else {
                         "{initials}"
                     }

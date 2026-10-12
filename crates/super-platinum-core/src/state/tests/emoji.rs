@@ -63,3 +63,34 @@ fn reaction_summary_format() {
     };
     assert_eq!(reaction_summary(&custom), ":hackclub_bug: 1");
 }
+
+#[test]
+fn custom_aliases_resolve_unicode_and_reject_cycles_and_unsafe_urls() {
+    let emojis = [
+        ("nice", "alias:thumbsup"),
+        ("very_nice", "alias:nice"),
+        ("cycle_a", "alias:cycle_b"),
+        ("cycle_b", "alias:cycle_a"),
+        ("missing", "alias:does_not_exist"),
+        ("unsafe", "javascript:alert(1)"),
+    ]
+    .into_iter()
+    .map(|(name, value)| {
+        (
+            name.to_owned(),
+            Emoji {
+                name: name.into(),
+                value: value.into(),
+                ..Default::default()
+            },
+        )
+    })
+    .collect();
+    assert_eq!(
+        custom_emoji_source(&emojis, "very_nice"),
+        Some(EmojiSource::Unicode("👍"))
+    );
+    for name in ["cycle_a", "missing", "unsafe"] {
+        assert_eq!(custom_emoji_source(&emojis, name), None, "{name}");
+    }
+}

@@ -15,12 +15,19 @@ BINARY="target/debug/super-platinum"
 FIXTURES=(
   login opening loading channel main-general-new-message-motion unreads threads
   rail-account-snoozed
-  animated-reaction profile-hover-card profile-pane profile-pane-rich-fields
+  animated-reaction reaction-picker later later-empty later-error later-reminder later-new-reminder
+  files files-narrow files-empty files-error
+  channel-files channel-files-narrow channel-links channel-links-narrow channel-links-empty channel-links-error
+  pins pins-narrow pins-empty pins-error channel-pinned-message
+  forward forward-narrow forward-error
+  scheduled scheduled-empty scheduled-error scheduled-edit scheduled-send-confirm
+  drafts drafts-empty drafts-edit drafts-conflict drafts-no-destination channel-details channel-create channel-leave channel-leave-last channel-join channel-join-composer
+  profile-hover-card profile-pane profile-pane-rich-fields
   profile-pane-min-width dm-header-compact
   channel-thread-profile-headers channel-huddle huddle-connected huddle-invite
   huddle-video huddle-video-expanded huddle-settings huddle-people huddle-captions
   chat-paused-pill
-  thread-unread-divider main-dev settings settings-storage appearance-countertop
+  thread-unread-divider thread-target thread-error thread-paging thread-paging-error thread-grouped thread-grouped-pending main-dev settings settings-storage appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background
   image-viewer-upload image-viewer-embed-compact gif-picker-attachment
   video-viewer search palette activity-unread activity-channel-post
@@ -30,7 +37,7 @@ FIXTURES=(
   composer-upload-progress
   edit-message-composer accounts self-menu self-menu-notifications
   multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout
-  media-loading-state
+  media-loading-state media-failed timeline-variable-height
   usergroup-members usergroup-channels
 )
 

@@ -368,3 +368,16 @@
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Emoji catalog: bounded page of choices, with local search over all names. */
+.modal.emoji-picker { width: min(360px, calc(100vw - 32px)); top: 12%; }
+.emoji-picker > input { width: calc(100% - 24px); margin: 4px 12px 12px; padding: 8px 10px; }
+.emoji-options { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 2px; padding: 4px 12px 12px; max-height: 340px; overflow-y: auto; }
+.emoji-options button { display: grid; place-items: center; min-width: 0; height: 36px; padding: 4px; border-radius: var(--radius-sm); font-size: 23px; }
+.emoji-options button:hover, .emoji-options button[aria-selected="true"] { background: var(--selection-bg); }
+.emoji-options img { width: 26px; height: 26px; object-fit: contain; }
+.emoji-footer { display: flex; align-items: center; justify-content: space-between; min-height: 40px; padding: 8px 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: var(--text-sm); }
+.emoji-footer button { color: var(--link); }
+.emoji-empty { padding: 12px; color: var(--muted); text-align: center; }
+.message:focus-within .message-tools { display: inline-flex; }
+.message-tools button { display: inline-flex; align-items: center; min-height: 26px; }

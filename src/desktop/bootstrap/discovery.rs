@@ -148,8 +148,7 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
         shell.group_panel = None;
         shell.profile_hover = None;
         shell.profile_menu_open = false;
-        shell.thread_root = None;
-        shell.thread_messages.clear();
+        shell.close_thread();
         shell.core.profile_pane = Some(super_platinum_core::domain::ProfilePaneState {
             user: user.clone(),
             loading: true,
@@ -517,115 +516,6 @@ pub async fn toggle_profile_vip(mut state: Signal<ShellState>, user: String) {
     }
 }
 
-pub async fn open_thread(mut state: Signal<ShellState>, channel: String, root_ts: String) {
-    state.write().close_profile();
-    {
-        let mut shell = state.write();
-        shell.thread_root = Some(root_ts.clone());
-        // A thread always opens parked on its newest reply, like Slack.
-        shell.thread_at_bottom = true;
-    }
-    let Some((transport, client, workspaces)) = credentials(&state) else {
-        return;
-    };
-    let Some(team) = state.read().core.active_team.clone() else {
-        return;
-    };
-    let Some(workspace_session) = workspaces
-        .into_iter()
-        .find(|workspace| workspace.team_id == team)
-    else {
-        return;
-    };
-    match api::fetch_replies(
-        &transport,
-        &client,
-        &workspace_session,
-        super_platinum_core::slack::api::RepliesArgs {
-            channel: channel.clone(),
-            ts: root_ts.clone(),
-            // Slack's own client asks for the *tail* of a thread
-            // (`latest` + `inclusive`), not the first page after the root. A
-            // long thread otherwise opens on replies from hours ago and the
-            // newest reply — the one the notification is about — is missing.
-            latest: Some(format!("{}.999999", super_platinum_core::state::now_secs())),
-            inclusive: true,
-            limit: Some(200),
-            ..Default::default()
-        },
-    )
-    .await
-    {
-        Ok(page) => {
-            let mut shell = state.write();
-            if shell.thread_root.as_deref() != Some(&root_ts) {
-                return;
-            }
-            let key = (team.clone(), channel.clone(), root_ts.clone());
-            let thread_messages = {
-                let messages = shell.core.threads.entry(key).or_default();
-                for message in page.messages {
-                    messages.upsert(super_platinum_core::state::visible_message(message));
-                }
-                messages.loaded = true;
-                messages.messages.clone()
-            };
-            let workspace = shell.core.workspaces.get(&team);
-            shell.thread_messages = thread_messages
-                .iter()
-                .map(|message| {
-                    workspace
-                        .map(|workspace| crate::state::message_vm(workspace, message, &shell.media))
-                        .unwrap_or_else(|| crate::state::MessageVm {
-                            id: message.ts.clone().unwrap_or_default(),
-                            ts: message.ts.clone().unwrap_or_default(),
-                            user_id: message.user.clone(),
-                            author: "Slack".into(),
-                            timestamp: message
-                                .ts
-                                .as_deref()
-                                .map(super_platinum_core::state::format_ts_hm)
-                                .unwrap_or_default(),
-                            avatar_initials: "S".into(),
-                            body: vec![crate::state::RichNode::Text(
-                                super_platinum_core::state::message_text(message),
-                            )],
-                            edited: message.edited.is_some(),
-                            reply_count: message.reply_count.unwrap_or(0),
-                            ..Default::default()
-                        })
-                })
-                .collect();
-            drop(shell);
-            super::session::hydrate_current_surface(state).await;
-            super::history::mark_thread_read(state, channel.clone(), root_ts.clone()).await;
-            let mut shell = state.write();
-            if shell.thread_root.as_deref() == Some(&root_ts) {
-                let key = (team.clone(), channel.clone(), root_ts.clone());
-                let messages = shell
-                    .core
-                    .threads
-                    .get(&key)
-                    .map(|messages| messages.messages.clone())
-                    .unwrap_or_default();
-                if let Some(workspace) = shell.core.workspaces.get(&team) {
-                    shell.thread_messages = messages
-                        .iter()
-                        .map(|message| crate::state::message_vm(workspace, message, &shell.media))
-                        .collect();
-                }
-            }
-        }
-        Err(error) => {
-            state
-                .write()
-                .report_failure(&error, "Replies cannot load while offline", || {
-                    format!("Thread failed: {error}")
-                })
-        }
-    }
-}
-
 /// Clears one Activity item. Slack's client sends `activity.markRead` with the
 /// entry type, the item's `feed_ts`, and its key the moment a row is clicked
 /// (CDP-verified), so the row and the bell badge stop counting it.
@@ -748,6 +638,12 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
         shell.remember_surface();
         shell.main_view = target;
         shell.profile_hover = None;
+        if matches!(
+            target,
+            MainView::Later | MainView::Files | MainView::Scheduled
+        ) {
+            shell.close_profile();
+        }
         shell.close_thread();
         let restore = shell.surfaces.get(&target).cloned();
         if let Some(surface) = restore.as_ref()
@@ -764,7 +660,7 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
         let signal = state;
         spawn(super::history::refresh_selected_channel(signal));
         if let Some(root) = surface.thread_root {
-            spawn(open_thread(signal, surface.channel, root));
+            spawn(super::open_thread(signal, surface.channel, root));
         }
     }
     if target == MainView::Home || std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
@@ -784,6 +680,19 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
     };
     match target {
         MainView::Home => {}
+        MainView::Scheduled => crate::scheduled::load(state, false).await,
+        MainView::Files => {
+            let (query, page) = crate::files::visible_state(&state.peek())
+                .map(|f| (f.query.clone(), f.page))
+                .unwrap_or_default();
+            crate::files::load(state, query, page).await;
+        }
+        MainView::Later => {
+            let filter = crate::later::visible_state(&state.peek())
+                .map(|later| later.filter)
+                .unwrap_or_default();
+            crate::later::load(state, filter, false).await;
+        }
         MainView::Unreads => {}
         MainView::Dms => {
             let load_seq = {

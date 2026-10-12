@@ -351,6 +351,11 @@ impl ShellState {
         self.open_message(channel, ts, ChannelOpen::Global)
     }
 
+    pub fn open_later_item(&mut self, channel: &str, ts: &str) -> bool {
+        self.close_thread();
+        self.open_message(channel, ts, ChannelOpen::InSurface)
+    }
+
     /// Opens one conversation anchored on a specific message.
     fn open_message(&mut self, channel: &str, ts: &str, open: ChannelOpen) -> bool {
         let Some(index) = self
@@ -365,6 +370,8 @@ impl ShellState {
             channel.to_owned(),
             super_platinum_core::domain::PendingScrollTarget::Message(ts.to_owned()),
         ));
+        self.stick_to_bottom = false;
+        self.reset_timeline_window();
         self.overlay = None;
         true
     }

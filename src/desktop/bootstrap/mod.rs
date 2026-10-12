@@ -8,6 +8,7 @@ mod self_menu;
 mod session;
 mod startup;
 mod storage;
+mod thread;
 pub(crate) use startup::initialize;
 
 pub use crate::messaging::{
@@ -22,3 +23,4 @@ pub use persist::*;
 pub use self_menu::*;
 pub use session::*;
 pub use storage::*;
+pub use thread::*;

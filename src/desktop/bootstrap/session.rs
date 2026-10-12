@@ -70,10 +70,17 @@ pub async fn refresh(mut state: Signal<ShellState>) {
         }
 
         crate::usergroups::hydrate(state, &team).await;
+        let membership_revision = state
+            .peek()
+            .core
+            .workspaces
+            .get(&team)
+            .map(|w| w.channel_lifecycle.revision())
+            .unwrap_or_default();
         if let Ok(counts) = api::fetch_counts(&transport, &client, &workspace_session).await
             && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
         {
-            workspace.apply_counts(counts);
+            workspace.apply_counts_since(counts, membership_revision);
         }
         refresh_channel_metadata(&mut state, &transport, &client, &workspace_session, &team).await;
         if let Ok(dnd) = api::fetch_dnd_info(&transport, &client, &workspace_session).await
@@ -98,6 +105,8 @@ pub async fn refresh(mut state: Signal<ShellState>) {
 
         persist_workspace(&state, &team);
     }
+    // Metadata only unless Later is visible; active history takes priority.
+    dioxus::prelude::spawn(crate::later::load(state, Default::default(), false));
 }
 
 pub(crate) async fn hydrate_current_surface(mut state: Signal<ShellState>) {
@@ -264,10 +273,17 @@ async fn refresh_channel_metadata(
         .map(|workspace| workspace.channels_to_refresh())
         .unwrap_or_default();
     for batch in batches {
+        let revision = state
+            .peek()
+            .core
+            .workspaces
+            .get(team)
+            .map(|w| w.channel_lifecycle.revision())
+            .unwrap_or(0);
         match api::fetch_generic_info(transport, client, workspace_session, &batch).await {
             Ok(page) if !page.channels.is_empty() => {
                 if let Some(workspace) = state.write().core.workspaces.get_mut(team) {
-                    workspace.apply_channel_refresh(page);
+                    workspace.apply_channel_refresh_since(page, revision);
                 }
             }
             Ok(_) => {}

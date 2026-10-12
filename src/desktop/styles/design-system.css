@@ -1,5 +1,5 @@
 /*
- * Ink & Signal component standards.
+ * Geist-inspired component standards.
  * This final cascade normalizes shared interaction, typography, and elevation
  * without coupling renderer-neutral state to presentation details.
  */
@@ -37,7 +37,7 @@
 .primary:active { transform: scale(.96); }
 
 /* ── Chrome: quiet planes, strong orientation ───────── */
-.rail { background: color-mix(in srgb, var(--rail) 94%, black); }
+.rail { background: var(--rail); }
 .sidebar,
 .list-panel { background: var(--sidebar); }
 .sidebar-title,
@@ -52,7 +52,7 @@
 .conversation-header h2,
 .thread-pane h2 {
   font-size: var(--text-md);
-  font-weight: 680;
+  font-weight: 600;
   letter-spacing: -.012em;
 }
 .jump-to {
@@ -62,7 +62,7 @@
   border: 1px solid transparent;
   background: var(--surface-raised);
 }
-.jump-to:hover { background: color-mix(in srgb, var(--surface-raised) 82%, var(--accent)); }
+.jump-to:hover { background: color-mix(in srgb, var(--surface-raised) 94%, var(--text)); }
 .jump-to .hint {
   padding: 1px 5px;
   border-radius: var(--radius-sm);
@@ -73,10 +73,11 @@
 .section-label,
 .palette-section,
 .storage-limit-label {
-  color: var(--muted-2);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .075em;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .nav-row,
 .channel,
@@ -84,10 +85,10 @@
 .nav-row.active,
 .channel.active,
 .workspace-row.active {
-  background: color-mix(in srgb, var(--accent) 17%, var(--surface-raised));
+  background: var(--selection-bg);
 }
 .rail-btn.active {
-  background: var(--accent-soft);
+  background: var(--selection-bg);
 }
 .channel-name,
 .dm-name,
@@ -101,13 +102,13 @@
 /* ── Conversation: Slack-familiar, calmer reading ───── */
 .conversation-header {
   background: color-mix(in srgb, var(--bg) 92%, transparent);
-  box-shadow: 0 1px rgb(0 0 0 / 32%);
+  box-shadow: none;
 }
 .timeline { padding-top: var(--space-3); }
 .message { padding-left: var(--space-4); padding-right: var(--space-4); }
-.message:hover { background: rgb(50 140 255 / 4%); }
+.message:hover { background: var(--hover-overlay); }
 .message-meta { gap: 6px; line-height: var(--leading-tight); }
-.message-meta strong { font-size: var(--text-md); font-weight: 680; letter-spacing: -.01em; }
+.message-meta strong { font-size: var(--text-md); font-weight: 600; letter-spacing: -.01em; }
 .message-meta time,
 .message-meta span { font-size: var(--text-xs); }
 .message-body { font-size: var(--text-md); line-height: var(--leading-copy); }
@@ -140,16 +141,16 @@
 /* ── Composer: a single focused work surface ────────── */
 .composer-wrap,
 .thread-composer {
-  border-color: transparent;
-  border-radius: var(--radius-lg);
-  background: var(--surface-raised);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 16%);
+  border-color: var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 12%);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 .composer-wrap:focus-within,
 .thread-composer:focus-within {
-  border-color: transparent;
-  box-shadow: 0 0 0 2px rgb(50 140 255 / 55%), 0 8px 24px rgb(0 0 0 / 18%);
+  border-color: var(--muted);
+  box-shadow: 0 0 0 1px var(--muted);
 }
 .composer-wrap textarea,
 .thread-composer textarea { line-height: var(--leading-copy); }
@@ -160,13 +161,13 @@
 }
 .modal,
 .self-menu {
-  border-color: transparent;
+  border-color: var(--border);
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--surface-raised) 96%, black);
+  background: var(--surface-raised);
   box-shadow: var(--shadow-popover);
 }
 .modal header { min-height: 48px; padding: 0 var(--space-4); }
-.modal h2 { font-size: var(--text-lg); font-weight: 680; letter-spacing: -.02em; }
+.modal h2 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -.02em; }
 .modal header button {
   display: grid;
   width: var(--control-height);
@@ -197,7 +198,7 @@
 .modal.compact .palette-result { min-height: 34px; border-radius: var(--radius-md); }
 .results button:hover,
 .palette-result.selected {
-  background: color-mix(in srgb, var(--accent) 19%, var(--surface-raised));
+  background: var(--selection-bg);
 }
 
 /* ── Settings: aligned controls and deliberate groups ─ */
@@ -257,7 +258,7 @@
 .secondary-row + .secondary-row,
 .group-row + .group-row { margin-top: 2px; }
 .dm-row.active,
-.activity-row.active { background: color-mix(in srgb, var(--accent) 17%, var(--surface-raised)); }
+.activity-row.active { background: var(--selection-bg); }
 .dm-row.unread:not(.active),
 .activity-row.unread:not(.active),
 .secondary-row.unread { background: var(--accent-faint); }
@@ -325,7 +326,7 @@
 .profile-action:hover { background: color-mix(in srgb, var(--surface-raised) 84%, var(--accent)); }
 .profile-action.active {
   border-color: transparent;
-  background: color-mix(in srgb, var(--accent) 17%, var(--surface-raised));
+  background: var(--selection-bg);
 }
 .profile-pane-avatar { width: min(184px, 58%); border-radius: var(--radius-lg); }
 .profile-pane-scroll { padding-bottom: var(--space-4); }
@@ -416,7 +417,7 @@
   min-height: var(--control-height);
   border-radius: var(--radius-md);
   background: var(--accent);
-  box-shadow: 0 6px 18px rgb(24 113 230 / 18%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
   font-weight: 650;
 }
 

@@ -308,7 +308,7 @@ pub(crate) fn emoji_node(ctx: BlockCtx<'_>, name: &str) -> RichNode {
             name: name.to_owned(),
         },
         None => RichNode::Emoji {
-            glyph: super_platinum_core::state::emoji_glyph(name),
+            glyph: ctx.workspace.emoji_glyph(name),
             name: name.to_owned(),
         },
     }

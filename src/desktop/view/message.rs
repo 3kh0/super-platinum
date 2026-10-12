@@ -44,14 +44,29 @@ fn message_tools(
     surface: RowSurface,
 ) -> Element {
     let can_reply = !surface.in_thread();
-    if !can_reply && !message.is_own {
-        // Nothing this reader can do to someone else's reply: an empty pill
-        // floating over the message on hover is worse than no pill.
+    if message.pending {
         return rsx! {};
     }
+    let pinned = crate::pins::is_pinned(&state.read(), channel_id, message);
+    let pin_busy = crate::pins::visible_state(&state.read())
+        .is_some_and(|p| p.is_busy(channel_id, &message.ts));
+    let saved_key = super_platinum_core::later::SavedKey::message(channel_id, &message.id);
+    let saved = crate::later::visible_state(&state.read())
+        .is_some_and(|later| later.items.contains_key(&saved_key));
+    let saving = crate::later::visible_state(&state.read())
+        .is_some_and(|later| later.busy.contains(&saved_key));
     rsx! {
         span { class: "message-tools",
             ondoubleclick: |event| event.stop_propagation(),
+            button {
+                title: "Add a reaction", "aria-label": "Add a reaction",
+                onclick: {
+                    let channel = channel_id.to_owned();
+                    let ts = message.id.clone();
+                    move |_| crate::reaction_picker::open(state, channel.clone(), ts.clone())
+                },
+                {crate::icons::icon(crate::icons::Icon::AddReaction, "icon sm")}
+            }
             if can_reply {
                 button {
                     onclick: {
@@ -63,6 +78,26 @@ fn message_tools(
                     },
                     "Reply"
                 }
+            }
+            button {
+                title:if saved {"Remove from Later"} else {"Save for later"},
+                "aria-label":if saved {"Remove from Later"} else {"Save for later"},
+                class:if saved {"is-saved"}else{""},
+                disabled:saving,
+                onclick:move |_|crate::later::change(state,saved_key.clone(),if saved {super_platinum_core::later::SavedAction::Remove}else{super_platinum_core::later::SavedAction::Save}),
+                {crate::icons::icon(crate::icons::Icon::Bookmark,"icon sm")}
+            }
+            button {
+                title:if pinned {"Unpin from conversation"}else{"Pin to conversation"},
+                "aria-label":if pinned {"Unpin from conversation"}else{"Pin to conversation"},
+                class:if pinned {"is-saved"}else{""}, disabled:pin_busy,
+                onclick:{let channel=channel_id.to_owned();let ts=message.ts.clone();move |_|crate::pins::change(state,channel.clone(),ts.clone(),!pinned)},
+                {crate::icons::icon(crate::icons::Icon::Pin,"icon sm")}
+            }
+            button {
+                title:"Forward message", "aria-label":"Forward message",
+                onclick:{let channel=channel_id.to_owned();let message=message.clone();move |_|crate::forward::open(state,channel.clone(),message.clone())},
+                {crate::icons::icon(crate::icons::Icon::Forward,"icon sm")}
             }
             if message.is_own {
                 button {
@@ -165,7 +200,11 @@ fn message_avatar(
             // Initials until the bytes land: an `img` with nothing behind it
             // paints the platform's broken-image icon.
             if let Some(avatar) = message.avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
-                img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{message.author}" }
+                super::media_image::MediaImage {
+                    state, id:avatar.clone(), media_epoch:snapshot.media_epoch,
+                    alt:message.author.clone(), compact:true,
+                    fallback:rsx! { "{message.avatar_initials}" }
+                }
             } else {
                 "{message.avatar_initials}"
             }
@@ -198,9 +237,15 @@ pub(crate) fn message_row(
     surface: RowSurface,
 ) -> Element {
     let in_thread = surface.in_thread();
-    let compact = message.compact && !in_thread;
+    let compact = message.compact && !message.pending;
     let class = if in_thread {
-        "message thread-message"
+        if compact {
+            "message thread-message compact"
+        } else if message.pending {
+            "message thread-message pending"
+        } else {
+            "message thread-message"
+        }
     } else if snapshot.message_arrivals.contains_key(&message.id) {
         if compact {
             "message compact entering"
@@ -227,6 +272,8 @@ pub(crate) fn message_row(
     rsx! {
         article {
             class: "{class}",
+            tabindex: "0",
+            "aria-label":"{message.author}, {message.timestamp}",
             "data-message-index": if let Some(index) = index { "{index}" },
             "data-message-id": "{message.id}",
             ondoubleclick: {
@@ -246,6 +293,9 @@ pub(crate) fn message_row(
             }
             {message_tools(state, message, channel_id, surface)}
             div { class: "message-content",
+                if crate::pins::is_pinned(snapshot,channel_id,message) {
+                    div {class:"message-pin-label",{crate::icons::icon(crate::icons::Icon::Pin,"icon sm")} "Pinned"}
+                }
                 if !compact {
                     {message_meta(state, snapshot, message)}
                 }
@@ -270,6 +320,7 @@ pub(crate) fn message_row(
                 } else {
                     div { class: "message-body",
                         for node in &message.body { {rich_node(node, snapshot.media_epoch, state)} }
+                        if compact && message.edited {span {class:"message-edited"," (edited)"}}
                     }
                     if !message.attachments.is_empty() {
                         {attachment_embeds(state, snapshot.media_epoch, &message.attachments)}

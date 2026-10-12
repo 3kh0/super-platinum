@@ -66,7 +66,16 @@ const MAX_RESIDENT_ASSETS: usize = 1024;
 
 /// Hosts Slack serves its own assets from, which require the session cookie.
 fn is_slack_hosted(url: &str) -> bool {
-    url.contains("slack-edge.com") || url.contains("slack.com")
+    let Ok(url) = url::Url::parse(url) else {
+        return false;
+    };
+    url.scheme() == "https"
+        && url.host_str().is_some_and(|host| {
+            host == "slack.com"
+                || host.ends_with(".slack.com")
+                || host == "slack-edge.com"
+                || host.ends_with(".slack-edge.com")
+        })
 }
 
 #[derive(Clone, Default)]
@@ -107,6 +116,8 @@ struct MediaAsset {
     /// image replaces them once it downloads.
     provisional: bool,
     last_used: u64,
+    revision: u64,
+    image_failed: bool,
 }
 
 #[derive(Default)]
@@ -134,6 +145,7 @@ impl AssetCache {
         self.evicted.remove(&id);
         self.clock = self.clock.wrapping_add(1);
         asset.last_used = self.clock;
+        asset.revision = self.clock;
         self.bytes += asset.bytes.len();
         self.entries.insert(id, asset);
         while self.bytes > MAX_RESIDENT_BYTES || self.entries.len() > MAX_RESIDENT_ASSETS {
@@ -241,6 +253,17 @@ impl MediaRegistry {
         self.insert_asset(id, mime.into(), bytes.into(), false);
     }
 
+    /// Hold the requested original while a native Save dialog is open, even
+    /// if scrolling elsewhere evicts it from the bounded renderer cache.
+    pub fn ready_bytes(&self, id: &MediaAssetId) -> Option<Arc<[u8]>> {
+        self.assets
+            .lock()
+            .expect("media registry poisoned")
+            .get(id)
+            .filter(|asset| !asset.provisional)
+            .map(|asset| asset.bytes.clone())
+    }
+
     fn insert_asset(&self, id: MediaAssetId, mime: String, bytes: Arc<[u8]>, provisional: bool) {
         self.assets.lock().expect("media registry poisoned").insert(
             id,
@@ -249,6 +272,8 @@ impl MediaRegistry {
                 bytes,
                 provisional,
                 last_used: 0,
+                revision: 0,
+                image_failed: false,
             },
         );
         self.dirty.store(true, Ordering::Release);
@@ -433,6 +458,35 @@ impl MediaRegistry {
         ready
     }
 
+    /// Decoder failures are presentation failures: keep the original bytes
+    /// available for saving, but do not repeatedly hand them to image elements.
+    pub fn image_state(&self, id: &MediaAssetId) -> (Option<u64>, bool) {
+        if let Some(asset) = self.assets.lock().expect("media registry poisoned").get(id) {
+            return (Some(asset.revision), asset.image_failed);
+        }
+        let unavailable = matches!(
+            self.backoff
+                .read()
+                .expect("media registry poisoned")
+                .get(id),
+            Some(Backoff::Abandoned)
+        );
+        (None, unavailable)
+    }
+
+    pub fn reject_image(&self, id: &MediaAssetId, revision: u64) -> bool {
+        let mut assets = self.assets.lock().expect("media registry poisoned");
+        let Some(asset) = assets.entries.get_mut(id) else {
+            return false;
+        };
+        if asset.revision != revision || asset.image_failed {
+            return false;
+        }
+        asset.image_failed = true;
+        self.dirty.store(true, Ordering::Release);
+        true
+    }
+
     /// Whether any registered source still needs bytes. Sources are also
     /// registered during render (hover cards, activity rows), which no Slack
     /// call follows, so the UI tick polls this to kick a load.
@@ -515,17 +569,20 @@ impl MediaRegistry {
                     self.insert_asset(id, mime.to_owned(), bytes.into(), false);
                 }
                 Err(error) => {
-                    // Host plus path, never the query: a signed media URL
-                    // carries its credential there. Without the path a failure
-                    // cannot be told apart from the next one on the same CDN.
-                    let target = url::Url::parse(&source.url)
+                    // Transport errors may themselves contain signed URLs.
+                    // Log only the host, opaque local asset ID and category.
+                    let host = url::Url::parse(&source.url)
                         .ok()
-                        .map(|url| format!("{}{}", url.host_str().unwrap_or_default(), url.path()))
-                        .unwrap_or_else(|| "invalid-url".into());
-                    eprintln!(
-                        "super-platinum: {} media fetch from {target} failed: {error}",
-                        id.kind().as_str()
-                    );
+                        .and_then(|url| url.host_str().map(str::to_owned))
+                        .unwrap_or_else(|| "invalid-host".into());
+                    let category = if transport.health() == Health::Offline {
+                        "offline"
+                    } else if is_permanent(&error) {
+                        "unavailable"
+                    } else {
+                        "retryable transport failure"
+                    };
+                    eprintln!("super-platinum: media {} from {host}: {category}", id.uri());
                     // A machine-level outage is not this URL's fault. Recording
                     // a failure would double its backoff on every sweep, and
                     // the picture would stay blank for minutes after the
@@ -627,6 +684,7 @@ impl MediaRegistry {
         let mut backoff = self.backoff.write().expect("media registry poisoned");
         if permanent {
             backoff.insert(id.clone(), Backoff::Abandoned);
+            self.dirty.store(true, Ordering::Release);
             return;
         }
         let failures = match backoff.get(id) {
@@ -732,13 +790,25 @@ const WINDOW_DEFAULT_INNER_SIZE: dioxus::desktop::tao::dpi::LogicalSize<f64> =
 
 pub fn desktop_config(media: MediaRegistry) -> Config {
     let config = Config::new();
+    let initial_size = if matches!(
+        std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
+        Ok("files-narrow"
+            | "channel-links-narrow"
+            | "channel-files-narrow"
+            | "pins-narrow"
+            | "forward-narrow")
+    ) {
+        WINDOW_MIN_INNER_SIZE
+    } else {
+        WINDOW_DEFAULT_INNER_SIZE
+    };
     #[cfg(target_os = "windows")]
     let config = config.with_windows_browser_args(WINDOWS_BROWSER_ARGS);
     config
         .with_window(
             WindowBuilder::new()
                 .with_title("Super Platinum")
-                .with_inner_size(WINDOW_DEFAULT_INNER_SIZE)
+                .with_inner_size(initial_size)
                 .with_min_inner_size(WINDOW_MIN_INNER_SIZE),
         )
         .with_custom_head(format!(
@@ -799,6 +869,44 @@ fn validated_external_url(url: &str) -> Result<url::Url, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn image_decode_failure_preserves_download_and_rejects_stale_callbacks() {
+        let registry = MediaRegistry::default();
+        let id = MediaAssetId::new(MediaAssetKind::Attachment);
+        registry.insert(id.clone(), "image/png", b"undecodable original".as_slice());
+        let revision = registry.image_state(&id).0.unwrap();
+        // Serving or checking the bytes does not change their identity.
+        assert!(registry.is_ready(&id));
+        assert_eq!(registry.image_state(&id), (Some(revision), false));
+        assert!(registry.reject_image(&id, revision));
+        assert!(registry.clone().image_state(&id).1);
+        assert_eq!(
+            registry.ready_bytes(&id).unwrap().as_ref(),
+            b"undecodable original"
+        );
+        assert!(!registry.reject_image(&id, revision));
+        registry.insert(id.clone(), "image/png", PLACEHOLDER_PNG);
+        assert!(!registry.image_state(&id).1);
+        assert!(!registry.reject_image(&id, revision));
+        assert!(!registry.image_state(&id).1);
+    }
+
+    #[test]
+    fn permanent_media_failure_leaves_loading_state_and_notifies_renderer() {
+        let registry = MediaRegistry::default();
+        let id = registry.register_image(
+            MediaAssetKind::Attachment,
+            "https://example.test/gone.png",
+            "image/png",
+        );
+        assert_eq!(registry.image_state(&id), (None, false));
+        registry.record_failure(&id, false);
+        assert_eq!(registry.image_state(&id), (None, false));
+        registry.record_failure(&id, true);
+        assert_eq!(registry.image_state(&id), (None, true));
+        assert!(registry.take_dirty());
+    }
 
     fn get(registry: &MediaRegistry, uri: &str) -> Response<Cow<'static, [u8]>> {
         let request = Request::builder()
@@ -982,6 +1090,12 @@ mod tests {
         // Block Kit and unfurl images point at arbitrary third-party hosts.
         assert!(!is_slack_hosted("http://cdn.weatherapi.com/weather/64.png"));
         assert!(!is_slack_hosted("https://cachet.dunkirk.sh/users/U1/r"));
+        assert!(!is_slack_hosted("https://slack.com.example.org/image.png"));
+        assert!(!is_slack_hosted(
+            "https://example.org/slack-edge.com/image.png"
+        ));
+        assert!(!is_slack_hosted("https://slack.com@example.org/image.png"));
+        assert!(!is_slack_hosted("http://files.slack.com/image.png"));
     }
 
     #[test]
@@ -1012,12 +1126,20 @@ mod tests {
         );
 
         assert!(registry.is_ready(&id), "the old face still paints");
+        assert!(
+            registry.ready_bytes(&id).is_none(),
+            "a download never saves provisional bytes"
+        );
         assert!(registry.has_pending(), "the new face is still wanted");
         let response = get(&registry, &id.uri());
         assert_eq!(response.body().as_ref(), b"old");
         assert_eq!(response.headers()["Cache-Control"], "no-store");
 
         registry.insert(id.clone(), "image/png", b"new".as_slice());
+        assert_eq!(
+            registry.ready_bytes(&id).as_deref(),
+            Some(b"new".as_slice())
+        );
         assert!(!registry.has_pending());
         assert_eq!(
             get(&registry, &id.uri()).headers()["Cache-Control"],

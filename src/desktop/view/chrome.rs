@@ -47,7 +47,7 @@ pub(crate) fn rail_view(
 ) -> Element {
     let home_active = matches!(
         active,
-        MainView::Home | MainView::Unreads | MainView::Threads
+        MainView::Home | MainView::Unreads | MainView::Threads | MainView::Scheduled
     );
     rsx! {
         nav { class: "rail",
@@ -78,6 +78,18 @@ pub(crate) fn rail_view(
                         if activity_unread > 99 { "99+" } else { "{activity_unread}" }
                     }
                 }
+            }
+            button {
+                class: if active == MainView::Files { "rail-btn active" } else { "rail-btn" },
+                title: "Files", "aria-label": "Files",
+                onclick: move |_| { spawn(crate::bootstrap::load_main_view(state, MainView::Files)); },
+                {crate::icons::icon(crate::icons::Icon::AttachFile, "icon")}
+            }
+            button {
+                class: if active == MainView::Later { "rail-btn active" } else { "rail-btn" },
+                title: "Later", "aria-label": "Later",
+                onclick: move |_| { spawn(crate::bootstrap::load_main_view(state, MainView::Later)); },
+                {crate::icons::icon(crate::icons::Icon::Bookmark, "icon")}
             }
             div { class: "rail-spacer" }
             // Sits above the account picture, the way Telegram parks its own
@@ -132,13 +144,7 @@ pub(crate) fn channel_sidebar(
     let has_unreads = snapshot.channels.iter().any(|channel| channel.unread);
     rsx! {
         aside { class: "sidebar",
-            div { class: "sidebar-title",
-                button {
-                    title: "Accounts",
-                    onclick: move |_| state.write().overlay = Some(Overlay::Accounts),
-                    "{workspace_name}"
-                }
-            }
+            super::new_channel::WorkspaceHeading {state,workspace_name:workspace_name.to_owned(),key:"new-channel-{snapshot.core.account_epoch}-{snapshot.core.active_team:?}"}
             button {
                 class: "jump-to",
                 title: "Jump to…",
@@ -165,6 +171,12 @@ pub(crate) fn channel_sidebar(
                     onclick: move |_| { spawn(crate::bootstrap::load_main_view(state, MainView::Threads)); },
                     {crate::icons::icon(crate::icons::Icon::Reply, "icon sm")}
                     span { "Threads" }
+                }
+                button {
+                    class: if snapshot.main_view == MainView::Scheduled { "nav-row active" } else { "nav-row" },
+                    onclick: move |_| { spawn(crate::bootstrap::load_main_view(state, MainView::Scheduled)); },
+                    {crate::icons::icon(crate::icons::Icon::Schedule, "icon sm")}
+                    span { "Drafts & scheduled" }
                 }
             }
             hr { class: "sidebar-divider" }
@@ -291,8 +303,8 @@ pub(crate) fn conversation_header(
                 }
             }
         }
-        h2 {
-            if is_dm {
+        if is_dm {
+            h2 {
                 button {
                     class: "header-name",
                     onmouseenter: move |event: MouseEvent| {
@@ -309,9 +321,9 @@ pub(crate) fn conversation_header(
                     },
                     "{title}"
                 }
-            } else {
-                "{title}"
             }
+        } else if let Some(channel)=channel {
+            super::channel_details::ChannelDetailsButton{key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}-{channel.id}",state,channel:channel.id.clone(),title}
         }
         {super::huddle::huddle_header_button(state, snapshot, channel.map(|c| c.id.as_str()).unwrap_or_default(), huddle)}
     }

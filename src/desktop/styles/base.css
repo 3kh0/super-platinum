@@ -1,40 +1,62 @@
 /* Super Platinum foundations. Component standards live in design-system.css. */
 
+@font-face {
+  font-family: Geist;
+  src: url('/fonts/Geist.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: Geist;
+  src: url('/fonts/Geist-Italic.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 :root {
   color-scheme: dark;
-  --bg: #030405;
-  --surface: #080a0d;
-  --surface-raised: #0d1117;
-  --panel: #0a0d12;
-  --sidebar: #06080b;
-  --rail: #010203;
-  --border: #1b222c;
-  --border-strong: #344153;
-  --text: #f4f7fb;
-  --muted: #9aa7b6;
-  --muted-2: #697789;
-  --accent: #328cff;
-  --accent-soft: #102b4d;
-  --accent-faint: #091b2f;
-  --mention: #52a3ff;
-  --success: #42d392;
-  --warning: #f5b942;
-  --danger: #ff647c;
-  --link: #69b1ff;
-  --avatar-bg: #123a61;
-  --hover-overlay: rgb(47 140 255 / 9%);
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface-raised: #1a1a1a;
+  --panel: #141414;
+  --sidebar: #111111;
+  --rail: #0a0a0a;
+  --border: #292929;
+  --border-strong: #454545;
+  --text: #ededed;
+  --muted: #a1a1a1;
+  --muted-2: #8a8a8a;
+  --accent: #0070f3;
+  --accent-soft: #173457;
+  --accent-faint: #101d2b;
+  --mention: #52a8ff;
+  --success: #46a758;
+  --warning: #ffb224;
+  --danger: #ff6369;
+  --link: #52a8ff;
+  --avatar-bg: #262626;
+  --hover-overlay: rgb(255 255 255 / 6%);
+  --selection-bg: color-mix(in srgb, var(--text) 9%, var(--sidebar));
   --on-accent: #fff;
   --on-warning: #07111d;
 
   /* Type: one family, four roles, tabular metadata. */
-  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-sans: Geist, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --text-xs: 11px;
   --text-sm: 12px;
   --text-md: 14px;
   --text-lg: 16px;
   --leading-tight: 1.25;
-  --leading-copy: 1.4;
+  --leading-copy: 1.5;
 
   /* Space, shape, elevation, and motion are shared across every surface. */
   --space-1: 4px;
@@ -51,12 +73,12 @@
 
   --rail-width: 44px;
   --list-panel-width: 340px;
-  --header-height: 42px;
+  --header-height: 48px;
   --sidebar-width: 240px;
   --density-gap: 6px;
   --panel-radius: 8px;
   --border-thickness: 1px;
-  --msg-avatar: 28px;
+  --msg-avatar: 32px;
 }
 
 * { box-sizing: border-box; }

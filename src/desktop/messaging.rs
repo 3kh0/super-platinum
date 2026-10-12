@@ -10,6 +10,11 @@ use crate::bootstrap::{credentials, persist_workspace, refresh_history};
 use crate::state::{PendingSend, ShellState};
 
 pub async fn send_composer(mut state: Signal<ShellState>) {
+    let unavailable = state.peek().composer_unavailable();
+    if let Some(reason) = unavailable {
+        state.write().show_toast(reason);
+        return;
+    }
     if !state.read().core.composer_attachments.is_empty() {
         send_attachments(state).await;
         return;
@@ -24,6 +29,11 @@ pub async fn send_composer(mut state: Signal<ShellState>) {
 }
 
 pub async fn send_thread_composer(mut state: Signal<ShellState>) {
+    let unavailable = state.peek().composer_unavailable();
+    if let Some(reason) = unavailable {
+        state.write().show_toast(reason);
+        return;
+    }
     if !state.read().core.thread_composer_attachments.is_empty() {
         send_thread_attachments(state).await;
         return;
@@ -263,6 +273,7 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
         ));
         shell.stick_to_bottom = true;
 
+        shell.checkpoint_composers();
         PreparedUpload {
             team,
             channel,
@@ -433,11 +444,39 @@ fn restore_failed_upload(
         attachment.upload_cancel = None;
         attachment.upload_progress = None;
     }
-    if thread_ts.is_some() {
-        shell.core.thread_composer_attachments.extend(attachments);
+    shell.checkpoint_composers();
+    let key = super_platinum_core::drafts::DraftKey {
+        team: pending.team,
+        channel: pending.channel,
+        thread: pending.thread_ts,
+    };
+    let target = if key.thread.is_some() {
+        crate::state::ComposerTarget::Thread
     } else {
-        shell.core.composer_attachments.extend(attachments);
+        crate::state::ComposerTarget::Channel
+    };
+    if shell.composer_key(target).as_ref() == Some(&key) {
+        if target == crate::state::ComposerTarget::Thread {
+            if shell.core.thread_composer.text.is_empty() {
+                shell.core.thread_composer =
+                    super_platinum_core::ComposerState::with_text(&pending.text);
+                crate::view::composer::set_field_text("thread-composer", &pending.text);
+            }
+            shell.core.thread_composer_attachments.extend(attachments);
+        } else {
+            if shell.core.composer.text.is_empty() {
+                shell.core.composer = super_platinum_core::ComposerState::with_text(&pending.text);
+                crate::view::composer::set_field_text("channel-composer", &pending.text);
+            }
+            shell.core.composer_attachments.extend(attachments);
+        }
+    } else {
+        shell
+            .core
+            .drafts
+            .return_upload(key, pending.text, attachments);
     }
+    shell.checkpoint_composers();
     shell.refresh_from_core();
 }
 
@@ -463,14 +502,15 @@ pub async fn toggle_reaction(
     let user = workspace_session.user_id.clone();
     {
         let mut shell = state.write();
-        if let Some(messages) = shell
-            .core
-            .workspaces
-            .get_mut(&team)
-            .and_then(|workspace| workspace.messages.get_mut(&channel))
-        {
-            messages.apply_reaction(&ts, &user, &name, !removing);
-        }
+        crate::realtime::apply_reaction(
+            &mut shell.core,
+            &team,
+            &channel,
+            &ts,
+            &user,
+            &name,
+            !removing,
+        );
         shell.refresh_from_core();
     }
     let result = if removing {
@@ -494,16 +534,28 @@ pub async fn toggle_reaction(
         )
         .await
     };
+    // Account reloads replace the transport. Never roll a late response into
+    // another account's workspace, even when the team id is the same.
+    if state
+        .peek()
+        .core
+        .transport
+        .as_ref()
+        .is_none_or(|current| !std::sync::Arc::ptr_eq(current, &transport))
+    {
+        return;
+    }
     if let Err(error) = result {
         let mut shell = state.write();
-        if let Some(messages) = shell
-            .core
-            .workspaces
-            .get_mut(&team)
-            .and_then(|workspace| workspace.messages.get_mut(&channel))
-        {
-            messages.apply_reaction(&ts, &user, &name, removing);
-        }
+        crate::realtime::apply_reaction(
+            &mut shell.core,
+            &team,
+            &channel,
+            &ts,
+            &user,
+            &name,
+            removing,
+        );
         shell.refresh_from_core();
         shell.report_failure(&error, "Reaction not saved — you are offline", || {
             format!("Reaction failed: {error}")

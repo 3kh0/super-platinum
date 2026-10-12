@@ -256,7 +256,15 @@
   font-size: 22px;
   color: var(--muted);
 }
-.thread-body { flex: 1; min-height: 0; padding: 8px 0; overflow-y: auto; }
+.thread-body { flex: 1; min-height: 0; padding: 8px 0; overflow-y: auto; overflow-anchor: none; }
+.thread-page-control { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 8px 16px; color: var(--muted); font-size: var(--text-sm); }
+.thread-page-control button { min-height: 32px; padding: 4px 12px; border-radius: 8px; background: var(--surface-raised); color: var(--text); }
+.thread-page-control button:hover:not(:disabled) { background: var(--hover-overlay); }
+.thread-page-control button:disabled { opacity: .6; }
+.thread-load-notice { margin: 12px 16px; color: var(--muted); font-size: var(--text-sm); }
+.thread-load-notice p { margin: 0 0 8px; }
+.thread-load-notice button { min-height: 32px; padding: 4px 12px; border-radius: 8px; background: var(--surface-raised); color: var(--text); }
+.thread-load-notice button:hover { background: var(--hover-overlay); }
 .thread-message { /* reuses .message grid when class combined */ }
 .thread-composer {
   margin: 8px 10px 12px;
@@ -269,3 +277,17 @@
 
 /* Overlays / modals */
 .scrim { position: absolute; inset: 0; z-index: 10; background: rgba(0,0,0,.55); }
+
+/* Formatting stays visible and occupies a fixed row, including in a thread. */
+.composer-formatting {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px 0;
+}
+.composer-formatting .composer-icon-btn { width: 26px; height: 26px; flex-basis: 26px; }
+.composer-formatting .composer-icon-btn:hover { background: var(--hover-overlay); }
+.composer-formatting .composer-icon-btn:focus-visible { outline-offset: -2px; }
+.composer-row { padding: 4px 8px 8px; }
+.composer-row > .composer-send-btn { background: var(--text); color: var(--bg); }
+.composer-row > .composer-send-btn:hover { background: var(--muted); }

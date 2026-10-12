@@ -204,8 +204,9 @@ impl ChannelMessages {
     pub fn latest_ts(&self) -> Option<MessageTs> {
         self.messages
             .iter()
-            .filter_map(|m| m.ts.clone())
-            .max_by(|a, b| ts_key(a).cmp(&ts_key(b)))
+            .filter_map(|m| m.ts.as_ref())
+            .max_by_key(|ts| ts_key(ts))
+            .cloned()
     }
 
     pub fn latest_confirmed_ts(&self) -> Option<MessageTs> {
@@ -213,16 +214,18 @@ impl ChannelMessages {
             .iter()
             .filter_map(|message| {
                 let ts = message.ts.as_ref()?;
-                (!self.is_pending(ts)).then(|| ts.clone())
+                (!self.is_pending(ts)).then_some(ts)
             })
-            .max_by(|a, b| ts_key(a).cmp(&ts_key(b)))
+            .max_by_key(|ts| ts_key(ts))
+            .cloned()
     }
 
     pub fn oldest_ts(&self) -> Option<MessageTs> {
         self.messages
             .iter()
-            .filter_map(|m| m.ts.clone())
-            .min_by(|a, b| ts_key(a).cmp(&ts_key(b)))
+            .filter_map(|m| m.ts.as_ref())
+            .min_by_key(|ts| ts_key(ts))
+            .cloned()
     }
 
     pub fn apply_reaction(&mut self, ts: &str, user: &str, name: &str, added: bool) -> bool {
@@ -241,6 +244,7 @@ impl ChannelMessages {
 
 #[derive(Debug, Clone)]
 pub struct Workspace {
+    pub channel_lifecycle: ChannelLifecycle,
     pub team_id: TeamId,
     pub name: String,
     pub url: String,
@@ -300,6 +304,7 @@ impl Workspace {
             active_huddles: HashMap::new(),
             rt: RealtimeStatus::default(),
             rt_generation: 0,
+            channel_lifecycle: Default::default(),
         }
     }
 
@@ -398,10 +403,14 @@ impl Workspace {
     }
 
     pub fn apply_counts(&mut self, counts: crate::slack::models::CountsPage) {
+        self.apply_counts_since(counts, self.channel_lifecycle.revision());
+    }
+
+    pub fn apply_counts_since(&mut self, counts: crate::slack::models::CountsPage, since: u64) {
         if let Some(unread_count) = counts.activity_unread_count() {
             self.activity_unread_count = Some(unread_count);
         }
-        self.apply_counts_membership(&counts);
+        self.apply_counts_membership(&counts, since);
         for channel in counts.all_channels() {
             self.apply_channel_read_state(&channel);
             // Counts are the read state, not a hint: a read channel arrives as
@@ -481,6 +490,13 @@ impl Workspace {
 
     pub fn custom_emoji_url(&self, name: &str) -> Option<&str> {
         custom_emoji_url(&self.custom_emoji, name)
+    }
+
+    pub fn emoji_glyph(&self, name: &str) -> String {
+        match custom_emoji_source(&self.custom_emoji, name) {
+            Some(EmojiSource::Unicode(glyph)) => glyph.to_owned(),
+            _ => emoji_glyph(name),
+        }
     }
 
     pub fn apply_emojis(&mut self, emojis: Vec<Emoji>) {
@@ -766,10 +782,8 @@ fn preserve_missing<T>(update: &mut Option<T>, existing: Option<T>) {
 
 mod helpers;
 pub use helpers::*;
-use helpers::{
-    append_unique, apply_message_reaction, custom_emoji_url, linked_list_order,
-    merge_channel_metadata, merge_message,
-};
+use helpers::{append_unique, custom_emoji_url, linked_list_order, merge_channel_metadata};
+pub(crate) use helpers::{apply_message_reaction, merge_message};
 
 mod sidebar;
 pub use sidebar::*;
@@ -779,6 +793,8 @@ mod sidebar_layout;
 pub use sidebar_layout::*;
 mod sidebar_prefs;
 pub use sidebar_prefs::*;
+mod channel_lifecycle;
+pub use channel_lifecycle::ChannelLifecycle;
 mod channel_sync;
 mod unreads;
 pub use channel_sync::*;

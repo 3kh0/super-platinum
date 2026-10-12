@@ -25,7 +25,7 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
     workspace.priority_sidebar_section = true;
     for channel in [
         serde_json::json!({"id":"C1","name":"general","is_channel":true,"is_starred":true}),
-        serde_json::json!({"id":"C2","name":"ship","is_channel":true,"has_unreads":true,"unread_count":2,"unread_count_display":2,"mention_count":1,"last_read":"1.0","topic":{"value":"Ship the desktop client without losing details."}}),
+        serde_json::json!({"id":"C2","name":"ship","is_channel":true,"is_member":true,"has_unreads":true,"unread_count":2,"unread_count_display":2,"mention_count":1,"last_read":"1.0","topic":{"value":"Ship the desktop client without losing details."}}),
         serde_json::json!({"id":"C3","name":"design","is_channel":true}),
         serde_json::json!({"id":"C4","name":"random","is_channel":true}),
         serde_json::json!({"id":"C5","name":"ops-private","is_channel":true,"is_private":true,"is_group":true}),

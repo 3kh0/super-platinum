@@ -1,0 +1,45 @@
+.modal.channel-details { display:flex; flex-direction:column; gap:12px; width:min(520px,calc(100vw - 32px)); top:48px; max-height:calc(100vh - 96px); overflow-y:auto; padding:16px; }
+.channel-details header { padding:0; }
+.channel-details p { margin:0; }
+.channel-detail-field { padding:12px 0; border-bottom:1px solid var(--border); }
+.channel-detail-label { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.channel-detail-label h3 { margin:0; font-size:var(--text-sm); font-weight:600; }
+.channel-detail-label button { margin-left:auto; }
+.channel-detail-label button, .channel-details > button { min-height:32px; padding:4px 8px; border-radius:8px; background:var(--surface-raised); color:var(--text); }
+.channel-detail-value { white-space:pre-wrap; overflow-wrap:anywhere; font-size:var(--text-md); line-height:1.5; }
+.channel-detail-field > label { display:block; font-size:var(--text-sm); margin-bottom:6px; }
+.channel-detail-field textarea { width:100%; box-sizing:border-box; min-height:96px; resize:vertical; padding:8px; margin-bottom:8px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:8px; font:inherit; }
+.channel-members { display:flex; flex-direction:column; }
+.channel-member { display:flex; align-items:center; gap:8px; text-align:left; min-height:36px; padding:8px; border-radius:8px; color:var(--text); }
+.channel-member:hover { background:var(--hover-overlay); }
+
+.channel-member-avatar { display:grid; place-items:center; flex:0 0 28px; width:28px; height:28px; overflow:hidden; border-radius:5px; background:var(--surface-raised); font-size:var(--text-sm); }
+.channel-member-avatar img { width:100%; height:100%; object-fit:cover; }
+
+.sidebar-title .new-channel-trigger { margin-left:auto; flex:0 0 28px; display:grid; place-items:center; width:28px; height:28px; border-radius:5px; }
+.sidebar-title .new-channel-trigger:hover { background:var(--hover-overlay); }
+.modal.channel-create { display:flex; flex-direction:column; gap:12px; padding:16px; width:min(460px,calc(100vw - 32px)); top:48px; max-height:calc(100vh - 96px); overflow-y:auto; }
+.channel-create > label, .channel-create legend { font-size:var(--text-sm); font-weight:600; }
+.channel-create > input, .channel-create > select { width:100%; margin:0; min-height:32px; padding:6px 8px; background:var(--surface-raised); border:1px solid var(--border); border-radius:8px; }
+.channel-create p { margin:0; overflow-wrap:anywhere; }
+.channel-create fieldset { border:0; padding:0; margin:0; }
+.channel-create fieldset label { display:flex; gap:8px; align-items:center; padding:8px 0; }
+.channel-create fieldset strong { display:block; font-weight:500; }
+.channel-create fieldset small { display:block; font-size:var(--text-sm); color:var(--muted); }
+
+.channel-detail-field > input { width:100%; min-height:32px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--surface-raised); margin-bottom:8px; }
+.channel-archive-action { align-self:flex-start; padding:6px 8px; min-height:32px; border-radius:8px; color:var(--muted); }
+.channel-archive-action:hover { background:var(--hover-overlay); color:var(--text); }
+.channel-archive-confirm { display:flex; flex-direction:column; gap:12px; font-size:var(--text-sm); }
+.composer-unavailable { padding:16px; color:var(--muted); font-size:var(--text-sm); border-top:1px solid var(--border); }
+
+.sidebar-title { display:flex; align-items:center; gap:8px; }
+.sidebar-title > button:first-child { min-width:0; flex:1; width:auto; overflow:hidden; text-overflow:ellipsis; }
+
+.channel-details button:disabled, .channel-create button:disabled { opacity:.5; cursor:default; }
+.channel-membership { display:flex; flex-direction:column; align-items:flex-start; gap:8px; font-size:var(--text-sm); }
+.channel-membership:empty { display:none; }
+.channel-membership p { margin:0; }
+.channel-membership > button { min-height:32px; padding:6px 12px; border-radius:8px; background:var(--surface-raised); color:var(--text); }
+.channel-membership button:disabled { opacity:.5; cursor:default; }
+.composer-unavailable > p { margin:0 0 8px; }

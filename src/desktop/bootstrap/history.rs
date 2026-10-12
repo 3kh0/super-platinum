@@ -22,8 +22,13 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     let opening = state.read().core.pending_scroll_to.clone();
     if let Some((pending_channel, target)) = opening
         && pending_channel == channel
-        && scroll_to_target(&target).await
+        && scroll_to_target(state, &target).await
         && state.read().channel_generation == generation
+        // An explicit message can be present in cache before the surrounding
+        // history arrives. Keep its identity through that merge: prepended
+        // rows change both virtual indices and spacer heights.
+        && (!matches!(target, super_platinum_core::domain::PendingScrollTarget::Message(_))
+            || std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some())
     {
         state.write().core.pending_scroll_to = None;
     }
@@ -117,7 +122,7 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     let pending = state.read().core.pending_scroll_to.clone();
     if let Some((pending_channel, target)) = pending
         && pending_channel == channel
-        && scroll_to_target(&target).await
+        && scroll_to_target(state, &target).await
         && state.read().channel_generation == generation
     {
         state.write().core.pending_scroll_to = None;
@@ -129,7 +134,7 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
 }
 
 pub async fn load_older(mut state: Signal<ShellState>) {
-    let (team, channel, oldest, has_more) = {
+    let (team, channel, oldest, has_more, generation, epoch) = {
         let shell = state.read();
         let (Some(team), Some(channel)) = (
             shell.core.active_team.clone(),
@@ -148,6 +153,8 @@ pub async fn load_older(mut state: Signal<ShellState>) {
             list.and_then(|list| list.messages.first())
                 .and_then(|message| message.ts.clone()),
             list.is_some_and(|list| list.has_more_older),
+            shell.channel_generation,
+            shell.core.account_epoch,
         )
     };
     if !has_more || state.read().loading_older {
@@ -164,35 +171,56 @@ pub async fn load_older(mut state: Signal<ShellState>) {
         return;
     };
     state.write().loading_older = true;
-    let previous_height =
-        document_number("document.getElementById('message-timeline')?.scrollHeight ?? 0").await;
     refresh_history_at(
         &mut state,
         &transport,
         &client,
         &workspace_session,
         &team,
-        channel,
+        channel.clone(),
         Some(oldest),
     )
     .await;
-    super::session::hydrate_current_surface(state).await;
+    // A history response may warm its original conversation's cache, but must
+    // not hydrate or change the loading flag of a newer navigation/account.
+    let current = {
+        let shell = state.read();
+        shell.channel_generation == generation
+            && shell.core.account_epoch == epoch
+            && shell.core.active_team.as_ref() == Some(&team)
+            && shell.core.active_channel.as_ref() == Some(&channel)
+            && shell
+                .core
+                .transport
+                .as_ref()
+                .is_some_and(|active| std::sync::Arc::ptr_eq(active, &transport))
+    };
+    if !current {
+        return;
+    }
     state.write().loading_older = false;
-    dioxus::document::eval(&format!(
-        "requestAnimationFrame(() => {{ const t=document.getElementById('message-timeline'); if(t) t.scrollTop += t.scrollHeight - {previous_height}; }});"
-    ));
     persist_workspace(&state, &team);
+    // timeline_anchor.js preserves the visible row across the prepend. A
+    // second scrollHeight adjustment here would apply the insertion twice,
+    // and could also override scrolling performed during the network wait.
+    super::session::hydrate_current_surface(state).await;
 }
 
 /// Returns whether the anchor actually landed on its row. A pending anchor is
 /// only spent once it does: on a cold channel the rows do not exist yet, and
 /// dropping the anchor there would leave the reader wherever the fallback put
 /// them.
-pub async fn scroll_to_pending(target: super_platinum_core::domain::PendingScrollTarget) -> bool {
-    scroll_to_target(&target).await
+pub async fn scroll_to_pending(
+    state: Signal<ShellState>,
+    target: super_platinum_core::domain::PendingScrollTarget,
+) -> bool {
+    scroll_to_target(state, &target).await
 }
 
-async fn scroll_to_target(target: &super_platinum_core::domain::PendingScrollTarget) -> bool {
+async fn scroll_to_target(
+    state: Signal<ShellState>,
+    target: &super_platinum_core::domain::PendingScrollTarget,
+) -> bool {
     let selector = match target {
         super_platinum_core::domain::PendingScrollTarget::Message(ts)
         | super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(ts) => {
@@ -211,39 +239,30 @@ async fn scroll_to_target(target: &super_platinum_core::domain::PendingScrollTar
         }
         super_platinum_core::domain::PendingScrollTarget::Latest => String::new(),
     };
-    let script = if selector.is_empty() {
-        // A cold conversation has no rows yet, and scrolling an empty container
-        // settles nothing: report failure so the anchor survives to be spent
-        // again once history lands.
-        "const t=document.getElementById('message-timeline');
-         if (t) requestAnimationFrame(() => { t.scrollTop = t.scrollHeight; });
-         dioxus.send(Boolean(t && t.querySelector('[data-message-id]')));"
-            .to_owned()
-    } else {
-        format!(
-            "const el = document.querySelector({});
-             if (el) requestAnimationFrame(() => el.scrollIntoView({{block:'center'}}));
-             else requestAnimationFrame(() => {{ const t=document.getElementById('message-timeline'); if(t) t.scrollTop=t.scrollHeight; }});
-             dioxus.send(Boolean(el));",
-            serde_json::to_string(&selector).unwrap()
-        )
+    let args = {
+        let shell = state.read();
+        serde_json::json!({
+            "scope":shell.timeline_scope(),
+            "selector":selector,
+            "latestId":shell.messages.last().map(|message| &message.id),
+        })
     };
+    let script = format!(
+        "{}({args}).then(value => dioxus.send(value));",
+        include_str!("../timeline_navigation.js")
+    );
     dioxus::document::eval(&script)
         .recv::<bool>()
         .await
         .unwrap_or(false)
 }
 
-async fn document_number(script: &str) -> f64 {
-    dioxus::document::eval(&format!("dioxus.send({script});"))
-        .recv::<f64>()
-        .await
-        .unwrap_or(0.0)
-}
-
 pub async fn mark_visible_read(mut state: Signal<ShellState>) {
     let (team, channel, latest) = {
         let shell = state.read();
+        if !shell.transcript_visible() {
+            return;
+        }
         let (Some(team), Some(channel)) = (
             shell.core.active_team.clone(),
             shell.core.active_channel.clone(),

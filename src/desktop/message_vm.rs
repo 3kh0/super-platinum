@@ -87,6 +87,7 @@ pub(crate) fn message_vm_with_pending(
         });
     MessageVm {
         id: raw_ts.clone(),
+        thread_ts: message.thread_ts.clone(),
         ts: message.ts.clone().unwrap_or_else(|| raw_ts.clone()),
         user_id: message.user.clone(),
         author,
@@ -96,6 +97,14 @@ pub(crate) fn message_vm_with_pending(
         external_team,
         body: message_body(workspace, message, media),
         edited: message.edited.is_some(),
+        pinned_to: message
+            .extra
+            .get("pinned_to")
+            .and_then(|v| v.as_array())
+            .into_iter()
+            .flatten()
+            .filter_map(|v| v.as_str().map(str::to_owned))
+            .collect(),
         is_own: message.user.as_deref() == Some(workspace.self_user_id.as_str()),
         is_app: super_platinum_core::state::is_app_message(message),
         pending,
@@ -129,7 +138,7 @@ fn reaction_vms(
             ReactionVm {
                 glyph: emoji
                     .is_none()
-                    .then(|| super_platinum_core::state::emoji_glyph(&reaction.name)),
+                    .then(|| workspace.emoji_glyph(&reaction.name)),
                 media: emoji,
                 name: reaction.name.clone(),
                 count: reaction.count.max(1),

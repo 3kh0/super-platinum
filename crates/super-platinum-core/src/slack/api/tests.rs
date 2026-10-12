@@ -22,6 +22,47 @@ fn form_fields(req: &PreparedRequest) -> &Vec<(String, String)> {
 }
 
 #[test]
+fn channel_details_writes_allow_clearing_and_reads_page_explicitly() {
+    let client = SlackClient::default();
+    let session = workspace();
+    for field in [ChannelTextField::Topic, ChannelTextField::Description] {
+        let request = conversation_set_text(&client, &session, "C1", field, "");
+        assert!(form_fields(&request).contains(&(field.key().into(), String::new())));
+        assert!(!request.retry_safe());
+    }
+    let request = conversation_members(&client, &session, "C1", Some("cursor-one"));
+    assert!(request.retry_safe());
+    assert!(form_fields(&request).contains(&("cursor".into(), "cursor-one".into())));
+    let edge =
+        conversation_members_edge(&client, &session, "C1", Some("next-person"), 500).unwrap();
+    assert!(edge.retry_safe());
+    let RequestBody::Json(body) = edge.body else {
+        panic!("edge members use JSON")
+    };
+    assert_eq!(body["channels"], serde_json::json!(["C1"]));
+    assert_eq!(body["marker"], "next-person");
+    assert_eq!(body["filter"], "people");
+    assert_eq!(body["count"], 100);
+    let mut members = ConversationMembers::default();
+    let page = |ids: Vec<&str>, cursor: &str| {
+        serde_json::from_value(
+            serde_json::json!({"members":ids,"response_metadata":{"next_cursor":cursor}}),
+        )
+        .unwrap()
+    };
+    assert!(members.apply(page(vec!["U1", "U2"], "next")));
+    assert!(!members.apply(page(vec!["U2", "U3"], "next")));
+    assert_eq!(members.ids, vec!["U1", "U2", "U3"]);
+    assert!(members.cursor.is_none());
+    let channel: Channel = serde_json::from_value(
+        serde_json::json!({"id":"C1","topic":{"value":"Topic 🚀"},"purpose":"Description"}),
+    )
+    .unwrap();
+    assert_eq!(ChannelTextField::Topic.value(&channel), "Topic 🚀");
+    assert_eq!(ChannelTextField::Description.value(&channel), "Description");
+}
+
+#[test]
 fn history_request_targets_enterprise_host_with_channel_and_limit() {
     let request = conversations_history(
         &SlackClient::default(),
@@ -440,4 +481,285 @@ fn the_probe_host_follows_the_workspace_to_its_grid() {
         ..workspace()
     };
     assert_eq!(crate::slack::api_host(&plain), "echonet.slack.com");
+}
+
+#[test]
+fn channel_resources_use_scoped_search_and_server_pagination() {
+    let query = crate::files::FilesQuery {
+        channel: Some("C1".into()),
+        ..Default::default()
+    };
+    let request = files_search(&SlackClient::default(), &workspace(), &query, 2);
+    let fields = form_fields(&request);
+    assert!(fields.contains(&("query".into(), "in:<#C1>".into())));
+    assert!(fields.contains(&("sort".into(), "score".into())));
+    assert!(fields.contains(&("search_context".into(), "desktop_files_channel_tab".into())));
+    assert!(fields.contains(&("page".into(), "2".into())));
+    let request =
+        channel_links_search(&SlackClient::default(), &workspace(), "C1", "  design  ", 3);
+    let fields = form_fields(&request);
+    assert!(request.url.contains("/api/conversations.searchLinks?"));
+    assert!(fields.contains(&("channel_id".into(), "C1".into())));
+    assert!(fields.contains(&("query".into(), "design".into())));
+    assert!(fields.contains(&("page".into(), "3".into())));
+}
+
+#[test]
+fn pins_requests_use_channel_and_message_timestamp() {
+    let client = SlackClient::default();
+    let workspace = workspace();
+    let list = pins_list(&client, &workspace, "C_PRIVATE");
+    assert!(list.url.contains("/api/pins.list?"));
+    assert!(form_fields(&list).contains(&("channel".into(), "C_PRIVATE".into())));
+    for (pinned, method) in [(true, "pins.add"), (false, "pins.remove")] {
+        let request = pins_change(&client, &workspace, "C_PRIVATE", "123.000456", pinned);
+        assert!(request.url.contains(&format!("/api/{method}?")));
+        assert!(form_fields(&request).contains(&("channel".into(), "C_PRIVATE".into())));
+        assert!(form_fields(&request).contains(&("timestamp".into(), "123.000456".into())));
+        assert!(!request.redacted_debug().contains("xoxc-test-token"));
+    }
+}
+
+#[test]
+fn forwarding_keeps_source_destination_rich_note_and_client_id_distinct() {
+    let client = SlackClient::default();
+    let workspace = workspace();
+    let blocks = vec![
+        serde_json::json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"Read this 🚀","style":{"bold":true}}]}]}),
+    ];
+    let args = ForwardMessage::new(
+        "C_SOURCE".into(),
+        "12.000345".into(),
+        "C_DEST".into(),
+        blocks.clone(),
+    );
+    let req = chat_share_message(&client, &workspace, &args);
+    let fields = form_fields(&req);
+    assert!(req.url.contains("/api/chat.shareMessage?"));
+    for pair in [
+        ("channel", "C_SOURCE"),
+        ("share_channel", "C_DEST"),
+        ("timestamp", "12.000345"),
+        ("client_msg_id", &args.client_msg_id),
+        ("text", ""),
+    ] {
+        assert!(fields.contains(&(pair.0.into(), pair.1.into())));
+    }
+    let body = fields.iter().find(|(key, _)| key == "blocks").unwrap();
+    assert_eq!(
+        serde_json::from_str::<Vec<serde_json::Value>>(&body.1).unwrap(),
+        blocks
+    );
+    assert!(!req.retry_safe());
+    assert!(!req.redacted_debug().contains("xoxc-test-token"));
+    let retry = chat_share_message(&client, &workspace, &args);
+    assert_eq!(form_fields(&retry), fields);
+    let result: ForwardedMessage =
+        serde_json::from_value(serde_json::json!({"ok":true,"channel":"C_DEST","ts":"13.0"}))
+            .unwrap();
+    assert_eq!(result.channel, "C_DEST");
+    assert_eq!(result.ts, "13.0");
+}
+#[test]
+fn permalink_request_uses_message_timestamp_without_inventing_thread_links() {
+    let req = chat_get_permalink(&SlackClient::default(), &workspace(), "C1", "23.000004");
+    assert!(req.url.contains("/api/chat.getPermalink?"));
+    assert!(form_fields(&req).contains(&("message_ts".into(), "23.000004".into())));
+    assert!(form_fields(&req).contains(&("channel".into(), "C1".into())));
+}
+
+#[test]
+fn enterprise_permalink_preserves_precision_and_thread_context() {
+    let root = workspace_permalink(
+        "https://hackclub.enterprise.slack.com/",
+        "C123",
+        "1791780358.080789",
+        None,
+    )
+    .unwrap();
+    assert_eq!(
+        root,
+        "https://hackclub.slack.com/archives/C123/p1791780358080789"
+    );
+    let reply = workspace_permalink(
+        "https://hackclub.slack.com",
+        "C123",
+        "1791780400.000009",
+        Some("1791780358.080789"),
+    )
+    .unwrap();
+    assert_eq!(
+        reply,
+        "https://hackclub.slack.com/archives/C123/p1791780400000009?thread_ts=1791780358.080789&cid=C123"
+    );
+    for url in [
+        "https://slack.com.evil.test",
+        "https://hackclub.slack.com@evil.test",
+        "http://hackclub.slack.com",
+        "https://user@hackclub.slack.com",
+    ] {
+        assert!(workspace_permalink(url, "C123", "1.000001", None).is_none());
+    }
+    assert!(
+        workspace_permalink("https://hackclub.slack.com", "C123/other", "1.000001", None).is_none()
+    );
+    assert!(workspace_permalink("https://hackclub.slack.com", "C123", "1.00001", None).is_none());
+    assert!(
+        workspace_permalink(
+            "https://hackclub.slack.com",
+            "C123",
+            "1.000001",
+            Some("bad")
+        )
+        .is_none()
+    );
+}
+
+#[test]
+fn scheduled_drafts_use_session_api_and_preserve_destination_and_files() {
+    let client = SlackClient::default();
+    let workspace = workspace();
+    let mut message = ScheduleMessage::new(
+        "Cprivate".into(),
+        Some("123.456".into()),
+        vec![serde_json::json!({"type":"rich_text","elements":[]})],
+        1800000000,
+    );
+    message.file_ids = vec!["Fprivate".into()];
+    let create = drafts_schedule(&client, &workspace, &message, None);
+    assert!(create.url.contains("/drafts.create?"));
+    assert!(!create.retry_safe());
+    let fields = form_fields(&create);
+    assert!(fields.contains(&("is_from_composer".into(), "true".into())));
+    assert!(fields.contains(&("date_scheduled".into(), "1800000000".into())));
+    let destinations: serde_json::Value =
+        serde_json::from_str(&fields.iter().find(|(k, _)| k == "destinations").unwrap().1).unwrap();
+    assert_eq!(destinations[0]["thread_ts"], "123.456");
+    assert!(fields.contains(&("file_ids".into(), "[\"Fprivate\"]".into())));
+    let update = drafts_schedule(&client, &workspace, &message, Some("Dr1"));
+    assert!(update.url.contains("/drafts.update?"));
+    assert!(!update.retry_safe());
+    assert!(
+        form_fields(&update)
+            .iter()
+            .any(|(k, v)| k == "client_last_updated_ts" && v.parse::<f64>().unwrap() > 0.0)
+    );
+    assert!(form_fields(&update).contains(&("draft_id".into(), "Dr1".into())));
+    let list = drafts_list(&client, &workspace, 200);
+    assert!(list.retry_safe());
+    assert!(form_fields(&list).contains(&("is_active".into(), "true".into())));
+    let delete = drafts_delete(&client, &workspace, "Dr1");
+    assert!(!delete.retry_safe());
+    assert!(form_fields(&delete).contains(&("skip_file_deletion".into(), "true".into())));
+}
+
+#[test]
+fn draft_actions_preserve_content_and_atomically_retire_sent_drafts() {
+    let client = SlackClient::default();
+    let workspace = workspace();
+    let draft:crate::scheduled::ScheduledMessage=serde_json::from_value(serde_json::json!({"id":"Dr1","client_msg_id":"stable-id","date_scheduled":1800000000,"blocks":[{"type":"rich_text","elements":[]}],"file_ids":["F1","F2"],"destinations":[{"channel_id":"C1","thread_ts":"100.001","broadcast":true}]})).unwrap();
+    let cancel = drafts_unschedule(&client, &workspace, &draft);
+    let fields = form_fields(&cancel);
+    assert!(!cancel.retry_safe());
+    assert!(fields.contains(&("date_scheduled".into(), "0".into())));
+    assert!(fields.contains(&("file_ids".into(), "[\"F1\",\"F2\"]".into())));
+    assert!(
+        fields
+            .iter()
+            .any(|(k, v)| k == "blocks" && v.contains("rich_text"))
+    );
+    assert!(
+        fields.iter().any(|(k, v)| k == "client_last_updated_ts"
+            && v.parse::<u128>().unwrap() > 1_000_000_000_000)
+    );
+    let send = drafts_send(&client, &workspace, &draft).unwrap();
+    let fields = form_fields(&send);
+    assert!(send.url.contains("/files.share?"));
+    assert!(!send.retry_safe());
+    for (key, value) in [
+        ("draft_id", "Dr1"),
+        ("client_msg_id", "stable-id"),
+        ("files", "F1,F2"),
+        ("thread_ts", "100.001"),
+        ("reply_broadcast", "true"),
+        ("skip_dlp_user_warning", "false"),
+    ] {
+        assert!(fields.contains(&(key.into(), value.into())));
+    }
+    let mut text = draft.clone();
+    text.file_ids.clear();
+    let send = drafts_send(&client, &workspace, &text).unwrap();
+    assert!(send.url.contains("/chat.postMessage?"));
+    assert!(form_fields(&send).contains(&("draft_id".into(), "Dr1".into())));
+    text.destinations
+        .push(serde_json::json!({"channel_id":"C2"}));
+    assert!(drafts_send(&client, &workspace, &text).is_err());
+    text.destinations.clear();
+    assert!(drafts_send(&client, &workspace, &text).is_err());
+}
+
+#[test]
+fn channel_creation_uses_real_workspace_memberships_not_org_or_external_channels() {
+    let mut session = workspace();
+    let user:User=serde_json::from_value(serde_json::json!({"id":"U1","profile":{"team":"E1"},"enterprise_user":{"teams":["T2","T1","T2","E1"]}})).unwrap();
+    assert_eq!(channel_creation_team_ids(&session, &user), vec!["T1", "T2"]);
+    assert!(channel_creation_team_ids(&session, &User::default()).is_empty());
+    session.team_id = "T_CURRENT".into();
+    assert_eq!(
+        channel_creation_team_ids(&session, &user),
+        vec!["T_CURRENT"]
+    );
+}
+#[test]
+fn channel_management_requests_preserve_visibility_targets_and_never_retry_writes() {
+    let client = SlackClient::default();
+    let session = workspace();
+    for private in [true, false] {
+        let request = conversation_create(&client, &session, "T1", "project", private);
+        assert!(!request.retry_safe());
+        for (key, value) in [
+            ("team_id", "T1".to_owned()),
+            ("name", "project".to_owned()),
+            ("is_private", private.to_string()),
+            ("validate_name", "true".to_owned()),
+        ] {
+            assert!(form_fields(&request).contains(&(key.into(), value)));
+        }
+    }
+    for archive in [true, false] {
+        let request = conversation_archive(&client, &session, "C1", archive);
+        assert!(!request.retry_safe());
+        assert!(request.url.contains(if archive {
+            "/conversations.archive?"
+        } else {
+            "/conversations.unarchive?"
+        }));
+        assert!(form_fields(&request).contains(&("channel".into(), "C1".into())));
+    }
+    let request =
+        conversation_set_text(&client, &session, "C1", ChannelTextField::Name, "new-name");
+    assert!(!request.retry_safe());
+    assert!(request.url.contains("/conversations.rename?"));
+    assert!(form_fields(&request).contains(&("name".into(), "new-name".into())));
+    let channel = Channel {
+        name: Some("canonical-name".into()),
+        ..Default::default()
+    };
+    assert_eq!(ChannelTextField::Name.value(&channel), "canonical-name");
+}
+#[test]
+fn channel_names_preview_normalization_and_reject_empty_invalid_or_long_values() {
+    assert_eq!(
+        normalize_channel_name(" #Project.  Launch ").unwrap(),
+        "project-launch"
+    );
+    assert_eq!(
+        normalize_channel_name("Équipe_日本語").unwrap(),
+        "équipe_日本語"
+    );
+    for invalid in ["", "  # ", "---", "team/other", "hi🚀"] {
+        assert!(normalize_channel_name(invalid).is_err(), "{invalid}");
+    }
+    assert!(normalize_channel_name(&"é".repeat(80)).is_ok());
+    assert!(normalize_channel_name(&"a".repeat(81)).is_err());
 }

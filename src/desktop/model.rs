@@ -1,3 +1,12 @@
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ChannelTab {
+    #[default]
+    Messages,
+    Files,
+    Links,
+    Pins,
+}
+
 use super_platinum_core::MediaAssetId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -7,6 +16,9 @@ pub enum MainView {
     Threads,
     Activity,
     Dms,
+    Later,
+    Scheduled,
+    Files,
 }
 
 impl MainView {
@@ -14,7 +26,7 @@ impl MainView {
     /// hands the whole window to the channel; DMs and Activity keep a list on
     /// the left and open the conversation next to it.
     pub fn has_own_list(self) -> bool {
-        matches!(self, Self::Dms | Self::Activity)
+        matches!(self, Self::Dms | Self::Activity | Self::Later)
     }
 }
 
@@ -409,6 +421,7 @@ pub struct AttachmentVm {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct MessageVm {
     pub id: String,
+    pub thread_ts: Option<String>,
     pub ts: String,
     pub user_id: Option<String>,
     pub author: String,
@@ -418,6 +431,7 @@ pub struct MessageVm {
     pub external_team: Option<ExternalTeamVm>,
     pub body: Vec<RichNode>,
     pub edited: bool,
+    pub pinned_to: Vec<String>,
     pub is_own: bool,
     pub is_app: bool,
     pub pending: bool,
@@ -669,6 +683,15 @@ pub enum Overlay {
     Search,
     Settings,
     Viewer,
+    ReactionPicker,
+    Forward,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReactionTarget {
+    pub team: String,
+    pub channel: String,
+    pub ts: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

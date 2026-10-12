@@ -29,6 +29,7 @@ fn prune_typing_drops_stale() {
         active_huddles: HashMap::new(),
         rt: RealtimeStatus::default(),
         rt_generation: 0,
+        channel_lifecycle: Default::default(),
     };
     let now = Instant::now();
     ws.set_typing("C1", "U1".into(), now - Duration::from_secs(10));

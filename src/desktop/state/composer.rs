@@ -1,6 +1,4 @@
-use super_platinum_core::FormatMark;
-
-use super::{ShellState, message_vm};
+use super::ShellState;
 use crate::model::*;
 
 /// Which composer a file is being attached to.
@@ -15,7 +13,30 @@ pub enum ComposerTarget {
 }
 
 impl ShellState {
+    pub fn composer_unavailable(&self) -> Option<&'static str> {
+        let team = self.core.active_team.as_ref()?;
+        let channel = self.core.active_channel.as_ref()?;
+        let info = self.core.workspaces.get(team)?.channels.get(channel)?;
+        if info.is_archived {
+            Some("This channel is archived. Unarchive it in channel details to send messages.")
+        } else if !info.is_im
+            && !info.is_mpim
+            && info.extra.get("is_member").and_then(|v| v.as_bool()) == Some(false)
+        {
+            Some(if info.is_private || info.is_group {
+                "You are not a member of this private channel. An invitation is required to rejoin."
+            } else {
+                "Join this channel to send messages."
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn queue_composer(&mut self) -> Option<PendingSend> {
+        if self.composer_unavailable().is_some() {
+            return None;
+        }
         let text = self.core.composer.text.trim().to_owned();
         if text.is_empty() {
             return None;
@@ -48,6 +69,7 @@ impl ShellState {
                 self.message_arrivals
                     .insert(optimistic_ts.clone(), std::time::Instant::now());
                 self.core.composer = super_platinum_core::ComposerState::default();
+                self.checkpoint_composers();
                 self.refresh_from_core();
                 return Some(PendingSend {
                     team,
@@ -81,11 +103,15 @@ impl ShellState {
                 .push(message);
         }
         self.core.composer = super_platinum_core::ComposerState::default();
+        self.checkpoint_composers();
         self.show_toast("Message queued by the fixture dispatcher");
         None
     }
 
     pub fn queue_thread_composer(&mut self) -> Option<PendingSend> {
+        if self.composer_unavailable().is_some() {
+            return None;
+        }
         let text = self.core.thread_composer.text.trim().to_owned();
         if text.is_empty() {
             return None;
@@ -120,6 +146,7 @@ impl ShellState {
         messages.upsert(message);
         messages.pending.push(optimistic_ts.clone());
         self.core.thread_composer = super_platinum_core::ComposerState::default();
+        self.checkpoint_composers();
         self.refresh_thread_from_core();
         Some(PendingSend {
             team,
@@ -143,23 +170,19 @@ impl ShellState {
             self.thread_messages.clear();
             return;
         };
-        let messages = self
+        let bag = self
             .core
             .threads
-            .get(&(team.clone(), channel, root))
-            .map(|messages| messages.messages.clone())
+            .get(&(team.clone(), channel, root.clone()));
+        self.thread_messages = self
+            .core
+            .workspaces
+            .get(&team)
+            .zip(bag)
+            .map(|(workspace, bag)| {
+                crate::thread_vm::project(workspace, bag, &self.thread_history, &root, &self.media)
+            })
             .unwrap_or_default();
-        if let Some(workspace) = self.core.workspaces.get(&team) {
-            self.thread_messages = messages
-                .iter()
-                .map(|message| message_vm(workspace, message, &self.media))
-                .collect();
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn format_composer(&mut self, mark: FormatMark) {
-        self.core.composer.apply_format(mark);
     }
 
     pub fn start_edit(&mut self, channel: String, ts: String, text: String) {
@@ -183,6 +206,7 @@ impl ShellState {
         } else {
             target
         };
+        self.sync_composer_drafts();
         for path in paths {
             let attachments = match target {
                 ComposerTarget::Channel => &self.core.composer_attachments,
@@ -215,9 +239,11 @@ impl ShellState {
                 preview_path: None,
             });
         }
+        self.checkpoint_composers();
     }
 
     pub fn remove_attachment(&mut self, id: u64) {
+        self.sync_composer_drafts();
         for attachment in self
             .core
             .composer_attachments
@@ -235,21 +261,18 @@ impl ShellState {
         self.core
             .thread_composer_attachments
             .retain(|attachment| attachment.id != id);
+        self.checkpoint_composers();
     }
 
     /// Freeze virtualization while the user is drag-selecting message text so
-    /// multi-row native selection cannot unmount mid-gesture. Expand the window
-    /// so the drag can span many adjacent rows.
+    /// multi-row native selection cannot unmount mid-gesture. Keep the existing
+    /// overscan: inserting estimated-height rows above the pointer during
+    /// selectstart moves the clicked text before the native selection begins.
     pub fn pin_selection(&mut self) {
         if self.selection_pinned {
             return;
         }
         self.selection_pinned = true;
-        self.timeline_start = self.timeline_start.saturating_sub(80);
-        self.timeline_end = (self.timeline_end + 80).min(self.messages.len());
-        if self.timeline_end <= self.timeline_start {
-            self.reset_timeline_window();
-        }
     }
 
     pub fn unpin_selection(&mut self) {

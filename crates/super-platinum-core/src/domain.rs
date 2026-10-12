@@ -307,16 +307,21 @@ pub struct SearchState {
     pub loading: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ComposerAttachment {
     pub id: u64,
     pub path: PathBuf,
     pub name: String,
     pub bytes: u64,
+    #[serde(skip)]
     pub uploading: bool,
+    #[serde(skip)]
     pub upload_started: Option<Instant>,
+    #[serde(skip)]
     pub upload_cancel: Option<Arc<AtomicBool>>,
+    #[serde(skip)]
     pub upload_progress: Option<Arc<AtomicU64>>,
+    #[serde(skip)]
     pub preview_path: Option<PathBuf>,
 }
 

@@ -43,13 +43,26 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 // know. The first connect needs none of this: the conversation
                 // it opens fetches itself.
                 let reconnected = generation > 1;
+                let refresh_later = reconnected && shell.core.active_team.as_ref() == Some(&team);
+                let refresh_drafts = refresh_later
+                    && (shell.core.scheduled.loaded
+                        || shell.main_view == crate::state::MainView::Scheduled);
+                let later_filter = shell.core.later.filter;
                 let thread = shell
                     .thread_root
                     .clone()
                     .zip(shell.core.active_channel.clone());
                 drop(shell);
                 if reconnected {
+                    if refresh_later {
+                        dioxus::prelude::spawn(refresh_open_metadata(state, generation));
+                        dioxus::prelude::spawn(crate::later::load(state, later_filter, false));
+                    }
+                    if refresh_drafts {
+                        dioxus::prelude::spawn(crate::scheduled::load(state, false));
+                    }
                     dioxus::prelude::spawn(crate::bootstrap::refresh_selected_channel(state));
+                    dioxus::prelude::spawn(crate::channel_resources::refresh(state));
                     if let Some((root, channel)) = thread {
                         dioxus::prelude::spawn(crate::bootstrap::open_thread(state, channel, root));
                     }
@@ -93,7 +106,8 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     &event,
                     crate::notification::NotificationView {
                         focused: dioxus::desktop::window().window.is_focused()
-                            && shell.detail_open(),
+                            && (shell.transcript_visible()
+                                || (shell.detail_open() && shell.thread_root.is_some())),
                         thread_root: shell.thread_root.as_deref(),
                     },
                 );
@@ -122,8 +136,42 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 };
                 // Typing names are read directly from the workspace by the view;
                 // no channel or transcript projection changes for this event.
-                let typing_only = matches!(event.as_ref(), RtEvent::UserTyping { .. });
-                apply(&mut shell.core, &team, generation, *event);
+                let pin_event = matches!(event.as_ref(),RtEvent::Unknown(raw) if matches!(raw.kind.as_str(),"pin_added"|"pin_removed"));
+                let pins_generation = shell.core.pins.generation;
+                let saved_event = matches!(event.as_ref(),RtEvent::Unknown(raw) if matches!(raw.kind.as_str(),"saved_added"|"saved_updated"|"saved_deleted"));
+                let draft_event = matches!(event.as_ref(),RtEvent::Unknown(raw) if matches!(raw.kind.as_str(),"draft_create"|"draft_update"|"draft_delete"));
+                let later_generation = shell.core.later.generation;
+                let later_needs_reload = shell.core.later.loading || !shell.core.later.loaded;
+                let typing_only = matches!(event.as_ref(), RtEvent::UserTyping { .. })
+                    || saved_event
+                    || draft_event;
+                let metadata_revision = shell
+                    .core
+                    .workspaces
+                    .get(&team)
+                    .map(|w| w.channel_lifecycle.revision());
+                let transcript_visible = shell.transcript_visible();
+                apply_in_view(
+                    &mut shell.core,
+                    &team,
+                    generation,
+                    *event,
+                    transcript_visible,
+                );
+                let metadata_changed = shell
+                    .core
+                    .workspaces
+                    .get(&team)
+                    .map(|w| w.channel_lifecycle.revision())
+                    != metadata_revision;
+                let pins_changed = pin_event && shell.core.pins.generation != pins_generation;
+                let pins_channel = shell
+                    .core
+                    .active_channel
+                    .clone()
+                    .filter(|_| shell.channel_tab == crate::state::ChannelTab::Pins);
+                let later_changed = saved_event && shell.core.later.generation != later_generation;
+                let later_filter = shell.core.later.filter;
                 if let Some(arrival) = arrival {
                     let now = std::time::Instant::now();
                     shell.message_arrivals.insert(arrival, now);
@@ -133,7 +181,19 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     shell.refresh_from_core();
                 }
                 drop(shell);
-                if prefs_changed {
+                if pins_changed {
+                    if let Some(channel) = pins_channel {
+                        dioxus::core::spawn_forever(crate::pins::load(state, channel));
+                    }
+                }
+                if later_changed {
+                    if later_needs_reload {
+                        dioxus::prelude::spawn(crate::later::load(state, later_filter, false));
+                    } else {
+                        dioxus::prelude::spawn(crate::later::hydrate_visible(state));
+                    }
+                }
+                if prefs_changed || metadata_changed {
                     crate::bootstrap::persist_workspace(&state, &team);
                 }
                 if needs_user_hydration || self_profile_changed {
@@ -163,11 +223,67 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
     }
 }
 
+async fn refresh_open_metadata(mut state: Signal<ShellState>, generation: u64) {
+    let Some(ctx) = crate::scheduled::Context::get(&state) else {
+        return;
+    };
+    let Some((channel, revision)) = ({
+        let shell = state.peek();
+        shell.core.active_channel.clone().zip(
+            shell
+                .core
+                .workspaces
+                .get(&ctx.session.team_id)
+                .map(|w| w.channel_lifecycle.revision()),
+        )
+    }) else {
+        return;
+    };
+    let result = super_platinum_core::slack::api::fetch_conversation_details(
+        &ctx.transport,
+        &ctx.client,
+        &ctx.session,
+        &channel,
+    )
+    .await;
+    if !ctx.current(&state.peek())
+        || state
+            .peek()
+            .core
+            .workspaces
+            .get(&ctx.session.team_id)
+            .is_none_or(|w| w.rt_generation != generation)
+    {
+        return;
+    }
+    if let Ok(info) = result {
+        {
+            let mut shell = state.write();
+            if let Some(w) = shell.core.workspaces.get_mut(&ctx.session.team_id) {
+                w.merge_channel_details(info, revision);
+            }
+            shell.refresh_from_core();
+        }
+        crate::bootstrap::persist_workspace(&state, &ctx.session.team_id);
+    }
+}
+
+#[cfg(test)]
 fn apply(
     core: &mut super_platinum_core::CoreAppState,
     team: &str,
     generation: u64,
     event: RtEvent,
+) {
+    apply_in_view(core, team, generation, event, true);
+}
+
+fn apply_in_view(
+    core: &mut super_platinum_core::CoreAppState,
+    team: &str,
+    generation: u64,
+    event: RtEvent,
+    transcript_visible: bool,
 ) {
     let Some(workspace) = core.workspaces.get_mut(team) else {
         return;
@@ -175,6 +291,7 @@ fn apply(
     if generation != workspace.rt_generation {
         return;
     }
+    workspace.apply_channel_event(&event);
     match event {
         RtEvent::DesktopNotification(_) => {}
         RtEvent::PreferencesChanged { name, value } => {
@@ -227,7 +344,8 @@ fn apply(
                 && workspace.usergroups.values().any(|group| {
                     group.includes(&workspace.self_user_id) && group.mentioned_in(&message)
                 });
-            let viewing = core.active_team.as_deref() == Some(team)
+            let viewing = transcript_visible
+                && core.active_team.as_deref() == Some(team)
                 && core.active_channel.as_deref() == Some(channel.as_str());
             workspace.count_incoming_message(&channel, &message, viewing, group_ping);
             // Merged, not replaced. A frame that re-sends a message we already
@@ -244,6 +362,12 @@ fn apply(
                 .merge_update(super_platinum_core::state::visible_message(message));
         }
         RtEvent::MessageChanged { channel, message } => {
+            if core.pins.matches_scope(core.account_epoch, team) {
+                core.pins.update_message(&channel, &message);
+            }
+            if core.later.matches_scope(core.account_epoch, team) {
+                core.later.update_message(&channel, &message);
+            }
             workspace
                 .messages
                 .entry(channel.clone())
@@ -259,6 +383,12 @@ fn apply(
             channel,
             deleted_ts,
         } => {
+            if core.pins.matches_scope(core.account_epoch, team) {
+                core.pins.delete_message(&channel, &deleted_ts);
+            }
+            if core.later.matches_scope(core.account_epoch, team) {
+                core.later.delete_message(&channel, &deleted_ts);
+            }
             if let Some(messages) = workspace.messages.get_mut(&channel) {
                 messages.remove(&deleted_ts);
             }
@@ -336,11 +466,43 @@ fn apply(
                 channel.has_unreads = unread_count > 0 || mention_count > 0;
             }
         }
-        RtEvent::Unknown(raw) => super_platinum_core::slack::models::apply_group_event(
-            &mut workspace.usergroups,
-            &workspace.self_user_id,
-            &raw,
-        ),
+        RtEvent::Unknown(raw) => {
+            if matches!(
+                raw.kind.as_str(),
+                "draft_create" | "draft_update" | "draft_delete"
+            ) {
+                if core.active_team.as_deref() == Some(team) {
+                    core.scheduled.ensure_scope(core.account_epoch, team);
+                    core.scheduled.apply_event(&raw);
+                }
+                return;
+            }
+            if let Some(update) = super_platinum_core::pins::PinUpdate::from_event(&raw) {
+                if core.active_team.as_deref() == Some(team) {
+                    core.pins.ensure_scope(core.account_epoch, team);
+                    if core.pins.apply_event(&update) {
+                        if let Some(ts) = update.item.message.as_ref().and_then(|m| m.ts.as_ref()) {
+                            core.update_pin_copies(team, &update.channel, ts, update.pinned);
+                        }
+                    }
+                }
+                return;
+            }
+            super_platinum_core::slack::models::apply_group_event(
+                &mut workspace.usergroups,
+                &workspace.self_user_id,
+                &raw,
+            );
+            if core.active_team.as_deref() == Some(team)
+                && matches!(
+                    raw.kind.as_str(),
+                    "saved_added" | "saved_updated" | "saved_deleted"
+                )
+            {
+                core.later.ensure_scope(core.account_epoch, team);
+                core.later.apply_event(&raw);
+            }
+        }
     }
 }
 
@@ -355,7 +517,7 @@ fn apply(
 /// A channel with no transcript loaded is left alone rather than given an empty
 /// one: the reaction is already on the server copy, and the history fetch that
 /// opens the conversation brings it in.
-fn apply_reaction(
+pub(crate) fn apply_reaction(
     core: &mut super_platinum_core::CoreAppState,
     team: &str,
     channel: &str,
@@ -364,6 +526,9 @@ fn apply_reaction(
     name: &str,
     added: bool,
 ) {
+    if core.pins.matches_scope(core.account_epoch, team) {
+        core.pins.apply_reaction(channel, ts, user, name, added);
+    }
     if let Some(messages) = core
         .workspaces
         .get_mut(team)
@@ -435,6 +600,141 @@ mod tests {
         thread.upsert(root);
         thread.upsert(message("2.0", Some(ROOT)));
         core
+    }
+
+    #[test]
+    fn channel_metadata_is_connection_guarded_and_preserves_other_workspaces_and_drafts() {
+        use super_platinum_core::slack::models::Channel;
+        let mut core = core();
+        let workspace = core.workspaces.get_mut(TEAM).unwrap();
+        workspace.rt_generation = 4;
+        workspace.channels.insert(
+            CHANNEL.into(),
+            Channel {
+                id: CHANNEL.into(),
+                name: Some("before".into()),
+                is_private: true,
+                ..Default::default()
+            },
+        );
+        let other = workspace.clone();
+        core.workspaces.insert("OTHER".into(), other);
+        core.active_team = Some("OTHER".into());
+        core.composer.text = "unsent channel draft".into();
+        core.thread_composer.text = "unsent thread draft".into();
+        let event = || {
+            super_platinum_core::slack::realtime::parse_event(
+                r#"{"type":"group_rename","channel":{"id":"C1","name":"after"},"event_ts":"20.1"}"#,
+            )
+            .unwrap()
+        };
+        apply(&mut core, TEAM, 3, event());
+        assert_eq!(
+            core.workspaces[TEAM].channels[CHANNEL].name.as_deref(),
+            Some("before")
+        );
+        apply(&mut core, "MISSING", 4, event());
+        apply(&mut core, TEAM, 4, event());
+        assert_eq!(
+            core.workspaces[TEAM].channels[CHANNEL].name.as_deref(),
+            Some("after")
+        );
+        assert_eq!(
+            core.workspaces["OTHER"].channels[CHANNEL].name.as_deref(),
+            Some("before")
+        );
+        assert_eq!(core.composer.text, "unsent channel draft");
+        assert_eq!(core.thread_composer.text, "unsent thread draft");
+        assert!(core.workspaces[TEAM].channels[CHANNEL].is_private);
+    }
+
+    #[test]
+    fn draft_events_are_workspace_and_connection_generation_guarded() {
+        let mut core = core();
+        let generation = core.workspaces[TEAM].rt_generation;
+        let raw = serde_json::from_value(serde_json::json!({
+            "type":"draft_update", "draft_id":"DrLive", "event_ts":"10.1",
+            "draft":{"id":"DrLive","team_id":TEAM,"last_updated_ts":"10.2",
+                "blocks":[],"file_ids":["F1"],"destinations":[{"channel_id":CHANNEL,"thread_ts":ROOT}]}
+        })).unwrap();
+        let event = RtEvent::Unknown(raw);
+        apply(&mut core, TEAM, generation.wrapping_add(1), event.clone());
+        assert!(core.scheduled.items.is_empty());
+        core.active_team = Some("OTHER".into());
+        apply(&mut core, TEAM, generation, event.clone());
+        assert!(core.scheduled.items.is_empty());
+        core.active_team = Some(TEAM.into());
+        apply(&mut core, TEAM, generation, event);
+        assert_eq!(core.scheduled.items["DrLive"].file_ids, vec!["F1"]);
+        assert_eq!(core.scheduled.items["DrLive"].thread_ts(), Some(ROOT));
+        assert_eq!(core.scheduled.items.len(), 1);
+    }
+
+    #[test]
+    fn pins_reconcile_transcript_and_thread_and_receive_reactions() {
+        use super_platinum_core::pins::{PinnedItem, PinsPage};
+        let mut core = core();
+        core.pins.ensure_scope(core.account_epoch, TEAM);
+        let generation = core.pins.begin(CHANNEL);
+        core.pins.apply(
+            generation,
+            PinsPage {
+                items: vec![PinnedItem {
+                    kind: "message".into(),
+                    message: Some(message(ROOT, Some(ROOT))),
+                    ..Default::default()
+                }],
+            },
+        );
+        core.reconcile_pin_copies(TEAM, CHANNEL);
+        assert_eq!(
+            core.workspaces[TEAM].messages[CHANNEL].messages[0].extra["pinned_to"],
+            serde_json::json!([CHANNEL])
+        );
+        assert_eq!(
+            core.threads[&(TEAM.into(), CHANNEL.into(), ROOT.into())].messages[0].extra["pinned_to"],
+            serde_json::json!([CHANNEL])
+        );
+        apply_reaction(&mut core, TEAM, CHANNEL, ROOT, "U2", "eyes", true);
+        assert_eq!(
+            core.pins.items[&format!("message:{ROOT}")]
+                .message
+                .as_ref()
+                .unwrap()
+                .reactions[0]
+                .name,
+            "eyes"
+        );
+        let generation = core.pins.begin(CHANNEL);
+        core.pins.apply(generation, PinsPage::default());
+        core.reconcile_pin_copies(TEAM, CHANNEL);
+        assert_eq!(
+            core.workspaces[TEAM].messages[CHANNEL].messages[0].extra["pinned_to"],
+            serde_json::json!([])
+        );
+        assert_eq!(
+            core.threads[&(TEAM.into(), CHANNEL.into(), ROOT.into())].messages[0].extra["pinned_to"],
+            serde_json::json!([])
+        );
+    }
+
+    #[test]
+    fn saved_events_ignore_old_connections_and_other_workspaces() {
+        let mut core = core();
+        core.active_team = Some(TEAM.into());
+        core.workspaces.get_mut(TEAM).unwrap().rt_generation = 4;
+        let event = || {
+            super_platinum_core::slack::realtime::parse_event(r#"{"type":"saved_added","saved":{"item_type":"message","item_id":"C1","ts":"1.2"},"counts":{"uncompleted_count":1},"event_ts":"20.0"}"#).unwrap()
+        };
+        apply(&mut core, TEAM, 3, event());
+        assert!(core.later.items.is_empty());
+        core.active_team = Some("OTHER".into());
+        apply(&mut core, TEAM, 4, event());
+        assert!(core.later.items.is_empty());
+        core.active_team = Some(TEAM.into());
+        apply(&mut core, TEAM, 4, event());
+        assert_eq!(core.later.items.len(), 1);
+        assert_eq!(core.later.counts.uncompleted_count, 1);
     }
 
     fn reactions(core: &super_platinum_core::CoreAppState, ts: &str) -> Vec<String> {
@@ -555,6 +855,19 @@ mod tests {
         assert_eq!(core.workspaces[TEAM].messages[CHANNEL].mention_count, 0);
         apply(&mut core, TEAM, 0, RtEvent::Message(ping.clone()));
         apply(&mut core, TEAM, 0, RtEvent::Message(ping));
+        assert_eq!(core.workspaces[TEAM].messages[CHANNEL].mention_count, 1);
+    }
+
+    #[test]
+    fn resource_panel_does_not_consume_new_channel_mentions() {
+        let mut core = core();
+        core.active_team = Some(TEAM.into());
+        core.active_channel = Some(CHANNEL.into());
+        let user = core.workspaces[TEAM].self_user_id.clone();
+        let mut ping = message("99.0", None);
+        ping.user = Some("another-user".into());
+        ping.text = Some(format!("<@{user}> hello"));
+        apply_in_view(&mut core, TEAM, 0, RtEvent::Message(ping), false);
         assert_eq!(core.workspaces[TEAM].messages[CHANNEL].mention_count, 1);
     }
 

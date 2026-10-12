@@ -1,0 +1,3 @@
+Geist by Vercel, SIL Open Font License 1.1.
+https://github.com/vercel/geist-font/tree/10dc7658f13c38a474cde201bb09a4617267545b
+Variable WOFF2 files vendored without modification.

@@ -53,7 +53,7 @@ Commands:
   search <query>
   clear-search
   open-settings
-  main-view <home|unreads|dms|activity>   Switch main surface
+  main-view <home|unreads|threads|dms|activity|later|files|scheduled>   Switch main surface
   activity-select <index>         Open activity item in right panel
   close-settings
   open-profile <user_id>

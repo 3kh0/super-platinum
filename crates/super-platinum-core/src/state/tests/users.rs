@@ -212,6 +212,7 @@ fn boot_self_user_provides_self_avatar_url() {
         active_huddles: HashMap::new(),
         rt: RealtimeStatus::default(),
         rt_generation: 0,
+        channel_lifecycle: Default::default(),
     };
 
     ws.apply_boot(BootData {

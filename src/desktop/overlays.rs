@@ -11,6 +11,12 @@ pub fn overlay_view(
     if overlay == Overlay::SelfMenu {
         return self_menu_view(state, snapshot);
     }
+    if overlay == Overlay::ReactionPicker {
+        return rsx! { crate::reaction_picker::ReactionPicker { state } };
+    }
+    if overlay == Overlay::Forward {
+        return rsx! { crate::forward::ForwardDialog {key:"{snapshot.forward_target.as_ref().map(|t|t.id.as_str()).unwrap_or_default()}", state } };
+    }
     let (title, input_value, placeholder) = match overlay {
         Overlay::SelfMenu => unreachable!("self menu renders as a rail popover"),
         Overlay::Accounts => ("Accounts", "", ""),
@@ -26,6 +32,8 @@ pub fn overlay_view(
         ),
         Overlay::Settings => ("Settings", "", ""),
         Overlay::Viewer => ("Media viewer", "", ""),
+        Overlay::Forward => unreachable!("forward dialog owns its surface"),
+        Overlay::ReactionPicker => unreachable!("reaction picker owns its dialog"),
     };
     let compact = overlay == Overlay::Palette;
     rsx! {
@@ -112,20 +120,19 @@ pub fn overlay_view(
                         rsx! {
                             div { class: "viewer",
                                 if !ready {
-                                    p { class: "viewer-loading", "Loading {viewer.name}…" }
+                                    if snapshot.media.image_state(&viewer.id).1 {
+                                        p {class:"media-unavailable", "Preview unavailable"}
+                                    } else {
+                                        p { class: "viewer-loading", "Loading {viewer.name}…" }
+                                    }
                                 } else if viewer.mime.starts_with("image/") {
-                                    img { key: "viewer-{uri}", src: "{uri}", alt: "{viewer.name}" }
+                                    crate::view::media_image::MediaImage {state,id:viewer.id.clone(),media_epoch:snapshot.media_epoch,alt:viewer.name.clone()}
                                 } else if viewer.mime.starts_with("video/") {
                                     video { key: "viewer-{uri}", src: "{uri}", controls: true, autoplay: true, "{viewer.name}" }
                                 } else {
                                     p { "This file type cannot be previewed in the system WebView." }
                                 }
-                                a {
-                                    class: if ready { "primary" } else { "primary disabled" },
-                                    href: "{uri}",
-                                    download: "{viewer.name}",
-                                    "Download {viewer.name}"
-                                }
+                                crate::download::DownloadButton {key:"{viewer.id.uri()}",state,id:viewer.id.clone(),name:viewer.name.clone(),ready}
                             }
                         }
                     }

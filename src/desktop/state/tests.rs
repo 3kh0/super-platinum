@@ -1,17 +1,83 @@
 use super::*;
+
+#[test]
+fn composers_keep_text_and_attachments_with_the_original_conversation() {
+    let mut state = ShellState::fixture(MediaRegistry::default());
+    state.sync_composer_drafts();
+    let first = state.active_channel;
+    let second = if first == 0 { 1 } else { 0 };
+    state.core.composer = super_platinum_core::ComposerState::with_text("*Channel draft 🚀*");
+    state
+        .core
+        .composer_attachments
+        .push(super_platinum_core::domain::ComposerAttachment {
+            id: 77,
+            path: "/tmp/draft-fixture.png".into(),
+            name: "draft-fixture.png".into(),
+            bytes: 12,
+            uploading: false,
+            upload_started: None,
+            upload_cancel: None,
+            upload_progress: None,
+            preview_path: None,
+        });
+    state.begin_thread("root-one".into(), None);
+    state.core.thread_composer = super_platinum_core::ComposerState::with_text("Reply one");
+    state.begin_thread("root-two".into(), None);
+    assert!(state.core.thread_composer.text.is_empty());
+    state.core.thread_composer = super_platinum_core::ComposerState::with_text("Reply two");
+    state.close_thread();
+    state.select_channel(second, ChannelOpen::Global);
+    assert!(state.core.composer.text.is_empty());
+    assert!(state.core.composer_attachments.is_empty());
+    state.core.composer = super_platinum_core::ComposerState::with_text("Other channel");
+    state.select_channel(first, ChannelOpen::Global);
+    assert_eq!(state.core.composer.text, "*Channel draft 🚀*");
+    assert_eq!(state.core.composer_attachments[0].id, 77);
+    state.begin_thread("root-one".into(), None);
+    assert_eq!(state.core.thread_composer.text, "Reply one");
+    state.begin_thread("root-two".into(), None);
+    assert_eq!(state.core.thread_composer.text, "Reply two");
+    state.queue_thread_composer();
+    state.close_thread();
+    state.begin_thread("root-two".into(), None);
+    assert!(state.core.thread_composer.text.is_empty());
+}
+
+#[test]
+fn deleting_a_hidden_local_draft_preserves_the_current_composer() {
+    let mut state = ShellState::fixture(MediaRegistry::default());
+    state.sync_composer_drafts();
+    let original = state.active_channel;
+    let key = state.composer_key(ComposerTarget::Channel).unwrap();
+    state.core.composer = super_platinum_core::ComposerState::with_text("Discard this");
+    state.select_channel(if original == 0 { 1 } else { 0 }, ChannelOpen::Global);
+    state.core.composer = super_platinum_core::ComposerState::with_text("Keep this");
+    state.discard_local_draft(&key);
+    assert_eq!(state.core.composer.text, "Keep this");
+    state.select_channel(original, ChannelOpen::Global);
+    assert!(state.core.composer.text.is_empty());
+}
 use crate::media::MediaRegistry;
 
 #[test]
-fn pin_selection_expands_and_freezes_window() {
+fn pin_selection_keeps_the_clicked_rows_in_place_and_freezes_window() {
     let media = MediaRegistry::default();
     let mut state = ShellState::fixture(media);
-    let len = state.messages.len().max(1);
-    state.timeline_start = len.saturating_sub(20).min(len);
-    state.timeline_end = len;
-    let before_start = state.timeline_start;
+    let template = state.messages[0].clone();
+    state.messages = (0..200)
+        .map(|index| {
+            let mut message = template.clone();
+            message.id = format!("selection-row-{index}");
+            message
+        })
+        .collect();
+    state.timeline_start = 150;
+    state.timeline_end = 180;
+    let before = (state.timeline_start, state.timeline_end);
     state.pin_selection();
     assert!(state.selection_pinned);
-    assert!(state.timeline_start <= before_start);
+    assert_eq!((state.timeline_start, state.timeline_end), before);
     let frozen_start = state.timeline_start;
     let frozen_end = state.timeline_end;
     state.set_timeline_window(0, 1, None::<(String, f64)>, false);
@@ -244,6 +310,54 @@ fn reaching_the_newest_message_drops_a_pending_anchor() {
     // them back up to the unread divider.
     state.set_timeline_window(0, 1, None::<(String, f64)>, true);
     assert!(state.core.pending_scroll_to.is_none());
+}
+
+#[test]
+fn saved_message_anchor_survives_a_cold_timeline_bottom_measurement() {
+    let mut state = ShellState::fixture(MediaRegistry::default());
+    state.main_view = MainView::Later;
+    assert!(state.open_later_item("C1", "900.000001"));
+    let target = state.core.pending_scroll_to.clone();
+    state.messages.clear();
+    state.set_timeline_window(0, 0, None::<(String, f64)>, true);
+    assert_eq!(state.core.pending_scroll_to, target);
+    assert_eq!(state.main_view, MainView::Later);
+}
+
+#[test]
+fn saved_message_outside_the_latest_window_is_rendered_until_the_anchor_lands() {
+    let mut state = ShellState::fixture(MediaRegistry::default());
+    let template = state.messages[0].clone();
+    state.messages = (0..250)
+        .map(|i| {
+            let mut message = template.clone();
+            message.ts = format!("{i}.000001");
+            message.id = message.ts.clone();
+            message
+        })
+        .collect();
+    let channel = state.core.active_channel.clone().unwrap();
+    state.core.pending_scroll_to = Some((
+        channel,
+        super_platinum_core::domain::PendingScrollTarget::Message("30.000001".into()),
+    ));
+    state.reset_timeline_window();
+    assert!(state.timeline_start <= 30 && state.timeline_end > 30);
+    assert!(state.timeline_end - state.timeline_start <= 100);
+    state.set_timeline_window(220, 249, None::<(String, f64)>, true);
+    assert!(state.timeline_start <= 30 && state.timeline_end > 30);
+    // A history response can prepend rows after the initial cached scroll.
+    // Identity must survive that merge; the old numeric index is no longer it.
+    let prepended = (0..100).map(|i| {
+        let mut message = template.clone();
+        message.ts = format!("older-{i}");
+        message.id = message.ts.clone();
+        message
+    });
+    state.messages.splice(0..0, prepended);
+    state.reset_timeline_window();
+    assert!(state.timeline_start <= 130 && state.timeline_end > 130);
+    assert_eq!(state.messages[130].ts, "30.000001");
 }
 
 #[test]
@@ -481,4 +595,98 @@ fn attachments_land_in_the_composer_they_were_added_to() {
     assert!(state.core.thread_composer_attachments.is_empty());
 
     std::fs::remove_file(path).ok();
+}
+
+#[test]
+fn resource_navigation_keeps_global_files_and_returns_to_messages_on_channel_open() {
+    let mut state = ShellState::fixture_variant(MediaRegistry::default(), "channel-files");
+    state.core.files.ensure_scope(
+        state.core.account_epoch,
+        state.core.active_team.as_deref().unwrap(),
+    );
+    state.core.files.begin(
+        super_platinum_core::files::FilesQuery {
+            text: "global design".into(),
+            ..Default::default()
+        },
+        1,
+    );
+    assert_eq!(state.channel_tab, ChannelTab::Files);
+    assert!(!state.transcript_visible());
+    assert!(state.core.channel_files.query.channel.is_some());
+    state.select_channel(state.active_channel, ChannelOpen::Global);
+    assert_eq!(state.channel_tab, ChannelTab::Messages);
+    assert!(state.transcript_visible());
+    assert_eq!(state.core.files.query.text, "global design");
+}
+
+#[test]
+fn archived_channels_block_channel_and_thread_queues_without_losing_drafts() {
+    let mut state = ShellState::fixture(MediaRegistry::default());
+    let team = state.core.active_team.clone().unwrap();
+    let channel = state.core.active_channel.clone().unwrap();
+    state.begin_thread("root".into(), None);
+    state.core.composer = super_platinum_core::ComposerState::with_text("Keep channel draft");
+    state.core.thread_composer = super_platinum_core::ComposerState::with_text("Keep thread draft");
+    state
+        .core
+        .workspaces
+        .get_mut(&team)
+        .unwrap()
+        .channels
+        .get_mut(&channel)
+        .unwrap()
+        .is_archived = true;
+    assert!(state.composer_unavailable().unwrap().contains("archived"));
+    assert!(state.queue_composer().is_none());
+    assert!(state.queue_thread_composer().is_none());
+    assert_eq!(state.core.composer.text, "Keep channel draft");
+    assert_eq!(state.core.thread_composer.text, "Keep thread draft");
+    state
+        .core
+        .workspaces
+        .get_mut(&team)
+        .unwrap()
+        .channels
+        .get_mut(&channel)
+        .unwrap()
+        .is_archived = false;
+    assert!(state.composer_unavailable().is_none());
+    let info = state
+        .core
+        .workspaces
+        .get_mut(&team)
+        .unwrap()
+        .channels
+        .get_mut(&channel)
+        .unwrap();
+    info.is_im = false;
+    info.is_mpim = false;
+    info.extra.insert("is_member".into(), false.into());
+    assert!(state.composer_unavailable().unwrap().contains("Join"));
+    assert!(state.queue_composer().is_none());
+}
+
+#[test]
+fn confirmed_leave_and_join_preserve_independent_composer_drafts() {
+    let mut state = ShellState::fixture(MediaRegistry::default());
+    let team = state.core.active_team.clone().unwrap();
+    let channel = state.core.active_channel.clone().unwrap();
+    state.begin_thread("membership-root".into(), None);
+    state.core.composer = super_platinum_core::ComposerState::with_text("Unsent channel text");
+    state.core.thread_composer =
+        super_platinum_core::ComposerState::with_text("Unsent thread text");
+    for member in [false, true] {
+        let workspace = state.core.workspaces.get_mut(&team).unwrap();
+        let revision = workspace.channel_lifecycle.revision();
+        workspace.confirm_channel_membership(&channel, member, revision);
+        state.refresh_from_core();
+        assert_eq!(state.composer_unavailable().is_none(), member);
+        if !member {
+            assert!(state.queue_composer().is_none());
+            assert!(state.queue_thread_composer().is_none());
+        }
+        assert_eq!(state.core.composer.text, "Unsent channel text");
+        assert_eq!(state.core.thread_composer.text, "Unsent thread text");
+    }
 }

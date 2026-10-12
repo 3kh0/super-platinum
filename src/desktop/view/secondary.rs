@@ -148,7 +148,11 @@ pub(crate) fn secondary_view(mut state: Signal<ShellState>, snapshot: &ShellStat
                 }
             }
         },
-        MainView::Dms | MainView::Activity => rsx! {},
+        MainView::Dms
+        | MainView::Activity
+        | MainView::Later
+        | MainView::Files
+        | MainView::Scheduled => rsx! {},
     }
 }
 

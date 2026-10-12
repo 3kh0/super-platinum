@@ -48,6 +48,8 @@ tokio = { version = "1", features = [
     "time",
 ] }
 url = "2"
+# Same dialog backend/version already used by the pinned Dioxus desktop crate.
+rfd = { version = "0.17.2", default-features = false, features = ["xdg-portal"] }
 # tao and wry must match the versions dioxus-desktop resolves to. A different
 # version compiles a second copy into the graph, and its traits (for example
 # WindowExtWindows::hwnd) then do not apply to the window dioxus hands us.

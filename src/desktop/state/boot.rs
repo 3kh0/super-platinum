@@ -70,7 +70,14 @@ impl ShellState {
                 }];
                 state
             }
-            "threads" | "thread-unread-divider" => {
+            "threads"
+            | "thread-unread-divider"
+            | "thread-target"
+            | "thread-error"
+            | "thread-paging"
+            | "thread-paging-error"
+            | "thread-grouped"
+            | "thread-grouped-pending" => {
                 let mut state = Self::fixture(media);
                 state.thread_root = Some("m2".into());
                 state.thread_messages = vec![
@@ -100,6 +107,69 @@ impl ShellState {
                         ..Default::default()
                     },
                 ];
+                if fixture.starts_with("thread-grouped") {
+                    let root = "1719800400.000000";
+                    let mut bag = super_platinum_core::state::ChannelMessages::default();
+                    for index in 0..13 {
+                        let mut message:super_platinum_core::slack::models::Message=serde_json::from_value(serde_json::json!({"ts":format!("{}.000000",1719800400+index),"user":"U1","thread_ts":root,"text":if index==0 {"A compact thread with complete message controls.".into()}else{format!("Synthetic reply {index}: readable, with less repeated chrome.")}})).unwrap();
+                        if index == 4 {
+                            message.edited =
+                                Some(serde_json::json!({"user":"U1","ts":"1719800450.000000"}));
+                        }
+                        bag.upsert(message);
+                    }
+                    if fixture == "thread-grouped-pending" {
+                        bag.pending.push("1719800412.000000".into());
+                    }
+                    state.thread_root = Some(root.into());
+                    state.thread_at_bottom = false;
+                    state.thread_messages = crate::thread_vm::project(
+                        &state.core.workspaces["T1"],
+                        &bag,
+                        &state.thread_history,
+                        root,
+                        &state.media,
+                    );
+                    state.core.threads.insert(
+                        (
+                            "T1".into(),
+                            state.core.active_channel.clone().unwrap(),
+                            root.into(),
+                        ),
+                        bag,
+                    );
+                }
+                if fixture.starts_with("thread-paging") {
+                    use super_platinum_core::thread_history::{Direction, ThreadHistory};
+                    state.thread_root = Some("3.0".into());
+                    state.thread_messages[0].id = "3.0".into();
+                    let page=serde_json::from_value(serde_json::json!({"messages":[{"ts":"3.0"},{"ts":"3.1"}],"has_more":true,"response_metadata":{"next_cursor":"fixture-next"}})).unwrap();
+                    state.thread_history.start(
+                        &ThreadHistory::initial(Some("3.1"), 4),
+                        "3.0",
+                        &page,
+                    );
+                    state.thread_at_bottom = false;
+                    if fixture == "thread-paging-error" {
+                        state.thread_history.failed = Some(Direction::Earlier);
+                    }
+                }
+                if fixture == "thread-error" {
+                    state.thread_messages.clear();
+                    state.thread_error = Some("Replies could not load. Please try again.".into());
+                } else if fixture == "thread-target" {
+                    let template = state.thread_messages[1].clone();
+                    state.thread_root = Some("3.000000".into());
+                    state.thread_messages = (0..40).map(|index| {
+                        let mut message = template.clone();
+                        message.id = format!("3.{index:06}");
+                        message.ts = message.id.clone();
+                        message.body = vec![RichNode::Text(format!("Synthetic thread reply {index}. A saved reply should open here even when newer replies exist."))];
+                        message
+                    }).collect();
+                    state.thread_target = Some("3.000007".into());
+                    state.thread_at_bottom = false;
+                }
                 state
             }
             name => Self::fixture_variant(media, name),
@@ -156,6 +226,17 @@ impl ShellState {
         core.screen = super_platinum_core::state::Screen::Main;
         core.accounts = accounts.sessions.clone();
         core.active_account = Some(accounts.active_account.clone());
+        let drafts = super_platinum_core::drafts::store::load(&accounts.active_account);
+        let drafts_load_failed = drafts.is_err();
+        core.drafts = super_platinum_core::drafts::DraftBook::restored(drafts.unwrap_or_default());
+        core.attachment_seq = core
+            .drafts
+            .items
+            .values()
+            .flat_map(|d| &d.attachments)
+            .map(|a| a.id)
+            .max()
+            .unwrap_or(0);
         core.session = Some(session.clone());
         core.transport = super_platinum_core::slack::Transport::new(session.d_cookie.clone())
             .ok()
@@ -220,6 +301,7 @@ impl ShellState {
             loading_older: false,
             chat_paused: false,
             main_view: MainView::Home,
+            channel_tab: ChannelTab::Messages,
             dm_query: String::new(),
             dm_unread_only: false,
             activity_tab: ActivityTab::default(),
@@ -228,6 +310,9 @@ impl ShellState {
             profile_hover_generation: 0,
             profile_hover_card_active: false,
             overlay: None,
+            reaction_target: None,
+            forward_target: None,
+            emoji_catalog_loaded: HashMap::new(),
             settings_section: SettingsSection::Appearance,
             storage: StoragePanel::default(),
             palette_query: String::new(),
@@ -235,10 +320,16 @@ impl ShellState {
             search_query: String::new(),
             search_results: Vec::new(),
             search_loading: false,
+            later_open_generation: 0,
             unread_anchor: None,
             thread_root: None,
             thread_messages: Vec::new(),
             thread_at_bottom: true,
+            thread_generation: 0,
+            thread_target: None,
+            thread_loading: false,
+            thread_error: None,
+            thread_history: Default::default(),
             profile_user: None,
             group_panel: None,
             profile_pane_width: 495.0,
@@ -256,6 +347,13 @@ impl ShellState {
         state
             .media
             .set_cache_limit(state.core.settings.cache_limit.bytes());
+        let mut state = state;
+        state.sync_composer_drafts();
+        if drafts_load_failed {
+            state.show_toast(
+                "Local drafts could not be restored. The saved data has been left in place.",
+            );
+        }
         Ok(state)
     }
 
@@ -303,6 +401,7 @@ impl ShellState {
             loading_older: false,
             chat_paused: false,
             main_view: MainView::Home,
+            channel_tab: ChannelTab::Messages,
             dm_query: String::new(),
             dm_unread_only: false,
             activity_tab: ActivityTab::default(),
@@ -311,6 +410,9 @@ impl ShellState {
             profile_hover_generation: 0,
             profile_hover_card_active: false,
             overlay: None,
+            reaction_target: None,
+            forward_target: None,
+            emoji_catalog_loaded: HashMap::new(),
             settings_section: SettingsSection::Appearance,
             storage: StoragePanel::default(),
             palette_query: String::new(),
@@ -318,10 +420,16 @@ impl ShellState {
             search_query: String::new(),
             search_results: Vec::new(),
             search_loading: false,
+            later_open_generation: 0,
             unread_anchor: None,
             thread_root: None,
             thread_messages: Vec::new(),
             thread_at_bottom: true,
+            thread_generation: 0,
+            thread_target: None,
+            thread_loading: false,
+            thread_error: None,
+            thread_history: Default::default(),
             profile_user: None,
             group_panel: None,
             profile_pane_width: 495.0,
@@ -343,7 +451,32 @@ impl ShellState {
     }
 
     pub fn fixture(media: MediaRegistry) -> Self {
-        let core = fixture_core();
+        let mut core = fixture_core();
+        if matches!(
+            std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
+            Ok("channel-join" | "channel-leave" | "channel-leave-last" | "channel-join-composer")
+        ) {
+            let name = std::env::var("SUPER_PLATINUM_FIXTURE").unwrap();
+            let channel = core
+                .workspaces
+                .get_mut("T1")
+                .unwrap()
+                .channels
+                .get_mut("C2")
+                .unwrap();
+            channel
+                .extra
+                .insert("is_member".into(), name.starts_with("channel-leave").into());
+            channel.is_private = name.starts_with("channel-leave");
+            channel.extra.insert(
+                "num_members".into(),
+                if name == "channel-leave-last" {
+                    1.into()
+                } else {
+                    2.into()
+                },
+            );
+        }
         // Fixture avatars use opaque media IDs backed by local placeholder bytes so
         // profile/DM chrome is not limited to letter placeholders offline.
         let placeholder = include_bytes!("../../../assets/icons/icon-512.png");
@@ -555,6 +688,7 @@ impl ShellState {
             loading_older: false,
             chat_paused: false,
             main_view: MainView::Home,
+            channel_tab: ChannelTab::Messages,
             dm_query: String::new(),
             dm_unread_only: false,
             activity_tab: ActivityTab::default(),
@@ -563,6 +697,9 @@ impl ShellState {
             profile_hover_generation: 0,
             profile_hover_card_active: false,
             overlay: None,
+            reaction_target: None,
+            forward_target: None,
+            emoji_catalog_loaded: HashMap::new(),
             settings_section: SettingsSection::Appearance,
             storage: StoragePanel::default(),
             palette_query: String::new(),
@@ -570,10 +707,16 @@ impl ShellState {
             search_query: String::new(),
             search_results: Vec::new(),
             search_loading: false,
+            later_open_generation: 0,
             unread_anchor: None,
             thread_root: None,
             thread_messages: Vec::new(),
             thread_at_bottom: true,
+            thread_generation: 0,
+            thread_target: None,
+            thread_loading: false,
+            thread_error: None,
+            thread_history: Default::default(),
             profile_user: None,
             group_panel: None,
             profile_pane_width: 495.0,
@@ -629,8 +772,221 @@ impl ShellState {
                 state.self_account.snoozed = true;
                 state.self_account.presence = PresenceVm::Away;
             }
+            "scheduled"
+            | "scheduled-empty"
+            | "scheduled-error"
+            | "scheduled-edit"
+            | "scheduled-send-confirm"
+            | "drafts"
+            | "drafts-empty"
+            | "drafts-edit"
+            | "drafts-conflict"
+            | "drafts-no-destination" => {
+                state.main_view = MainView::Scheduled;
+                let team = state.core.active_team.clone().unwrap();
+                state
+                    .core
+                    .scheduled
+                    .ensure_scope(state.core.account_epoch, &team);
+                let (generation, limit) = state.core.scheduled.begin(false).unwrap();
+                let drafts = if matches!(name, "scheduled-empty" | "drafts-empty") {
+                    vec![]
+                } else {
+                    vec![serde_json::from_value(serde_json::json!({
+                    "id":"DrFixture","date_scheduled":super_platinum_core::state::now_secs()+86400,"destinations":[{"channel_id":"C2","thread_ts":"1790000000.000001"}],"file_ids":["Ffixture"],
+                    "blocks":[{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"Release review 🚀","style":{"bold":true}},{"type":"text","text":"\nCheck the final changes before we ship. The report is attached."}]}]}]
+                })).unwrap()]
+                };
+                state.core.scheduled.apply(
+                    generation,
+                    super_platinum_core::scheduled::ScheduledPage {
+                        drafts,
+                        has_more: false,
+                    },
+                    limit,
+                );
+                if name.starts_with("drafts") {
+                    state.core.scheduled.filter =
+                        super_platinum_core::scheduled::DraftFilter::Drafts;
+                    if let Some(item) = state.core.scheduled.items.get_mut("DrFixture") {
+                        item.post_at = 0;
+                        if name == "drafts-no-destination" {
+                            item.destinations.clear();
+                        }
+                    }
+                }
+                if name == "scheduled-error" {
+                    state.core.scheduled.error = Some(
+                        "Could not refresh scheduled messages. Your saved queue is still here."
+                            .into(),
+                    );
+                }
+            }
             "unreads" => state.main_view = MainView::Unreads,
             "dms" => state.main_view = MainView::Dms,
+            "files"
+            | "files-narrow"
+            | "files-empty"
+            | "files-error"
+            | "channel-files"
+            | "channel-files-narrow" => {
+                state.main_view = MainView::Files;
+                let team = state.core.active_team.clone().unwrap();
+                state
+                    .core
+                    .files
+                    .ensure_scope(state.core.account_epoch, &team);
+                let generation = state.core.files.begin(Default::default(), 1);
+                let items = if name == "files-empty" {
+                    vec![]
+                } else {
+                    vec![
+                        serde_json::json!({"id":"F1","title":"Super Platinum interface review.pdf","filetype":"pdf","pretty_type":"PDF","size":184200,"user":"U1","created":1791763200}),
+                        serde_json::json!({"id":"F2","title":"Product decisions and launch notes","filetype":"quip","pretty_type":"Canvas","user":"U2","created":1791676800}),
+                        serde_json::json!({"id":"F3","title":"Screenshot — compact thread layout.png","filetype":"png","pretty_type":"PNG","size":294100,"user":"U1","created":1791590400}),
+                        serde_json::json!({"id":"F4","title":"A long file name that still stays on one line and leaves room for useful metadata when the window is narrow.csv","filetype":"csv","pretty_type":"CSV","size":12200,"user":"U2","created":1791504000}),
+                    ]
+                };
+                let page=serde_json::from_value(serde_json::json!({"items":items,"pagination":{"page":1,"page_count":if items.is_empty(){1}else{3},"total_count":if items.is_empty(){0}else{124}}})).unwrap();
+                state.core.files.apply(generation, page);
+                if matches!(name, "channel-files" | "channel-files-narrow") {
+                    state.main_view = MainView::Home;
+                    state.channel_tab = ChannelTab::Files;
+                    state.core.channel_files = std::mem::take(&mut state.core.files);
+                    state.core.channel_files.query.channel = state.core.active_channel.clone();
+                    state.core.channel_files.query.sort =
+                        super_platinum_core::files::FileSort::Newest;
+                }
+                if name == "files-error" {
+                    state.core.files.error = Some(
+                        "Files could not refresh. Your previous results are still available."
+                            .into(),
+                    );
+                }
+            }
+            "pins" | "pins-narrow" | "pins-empty" | "pins-error" | "channel-pinned-message" => {
+                use super_platinum_core::pins::{PinnedItem, PinsPage};
+                let team = state.core.active_team.clone().unwrap();
+                let channel = state.core.active_channel.clone().unwrap();
+                state.channel_tab = if name == "channel-pinned-message" {
+                    ChannelTab::Messages
+                } else {
+                    ChannelTab::Pins
+                };
+                state
+                    .core
+                    .pins
+                    .ensure_scope(state.core.account_epoch, &team);
+                let generation = state.core.pins.begin(&channel);
+                let items = if matches!(name, "pins-empty" | "pins-error") {
+                    vec![]
+                } else {
+                    state.core.workspaces[&team].messages[&channel]
+                        .messages
+                        .iter()
+                        .take(3)
+                        .enumerate()
+                        .map(|(i, message)| PinnedItem {
+                            kind: "message".into(),
+                            channel: Some(channel.clone()),
+                            message: Some(message.clone()),
+                            created: Some(1791763200 - i as i64 * 86400),
+                            created_by: Some("U1".into()),
+                            ..Default::default()
+                        })
+                        .collect()
+                };
+                state.core.pins.apply(generation, PinsPage { items });
+                state.core.reconcile_pin_copies(&team, &channel);
+                if name == "pins-error" {
+                    state.core.pins.loaded = false;
+                    state.core.pins.error = Some("Pins could not load. Please try again.".into());
+                }
+                state.refresh_from_core();
+            }
+            "channel-links"
+            | "channel-links-narrow"
+            | "channel-links-empty"
+            | "channel-links-error" => {
+                state.channel_tab = ChannelTab::Links;
+                let team = state.core.active_team.clone().unwrap();
+                let channel = state.core.active_channel.clone().unwrap();
+                state
+                    .core
+                    .channel_links
+                    .ensure_scope(state.core.account_epoch, &team, &channel);
+                let generation = state.core.channel_links.begin(String::new(), 1);
+                let items = if name == "channel-links-empty" {
+                    vec![]
+                } else {
+                    vec![
+                        serde_json::json!({"url":"https://vercel.com/geist/introduction","title":"Geist — a precise design system","timestamp":"1791763200.000001"}),
+                        serde_json::json!({"url":"https://example.com/notes/a-long-url-that-should-truncate-without-pushing-message-actions-outside-the-window","title":"A long shared link title that remains compact and keeps its original message within reach","timestamp":"1791676800.000001"}),
+                        serde_json::json!({"url":"https://example.com/launch","title":"Launch notes 🚀","timestamp":"1791590400.000001"}),
+                    ]
+                };
+                state.core.channel_links.apply(generation,serde_json::from_value(serde_json::json!({"items":items,"pagination":{"page":1,"page_count":if items.is_empty(){1}else{6},"total_count":if items.is_empty(){0}else{104}}})).unwrap());
+                if name == "channel-links-error" {
+                    state.core.channel_links.error = Some(
+                        "Links could not refresh. Your previous results are still available."
+                            .into(),
+                    );
+                }
+            }
+            "later" | "later-empty" | "later-error" | "later-reminder" | "later-new-reminder" => {
+                use super_platinum_core::later::{SavedItem, SavedPage};
+                state.main_view = MainView::Later;
+                let team = state.core.active_team.clone().unwrap();
+                let channel = state.core.active_channel.clone().unwrap();
+                state
+                    .core
+                    .later
+                    .ensure_scope(state.core.account_epoch, &team);
+                let mut page = SavedPage::default();
+                if name != "later-empty" {
+                    let messages = state.core.workspaces[&team].messages[&channel]
+                        .messages
+                        .iter()
+                        .rev()
+                        .take(3)
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    for (index, message) in messages.into_iter().enumerate() {
+                        let item = SavedItem {
+                            item_type: "message".into(),
+                            item_id: channel.clone(),
+                            ts: message.ts.clone().unwrap(),
+                            date_created: super_platinum_core::state::now_secs(),
+                            date_due: if index == 0 {
+                                super_platinum_core::state::now_secs() + 3600
+                            } else {
+                                0
+                            },
+                            state: "in_progress".into(),
+                            todo_state: "saved".into(),
+                            ..Default::default()
+                        };
+                        state.core.later.hydrated.insert(item.key(), message);
+                        page.saved_items.push(item);
+                    }
+                }
+                if name == "later-new-reminder" {
+                    page.saved_items.push(SavedItem {
+                        item_type: "reminder".into(), item_id: "Sa_fixture".into(),
+                        date_due: super_platinum_core::state::now_secs()+3600,
+                        description: vec![serde_json::json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"Check the release notes\nVerify keyboard navigation.","style":{"bold":true}}]}]})],
+                        ..Default::default()
+                    });
+                }
+                page.counts.uncompleted_count = page.saved_items.len();
+                let generation = state.core.later.begin(Default::default(), false);
+                state.core.later.apply_page(generation, page, false, None);
+                if name == "later-error" {
+                    state.core.later.error = Some(
+                        "Later could not refresh. Your saved items are still available.".into(),
+                    );
+                }
+            }
             "dm-header-compact" => {
                 state.main_view = MainView::Dms;
                 if let Some(index) = state.channels.iter().position(|channel| channel.id == "D1") {
@@ -729,6 +1085,34 @@ impl ShellState {
                 };
             }
             "palette" => state.overlay = Some(Overlay::Palette),
+            "reaction-picker" => {
+                let channel = state.core.active_channel.clone().unwrap_or_default();
+                let team = state.core.active_team.clone().unwrap_or_default();
+                let ts = state
+                    .messages
+                    .last()
+                    .map(|message| message.id.clone())
+                    .unwrap_or_default();
+                state.reaction_target = Some(ReactionTarget { team, channel, ts });
+                state.overlay = Some(Overlay::ReactionPicker);
+            }
+            "forward" | "forward-narrow" | "forward-error" => {
+                let team = state.core.active_team.clone().unwrap();
+                let channel = if name == "forward-narrow" {
+                    "C5".into()
+                } else {
+                    state.core.active_channel.clone().unwrap()
+                };
+                let message = state.messages.first().cloned().unwrap();
+                state.forward_target = Some(crate::forward::ForwardTarget {
+                    epoch: state.core.account_epoch,
+                    team,
+                    channel,
+                    message,
+                    id: "fixture-forward".into(),
+                });
+                state.overlay = Some(Overlay::Forward);
+            }
             "animated-reaction" => {
                 keep_recent_messages(&mut state, 8);
                 if let Some(message) = state.messages.last_mut() {
@@ -1128,6 +1512,70 @@ impl ShellState {
             "block-kit-layout" => {
                 keep_recent_messages(&mut state, 3);
                 state.append_projected_fixture_messages(&[weather_block_kit_message()], true);
+            }
+            "timeline-variable-height" => {
+                let template = state.messages.last().cloned().unwrap();
+                state.messages=(0..360).map(|index| {
+                    let mut message=template.clone();
+                    message.id=format!("{}.{:06}",1790000000+index,1);
+                    message.ts=message.id.clone();
+                    message.date_label=(index%20==0).then(||format!("Fixture day {}",index/20));
+                    message.body=(0..1+index%6).map(|line|RichNode::Paragraph(vec![RichNode::Text(format!("Reading anchor {index}, paragraph {}. Uneven message heights must not move the reader.",line+1))])).collect();
+                    message
+                }).collect();
+                state.sync_fixture_messages();
+            }
+            "media-failed" => {
+                keep_recent_messages(&mut state, 2);
+                let broken = super_platinum_core::MediaAssetId::new(MediaAssetKind::Attachment);
+                state.media.insert(
+                    broken.clone(),
+                    "image/png",
+                    b"not a decodable image".as_slice(),
+                );
+                let valid = super_platinum_core::MediaAssetId::new(MediaAssetKind::Attachment);
+                state.media.insert(
+                    valid.clone(),
+                    "image/png",
+                    include_bytes!("../../../assets/icons/icon-256.png").as_slice(),
+                );
+                let emoji = super_platinum_core::MediaAssetId::new(MediaAssetKind::Emoji);
+                state
+                    .media
+                    .insert(emoji.clone(), "image/png", b"not an emoji".as_slice());
+                let avatar = super_platinum_core::MediaAssetId::new(MediaAssetKind::Avatar);
+                state
+                    .media
+                    .insert(avatar.clone(), "image/png", b"not an avatar".as_slice());
+                if let Some(message) = state.messages.last_mut() {
+                    message.avatar = Some(avatar);
+                    message.body = vec![
+                        RichNode::Paragraph(vec![RichNode::Text(
+                            "Unavailable media keeps its place. Valid images still render.".into(),
+                        )]),
+                        RichNode::ImageBlock {
+                            id: broken.clone(),
+                            alt: "Corrupt attachment".into(),
+                            title: None,
+                            size: Some((280, 120)),
+                        },
+                        RichNode::Paragraph(vec![
+                            RichNode::Text("Custom emoji: ".into()),
+                            RichNode::EmojiImage {
+                                id: emoji,
+                                name: "unavailable-fixture".into(),
+                            },
+                        ]),
+                        RichNode::Media {
+                            id: Some(valid),
+                            full: None,
+                            name: "Valid control image".into(),
+                            mime: "image/png".into(),
+                            size: Some((96, 96)),
+                        },
+                    ];
+                }
+                state.sync_fixture_messages();
             }
             "media-loading-state" => {
                 keep_recent_messages(&mut state, 3);
