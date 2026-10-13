@@ -1,5 +1,10 @@
 //! Native canvas reading. Editing and collaborative updates need Slack's
 //! separate document protocol; the reader never converts exports into writes.
+pub(crate) mod checklist;
+mod loader;
+use loader::load;
+pub(crate) mod text;
+
 use crate::{
     icons::{Icon, icon},
     state::{CanvasTarget, Overlay, ShellState},
@@ -42,6 +47,7 @@ pub fn open_target(mut state: Signal<ShellState>, target: CanvasTarget) {
     shell.canvas = Some(target);
     shell.shortcut_generation = shell.shortcut_generation.wrapping_add(1);
     shell.overlay = Some(Overlay::Canvas);
+    checklist::open_visit(&mut shell);
 }
 
 #[derive(Default)]
@@ -52,60 +58,37 @@ struct Reader {
     generation: u64,
     title: Option<String>,
     editable: bool,
+    checklist: checklist::reader::Mapping,
+    text: text::Mapping,
 }
-async fn load(state: Signal<ShellState>, mut reader: Signal<Reader>, target: CanvasTarget) {
-    let Some(ctx) = crate::scheduled::Context::capture(&state.peek()) else {
-        reader.write().error = Some("Connect to your workspace to read this canvas.".into());
-        return;
-    };
-    let generation = {
-        let mut r = reader.write();
-        r.generation = r.generation.wrapping_add(1);
-        r.loading = true;
-        r.error = None;
-        r.generation
-    };
-    let response = api::fetch_canvas(&ctx.transport, &ctx.client, &ctx.session, &target.id).await;
-    if !ctx.current(&state.peek()) || reader.peek().generation != generation {
-        return;
-    }
-    let mut r = reader.write();
-    r.loading = false;
-    match response {
-        Ok((file, doc)) => {
-            r.title = Some(super_platinum_core::state::file_title(&file));
-            r.editable = file
-                .extra
-                .get("editable")
-                .and_then(serde_json::Value::as_bool)
-                == Some(true);
-            r.document = Some(Arc::new(doc));
+impl Reader {
+    fn finish_export(&mut self, generation: u64, canonical_current: bool) -> bool {
+        if self.generation != generation {
+            return false;
         }
-        Err(e) => {
-            r.error = Some(
-                if e.is_offline() {
-                    "Reconnect to load this canvas. Your current view is still here."
-                } else {
-                    "This canvas could not load. Try again or open it in Slack."
-                }
-                .into(),
-            )
-        }
+        self.loading = false;
+        canonical_current
     }
 }
 
 #[component]
 pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Element {
     let original = use_hook(|| target.clone());
-    let reader = use_signal(|| {
+    let mut reader = use_signal(|| {
         let fixture = std::env::var("SUPER_PLATINUM_FIXTURE").unwrap_or_default();
         if crate::fixture::is_fixture() && original.id == "Ffixture" {
             Reader {
                 document: (!matches!(fixture.as_str(), "canvas-loading" | "canvas-error")).then(
                     || {
                         Arc::new(
-                            CanvasDocument::parse(include_str!("canvas_fixture.html"))
-                                .expect("canvas fixture"),
+                            CanvasDocument::parse(if text::fixture::requested() {
+                                text::fixture::HTML
+                            } else if checklist::fixture::requested() {
+                                checklist::fixture::HTML
+                            } else {
+                                include_str!("canvas_fixture.html")
+                            })
+                            .expect("canvas fixture"),
                         )
                     },
                 ),
@@ -115,16 +98,42 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
                 generation: 0,
                 title: Some(original.title.clone()),
                 editable: fixture != "canvas-readonly",
+                checklist: Default::default(),
+                text: Default::default(),
             }
         } else {
             Reader::default()
+        }
+    });
+    // Fixture/backend completions can update canonical state without owning the
+    // component's Reader signal. Keep that signal local (ShellState is Send).
+    // The owner token makes ordinary shell ticks an O(1) check, not a reproject.
+    use_effect(move || {
+        let shell = state.read();
+        let owner = checklist::presentation(&shell).map(|view| (view.visit, view.read));
+        if reader.peek().checklist.owner != owner {
+            checklist::reader::update_mapping(&shell, &mut reader.write());
+        }
+    });
+    use_effect(move || {
+        if loader::fixture::pending(&state.read()) {
+            loader::fixture::tick(&mut state.write(), &mut reader.write());
         }
     });
     let initial = original.clone();
     use_future(move || {
         let initial = initial.clone();
         async move {
-            if !crate::fixture::is_fixture() {
+            if text::fixture::requested() {
+                let mut shell = state.write();
+                text::fixture::install(&mut shell);
+                checklist::reader::update_mapping(&shell, &mut reader.write());
+                loader::fixture::start(&mut shell, &mut reader.write());
+            } else if checklist::fixture::requested() {
+                let mut shell = state.write();
+                checklist::fixture::install(&mut shell);
+                checklist::reader::update_mapping(&shell, &mut reader.write());
+            } else if !crate::fixture::is_fixture() {
                 load(state, reader, initial).await;
             }
         }
@@ -142,15 +151,95 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
             _ => None,
         },
     );
+    let mut text_draft = use_signal(|| None::<text::Draft>);
+    use_effect(move || {
+        let shell = state.read();
+        if text::should_close(&shell, text_draft.peek().as_ref()) {
+            text_draft.set(None);
+        }
+    });
+    // File events can arrive after an accepted save's readback has settled.
+    // Coalesce revisions into one component-owned read task, with at most one
+    // dirty followup. No timer runs when the view has no new file event.
+    let mut event_refreshing = use_signal(|| false);
+    use_effect(move || {
+        let visit = {
+            let shell = state.read();
+            if crate::fixture::is_fixture()
+                || *event_refreshing.read()
+                || reader.read().loading
+                || rename.read().is_some()
+                || shell.core.transport.as_ref().is_none_or(|transport| {
+                    transport.health() == super_platinum_core::slack::transport::Health::Offline
+                })
+            {
+                None
+            } else {
+                checklist::event_reads::needed(&shell)
+            }
+        };
+        let Some(visit) = visit else { return };
+        event_refreshing.set(true);
+        spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+            let read = {
+                let mut shell = state.write();
+                if reader.peek().loading
+                    || rename.peek().is_some()
+                    || shell.core.transport.as_ref().is_none_or(|transport| {
+                        transport.health() == super_platinum_core::slack::transport::Health::Offline
+                    })
+                {
+                    None
+                } else {
+                    checklist::event_reads::claim(&mut shell, visit)
+                }
+            };
+            if let Some(read) = read {
+                loader::read_pair(state, reader, read).await;
+            }
+            event_refreshing.set(false);
+        });
+    });
     let mut shown = use_signal(|| 80usize);
     let snapshot = reader.read();
+    let canonical = checklist::presentation(&state.read());
     let loading = snapshot.loading;
+    let refreshing = loading || canonical.as_ref().is_some_and(|view| view.loading);
+    let notice = canonical
+        .as_ref()
+        .filter(|view| {
+            snapshot.document.is_some()
+                || snapshot.checklist.exported > 0
+                || !snapshot.text.items.is_empty()
+                || view.operation.is_some()
+        })
+        .and_then(checklist::reader::notice);
+    let no_mapping = checklist::reader::Mapping::default();
+    let mapped = if canonical.is_some() {
+        &snapshot.checklist
+    } else {
+        &no_mapping
+    };
     let title = snapshot
         .title
         .clone()
         .unwrap_or_else(|| target.title.clone());
     let rename_title = title.clone();
-    let editing = rename.read().is_some();
+    let editing = rename.read().is_some() || text_draft.read().is_some();
+    let block_refresh = rename.read().is_some()
+        || text_draft
+            .read()
+            .as_ref()
+            .is_some_and(|draft| draft.pending.is_none());
+    let checklist_pending = canonical
+        .as_ref()
+        .is_some_and(|view| view.operation.is_some());
+    let writing = canonical.as_ref().is_some_and(|view| {
+        view.operation
+            .as_ref()
+            .is_some_and(|(_, _, stage)| stage.blocks_refresh())
+    });
     let rename_target = original.clone();
     let retry = original.clone();
     let refresh = original.clone();
@@ -164,18 +253,22 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
                 button {class:"icon-btn","aria-label":"Close canvas",onclick:move |_|state.write().dismiss_overlay(),{icon(Icon::Close,"icon")}}
             }
             nav {class:"canvas-toolbar","aria-label":"Canvas actions",
-                span {class:"canvas-status",if loading {"Loading…"} else {"Read view"}}
+                span {class:"canvas-status",if text_draft.read().is_some() {"Editing paragraph"} else if loading {"Loading…"} else {"Read view"}}
                 span {class:"spacer"}
-                if snapshot.editable {button {disabled:loading||editing,onclick:move |_|rename.set(Some(RenameDraft{base:rename_title.clone(),input:rename_title.clone(),busy:false,error:None})),"Rename"}}
-                button {disabled:loading||editing,onclick:move |_|{spawn(load(state,reader,refresh.clone()));},"Refresh"}
+                if snapshot.editable {button {disabled:refreshing||editing||checklist_pending||canonical.as_ref().is_some_and(|view|view.stale),onclick:move |_|{if text_draft.peek().is_none() && checklist::presentation(&state.peek()).is_none_or(|view|view.operation.is_none()&&!view.loading&&!view.stale) && !reader.peek().loading {rename.set(Some(RenameDraft{base:rename_title.clone(),input:rename_title.clone(),busy:false,error:None}));}},"Rename"}}
+                button {disabled:refreshing||block_refresh||writing,onclick:move |_|{spawn(load(state,reader,refresh.clone()));},"Refresh"}
                 if let Some(url)=permalink {button {onclick:move |_|{if crate::media::open_external(&url).is_err(){state.write().show_toast("This canvas link could not be opened.");}},"Open in Slack"}}
             }
-            if editing {RenameForm {state,reader,draft:rename,target:rename_target}}
+            if let Some(notice) = notice {p {class:"canvas-status",role:"status", "{notice}"}}
+            if rename.read().is_some() {RenameForm {state,reader,draft:rename,target:rename_target}}
             div {class:"canvas-scroll","aria-busy":loading,
-                if let Some(error)=snapshot.error.as_ref() {div {class:"canvas-error",role:"alert",p {"{error}"}button {disabled:loading||editing,onclick:move |_|{spawn(load(state,reader,retry.clone()));},"Retry"}}}
+                if let Some(error)=snapshot.error.as_ref() {div {class:"canvas-error",role:"alert",p {"{error}"}button {disabled:refreshing||block_refresh||writing,onclick:move |_|{spawn(load(state,reader,retry.clone()));},"Retry"}}}
+                if let Some(generation)=text_draft.read().as_ref().map(|draft|draft.generation) {
+                    text::Editor {key:"canvas-text-{generation}",state,reader,draft:text_draft}
+                }
                 if let Some(document)=snapshot.document.as_ref() {
                     article {class:"canvas-document",
-                        for node in document.nodes.iter().take(shown()) {{render_node(node,state,epoch)}}
+                        for node in document.nodes.iter().take(shown()) {{render_node(node,state,epoch,mapped,reader,canonical.as_ref(),rename,text_draft)}}
                         if document.nodes.len()>shown() {button {class:"canvas-more",onclick:move |_|shown+=80,"Show more"}}
                     }
                 } else if loading {
@@ -186,16 +279,38 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
     }
 }
 
-fn render_node(node: &N, state: Signal<ShellState>, epoch: u64) -> Element {
-    let N::Element { kind, children, .. } = node else {
+fn render_node(
+    node: &N,
+    state: Signal<ShellState>,
+    epoch: u64,
+    checklist: &checklist::reader::Mapping,
+    reader: Signal<Reader>,
+    canonical: Option<&checklist::Presentation>,
+    rename: Signal<Option<RenameDraft>>,
+    text_draft: Signal<Option<text::Draft>>,
+) -> Element {
+    let N::Element {
+        kind,
+        children,
+        section,
+    } = node
+    else {
         let N::Text(text) = node else { unreachable!() };
         return rsx! {"{text}"};
     };
-    let content = || rsx! {for child in children {{render_node(child,state,epoch)}}};
+    let content = || rsx! {for child in children {{render_node(child,state,epoch,checklist,reader,canonical,rename,text_draft)}}};
     match kind {
         K::Group => rsx! {div {{content()}}},
         K::Inline => rsx! {span {{content()}}},
-        K::Paragraph => rsx! {p {{content()}}},
+        K::Paragraph => text::paragraph(
+            state,
+            reader,
+            text_draft,
+            section.as_deref(),
+            epoch,
+            rename,
+            content(),
+        ),
         K::Heading(1) => rsx! {h1 {{content()}}},
         K::Heading(2) => rsx! {h2 {{content()}}},
         K::Heading(3) => rsx! {h3 {{content()}}},
@@ -218,7 +333,32 @@ fn render_node(node: &N, state: Signal<ShellState>, epoch: u64) -> Element {
         K::Item {
             checked: Some(checked),
         } => {
-            rsx! {li {class:"canvas-check-item",span {class:if *checked {"canvas-checkbox checked"}else{"canvas-checkbox"},role:"checkbox","aria-checked":*checked,"aria-disabled":"true","aria-label":if *checked {"Completed"}else{"Incomplete"},if *checked {{icon(Icon::Check,"icon")}}}div {{content()}}}}
+            let mapped = section.as_deref().and_then(|id| checklist.items.get(id));
+            let checked = mapped.map_or(*checked, |item| item.checked);
+            let current = canonical.filter(|view| checklist.owner == Some((view.visit, view.read)));
+            let supported = mapped.is_some_and(|item| item.intent.is_some());
+            let busy = reader.peek().loading
+                || rename.peek().is_some()
+                || text_draft.peek().is_some()
+                || current.is_none_or(|view| {
+                    view.loading
+                        || view.stale
+                        || view.operation.is_some()
+                        || view.capacity_reason.is_some()
+                });
+            let reason = mapped
+                .and_then(|item| item.reason.as_deref())
+                .unwrap_or("This item could not be verified. Open in Slack to edit it.");
+            let section_id = section.clone().unwrap_or_default();
+            let (visit, read) = current.map_or((0, 0), |view| (view.visit, view.read));
+            rsx! {li {class:"canvas-check-item","data-canvas-section":section.as_deref(),"data-canonical-mapped":mapped.is_some(),
+                if supported {
+                    button {class:if checked {"canvas-checkbox checked"}else{"canvas-checkbox"},type:"button",role:"checkbox",disabled:busy,"aria-checked":checked,"aria-label":if checked {"Mark checklist item incomplete"}else{"Mark checklist item complete"},title:if busy {"Wait for checklist state to refresh"}else{"Toggle checklist item"},onclick:move |_|{if rename.peek().is_none() && text_draft.peek().is_none() {checklist::save::toggle(state,reader,section_id.clone(),visit,read)}},if checked {{icon(Icon::Check,"icon")}}}
+                } else {
+                    span {class:if checked {"canvas-checkbox checked"}else{"canvas-checkbox"},role:"checkbox",tabindex:"0","aria-checked":checked,"aria-disabled":"true","aria-label":if checked {"Completed checklist item"}else{"Incomplete checklist item"},"aria-description":reason,title:reason,if checked {{icon(Icon::Check,"icon")}}}
+                }
+                div {{content()}}
+            }}
         }
         K::Item { checked: None } => rsx! {li {{content()}}},
         K::Table => rsx! {div {class:"canvas-table-scroll",table {{content()}}}},
@@ -402,6 +542,7 @@ async fn save_name(
             {
                 let mut shell = state.write();
                 crate::file_events::invalidate(&mut shell, &ctx.session.team_id, &target.id);
+                checklist::invalidate(&mut shell, &ctx.session.team_id, &target.id);
                 if let Some(canvas) = shell.canvas.as_mut().filter(|c| c.id == target.id) {
                     canvas.title = name.clone();
                 }

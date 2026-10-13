@@ -4,6 +4,8 @@ use crate::{
     state::ShellState,
 };
 use dioxus::prelude::*;
+mod entities;
+mod link;
 
 #[component]
 pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u64) -> Element {
@@ -14,7 +16,9 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
     });
     let initial = editor.original.clone();
     let mut selected = use_signal(move || match initial.as_ref() {
-        CellEditValue::Select(values) => values.clone(),
+        CellEditValue::Select(values)
+        | CellEditValue::Users(values)
+        | CellEditValue::Channels(values) => values.clone(),
         _ => Vec::new(),
     });
     let mut reading = use_signal(|| false);
@@ -78,6 +82,7 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
                             oninput:move |event| {number.set(event.value());error.set(None);}}
                         p {class:"slack-list-editor-hint","Leave empty to clear the value."}
                     },
+                    EditorKind::Link => rsx! {link::LinkFields {state,editor:editor.clone(),reading,error}},
                     EditorKind::Date => rsx! {
                         label {r#for:"slack-list-date-draft","{editor.column_label}"}
                         // Keep native partial date segments intact. Save reads validity and the
@@ -119,6 +124,12 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
                             }
                         }
                     },
+                    EditorKind::User | EditorKind::MultiUser => rsx! {entities::EntityPicker {
+                        state,generation,selected,initial:editor.choices.clone(),directory:editor.directory.clone(),kind:crate::slack_lists::entities::Kind::Users,multi:editor.kind==EditorKind::MultiUser,disabled
+                    }},
+                    EditorKind::Channel | EditorKind::MultiChannel => rsx! {entities::EntityPicker {
+                        state,generation,selected,initial:editor.choices.clone(),directory:editor.directory.clone(),kind:crate::slack_lists::entities::Kind::Channels,multi:editor.kind==EditorKind::MultiChannel,disabled
+                    }},
                 }
             }
             if let Some(message)=error.read().as_ref().or(editor.error.as_ref()) {p {class:"slack-list-error",role:"alert","{message}"}}
@@ -139,6 +150,9 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
                                 }
                             }
                             EditorKind::Select | EditorKind::MultiSelect => crate::slack_lists::save_editor(state,generation,layout_generation,CellEditValue::Select(selected.read().clone())),
+                            EditorKind::User | EditorKind::MultiUser => crate::slack_lists::save_editor(state,generation,layout_generation,CellEditValue::Users(selected.read().clone())),
+                            EditorKind::Channel | EditorKind::MultiChannel => crate::slack_lists::save_editor(state,generation,layout_generation,CellEditValue::Channels(selected.read().clone())),
+                            EditorKind::Link => link::save(state,generation,layout_generation,reading,error),
                             EditorKind::Date => {
                                 reading.set(true);
                                 spawn(async move {

@@ -40,13 +40,13 @@ data. A passing unit suite is not evidence of live Slack behavior.
 | Forwarding and message links | Rich notes, people/directory discovery, deferred DM opening, multiple destinations, per-destination receipts and explicit uncertain resends | Scheduled forwarding, full note controls, live new-DM/multi-destination/fault recovery |
 | Channels, membership, details, management | Native create, About/Members, metadata editing, archive/unarchive, join/leave, people invitations/removal; open member lists refresh on membership events/reconnect; live private discovery, missed-create/rename recovery after socket outage, and people search verified | Successful live add/remove round trip, nonsingleton self join/leave, app/agent invitations; large lists and permission/offline cases |
 | DMs, group DMs, profiles, presence, status | Quick switcher retains people without loaded DMs; dedicated recipient picker and DM/group-DM opening implemented; remote recipient discovery verified in the signed client; account-scoped status text/emoji/expiry editor and uncertain-result readback passed native offline checks | Live first-DM/group-creation API round trip, live remote-recipient selection, live status set/get responses and broader draft checks |
-| Threads, Activity, read state, subscriptions | Existing; audit pending | Both-client realtime and read-state reconciliation |
+| Threads, Activity, read state, subscriptions | Shared conversation/thread surfaces; Activity preserves exact reply targets with parsed-shape/request regressions and normal/narrow native click verification; agent navigation now uses the same reply destination | Both-client realtime and live read-state reconciliation |
 | Huddles, camera, sharing, device selection | Existing; live media unproven | Controlled private call and media checks |
-| Canvases, lists, app interactions, workflows | Native canvas reader/create/rename; Lists reader with rich cells, reference labels, expandable hierarchy and guarded boolean edits; live List metadata/records/permission reads verified; typed app modals and ordinary message controls have signed offline checks | Live List write/app responses; List continuation, saved views and other edits; native canvas editing/collaboration, comments, custom tabs and workflow discovery/execution |
+| Canvases, lists, app interactions, workflows | Native canvas reader/create/rename and bounded checkbox/paragraph editing with private cross-client save/restore proof and paired first-load recovery; Lists support saved tables/boards, record details, guarded rich-text/number/select/boolean/calendar-date and ordinary User and Channel edits, item creation, conditional deletion confirmation, and same-ID deletion Undo/Redo; private live writes/readback verified; typed app modals and ordinary message buttons/static-select/radio/checkbox/static-multi-select/datepicker/timepicker/users-select/conversations-select controls have signed offline checks, including normal/narrow multi-picker interactions and full-state wire regressions | Live app receipt/responses remain unverified; broader app controls; List continuation, saved-view writes, remaining field types and item actions; richer canvas authoring/collaboration, comments, custom tabs and workflow discovery/execution |
 | Notifications, DND, settings, accounts | Existing; audit pending | Native bundle tests, persistence, isolation |
 | Keyboard, focus, accessibility, narrow windows | Shortcut handoff and IME event guards tested through the native WebView; partial overall | Real OS input-method composition, remaining native interaction, labels, reduced motion, layout sweeps |
 | Geist visual system | In progress | Native screenshots of all surfaces and states |
-| Speed, memory, idle work, large workspaces | Paired quick-switcher and channel-geometry CPU benchmarks show lower calculation cost; visible projections remain bounded; native geometry before/after scrolling and navigation checks passed with similar frame timing | End-to-end live startup, scrolling, interaction, memory/idle measurements; thread geometry and broader workloads |
+| Speed, memory, idle work, large workspaces | Paired quick-switcher, channel-geometry and thread-index CPU benchmarks show lower calculation cost; visible projections remain bounded; signed native channel/thread scrolling and selection checks pass | End-to-end live startup, scrolling, interaction, memory/idle measurements and broader workloads; thread CPU probes do not establish native latency gains |
 
 ## Changes underway
 
@@ -5070,3 +5070,1317 @@ Keep the full objective active; no full-parity claim is justified.
   canonical detail opener for accepted created rows hidden by saved filters.
   The opener preserves saved-view selection and will not replace a user-opened
   detail. Builds, fixture captures and live creation proof remain pending.
+- Parallel final review fixed two recovery edges: a later Open item preserves
+  the original accepted receipt while allowing concurrent canonical field/schema
+  changes, and confirmed-but-unavailable items have an explicit Dismiss action.
+  Post-dispatch connection loss is now uncertain even when transport health
+  becomes offline; only the known-offline pre-dispatch gate is definitive.
+  A TCP regression verifies accepted POST plus lost response is never replayed.
+- Current locked gates pass: 791 core tests (1 ignored), 658 desktop tests
+  (3 ignored), formatting, diff check, signed build and strict deep signature
+  verification. Native normal/narrow runs and live creation proof are pending.
+  Dismiss stage ownership is unit tested; the native checker currently exercises
+  successful readback and uncertain acknowledgment rather than missing-item Dismiss.
+- Complete normal/narrow native List suites passed after the final changes:
+  `tmp/slack-list-create-native.log`. Inspected all four creation captures
+  (`tmp/agent-ui/*-list-created.png` and `*-list-create-uncertain.png`): header
+  actions, filtered-item details, recovery copy and acknowledgment fit both widths.
+- Signed live app created and named two items in the private verification List
+  F0C8MDD6B8D, reached through #echotestchamber Files & links. Ordinary header
+  creation produced Rec0C8P37RW8M (Native creation verification 2026-10-13,
+  unchecked); Completed-view creation produced Rec0C9NPBM8RE (Native completed
+  creation verification 2026-10-13, checked). Both opened canonical details and
+  saved their Name through the existing rich-text editor. Independent server
+  reads verified exactly those two additions and byte-equivalent projected fields
+  for the original three records. Evidence: `tmp/slack-list-create-live-{before,
+  first,views,completed,final}.log`. The two named test items remain in this private
+  List; no deletion was attempted. Returned UI to Native parity verification.
+- Creation is verified progress, not full List parity. Group/lane-specific and
+  subitem creation, broader field types/actions and record-open tracking remain.
+  Next bounded source-backed slice: one `lists.records.open` request per explicit
+  detail opening (`list_id`, `id`, `_x_reason=open-record`), no replay on refresh
+  or paging and no failure-driven loss of local detail. Captured B t0NX@7300063
+  dispatches wCCe.LO before routing; V wCCe@9785910 owns the request wrapper.
+
+### Explicit List item-open tracking continuation
+
+- Previous goal turn made verified progress: live ordinary/Completed creation
+  and canonical name editing passed, with original private records unchanged.
+- Captured caller fires `lists.records.open` without awaiting or consuming its
+  response before routing locally. Implementing one mount-owned request per
+  explicit item opening, guarded by stable detail-open identity and account/List
+  scope. Refresh/paging must not resend; failure must not replace canonical
+  fields or make details unusable. There is no evidence for additional response
+  fields or specific unread-counter effects in the captured caller.
+- Core builder and exact-path no-hold transport gates are implemented; the
+  independently locked core suite passes 792 tests (1 ignored). Desktop/native/
+  live request acceptance verification remains pending.
+- Parallel broader audit identifies higher-impact next work after this bounded
+  lifecycle addition: ordinary message checkbox/multi-select controls (currently
+  unsupported siblings block whole-message actions), existing canvas body editing
+  and collaboration, and measured live conversation/thread responsiveness. These
+  remain open requirements, not implied complete by the List work.
+- Next app-control source handoff: B M0Sk@1611609 and cxJV@1750345 distinguish
+  absent `initial_options` from explicit `[]`; section type-only state and actions
+  omission must survive that distinction. iGIl@1742940 lets saved empty selections
+  override defaults. AM6q@1754021 submits complete raw `selected_options` objects,
+  including `[]` for deselection. Checkbox s+nw@132217xx retains mounted options
+  and updates/dispatches only after confirmation; do not recanonicalize old raw
+  selected siblings against a newly changed option list. Multi etBz@132807xx
+  resets display for changed truthy initial options (including empty arrays),
+  not arbitrary option-list changes. s3Wf@1598455 excludes ordinary message/thread
+  from immediate dispatch: use a picker draft with Apply/Cancel and max checking.
+  Existing modal `InputValue::Selected(Vec<String>)` / raw `OptionSpec` can help,
+  but modal submission/confirmation policy is not ordinary-message policy.
+- Final record-open gates passed: 664 desktop tests (3 ignored), 792 independently
+  locked core tests (1 ignored), formatting/diff checks, signed build with strict
+  deep verification, and full normal/narrow native List suites. Native receipts
+  prove explicit-open counts, no refresh/field-paging replay, and created-item
+  mount tracking. Inspected both refreshed detail-table PNGs. Logs:
+  `tmp/slack-list-record-open-{desktop,core,build,native}.log`.
+- Live signed diagnostic run opened the existing private record Rec0C8P37RW8M
+  in F0C8MDD6B8D. Slack accepted one request at opening generation 15. A completed
+  canonical Refresh preserved the panel and produced no extra request. Back and
+  explicit reopen produced exactly one accepted request at generation 20.
+  `tmp/slack-list-record-open-live.log` records only structural tracking fields
+  and static success/error classes; no API response bodies or credentials.
+  Independent readback in `tmp/slack-list-record-open-live-fields.log` confirms
+  all five records have identical fields to the preceding creation checkpoint.
+  This proves request acceptance and ownership, not undocumented unread effects.
+- The same warm debug launch recorded first paint 1632.2 ms, cache loaded
+  1884.3 ms, conversation paint 2436.1 ms, realtime connected 3751.6 ms. These
+  are one-run baseline observations, not paired evidence of a speed improvement.
+  Diagnostic process exited cleanly; no persistent tracing settings were changed.
+
+### Ordinary message checkbox and multi-select continuation
+
+- Implemented ordinary message checkbox groups and static multi-selects through
+  the shared message renderer. Message actions retain raw option objects and
+  include sibling button/select/radio/checkbox/multi state. Absent defaults,
+  explicit empty arrays, and an untouched absent multi Apply stay distinct on
+  the wire. Checkbox confirmation commits only on Go; multi confirmation is
+  integrated into a draft picker with Apply/Cancel and an enforced selection cap.
+- Account, source, container revision and mounted-control ownership guard queued
+  handlers and picker submissions. Changed initial arrays reset multi display;
+  option updates do not recanonicalize retained selections. Cancel, navigation
+  and account replacement retire uncommitted drafts.
+- Independently locked core suite passes 804 tests (1 ignored); desktop suite
+  passes 673 tests (3 ignored). Native signed build and normal/narrow interaction
+  verification are in progress. Final gates must include the 80-option scrolling,
+  filtering/focus stress case and actual inspection of the captured PNGs.
+- No verified private app-action target is established yet. Prepared fixture
+  requests prove serialization and native behavior only, not live app receipt.
+  A read-only history audit is restricted to private #echotestchamber; no arbitrary
+  third-party app action may be used as a substitute for an owned test target.
+- Source-backed review also found retained multi selections must remain removable
+  even when no longer present in the current option list. The picker exposes
+  selected tokens separately; removal keeps trusted raw siblings intact and
+  unavailable values cannot be re-added. Cancel restores the mounted selection.
+- Fresh guarded private-channel history audit completed two pages / 342 messages:
+  five messages contain eight buttons, and none contain checkbox or multi-select
+  controls. The temporary read-only probe was removed. This confirms the current
+  history has no target for this slice; thread replies were not separately scanned.
+  Log: `tmp/private-message-controls-read.log` (structural metadata only).
+- Next canvas boundary audit: an existing checklist-item toggle is smaller than
+  arbitrary body editing, but still needs captured collaboration initialization,
+  `/-/edit-document` envelope, binary acknowledgement and canonical readback.
+  Current HTML export has section IDs/checked state but not edit sequence/session
+  or locks. Cached `ToggleSectionCheckedState` is only an unexported descriptor;
+  the real caller mutates section state through collaboration, so it is not a
+  safe shortcut. Do not enable the read-only rendered checkboxes without this
+  protocol evidence. Public `canvases.edit` remains incompatible with the current
+  desktop token as recorded above.
+- Final gates passed: 674 desktop tests (3 ignored), 804 independently locked core
+  tests (1 ignored), formatting/diff checks, signed bundle and strict deep signature
+  verification. Both normal/narrow multi native runs prove 10 prepared requests,
+  untouched-absent omission, explicit empty selection, integrated confirmation,
+  duplicate rejection, retained selection removal, stale/account/navigation guards,
+  and 80-option scrolling/filtering/keyboard focus. Existing radio and static-select
+  normal/narrow native suites also pass. Logs: `tmp/message-multi-{desktop,core,
+  build,native,radio-regression,select-regression}.log`.
+- Inspected final normal/narrow picker PNGs under `tmp/agent-ui/`; removed WebKit's
+  redundant native search bevel and retained the standard compact field/focus ring.
+  Native harness readiness now polls only before one click, and navigation checks
+  actual old-node disconnection rather than a fleeting empty viewport. The initial
+  failures were harness timing checks; no controller guards were weakened.
+- Reopened the signed normal-session app and verified Messages in private
+  #echotestchamber. No live app actions were dispatched. Full Slack parity, canvas
+  collaboration and measured performance work remain active beyond this slice.
+
+### Thread viewport indexing and cached spacer projection
+
+Replaced whole-thread selection scans with cached canonical source indices, and cached the history/live render pieces using cumulative heights. Accepted viewport receipts now reproject the selected rows without reconstructing all lightweight thread metadata. Canonical history/realtime refreshes still rebuild the index; selected identity, pending-state, or bag-length drift rejects the indexed projection and the shell falls back to canonical synchronization. Root and pending rows remain selected outside the viewport, and timestamp-bearing omitted messages still break author grouping.
+
+Standalone CPU probe: `scripts/bench-thread-window.rs`, compiled with `rustc --edition 2024 -C opt-level=1`. Baseline executable was captured before the patch; five alternating before/after process pairs each measured 20 batches of 100 calls after warmup. The patched probe also compares old reference walks and new paths within the same process, checks their output equality, and holds the comparison viewport fixed. Results are the median of each process's median per-call time (milliseconds):
+
+| Loaded rows | Selection before / indexed | Render pieces before / cached | Full sync before / after | Viewport measure + align after |
+| --- | --- | --- | --- | --- |
+| 200 | 0.010517 / 0.000474 | 0.010738 / 0.000434 | 0.014777 / 0.015352 | 0.000289 |
+| 2,000 | 0.060149 / 0.000310 | 0.061533 / 0.000417 | 0.123200 / 0.118146 | 0.000272 |
+| 10,000 | 0.274447 / 0.000347 | 0.277745 / 0.000470 | 0.592169 / 0.648118 | 0.000338 |
+
+At 10,000 rows, the patched executable's same-process linear references measured 0.234619 ms for selection and 0.264116 ms for render pieces, corroborating the removed scan cost. Full synchronization is approximately 9% slower at that size because it builds the additional numeric geometry caches; the saving is on repeated viewport-only updates and ordinary renders. Additional cache memory is linear in loaded lightweight rows, without duplicating rich message VMs. Height changes rebuild cumulative geometry; estimated offset-to-row lookup remains linear.
+
+Evidence: `tmp/thread-window-cpu-paired.json`, `tmp/thread-window-cpu-{before,after}-{1..5}.log`, and preserved `tmp/bench-thread-window-before` executable. These are synthetic geometry/index CPU measurements, using the production ThreadWindow with small synthetic core adapters. They do not measure full rich-message projection, Dioxus reconciliation, browser layout/paint, native interaction latency, network behavior, or real Slack data. Sub-microsecond timings are batch averages, not individual frame-latency claims. No profile settings changed.
+
+New regressions compare cached paint pieces and actual rich MessageVm output against the former linear reference, including unloaded gaps, missing timestamps, pending/root inclusion, height eviction, viewport alignment, scope changes, same-length reorder, pending changes, and shell fallback after a prepend. Scoped rustfmt, `git diff --check`, and the standalone probe passed. Final desktop/native gates are recorded below.
+
+A focused followup also retires same-visit viewport receipts after a canonical synchronization, even when timestamps and input generation stay unchanged. A separate projection generation, advancing within each window lifetime, is emitted on `#thread-body` and checked against both the captured Rust generation and sampled DOM generation. Rejected samples use the existing queued fresh-sample path. Viewport-only measure/align does not advance this generation, avoiding a self-invalidating measurement loop. Pure regression covers unchanged-ID content edits, stale pre-commit DOM, absent/malformed DOM tokens, valid fresh receipts, viewport-only updates, and scope changes. The final root validation below includes this guard.
+
+- Final locked desktop suite passed: 681 tests, three ignored; doctests, `cargo fmt --check` and `git diff --check` passed. Log: `tmp/thread-index-desktop-final.log`. This slice changes desktop geometry only; the independent core suite was not repeated.
+- `scripts/macos-app.sh` built the final bundle and strict deep codesign verification passed. Log: `tmp/thread-index-signed-build.log`.
+- Final signed native thread driver passed all five fixtures (200, 2,000, 10,000 replies, exact target and history gap), including five viewport jumps each, root/pending retention, at most 102 mounted rows, exact initial target, page-gap placement and stable latest restoration. Log: `tmp/thread-index-interactions.log`; detailed receipts and inspected final screenshots: `tmp/agent-ui/thread-window-{200,2000,10000,target,gap}.{log,png}`. Screenshots are taken after the final jump to latest; target/gap initial conditions are in the receipts.
+- Final signed selection lifecycle driver passed channel outside-release text retention, channel/thread virtual jumps, pointer-cancel/blur release, latest restoration and both selection pins cleared. Root inspected `tmp/agent-ui/selection-lifecycle.png`; log: `tmp/thread-index-selection.log`.
+- The indexed CPU timings above predate the final constant-time projection-generation guard. The approximately 9% full-sync difference is an observed paired median with variation, not an isolated exact overhead. Native driver timings include deliberate settling delays and are correctness evidence only. The same-visit stale-receipt race has a pure regression and final native smoke, not a deliberately interleaved native race test.
+
+### Existing-canvas write protocol captured from stock Slack
+
+- Opened the previously created private, owner-only unshared canvas in stock Slack through Playwright CDP. A fresh read-only probe checked account/workspace, private test channel membership, canvas owner/editability, empty channel/group/DM shares and no workspace/org access before inspecting it.
+- Toggled one existing checklist item on and restored it off. Both protobuf edit acknowledgements and independent fetch-latest responses confirmed the exact section/state; authenticated HTML export eventually confirmed the original unchecked/checked pair. The immediate HTML export lagged the first accepted edit, so it must not be used alone to infer write failure.
+- Captured and inspected the missing editor controller chunk. `docs/slack-canvas-edit-protocol.md` records the verified binary envelope, session/canonical/local sequence distinctions, partial-state and CRDT requirements, acknowledgement handling, and outstanding native implementation. No general canvas editing capability is claimed.
+- Sensitive captures remain gitignored. The temporary authenticated probe was removed; the owned capture process stopped normally after 11 requests; stock Slack returned to its original Home conversation. No messages were sent. Full Slack parity remains active.
+
+- Reopened the rebuilt signed client normally and verified Home → #echotestchamber with an empty composer. Task-owned capture and fixture driver processes have exited. No commit, push or storage cleanup occurred.
+
+### Canonical canvas reads and guarded checkbox preparation
+
+- Added bounded protobuf decoding with lossless unknown-field preservation, a canonical collaboration loader, and a one-section checkbox intent builder. The loader checks file/thread/document identity, account initialization, section associations and the complete section index; incomplete or unsupported response shapes fail closed. The binary read transport is restricted to observed read endpoints with bounded request/response sizes and timeouts.
+- A freshly guarded read of the task-owned, private unshared canvas succeeded through the production loader: six canonical sections and two existing checklist items. Both items initially lacked CRDT state. Captured stock source shows that this state is created locally with Automerge when the first edit is prepared, rather than fetched by a missing read endpoint. No native mutation was sent.
+- Added genuine Automerge initialization for ordinary unmarked canonical text. It preserves Unicode, uses the editor's escaped-text representation and end sentinel, and creates typed local provenance without inventing a server expiry. Existing server sessions retain their expiry/shape validation. Rich or unsupported content stays unavailable for this initial path. The exact pinned dependency and both lockfiles were updated without refreshing unrelated packages.
+- Desktop checklist lifecycle state now retains potentially sent operations across close/reopen, workspace changes and credential/transport rotation. Stable account/team/user/file identity prevents duplicate edits; immutable full request scope still guards dispatch and reads. A matching accepted acknowledgement can reconcile through a new authorized canonical read, while an uncertain request never clears merely because its boolean matches. Capacity is explicit (eight per stable owner, 32 total), with no silent eviction. An independent agent reviewed the corrected ownership and capacity boundaries.
+- At this foundation checkpoint, the canvas checkbox UI was not enabled. Mutation transport, reader mapping, visible pending/error states and native private toggle-and-restore verification were still outstanding; their subsequent implementation and proof are recorded below. Protocol details and the next verification boundaries are in `docs/slack-canvas-edit-protocol.md`.
+
+- Locked validation passed: 693 desktop tests (three ignored) and 834 independently locked core tests (two ignored), plus both doctest gates. The explicit ignored synthetic-export gate also passed. Logs: `tmp/canvas-bootstrap-desktop-final.log`, `tmp/canvas-bootstrap-core-final.log`, `tmp/canvas-bootstrap-export-final.log`.
+- Captured Slack JavaScript Automerge and native Rust interoperate in both directions for all six synthetic cases (plain text, empty text and varied Unicode). Exact decoded changes and heads match when given the same actor and commit time. The first comparison exposed JavaScript's current-Unix-seconds commit default versus Rust's zero default; native preparation now supplies its explicit clock. The isolated oracle loads only library modules and the matching public WASM; it contains no Slack session or real document content. Final proof: `tmp/canvas-automerge-roundtrip.json`; repeatable synthetic fixtures live beside the bootstrap tests.
+- A final guarded live canonical read confirmed both real checklist items are within the supported plain-text subset, but preparation is still deliberately rejected: initial canonical Document field 69 is absent, while the captured outgoing edit contained title metadata. Source-backed title construction remains a prerequisite; the guard has not been removed by assumption. Structural-only evidence: `tmp/canvas-bootstrap-live-shape.log`. No native edit endpoint was called, and no UI/native visual claims apply to this foundation.
+
+- Followup source investigation located the missing title path: stock save calls `extractTitleMetadata(true)` and converts the non-deleted static title section to RichTextApi; Document field 69 is not copied. The captured canonical title is Section type 64/style 48, with authoritative text at Content field 58 / ContentTitle field 1. Both captured outgoing DocumentData field 14 values contain rich_text → rich_text_section → text and match that canonical title. Strict source-bound title synthesis is the next small implementation boundary; no guard was relaxed in this checkpoint. The temporary authenticated probe was removed. Final root/core formatting and `git diff --check` passed.
+
+### Native checkbox title mapping and first endpoint verification
+
+- Replaced the incorrect Document.69 dependency with source-bound canonical title-section synthesis. Generated form title and RichTextApi bytes match both captured stock requests exactly. Detached Chromium parser checks verified control/space/Unicode normalization; unsupported rich/empty titles and UTF-16 cuts through a surrogate remain explicit boundaries.
+- Added the exact edit-document form constructor, a consumed preparation API and a dedicated, lazily pooled mutation HTTP client with redirects and even library-level protocol retries disabled. Pre-dispatch failures are NotSent; any failure after dispatch remains Uncertain. A separate source review checked delivery classification, scope binding, limits and secret-free errors. Initial core gate passed 847 tests (two ignored); read-only desktop wiring passed 696 tests (three ignored). Later batch/retention/UI changes require the final gates below.
+- Fresh private read-only verification proved two exact exported/canonical checkbox ID matches, both independent fresh preparations, and byte-for-byte title metadata equality with captured Slack requests. Evidence: `tmp/canvas-title-private-prepare.log`.
+- The first actual native API toggle was accepted and independently read back. Target content/parents stayed unchanged and all other canonical sections were byte-identical. The second attempt, intended to restore the checkbox, returned Uncertain; it was not replayed. Independent canonical and export reads still showed the changed value. Evidence: `tmp/canvas-native-private-roundtrip.log`, `tmp/canvas-native-after-uncertain-read.log`.
+- Restored the original unchecked/checked pair through the stock canvas's actual checkbox input, receiving HTTP 200; a new native canonical+HTML read independently verified the restored pair. Evidence: `tmp/canvas-stock-restored-readback.log`. A prior click on the editable text's role=checkbox div only focused the section and made no write.
+- An isolated captured-Automerge reproduction then proved that two newly initialized documents using the same actor and different timestamps cannot merge (`duplicate seq 1`). This is a concrete local compatibility issue, not proof of the unrecorded second response's exact cause. Stock retains its accepted CRDT state across ordinary saves. Retained-session integration and a fresh complete native round trip were the next steps at this checkpoint; the first attempt itself did not prove native restore. The corrected API and UI round trips are recorded below.
+
+- Retained-session correction now records genuine local seeds on successful preparation and adopts canonical CRDT state only from an own-session, own-request sealed ACK. Missing Section38 on a fresh load no longer implies a new history. Exact association preserves all fields except observed response-only18/103/104 and omitted38; server expiry is retained privately and checked again immediately before dispatch. A new fresh explicit intent can transactionally rotate the whole client/actor on unusable absent-38 state or bounded-cache exhaustion; old ACKs cannot overwrite the new session. Present expired server metadata still rejects. Seven focused retention regressions were added; scoped formatting and diff checks passed. Full core/desktop validation and corrected private native toggle-and-restore plus signed UI proof were pending at this checkpoint; later results are recorded below. Protocol/API details are updated in `docs/slack-canvas-edit-protocol.md`.
+
+- Corrected private **native core API** toggle-and-restore now passed: checked=true at canonical sequence16000, then checked=false at17000, with valid supported ACK CRDT metadata and successful `remember_accepted` after each. Independent canonical reads confirmed both changes; target content/parents were unchanged and every other section remained byte-identical. Independent HTML export confirmed the original unchecked/checked pair. Evidence: `tmp/canvas-retained-private-roundtrip.log`. Full independent core suite passed856 tests before the final-send expiry patch; affected tests afterward passed30 with one ignored. Signed desktop clicks and captures were still pending at this API checkpoint; their later proof is recorded separately below. This API result alone is not a UI verification claim.
+
+- Independent protocol review found and closed a final-send expiry gap: selected retained server expiry now survives as private preparation provenance and is rechecked immediately before dispatch, even when the new load omits Section38. The final independently locked core suite passed857 tests with two ignored.
+- Desktop integration initially exposed three compile failures, all fixed; the next full suite passed700 tests with three ignored. Subsequent independent review closed the file-event invalidation and concurrent Refresh/loading races: validated matching file events retire canonical reads, stale exports release only their own loading flag, dispatch stages block Refresh/Retry while recovery stages remain usable, and rename drafts exclude checkbox actions. Three focused regressions accompany these fixes. The subsequent full desktop gate passed 704 tests with three ignored, and strict code-signature verification passed. Those checks precede the later post-ACK read recovery correction; static gates alone make no visual claim.
+
+### Native canvas checkbox UI verification and read recovery
+
+- Signed fixtures passed at 1280×800 and true narrow 668×400, exercising duplicate-action blocking, toggle and restore. Normal/narrow screenshots were inspected, along with saving, uncertain, read-only and rename states. These fixture states are not evidence of live lost-response recovery.
+- Initial live mapping rejected the stock export's repeated ID on `li[id] > span[id]`. A reviewed, bounded exception now accepts that exact wrapper shape; ambiguous duplicates still fail closed. The fixtures include the real shape.
+- Actual native desktop clicks accepted the first toggle; stock Slack showed checked/checked. Its own realtime event invalidated the automatic read, requiring manual Refresh. Native restore then succeeded with automatic readback, and stock Slack showed the original unchecked/checked pair. The restored screenshot `tmp/agent-ui/canvas-live-restored.png` was inspected.
+- An independent read-only probe then passed private-owner/unshared guards, six canonical sections, two exact exported/canonical checkbox matches, two fresh preparations and title-byte equality; canonical/export state was the original unchecked/checked pair. It made zero writes. Evidence: `tmp/canvas-native-ui-restored-read.log`.
+- At this checkpoint, gates were 857 independently locked core tests (two ignored), 704 desktop tests (three ignored), strict signed-app verification and the native fixture/live UI evidence above. Bounded post-ACK read recovery was still pending; its later final validation is recorded below. Uncertain operations remain separately locked and are never replayed or cleared solely by boolean equality.
+
+- Final readback correction passed independent review and the full locked desktop suite: **706 passed, three ignored** (`tmp/canvas-readback-final-tests.log`). Final signed build and strict verification passed. The normal1280×800 and narrow668×400 native checks passed again, and final captures were inspected.
+- A fresh signed native UI toggle-and-restore completed automatic confirmation in both directions without manual Refresh; stock Slack independently reflected checked/checked then unchecked/checked. A final zero-write canonical/export probe revalidated private ownership and the restored original pair (`tmp/canvas-final-restored-readback.log`); `tmp/agent-ui/canvas-final-native-restored.png` was inspected. This proves the live workflow, while the specific event-retirement branch is regression-tested rather than claimed to have occurred on that run.
+- Removed temporary authenticated probe source and ACK diagnostics. Returned native client to Home/#echotestchamber with destructive agent commands disabled; stock Slack returned to its original channel route. No messages were sent in this slice. Full rich canvas authoring/collaboration remains outside this completed checkbox path; the broader parity goal stays active.
+
+
+### Activity reply destinations and presence projection
+
+- Activity now preserves the exact reply timestamp for message-specific mention,
+  reaction and reply entries. Bundled thread notifications retain latest-thread
+  behavior. Three parsed-shape regressions passed through Activity selection,
+  thread state and the inclusive history request; a real native Activity click
+  and cross-client read-cursor comparison remain unverified.
+- A five-second live process sample (`tmp/native-idle-profile.txt`) located
+  repeated sidebar projection under the realtime worker. Presence frames now
+  update the rail and conversation presence fields without rebuilding messages,
+  geometry, avatars or sidebar ordering. Workspace and socket generation checks
+  remain in the existing reducer. The change retains rail snooze expiry refresh.
+- Initial focused tests passed for equality with full projection, untouched
+  timeline/sections, stale sockets and inactive workspaces. A paired disconnected
+  2,009-conversation benchmark recorded median 1.1985 ms for full refresh versus
+  0.1184 ms for presence projection (p95 1.2482 / 0.1205 ms). This establishes a
+  lower projection cost, not an overall idle CPU or native latency improvement.
+  Evidence: `tmp/presence-tests.log`, `tmp/presence-benchmark.log`. Final integrated
+  checks follow after the parallel date-control and List API changes settle.
+
+
+### Parallel pass: Activity, presence, datepicker and List deletion API
+
+- Signed ordinary-message datepicker checks passed at exact **1280x800** and
+  **668x400**. Both PNGs were inspected: controls remain readable and contained;
+  narrow controls wrap vertically and keyboard focus remains on the native date
+  segment. The runner prepared four disconnected requests per size and asserted
+  untouched/absent date state, complete sibling state, invalid/empty event rejection,
+  confirmation Cancel without commit, duplicate/pending rejection, navigation
+  remount, and stale-message confirmation retirement. No real Slack action was
+  sent. Programmatic invalid-date sanitation is not proof of trusted OS typing.
+- The initial native checker incorrectly expected an explicit null for an
+  untouched actions date. Its assertion was corrected to require omission, matching
+  captured Slack initialization and existing unit evidence; production was unchanged.
+- Core List deletion now has exact single-attempt delete/info requests, fresh
+  permission and target/topology guards, explicit NotSent/Uncertain outcomes,
+  and target-bound record_deleted readback. This is an **API layer only**: a
+  native confirmation flow, retained operation state and private live proof are
+  still required before exposing Delete item. See `slack-lists-protocol.md`.
+- Final independently locked core suite: **875 passed, 2 ignored**. Full desktop
+  suite: **714 passed, 4 ignored**, with doctests passing. Both formatting checks,
+  diff check, signed build and deep/strict signature verification passed. A later
+  checker-only assertion change was rebuilt and exercised by both native runs.
+- Final paired presence benchmark: 2,009 conversations, median **1.1905 ms full
+  refresh / 0.1108 ms presence-only**, p95 **1.2278 / 0.1158 ms**. This measures
+  projection CPU cost only. Overall idle CPU and native interaction latency still
+  need controlled before/after workload measurements.
+- Evidence: `tmp/list-date-core-tests.log`,
+  `tmp/activity-presence-date-tests-final.log`,
+  `tmp/message-date-checker-build.log`, `tmp/message-date-native-checks.log`,
+  `tmp/presence-benchmark-final.log`, and
+  `tmp/agent-ui/message-datepicker{,-narrow}.png`.
+- Remaining next steps: private live app response/receipt proof, trusted native
+  date entry, other app controls, List delete confirmation/reconciliation UI,
+  native Activity exact-reply click/read-cursor proof, and broader parity audits.
+  The overall parity/design/performance goal remains active.
+
+
+### Ordinary-message timepicker: signed offline verification
+
+- Ordinary message timepickers now preserve exact `HH:mm` wall time and optional
+  timezone metadata without UTC conversion. Captured Slack initialization is
+  retained: absent values remain omitted, a timezone-only initial state contains
+  no invented `selected_time`, and committed actions carry explicit selected
+  time plus the complete sibling state. Truthy initial-time and timezone fields
+  are included in the action exactly as captured.
+- The required native time input has no invented Clear action. Empty or invalid
+  changes do not dispatch. Confirmation Cancel leaves mounted display and shared
+  wire state unchanged; Go commits only after request preparation. Pending and
+  duplicate actions, stale message/account owners, navigation, and unmounted
+  controls retain the existing action guards. Component-local display and shared
+  state remain distinct across prop changes and remounts.
+- Normal **1280x800** and narrow **668x400** signed native checks passed, with
+  **four prepared requests per fixture** and `noTransport` asserted. They cover
+  untouched and timezone-only state, sibling-state preservation, invalid/empty
+  rejection, confirmation cancellation, duplicate/pending rejection, navigation
+  remount, and stale confirmation retirement. Both final PNGs were inspected by
+  the root agent. No real Slack action was dispatched by these fixtures.
+- Integrated gates passed: independently locked core **882 passed, 2 ignored**;
+  desktop **728 passed, 4 ignored**; signed build and deep/strict signature
+  verification. Evidence: `tmp/time-delete-core-tests.log`,
+  `tmp/list-delete-time-desktop-tests-final.log`,
+  `tmp/list-delete-time-signed-build.log`, `tmp/message-time-native-checks.log`,
+  and `tmp/agent-ui/message-timepicker{,-narrow}.png`.
+- Live app responses/receipts and trusted OS time-segment entry remain unverified.
+  Programmatic input events and invalid-value sanitation establish the tested
+  native event boundary, not physical keyboard-entry parity. This checkpoint
+  records timepicker completion only: the separate List deletion narrow fixture
+  failed on premature detail closure and remains under investigation. Broader
+  app controls and the overall parity/design/performance goal remain open.
+
+
+### List deletion: native and private-live checkpoint
+
+- Normal and narrow native deletion fixtures passed on rerun and again with the
+  diagnostic build. Evidence: `tmp/slack-list-delete-native-checks-rerun.log`
+  and `tmp/slack-list-delete-native-diagnostics.log`. The first narrow run's
+  unexpected detail closure remains unexplained; its evidence is preserved at
+  `tmp/slack-list-delete-first-narrow-failure.{log,png}`. Passing later runs do
+  not explain that failure, and no speculative product fix is claimed.
+- In the private verification List, native Add item created a new disposable
+  record. Native Delete → Cancel was followed by exact-target **Present**
+  readback; native Delete → Confirm was followed by exact-target **Deleted**
+  readback. All five baseline fields remained intact and no extra rows remained.
+  Evidence: `tmp/list-delete-native-predelete.log`,
+  `tmp/list-delete-native-cancel-readback.log`, and
+  `tmp/list-delete-native-final-readback.log`. The root agent inspected
+  `tmp/agent-ui/list-delete-private-live.png`.
+- The earlier unrelated Name bold-style loss was restored using the exact
+  baseline blocks, and readback confirmed all five baseline fields preserved.
+  Its cause remains unproven; the captured stock editor normalization path is a
+  possible explanation, not attribution to the unrelated deletion.
+- Native deletion remains confirmation-only; Undo is unimplemented. Stock's
+  conditional immediate-delete/Undo behavior and same-ID undelete contract are
+  documented in `slack-lists-protocol.md`.
+- Follow-up fixes for a stale creation “Open item” notice and conflicting Refresh
+  guidance are in progress. Final integrated gates for those changes are pending.
+  This checkpoint establishes the tested deletion/cancellation round trip, not
+  completion of all List actions or the broader parity goal.
+
+
+### 2026-10-13 — Final deletion integration checks
+
+- Exact deletion readback now retires a matching accepted creation notice/receipt,
+  removing the stale “Item added / Open item” affordance for that deleted item.
+  Other record/list/account identities and non-deleted readbacks preserve their
+  notices. Two focused regressions cover these boundaries.
+- Pending deletion owns recovery guidance; generic refresh-to-edit/add copy is
+  suppressed while its receipt locks mutations. Read-only refresh remains
+  available for uncertain outcomes. Native Undo remains unimplemented.
+- Final desktop suite: **730 passed, 4 ignored**, with no failures
+  (`tmp/list-delete-time-final-tests.log`). Root and independently locked core
+  formatting plus `git diff --check` pass. Core remains **882 passed, 2 ignored**;
+  no core source changed after that independent run.
+- Temporary private read/restore probe source was removed. The stock Slack
+  reference returned to its original channel without changing its saved draft.
+  Earlier transient narrow-fixture closure remains an unexplained observation,
+  not a fixed or disproven bug. Successful subsequent runs and structural failure
+  diagnostics are recorded above.
+- Final signed build and deep/strict signature verification pass
+  (`tmp/list-delete-time-final-build.log`). Both deletion fixture sizes pass on
+  that build (`tmp/slack-list-delete-native-final.log`); final normal/narrow
+  uncertain-state PNGs were inspected and show the corrected recovery copy.
+  This is the third successful normal/narrow run after the preserved first
+  narrow failure; that earlier failure's cause remains unproven.
+- Final signed live client relaunched in the private channel. Direct background
+  launch initially showed a blank window and agent timeout; activating its exact
+  app bundle with `open -a` restored the signed-in Dioxus surface. This reproduces
+  the earlier background responsiveness observation; it is not a resolved startup
+  performance claim. Structural sample: `tmp/final-native-blank-profile.txt`.
+
+### 2026-10-13 — Metadata cache snapshot cost
+
+- A fresh five-second native sample identified user-group hydration spending
+  main-thread time cloning the entire workspace before enqueueing a metadata
+  save. The path included cached message bodies and their rich JSON. The sample
+  was predominantly idle overall; it does not establish a continuously busy
+  application or explain the intermittent blank-window launch.
+  Evidence: `tmp/native-background-before-undo.txt`.
+- User-group hydration and its member-panel refresh now capture only persisted
+  workspace metadata. They do not clone message bags, realtime connections, or
+  session credentials. Full transcript persistence retains its previous path.
+  The single persistence worker still coalesces by account and team: newer
+  metadata retains an older queued full transcript snapshot; a newer full
+  snapshot supersedes it. Metadata saved after an already-drained full save
+  leaves the transcript and channel-state tables untouched.
+- The paired CPU-only benchmark used **2,001 channels and 8,001 synthetic rich
+  messages**, with five warmup rounds and **40 measured samples per path** in
+  alternating order. Full workspace snapshot capture measured **11.1317 ms
+  median / 13.0110 ms p95**; metadata capture measured **0.3558 ms median /
+  0.8835 ms p95**. This measures capture cost only, excluding destruction, queue
+  work, serialization, SQLite I/O, and rendering. It is not a whole-app speedup,
+  frame-latency, or startup improvement claim.
+  Evidence: `tmp/cache-metadata-benchmark.log`; repeat with the independently
+  locked core test `metadata_snapshot_clone_cost --ignored --nocapture`.
+- Core regressions verify equivalent persisted metadata, unchanged transcript
+  and read-state rows, retained group-removal behavior, same-team snapshot
+  merging, cross-team isolation, and later full-snapshot precedence. The
+  independently locked core suite passed **895 tests, 3 ignored**, and the
+  separately invoked snapshot benchmark passed. Evidence:
+  `tmp/undo-cache-core-tests.log` and `tmp/cache-metadata-benchmark.log`.
+  Desktop queue coverage was added; its integrated gate is recorded separately
+  when completed.
+- Limits: metadata capture still clones channels, users, and groups. Full saves
+  still clone transcripts, and hydration/realtime can still trigger full shell
+  projections. Failed cache writes retain the existing no-retry behavior; a
+  later metadata-only save does not incidentally retry a failed drained full
+  transcript snapshot. No activation workaround was added, and the intermittent
+  blank-window observation remains unresolved.
+
+### 2026-10-13 — List Undo/Redo integration checkpoint
+
+- Completed record-specific same-ID deletion Undo/Redo with fresh access and
+  exact-record preflight, stale account/visit/cancellation guards, single-attempt
+  dispatch, and exact readback. Verified childless complete Lists delete
+  immediately; known children or incomplete pages retain confirmation.
+- Private native Delete → Undo → Redo passed for one newly created disposable
+  item. Undo restored its original ID and exact fields; Redo left only the five
+  unchanged baseline records. Readback logs: `tmp/list-undo-{created,delete,redo}-readback.log`
+  and `tmp/list-undo-first-attempt-readback.log`. The restored native window was
+  visually inspected through computer-use capture. Subtree restoration is still
+  fixture-only; this is not a general List Undo history.
+- Stronger normal/narrow signed native fixtures passed at 1280×800 and 668×400:
+  duplicate transition clicks, held-request disabled controls, exact restored
+  raw-field/ID baseline, expanded child rendering, immediate childless deletion,
+  confirmation cancellation, and uncertain result recovery. Restored screenshots
+  for both sizes and the narrow uncertain state were inspected.
+  Evidence: `tmp/undo-cache-native-checks-final.log` and
+  `tmp/agent-ui/slack-list{,-narrow}-delete-restored.png`.
+- Desktop **737 passed, 4 ignored** (`tmp/undo-cache-desktop-tests-final.log`);
+  independently locked core **895 passed, 3 ignored**; formatting and diff checks
+  passed. Final signed build and deep/strict signature verification passed
+  (`tmp/undo-cache-signed-build-final.log`). Later harness-only coverage changes
+  were compiled and exercised by that signed build.
+- Before this checkpoint, five repeated normal/narrow deletion runs passed
+  (`tmp/delete-repeat/run-{1..5}.log`). The earlier intermittent detail closure
+  remains unexplained. This checkpoint's first fixture failed before actions,
+  while native windows could not be captured; a later power-state read reported
+  a recent lid-open event. After the display returned, the stronger fixtures
+  passed. This does not establish a fix for background responsiveness.
+- Two earlier individual startup samples measured direct launch first paint
+  444.7 ms/cached conversation 844.6 ms, and standard bundle launch 914.1/1286.6 ms
+  (`tmp/launch-{direct,bundle}-before-undo.log`). These are individual observations,
+  not a performance trend or proof that blank-window behavior is resolved.
+- Next bounded parity candidate: ordinary User-column editing through the
+  existing guarded cell-update path, excluding todo-assignee sharing behavior.
+  Entity-picker candidate filtering still needs source confirmation. Next
+  performance candidate: skip empty user-group hydration commits; frequency of
+  empty live responses has not been measured. Neither candidate is implemented.
+
+
+### 2026-10-13 — Ordinary People fields and empty hydration checkpoint
+
+- Ordinary List `user` fields now support single/multiple people, removal and
+  clearing through the existing guarded cell-update path. The picker retains
+  uncached selected IDs, limits cached/remote choices to 30, includes self and
+  guests, excludes ordinary bots/deactivated/profile-only candidates, and rejects
+  stale query/account/visit results. Selection remains local until Save.
+  Legacy assignee and todo-assignee sharing behavior remains unsupported.
+- Slack bundle references and exact wire/cardinality rules are documented in
+  `docs/slack-lists-protocol.md`. Parallel reviews caught fuzzy remote matches
+  being filtered a second time and hidden-cell queued queries changing loading
+  state; both now have focused regressions.
+- Private native verification created a disposable item, selected self, cancelled
+  a removal, saved an explicit clear, and deleted the item. Canonical reads and
+  stock Slack agreed on selection and clearing. The final read retained all five
+  original records with identical fields and no extra live records. A named
+  verification People column remains on the task-owned private List. Evidence:
+  `tmp/list-users-{selected,cancelled,cleared,cleanup}.log`. Stock Slack's original
+  route and existing draft were restored. The temporary read-only probe source
+  was removed; no sharing or assignment endpoint was introduced.
+- Signed native fixtures passed at normal and narrow sizes, covering single
+  replacement/clear, multiple selection, uncached removal, candidate exclusions,
+  Cancel with zero writes, duplicate Save locks, keyboard entry/focus recovery,
+  and canonical request identity. Both People editor PNGs were inspected, as was
+  the live native picker. Evidence: `tmp/list-users-native-checks-final.log` and
+  `tmp/agent-ui/slack-list{,-narrow}-user-editor.png`.
+- Empty successful user-group hydration batches now skip the Signal write and
+  full shell projection. An all-empty run skips metadata persistence; nonempty
+  batches still project immediately and preserve loaded group membership.
+  Partial success followed by failure retains prior updates and existing retry
+  behavior. Tests cover empty, mixed, partial-error and missing-workspace cases.
+- The paired synthetic benchmark used 2,009 channels and 40 measured samples:
+  full projection median **3.975417 ms**, p95 **7.516625 ms**; empty commit median
+  **0.000291 ms**, p95 **0.000708 ms**. Evidence:
+  `tmp/usergroup-empty-benchmark.log`. This isolates projection work; live empty
+  response frequency, end-to-end startup and frame latency remain unmeasured.
+- Final gates: desktop **749 passed, 5 ignored**; independently locked core
+  **900 passed, 3 ignored**; separately invoked hydration benchmark passed;
+  both formatting checks, diff check, signed build and deep/strict signature
+  verification passed. Logs: `tmp/list-users-desktop-tests-final.log`,
+  `tmp/list-users-core-tests.log`, `tmp/list-users-signed-build-final.log`.
+  Initial validation exposed two fixture issues: independent opaque media IDs
+  in equality checks, and an earlier numeric edit filtering out the User target.
+  Both were fixed while preserving full equality and exact fixture restoration.
+- Limits: live verification selected self only. Single-user and multiple-person
+  writes are fixture-proven; live remote directory search and special AI-agent
+  eligibility remain unverified. Started directory reads can outlive cancellation,
+  although stale results cannot enter a newer draft. Full Slack parity and the
+  earlier intermittent blank-window observation remain open.
+- Next bounded candidate: ordinary channel-reference List fields through the
+  same editor path, after verifying Slack's picker and payload contract. Continue
+  measuring visible runtime work before extending performance claims.
+
+### 2026-10-13 — Ordinary Channel fields checkpoint
+
+- Ordinary List Channel fields now use the guarded entity-editor path. Private
+  native verification confirmed Cancel preserves the existing selection,
+  explicit clear saves `channel: []`, and fuzzy search `echotestchambr` finds
+  `echotestchamber`; Save retained the exact intended private channel ID.
+  Independent canonical reads verified each result. The disposable record was
+  deleted afterward: all five baseline records retained their original fields,
+  with no extra live records. Evidence:
+  `tmp/list-channels-native-{cancel,clear,selected,cleanup}.log`.
+- The original signed binary's normal and narrow fixture runs passed
+  (`tmp/list-channels-native-checks-retry.log`). Both Channel editor PNGs and the
+  narrow User editor PNG were inspected. Gates for that binary: independently
+  locked core **904 passed, 3 ignored**; desktop **759 passed, 5 ignored**; signed
+  build passed. This checkpoint does not imply support for every channel-picker
+  variant or full Lists parity.
+- The shared User/Channel search input now uses `initial_value` as its mount seed
+  so delayed cached-result renders do not overwrite browser-owned text or caret.
+  New native assertions exercise DOM text and caret retention for both entity
+  pickers; query, account, visit, and mutation guards are unchanged. Follow-up
+  desktop suite: **759 passed, 5 ignored**
+  (`tmp/list-channels-input-desktop-tests.log`). The follow-up signed build and
+  deep/strict signature verification passed
+  (`tmp/list-channels-input-signed-build.log`). Both normal/narrow native runs
+  then passed, with User and Channel `inputSurvivesResultRender` receipts true
+  (`tmp/list-channels-input-native-checks.log`). Fresh normal/narrow Channel
+  editor PNGs and the narrow User editor PNG were inspected and fit clearly.
+  Both Cargo formatting checks and the diff check passed; the temporary read-only
+  probe source was removed. These synthetic DOM checks do not establish trusted
+  OS input or IME completeness. The earlier overlay/Budget fixture failures remain
+  preserved without an asserted cause; the private round-trip evidence above
+  belongs to the original signed binary.
+
+### 2026-10-13 — Bounded runtime observability checkpoint
+
+- Added opt-in `SUPER_PLATINUM_RUNTIME_PROBE=1` instrumentation in
+  `src/desktop/performance/runtime_probe.rs` and its adjacent JS, with narrow
+  `performance.rs`, `media.rs`, and `runtime.rs` wiring. A native watchdog and
+  structural JS reports observe the first **20 seconds** independently of the
+  Dioxus app-task queue; payloads are whitelisted and capped, with no message
+  content, URLs, credentials, or raw IPC. Disabled mode adds no probe thread,
+  script, custom protocol, or native callback. See
+  `docs/runtime-responsiveness.md` for commands, source reasoning, and limits.
+- Two signed offline `slack-list` launches were healthy and remained unfocused:
+  direct executable first paint **1632.4 ms**, bundle launch **589.0 ms**. Fresh
+  agent checks from approximately 2–20.5 seconds passed at **0.170–1.036 ms** and
+  **0.495–1.118 ms**, respectively; earlier socket checks found no socket. Both
+  reported `headless=true`, an open edit socket, three root children, completed
+  frame callbacks, and advancing runtime heartbeats. These are individual
+  observations, not a comparative speedup or focused/background comparison.
+- Direct-launch PNG was inspected. Bundle agent capture failed with
+  `screencapture` exit 1; a separate CUA screenshot was inspected and showed the
+  fully painted fixture with inactive window controls. The artifact name
+  `bundle-foreground` is inaccurate as an observed focus label. Evidence:
+  `tmp/runtime-probe-{direct-background,bundle-foreground}.{log,json}` and
+  `tmp/agent-ui/runtime-probe-direct-background.png`.
+- The probe can change scheduling through its own wakeups, logging, and protocol
+  requests. Neither healthy launch reproduced the earlier live blank-window
+  failure; no activation workaround or hang fix is claimed. A controlled live
+  reproduction and an uninstrumented comparison remain open.
+
+### 2026-10-13 — DM pane channel lookup CPU cost
+
+- `view/secondary.rs::dm_list_panel` previously searched all projected channels
+  separately for each displayed DM's avatar and presence. The first DM page has
+  100 entries and later 100-entry pages accumulate; query changes and shared
+  shell repaints repeated those scans. The pane now builds one borrowed index
+  per render and performs one lookup per displayed entry. Existing avatar
+  eligibility and missing-presence fallbacks are unchanged. The index keeps the
+  first duplicate to preserve `iter().find` semantics, assumes no sort order,
+  clones no channel rows, and requires no retained-cache invalidation.
+- The paired standalone benchmark includes the actual production `ChannelVm`
+  layout (184 bytes) and `view/secondary/dm_channels.rs` helper. It uses synthetic
+  distributed IDs with 10% misses, five warmup rounds, 40 alternating measured
+  samples, and five calls per sample. Index construction and destruction are
+  included each time. Final median / p95 milliseconds:
+
+  | Projected channels / loaded DMs | Previous two scans | Borrowed index |
+  | --- | --- | --- |
+  | 2,000 / 100 | 0.372592 / 0.428108 | 0.025425 / 0.032292 |
+  | 2,000 / 500 | 1.959042 / 2.517817 | 0.033617 / 0.036550 |
+  | 10,000 / 100 | 1.637908 / 2.726358 | 0.134742 / 0.197300 |
+  | 10,000 / 500 | 7.913600 / 11.021083 | 0.142917 / 0.275875 |
+  | 10,000 / 2,000 | 31.522158 / 33.131083 | 0.161475 / 0.172375 |
+
+- Reproduce with `bash scripts/bench-dm-channel-lookup.sh` after a normal desktop
+  build. It invokes standalone `rustc` at the app's `opt-level=1`, using existing
+  core artifacts; it does not invoke Cargo, launch the app, or access a session.
+  Evidence: `tmp/dm-channel-lookup-benchmark-final.log`; two earlier paired runs
+  are retained in `tmp/dm-channel-lookup-benchmark{,-repeat}.log`. The pure
+  regression checks unsorted, duplicate, and missing IDs against the prior
+  first-match behavior, including pointer identity. Scoped formatting, shell
+  syntax, and diff checks passed. The integrated desktop suite passed 760 tests
+  (5 ignored), including the index regression. The signed native DM fixture
+  passed and `tmp/agent-ui/dms.png` was inspected: avatar, presence, unread badge,
+  and preview remained visible. Evidence: `tmp/dm-lookup-native-checks.log`.
+- This measures lookup CPU work only. It excludes label/preview projection,
+  Dioxus reconciliation, DOM size, layout/paint, network, and native interaction
+  latency. Synthetic sizes are not measurements of the user's live DM count.
+  Results assume rows eligible for both old lookups; rows without an available
+  avatar previously performed only the presence scan. Building the index can
+  cost more for a very selectively filtered list; the empty feed skips index
+  construction. Rich-message preview
+  generation and unbounded loaded-row rendering remain separate concerns; no
+  whole-app or startup speedup is claimed and no profile settings changed.
+
+### 2026-10-13 — Activity reply navigation and compact List chrome
+
+- The Activity control-plane command previously discarded the exact reply
+  destination even though the visible row click preserved it. `ActivitySelect`
+  now uses `thread_destination` and `open_thread_at`, matching the UI's older
+  reply versus bundled-thread distinction.
+- Added disconnected `activity-navigation` and `activity-navigation-narrow`
+  fixtures with a 32-reply transcript. The native checker clicks a bundled
+  thread, a channel post, and an older reply. It verifies latest behavior for
+  the bundle, removal of the prior thread for a channel post, preservation of
+  the Activity surface, and exact older-reply visibility away from the bottom.
+  The Python harness also exercises both agent destinations. Both sizes passed;
+  PNGs were inspected and showed the intended reply. Evidence:
+  `tmp/activity-navigation-native-checks.log` and
+  `tmp/agent-ui/activity-navigation{,-narrow}.png`. All data was synthetic and
+  transport remained absent. This does not prove live Slack read-state parity.
+- List titles/view controls now share a wrapping header row. Full shortcut
+  instructions remain available through accessible descriptions and a collapsed
+  disclosure at every size, instead of occupying a persistent paragraph above
+  the content. Table, Board, and record-detail disclosure gates passed at both
+  sizes, checking accessible descriptions, expansion bounds, content/scroll
+  restoration, and focus. Normal/narrow table, Board, and record PNGs were
+  inspected. The first assertion incorrectly treated a nonzero paragraph
+  rectangle inside closed native details as visible; WebKit reported it as
+  invisible. The corrected check uses `checkVisibility()` and retains all
+  geometry/restoration assertions. Evidence: `tmp/list-density-final-native.log`
+  and `tmp/agent-ui/slack-list{,-narrow}-{rich,board-multi,detail-table}.png`.
+  These checks exercise native summary click behavior, not trusted OS keyboard
+  activation or assistive-technology output.
+- Integrated desktop tests passed **760, with 5 ignored** and the signed build
+  passed deep/strict verification (`tmp/activity-density-desktop-tests.log`,
+  `tmp/activity-density-signed-build.log`). Core behavior was unchanged in this
+  checkpoint; the prior independently locked **904/3 ignored** suite remains
+  the latest core result. The final signed rebuild and strict signature check
+  passed (`tmp/list-density-final-build.log`); final root/core formatting and
+  `git diff --check` passed. List/DM fixture gates and screenshot inspection are
+  complete. Broader live read-state parity and intermittent startup blankness
+  remain open; this checkpoint does not close the overall parity goal.
+
+- Independent Activity review confirmed the exact-target request and post-await
+  guards. It also identified a pre-existing queued-start gap in
+  `bootstrap/thread.rs::open_thread_at`: its first channel/thread mutations
+  precede ownership capture, so navigation between queuing and first polling
+  needs a synchronous admission guard. This remains a follow-up; no unvalidated
+  fix was mixed into this checkpoint. The agent-path automated assertion proves
+  non-latest state; exact visible reply was additionally checked in its PNG.
+- Relaunched the latest signed bundle, confirmed signed-in Home in the private
+  test channel and destructive commands disabled, and inspected its live CUA
+  screenshot. The channel, composer, avatars, and gray system messages painted.
+  The older owned instance had stopped answering its agent ping; it was replaced
+  only after PID/socket identity verification. The fresh instance answers. Native
+  agent screenshot still returns `screencapture` exit 1 for the live bundle; CUA
+  supplied the visual evidence. This does not establish that intermittent
+  unresponsiveness is fixed. Private state: `tmp/activity-density-live-final.json`.
+
+- Parallel Link research produced a reproducible offline captured-code oracle:
+  48 normalization cases and 10 stored-value converter cases passed, reproduced
+  by root (`scripts/slack-list-link-oracle.mjs`,
+  `tmp/slack-list-link-oracle.json`). Source hashes and synthetic inputs are
+  recorded. This establishes edge cases for the next faithful port; Link editing
+  itself and server enrichment/readback remain unimplemented/unverified.
+
+### 2026-10-13 — Activity queued admission and ordinary List Link editing
+
+- This checkpoint supersedes the prior Activity queued-start follow-up and Link
+  implementation-pending notes above. Activity now captures a navigation ticket
+  synchronously at selection, before its task is queued. First polling checks
+  account, viewer, credentials, transport, surface/overlay, channel/thread
+  generations, and the exact selected notification before any initial thread
+  mutation. Admission consumes the generation; identical queued tickets cannot
+  run twice. Read marking and destination loading start together after admission.
+  Five pure regressions cover replacement/removal, navigation and away/back,
+  account/credential/transport changes, and one-shot exact/bundle/channel paths.
+  `tmp/activity-admission-native.log` passed normal and narrow disconnected
+  fixtures. Both DOM clicks and subsequent agent commands now have measured
+  rendered destinations: bundle bottom gap zero and the exact older reply
+  intersecting the thread viewport at 1280×800 and 668×400. This remains synthetic
+  navigation proof, not live Slack read-state parity.
+- Ordinary Link cells now support an uncontrolled Link/Name draft with explicit
+  Save and Cancel, Remove Link, and separate display-as-URL/name actions through
+  the existing guarded cell-update lifecycle. Save uses the captured detector
+  semantics, including first-match URL/email/phone extraction and original-input
+  fallback; it does not substitute generic URL parsing or unconditional trimming.
+  Display changes preserve the canonical URL/name and are disabled while the
+  draft is dirty. Editable wire values contain only `original_url`, optional
+  `display_name`, and `display_as_url`; full record/schema snapshots remain pinned
+  for preflight. Receipt comparison permits the known attachment enrichment while
+  keeping editable members exact. Storage and safe navigation remain separate:
+  unsafe schemes can be stored as inert text and do not become clickable links.
+- Normalization runs in `spawn_blocking`, with one shared permit held inside the
+  blocking closure even if its editor task is cancelled. Old results cannot save
+  into a reopened draft or cross account/revision changes. Save, Display, and
+  Remove also check the live pending state, covering clicks queued before the
+  disabled render arrives. The normal/narrow native List gates passed
+  (`tmp/link-native-final.log`): typing/Cancel without writes; held-normalizer
+  Save/Display/Remove duplicate suppression followed by Cancel/reopen; normalized
+  set, both display modes, rename, Remove Link, inert unsafe storage, focus,
+  bounded controls, and exact fixture cleanup. The inspected
+  `tmp/agent-ui/slack-list-link-editor.png` and
+  `tmp/agent-ui/slack-list-narrow-link-editor.png` show both labeled inputs,
+  display/removal controls, Cancel and Save fully inside the native editor.
+  Neither image showed clipped actions or horizontal overflow.
+- The independently locked core suite passed **914 tests, 4 ignored**
+  (`tmp/link-core-final.log`); the integrated desktop suite passed **768 tests,
+  5 ignored** (`tmp/link-activity-desktop-final.log`). The checked-in captured-code
+  normalization oracle contains 1,548 synthetic cases and is exercised by the
+  core suite. The native-profile timing
+  probe (`tmp/link-detector-desktop-final.log`) measured 105.567 ms cold setup,
+  5.167 ms for 1,000 warm ordinary calls, and approximately 679–762 ms for the
+  measured 10,000-character pathological dotted inputs. This is local synthetic
+  CPU evidence, not an arbitrary-input latency bound or a whole-app speed claim.
+  Large pathological input can still take time; work stays off the UI thread and
+  concurrent normalization is bounded. No arbitrary maximum input length was
+  introduced. Split-surrogate results that cannot be represented as Rust strings
+  remain rejected rather than silently rewritten.
+- **Live Link write/readback and cleanup remain pending at this checkpoint.** A
+  disposable private row and existing Link column were prepared before the pause;
+  their real identifiers are retained only in private task evidence. This entry
+  does not claim that the live row was deleted or that server enrichment has
+  been proven by a native roundtrip. Full attachment/unfurl presentation and
+  exhaustive browser-detector equivalence remain separate gaps. The broader
+  parity goal, live read-state coverage, and intermittent native responsiveness
+  are not closed by these gates.
+
+### 2026-10-13 — Link live findings and retained cell-write ownership
+
+- The private live Link check has now proved Cancel without a change, explicit
+  Save, display-mode changes, and rename through stock Slack plus independent
+  canonical readback. The existing baseline rows remain unchanged. The service
+  returned singleton camelCase Link values; editing/receipt parsing already
+  accepted those, but display projection did not. The reader now accepts equal
+  snake/camel aliases and rejects conflicting URL/name/display aliases instead
+  of silently choosing one. The disconnected backend now emits the observed
+  camelCase array with attachment metadata, keeping the outgoing request intact.
+  **The rendering fix still needs the rebuilt native check/live display proof;
+  the disposable live row has not yet been cleaned up.** No real identifiers are
+  included here.
+- A separate stock-source correction captures the Link modal's initial Name:
+  a nonempty explicit name wins (including whitespace), otherwise the exact
+  URL-keyed attachment title is used, with nullish fallback to attachment
+  fallback text. An empty title remains empty. This is an immutable desktop
+  draft seed, separate from canonical `LinkValue`: Cancel and display-mode
+  toggles do not invent a stored name; explicit Save can store the seeded title.
+  Helper/controller regressions cover precedence, malformed metadata,
+  snake/camel storage, Cancel, toggle, stale attachment refresh, reopen, and
+  explicit Save. The revised native cancellation check also uses a genuinely
+  changed URL/name, so a core no-op rejection cannot substitute for proving that
+  a cancelled normalizer cannot affect a reopened editor. These additions are
+  implemented; their integrated desktop/native gates remain pending below.
+- Independent review found an inherited cell-mutation lifecycle gap: changing
+  workspace, account, credentials, or transport erased potentially sent cell
+  receipts. The desktop now retains `Saving` and `Uncertain` operations by exact
+  attempt serial plus stable account/team/user/List ownership. Only unsent
+  `Preparing` work is retired. Returning to the owner restores its locks; another
+  owner with the same List ID stays isolated. A sending operation remains locked
+  until its original bounded request completes, then a fresh current-scope read
+  reconciles the exact record/column identity. No request is replayed. Late
+  responses settle only their matching receipt and cannot update a replacement
+  visit's UI. Retained receipt scopes discard the session/client; pending copy
+  derives from the current receipt phase instead of freezing a Sending notice.
+- New cell admission is bounded to eight pending operations per stable owner and
+  32 total, without evicting unresolved writes. Restore refuses an ambiguous
+  same-List collision rather than overwriting either receipt. Six focused
+  regressions were added for switch-away/back while still sending, credential
+  rotation and stale reads, another owner with the same List ID, unsent retirement
+  and uncertain reconciliation, late duplicate completion, and capacity/collision
+  preservation. An independent read-only review found no remaining blocker.
+  Scoped formatting and diff checks passed. **These six regressions and the
+  integrated rebuild/native gates have not yet been run at this checkpoint.**
+- The independently locked core suite now passes **918 tests, 4 ignored**
+  (`tmp/link-core-live-followup.log`). A source-equivalent parser scanning change
+  reduced the three previously measured pathological dotted cases from
+  679.387/682.535/762.409 ms to 2.534/2.598/3.101 ms in the native-profile probe
+  (`tmp/link-detector-desktop-offset.log`). These are the same selected synthetic
+  cases, not a universal latency bound; the single-worker CPU budget and
+  cancellation guards remain in place. The earlier 914-core/768-desktop/native
+  results above remain historical gates for the prior source state. Root will
+  append the final integrated results and private cleanup evidence separately.
+
+### 2026-10-13 — Integrated Link verification and private cleanup complete
+
+- Final locked gates passed: **918 core tests, 4 ignored** and **777 desktop
+  tests, 5 ignored**, both formatting checks, and the signed macOS bundle build
+  with strict signature verification. Evidence: `tmp/link-core-live-followup.log`,
+  `tmp/link-live-integration-desktop.log`, and `tmp/link-live-final-build.log`.
+  Both normal and narrow native List checks passed in
+  `tmp/link-live-final-native.log`, including camelCase canonical responses and
+  the strengthened changed-draft cancellation case. The operator read both
+  generated Link editor PNGs and confirmed visible, bounded inputs/actions.
+- The rebuilt client displayed the real canonical Link name correctly in item
+  details; `tmp/agent-ui/link-live-after-alias-fix.png` was captured and inspected.
+  Native Remove Link then produced an empty canonical Link array and an empty
+  stock Slack cell. Native Delete item removed only the disposable row and
+  offered Undo. Independent readback confirmed that the remaining five complete
+  records exactly match the original baseline, with no extra records and no
+  sharing changes. The task-owned Link verification column remains available.
+  Stock Slack's original route and existing draft were restored; the temporary
+  session-backed probe source was removed. Private snapshots stay untracked.
+- After the final build, an isolated CPU probe measured 103.643 ms cold setup,
+  5.037 ms for 1,000 warm calls, and 2.588/2.627/2.818 ms for the three selected
+  pathological dotted cases (`tmp/link-detector-desktop-integrated-isolated.log`).
+  A probe run concurrently with the native harness was slower (8.820–12.996 ms
+  for those cases, 1197.895 ms cold); keep that load sensitivity visible rather
+  than treating individual runs as a stable latency guarantee. Full-input
+  semantics, immutable draft ownership, and the single-worker budget remain.
+- Live ordinary Link editing is verified; full attachment/unfurl parity,
+  exhaustive detector equivalence, live credential-rotation reconciliation, and
+  the intermittent blank startup are still open. Receipt-retention proof here
+  is from focused controller tests and review, not a forced real-account outage.
+
+### 2026-10-13 — Parallel user-picker, List layout, and startup follow-up
+
+- Three concurrent workers handled ordinary-message `users_select`, independent
+  candidate-policy/fixture work, and List horizontal usability, then independently
+  reviewed the picker lifecycle. This fills the runtime's four-agent limit with
+  root; no extra agents or unrelated work were started to meet the user's cap.
+- The user-picker policy is based on captured ordinary-message member search,
+  separate from List User fields: self, ordinary bots, Slackbot/securitybot,
+  guests, and external members are included. Deleted, profile-only, workflow,
+  huddle-only external guests, and special search/expert/system identities are
+  excluded. Agentforce discovery remains unavailable because its app-access
+  metadata is not retained; the picker explains that limitation when encountered.
+  Confirmation, container state, owner/query revision guards, rate-limit retention,
+  and remote-only display labels are part of the implementation/review scope.
+- List changes use compact checkbox and numeric widths, pin the visible canonical
+  primary column even when reordered, paint opaque matching row states, and
+  reserve measured header/primary clearance during keyboard navigation. Hidden
+  primary columns pin nothing. The new normal/narrow checks exercise geometry,
+  hit testing, and synthetic Home/End/Right navigation; they do not establish
+  trusted OS keyboard event delivery. Percent-formatted numeric columns inherit
+  numeric sizing; no undocumented percent type was invented.
+- Two bounded live startup probes were healthy, including an actually unfocused
+  background launch. A CUA screenshot of the background conversation was read
+  after the agent screenshot path failed; it showed painted content and muted
+  system messages. The earlier blank-window failure remains unresolved. Corrected
+  stack interpretation and individual measurements are in
+  `docs/runtime-responsiveness.md`; these observations are not a startup fix or
+  comparative speedup.
+- The opt-in probe now adds passive numeric script/resource/rejection counters,
+  without inspecting private error payloads. Root's pure-JS privacy/lifetime
+  regression script and independent review passed. No interpreter wrapping,
+  ACK replacement, or activation workaround was added.
+- First integrated core gate: **924 passed, 4 ignored**
+  (`tmp/users-list-core-tests.log`). The initial desktop check caught missing
+  `serde_json::Value` imports, now repaired. Final desktop/build/native gates are
+  pending at this checkpoint; root will append their actual results below.
+- Final frozen-source desktop suite passes **784 tests, 5 ignored**
+  (`tmp/users-list-desktop-final-tests.log`); both formatting checks and
+  `git diff --check` pass. An independent lifecycle review found no remaining
+  blocker after the concurrent Retry-After fix. Captured upstream `iGIl` coalesces
+  null saved user values before `HvtU`'s undefined-only fallback, confirming that
+  remounting a committed null selection uses `initial_user`; no speculative
+  display change was made. Live remote search/app receipt and trusted OS keyboard
+  delivery remain unproven by the disconnected fixtures.
+- Signed build and strict signature verification passed
+  (`tmp/users-list-build.log`). Normal and narrow List native checks passed
+  (`tmp/users-list-native-final.log`), including compact-column measurements,
+  reordered/hidden primary, focused-cell hit testing, and existing editors/views.
+  Root inspected both rich and horizontally scrolled reference captures; primary
+  labels remain opaque and visible while the remaining columns scroll.
+- The first normal/narrow message-user interaction checks also passed
+  (`tmp/users-native-final.log`), but image inspection found a wrapped trigger
+  chevron and default platform search styling. A scoped CSS correction plus a
+  single-row trigger assertion is being integrated before the final screenshot
+  gate. The narrow capture also showed the deliberate stale-action test toast;
+  its dismissal belongs to fixture cleanup, not a product toast behavior change.
+- Final picker follow-up is verified: shared compact trigger/search styles keep
+  both triggers on one 32-pixel row; the search focus outline is inset so its
+  scrolling container cannot clip the top edge. The fixture clears its deliberate
+  stale-action toast only after proving no extra dispatch. The final signed build
+  and strict signature check passed (`tmp/users-focus-final-build.log`), then both
+  native sizes passed again (`tmp/users-focus-native-final.log`). Root read both
+  final PNGs; controls, availability copy, Cancel, and scrolling result area are
+  visible and bounded. Unit logic remains the previously verified 924-core /
+  784-desktop state; subsequent edits were scoped CSS and fixture assertions.
+- Final real-session background launch accepted all three numeric error counters:
+  eight JS samples, zero script errors/rejections and two resource errors in the
+  last sample, 99 native-observed app heartbeats by 20 seconds, and five successful
+  pings from approximately 1–20.5 seconds. Logs:
+  `tmp/runtime-probe-live-counters-bundle-background.{log,json}`. Agent capture
+  failed with exit 1; root inspected a CUA capture of the painted private channel.
+  The rebuilt live client remains open (owned PID 37398 at this checkpoint,
+  socket `/tmp/sp-runtime-live-counters-bundle-background.sock`). Diagnostics
+  expired after their bounded run. This remains a healthy counterexample, not
+  a resolution of the intermittent blank startup; no Slack messages were sent.
+
+### 2026-10-13 — Existing-paragraph authoring and Files density in parallel
+
+- Three workers split canonical canvas text protocol, desktop editor/lifecycle,
+  and compact Files layout plus independent review. Root owns live reference
+  captures, integration builds and native validation.
+- Stock Slack reference capture used only the existing task-owned private canvas.
+  The appended text probe and exact restoration both received HTTP 200, and a
+  reload showed the original bold/Unicode paragraph. Before/after canonical loads
+  prove all five non-target sections byte-identical and target content/parents
+  restored. The original Slack route and empty composer were preserved.
+- Files changes reduce rows from 72 to 56 pixels and previews from 44 to 32,
+  compact surrounding controls, center row actions and preserve full title and
+  metadata tooltips. An isolated normal/narrow checker covers geometry, search
+  draft/caret preservation during a result-count render, actions, focus and
+  reaching the final row. Native build/capture validation is pending.
+- Canvas existing-paragraph support is still in progress. The early integration
+  check identified missing scraper parser-error support; enabling its existing
+  zero-dependency `errors` feature keeps malformed markup rejection available.
+  No native text save, new passing suite or full rich-authoring parity is claimed
+  at this checkpoint.
+
+- Frozen domain and desktop suites passed **934 core tests, five ignored**
+  (`tmp/canvas-text-core-readback-fixed.log`) and **788 desktop tests, five
+  ignored** (`tmp/canvas-files-desktop-final-tests.log`). Both formatting checks
+  and diff checks passed. Independent review corrected a post-ACK race: a newer
+  legitimate canonical edit settles the prior accepted receipt; an equal revision
+  still needs matching content/parents. The regression reconstructs a validated
+  other-file snapshot, rather than mutating only its public File metadata.
+- The signed build and strict signature check passed
+  (`tmp/canvas-files-final-build.log`). Files native normal/narrow gates passed
+  (`tmp/files-density-native-final.log`), with ten and three fully visible rows
+  respectively, stable 56-pixel rows and intact controls. Root inspected both
+  final Files PNGs; full titles remain available and narrow titles ellipsize.
+- Canvas normal native interactions passed, but narrow screenshot inspection and
+  geometry found clipped Save/Cancel controls. The first captures also showed an
+  inherited primary-button margin and a misleading perpetual Saving label for an
+  uncertain result. The follow-up gives the editor a bounded text scroll area,
+  fixes both actions at 32 pixels, and distinguishes Checking/Unconfirmed. The
+  native checker now uses the intersection of modal, scroll-container and window
+  bounds in initial, invalid, stale and uncertain states. Final follow-up build
+  and native rerun are pending at this checkpoint.
+
+- The bounded editor follow-up passed signed normal/narrow interaction and
+  ancestor-clipping gates (`tmp/canvas-text-layout-native-final.log`, repeated
+  after the parent readback correction in `tmp/canvas-readback-native-final.log`).
+  Root read both final PNGs: formatting controls, scrolling text, helper copy and
+  32-pixel actions fit inside the modal at both sizes. These captures show the
+  synthetic uncertain state, not a live lost-response injection.
+- Core parent normalization is now covered by **936 passed, five ignored**
+  (`tmp/canvas-text-retention-core-final.log`). The final retention build and
+  strict signature check passed (`tmp/canvas-text-retention-final-build.log`).
+  A later focused desktop canvas gate passed **29 tests**
+  (`tmp/canvas-text-desktop-last-gate.log`); the full desktop baseline remains
+  788 passed / five ignored before this follow-up.
+- Native keyboard append and exact restoration were independently visible in
+  stock Slack, with bold/Unicode text and unchecked/checked preserved. The first
+  pair automatically returned to read view. Canonical baseline/final comparison
+  proves six stable section IDs, all five other sections byte-identical, and
+  target content/parents restored (`tmp/canvas-text-final-live-comparison.json`).
+  That pair exceeded Slack's retained-history expiry and therefore legitimately
+  rotated its actor; it does not prove retained reuse.
+- An additional rapid live repetition exposed a late-event ordering: a successful
+  accepted read can settle the receipt just before a file event marks the view
+  stale, preventing the draft-close effect or leaving read view disabled. The
+  append was reconciled with read-only Refresh and exact restoration independently
+  confirmed. A focused worker is correcting receipt-driven closure and bounded,
+  event-driven visible-reader recovery; no mutation replay is permitted.
+- Three available workers independently reviewed desktop lifecycle, domain
+  parent normalization and evidence. The runtime permits root plus three active
+  workers; all three were used, within the user's maximum of twenty.
+
+- The rapid pair additionally proves retained-session reuse: its authoritative
+  incremental responses share one trace prefix with counters 0→1, preserve the
+  same CRDT base/head and extend processed history from two to three heads.
+  Saves were 24.17 seconds apart, within the first history expiry. A subsequent
+  complete canonical reload proves all six identities and all five non-target
+  sections unchanged, with target content/parents exactly restored. Evidence:
+  `tmp/canvas-text-retained-live-comparison.json`. Stock Slack's original DM route
+  and empty composer were restored; the private capture was stopped.
+
+- Late-event correction is frozen and independently reviewed. Positive settlement
+  records the exact accepted text attempt on its current visit, so later cache
+  invalidation cannot strand that draft. Visible loaded canvases coalesce new
+  file-event revisions into one pending component-owned read task with a 250ms
+  debounce. Reads defer during export/rename/write preparation/dispatch and while
+  offline; a failed read latches automatic recovery off until explicit refresh
+  or reopen. No background polling or mutation retry was added. Three regression
+  tests cover settlement/late invalidation, absent or uncertain receipts, event
+  coalescing, errors, write stages, manual recovery and account retirement.
+- The full final desktop suite now passes **791 tests, five ignored**
+  (`tmp/canvas-late-event-final-tests.log`). The independently locked core result
+  remains 936 / five ignored because this correction only changes desktop state.
+- Explicit remaining gap: a file event during the first canonical/HTML export
+  load, before any snapshot exists, can still require manual Refresh. This batch
+  addresses event recovery for an already loaded canvas; it does not invent a
+  separate export retry policy. IME and live lost-response/account-rotation fault
+  injection also remain outside the verified scope.
+
+- Final signed late-event build and strict signature verification passed
+  (`tmp/canvas-late-event-final-build.log`). Both signed native text fixtures
+  passed again (`tmp/canvas-late-event-native-final.log`); root read both PNGs.
+- A fresh process then completed native keyboard append and exact restoration
+  without manual Refresh. Both returned automatically to Read view; after stock
+  reload the original bold/Unicode paragraph and unchecked/checked pair remained,
+  and native Edit/checkbox controls were enabled with no stale banner. Root
+  inspected the final restored CUA screenshot. The agent screenshot command
+  failed with screencapture exit 1, so no saved final live PNG is claimed. The
+  live pair validates end-to-end completion; deterministic ordering of the late
+  event is established by the new regression, not assumed from that successful
+  run. Stock Slack was restored to its original route and empty composer.
+- Updated client remains running on Home, owned PID 59287 at this checkpoint,
+  socket `/tmp/sp-canvas-late-event-live.sock`. No Slack messages or sharing
+  changes were sent. Final formatting and diff checks pass. Full Slack parity,
+  general canvas authoring and the intermittent blank-startup investigation
+  remain open; this is a completed bounded batch, not completion of the goal.
+
+
+### 2026-10-13 — First-load canvas recovery, conversation app control and runtime evidence
+
+- Prior batch classified as progress: native paragraph save/restore and retained
+  history were independently verified; full desktop/core gates passed and the
+  loaded-canvas late-event defect was corrected. The overall goal remains open.
+- Three workers now own paired first-load canvas recovery, ordinary app-message
+  conversations_select, and bounded startup socket observations. Root owns
+  integration and all live/native validation. Conversation candidates must cover
+  direct/group conversations and source-backed filters, not only channels.
+- Two sequential same-build live background launches, with the runtime probe off
+  then on, stayed responsive and visibly painted. Their individual paint timings
+  and ping samples are recorded in `docs/runtime-responsiveness.md`; they are
+  healthy counterexamples, not a blank-startup fix or measured speedup. Sparse
+  native accessibility snapshots coexisted with painted WebView screenshots.
+
+- Ordinary app-message `conversations_select` now has typed capture, complete
+  sibling form state, guarded confirmation and bounded shared picker discovery.
+  It supports channel, group-DM and member results; member IDs pass through
+  unchanged without opening a DM. Source-derived include/exclusion defaults and
+  metadata freshness have regressions, including a newer rejected remote result
+  suppressing stale cached fallback. Internal team-restricted selection on Grid
+  is explicitly unavailable because required account-types normalization state
+  is not modeled; ordinary filters remain available. Live app receipt remains
+  unverified. Public contract: https://docs.slack.dev/reference/block-kit/block-elements/select-menu-element/.
+- Paired canonical/export canvas loads now recover from first-load invalidation;
+  stale exports can only supply an inert initial preview. Automatic reads remain
+  coalesced, owner/visit guarded and latched off after either half fails. A reopened
+  view deferred by a retained Saving operation receives its first read once that
+  operation settles. No mutation replay was added.
+- Final locked desktop suite passed **807 tests, five ignored**
+  (`tmp/conversation-canvas-final-tests.log`), including the final remote rejection
+  regression. Independently locked core suite passed **944 tests, five ignored**
+  (`tmp/conversation-picker-core-tests.log`). Formatting/diff checks and the passive
+  socket Node harness passed. Signed build and strict signature verification passed
+  (`tmp/conversation-canvas-final-build.log`). Both normal/narrow conversation
+  picker fixtures, canvas recovery/text fixtures and existing user picker
+  regressions passed; root read all six PNGs. Evidence:
+  `tmp/message-conversation-native-final.log`,
+  `tmp/canvas-paired-load-native-final.log`,
+  `tmp/message-user-conversation-regression.log`. These disconnected fixtures
+  verify guarded native interactions and prepared requests, not live app receipts.
+
+- Final signed live launch accepted the new passive socket fields and remained
+  responsive for the controlled twenty-second observation; exact noncomparative
+  results are in `docs/runtime-responsiveness.md`. The private test canvas opened
+  through the paired reader with original bold/Unicode paragraph, unchecked/checked
+  pair and enabled edit controls. Root inspected its live screenshot. No live
+  canvas writes, Slack messages or sharing changes occurred in this batch. The
+  agent screencapture command failed (exit 1), so only the inspected CUA image is
+  claimed for this live read; fixture PNGs were captured successfully.
+- Updated signed client remains running, owned PID 80845, socket
+  `/tmp/sp-runtime-controlled-a3-bundle-background.sock`. Overall Slack parity,
+  live app receipt verification, richer canvas authoring and the intermittent
+  blank-startup cause remain open. This batch is progress, not goal completion.
+
+### 2026-10-13 — Next everyday interaction slices (source audit only)
+
+No implementation or new live verification is claimed for these priorities:
+
+1. **Channel mute/unmute.** The notification and sidebar models already consume
+   mute preferences (`crates/super-platinum-core/src/state/notifications.rs`
+   and `sidebar_prefs.rs`),
+   and `src/desktop/realtime.rs` applies preference events. Native channel details
+   (`src/desktop/view/channel_details.rs`) has no corresponding control. First
+   capture the exact stock notification-write protocol; do not infer it from the
+   read model. A bounded controller/action should preserve unrelated preferences.
+   Validate one explicit write in a task-owned private channel, independent stock
+   readback, immediate sidebar/notification changes, account guards, restart
+   persistence and restoration of the original setting.
+2. **Thread reply “Also send to channel”.** The thread composer in
+   `src/desktop/view/composer.rs` lacks the control, and
+   `src/desktop/state/composer.rs` plus `messaging.rs` do not retain broadcast
+   intent in ordinary pending sends. Core draft/scheduled request builders already
+   support `reply_broadcast`; that alone does not establish the native workflow.
+   Carry explicit intent through draft, send and scheduling boundaries. Offline
+   checks should cover destination changes and duplicate-send protection; private
+   validation should prove one canonical reply appears in both thread and channel
+   without duplicate rows, with ordinary replies remaining thread-only.
+3. **Edit own profile fields.** `src/desktop/profile.rs` displays name, title and
+   pronouns but offers no editor. Existing `bootstrap/self_menu.rs` profile writes
+   handle status, and the core `users.profile.set` primitive is available. Start
+   with a separate guarded display-name/pronouns editor, after checking field
+   restrictions in stock Slack. Test Cancel/no write, untouched-field preservation,
+   stale-field conflicts and account changes. Any authorized private-account
+   verification must compare fresh canonical readback and restore exact original
+   values; profile changes are workspace-visible even when testing from a private
+   conversation.
+
+These are current code omissions, not newly reproduced live failures. The proposed
+acceptance checks remain pending and do not expand this batch's completed scope.
+
+### 2026-10-13 — Composer emoji and mention-search handoff (read-only audit)
+
+- **Composer emoji insertion remains absent.** Channel/thread controls in
+  `src/desktop/view/composer.rs` expose formatting, attachments, send and schedule;
+  `reaction_picker::EmojiPicker` currently serves reactions and self status only.
+  Core `composer_completion::Kind` supports people/channels, not emoji shortcode
+  suggestions. Manual shortcode typing remains possible. Reuse the bounded emoji
+  picker for an explicit composer action, capturing the exact account, destination,
+  field scope, DOM text and selection before opening. Insert through the existing
+  reference-aware textarea boundary in `composer_references.js`; do not replace
+  a newer draft or recover identity from a display name. Test channel and thread
+  insertion at a caret and over a selection, Unicode offsets beside mentions,
+  Cancel/no change, focus/caret return, native undo, and navigation/account changes
+  while the picker is open. Normal/narrow native checks must verify the selected
+  emoji reaches the intended draft without sending a message.
+- **Mention directory search can bypass Retry-After when its task is canceled.**
+  `src/desktop/view/completion.rs` cancels the previous lookup on every new query
+  or dismissal, then permits another lookup after 250 ms. The transport's retry
+  delay lives inside that canceled request future; completion retains no endpoint
+  cooldown. Thus changing `@query` during a 429 backoff can start a fresh request
+  before the deadline. Preserve observed backoff independently of query lifetime,
+  scoped to the authenticated owner/workspace, while retaining current query,
+  destination and transport guards for installing results. Recheck admission
+  after debounce; shorter late errors must not shorten a longer deadline. Use
+  `view/completion.rs` and focused helper tests plus
+  `scripts/composer-completion.test.mjs` for controller coverage. A controlled
+  transport regression should return 429, change/dismiss/reopen the query, and
+  prove zero new requests until expiry, cached choices still usable, and stale
+  results unable to replace the current selection. Existing message user-picker
+  cooldown handling is a reference, not proof that composer search already has it.
+
+These are code-backed findings; no new live reproduction, implementation, or
+validation run was performed for this handoff. Work waits until the current
+signed/native integration gates finish.
+
+### 2026-10-13 — Composer emoji, thread broadcasts, and retained mention cooldown
+
+The preceding composer/broadcast handoffs are now implemented; live parity is still pending.
+
+- Shared channel/thread formatting controls open the existing bounded emoji picker.
+  Insertion preserves UTF-16 selections and mention identities through the existing
+  textarea reference boundary; account, destination, visit, text, IME and stale
+  picker callbacks are guarded. Standard emoji insert glyphs; custom emoji insert
+  workspace shortcodes. Shortcode suggestion completion is still absent.
+- Thread replies expose a draft-owned “Also send” checkbox, including stock
+  channel, DM and group labels. The choice survives local draft navigation/recovery
+  and follows captured destinations into text sends, uploads and schedules.
+  Thread DOM scopes now include the visit generation so delayed clearing cannot
+  erase an identical draft in a reopened thread.
+- Draft/text/broadcast-file writes use a strict one-attempt HTTP boundary.
+  Broadcast files finalize privately before one files.share request; explicit API
+  rejection differs from uncertain delivery. Canonical upload readback projects
+  into both original bags without overriding newer rows or tombstones.
+- Mention search retains endpoint admission and Retry-After independently of a
+  canceled query receiver; a controlled HTTP regression covers that cancellation.
+- Final Rust gates: desktop 823 passed / 5 ignored; independent core 957 passed /
+  5 ignored. Composer JavaScript gates: 32 passed. Formatting and diff checks pass.
+  Logs: tmp/composer-broadcast-{desktop,core,js}-verified.log.
+- Native fixtures and live Slack verification are the next gate. Do not infer
+  real broadcast delivery, trusted OS undo, or attachment parity from unit tests.
+- Original dependency updates remain present, and system activity uses the muted
+  token. Earlier committed CI evidence does not validate the current dirty tree.
+- Next separate feature: a scoped Mute/Unmute channel action. Capture stock's
+  permanent plus temporary mute writes before implementing; clearing only the
+  permanent flag is insufficient when a temporary mute is active.
+
+Native checkpoint: signed bundle and strict deep signature verification passed.
+Both thread-broadcast fixtures passed and their PNGs were inspected: visible
+checkbox/focus, bounded normal/narrow layout, one offline queued send, captured
+destination, retained choice, stale-visit rejection, and schedule choice all pass.
+The emoji fixture failed while reopening/focusing its picker after earlier
+insertion; its failure PNG was inspected. This is an open native gate, not an
+emoji completion claim. Logs: tmp/thread-broadcast-native-verified.log and
+tmp/composer-emoji-native-verified.log; captures under tmp/agent-ui/.
+
+Emoji native resolution: a composer-only capture-phase guard now consumes each
+original dialog's first choice before the native event bridge; duplicate clicks
+or Enter events from that dialog remain blocked after its ticket is retired.
+The duplicate-click regression was retained. Both emoji fixtures now pass and
+their PNGs were inspected, including selected Unicode text beside a mention,
+custom shortcode insertion in threads, Cancel/caret return, newer text rejection,
+navigation retirement and bounded 120-choice normal/narrow layout. Final desktop
+823 / 5 ignored, core 957 / 5 ignored, JavaScript 33 / 0 failed; signed bundle
+and strict signature verification pass. Final logs: tmp/composer-broadcast-
+desktop-final-gate.log, tmp/composer-broadcast-js-final-gate.log,
+tmp/composer-emoji-guard-build.log, tmp/composer-emoji-native-final.log.
+The repeat native run also passed both sizes; both final PNGs were inspected.
+Repeat evidence: tmp/composer-emoji-native-repeat.log. The earlier intermittent
+symptom did not recur in either post-fix sweep.
+Real Slack text/file broadcast delivery and trusted OS undo remain pending.
+Stock Slack was restored to its original conversation with an empty composer;
+no real Slack messages were sent in this batch.
+
+Mute protocol handoff (captured source, no writes): shared-boot-async.56e901
+bundle BtIR at14609200 sends users.prefs.setNotifications via uhjK.Kp at7590700
+and full-capture.0b815 Nu4c at1448220. The multi-pref shape is global:false,
+channel_ids:[id], prefs:[{name:"muted",value:"true"|"false"}], sync:false.
+Temporary mute uses temp_mute_expiration_ts with a Unix-seconds string. Stock
+Unmute sends only muted:false; the inspected local merge does not clear expiry.
+Do not invent an additional expiry write: canonical server readback must settle
+the behavior for an actively temporary-muted channel. Preserve all unrelated
+notification preferences and test only the authorized private channel.
+
+### 2026-10-13 — Live composer verification and channel mute integration
+
+Using the signed client in private #echotestchamber (C0AQDL3V5GU), root
+inserted a rocket through the thread emoji picker. Real Cmd-Z removed only the
+emoji and Cmd-Shift-Z restored it. Broadcast text arrived as canonical
+1791926748.668329 in both stock channel and thread; ordinary reply
+1791926881.147329 appeared only in the stock thread. Both native pending text
+rows retired after acknowledgment.
+
+The inspected synthetic 326-byte PNG was then sent as a broadcast with caption
+“Super Platinum file broadcast check · 2026-10-13 · private fixture”. Stock
+channel/thread each show one canonical 1791926912.286919, file F0C8TKF2KV1.
+Native shows that same canonical file in both views, but retained a duplicate
+local Delivery unconfirmed row. Root inspected the live screenshot (the agent
+screenshot save failed; do not claim a saved PNG). This exposed strict
+files.share envelope parsing plus loss of finalized IDs on uncertainty. The fix
+must retain exact IDs for canonical readback without replay; parser relaxation
+requires actual response shape evidence. A structural-only env-gated diagnostic
+is planned for the next authorized private validation.
+
+Channel Mute/Unmute API, guarded desktop controller, About action and offline
+fixtures are being integrated in parallel. Their final Cargo/native/live gates
+are still pending.
+
+
+Post-integration result: desktop 832 passed / 0 failed / 5 ignored; independent
+core 964 passed / 0 failed / 5 ignored. Formatting, diff checks, signed bundle
+build and strict deep codesign verification passed. Normal and narrow channel
+mute fixtures passed; both PNGs were inspected. Live native Mute changed stock
+Slack to Muted; native Unmute restored the original Just mentions preference.
+Temporary-mute server expiry behavior remains unverified.
+
+A second authorized synthetic file broadcast after the recovery fix arrived as
+canonical 1791927594.119769 with file F0C8Y0606NA. Playwright independently found
+exactly one matching stock channel row and one matching thread row. The native
+pending row retired, both canonical views show the fixture, and both composers
+are empty. The live screenshot was inspected through CUA. This proves normal
+live recovery for this upload; it does not prove outage/restart recovery. The
+opt-in tracing diagnostic emitted no receipt line in the packaged launch, so
+no real envelope-shape inference is justified. It is being changed to emit its
+already privacy-tested allowlisted structure directly when explicitly enabled.
+
+Parallel follow-up: bounded pagination for upload readback beyond 100 replies,
+channel broadcast parent context/jump, and dependency/system-message audit.
+Finalized upload IDs still need a retained recovery workflow if immediate
+readback fails; current confirmation must not be presented as durable recovery.
+
+
+Original request audit: requested rustls 0.23.45, Tokio 1.53.2 and objc2 0.6.5
+are already locked. PRs https://github.com/3kh0/super-platinum/pull/21 and
+https://github.com/3kh0/super-platinum/pull/22 are closed, unmerged. The direct
+Tao update was superseded by using pinned Dioxus Tao 0.34.8 / Wry 0.53.5,
+avoiding the mixed-version Windows hwnd error from CI 38244163656. Dependency
+baseline CI 38261872738 passed all ten jobs. Current remote HEAD d6de69f run
+38392261877 fails on List creation E0499/E0382; those exact source errors have
+already been repaired in this dirty local tree. Local checks are not proof that
+the remote CI is green. No additional dependency change or remote merge was made.
+System-message body styling remains muted while authored subtypes stay normal;
+the inspected live native channel also displayed its topic/description notices
+in gray. Stock Slack was restored to its original DM route after verifying both
+private test composers were empty.
+
+
+### 2026-10-13 — Parallel upload recovery, broadcast context and mute expiry
+
+Upload receipt readback now follows up to ten 100-row history/reply pages under
+one 30-second budget, checking owner before/after each request and refusing
+cursor cycles/missing continuations. Exhaustion is uncertainty, never permission
+to resend. Finalized file IDs are also retained on the in-memory pending upload.
+Canonical realtime/history/reply ingestion reconciles exact account, sender,
+destination and file IDs, respecting tombstones in both bags. Fresh events use
+binary lookup of incoming timestamps; only receipt attachment scans a relevant
+bag once for realtime-before-ACK. Four same-session regressions and three page
+scan regressions cover both arrival orders and owner/proof rejection. Restart
+recovery and an explicit Check delivery control are not implemented.
+
+Channel broadcasts now carry a quiet Replied to a thread context link and an
+optional bounded parent preview. The channel projection supplies authoritative
+channel identity even when Slack omits it from individual history rows. Deleted
+parents stay masked; rich Block Kit parents use label-only context rather than
+stale fallback text. Thread rows omit the preamble. Context click, toolbar Reply
+and double-click synchronously admit the exact parent/reply destination, then
+load that captured thread visit; double-click focus does not wait for network.
+Legacy reply_broadcast rows now remain visible alongside thread_broadcast rows.
+Native fixtures/checker: message-broadcast and message-broadcast-narrow.
+
+The sidebar now derives permanent and temporary mute state from one canonical
+notification projection at boot, realtime updates and readback. A local scalar
+expiry deadline avoids repeated preference scans between changes. Loaded warm
+caches rebuild once; unloaded fixtures/caches preserve their current mute sets.
+Three core and one desktop regression cover expiry, preserved permanent mutes,
+canonical preference preservation and retained uncertain mutation ownership.
+The independent production review found no outstanding ownership blocker.
+
+Core gate: 968 passed / 0 failed / 5 ignored. Desktop integration initially
+caught an RSX partial move of preview; root changed the rendered binding to borrow
+it. The post-fix desktop and native gates are pending below.
+
+
+Final integration gates: desktop 843 passed / 0 failed / 5 ignored; core 968
+passed / 0 failed / 5 ignored. cargo fmt --check and git diff --check passed.
+Signed macOS bundle build and strict deep signature verification passed. Both
+message-broadcast fixtures and both channel-mute fixtures passed on this build;
+root inspected all four final PNGs. Broadcast links/parent reply targeting,
+thread-only preamble omission, immediate double-click composer focus and bounded
+normal/narrow geometry passed. Logs: tmp/parallel-recovery-desktop.log,
+tmp/parallel-recovery-core.log, tmp/parallel-recovery-build.log,
+tmp/message-broadcast-native.log and tmp/channel-mute-native-final.log. Captures:
+tmp/agent-ui/message-broadcast{,-narrow}.png and channel-mute{,-narrow}.png.
+No new Slack writes were required for these final offline checks. Full Slack
+parity remains an active goal; temporary-mute server duration behavior, durable
+upload recovery, and additional feature/live coverage remain open.

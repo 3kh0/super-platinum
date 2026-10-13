@@ -14,6 +14,9 @@ use crate::state::{Presence, Workspace};
 pub struct NotificationConfig {
     #[serde(default)]
     pub loaded: bool,
+    /// Older cache snapshots lack the full DND schedule needed for tomorrow.
+    #[serde(default)]
+    pub temporary_schedule_loaded: bool,
     #[serde(default)]
     pub global: BTreeMap<String, Value>,
     #[serde(default)]
@@ -37,8 +40,30 @@ const USER_PREFS: &[&str] = &[
     "huddles_allow_smart_notif",
 ];
 
+fn temporary_schedule_pref(name: &str) -> bool {
+    matches!(name, "dnd_days" | "dnd_end_hour")
+        || [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ]
+        .iter()
+        .any(|day| name == format!("dnd_before_{day}") || name == format!("dnd_enabled_{day}"))
+}
+
 impl NotificationConfig {
     pub fn apply_prefs(&mut self, prefs: &BootPrefs) {
+        self.temporary_schedule_loaded = true;
+        self.user.retain(|name, _| !temporary_schedule_pref(name));
+        for (name, value) in &prefs.extra {
+            if temporary_schedule_pref(name) {
+                self.user.insert(name.clone(), value.clone());
+            }
+        }
         if let Some(value) = prefs.extra.get("all_notifications_prefs") {
             self.apply_change("all_notifications_prefs", value.clone());
         }
@@ -70,7 +95,7 @@ impl NotificationConfig {
                 .and_then(|v| serde_json::from_value(v).ok())
                 .unwrap_or_default();
             self.loaded = true;
-        } else if USER_PREFS.contains(&name) {
+        } else if USER_PREFS.contains(&name) || temporary_schedule_pref(name) {
             self.user.insert(name.into(), value);
         }
     }
@@ -88,11 +113,15 @@ impl NotificationConfig {
     pub fn muted(&self, channel: &str, now: i64) -> bool {
         self.channel_flag(channel, "muted").unwrap_or(false)
             || self
-                .channels
-                .get(channel)
-                .and_then(|p| p.get("temp_mute_expiration_ts"))
-                .and_then(|v| v.as_i64().or_else(|| v.as_str()?.parse().ok()))
+                .temporary_mute_expiration(channel)
                 .is_some_and(|end| end > now)
+    }
+
+    pub fn temporary_mute_expiration(&self, channel: &str) -> Option<i64> {
+        self.channels
+            .get(channel)
+            .and_then(|p| p.get("temp_mute_expiration_ts"))
+            .and_then(|v| v.as_i64().or_else(|| v.as_str()?.parse().ok()))
     }
 
     fn setting(&self, channel: &str, direct: bool) -> &str {

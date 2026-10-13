@@ -4,6 +4,8 @@ use super_platinum_core::slack::realtime::{self, ConnectParams, RtUpdate};
 
 use crate::state::ShellState;
 
+mod presence;
+
 pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
     // The supervisor watches the same link verdict the shell paints on the
     // rail, so a dead socket is dropped in seconds and the reconnect waits for
@@ -94,6 +96,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
             }
             RtUpdate::Event { generation, event } => {
+                let presence_only = matches!(event.as_ref(), RtEvent::PresenceChange { .. });
                 let list_refresh =
                     crate::slack_lists::events::prepare(&mut shell, &team, generation, &event);
                 let file_read = crate::file_events::prepare(&mut shell, &team, generation, &event);
@@ -210,6 +213,8 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 let modal_load = crate::app_modal::realtime(&mut shell, &team, generation, &event);
                 let list_labels =
                     crate::slack_lists::labels::prepare(&shell, &team, generation, &event);
+                let upload =
+                    crate::messaging::upload_recovery::event(&shell, &team, generation, &event);
                 apply_in_view(
                     &mut shell.core,
                     &team,
@@ -217,6 +222,14 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     *event,
                     transcript_visible,
                 );
+                if let Some((channel, ts)) = upload {
+                    crate::messaging::upload_recovery::reconcile(
+                        &mut shell,
+                        &team,
+                        &channel,
+                        Some(std::slice::from_ref(&ts)),
+                    );
+                }
                 if let Some(change) = list_labels {
                     change.apply(&mut shell);
                 }
@@ -258,7 +271,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     shell.message_arrivals.insert(arrival, now);
                     shell.realtime_insert_started = Some(now);
                 }
-                if !typing_only {
+                if presence_only {
+                    presence::refresh(&mut shell, &team);
+                } else if !typing_only {
                     shell.refresh_from_core();
                 }
                 drop(shell);
@@ -438,17 +453,10 @@ fn apply_in_view(
             workspace.notifications.apply_change(&name, value.clone());
             // Sidebar and notifications share the same mute preference.
             if name == "all_notifications_prefs" {
-                workspace.sidebar.muted = workspace
-                    .notifications
-                    .channels
-                    .keys()
-                    .filter(|channel| {
-                        workspace
-                            .notifications
-                            .muted(channel, super_platinum_core::state::now_secs())
-                    })
-                    .cloned()
-                    .collect();
+                workspace.sidebar.sync_notification_mutes(
+                    &workspace.notifications,
+                    super_platinum_core::state::now_secs(),
+                );
             }
             if name == "vip_users" {
                 workspace.apply_vip_snapshot(

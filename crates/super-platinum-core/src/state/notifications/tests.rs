@@ -305,3 +305,23 @@ fn keywords_span_styled_text_and_unfurls_do_not_create_mentions() {
     }];
     assert!(!delivers(&ws, &m));
 }
+
+#[test]
+fn temporary_schedule_boot_and_partial_updates_preserve_cache_capability_boundary() {
+    let mut config = NotificationConfig::default();
+    config.apply_change("dnd_end_hour", json!("08:00"));
+    assert!(!config.temporary_schedule_loaded);
+    let prefs = serde_json::from_value(json!({"dnd_days":"custom","dnd_end_hour":"09:00","dnd_enabled_monday":"partial","dnd_before_monday":"10:00"})).unwrap();
+    config.apply_prefs(&prefs);
+    assert!(config.temporary_schedule_loaded);
+    assert_eq!(config.user["dnd_before_monday"], json!("10:00"));
+    config.apply_change("dnd_before_monday", json!("11:00"));
+    assert_eq!(config.user["dnd_before_monday"], json!("11:00"));
+    let restored: NotificationConfig =
+        serde_json::from_value(serde_json::to_value(&config).unwrap()).unwrap();
+    assert!(restored.temporary_schedule_loaded);
+    config.apply_prefs(&Default::default());
+    assert!(!config.user.contains_key("dnd_before_monday"));
+    let legacy: NotificationConfig = serde_json::from_value(json!({"loaded":true})).unwrap();
+    assert!(!legacy.temporary_schedule_loaded);
+}

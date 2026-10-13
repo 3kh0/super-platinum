@@ -323,3 +323,15 @@
 .composer-row { padding: 4px 8px 8px; }
 .composer-row > .composer-send-btn { background: var(--text); color: var(--bg); }
 .composer-row > .composer-send-btn:hover { background: var(--muted); }
+
+.thread-broadcast { display:flex; align-items:center; gap:6px; padding:4px 8px 8px; color:var(--muted); font-size:var(--text-sm); min-width:0; cursor:pointer; }
+.thread-broadcast input { margin:0; flex:0 0 auto; accent-color:var(--accent); }
+.thread-broadcast span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.thread-broadcast:has(input:disabled) { cursor:default; opacity:.6; }
+
+/* Explicit upload verification is read-only and stays with its pending files. */
+.upload-delivery { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); margin-top:var(--space-2); min-width:0; }
+.upload-delivery-check { flex:0 0 auto; min-width:112px; height:var(--control-height); padding:0 var(--space-3); border:0; border-radius:var(--radius-md); background:var(--surface-raised); color:var(--text); font-size:var(--text-sm); }
+.upload-delivery-check:hover:not(:disabled) { background:var(--selection-bg); }
+.upload-delivery-check:disabled { color:var(--muted); cursor:default; }
+.upload-delivery-hint { flex:1 1 160px; min-width:0; color:var(--muted); font-size:var(--text-sm); line-height:var(--leading-copy); overflow-wrap:anywhere; }

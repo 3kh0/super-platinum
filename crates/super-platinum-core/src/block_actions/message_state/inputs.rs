@@ -5,7 +5,10 @@ use serde_json::{Value, json};
 
 use super::{Message, MessageStateError, element, kind, stateful};
 use crate::block_actions::form::{
-    FormField, InputKey, InputKind, InputValue, parse_message_radio, parse_message_static_select,
+    FormField, InputKey, InputKind, InputValue, parse_message_conversation, parse_message_date,
+    parse_message_multi, parse_message_radio, parse_message_static_select, parse_message_time,
+    parse_message_user, validate_message_conversation, validate_message_date,
+    validate_message_time, validate_message_user,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -68,7 +71,17 @@ impl MessageInputs {
                     return Err(MessageStateError::MalformedStructure);
                 }
                 let control_kind = kind(control)?;
-                if !matches!(control_kind, "static_select" | "radio_buttons") {
+                if !matches!(
+                    control_kind,
+                    "static_select"
+                        | "radio_buttons"
+                        | "checkboxes"
+                        | "multi_static_select"
+                        | "datepicker"
+                        | "timepicker"
+                        | "users_select"
+                        | "conversations_select"
+                ) {
                     element(control)?;
                     continue;
                 }
@@ -79,16 +92,66 @@ impl MessageInputs {
                     action_id: action_id.ok_or(MessageStateError::MalformedStructure)?,
                 };
                 let field = match control_kind {
+                    "datepicker" => parse_message_date(control),
+                    "conversations_select" => parse_message_conversation(control),
+                    "users_select" => parse_message_user(control),
+                    "timepicker" => parse_message_time(control),
                     "radio_buttons" => parse_message_radio(control),
+                    "checkboxes" | "multi_static_select" => parse_message_multi(control),
                     _ => parse_message_static_select(control),
                 }
                 .map_err(|_| MessageStateError::MalformedStructure)?;
                 let mut initial = json!({"type":control_kind});
+                if control_kind == "timepicker" {
+                    for (input, wire) in
+                        [("initial_time", "selected_time"), ("timezone", "timezone")]
+                    {
+                        if let Some(value) = control
+                            .get(input)
+                            .and_then(Value::as_str)
+                            .filter(|value| !value.is_empty())
+                        {
+                            initial[wire] = json!(value);
+                        }
+                    }
+                    if section || initial.as_object().expect("type object").len() > 1 {
+                        result.initial.insert(key.clone(), initial);
+                    }
+                    result.fields.insert(key, field);
+                    continue;
+                }
+                let multiple = matches!(control_kind, "checkboxes" | "multi_static_select");
                 if let Some(option) = control
-                    .get("initial_option")
-                    .filter(|value| !value.is_null())
+                    .get(if control_kind == "conversations_select" {
+                        "initial_conversation"
+                    } else if control_kind == "users_select" {
+                        "initial_user"
+                    } else if control_kind == "datepicker" {
+                        "initial_date"
+                    } else if multiple {
+                        "initial_options"
+                    } else {
+                        "initial_option"
+                    })
+                    .filter(|value| {
+                        !value.is_null()
+                            && (!matches!(
+                                control_kind,
+                                "datepicker" | "users_select" | "conversations_select"
+                            ) || value.as_str().is_some_and(|value| !value.is_empty()))
+                    })
                 {
-                    initial["selected_option"] = option.clone();
+                    initial[if control_kind == "conversations_select" {
+                        "selected_conversation"
+                    } else if control_kind == "users_select" {
+                        "selected_user"
+                    } else if control_kind == "datepicker" {
+                        "selected_date"
+                    } else if multiple {
+                        "selected_options"
+                    } else {
+                        "selected_option"
+                    }] = option.clone();
                     result.initial.insert(key.clone(), initial);
                 } else if section {
                     // Captured M0Sk keeps a section's type-only entry, whereas
@@ -120,6 +183,62 @@ impl MessageInputs {
             .fields
             .get(key)
             .ok_or(MessageStateError::UnknownField)?;
+        if matches!(field.kind, InputKind::Conversation) {
+            let wire = validate_message_conversation(field, selected)
+                .map_err(|_| MessageStateError::InvalidSelection)?;
+            self.initialize();
+            let field = self.fields.get_mut(key).expect("checked field");
+            field.value = InputValue::Conversation(selected.map(str::to_owned));
+            field.dirty = true;
+            field.error = None;
+            self.committed
+                .as_mut()
+                .expect("initialized")
+                .insert(key.clone(), wire.clone());
+            return Ok(wire);
+        }
+        if matches!(field.kind, InputKind::User) {
+            let wire = validate_message_user(field, selected)
+                .map_err(|_| MessageStateError::InvalidSelection)?;
+            self.initialize();
+            let field = self.fields.get_mut(key).expect("checked field");
+            field.value = InputValue::User(selected.map(str::to_owned));
+            field.dirty = true;
+            field.error = None;
+            self.committed
+                .as_mut()
+                .expect("initialized")
+                .insert(key.clone(), wire.clone());
+            return Ok(wire);
+        }
+        if matches!(field.kind, InputKind::Date) {
+            let wire = validate_message_date(field, selected)
+                .map_err(|_| MessageStateError::InvalidSelection)?;
+            self.initialize();
+            let field = self.fields.get_mut(key).expect("checked field");
+            field.value = InputValue::Date(selected.map(str::to_owned));
+            field.dirty = true;
+            field.error = None;
+            self.committed
+                .as_mut()
+                .expect("initialized")
+                .insert(key.clone(), wire.clone());
+            return Ok(wire);
+        }
+        if matches!(field.kind, InputKind::Time { .. }) {
+            let wire = validate_message_time(field, selected)
+                .map_err(|_| MessageStateError::InvalidSelection)?;
+            self.initialize();
+            let field = self.fields.get_mut(key).expect("checked field");
+            field.value = InputValue::Time(selected.map(str::to_owned));
+            field.dirty = true;
+            field.error = None;
+            self.committed
+                .as_mut()
+                .expect("initialized")
+                .insert(key.clone(), wire.clone());
+            return Ok(wire);
+        }
         let options = options(field)?;
         let selected_option = match selected {
             Some(value) => options
@@ -144,6 +263,64 @@ impl MessageInputs {
             .expect("initialized state")
             .insert(key.clone(), wire.clone());
         Ok(wire)
+    }
+
+    /// Commit the complete raw selection array after confirmation. Retained
+    /// options must come from trusted mounted display state, not DOM metadata.
+    pub fn commit_multi(
+        &mut self,
+        key: &InputKey,
+        selected: &[Value],
+        retained: &[Value],
+    ) -> Result<Value, MessageStateError> {
+        self.commit_multi_optional(key, Some(selected), retained)
+    }
+
+    pub fn commit_multi_optional(
+        &mut self,
+        key: &InputKey,
+        selected: Option<&[Value]>,
+        retained: &[Value],
+    ) -> Result<Value, MessageStateError> {
+        let field = self
+            .fields
+            .get(key)
+            .ok_or(MessageStateError::UnknownField)?;
+        crate::block_actions::form::validate_message_multi_optional(field, selected, retained)
+            .map_err(|_| MessageStateError::InvalidSelection)?;
+        let wire_type = match field.kind {
+            InputKind::Checkboxes { .. } => "checkboxes",
+            _ => "multi_static_select",
+        };
+        let mut wire = json!({"type":wire_type});
+        if let Some(selected) = selected {
+            wire["selected_options"] = json!(selected);
+        }
+        self.initialize();
+        let field = self.fields.get_mut(key).expect("checked field");
+        field.value = InputValue::Selected(
+            selected
+                .unwrap_or_default()
+                .iter()
+                .map(|option| option["value"].as_str().expect("validated").to_owned())
+                .collect(),
+        );
+        field.dirty = true;
+        field.error = None;
+        self.committed
+            .as_mut()
+            .expect("initialized")
+            .insert(key.clone(), wire.clone());
+        Ok(wire)
+    }
+
+    pub fn saved_options(&self, key: &InputKey) -> Option<&[Value]> {
+        self.committed
+            .as_ref()?
+            .get(key)?
+            .get("selected_options")?
+            .as_array()
+            .map(Vec::as_slice)
     }
 
     /// Raw values map; the API layer adds the single outer `values` envelope.
@@ -176,6 +353,38 @@ impl MessageInputs {
             .filter(|value| value.is_object())
     }
 
+    pub fn saved_conversation(&self, key: &InputKey) -> Option<&Value> {
+        self.committed
+            .as_ref()?
+            .get(key)?
+            .get("selected_conversation")
+            .filter(|value| value.is_string())
+    }
+
+    pub fn saved_user(&self, key: &InputKey) -> Option<&Value> {
+        self.committed
+            .as_ref()?
+            .get(key)?
+            .get("selected_user")
+            .filter(|value| value.is_string())
+    }
+
+    pub fn saved_date(&self, key: &InputKey) -> Option<&Value> {
+        self.committed
+            .as_ref()?
+            .get(key)?
+            .get("selected_date")
+            .filter(|value| value.is_string())
+    }
+
+    pub fn saved_time(&self, key: &InputKey) -> Option<&Value> {
+        self.committed
+            .as_ref()?
+            .get(key)?
+            .get("selected_time")
+            .filter(|value| value.is_string())
+    }
+
     /// Parse transactionally, prune only removed identities from stored state,
     /// and reconcile component display independently from committed wire state.
     pub fn reconcile(&mut self, message: &Message) -> Result<(), MessageStateError> {
@@ -186,6 +395,147 @@ impl MessageInputs {
             };
             field.dirty = old.dirty;
             field.revision = old.revision;
+            if matches!(
+                field.kind,
+                InputKind::Conversation
+                    | InputKind::User
+                    | InputKind::Date
+                    | InputKind::Time { .. }
+            ) || matches!(
+                old.kind,
+                InputKind::Conversation
+                    | InputKind::User
+                    | InputKind::Date
+                    | InputKind::Time { .. }
+            ) {
+                let initial_key = if matches!(field.kind, InputKind::Conversation) {
+                    "initial_conversation"
+                } else if matches!(field.kind, InputKind::User) {
+                    "initial_user"
+                } else if matches!(field.kind, InputKind::Time { .. }) {
+                    "initial_time"
+                } else {
+                    "initial_date"
+                };
+                if matches!(
+                    (&old.kind, &field.kind),
+                    (InputKind::Conversation, InputKind::Conversation)
+                        | (InputKind::User, InputKind::User)
+                        | (InputKind::Date, InputKind::Date)
+                        | (InputKind::Time { .. }, InputKind::Time { .. })
+                ) {
+                    if old.raw.get(initial_key) == field.raw.get(initial_key) {
+                        field.value = old.value.clone();
+                    } else {
+                        field.revision = old.revision.wrapping_add(1);
+                    }
+                } else {
+                    // A different component is mounted; it consumes only its
+                    // own saved wire property, never another control's value.
+                    if matches!(field.kind, InputKind::Conversation) {
+                        if let Some(saved) = self.saved_conversation(key).and_then(Value::as_str) {
+                            field.value = InputValue::Conversation(Some(saved.into()));
+                        }
+                    } else if matches!(field.kind, InputKind::User) {
+                        if let Some(saved) = self.saved_user(key).and_then(Value::as_str) {
+                            field.value = InputValue::User(Some(saved.into()));
+                        }
+                    } else if matches!(field.kind, InputKind::Date) {
+                        if let Some(saved) = self
+                            .saved_date(key)
+                            .and_then(Value::as_str)
+                            .filter(|s| !s.is_empty())
+                        {
+                            field.value = InputValue::Date(Some(saved.into()));
+                        }
+                    } else if matches!(field.kind, InputKind::Time { .. }) {
+                        if let Some(saved) = self
+                            .saved_time(key)
+                            .and_then(Value::as_str)
+                            .filter(|s| !s.is_empty())
+                        {
+                            field.value = InputValue::Time(Some(saved.into()));
+                        }
+                    } else if matches!(
+                        field.kind,
+                        InputKind::StaticSelect { multiple: true, .. }
+                            | InputKind::Checkboxes { .. }
+                    ) {
+                        if let Some(saved) = self.saved_options(key) {
+                            field.value = InputValue::Selected(
+                                saved
+                                    .iter()
+                                    .filter_map(|o| {
+                                        o.get("value").and_then(Value::as_str).map(str::to_owned)
+                                    })
+                                    .collect(),
+                            );
+                        }
+                    } else if let Some(saved) = self
+                        .saved_option(key)
+                        .and_then(|o| o.get("value"))
+                        .and_then(Value::as_str)
+                        .filter(|v| !matches!(field.kind, InputKind::Radio { .. }) || !v.is_empty())
+                    {
+                        field.value = InputValue::Selected(vec![saved.into()]);
+                    }
+                    field.revision = old.revision.wrapping_add(1);
+                }
+                continue;
+            }
+            let was_multi = matches!(
+                &old.kind,
+                InputKind::Checkboxes { .. } | InputKind::StaticSelect { multiple: true, .. }
+            );
+            let is_multi = matches!(
+                &field.kind,
+                InputKind::Checkboxes { .. } | InputKind::StaticSelect { multiple: true, .. }
+            );
+            if was_multi || is_multi {
+                let same_kind = old.raw.get("type") == field.raw.get("type");
+                if !same_kind {
+                    let saved = if is_multi {
+                        self.saved_options(key).map(|options| {
+                            options
+                                .iter()
+                                .filter_map(|option| {
+                                    option
+                                        .get("value")
+                                        .and_then(Value::as_str)
+                                        .map(str::to_owned)
+                                })
+                                .collect()
+                        })
+                    } else {
+                        self.saved_option(key)
+                            .and_then(|option| option.get("value"))
+                            .and_then(Value::as_str)
+                            .filter(|value| {
+                                !matches!(&field.kind, InputKind::Radio { .. }) || !value.is_empty()
+                            })
+                            .map(|value| vec![value.to_owned()])
+                    };
+                    if let Some(saved) = saved {
+                        field.value = InputValue::Selected(saved);
+                    }
+                    field.revision = old.revision.wrapping_add(1);
+                } else if matches!(&field.kind, InputKind::Checkboxes { .. }) {
+                    // s+nw has no prop-update reset at all.
+                    field.value = old.value.clone();
+                } else if field
+                    .raw
+                    .get("initial_options")
+                    .is_some_and(|value| !value.is_null())
+                    && old.raw.get("initial_options") != field.raw.get("initial_options")
+                {
+                    // etBz resets only for a changed truthy initialOptions;
+                    // JavaScript empty arrays are truthy. Wire state stays put.
+                    field.revision = old.revision.wrapping_add(1);
+                } else {
+                    field.value = old.value.clone();
+                }
+                continue;
+            }
             let was_radio = matches!(&old.kind, InputKind::Radio { .. });
             let is_radio = matches!(&field.kind, InputKind::Radio { .. });
             if was_radio != is_radio {
@@ -287,7 +637,18 @@ fn scan_owned(
             let direct = elements.iter().any(|element| std::ptr::eq(*element, value));
             if let Some(kind) = object.get("type").and_then(Value::as_str)
                 && (stateful(kind) || kind.ends_with("_select") || kind.ends_with("_input"))
-                && !(direct && matches!(kind, "static_select" | "radio_buttons"))
+                && !(direct
+                    && matches!(
+                        kind,
+                        "static_select"
+                            | "radio_buttons"
+                            | "checkboxes"
+                            | "multi_static_select"
+                            | "datepicker"
+                            | "timepicker"
+                            | "users_select"
+                            | "conversations_select"
+                    ))
             {
                 return Err(MessageStateError::StatefulControl);
             }
@@ -310,3 +671,18 @@ fn scan_owned(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod multi_tests;
+
+#[cfg(test)]
+mod date_tests;
+
+#[cfg(test)]
+mod time_tests;
+
+#[cfg(test)]
+mod user_tests;
+
+#[cfg(test)]
+mod conversation_tests;

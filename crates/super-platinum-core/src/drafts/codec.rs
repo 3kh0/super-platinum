@@ -1,6 +1,6 @@
 //! A deliberately small, reversible projection for ordinary text composers.
 //!
-//! Accepted snapshots have one top-level destination, no files, and exactly one
+//! Accepted snapshots have one conversation/thread destination, no files, and exactly one
 //! rich_text / rich_text_section containing canonical text runs. Decode succeeds
 //! only if encoding the projected text reproduces the complete Snapshot exactly
 //! (JSON object ordering excepted). Unknown fields are rejected, not discarded.
@@ -18,7 +18,7 @@ use serde_json::{Value, json};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum Unsupported {
-    #[error("only one top-level conversation is supported")]
+    #[error("only one valid conversation or thread destination is supported")]
     Destination,
     #[error("file attachments require a different composer")]
     Files,
@@ -48,24 +48,44 @@ impl Projection {
     /// Selection changes do not change Slack content. An unchanged projection
     /// returns its original snapshot; edited text must pass the same strict codec.
     pub fn snapshot_for(&self, composer: &ComposerState) -> Result<Snapshot, Unsupported> {
-        if composer.text == self.composer.text {
+        if composer.text == self.composer.text
+            && composer.reply_broadcast == self.composer.reply_broadcast
+        {
             Ok(self.raw.clone())
         } else {
-            encode(&self.key, &composer.text)
+            let mut snapshot = encode_composer(&self.key, composer)?;
+            if self.key.thread.is_some()
+                && !composer.reply_broadcast
+                && self.raw.destinations[0].get("broadcast").is_some()
+            {
+                snapshot.destinations[0]["broadcast"] = Value::Bool(false);
+            }
+            Ok(snapshot)
         }
     }
 }
 
 fn destination(key: &DraftKey) -> Result<Value, Unsupported> {
-    if key.thread.is_some()
-        || key.team.trim().is_empty()
+    if key.team.trim().is_empty()
         || key.channel.trim().is_empty()
         || key.team.trim() != key.team
         || key.channel.trim() != key.channel
     {
         return Err(Unsupported::Destination);
     }
-    Ok(json!({"channel_id":key.channel}))
+    let mut destination = json!({"channel_id":key.channel});
+    if let Some(thread) = &key.thread {
+        if !thread.split_once('.').is_some_and(|(s, f)| {
+            !s.is_empty()
+                && !f.is_empty()
+                && s.bytes().all(|c| c.is_ascii_digit())
+                && f.bytes().all(|c| c.is_ascii_digit())
+        }) {
+            return Err(Unsupported::Destination);
+        }
+        destination["thread_ts"] = json!(thread);
+    }
+    Ok(destination)
 }
 fn exact_keys(value: &Value, keys: &[&str]) -> bool {
     value.as_object().is_some_and(|object| {
@@ -187,10 +207,36 @@ pub fn encode(key: &DraftKey, text: &str) -> Result<Snapshot, Unsupported> {
     })
 }
 
+/// Preserve explicit thread destination intent independently of text selection.
+pub fn encode_composer(key: &DraftKey, composer: &ComposerState) -> Result<Snapshot, Unsupported> {
+    let mut snapshot = encode(key, &composer.text)?;
+    if composer.reply_broadcast {
+        if key.thread.is_none() {
+            return Err(Unsupported::Destination);
+        }
+        snapshot.destinations[0]["broadcast"] = json!(true);
+    }
+    Ok(snapshot)
+}
+
 /// Reject anything whose raw representation cannot be reproduced exactly. Even
 /// semantically redundant fields/partitions are kept opaque rather than dropped.
 pub fn decode(key: &DraftKey, snapshot: &Snapshot) -> Result<Projection, Unsupported> {
-    if snapshot.destinations != vec![destination(key)?] {
+    let mut expected_destination = destination(key)?;
+    let broadcast = if let Some(value) = snapshot
+        .destinations
+        .first()
+        .and_then(|d| d.get("broadcast"))
+    {
+        if key.thread.is_none() || !value.is_boolean() {
+            return Err(Unsupported::Destination);
+        }
+        expected_destination["broadcast"] = value.clone();
+        value.as_bool().unwrap()
+    } else {
+        false
+    };
+    if snapshot.destinations != vec![expected_destination.clone()] {
         return Err(Unsupported::Destination);
     }
     if !snapshot.file_ids.is_empty() {
@@ -246,12 +292,17 @@ pub fn decode(key: &DraftKey, snapshot: &Snapshot) -> Result<Projection, Unsuppo
             text.push(marker);
         }
     }
-    if encode(key, &text)? != *snapshot {
+    let mut encoded = encode(key, &text)?;
+    encoded.destinations = vec![expected_destination];
+    if encoded != *snapshot {
         return Err(Unsupported::NotReversible);
     }
     Ok(Projection {
         key: key.clone(),
-        composer: ComposerState::with_text(text),
+        composer: ComposerState {
+            reply_broadcast: broadcast,
+            ..ComposerState::with_text(text)
+        },
         raw: snapshot.clone(),
     })
 }

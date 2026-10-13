@@ -59,6 +59,22 @@ pub async fn open_thread_at(
         shell.begin_thread(root.clone(), target.clone());
         shell.remember_surface();
     }
+    let scope = state.peek().thread_scope();
+    load_started_thread(state, channel, root, target, scope).await;
+}
+
+/// Continue an already-admitted thread open without beginning a second visit.
+/// Check before credentials or fixture mutation, as well as after network awaits.
+pub(crate) async fn load_started_thread(
+    mut state: Signal<ShellState>,
+    channel: String,
+    root: String,
+    target: Option<String>,
+    scope: String,
+) {
+    if state.peek().thread_scope() != scope {
+        return;
+    }
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         state.write().thread_loading = false;
         return;
@@ -72,10 +88,7 @@ pub async fn open_thread_at(
     let Some(session) = sessions.into_iter().find(|session| session.team_id == team) else {
         return;
     };
-    let visit = Visit {
-        scope: state.peek().thread_scope(),
-        transport,
-    };
+    let visit = Visit { scope, transport };
     let range = super_platinum_core::thread_history::ThreadHistory::initial(
         target.as_deref(),
         super_platinum_core::state::now_secs(),
@@ -112,6 +125,12 @@ pub async fn open_thread_at(
             });
             {
                 let mut shell = state.write();
+                let upload_ids = crate::messaging::upload_recovery::incoming(
+                    &shell,
+                    &team,
+                    &channel,
+                    &page.messages,
+                );
                 shell.thread_history.start(&range, &root, &page);
                 let messages = shell
                     .core
@@ -135,6 +154,12 @@ pub async fn open_thread_at(
                         Some("This reply is unavailable. It may have been deleted.".into());
                     shell.show_toast("This reply is unavailable. It may have been deleted.");
                 }
+                crate::messaging::upload_recovery::reconcile(
+                    &mut shell,
+                    &team,
+                    &channel,
+                    Some(&upload_ids),
+                );
                 shell.refresh_from_core();
             }
             super::session::hydrate_current_surface(state).await;
@@ -232,18 +257,30 @@ pub async fn load_thread_page(
         Ok(page) => {
             {
                 let mut shell = state.write();
+                let upload_ids = crate::messaging::upload_recovery::incoming(
+                    &shell,
+                    &team,
+                    &channel,
+                    &page.messages,
+                );
                 shell
                     .thread_history
                     .apply(direction, &request, &root, &page);
                 let bag = shell
                     .core
                     .threads
-                    .entry((team, channel, root.clone()))
+                    .entry((team.clone(), channel.clone(), root.clone()))
                     .or_default();
                 for message in page.messages {
                     bag.upsert(super_platinum_core::state::visible_message(message));
                 }
                 bag.recount_thread_unreads(&root);
+                crate::messaging::upload_recovery::reconcile(
+                    &mut shell,
+                    &team,
+                    &channel,
+                    Some(&upload_ids),
+                );
                 shell.refresh_from_core();
             }
             super::session::hydrate_current_surface(state).await;

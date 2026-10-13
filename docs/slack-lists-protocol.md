@@ -210,6 +210,418 @@ creation identities and undo history. It handles
 `slack_connect_file_upload_sharing_blocked` explicitly; generic failures produce
 a FailedSaving banner.
 
+### Ordinary User-column editor — implemented live checkpoint
+
+The native typed editor now supports exactly `type: "user"` through the existing
+`lists.cells.update` path. B `uDYD` at 7312962 emits `user: [IDs]`, with `[]`
+clearing the field. B's entity editor near 176889xx and `convertEntity` near
+17991030 use `options.format: "single_entity" | "multi_entity"`; absent/null
+format defaults to single. Unknown or malformed formats stay read-only. The
+native core retains ordered, distinct canonical IDs and checks cardinality in
+both the original and proposed values. S `kflk` at 4619765 recognizes the U/W
+member-ID form with at least eight uppercase alphanumeric suffix characters.
+The native mutation boundary accepts that canonical form, excluding paste-only
+`@` prefixes and special aliases. It does not require an existing selected ID to
+be present in the current user cache.
+
+The ordinary picker configuration is source-backed: S `Cmmr.$$` at 1233150
+allows empty queries, enables members with self included, excludes bots and
+Slackbot, disables channels/user groups, and requests frecency plus self-first
+sorting. B `Ecf1` at 18144813 consumes this configuration. B
+`getMemberFilterFunction` at 4209831 excludes deleted and profile-only users by
+default; the inherited member defaults allow guests and external users. Native
+candidates therefore exclude `deleted`, `is_bot`, `USLACKBOT`, and
+`is_profile_only_user: true`, while admitting guests, external members, and
+self. This is a bounded ordinary people picker, not a port of every special
+member/agent option in the general Slack searcher.
+
+Restricted selected tokens do not imply removal is disabled: B token rendering
+near 10698300 passes `isRestricted` separately from `isDisabled`, and only the
+latter suppresses the remove handler. Native selected IDs consequently remain
+visible and removable even when uncached or excluded from new search results.
+Single selection replaces the ID; multi selection retains the other IDs;
+removing the final selection sends the typed empty array only after Save.
+`assignee` and `todo_assignee` are excluded from this slice. In particular, the
+TodoAssignee callbacks and file-sharing behavior are not inferred for ordinary
+User columns.
+
+`slack_lists/editor/entities.rs` owns the shared User/Channel query lifecycle
+and keeps a maximum of 30 candidate rows; `editor/users.rs` owns User candidate
+policy. Cached matches use local name/handle/real-name/email matching with self-first and
+available DM-frecency ranking. Debounced remote queries reuse the existing
+`fetch_users_search` adapter with its 30-result limit. Eligible remote fuzzy
+matches are retained even when they do not pass the local substring matcher.
+Results are deduplicated by ID; no search result mutates the canonical List or
+its workspace user cache. Search ownership includes the full account/transport
+scope, List visit, editor generation, canonical revision, query revision, and
+visible cell/detail authority. A late result cannot replace a newer query,
+closed editor, changed account, or stale cell. Rate-limited queries retain
+cached results and honor the retry deadline without automatic resubmission.
+
+`view/slack_lists/editor/entities.rs` uses a labelled search input, native
+radio/checkbox choices, and explicit removal buttons. Typing, selecting,
+removing, and Cancel remain local draft operations. Save uses the existing
+permission/schema/value preflight and retained cell-mutation receipt; pending
+and uncertain operations keep the existing duplicate-write locks and readback
+recovery. No new sharing or assignment endpoint is called.
+
+Core and desktop regression tests have been added for typed single/multi/empty
+values, malformed schema/IDs, unknown selected IDs, candidate exclusions,
+bounded self-first search, fuzzy remote results, stale ownership, hidden-cell
+query rejection, and Retry-After. The independent locked core suite passed
+**900 tests with 3 ignored** (`tmp/list-users-core-tests.log`). The final desktop
+suite passed **749 tests with 5 ignored**, including eight focused User tests
+and fixture isolation (`tmp/list-users-desktop-tests-final.log`). The disconnected native checker
+additionally exercises F2 entry/focus recovery,
+search-and-Cancel with zero writes, single replacement/clear, uncached-ID
+removal, multi selection, task-assignee read-only behavior, duplicate Save
+suppression, and canonical fixture readback.
+
+Run `python3 scripts/check-slack-list-native.py` after building/signing
+`target/debug/Super Platinum.app`; the script launches the signed executable
+inside that bundle. It runs `slack-list` and `slack-list-narrow` fixtures and
+requires the new `userEdits` receipt flags plus
+`tmp/agent-ui/slack-list-user-editor.png` and
+`tmp/agent-ui/slack-list-narrow-user-editor.png`. Both normal/narrow runs passed
+all synthetic User-checker assertions (`tmp/list-users-native-checks-final.log`),
+and both editor PNGs were inspected, along with the live native picker capture.
+The signed build (`tmp/list-users-signed-build-final.log`) and deep/strict
+signature verification passed.
+
+The private live checkpoint used a new ordinary User column named
+`Verification people 2026-10-13`, created through stock Slack's column UI with
+`type: "user"` and `options.format: "multi_entity"`. A newly created disposable
+native item was the only record edited. Native Save selected the signed-in user;
+exact canonical readback contained that one ID. Removing the token and choosing
+Cancel retained the same array. Removing it again and choosing Save produced
+`user: []`. Stock Slack's accessible UI independently showed the selected person
+and then the empty field. Evidence: `tmp/list-users-selected.log`,
+`tmp/list-users-cancelled.log`, and `tmp/list-users-cleared.log`.
+
+Native deletion removed the disposable item afterward. The final read-only
+comparison found all five original records' field maps unchanged and no extra
+records (`tmp/list-users-cleanup.log`). The private read probe accepted the
+observed access entry only when its `user_id` exactly matched the signed-in user
+and its access was `write`; it did not permit other users or change sharing.
+Stock Slack's original route and draft state were restored.
+
+This establishes a live self-selection, Cancel, clear, and cleanup round trip
+for an ordinary multi-User column. Multiple-person writes, single-User live
+writes, and authenticated remote people-search behavior remain unverified. The
+synthetic single/multiple selection cases and normal/narrow layout passed the
+native gate above. The temporary read-only probe source was removed after use.
+
+### Ordinary Channel-column references — source and implementation
+
+B `uDYD` at 7312962 writes existing Channel cells as `channel: [IDs]`; an empty
+selection writes `channel: []`. B `convertEntity` near 17991030 and the entity
+editor near 176889xx use the same `options.format` cardinality as User columns:
+absent/null/`single_entity` is single selection, `multi_entity` is multiple.
+The core exposes `CellEditValue::Channels` and `Column::is_multi_channel`, reuses
+shared typed entity validation, and rejects unknown/malformed formats, duplicate
+IDs, malformed stored arrays, and single-column arrays with multiple IDs.
+
+Canonical identity and picker discovery are separate. S `kdyP` at 4619174
+recognizes `^(C|G|D|Z)[A-Z0-9]{8,}$`. That grammar permits retaining/removing an
+existing unknown reference without assuming it is an eligible new choice. The
+picker must not infer channel type from an ID alone, and selected IDs are not
+silently discarded because they are absent from the local directory.
+
+The ordinary Channel picker uses S `Cmmr.hZ` at 1233150 through B `Ecf1` at
+18149964: empty queries are allowed, archived channels are excluded, private
+and other-team channels are included, and ranking uses frecency. Inherited
+B `fRHe` defaults near 420009x include public channels and externally shared
+channels, set `onlyIfMember: false`, and set `includeIms: false` and
+`includeMpims: false`. There is no blanket membership requirement for ordinary
+public/private reference choices and no current-team-only restriction.
+
+The source's cached discovery is more specific than a nonempty name:
+B `getLocalChannels` at 4207693 unions S `EmXR.Wr`/`sE` public/private selectors
+near 2261560. S `zdO/` at 3698511 defines public as `is_channel` and neither
+private nor MPIM, and private as `is_private || is_group`, excluding MPIMs.
+S `crlq.cV` at 3714143 further requires `is_member` only for private Salesforce
+record channels: `properties.record_channel.record_id` must have exactly three
+colon-separated components with first component `S` (S `QgzF` at 5260692,
+`37Z9` at 4620644). Do not replace this with a guessed record-type rule or a
+membership requirement for every private channel. Native new choices require
+explicit channel/private/group metadata, exclude IM/MPIM/archived results,
+and preserve that special private-record membership gate. Unknown metadata
+cannot establish discovery eligibility.
+
+The desktop integration reuses the existing bounded `fetch_channels_search`
+adapter: Edge `channels/search`, count 30, `fuzz: 1`, `filter: "xws"`, and
+`include_record_channels: true`. Those request fields are an existing adapter
+contract, not proof that remote discovery matches every stock searcher option.
+Eligible cached results and remote fuzzy results are combined under the existing
+List/editor/account/query ownership guards; no result joins a channel, changes
+membership, or updates sharing. The stock entity editor also offers a separate
+create-channel sentinel; that action is outside this slice. Remote continuation,
+metadata hydration for incomplete result shapes, and full cross-workspace
+search/ranking parity remain unverified.
+
+Save uses the existing `lists.cells.update` permission/schema/record preflight
+and exact typed receipt/readback contract. Cancel is local, clear is explicit
+Save of an empty array, and no row/schema creation or personal To-do behavior is
+added. Core regressions cover default/single/multi cardinality, canonical prefix
+isolation from User IDs, retained unknown references, clear/exact wire and
+sibling preservation, malformed schema, stale preflight, and receipt/readback
+identity. The independent core suite passed **904 tests with 3 ignored** and the
+final desktop suite passed **759 tests with 5 ignored**
+(`tmp/list-channels-desktop-tests-final.log`), including the shared User/Channel
+extraction. The signed build and deep/strict signature verification passed.
+
+A stock Slack reference check saved the exact private test channel ID in an
+ordinary Channel cell on a disposable task-owned item. Its typed canonical value
+was `channel: [the private test channel ID]`, and stock Slack displayed the
+selected channel link (`tmp/list-channels-stock-selected.log`). Pressing Tab
+after selection also opened stock's create-channel dialog; it was closed before
+Next and no channel was created. Creating a channel from this picker remains an
+explicit native feature gap; the implemented reference editor only selects or
+removes existing IDs.
+
+A subsequent native live round trip used only that disposable task-owned item.
+Removing the private channel token and choosing Cancel preserved its exact
+one-ID array; removing it and choosing Save produced `channel: []`. Pasting the
+misspelled query `echotestchambr` returned `echotestchamber`, which does not match
+the local substring predicate. Selecting that result and saving restored the
+exact private channel ID array. The guarded readback logs are
+`tmp/list-channels-native-cancel.log`, `tmp/list-channels-native-clear.log`, and
+`tmp/list-channels-native-selected.log`. This verifies a live fuzzy result and
+native Cancel/clear/select behavior; it does not establish complete remote or
+cross-workspace discovery, multi-channel live writes, or every ranking case.
+
+Native deletion removed only the disposable record. Final canonical comparison
+confirmed all five baseline records' full field maps and parents were unchanged,
+no extra records remained, and the private sharing/ownership guards still
+passed (`tmp/list-channels-native-cleanup.log`). The live native picker was
+visually inspected through computer-use capture and was readable. The agent
+screenshot command failed, so this checkpoint has no saved live PNG artifact.
+
+The original signed binary subsequently passed both normal/narrow offline runs
+(`tmp/list-channels-native-checks-retry.log`): all 11 Channel and 12 User receipt
+flags were true. The normal/narrow Channel editor PNGs and narrow User editor PNG
+were inspected; controls fit and remained readable. Two earlier attempts failed
+before the Channel scenario: one could not find the overlay; another observed
+an unexpected Budget value of 6. Those earlier failures remain preserved rather
+than attributed to an unproven product cause.
+
+A separate live fast-typing check dropped letters in the shared controlled search
+input. The bounded follow-up now uses `initial_value` as the mount seed, preserving
+browser-owned text and caret across delayed cached-result renders. Native
+regressions were added for both User and Channel pickers; query/owner/mutation guards are
+unchanged. The follow-up desktop suite passed **759 tests, 5 ignored**
+(`tmp/list-channels-input-desktop-tests.log`). The modified signed build and
+deep/strict signature check passed (`tmp/list-channels-input-signed-build.log`),
+followed by successful normal and narrow native runs
+(`tmp/list-channels-input-native-checks.log`). Both sizes reported User and Channel
+`inputSurvivesResultRender: true`. Fresh Channel PNGs at both sizes and the narrow
+User PNG were inspected and fit clearly. Both Cargo formatting checks and the
+diff check passed, and the temporary read-only probe source was removed.
+These synthetic DOM assertions do not establish trusted OS input or IME
+completeness, and the earlier fixture failures remain unexplained. The private
+round-trip evidence above belongs to the original Channel binary; the follow-up
+changes input ownership, not the wire or dispatch guards.
+
+### Ordinary Link-column editing — implemented and verified checkpoint
+
+Ordinary Link editing now uses the existing guarded cell update lifecycle.
+`CellEditValue::Link(Option<LinkValue>)` carries the original URL, optional display
+name, and display-as-URL flag. `None` clears the field. The renderer-neutral
+implementation lives in `slack_lists/cell_edit/link.rs` and its `detector/`
+subtree; the desktop keyed cell editor provides URL/Name drafts, explicit Save,
+Cancel, Remove Link, and display-mode actions. The tested corpus establishes
+offline source equivalence; the scoped live roundtrip below also verifies specific
+server normalization and display-mode behavior. The integrated core, desktop,
+signed build, normal/narrow native checks, and scoped live cleanup passed as
+recorded below. No directory discovery, upload, or new mutation endpoint was added.
+
+B `uDYD` at 7312962 accepts the first array element or a scalar link object,
+camel-cases its keys through S `ijf8` at 4038745, and emits the ordinary
+`lists.cells.update` member:
+
+```text
+link: [{original_url, display_as_url, display_name?}]
+```
+
+A truthy `originalUrl` produces the singleton; otherwise it emits `link: []`.
+`displayAsUrl` defaults to false when null/missing. `displayName` is included only
+when truthy. The write projection does not include `attachment` or other unfurl
+metadata. This is the existing cell request with exact row/column identities,
+not a request to fetch, open, upload, or recreate a resource.
+
+B `LinkEditModal` at 18166249 has Link and Name inputs with explicit Save,
+Cancel, and Remove Link. Save calls `VTjO.d(url, name)`; Remove sends null to the
+same field updater. B `VTjO` at 2821065 returns an empty string for falsey input;
+otherwise it calls the shared detector on `input.trim()`, takes the first match's
+URL, and falls back to the **original untrimmed input** when no match exists.
+It also sets local `attachment: null` and an optional display name. Consequently,
+editing through this modal does not preserve `displayAsUrl` automatically: the
+converter's default becomes false. A separate display-mode action at B 18175362
+spreads the existing value and negates `displayAsUrl`. The menu is at B 18160490.
+
+The detector is a material implementation dependency, not interchangeable with
+`Url::parse`, unconditional trimming, or adding `https://`:
+
+- S `v+tG` at 4587174 merges URL, email, and phone matches, resolves overlaps,
+  sorts by text offset, and returns the earliest match first. This caller leaves
+  the email and phone detectors enabled; `go/` detection is not enabled.
+- S `vp1n` / `detectUrls` at 4608976 adds `http://` to recognized bare domains,
+  applies the captured TLD rules, strips selected trailing punctuation, and
+  handles brackets and special schemes. It does not simply reject all strings
+  without a URL scheme.
+- S `detectEmails` at 4586810 produces `mailto:` matches. The adjacent `xt89`
+  phone detector produces `tel:` matches. Copying these behaviors requires their
+  captured matching rules, including overlap precedence and Unicode boundaries.
+
+B's read renderer at 18164480 distinguishes attachment loading, explicit display
+name, display-as-URL, and server attachment title/fallback; Slack message links
+can have a richer unfurl surface. Native safe-link opening remains a separate
+policy from storing field text. A text value must never bypass that opening
+allowlist merely because Slack permits it as `original_url`.
+
+The core parser accepts a singleton array or scalar stored object, including
+consistent snake/camel-case aliases. A missing/null `link` member or an empty
+array is empty; an object without a string original URL is rejected;
+multiple entries, conflicting aliases, invalid typed members, and unknown stored
+semantics reject. The full original document, column, and record remain bound
+for preflight; this parsed value does not replace the canonical snapshot. Wire
+serialization emits only the three captured editable members. Receipt comparison
+accepts known attachment dictionary/null enrichment and equivalent known aliases,
+while URL, name, display mode, row, and column must match. It does not broadly
+ignore new response fields. Existing permission, personal-task exclusion, no-retry
+transport, and exact canonical readback guards are retained.
+
+`LinkValue::from_input` ports the captured default detector and JS trim behavior.
+Fixed regex/TLD data are reproducibly exported from the captured modules by
+`scripts/slack-list-link-oracle.mjs`; `--export-patterns` regenerates both that data
+and the core synthetic oracle. `regress = "=0.12.0"` with `std` and `utf16`
+features provides ECMAScript lookarounds/backreferences. These captured patterns
+are **non-Unicode (`g`/`gi`, not `u`)**: matching and offsets use UCS-2/UTF-16 code
+units. The default URL pattern expands to approximately 117,000 characters and
+is compiled once with the other fixed patterns.
+
+A compatibility adapter is necessary: regress 0.12's escape parser combines
+adjacent escaped high/low surrogates even in non-`u` mode. In a source class such
+as `[\ud83c\udffb-\udfff]`, that would incorrectly combine the first pair and
+reject the remaining range. `non_unicode_pattern` presents only active surrogate
+escapes as literal `u32` code units to `Regex::from_unicode`; other escapes and
+escaped backslashes remain intact. Tests cover the high/low class members,
+excluded neighbors, literal backslashes, and an outside-class pair consuming two
+units. This does not enable `u`, discard ranges, or replace Unicode characters.
+An output containing an unpaired surrogate is rejected rather than silently
+rewritten into replacement characters.
+
+The offline oracle executes the actual `VTjO`, `v+tG`, and `uDYD` modules without
+Slack entrypoints, sessions, or network facilities. It records bundle SHA256s and
+uses Node's WHATWG URL with a synthetic base for the captured browser URL helper;
+the application logger dependency is blocked, with any invocation failing the
+run. The corpus now contains **1,548 synthetic normalization cases** (48 explicit
+cases plus 1,500 seeded punctuation, Unicode, overlap, case, and TLD variations)
+and 10 stored-value conversion cases. Core tests compare normalization and
+URL/Name serialization against the exported corpus. The independently locked core
+suite most recently passed **918 tests, 4 ignored**, including the corpus and
+stale/receipt regressions (`tmp/link-core-live-followup.log`; the preceding
+914-test gate is retained in `tmp/link-core-final.log`). This is differential evidence for the
+captured version and tested inputs, not a universal detector-equivalence proof.
+
+Source-equivalent optimizations avoid unnecessary URL regex work:
+
+- S 4600411's default regex has only scheme, `www.`, or domain-plus-default-TLD
+  alternatives. If none of `:`, case-insensitive `www.`, or `.` plus a prefix from
+  `NS8g.Ay`/`now` occurs, the URL scan is skipped. Email/phone detection still runs.
+  The broader email TLD set is not substituted; `.travel`, for example, remains
+  eligible for the URL scan because it begins with the default country TLD `.tr`.
+- This API returns the earliest normalized link, so URL matching stops after the
+  first accepted URL. Any earlier email/phone extending across a later URL would
+  also overlap the first URL and already be rejected. This optimization must not
+  be copied into a future API returning all detected links.
+- The scan starts at the earliest possible UTF-16 offset derived from the
+  captured alternatives: bounded scheme length, the `www.` prefix, and bounded
+  domain label counts/lengths before an eligible TLD, including optional `//`.
+  Earlier impossible starts are skipped. The regex, full original input,
+  captures, offsets, and postfilters remain unchanged; the input is not sliced.
+  Differential tests compare original and bounded scans, including boundary and
+  false-marker cases. An earlier false marker can still force more scanning.
+
+Single-run measurements using the app's optimized core profile are recorded in
+`tmp/link-detector-desktop-profile.log` (before) and
+`tmp/link-detector-desktop-final.log` (first optimizations), followed by
+`tmp/link-detector-desktop-offset.log` (bounded start). On the same measured cases,
+10 KB dots followed by a colon fell from **679.387 ms to 2.534 ms**, a colon
+followed by 10 KB dots from **682.535 ms to 2.598 ms**, and dots ending in a TLD
+from **762.409 ms to 3.101 ms**. In that run the 10,000-byte `a.` near-match took
+2.679 ms; cold initialization took 92.892 ms and 1,000 ordinary warm
+normalizations totaled 5.491 ms. These are local single-run samples, not latency
+guarantees or a universal adversarial runtime bound. Earlier false markers can
+still retain expensive candidate starts.
+
+The final integrated isolated sample in
+`tmp/link-detector-desktop-integrated-isolated.log` measured cold initialization
+at 103.643 ms and 1,000 warm normalizations at 5.037 ms. The same dots-colon,
+colon-dots, and dots-TLD cases took 2.588, 2.627, and 2.818 ms respectively.
+A separate run concurrent with the native harness took roughly 9–13 ms for those
+cases and 1,197.895 ms cold. This demonstrates load sensitivity; these runs do
+not establish a general startup or whole-app responsiveness improvement.
+
+Normalization runs through `spawn_blocking` with one shared semaphore slot. The
+blocking job retains its permit even when its editor task is cancelled, preventing
+Cancel/reopen from spawning concurrent normalizers. Visit/editor/layout guards
+are rechecked before publishing the result or dispatching a mutation. No arbitrary
+input truncation or invented stock maxlength was introduced. The fixed regexes
+and background work do not run on the Dioxus render/event thread.
+
+The scoped private verification List has these live observations:
+
+- Native Cancel discarded the Link draft without a save.
+- Native Save of `example.com` plus a name produced canonical `http://example.com`;
+  stock Slack displayed the supplied label.
+- The native Display as URL action produced `displayAsUrl: true`, verified both
+  in canonical readback and stock Slack's displayed URL.
+- Renaming through native Save reset the flag to false, again verified through
+  canonical readback and stock Slack's displayed label.
+- Native Remove Link produced canonical `link: []`, and stock Slack showed an
+  empty field.
+- Native Delete item completed for the disposable record and offered Undo. Final
+  canonical records exactly matched the five complete baseline records, with no
+  extra rows; all baseline fields and parent relationships were preserved.
+  Document sharing was unchanged. The verification Link column remains
+  intentionally task-owned. The stock route and draft were restored, and the
+  temporary probe source was removed.
+
+The observed server field uses a singleton `link` array with camelCase editable
+members and `attachment: {}`. Core edit/readback validation accepted this shape,
+and reopening the native editor showed the canonical fields, but the initial
+native read presentation showed `Unsupported link`. Alias-aware presentation now
+renders the canonical name correctly in the rebuilt live client; root inspected
+`tmp/agent-ui/link-live-after-alias-fix.png` to verify that result.
+The disconnected fixture now returns this camelCase array/enrichment shape for
+both the receipt and canonical read, while preserving snake-case submitted cells.
+
+The Name seed gap is implemented and covered by the integrated tests.
+B 18175469 opens the editor with a nonempty explicit display name, or
+otherwise `attachment[originalUrl].title ?? fallback`. Native captures that seed
+once at editor admission, independently of the original canonical Link value.
+Whitespace-only explicit names retain precedence; an empty title wins over a
+fallback; missing/null titles allow the fallback. Only the exact URL-keyed
+attachment is consulted, and malformed non-string metadata is not stringified.
+Cancel and display-mode toggles do not turn this inferred seed into a stored name;
+explicit Save can. Tests cover those boundaries and stale refresh versus reopen.
+
+Final gates: the independently locked core suite passed **918 tests, 4 ignored**;
+desktop passed **777 tests, 5 ignored** in `tmp/link-live-integration-desktop.log`.
+The latest signed build and code-signature verification passed. Both normal and
+narrow native checks passed in `tmp/link-live-final-native.log`, including camelCase
+receipts and strengthened cancellation checks; root inspected both Link editor
+PNGs. These checks are distinct from the scoped live roundtrip above.
+
+Remaining boundaries: live auth-rotation behavior, browser-versus-Node URL edge
+behavior, and inputs outside the synthetic corpus are not fully verified. Full
+attachment/unfurl presentation and asynchronous enrichment remain separate gaps;
+an empty attachment dictionary is not proof of all enrichment shapes. Unsafe
+stored schemes remain inert under the existing opening policy. This checkpoint
+does not establish full Slack Lists parity or close the broader startup
+performance gap.
+
 ## Captured record creation contract
 
 B `t0Mq` at 7276635 is `Create list record`; V `9StH` at 9785110 wraps
@@ -285,6 +697,107 @@ that `record.list_id` or the submitted timestamp is echoed. Their absence must
 not be confused with a verified conflicting identity. Actual server defaults,
 near-limit races, and uncertain-create reconciliation require separate live
 verification; no automatic retry is justified by this source.
+
+## Ordinary item deletion and authoritative readback
+
+Captured B module `78M5` (approximately 72791xx–72817xx) calls V `z8Uw`
+(9785360): `lists.records.delete` with `list_id`, `id`, and
+`_x_reason: "delete-record"`. The thunk awaits ordinary API success without
+consuming a returned record. It sends no HLC timestamp or idempotency key.
+B `kmWj` / `DeleteItemMenuItem` near 180755xx hides the action for view-only
+Lists. Confirmation is conditional, rather than universal in record details.
+Let `inList` mean the sibling primary pane has `viewType == List`, and
+`hasSubtasks` mean the loaded subtask selector is nonempty. The menu passes
+`disableUndoRedo = !inList && !hasSubtasks` and
+`disableDeleteConfirmationSpeedbump = inList && !hasSubtasks` to `78M5`:
+
+| Detail-menu context | Confirmation | Undo toast |
+| --- | --- | --- |
+| List primary pane, no known subtasks | Skipped; submits immediately | Yes |
+| Outside List, no known subtasks | Shown | No |
+| Known subtasks present | Warns that associated subtasks will also be deleted | Yes |
+
+The single-item thunk defaults to Undo enabled and confirmation skipped; other
+callers can supply different flags. A private live check of **More actions →
+Delete item** on a task-owned disposable record observed immediate deletion and
+an “Item deleted” toast with Undo and Close, matching the first row above. This
+does not establish that every delete entry point skips confirmation. The bulk
+`deleteRecords` thunk near B 179775xx instead chooses confirmation directly from
+`disableUndoRedo` and calls `lists.records.deleteMultiple` with the selected IDs.
+
+Stock Undo records a deep clone of each original record as
+`{key: recordId, fromValue: record, toValue: null}`. The history reducer near
+B 72302xx stores its inverse; S `iLfW.reverseEditAction` at 4615101 swaps the
+values and reverses mutation order. The toast calls B `J2lf.undo({listId})` near
+72900xx, which pops the **current top List-scoped Undo action**, rather than
+capturing a record-specific restore closure. Its record-restoration branch
+optimistically restores the saved snapshot and calls V `Z4eT` at 9786145:
+`lists.records.updateDeletion` with `list_id`, the **same original `id`**,
+`deleted: false`, and `_x_reason: "update-record-deletion-state"`. It neither
+creates a replacement record nor resends its fields. Redo uses the same endpoint
+with `deleted: true`. The captured delete thunk publishes the Undo toast before
+awaiting its delete request; that timing is not proof of server acceptance or a
+reason to replay an uncertain native mutation. Undo's wire path is source-backed;
+it was not exercised in this live check.
+
+B's individual record fetch near 72843xx–72852xx calls V `lY+n` (9785599),
+`lists.records.info`, with `list_id`, `id`, `include_is_subscribed: true`, and
+`_x_reason: "get-list-record"`. Its error handler explicitly treats
+`record_deleted` as a deletion tombstone. `record_not_found`, permission failure,
+or absence from a list page or saved-view projection is not equivalent evidence.
+
+The core implementation is `slack_lists/deletion.rs`,
+`slack/api/lists/deletion.rs` and `slack/transport/list_record_delete.rs`.
+`DeletionIntent` captures an ordinary writable target and its known descendant
+snapshots, then revalidates permissions, personal-list policy, canonical identity,
+raw target state and loaded descendant topology. A change in page completeness
+also retires the intent. Unrelated rows and file `last_read` do not invalidate it.
+This is a stale-intent check, not server compare-and-swap. It does not prove the
+full cascade: archived or unloaded subtasks may be absent from the page. The
+native UI currently always confirms the item **and any associated subtasks**,
+without presenting a loaded count as the total. Native Undo is unimplemented;
+confirmation-only behavior is an explicit difference from stock's conditional
+immediate-delete/Undo flow, not claimed parity.
+
+`delete_list_record` consumes the confirmed intent after fresh preflight.
+`ListDeleteFailure::NotSent` is restricted to pre-dispatch failures;
+`Uncertain` covers all failures after dispatch, including API errors and invalid
+responses. HTTP and API rate limiting preserve the available `Retry-After` value.
+The narrowly allowlisted transport has a total request/body timeout, bounded
+request and streamed response sizes, immediate known-offline rejection, no
+redirects and no application or HTTP-library retries. It shares the existing
+lazy single-attempt client with Canvas; other List request paths are unchanged.
+
+`ListRecordReadback` retains the requested list/item identities and parses the
+unaltered `records.info` envelope. Only exact `ok:false,error:"record_deleted"`
+proves deletion; contradictory or conflicting identity fields reject. A sealed
+accepted-delete receipt can match only that same target. Account/transport/visit
+ownership and retained uncertain-operation locks remain desktop responsibilities;
+readback confirms current deletion, not which client caused it.
+
+The independently locked core suite passed (875 tests, 2 ignored), including
+the domain/API/transport deletion checks. That earlier core gate is not proof of
+the newer desktop integration. Native confirmation, retained operation locks and
+readback UI are implemented; their current build/native/live gate results are
+tracked separately in the worklog.
+
+A later native checkpoint passed normal/narrow deletion fixtures on rerun and
+with a diagnostic build (`tmp/slack-list-delete-native-checks-rerun.log`,
+`tmp/slack-list-delete-native-diagnostics.log`). The first narrow run's unexpected
+detail closure remains unexplained, with its original log/PNG preserved at
+`tmp/slack-list-delete-first-narrow-failure.{log,png}`; later passes are not a
+causal explanation and no speculative fix is claimed.
+
+The private live check created a disposable record through native Add item,
+canceled native deletion and observed exact-target **Present**, then confirmed
+native deletion and observed exact-target **Deleted**. All five baseline fields
+were intact with no extra rows. Evidence:
+`tmp/list-delete-native-{predelete,cancel-readback,final-readback}.log`; the root
+agent inspected `tmp/agent-ui/list-delete-private-live.png`. The earlier unrelated
+Name formatting loss was restored from exact baseline blocks and all five fields
+were verified again; its cause remains unproven. Native Undo remains absent.
+Stale creation “Open item” notice and conflicting Refresh guidance fixes are in
+progress, with final integrated gates still pending at this checkpoint.
 
 ## Permission and native UI requirements
 
@@ -675,6 +1188,12 @@ carry `viewId`, `highlightColumnId`, `threadTs`, `defaultContentType`, and focus
 navigation options; those are caller context, not additional cell-update fields.
 V `wCCe` around 9785910 wraps the endpoint. Under the shared argument conversion
 the request carries `list_id`, `id`, and `_x_reason=open-record`.
+The caller neither awaits this request nor consumes its returned fields before
+opening the local record route. The cached bundles contain no other named
+`wCCe` consumer or `listsRecordsOpenFetcher` reducer. This supports a nonblocking
+tracking request, not a requirement to replace the loaded record, fetch its
+thread, or assign a particular returned read timestamp. Exact server response
+fields and downstream read/badge effects require separate live evidence.
 
 The detail renderer is lazy-loaded as `client-list-record-details` / module
 `Jkle` at B 29925354. That chunk is absent from the inspected cached bundles, so
@@ -707,15 +1226,25 @@ editing disabled. Account, List visit, record identity, schema, and permission
 checks still apply. Focus returns to the original instance/cell when available,
 then to a surviving canonical record when a grouping edit moved its card.
 
-This slice deliberately **does not send `lists.records.open`**. Its open/read
-tracking side effects and ownership lifecycle remain unimplemented; local panel
-opening must not be described as reproducing those server effects. Threads,
-comments, subtask creation, new fields, record creation/deletion, record history,
-and standalone/deep-linked records outside the loaded page also remain outside
-this panel. Synthetic checks cover table/Board opening, hidden grouping-field
-edits, bounded field paging, nested Escape, view-change cancellation, current
-event invalidation with guarded readback, and record removal. Build/native/live
-results are recorded separately in the parity worklog.
+Native detail mounts now claim one `lists.records.open` tracking attempt for
+the stable explicit-open generation. Refreshing canonical data, paging fields,
+and repainting the same panel do not replay it; closing and explicitly reopening
+the record creates a new opening. Confirmed newly created records use the same
+detail mount hook. Tracking does not delay local detail presentation or discard
+the panel on failure. Account, List visit, record identity, and open-generation
+checks protect dispatch; transport does not hold or automatically retry this
+tracking operation. A skipped or failed attempt is not retried on a later repaint.
+This implements the captured request path without claiming unverified server
+read/badge effects.
+
+Threads, comments, subtask creation, new fields, record deletion/history, and
+standalone/deep-linked records outside the loaded page remain outside this panel.
+Header root creation is described in the creation section above. Synthetic checks cover
+table/Board opening, hidden grouping-field edits, bounded field paging, nested
+Escape, view-change cancellation, current event invalidation with guarded
+readback, and record removal. Tracking checks assert one canonical request per
+opening and no refresh/paging replay, including created-record detail mounts.
+Build/native/live results are recorded separately in the parity worklog.
 
 ## Existing calendar-date editing
 
@@ -926,6 +1455,22 @@ to investigate normalization. Evidence: `tmp/slack-list-live-read-fixed.log` and
 `rich_text.block_id` on first save, causing a false mismatch under literal JSON
 comparison; the visible content and subsequent bold style were preserved.
 
+A later private check observed that an existing verification record's bold Name
+became plain, retaining its root block ID, after stock Slack loaded the List and
+opened/deleted a **different** disposable record. No native action targeted the
+existing Name in that sequence. The cause remains unproven. A plausible stock
+editor path exists: S `Cmmr.jC` at 1233149 configures primary Name inputs with
+`useWysiwyg: false`; B `BaseTextyClass` near 23763479 enables bold formats only
+for WYSIWYG editing. B `RichTextComponent` near 179827xx can save converted editor
+contents when a focused input unmounts even without a typed-change guard, and
+`BaseRecordRichTextInput` at 16141761 compares original/current Delta on blur.
+This can make editor normalization a field change. It does **not** prove that the
+existing Name editor was focused, that loading performs a migration, or that the
+unrelated deletion caused the loss. The inspected delete thunk targets only its
+requested record IDs. Attribution needs a matching `lists.cells.update` request
+or an isolated editor round-trip; a retained block ID alone does not identify
+the writer. Native rich-text editing continues to preserve supplied formatting.
+
 
 ### Authenticated experiment policy for native saved views
 
@@ -947,3 +1492,45 @@ on 2026-10-13: grid todos and default-view dual write were on; rollback was off.
 Only these three booleans and the known/unknown outcome were printed in
 `tmp/slack-list-saved-view-policy-probe.log`. The native integration must preserve
 account/visit ownership and must not interpret a failed lookup as all flags off.
+
+Final integration gate: desktop 730 passed/4 ignored; independent core 882
+passed/2 ignored (no subsequent core changes). Signed/deep-strict build and both
+normal/narrow delete native fixtures pass after matching creation-notice cleanup
+and recovery-copy correction. The earlier intermittent narrow detail closure is
+still recorded as unexplained, and Undo remains unimplemented. See
+`tmp/list-delete-time-final-tests.log`, `tmp/list-delete-time-final-build.log`,
+and `tmp/slack-list-delete-native-final.log`.
+
+### Native same-ID deletion Undo/Redo — subsequent checkpoint
+
+Native deletion now skips confirmation only for a complete record page with no
+decoded descendants. Other cases retain confirmation. Exact accepted deletion
+readback retains a record-specific Undo capability; Undo and Redo use
+`lists.records.updateDeletion` with the original ID, `deleted=false/true`, and
+`_x_reason=update-record-deletion-state`. They never recreate the item or send
+cell fields. Fresh metadata/access and exact-record reads precede each mutation;
+scope, visit, revision, and receipt ownership are rechecked before dispatch.
+Cancellation/navigation also retires preflight before a follow-up record read.
+Uncertain writes remain locked for readback and are not automatically replayed.
+
+A private read confirmed `records.info` adds `is_subscribed`, absent from
+`records.list`. Redo comparison excludes this verified read-only difference and
+normalizes absent/null/empty root parent aliases; other content checks remain
+strict. Evidence: `tmp/list-undo-info-shape.log`.
+
+Native private verification created one disposable item, deleted it, restored
+the **same ID with identical fields**, and deleted it again through Redo. All
+five original records retained their fields, with no extra live rows afterward.
+Evidence: `tmp/list-undo-created-readback.log`,
+`tmp/list-undo-delete-readback.log`, `tmp/list-undo-first-attempt-readback.log`,
+and `tmp/list-undo-redo-readback.log`. The restored native window was inspected
+through computer-use capture. This proves a childless record round trip, not a
+live subtree restoration or a general multi-operation Undo stack.
+
+The signed normal/narrow offline fixtures additionally verify a synthetic
+parent/children round trip, exact baseline raw fields and IDs, rendered children,
+duplicate Undo/Redo suppression while requests are held, conditional confirmation,
+and uncertain-write recovery without Transport. Both pass in
+`tmp/undo-cache-native-checks-final.log`; restored and uncertain PNGs were read.
+Integrated gates: desktop 737 passed/4 ignored, independent core 895 passed/3
+ignored, formatting/diff checks, signed build, and deep/strict signature check.

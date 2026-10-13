@@ -4,6 +4,8 @@
 use super::*;
 use std::sync::Arc;
 use super_platinum_core::slack_lists::Record;
+mod read_state;
+pub(crate) use read_state::track_open;
 
 #[derive(Clone)]
 pub(crate) struct RecordDetailView {
@@ -18,6 +20,7 @@ pub(crate) struct RecordDetailView {
 #[derive(Clone)]
 pub(super) struct Detail {
     open_generation: u64,
+    read_started: bool,
     generation: u64,
     selection_generation: u64,
     revision: u64,
@@ -75,6 +78,29 @@ fn canonical<'a>(view: &'a View, detail: &Detail) -> Option<&'a Record> {
         && record.raw.get("created_by") == detail.creator.as_ref())
     .then_some(record)
 }
+/// Narrow delete authority: the same open detail and exact canonical record
+/// must remain current, even if a saved view hides its underlying row.
+pub(super) fn delete_target(view: &View, generation: u64) -> Option<(u64, String, String)> {
+    let detail = view.detail.as_ref()?;
+    if detail.generation != generation
+        || detail.unavailable
+        || detail.revision != view.revision
+        || detail.selection_generation != view.layout.selection_generation
+    {
+        return None;
+    }
+    let record = canonical(view, detail)?;
+    Some((
+        detail.open_generation,
+        record.id.clone(),
+        detail.row.label.clone(),
+    ))
+}
+pub(super) fn matches_delete_origin(view: &View, open: u64, record: &str) -> bool {
+    view.detail
+        .as_ref()
+        .is_some_and(|detail| detail.open_generation == open && detail.record_id == record)
+}
 fn columns(loaded: &Loaded) -> Arc<Vec<ColumnView>> {
     Arc::new(
         loaded
@@ -84,6 +110,8 @@ fn columns(loaded: &Loaded) -> Arc<Vec<ColumnView>> {
             .map(|column| ColumnView {
                 id: column.id.clone(),
                 label: column.name.clone(),
+                pinned: false,
+                size: ColumnView::size(&column.kind),
                 primary: loaded
                     .document
                     .primary_column()
@@ -213,6 +241,7 @@ fn install_detail(shell: &mut ShellState, record_id: &str) -> bool {
     let generation = next_id();
     let detail = Detail {
         open_generation: generation,
+        read_started: false,
         generation,
         selection_generation: view.layout.selection_generation,
         revision: view.revision,
@@ -249,6 +278,7 @@ pub(super) fn close_shell(shell: &mut ShellState, generation: u64) -> bool {
 /// Back, list close/reopen and saved-view selection revoke only local authority.
 /// Sent/uncertain receipts are retained independently until guarded readback.
 pub(super) fn dismiss_shell(shell: &mut ShellState) {
+    delete::close_visit(shell);
     let Some(view) = shell.slack_lists.view.as_mut() else {
         return;
     };

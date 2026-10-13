@@ -83,11 +83,11 @@ fn columns(
     ids: &[String],
     fallback: bool,
 ) -> Arc<Vec<presentation::ColumnView>> {
-    let primary = document
+    let pinned = document
         .primary_column()
         .filter(|column| ids.contains(&column.id))
-        .map(|column| column.id.as_str())
-        .or_else(|| fallback.then(|| ids.first().map(String::as_str)).flatten());
+        .map(|column| column.id.as_str());
+    let primary = pinned.or_else(|| fallback.then(|| ids.first().map(String::as_str)).flatten());
     Arc::new(
         ids.iter()
             .filter_map(|id| document.column(id))
@@ -95,6 +95,8 @@ fn columns(
                 id: column.id.clone(),
                 label: column.name.clone(),
                 primary: primary == Some(column.id.as_str()),
+                pinned: pinned == Some(column.id.as_str()),
+                size: presentation::ColumnView::size(&column.kind),
             })
             .collect(),
     )
@@ -477,6 +479,7 @@ pub(super) fn select_shell(
         return true;
     }
     create::close_visit(shell);
+    delete::close_visit(shell);
     record_detail::dismiss_shell(shell);
     let view = shell.slack_lists.view.as_mut().unwrap();
     view.layout.selected = id;

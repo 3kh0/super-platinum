@@ -2,6 +2,7 @@ use super::*;
 use std::collections::HashSet;
 
 mod date;
+mod entity;
 mod rich;
 
 pub(super) fn identity(column: &Column, record: &Record) -> Result<(), ListError> {
@@ -60,6 +61,9 @@ fn member(column: &Column) -> Result<&'static str, ListError> {
         "text" | "rich_text" => Ok("rich_text"),
         "number" | "currency" => Ok("number"),
         "select" | "multi_select" => Ok("select"),
+        "user" => Ok("user"),
+        "channel" => Ok("channel"),
+        "link" => Ok("link"),
         "date" | "due_date" | "todo_due_date" => Ok("date"),
         "checkbox" | "completed" | "todo_completed" => Ok("checkbox"),
         _ => Err(ListError("Editing this field type is not supported yet.")),
@@ -119,6 +123,7 @@ fn validate_read(column: &Column, record: &Record) -> Result<(), ListError> {
     }
     let value = raw(column, record)?;
     match member(column)? {
+        "link" => super::link::read(value).map(|_| ()),
         "rich_text" => match value {
             None => Ok(()),
             Some(Value::Array(blocks)) => rich::validate(blocks, blocks),
@@ -158,6 +163,7 @@ fn validate_read(column: &Column, record: &Record) -> Result<(), ListError> {
                 _ => Err(ListError("This selection is malformed.")),
             }
         }
+        "user" | "channel" => entity::validate_stored(column, value).map(|_| ()),
         "checkbox" => value
             .and_then(Value::as_bool)
             .map(|_| ())
@@ -173,6 +179,7 @@ pub(super) fn read(column: &Column, record: &Record) -> Result<CellEditValue, Li
     validate_read(column, record)?;
     let value = raw(column, record)?;
     Ok(match member(column)? {
+        "link" => CellEditValue::Link(super::link::read(value)?),
         "rich_text" => {
             CellEditValue::RichText(value.and_then(Value::as_array).cloned().unwrap_or_default())
         }
@@ -191,6 +198,8 @@ pub(super) fn read(column: &Column, record: &Record) -> Result<CellEditValue, Li
                 .map(|v| v.as_str().unwrap().to_owned())
                 .collect(),
         ),
+        "user" => CellEditValue::Users(entity::read(column, value)?),
+        "channel" => CellEditValue::Channels(entity::read(column, value)?),
         "checkbox" => CellEditValue::Boolean(value.and_then(Value::as_bool).unwrap()),
         _ => unreachable!(),
     })
@@ -244,6 +253,9 @@ pub(super) fn validate(
     initial: &CellEditValue,
 ) -> Result<(), ListError> {
     match (column.kind.as_str(), desired, initial) {
+        ("link", CellEditValue::Link(value), CellEditValue::Link(_)) => {
+            super::link::validate(value.as_ref())
+        }
         (
             "text" | "rich_text",
             CellEditValue::RichText(blocks),
@@ -282,11 +294,18 @@ pub(super) fn validate(
                 Ok(())
             }
         }
+        ("user", CellEditValue::Users(values), CellEditValue::Users(_)) => {
+            entity::validate(column, values.iter().map(String::as_str))
+        }
+        ("channel", CellEditValue::Channels(values), CellEditValue::Channels(_)) => {
+            entity::validate(column, values.iter().map(String::as_str))
+        }
         _ => Err(ListError("The edit does not match this field's type.")),
     }
 }
 pub(super) fn wire(value: &CellEditValue) -> (&'static str, Value) {
     match value {
+        CellEditValue::Link(value) => ("link", super::link::wire(value.as_ref())),
         CellEditValue::Boolean(value) => ("checkbox", json!(value)),
         CellEditValue::RichText(value) => ("rich_text", Value::Array(value.clone())),
         CellEditValue::Number(value) => (
@@ -294,6 +313,8 @@ pub(super) fn wire(value: &CellEditValue) -> (&'static str, Value) {
             Value::Array(value.iter().cloned().map(Value::Number).collect()),
         ),
         CellEditValue::Select(value) => ("select", json!(value)),
+        CellEditValue::Users(value) => ("user", json!(value)),
+        CellEditValue::Channels(value) => ("channel", json!(value)),
         CellEditValue::Date(value) => (
             "date",
             Value::Array(value.iter().cloned().map(Value::String).collect()),

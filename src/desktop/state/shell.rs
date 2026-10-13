@@ -66,6 +66,7 @@ pub struct ShellState {
     pub profile_hover_card_active: bool,
     pub overlay: Option<Overlay>,
     pub reaction_target: Option<ReactionTarget>,
+    pub composer_emoji: crate::composer_emoji::State,
     pub forward_target: Option<crate::forward::ForwardTarget>,
     /// Successful catalog loads are scoped to the authenticated transport.
     pub emoji_catalog_loaded: HashMap<String, crate::reaction_picker::CatalogCache>,
@@ -116,10 +117,13 @@ pub struct ShellState {
     pub self_menu_notifications_open: bool,
     pub(crate) slack_lists: crate::slack_lists::State,
     pub(crate) self_status: crate::self_status::State,
+    pub(crate) channel_mute: crate::channel_mute::State,
+    pub(crate) upload_checks: crate::messaging::delivery_check::State,
     pub self_menu_mutations: crate::bootstrap::SelfMenuMutations,
     pub profile_vip_pending: crate::profile_vip::Pending,
     pub viewer: Option<ViewerVm>,
     pub canvas: Option<CanvasTarget>,
+    pub(crate) canvas_checklist: crate::canvas::checklist::State,
     pub canvas_create: Option<crate::canvas_create::Draft>,
     pub toast: Option<ToastVm>,
     /// What the rail says about the link to Slack.
@@ -550,6 +554,17 @@ impl ShellState {
     }
 
     pub fn dismiss_overlay(&mut self) {
+        if self.overlay == Some(Overlay::ComposerEmoji) {
+            crate::composer_emoji::close_shell(self);
+            return;
+        }
+        if self.overlay == Some(Overlay::MessageUserSelect) {
+            crate::message_buttons::inputs::user::cancel_local(self);
+        }
+        if self.overlay == Some(Overlay::MessageMultiSelect) {
+            crate::message_buttons::inputs::multi::cancel_local(self);
+            return;
+        }
         if self.overlay == Some(Overlay::ButtonConfirmation) {
             crate::message_buttons::cancel_local(self);
             return;
@@ -565,6 +580,9 @@ impl ShellState {
         if self.overlay == Some(Overlay::SelfStatus) {
             crate::self_status::close_shell(self);
             return;
+        }
+        if self.overlay == Some(Overlay::Canvas) {
+            crate::canvas::checklist::close_visit(self);
         }
         self.cancel_profile_dm();
         self.cancel_palette_open();

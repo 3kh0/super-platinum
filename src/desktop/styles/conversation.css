@@ -361,3 +361,11 @@
   font-size: 12px;
   font-weight: 650;
 }
+
+/* Broadcast context is navigation metadata; the authored body keeps its normal color. */
+.message-broadcast-context { display:flex; align-items:center; gap:6px; max-width:100%; min-width:0; padding:2px 0; margin:0 0 4px; color:var(--muted); font-size:var(--text-sm); line-height:20px; text-align:left; }
+.message-broadcast-context:hover:not(:disabled) { color:var(--text); }
+.message-broadcast-context > .icon, .message-broadcast-label { flex-shrink:0; }
+.message-broadcast-preview { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.message-broadcast-preview::before { content:"· "; }
+.message-broadcast-context:disabled { opacity:.6; cursor:default; }

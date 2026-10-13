@@ -83,6 +83,8 @@ pub(crate) fn fixture(shell: &mut ShellState, name: &str) {
         shell.core.composer = ComposerState::with_text(text);
         let pending = shell.queue_composer().expect("fixture upload row queued");
         shell.core.pending_file_messages.push(PendingFileMessage {
+            finalized: None,
+            reply_broadcast: false,
             team: pending.team,
             channel: pending.channel,
             thread_ts: None,

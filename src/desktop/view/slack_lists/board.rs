@@ -151,7 +151,11 @@ fn field(
         .filter(|m| m.record_id == row.id && m.column_id == cell.column_id);
     let pending = mutation.is_some_and(|m| !m.uncertain);
     let uncertain = mutation.is_some_and(|m| m.uncertain);
-    let disabled = !cell.editable || view.mutation.is_some() || view.loading || view.stale;
+    let disabled = !cell.editable
+        || view.mutation.is_some()
+        || view.loading
+        || view.stale
+        || crate::slack_lists::delete::blocks_mutation(&state.read());
     let checked = vec![Attribute::new(
         "checked",
         cell.checkbox.unwrap_or(false),
@@ -180,7 +184,7 @@ fn field(
         "data-board-cell":"true","data-column-id":"{cell.column_id}",tabindex:"-1",role:"group","aria-label":"{label}, {item}","aria-busy":pending,
         if !heading {span{class:"slack-list-field-label","{label}"}}
         {content}
-        if cell.can_edit&&cell.checkbox.is_none(){button{r#type:"button",class:"slack-list-edit-cell",tabindex:"-1","aria-label":"Edit {label}, {item}",title:"Edit field (F2)",disabled:view.mutation.is_some()||view.loading||view.stale,
+        if cell.can_edit&&cell.checkbox.is_none(){button{r#type:"button",class:"slack-list-edit-cell",tabindex:"-1","aria-label":"Edit {label}, {item}",title:"Edit field (F2)",disabled:view.mutation.is_some()||view.loading||view.stale||crate::slack_lists::delete::blocks_mutation(&state.read()),
             onclick:move |_|crate::slack_lists::begin_cell_editor(state,edit_instance.clone(),edit_column.clone(),generation,layout),{icon(Icon::Compose,"icon")}}}
         if pending{span{class:"slack-list-cell-status","Saving…"}}
         if uncertain{span{class:"slack-list-cell-status","Save unconfirmed. Refresh to check."}}

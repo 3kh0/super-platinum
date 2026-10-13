@@ -16,6 +16,7 @@ async fn read_state_rejects_offline_or_unrelated_requests_without_later_dispatch
     transport.set_health(Health::Offline);
     for path in [
         "/api/lists.open",
+        "/api/lists.records.open",
         "/api/files.markRead",
         "/api/lists.getDefaultView",
     ] {
@@ -33,6 +34,10 @@ async fn read_state_rejects_offline_or_unrelated_requests_without_later_dispatch
         "/api/lists.open.extra",
         "/api/files.markRead/",
         "/api/lists.setDefaultView",
+        "/api/lists.records.open.extra",
+        "/api/lists.records.open/",
+        "/api/lists.records.list",
+        "/api/lists.records.create",
     ] {
         assert!(matches!(
             transport
@@ -41,12 +46,14 @@ async fn read_state_rejects_offline_or_unrelated_requests_without_later_dispatch
             Err(Error::Api(_))
         ));
     }
-    let mut get = request(address, "/api/lists.open");
-    get.method = "GET";
-    assert!(matches!(
-        transport.execute_list_read_state(get).await,
-        Err(Error::Api(_))
-    ));
+    for path in ["/api/lists.open", "/api/lists.records.open"] {
+        let mut get = request(address, path);
+        get.method = "GET";
+        assert!(matches!(
+            transport.execute_list_read_state(get).await,
+            Err(Error::Api(_))
+        ));
+    }
     assert!(
         tokio::time::timeout(Duration::from_millis(100), listener.accept())
             .await
@@ -57,6 +64,7 @@ async fn read_state_rejects_offline_or_unrelated_requests_without_later_dispatch
 async fn read_state_endpoint_dispatch_is_single_attempt_even_for_retryable_http_errors() {
     for path in [
         "/api/lists.open",
+        "/api/lists.records.open",
         "/api/files.markRead",
         "/api/lists.getDefaultView",
     ] {

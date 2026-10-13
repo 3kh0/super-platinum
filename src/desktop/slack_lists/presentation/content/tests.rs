@@ -65,17 +65,23 @@ fn structured_links_apply_existing_scheme_and_credentials_policy() {
         "data:text/html,unsafe",
         "https://name:password@example.test",
     ] {
-        let (column, record) = values(
-            "link",
-            json!({"key":"field","link":[{"original_url":url,"display_name":"Safe label"}]}),
-        );
-        let (text, content) = project(None, &media, &column, &record);
-        assert_eq!(text, "Safe label");
-        assert_eq!(
-            content,
-            CellContent::Rich(vec![RichNode::Text("Safe label".into())])
-        );
+        for (url_key, name_key) in [
+            ("original_url", "display_name"),
+            ("originalUrl", "displayName"),
+        ] {
+            let (column, record) = values(
+                "link",
+                json!({"key":"field","link":[{(url_key):url,(name_key):"Safe label"}]}),
+            );
+            let (text, content) = project(None, &media, &column, &record);
+            assert_eq!(text, "Safe label");
+            assert_eq!(
+                content,
+                CellContent::Rich(vec![RichNode::Text("Safe label".into())])
+            );
+        }
     }
+
     let (column, record) = values(
         "link",
         json!({"key":"field","link":[{"original_url":"https://example.test/path","display_name":"Notes"}]}),

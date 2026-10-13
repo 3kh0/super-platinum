@@ -27,10 +27,25 @@ pub async fn serve(
     crate::app_modal::check::start(state, desktop.clone());
     crate::self_status::check::start(state, desktop.clone());
     crate::slack_lists::check::start(state, desktop.clone());
+    crate::slack_lists::check::delete::start(state, desktop.clone());
     crate::message_buttons::check::start(state, desktop.clone());
     crate::message_buttons::select_check::start(state, desktop.clone());
+    crate::message_buttons::date_check::start(state, desktop.clone());
+    crate::message_buttons::user_check::start(state, desktop.clone());
+    crate::message_buttons::conversation_check::start(state, desktop.clone());
+    crate::message_buttons::time_check::start(state, desktop.clone());
+    crate::message_buttons::multi_check::start(state, desktop.clone());
+    crate::canvas::checklist::check::start(state, desktop.clone());
+    crate::canvas::text::check::start(state, desktop.clone());
     crate::message_buttons::radio_check::start(state, desktop.clone());
     crate::slack_links_check::start(state, desktop.clone());
+    crate::activity_feed::check::start(state, desktop.clone());
+    crate::composer_emoji::check::start(state, desktop.clone());
+    crate::channel_mute::check::start(state, desktop.clone());
+    crate::messaging::delivery_check::check::start(state, desktop.clone());
+    crate::messaging::thread_broadcast_check::start(state, desktop.clone());
+    crate::message_vm::broadcast_check::start(state, desktop.clone());
+    crate::view::files::check::start(state, desktop.clone());
     // Fixture-only diagnostics bypass the Dioxus eval bridge when investigating
     // an interpreter that never reaches its initial DOM handshake.
     if crate::fixture::is_fixture() && std::env::var_os("SUPER_PLATINUM_UI_DOM_TRACE").is_some() {
@@ -400,33 +415,33 @@ fn dispatch(
                         item.key.clone(),
                         item.channel()?.to_owned(),
                         item.ts()?.to_owned(),
-                        item.thread_ts().map(str::to_owned),
+                        crate::activity_feed::thread_destination(item),
                     ))
                 });
-            let Some((key, channel, ts, thread_ts)) = target else {
+            let Some((key, channel, ts, thread)) = target else {
                 return AgentResponse::err(id, format!("no activity item at {index}"));
             };
-            let opened = state.write().select_activity_item(
-                key.clone(),
-                Some(&channel),
-                Some(&ts),
-                thread_ts.as_deref(),
-            );
-            dioxus::prelude::spawn(crate::bootstrap::mark_activity_read(*state, key));
+            let (opened, navigation) = {
+                let mut shell = state.write();
+                let opened = shell.select_activity_item(
+                    key.clone(),
+                    Some(&channel),
+                    Some(&ts),
+                    thread.as_ref().map(|destination| destination.root.as_str()),
+                );
+                let navigation = opened
+                    .then(|| crate::activity_feed::Navigation::capture(&shell, &key))
+                    .flatten();
+                (opened, navigation)
+            };
             if !opened {
                 return AgentResponse::err(
                     id,
                     format!("activity channel is not loaded: {channel}"),
                 );
             }
-            if let Some(root) = thread_ts {
-                dioxus::prelude::spawn(crate::bootstrap::open_thread(
-                    *state,
-                    channel.clone(),
-                    root,
-                ));
-            } else {
-                dioxus::prelude::spawn(crate::bootstrap::refresh_selected_channel(*state));
+            if let Some(navigation) = navigation {
+                dioxus::prelude::spawn(navigation.run(*state));
             }
             AgentResponse::ok(id, json!({ "index": index, "channel": channel, "ts": ts }))
         }
@@ -746,6 +761,11 @@ fn state_snapshot(state: &ShellState) -> Value {
         // The sidebar as laid out: section order, collapse state, and rows.
         "notifications": state.core.active_team.as_ref().and_then(|team| state.core.workspaces.get(team)).map(|workspace| json!({
             "preferences_loaded": workspace.notifications.loaded,
+            "active_channel_mute": state.core.active_channel.as_ref().map(|channel| json!({
+                "muted": workspace.notifications.channels.get(channel).and_then(|prefs| prefs.get("muted")),
+                "temporary_expiry": workspace.notifications.temporary_mute_expiration(channel),
+                "effective_muted": workspace.notifications.muted(channel, super_platinum_core::state::now_secs()),
+            })),
             "channel_overrides": workspace.notifications.channels.len(),
             "global_desktop_push_enabled": workspace.notifications.global.get("global_desktop_push_enabled"),
             "threads_everything": workspace.notifications.global.get("threads_everything"),

@@ -507,3 +507,16 @@ async fn readback_cooldown_and_scope_blocks_do_not_issue_any_request_or_confirm_
         .await;
     assert!(!result.requested);
 }
+
+#[test]
+fn definite_offline_preflight_is_not_reported_as_dispatched_or_uncertain() {
+    let attempt = failure(&Error::Api("draft_mutation_not_sent_offline".into()), 1000);
+    assert!(!attempt.dispatched);
+    assert!(matches!(attempt.outcome, Outcome::Rejected));
+    assert_eq!(attempt.issue, Some(Issue::Blocked(Block::Offline)));
+    assert!(attempt.cooldown_until_ms.is_none());
+    assert!(matches!(
+        failure(&Error::Transport("lost response".into()), 1000).outcome,
+        Outcome::Uncertain
+    ));
+}

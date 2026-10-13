@@ -7,8 +7,22 @@
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
+mod message_conversation;
+mod message_date;
+mod message_multi;
+mod message_time;
+mod message_user;
+pub use message_conversation::{
+    ConversationFilter, parse_message_conversation, valid_message_conversation,
+    validate_message_conversation,
+};
+pub use message_user::{parse_message_user, valid_message_user, validate_message_user};
 mod parse;
 mod values;
+pub use message_date::{parse_message_date, validate_message_date};
+pub use message_multi::parse_message_multi;
+pub(crate) use message_multi::validate_optional_selection as validate_message_multi_optional;
+pub use message_time::{parse_message_time, validate_message_time};
 pub use values::{datetime_local_value, parse_datetime_local};
 
 /// Parse a message-owned single static select without synthesizing a modal.
@@ -65,6 +79,8 @@ pub enum InputKind {
         options: Vec<OptionSpec>,
     },
     Date,
+    User,
+    Conversation,
     Time {
         timezone: Option<String>,
     },
@@ -78,6 +94,8 @@ pub enum InputValue {
     Text(String),
     Selected(Vec<String>),
     Date(Option<String>),
+    User(Option<String>),
+    Conversation(Option<String>),
     Time(Option<String>),
     DateTime(Option<i64>),
     Unsupported,

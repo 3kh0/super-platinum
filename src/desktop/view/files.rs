@@ -8,6 +8,8 @@ use super_platinum_core::{
     state::{file_summary, file_title, file_uploader_id},
 };
 
+pub(crate) mod check;
+
 fn reload(state: Signal<ShellState>, channel: Option<&str>, edit: impl FnOnce(&mut FilesQuery)) {
     let mut query = crate::files::visible_for(&state.peek(), channel)
         .map(|f| f.query.clone())
@@ -59,7 +61,7 @@ pub(crate) fn FilesPanel(
         section {class:"files-panel","aria-label":"Files",
             if channel.is_none() {
             header {class:"files-header",
-                h2 {if channel.is_some() {"Shared files"} else {"Files"}}
+                h2 {"Files"}
                 span {class:"spacer"}
                 button {class:"later-refresh",onclick:move |_|crate::canvas_create::open(state),"New canvas"}
                 button {class:"later-refresh",disabled:loading,onclick:move |_|{dioxus::core::spawn_forever(crate::files::load(state,refresh.clone(),page));},"Refresh"}
@@ -68,7 +70,7 @@ pub(crate) fn FilesPanel(
             if channel.is_none() {crate::file_actions::recovery_list::RecoveryList {state}}
             form {class:"files-search",onsubmit:move |event|{event.prevent_default();let value=text();reload(state,scope.peek().as_deref(),|q|q.text=value);},
                 {icon(Icon::Search,"icon")}
-                input {type:"search","aria-label":"Search files",placeholder:if channel.is_some() {"Search files in this conversation"} else {"Search files, or use in:channel and from:person"},value:"{text}",oninput:move |event|text.set(event.value())}
+                input {type:"search","aria-label":"Search files",placeholder:if channel.is_some() {"Search files in this conversation"} else {"Search files, or use in:channel and from:person"},initial_value:"{text}",oninput:move |event|text.set(event.value())}
                 button {type:"submit","Search"}
             }
             div {class:"files-controls",
@@ -117,14 +119,14 @@ pub(crate) fn FilesPanel(
                                 let target=crate::file_actions::Target::new(&snapshot,file);
                                 let epoch=target.epoch;let team=target.team.clone();
                                 rsx! {
-                                    div {class:"file-result",role:"listitem",key:"{epoch}-{team}-{id}",
+                                    div {class:"file-result",role:"listitem",key:"{epoch}-{team}-{id}","data-file-id":"{id}",
                                         button {class:"files-row",onclick:move |_|crate::files::open(state,open.clone()),
                                             span {class:"files-thumbnail",
                                                 if let Some(id)=thumbnail {super::media_image::MediaImage {state,id,media_epoch:snapshot.media_epoch,compact:true,loading:"lazy",fallback:icon(Icon::AttachFile,"icon")}}else{{icon(Icon::AttachFile,"icon")}}
                                             }
                                             span {class:"files-row-body",
-                                                span {class:"files-title","{title}"}
-                                                span {class:"files-meta", "{summary}", if !author.is_empty(){" · {author}"}}
+                                                span {class:"files-title",title:"{title}","{title}"}
+                                                span {class:"files-meta",title:if author.is_empty() {summary.clone()} else {format!("{summary} · {author}")}, "{summary}", if !author.is_empty(){" · {author}"}}
                                             }
                                             span {class:"files-date","{created}"}
                                             if external {span {class:"files-open-hint","Open in Slack"}}

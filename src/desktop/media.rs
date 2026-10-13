@@ -804,7 +804,10 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
             | "bookmarks-narrow"
             | "canvas-create-narrow"
             | "canvas-narrow"
+            | "canvas-checklist-narrow"
+            | "canvas-text-narrow"
             | "files-narrow"
+            | "files-density-narrow"
             | "channel-links-narrow"
             | "channel-files-narrow"
             | "pins-narrow"
@@ -823,7 +826,17 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
             | "slack-list-narrow"
             | "self-status-editor-narrow"
             | "message-radio-buttons-narrow"
+            | "message-multi-controls-narrow"
             | "message-static-select-narrow"
+            | "message-datepicker-narrow"
+            | "message-users-select-narrow"
+            | "message-conversations-select-narrow"
+            | "composer-emoji-narrow"
+            | "channel-mute-narrow"
+            | "thread-broadcast-narrow"
+            | "message-broadcast-narrow"
+            | "upload-delivery-check-narrow"
+            | "message-timepicker-narrow"
             | "message-button-actions-narrow"
             | "message-button-metadata-narrow"
             | "slack-links-narrow"
@@ -838,6 +851,7 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
             | "thread-feed-narrow"
             | "thread-follow-narrow"
             | "activity-narrow"
+            | "activity-navigation-narrow"
             | "search-narrow"
             | "search-filters-narrow")
     ) {
@@ -847,16 +861,14 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
     };
     #[cfg(target_os = "windows")]
     let config = config.with_windows_browser_args(WINDOWS_BROWSER_ARGS);
-    config
+    let config = config
         .with_window(
             WindowBuilder::new()
                 .with_title("Super Platinum")
                 .with_inner_size(initial_size)
                 .with_min_inner_size(WINDOW_MIN_INNER_SIZE),
         )
-        .with_custom_head(format!(
-            r#"<meta http-equiv="Content-Security-Policy" content="{CSP}">"#
-        ))
+        .with_custom_head(crate::performance::runtime_probe::head(CSP))
         .with_custom_protocol("super-platinum-media", move |_webview, request| {
             media.respond(request)
         })
@@ -864,7 +876,8 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
             url.starts_with("dioxus://")
                 || url.starts_with("super-platinum-media://")
                 || url == "about:blank"
-        })
+        });
+    crate::performance::runtime_probe::configure(config)
 }
 
 fn response(

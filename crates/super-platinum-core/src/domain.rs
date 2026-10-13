@@ -232,11 +232,21 @@ pub struct ComposerAttachment {
     pub preview_path: Option<PathBuf>,
 }
 
+/// In-memory proof of private file finalization; not proof of publication.
+#[derive(Debug, Clone)]
+pub struct PendingUploadReceipt {
+    pub account: Option<String>,
+    pub sender: UserId,
+    pub file_ids: Vec<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct PendingFileMessage {
+    pub finalized: Option<PendingUploadReceipt>,
     pub team: TeamId,
     pub channel: ChannelId,
     pub thread_ts: Option<MessageTs>,
+    pub reply_broadcast: bool,
     pub message_ts: MessageTs,
     pub client_msg_id: String,
     pub text: String,

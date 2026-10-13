@@ -118,3 +118,51 @@ fn links_honor_display_as_url_and_do_not_claim_destination_is_safe() {
         matches!(column.presentation(&record), CellPresentation::Link { url, label } if url == "javascript:alert(1)" && label == "Literal name")
     );
 }
+
+#[test]
+fn link_readback_camel_case_and_equal_aliases_preserve_labels_and_raw_fields() {
+    let column = column("link", Value::Null);
+    let mut link = json!({"attachment":{},"displayAsUrl":false,
+        "displayName":"Native Link verified","originalUrl":"http://example.com"});
+    for duplicate in [false, true] {
+        if duplicate {
+            link["original_url"] = link["originalUrl"].clone();
+            link["display_name"] = link["displayName"].clone();
+            link["display_as_url"] = link["displayAsUrl"].clone();
+        }
+        let record = record(json!({"key":"field","link":[link.clone()]}));
+        let original = record.raw.clone();
+        assert_eq!(
+            column.presentation(&record),
+            CellPresentation::Link {
+                url: "http://example.com".into(),
+                label: "Native Link verified".into(),
+            }
+        );
+        assert_eq!(record.raw, original);
+    }
+    let record = record(json!({"key":"field","link":[{
+        "originalUrl":"http://example.com","displayName":"Name","displayAsUrl":true}]}));
+    assert_eq!(column.display_text(&record), "http://example.com");
+}
+
+#[test]
+fn conflicting_link_aliases_never_choose_a_destination_or_name_by_precedence() {
+    let column = column("link", Value::Null);
+    for (key, conflict) in [
+        ("original_url", json!("https://different.test")),
+        ("display_name", json!("Different name")),
+        ("display_as_url", json!(true)),
+        ("original_url", Value::Null),
+    ] {
+        let mut link = json!({"originalUrl":"https://example.test", "displayName":"Name", "displayAsUrl":false});
+        link[key] = conflict;
+        let record = record(json!({"key":"field","link":[link]}));
+        assert_eq!(
+            column.presentation(&record),
+            CellPresentation::Unsupported {
+                fallback: "Unsupported link".into()
+            }
+        );
+    }
+}

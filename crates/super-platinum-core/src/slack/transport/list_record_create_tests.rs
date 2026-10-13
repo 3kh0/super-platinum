@@ -94,3 +94,38 @@ async fn record_create_dispatch_is_single_attempt_even_for_retryable_http_errors
         }
     }
 }
+
+#[tokio::test]
+async fn accepted_create_with_lost_response_is_uncertain_and_never_replayed() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        let mut buffer = [0; 4096];
+        let len = stream.read(&mut buffer).await.unwrap();
+        assert!(
+            String::from_utf8_lossy(&buffer[..len]).starts_with("POST /api/lists.records.create")
+        );
+        // The server received the POST and could already have created the row.
+        // Close without a response to reproduce an ambiguous transport failure.
+        drop(stream);
+        assert!(
+            tokio::time::timeout(Duration::from_millis(100), listener.accept())
+                .await
+                .is_err()
+        );
+    });
+    let transport = Transport::new("fixture-cookie").unwrap();
+    transport.set_health(Health::Online);
+    let result = tokio::time::timeout(
+        Duration::from_secs(2),
+        transport.execute_list_record_create(request(address, "/api/lists.records.create")),
+    )
+    .await
+    .expect("lost response must not be held or retried");
+    assert!(
+        matches!(result, Err(Error::Transport(_))),
+        "post-dispatch failure must not be classified as a known-unsent Offline result: {result:?}"
+    );
+    server.await.unwrap();
+}

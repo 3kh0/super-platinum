@@ -20,13 +20,15 @@ pub(super) fn row(
                     let toggle_row=row.id.clone();let column_id=cell.column_id.clone();let edit_column=column_id.clone();
                     let label=view.columns.get(column_index).map(|column|column.label.as_str()).unwrap_or("Value");
                     let primary=view.columns.get(column_index).is_some_and(|column|column.primary);
+                    let pinned=view.columns.get(column_index).is_some_and(|column|column.pinned);
+                    let size=view.columns.get(column_index).map_or("standard",|column|column.size);
                     let item=if row.label.is_empty(){"Untitled item"}else{row.label.as_str()};
                     let checkbox_label=format!("{label}, {item}");
                     let toggle_label=format!("{} {}",if row.expanded{"Collapse"}else{"Expand"},item);
                     let indent=format!("padding-inline-start: {}px",row.depth.min(8)*16);
                     let mutation=view.mutation.as_ref().filter(|m|m.record_id==row.id&&m.column_id==cell.column_id);
                     let pending=mutation.is_some_and(|m|!m.uncertain);let uncertain=mutation.is_some_and(|m|m.uncertain);
-                    let disabled=!cell.editable||view.mutation.is_some()||view.loading||view.stale;
+                    let disabled=!cell.editable||view.mutation.is_some()||view.loading||view.stale||crate::slack_lists::delete::blocks_mutation(&state.read());
                     let checked_attributes=vec![Attribute::new("checked",cell.checkbox.unwrap_or(false),None,true)];
                     let content=if primary&&cell.text.trim().is_empty()&&cell.checkbox.is_none() {
                         rsx!{span{class:"slack-list-cell-text","{item}"}}
@@ -42,6 +44,7 @@ pub(super) fn row(
                     };
                     rsx!{
                         td{key:"{cell.column_id}",role:if primary{"rowheader"}else{"gridcell"},
+                            "data-pinned":pinned.to_string(),"data-column-size":size,
                             "data-column-id":"{cell.column_id}","aria-colindex":column_index+1,"data-tree-primary":primary.to_string(),
                             "aria-readonly":disabled,"aria-busy":pending,tabindex:if first&&column_index==0{"0"}else{"-1"},
                             if primary {
@@ -61,7 +64,7 @@ pub(super) fn row(
                             }
                             if cell.can_edit&&cell.checkbox.is_none(){
                                 button{r#type:"button",class:"slack-list-edit-cell",tabindex:"-1","aria-label":"Edit {label}, {item}",title:"Edit cell (F2)",
-                                    disabled:view.mutation.is_some()||view.loading||view.stale,
+                                    disabled:view.mutation.is_some()||view.loading||view.stale||crate::slack_lists::delete::blocks_mutation(&state.read()),
                                     onclick:move |_|crate::slack_lists::begin_cell_editor(state,edit_instance.clone(),edit_column.clone(),generation,layout),
                                     {icon(Icon::Compose,"icon")}}
                             }

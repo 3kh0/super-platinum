@@ -33,6 +33,71 @@ fn open(shell: &mut ShellState, column: &str) -> u64 {
     begin_shell(shell, "row", column, visit).unwrap();
     presentation(shell).unwrap().generation
 }
+
+#[test]
+fn attachment_name_is_an_immutable_draft_seed_not_a_canonical_edit() {
+    let mut shell = date_shell(
+        "link",
+        json!({"key":"date","link":[{
+            "original_url":"https://example.com/spec","display_as_url":false,
+            "attachment":{"https://example.com/spec":{"title":"Original title"}}
+        }]}),
+    );
+    let generation = open(&mut shell, "date");
+    let editor = presentation(&shell).unwrap();
+    assert_eq!(editor.link_name_seed, "Original title");
+    let CellEditValue::Link(Some(original)) = editor.original.as_ref() else {
+        panic!("link seed");
+    };
+    assert_eq!(original.display_name, None);
+    assert!(shell.slack_lists.operations.is_empty());
+
+    // The separate display-mode action must not persist the inferred name.
+    let mut toggle = original.clone();
+    toggle.display_as_url = true;
+    let attempt = begin_save(&mut shell, generation, CellEditValue::Link(Some(toggle))).unwrap();
+    assert!(
+        attempt.edit.cells()[0]["link"][0]
+            .get("display_name")
+            .is_none()
+    );
+    assert!(cancel_shell(&mut shell, generation));
+    let data = loaded(&shell);
+    assert!(validate_edit(&mut shell, &attempt, data.clone()).is_err());
+    let generation = open(&mut shell, "date");
+    let mut record = data.records.records[0].raw.clone();
+    record["fields"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|field| field["key"] == "date")
+        .unwrap()["link"][0]["attachment"]["https://example.com/spec"]["title"] =
+        json!("New title");
+    let mut changed = data;
+    changed.records = RecordsPage::parse(json!({"ok":true,"records":[record]})).unwrap();
+    let read = begin_read(&mut shell).unwrap();
+    finish_read(&mut shell, &read, Ok(changed));
+    let stale = presentation(&shell).unwrap();
+    assert!(stale.stale);
+    assert_eq!(stale.link_name_seed, "Original title");
+    assert_eq!(stale.original, editor.original);
+    assert!(cancel_shell(&mut shell, generation));
+    let generation = open(&mut shell, "date");
+    let editor = presentation(&shell).unwrap();
+    assert_eq!(editor.link_name_seed, "New title");
+    assert!(shell.slack_lists.operations.is_empty());
+
+    // Explicit Save may turn the displayed seed into an explicit name.
+    let CellEditValue::Link(Some(mut saved)) = editor.original.as_ref().clone() else {
+        panic!("link seed");
+    };
+    saved.display_name = Some(editor.link_name_seed);
+    let attempt = begin_save(&mut shell, generation, CellEditValue::Link(Some(saved))).unwrap();
+    assert_eq!(
+        attempt.edit.cells()[0]["link"][0]["display_name"],
+        "New title"
+    );
+}
 fn loaded(shell: &ShellState) -> Loaded {
     shell
         .slack_lists

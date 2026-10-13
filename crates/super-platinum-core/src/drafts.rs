@@ -18,7 +18,9 @@ pub struct LocalDraft {
 }
 impl LocalDraft {
     pub fn empty(&self) -> bool {
-        self.composer.text.is_empty() && self.attachments.is_empty()
+        self.composer.text.is_empty()
+            && self.attachments.is_empty()
+            && !self.composer.reply_broadcast
     }
     fn matches(&self, composer: &ComposerState, files: &[ComposerAttachment]) -> bool {
         self.composer == *composer
@@ -52,7 +54,10 @@ impl DraftBook {
             .items
             .get(key)
             .is_some_and(|draft| draft.matches(composer, files))
-            || (!self.items.contains_key(key) && composer.text.is_empty() && files.is_empty())
+            || (!self.items.contains_key(key)
+                && composer.text.is_empty()
+                && files.is_empty()
+                && !composer.reply_broadcast)
         {
             return;
         }
@@ -99,9 +104,19 @@ impl DraftBook {
     }
     /// An upload canceled after navigation belongs to its original composer.
     pub fn return_upload(&mut self, key: DraftKey, text: String, files: Vec<ComposerAttachment>) {
+        self.return_upload_with_broadcast(key, text, files, false);
+    }
+    pub fn return_upload_with_broadcast(
+        &mut self,
+        key: DraftKey,
+        text: String,
+        files: Vec<ComposerAttachment>,
+        reply_broadcast: bool,
+    ) {
         let mut draft = self.items.get(&key).cloned().unwrap_or_default();
-        if draft.composer.text.is_empty() {
+        if draft.composer.text.is_empty() && !draft.composer.reply_broadcast {
             draft.composer = ComposerState::with_text(text);
+            draft.composer.reply_broadcast = key.thread.is_some() && reply_broadcast;
         }
         for file in files {
             if !draft.attachments.iter().any(|old| old.id == file.id) {
@@ -180,5 +195,29 @@ mod tests {
         book.capture(&key, &ComposerState::with_text("New reply"), &[]);
         book.return_upload(key.clone(), "Old caption".into(), vec![]);
         assert_eq!(book.items[&key].composer.text, "New reply");
+    }
+    #[test]
+    fn broadcast_draft_migrates_and_survives_flag_only_navigation_and_upload_restore() {
+        let legacy: ComposerState = serde_json::from_value(
+            serde_json::json!({"text":"Reply","selection":{"start":0,"end":0}}),
+        )
+        .unwrap();
+        assert!(!legacy.reply_broadcast);
+        let mut composer = ComposerState::default();
+        composer.reply_broadcast = true;
+        let restored: ComposerState =
+            serde_json::from_value(serde_json::to_value(&composer).unwrap()).unwrap();
+        assert_eq!(restored, composer);
+        let key = key("C1", Some("1.1"));
+        let mut book = DraftBook::default();
+        book.capture(&key, &composer, &[]);
+        assert!(!book.items[&key].empty());
+        book.return_upload_with_broadcast(key.clone(), "Old caption".into(), vec![], false);
+        assert!(book.items[&key].composer.reply_broadcast);
+        assert!(book.items[&key].composer.text.is_empty());
+        book.capture(&key, &ComposerState::default(), &[]);
+        book.return_upload_with_broadcast(key.clone(), "Caption".into(), vec![], true);
+        assert!(book.items[&key].composer.reply_broadcast);
+        assert_eq!(book.items[&key].composer.text, "Caption");
     }
 }

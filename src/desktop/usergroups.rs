@@ -2,6 +2,8 @@ use crate::state::{ChannelOpen, ShellState};
 use dioxus::prelude::*;
 use super_platinum_core::slack::api;
 
+mod hydration;
+
 #[derive(Debug, Clone)]
 pub(crate) struct GroupPanel {
     pub id: String,
@@ -57,7 +59,7 @@ pub(crate) async fn open(mut state: Signal<ShellState>, id: String) {
                 .users
                 .extend(users.into_iter().map(|u| (u.id.clone(), u)));
         }
-        crate::bootstrap::persist_workspace(&state, &team);
+        crate::bootstrap::persist_workspace_metadata(&state, &team);
         Some(())
     }
     .await;
@@ -115,26 +117,24 @@ pub(crate) async fn hydrate(mut state: Signal<ShellState>, team: &str) {
     let Some(session) = sessions.into_iter().find(|s| s.team_id == team) else {
         return;
     };
+    let mut hydration = hydration::Progress::default();
     for chunk in ids.chunks(100) {
-        let Ok(groups) =
-            api::fetch_usergroups_info(&transport, &client, &session, chunk.to_vec()).await
-        else {
-            return;
-        };
-        let mut shell = state.write();
-        let Some(workspace) = shell.core.workspaces.get_mut(team) else {
-            return;
-        };
-        for mut group in groups {
-            if let Some(existing) = workspace.usergroups.get(&group.id) {
-                group.users = existing.users.clone();
-                group.members_loaded = existing.members_loaded;
+        let result =
+            api::fetch_usergroups_info(&transport, &client, &session, chunk.to_vec()).await;
+        // No write borrow (and thus no render notification) for an empty page.
+        if result.as_ref().is_ok_and(Vec::is_empty) {
+            if !state.peek().core.workspaces.contains_key(team) {
+                return;
             }
-            workspace.usergroups.insert(group.id.clone(), group);
+            continue;
         }
-        shell.refresh_from_core();
+        if !hydration.apply(&mut state.write(), team, result) {
+            return;
+        }
     }
-    crate::bootstrap::persist_workspace(&state, team);
+    if hydration.should_persist() {
+        crate::bootstrap::persist_workspace_metadata(&state, team);
+    }
 }
 
 pub(crate) fn pane(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {

@@ -47,6 +47,9 @@ struct CachedSidebarRef<'a> {
 }
 const MAX_CACHED_MESSAGES_PER_CHANNEL: usize = 200;
 
+mod snapshot;
+pub use snapshot::WorkspaceSnapshot;
+
 pub struct Cache {
     conn: Connection,
 }

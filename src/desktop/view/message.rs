@@ -9,6 +9,8 @@
 
 use dioxus::prelude::*;
 
+mod delivery;
+
 use super::rich::{
     attachment_embeds, message_plain_text, pending_attachment_strip, reactions_row, reply_bar,
     rich_node, rich_node_for_message,
@@ -70,10 +72,12 @@ fn message_tools(
             if can_reply {
                 button {
                     onclick: {
-                        let id = message.id.clone();
+                        let root = message.broadcast_root.clone().unwrap_or_else(||message.id.clone());
+                        let target = message.broadcast_root.as_ref().map(|_|message.id.clone());
                         let channel = channel_id.to_owned();
+                        let owner = thread_open_owner(&state.read());
                         move |_| {
-                            spawn(crate::bootstrap::open_thread(state, channel.clone(), id.clone()));
+                            open_row_thread(state, &owner, channel.clone(), root.clone(), target.clone(), false);
                         }
                     },
                     "Reply"
@@ -297,11 +301,12 @@ pub(crate) fn message_row(
             "data-message-id": "{message.id}",
             ondoubleclick: {
                 let channel = channel_id.to_owned();
-                let root = message.id.clone();
+                let root = message.broadcast_root.clone().unwrap_or_else(||message.id.clone());
+                let target = message.broadcast_root.as_ref().map(|_|message.id.clone());
+                let owner = thread_open_owner(snapshot);
                 move |_| {
                     if opens_thread {
-                        spawn(crate::bootstrap::open_thread(state, channel.clone(), root.clone()));
-                        super::composer::focus_field_when_mounted("thread-composer");
+                        open_row_thread(state, &owner, channel.clone(), root.clone(), target.clone(), true);
                     }
                 }
             },
@@ -312,6 +317,7 @@ pub(crate) fn message_row(
             }
             {message_tools(state, message, channel_id, surface)}
             div { class: "message-content",
+                if !in_thread { {broadcast_context(state,snapshot,message,channel_id)} }
                 if crate::pins::is_pinned(snapshot,channel_id,message) {
                     div {class:"message-pin-label",{crate::icons::icon(crate::icons::Icon::Pin,"icon sm")} "Pinned"}
                 }
@@ -350,6 +356,7 @@ pub(crate) fn message_row(
                     }
                     if let Some(attachments) = snapshot.pending_attachments_for_message(&message.id) {
                         {pending_attachment_strip(attachments, snapshot.upload_ui_epoch)}
+                        {delivery::row(state,snapshot,&message.id)}
                     }
                 }
                 if !message.reactions.is_empty() {
@@ -362,6 +369,82 @@ pub(crate) fn message_row(
                     {reply_bar(state, &snapshot.media, snapshot.media_epoch, channel_id, message)}
                 }
             }
+        }
+    }
+}
+
+type ThreadOpenOwner = (
+    u64,
+    Option<super_platinum_core::config::AccountId>,
+    Option<String>,
+    u64,
+);
+
+fn thread_open_owner(shell: &ShellState) -> ThreadOpenOwner {
+    (
+        shell.core.account_epoch,
+        shell.core.active_account.clone(),
+        shell.core.active_team.clone(),
+        shell.channel_generation,
+    )
+}
+
+/// Admit synchronously, then load only that already-opened thread visit. This
+/// keeps focus immediate without letting a queued task navigate a newer owner.
+fn open_row_thread(
+    mut state: Signal<ShellState>,
+    owner: &ThreadOpenOwner,
+    channel: String,
+    root: String,
+    target: Option<String>,
+    focus: bool,
+) {
+    let scope = {
+        let mut shell = state.write();
+        if thread_open_owner(&shell) != *owner
+            || shell.core.active_channel.as_ref() != Some(&channel)
+        {
+            return;
+        }
+        shell.begin_thread(root.clone(), target.clone());
+        shell.remember_surface();
+        shell.thread_scope()
+    };
+    if focus {
+        super::composer::focus_field_when_mounted("thread-composer");
+    }
+    spawn(crate::bootstrap::load_started_thread(
+        state, channel, root, target, scope,
+    ));
+}
+
+fn broadcast_context(
+    state: Signal<ShellState>,
+    snapshot: &ShellState,
+    message: &MessageVm,
+    channel: &str,
+) -> Element {
+    let Some(root) = message.broadcast_root.clone() else {
+        return rsx! {};
+    };
+    let channel = channel.to_owned();
+    let reply = message.id.clone();
+    let owner = thread_open_owner(snapshot);
+    let preview = message.broadcast_parent_preview.clone();
+    let pending = message.pending;
+    rsx! {
+        button {class:"message-broadcast-context",r#type:"button",disabled:message.pending,
+            "data-thread-root":"{root}","data-thread-reply":"{reply}",
+            title:preview.clone().unwrap_or_else(||"Open parent thread".into()),
+            ondoubleclick:move |event|event.stop_propagation(),
+            onclick:move |_| {
+                if !pending {
+                    open_row_thread(state, &owner, channel.clone(), root.clone(), Some(reply.clone()), false);
+                }
+            },
+            {crate::icons::icon(crate::icons::Icon::Reply,"icon sm")}
+            span {class:"message-broadcast-label","Replied to a thread"}
+            if let Some(preview)=preview.as_ref() {span {class:"message-broadcast-preview","{preview}"}}
         }
     }
 }

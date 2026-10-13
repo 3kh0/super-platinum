@@ -21,7 +21,7 @@ pub use crate::messaging::{
 
 pub use crate::profile_vip::toggle_profile_vip;
 pub use common::reload_after_outage;
-pub(crate) use common::{credentials, persist_workspace};
+pub(crate) use common::{credentials, persist_workspace, persist_workspace_metadata};
 pub use discovery::*;
 pub use history::*;
 pub(crate) use palette_navigation::{open_palette_entry, open_palette_target};

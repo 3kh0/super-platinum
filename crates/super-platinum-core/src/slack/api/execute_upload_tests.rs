@@ -79,6 +79,8 @@ async fn missing_local_file_and_cancellation_fail_before_message_delivery() {
             &SlackClient::default(),
             &workspace,
             UploadRequest {
+                reply_broadcast: false,
+                client_msg_id: "fixture-message".into(),
                 channel: "C1".into(),
                 thread_ts: None,
                 initial_comment: "Keep caption 🚀".into(),

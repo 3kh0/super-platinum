@@ -429,6 +429,9 @@ pub struct AttachmentVm {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct MessageVm {
     pub id: String,
+    /// Authored reply also published into the channel; no preamble inside its thread.
+    pub broadcast_root: Option<String>,
+    pub broadcast_parent_preview: Option<String>,
     pub thread_ts: Option<String>,
     pub ts: String,
     pub user_id: Option<String>,
@@ -653,6 +656,7 @@ pub struct AccountVm {
 }
 
 pub struct PendingSend {
+    pub reply_broadcast: bool,
     pub account: Option<String>,
     pub account_epoch: u64,
     pub team: String,
@@ -696,6 +700,8 @@ pub struct PerformanceVm {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Overlay {
     ButtonConfirmation,
+    MessageMultiSelect,
+    MessageUserSelect,
     AppModal,
     Accounts,
     SelfMenu,
@@ -708,6 +714,7 @@ pub enum Overlay {
     Canvas,
     CanvasCreate,
     ReactionPicker,
+    ComposerEmoji,
     Forward,
     NewDm,
 }

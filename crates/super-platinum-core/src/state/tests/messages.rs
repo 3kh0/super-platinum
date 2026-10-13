@@ -176,6 +176,18 @@ fn channel_timeline_hides_thread_replies_but_keeps_roots_and_broadcasts() {
     assert!(!is_channel_timeline_visible(&replied_envelope));
 }
 #[test]
+fn legacy_reply_broadcast_keeps_its_channel_row_without_exposing_ordinary_replies() {
+    let mut reply = SlackMessage {
+        ts: Some("103.000001".into()),
+        thread_ts: Some("100.000001".into()),
+        subtype: Some("reply_broadcast".into()),
+        ..Default::default()
+    };
+    assert!(is_channel_timeline_visible(&reply));
+    reply.subtype = None;
+    assert!(!is_channel_timeline_visible(&reply));
+}
+#[test]
 fn applies_reaction_add_remove_without_double_counting() {
     let mut cm = ChannelMessages::default();
     cm.upsert(msg("1.0", "hello"));

@@ -8,7 +8,16 @@ pub(crate) struct Row {
     pub ts: String,
     pub history: bool,
     pub pending: bool,
+    pub source_index: usize,
+    pub previous_source_index: Option<usize>,
+    history_index: usize,
 }
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum PaintPiece {
+    Spacer { index: usize, height: f64 },
+    Row { index: usize, projected: usize },
+}
+
 #[derive(Default)]
 pub(crate) struct ThreadWindow {
     scope: String,
@@ -19,6 +28,14 @@ pub(crate) struct ThreadWindow {
     pub selection_pinned: bool,
     pub measured: bool,
     pub input_generation: u64,
+    pub projection_generation: u64,
+    source_len: usize,
+    pending_snapshot: Vec<String>,
+    selected_indices: Vec<usize>,
+    always_selected: Vec<usize>,
+    history_rows: [Vec<usize>; 2],
+    history_offsets: [Vec<f64>; 2],
+    pieces: [Vec<PaintPiece>; 2],
 }
 impl ThreadWindow {
     pub fn user_navigation(&mut self) {
@@ -26,6 +43,11 @@ impl ThreadWindow {
     }
     pub fn measurement_is_current(&self, scope: &str, input_generation: u64) -> bool {
         self.scope == scope && self.input_generation == input_generation
+    }
+
+    pub fn projection_receipt_is_current(&self, sampled: u64, dom: Option<&str>) -> bool {
+        self.projection_generation == sampled
+            && dom.and_then(|generation| generation.parse::<u64>().ok()) == Some(sampled)
     }
 
     pub fn sync(
@@ -37,12 +59,16 @@ impl ThreadWindow {
         target: Option<&str>,
         bottom: bool,
     ) {
+        // Canonical updates may change geometry without changing any row IDs.
+        // Keep this separate from viewport-only measurements and user input.
+        let projection_generation = self.projection_generation.wrapping_add(1);
         if self.scope != scope {
             *self = Self {
                 scope: scope.into(),
                 ..Default::default()
             };
         }
+        self.projection_generation = projection_generation;
         let held = self
             .rows
             .get(self.start..self.end)
@@ -50,16 +76,35 @@ impl ThreadWindow {
             .iter()
             .map(|r| r.ts.as_str())
             .collect::<HashSet<_>>();
+        let mut previous_source_index = None;
+        let mut history_rows = [Vec::new(), Vec::new()];
+        let mut always_selected = Vec::new();
+        let mut row_index = 0;
         let rows = bag
             .messages
             .iter()
-            .filter_map(|m| {
+            .enumerate()
+            .filter_map(|(source_index, m)| {
                 let ts = m.ts.as_deref()?;
+                let predecessor = previous_source_index.replace(source_index);
                 let pending = bag.is_pending(ts);
-                (history.visible(root, ts) || pending).then(|| Row {
+                if !history.visible(root, ts) && !pending {
+                    return None;
+                }
+                let in_history = history.contains(root, ts);
+                let history_index = history_rows[usize::from(in_history)].len();
+                history_rows[usize::from(in_history)].push(row_index);
+                if ts == root || pending {
+                    always_selected.push(row_index);
+                }
+                row_index += 1;
+                Some(Row {
                     ts: ts.into(),
-                    history: history.contains(root, ts),
+                    history: in_history,
                     pending,
+                    source_index,
+                    previous_source_index: predecessor,
+                    history_index,
                 })
             })
             .collect::<Vec<_>>();
@@ -90,11 +135,19 @@ impl ThreadWindow {
                 (positions.last().copied().unwrap() + 1).min(start + LIMIT),
             )
         };
+        self.source_len = bag.messages.len();
+        self.pending_snapshot = bag.pending.clone();
         self.rows = rows;
+        self.always_selected = always_selected;
+        self.history_rows = history_rows;
         self.start = start;
         self.end = end;
         self.prune();
+        self.rebuild_offsets();
+        self.rebuild_selection();
     }
+    // Kept as the independent linear selection reference in regression probes.
+    #[allow(dead_code)]
     pub fn selected(&self, index: usize, root: &str) -> bool {
         let row = &self.rows[index];
         row.ts == root || row.pending || (self.start..self.end).contains(&index)
@@ -155,10 +208,12 @@ impl ThreadWindow {
     ) -> bool {
         self.measured = true;
         let mut changed = false;
+        let mut geometry_changed = false;
         for (id, height) in heights {
             if height.is_finite() && *height > 0.0 && self.heights.get(id) != Some(height) {
                 self.heights.insert(id.clone(), *height);
                 changed = true;
+                geometry_changed = true;
             }
         }
         if !target && !self.selection_pinned {
@@ -173,10 +228,98 @@ impl ThreadWindow {
                 changed = true;
             }
         }
-        self.prune();
+        geometry_changed |= self.prune();
+        if geometry_changed {
+            self.rebuild_offsets();
+        }
+        if changed || geometry_changed {
+            self.rebuild_selection();
+        }
         changed
     }
-    fn prune(&mut self) {
+    /// Viewport-only updates reuse canonical source positions and history flags.
+    /// Core mutations must still call sync before rich projection.
+    pub fn align_viewport(&mut self, target: Option<&str>, bottom: bool) {
+        let old = (self.start, self.end);
+        if let Some(index) = target.and_then(|ts| self.rows.iter().position(|row| row.ts == ts)) {
+            self.start = index.saturating_sub(24);
+            self.end = (self.start + LIMIT).min(self.rows.len());
+        } else if bottom {
+            self.start = self.start.max(self.rows.len().saturating_sub(LIMIT));
+            self.end = self.rows.len();
+        } else if self.start >= self.end {
+            self.start = self.rows.len().saturating_sub(LIMIT);
+            self.end = self.rows.len();
+        }
+        let geometry_changed = self.prune();
+        if geometry_changed {
+            self.rebuild_offsets();
+        }
+        if old != (self.start, self.end) || geometry_changed {
+            self.rebuild_selection();
+        }
+    }
+    pub fn source_shape_matches(&self, bag: &ChannelMessages) -> bool {
+        self.source_len == bag.messages.len() && self.pending_snapshot == bag.pending
+    }
+    pub fn selected_indices(&self) -> &[usize] {
+        &self.selected_indices
+    }
+    pub fn pieces(&self, history: bool) -> &[PaintPiece] {
+        &self.pieces[usize::from(history)]
+    }
+
+    fn rebuild_offsets(&mut self) {
+        for history in [false, true] {
+            let indices = &self.history_rows[usize::from(history)];
+            let mut offsets = Vec::with_capacity(indices.len() + 1);
+            let mut offset = 0.0;
+            offsets.push(offset);
+            for &index in indices {
+                offset += self.height(&self.rows[index].ts);
+                offsets.push(offset);
+            }
+            self.history_offsets[usize::from(history)] = offsets;
+        }
+    }
+    fn rebuild_selection(&mut self) {
+        self.selected_indices.clear();
+        self.selected_indices.extend(self.start..self.end);
+        self.selected_indices
+            .extend_from_slice(&self.always_selected);
+        self.selected_indices.sort_unstable();
+        self.selected_indices.dedup();
+        for history in [false, true] {
+            let slot = usize::from(history);
+            let offsets = &self.history_offsets[slot];
+            let indices = &self.history_rows[slot];
+            let mut pieces = Vec::with_capacity(self.selected_indices.len() + 2);
+            let mut cursor = 0;
+            for (projected, &index) in self.selected_indices.iter().enumerate() {
+                let row = &self.rows[index];
+                if row.history != history {
+                    continue;
+                }
+                if cursor < row.history_index {
+                    pieces.push(PaintPiece::Spacer {
+                        index: indices[cursor],
+                        height: offsets[row.history_index] - offsets[cursor],
+                    });
+                }
+                pieces.push(PaintPiece::Row { index, projected });
+                cursor = row.history_index + 1;
+            }
+            if cursor < indices.len() {
+                pieces.push(PaintPiece::Spacer {
+                    index: indices[cursor],
+                    height: offsets[indices.len()] - offsets[cursor],
+                });
+            }
+            self.pieces[slot] = pieces;
+        }
+    }
+    fn prune(&mut self) -> bool {
+        let before = self.heights.len();
         if self.heights.len() > 600 {
             let keep = self
                 .rows
@@ -188,6 +331,7 @@ impl ThreadWindow {
                 .collect::<HashSet<_>>();
             self.heights.retain(|id, _| keep.contains(id.as_str()));
         }
+        before != self.heights.len()
     }
 }
 
@@ -294,3 +438,6 @@ mod tests {
         assert!(!window.selection_pinned);
     }
 }
+
+#[cfg(test)]
+mod cache_tests;

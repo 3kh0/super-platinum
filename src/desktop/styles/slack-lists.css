@@ -4,10 +4,10 @@
   max-height: calc(100vh - 32px); padding: 0;
   display: flex; flex-direction: column; overflow: hidden;
 }
-.slack-list-dialog .slack-list-header { margin: 0; padding: 16px; gap: 12px; flex-shrink: 0; }
+.slack-list-dialog .slack-list-header { margin: 0; padding: 12px 16px; gap: 12px; flex-shrink: 0; }
 .slack-list-dialog .slack-list-header > button { position: static; flex-shrink: 0; }
-.slack-list-heading { flex: 1; min-width: 0; }
-.slack-list-heading h2 { overflow-wrap: anywhere; }
+.slack-list-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; flex: 1; min-width: 0; }
+.slack-list-heading h2 { margin: 0; font-size: var(--text-lg); overflow-wrap: anywhere; }
 .slack-list-heading p { margin: 4px 0 0; color: var(--muted); font-size: var(--text-sm); }
 .slack-list-dialog button.slack-list-action, .slack-list-pagination button {
   width: auto; min-height: var(--control-height); padding: 0 12px; border-radius: var(--radius-md);
@@ -20,20 +20,36 @@
 .slack-list-view-note, .slack-list-read-only { color: var(--muted); }
 .slack-list-warning { color: var(--warning); }
 .slack-list-error { color: var(--danger); }
-.slack-list-help { margin: 0; padding: 0 16px 8px; font-size: var(--text-xs); color: var(--muted); }
-.slack-list-keyboard-disclosure { display: none; }
-.slack-list-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; border-top: 1px solid var(--border); }
+/* Keep complete shortcut descriptions available to assistive technology. */
+.slack-list-help { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.slack-list-keyboard-disclosure { display: block; flex-shrink: 0; padding: 0 16px 4px; color: var(--muted); font-size: var(--text-xs); max-height: 160px; overflow: auto; }
+.slack-list-keyboard-disclosure summary { display: flex; align-items: center; gap: 4px; min-height: var(--control-height); width: fit-content; padding: 0 4px; border-radius: var(--radius-sm); cursor: pointer; list-style: none; }
+.slack-list-keyboard-disclosure summary:hover { background: var(--hover-overlay); color: var(--text); }
+.slack-list-keyboard-disclosure summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.slack-list-keyboard-disclosure summary::-webkit-details-marker { display: none; }
+.slack-list-keyboard-disclosure summary .icon { width: 16px; height: 16px; flex-shrink: 0; }
+.slack-list-keyboard-disclosure[open] summary .icon { transform: rotate(90deg); }
+.slack-list-keyboard-disclosure p { margin: 4px 4px 8px; max-width: 88ch; line-height: 1.5; }
+.slack-list-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; border-top: 1px solid var(--border); scroll-padding-inline-start: var(--list-pinned-width, 0px); scroll-padding-top: var(--list-header-height, 0px); }
 .slack-list-grid { border-collapse: separate; border-spacing: 0; width: 100%; table-layout: auto; font-size: var(--text-sm); }
 .slack-list-grid th, .slack-list-grid td { min-width: 160px; max-width: 320px; padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
-.slack-list-grid th { position: sticky; top: 0; z-index: 1; background: var(--surface-raised); font-weight: 500; }
+.slack-list-grid th { position: sticky; top: 0; z-index: 3; background: var(--surface-raised); font-weight: 500; overflow-wrap: anywhere; }
+.slack-list-grid [data-column-size="checkbox"] { width: 72px; min-width: 72px; max-width: 112px; }
+.slack-list-grid [data-column-size="number"] { width: 112px; min-width: 112px; max-width: 144px; font-variant-numeric: tabular-nums; }
 .slack-list-grid td[role="rowheader"] { font-weight: 500; min-width: 220px; }
 .slack-list-grid td:focus-visible { outline-offset: -2px; }
-.slack-list-grid td { position: relative; }
+.slack-list-grid td { position: relative; background: var(--list-row-background, var(--surface-raised)); }
+/* Pin the schema's visible primary column, including when it is reordered.
+   Every cell paints the same opaque row state; scrolling content cannot show
+   through the primary cell or its header. Hidden primaries pin nothing. */
+.slack-list-grid [data-pinned="true"] { position: sticky; inset-inline-start: 0; width: 220px; min-width: 220px; max-width: 320px; border-inline-end: 1px solid var(--border); }
+.slack-list-grid td[data-pinned="true"] { z-index: 2; }
+.slack-list-grid th[data-pinned="true"] { z-index: 4; }
 .slack-list-grid td:has(.slack-list-edit-cell) { padding-inline-end: 36px; }
 .slack-list-edit-cell { position: absolute; inset-inline-end: 4px; top: 6px; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border-radius: var(--radius-sm); color: var(--muted); opacity: 0; }
 .slack-list-edit-cell .icon { width: 16px; height: 16px; }
 .slack-list-grid td:hover .slack-list-edit-cell, .slack-list-grid td:focus-within .slack-list-edit-cell { opacity: 1; }
-.slack-list-grid tr:focus-within { background: var(--hover-overlay); }
+.slack-list-grid tbody tr:hover, .slack-list-grid tbody tr:focus-within { --list-row-background: color-mix(in srgb, var(--surface-raised) 94%, var(--text)); }
 .slack-list-cell-text { display: block; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow: auto; }
 .slack-list-cell-rich { overflow-wrap: anywhere; max-height: 160px; overflow: auto; }
 .slack-list-cell-rich p { margin: 0 0 4px; }
@@ -64,7 +80,13 @@
 .slack-list-editor-item { margin: 0; color: var(--muted); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .slack-list-editor-body { min-height: 0; overflow: auto; }
 .slack-list-editor-body > label, .slack-list-editor-body legend { display: block; margin-bottom: 4px; font-size: var(--text-sm); }
-.slack-list-editor-body input[type="text"], .slack-list-editor-body input[type="date"] { width: 100%; min-height: var(--control-height); padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); }
+.slack-list-editor-body input[type="text"], .slack-list-editor-body input[type="date"], .slack-list-editor-body input[type="search"] { width: 100%; min-height: var(--control-height); padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); }
+.slack-list-user-picker { display: flex; flex-direction: column; gap: 8px; }
+.slack-list-user-picker > label { font-size: var(--text-sm); }
+.slack-list-user-selected { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: var(--control-height); font-size: var(--text-sm); }
+.slack-list-user-selected span, .slack-list-user-results .slack-list-choice span { min-width: 0; overflow-wrap: anywhere; }
+.slack-list-user-selected button { flex-shrink: 0; }
+.slack-list-user-results { max-height: 192px; overflow-y: auto; }
 .slack-list-date-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .slack-list-date-actions button { flex-shrink: 0; }
 .slack-list-editor-body fieldset { margin: 0; padding: 0; border: 0; }
@@ -81,7 +103,7 @@
   .slack-list-dialog .slack-list-header { padding: 12px; gap: 8px; }
   .slack-list-heading h2 { font-size: var(--text-md); }
   .slack-list-notices { padding: 0 12px; }
-  .slack-list-help { padding: 0 12px 8px; }
+  .slack-list-keyboard-disclosure { padding-inline: 12px; }
   .slack-list-pagination { padding: 8px 12px; }
 }
 @media (max-height: 500px) {
@@ -92,20 +114,13 @@
   .slack-list-heading p { margin: 0; }
   .slack-list-notices { padding: 0 12px; }
   .slack-list-notices p { margin-bottom: 4px; }
-  /* Keep the treegrid's full accessible description without reserving height. */
-  .slack-list-help { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .slack-list-keyboard-disclosure { display: block; flex-shrink: 0; padding: 0 12px 4px; color: var(--muted); font-size: var(--text-xs); max-height: 25%; overflow: auto; }
-  .slack-list-keyboard-disclosure summary { display: flex; align-items: center; gap: 4px; cursor: pointer; width: fit-content; list-style: none; }
-  .slack-list-keyboard-disclosure summary::-webkit-details-marker { display: none; }
-  .slack-list-keyboard-disclosure summary .icon { width: 12px; height: 12px; }
-  .slack-list-keyboard-disclosure[open] summary .icon { transform: rotate(90deg); }
-  .slack-list-keyboard-disclosure p { margin: 4px 0 0; }
+  .slack-list-keyboard-disclosure { padding-inline: 12px; max-height: 25%; }
   .slack-list-grid th, .slack-list-grid td { padding: 6px 12px; }
   .slack-list-pagination { padding: 6px 12px; gap: 4px 8px; }
   .slack-list-cell-editor { inset: 8px; max-height: calc(100% - 16px); padding: 12px; gap: 4px; }
   .slack-list-cell-editor .rich-reminder-editor { min-height: 48px; max-height: 140px; }
 }
-.slack-list-view-picker { display: flex; align-items: center; gap: 8px; margin-top: 8px; color: var(--muted); font-size: var(--text-sm); }
+.slack-list-view-picker { display: flex; align-items: center; gap: 8px; margin-top: 0; color: var(--muted); font-size: var(--text-sm); }
 .slack-list-view-picker select { min-width: 0; max-width: 100%; min-height: var(--control-height); padding: 0 8px; border: 0; border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
 .slack-list-grid .slack-list-group td { background: var(--surface); padding: 4px 12px; }
 .slack-list-group-toggle { display: flex; align-items: center; gap: 8px; min-height: var(--control-height); padding: 0 4px; border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: 500; }
@@ -148,7 +163,7 @@
 .slack-list-dialog .slack-list-record-header { display: flex; justify-content: flex-start; align-items: center; gap: 12px; padding: 12px 16px; flex-shrink: 0; }
 .slack-list-record-header h3 { margin: 0; min-width: 0; max-height: 4em; overflow: auto; overflow-wrap: anywhere; font-size: var(--text-lg); font-weight: 600; }
 .slack-list-dialog .slack-list-record-header > button { position: static; display: flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0; }
-.slack-list-record-header > button .icon { width: 16px; height: 16px; transform: rotate(180deg); }
+.slack-list-record-header > #slack-list-record-back .icon { width: 16px; height: 16px; transform: rotate(180deg); }
 .slack-list-record-detail > .slack-list-warning { margin: 0; padding: 0 16px 8px; font-size: var(--text-sm); }
 .slack-list-detail-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 0 16px 12px; }
 .slack-list-detail-field { position: relative; display: grid; grid-template-columns: minmax(112px,28%) minmax(0,1fr); gap: 12px; padding: 12px 36px 12px 0; border-bottom: 1px solid var(--border); font-size: var(--text-sm); }
@@ -175,3 +190,17 @@
 .slack-list-create-help-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 #slack-list-add-item { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 #slack-list-add-item .icon { width: 16px; height: 16px; }
+
+/* A destructive action stays quiet until its explicit confirmation. */
+.slack-list-dialog .slack-list-record-header .slack-list-delete-action { margin-inline-start: auto; color: var(--danger); }
+.slack-list-delete-status { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.slack-list-delete-status p { flex: 1 1 240px; margin: 0; }
+.slack-list-delete-status button { flex-shrink: 0; }
+.slack-list-delete-confirm { width: min(440px, 100%); padding: 16px; }
+.slack-list-delete-confirm h3 { margin: 0; font-size: var(--text-lg); }
+.slack-list-delete-confirm p { margin: 12px 0; overflow-wrap: anywhere; }
+.slack-list-delete-confirm footer { display: flex; justify-content: flex-end; gap: 8px; }
+.slack-list-delete-confirm .danger { color: var(--danger); }
+@media (max-width: 600px) {
+  .slack-list-dialog .slack-list-record-header .slack-list-delete-action { margin-inline-start: 0; }
+}

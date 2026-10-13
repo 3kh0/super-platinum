@@ -4,6 +4,8 @@ use std::time::Instant;
 
 use crate::state::ShellState;
 
+pub(crate) mod runtime_probe;
+
 #[derive(Clone, Copy)]
 pub(crate) enum StartupStage {
     FirstPaint,

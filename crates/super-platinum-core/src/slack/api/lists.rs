@@ -5,6 +5,10 @@ use serde_json::Value;
 
 mod creation;
 pub use creation::*;
+mod deletion;
+pub use deletion::*;
+mod records;
+pub use records::*;
 mod viewing;
 pub use viewing::*;
 mod defaults;

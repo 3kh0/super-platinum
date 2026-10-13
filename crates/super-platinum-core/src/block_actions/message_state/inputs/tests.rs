@@ -344,7 +344,7 @@ fn radio_compositions_preserve_raw_metadata_and_reject_malformed_or_unowned_stat
     }
     for extra in [
         json!({"type":"checkboxes","action_id":"checks"}),
-        json!({"type":"datepicker","action_id":"date"}),
+        json!({"type":"datetimepicker","action_id":"datetime"}),
     ] {
         let mut mixed = actions(radio(None));
         mixed.blocks[0]["elements"]

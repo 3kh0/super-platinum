@@ -99,7 +99,10 @@ fn unavailable(shell: &ShellState) -> Option<&'static str> {
     if view.editor.is_some() || view.detail.is_some() {
         return Some("Return to the list before adding an item.");
     }
-    if shell.slack_lists.operations.contains_key(&view.id) || blocks_mutation(shell) {
+    if shell.slack_lists.operations.contains_key(&view.id)
+        || blocks_mutation(shell)
+        || delete::blocks_mutation(shell)
+    {
         return Some("Wait for the current change to be confirmed.");
     }
     let Some(loaded) = view.loaded.as_ref() else {
@@ -265,6 +268,7 @@ pub(super) fn validate(
     loaded: &Loaded,
 ) -> Result<(), &'static str> {
     if !attempt.current(shell)
+        || delete::blocks_mutation(shell)
         || shell
             .slack_lists
             .operations
@@ -546,5 +550,40 @@ pub(crate) fn reconcile(shell: &mut ShellState) {
     });
     if open {
         record_detail::open_created(shell, &record.id);
+    }
+}
+
+/// Retire only a known created identity after a current, request-associated
+/// records.info tombstone. Page absence and a delete ACK alone are insufficient.
+pub(super) fn reconcile_deleted(
+    shell: &mut ShellState,
+    scope: &Scope,
+    readback: &super_platinum_core::slack_lists::ListRecordReadback,
+) {
+    if !scope.current(shell) || !readback.is_deleted() {
+        return;
+    }
+    let owner = scope.stable_owner();
+    shell.slack_lists.create.receipts.retain(|_, receipt| {
+        !(receipt.stage == Stage::AwaitingRead
+            && receipt.attempt.scope.stable_owner() == owner
+            && receipt.attempt.intent.list_id() == readback.list_id()
+            && receipt
+                .record
+                .as_ref()
+                .is_some_and(|record| record.id == readback.record_id()))
+    });
+    if shell
+        .slack_lists
+        .create
+        .notice
+        .as_ref()
+        .is_some_and(|notice| {
+            notice.scope.stable_owner() == owner
+                && notice.list == readback.list_id()
+                && notice.record.id == readback.record_id()
+        })
+    {
+        shell.slack_lists.create.notice = None;
     }
 }

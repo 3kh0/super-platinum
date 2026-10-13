@@ -39,6 +39,17 @@ pub(crate) struct ColumnView {
     pub id: String,
     pub label: String,
     pub primary: bool,
+    pub pinned: bool,
+    pub size: &'static str,
+}
+impl ColumnView {
+    pub(super) fn size(kind: &str) -> &'static str {
+        match kind {
+            "checkbox" | "completed" | "todo_completed" => "checkbox",
+            "number" | "currency" | "rating" => "number",
+            _ => "standard",
+        }
+    }
 }
 #[derive(Clone)]
 pub(crate) struct RowView {
@@ -99,7 +110,10 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
         rows: view.rows.clone(),
         total_rows: view.all_rows.len(),
         loading: view.loading,
-        error: view.error.clone(),
+        error: view
+            .error
+            .clone()
+            .or_else(|| cell_receipts::notice(shell, &view.id)),
         incomplete: view
             .loaded
             .as_ref()

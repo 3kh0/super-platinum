@@ -19,7 +19,9 @@ FIXTURES=(
   bookmarks bookmarks-narrow bookmarks-edit bookmarks-remove bookmarks-error bookmarks-folder bookmarks-folder-remove bookmarks-move
   canvas-create canvas-create-narrow canvas-create-error
   canvas canvas-narrow canvas-loading canvas-error canvas-rename canvas-rename-error canvas-readonly
-  files files-narrow files-empty files-error
+  canvas-checklist canvas-checklist-narrow canvas-checklist-saving canvas-checklist-uncertain
+  canvas-text canvas-text-narrow
+  files files-narrow files-empty files-error files-density files-density-narrow
   channel-files channel-files-narrow channel-links channel-links-narrow channel-links-empty channel-links-error
   pins pins-narrow pins-empty pins-error channel-pinned-message
   forward forward-narrow forward-error forward-partial forward-partial-narrow forward-people forward-people-narrow
@@ -44,7 +46,7 @@ FIXTURES=(
   file-actions file-actions-narrow file-actions-channel-narrow file-rename file-rename-narrow file-rename-channel-narrow file-recovery file-recovery-narrow file-preview-renamed-files file-preview-renamed-message
   file-preview-text file-preview-narrow file-preview-large file-preview-utf16 file-preview-empty file-preview-binary file-preview-audio
   video-viewer search search-opening search-loading search-empty search-error search-more-error search-narrow search-filters search-filters-narrow palette palette-people activity-unread activity-channel-post
-  activity-thread-tools activity-paging activity-loading activity-error activity-more-error activity-empty activity-narrow dms
+  activity-thread-tools activity-paging activity-loading activity-error activity-more-error activity-empty activity-narrow activity-navigation activity-navigation-narrow dms
   dm-history-failed dm-cached-refresh-failed toast-long-error
   connection-connecting connection-no-network composer-multiline
   composer-upload-progress
@@ -54,6 +56,16 @@ FIXTURES=(
   slack-list slack-list-narrow slack-list-readonly slack-list-incomplete slack-list-error slack-list-loading
   self-status-editor self-status-editor-narrow
   message-radio-buttons message-radio-buttons-narrow
+  message-multi-controls message-multi-controls-narrow
+  message-datepicker message-datepicker-narrow
+  message-users-select message-users-select-narrow
+  message-conversations-select message-conversations-select-narrow
+  composer-emoji composer-emoji-narrow
+  channel-mute channel-mute-narrow
+  thread-broadcast thread-broadcast-narrow
+  message-broadcast message-broadcast-narrow
+  upload-delivery-check upload-delivery-check-narrow
+  message-timepicker message-timepicker-narrow
   message-static-select message-static-select-narrow
   message-button-actions message-button-actions-narrow message-button-metadata message-button-metadata-narrow
   slack-links slack-links-narrow

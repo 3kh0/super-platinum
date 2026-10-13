@@ -2,14 +2,24 @@
 //! cancel, refresh, or readback. In-flight receipts live outside this local draft.
 use super::*;
 use std::sync::Arc;
+mod channels;
+mod link;
+pub(crate) use link::normalization_slot as link_normalization_slot;
+pub(crate) mod entities;
+mod users;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum EditorKind {
     RichText,
     Number,
     Date,
+    Link,
     Select,
     MultiSelect,
+    User,
+    MultiUser,
+    Channel,
+    MultiChannel,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct EditorChoice {
@@ -26,7 +36,9 @@ pub(crate) struct EditorView {
     pub column_label: String,
     pub kind: EditorKind,
     pub original: Arc<CellEditValue>,
+    pub link_name_seed: String,
     pub choices: Arc<Vec<EditorChoice>>,
+    pub directory: entities::Presentation,
     pub disabled: bool,
     pub saving: bool,
     pub stale: bool,
@@ -47,7 +59,9 @@ pub(super) struct Draft {
     column_label: String,
     kind: EditorKind,
     original: Arc<CellEditValue>,
+    link_name_seed: String,
     choices: Arc<Vec<EditorChoice>>,
+    directory: entities::State,
     pub(super) attempt: Option<u64>,
     error: Option<String>,
 }
@@ -87,7 +101,9 @@ pub(super) fn presentation(shell: &ShellState) -> Option<EditorView> {
         column_label: draft.column_label.clone(),
         kind: draft.kind,
         original: draft.original.clone(),
+        link_name_seed: draft.link_name_seed.clone(),
         choices: draft.choices.clone(),
+        directory: draft.directory.presentation(),
         disabled: stale || hidden || view.loading || view.retry_at > now() || mutation.is_some(),
         saving: mutation.is_some_and(|mutation| mutation.phase != Phase::Uncertain),
         stale,
@@ -138,11 +154,13 @@ pub(super) fn begin_with_authority(
         return Err("Refresh this list before editing it.");
     }
     if create::blocks_mutation(shell)
+        || delete::blocks_mutation(shell)
         || view.editor.is_some()
         || shell.slack_lists.operations.contains_key(&view.id)
     {
         return Err("Finish the current edit before opening another cell.");
     }
+    cell_receipts::capacity(shell)?;
     let visible = view
         .all_rows
         .iter()
@@ -168,6 +186,11 @@ pub(super) fn begin_with_authority(
         "date" | "due_date" | "todo_due_date" => EditorKind::Date,
         "select" | "multi_select" if column.is_multi_select() => EditorKind::MultiSelect,
         "select" => EditorKind::Select,
+        "user" if column.is_multi_user() => EditorKind::MultiUser,
+        "user" => EditorKind::User,
+        "channel" if column.is_multi_channel() => EditorKind::MultiChannel,
+        "channel" => EditorKind::Channel,
+        "link" => EditorKind::Link,
         _ => return Err("This field does not have an editor yet."),
     };
     let original = column
@@ -208,6 +231,28 @@ pub(super) fn begin_with_authority(
             });
         }
     }
+    if let CellEditValue::Users(ids) = &original {
+        choices = users::selected_labels(shell, ids);
+    }
+    if let CellEditValue::Channels(ids) = &original {
+        choices = channels::selected_labels(shell, ids);
+    }
+    let directory = match kind {
+        EditorKind::User | EditorKind::MultiUser => {
+            entities::State::new(shell, entities::Kind::Users)
+        }
+        EditorKind::Channel | EditorKind::MultiChannel => {
+            entities::State::new(shell, entities::Kind::Channels)
+        }
+        _ => entities::State::default(),
+    };
+    let link_name_seed = link::name_seed(
+        &original,
+        record
+            .fields
+            .get(&column.key)
+            .and_then(|field| field.get("link")),
+    );
     let draft = Draft {
         generation: next_id(),
         visit,
@@ -222,7 +267,9 @@ pub(super) fn begin_with_authority(
         column_label: column.name.clone(),
         kind,
         original: Arc::new(original),
+        link_name_seed,
         choices: Arc::new(choices),
+        directory,
         attempt: None,
         error: None,
     };
@@ -289,9 +336,13 @@ pub(super) fn begin_save(
     {
         return Err("This editor is out of date. Cancel and reopen the cell before saving.");
     }
-    if create::blocks_mutation(shell) || shell.slack_lists.operations.contains_key(&view.id) {
+    if create::blocks_mutation(shell)
+        || delete::blocks_mutation(shell)
+        || shell.slack_lists.operations.contains_key(&view.id)
+    {
         return Err("Check the previous change before saving another edit.");
     }
+    cell_receipts::capacity(shell)?;
     if !draft
         .authority
         .admits(view, &draft.row_id, &draft.column_id)

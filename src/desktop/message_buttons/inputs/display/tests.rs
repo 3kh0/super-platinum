@@ -300,3 +300,122 @@ fn pure_radio_request_publishes_only_origin_display_and_unmounted_confirmation_c
         Some("a")
     );
 }
+
+#[test]
+fn date_mounts_are_independent_initial_updates_reset_and_unmount_retires_confirmation() {
+    let raw = json!({"type":"datepicker","action_id":"pick","initial_date":"2026-10-13"});
+    let field = super_platinum_core::block_actions::form::parse_message_date(&raw).unwrap();
+    let first = Mounted::new();
+    let second = Mounted::new();
+    assert_eq!(sync(&first, &field, None).as_deref(), Some("2026-10-13"));
+    sync(&second, &field, None);
+    let action = first.capture(&owner(), &key()).unwrap();
+    assert!(action.commit(Some("2026-10-14")));
+    let saved = json!("2026-10-14");
+    assert_eq!(
+        sync(&first, &field, Some(&saved)).as_deref(),
+        Some("2026-10-14")
+    );
+    assert_eq!(
+        sync(&second, &field, Some(&saved)).as_deref(),
+        Some("2026-10-13")
+    );
+    assert_eq!(
+        sync(&Mounted::new(), &field, Some(&saved)).as_deref(),
+        Some("2026-10-14")
+    );
+    let pending = first.capture(&owner(), &key()).unwrap();
+    let mut newraw = raw;
+    newraw["initial_date"] = json!("2026-11-01");
+    let updated = super_platinum_core::block_actions::form::parse_message_date(&newraw).unwrap();
+    assert_eq!(
+        sync(&first, &updated, Some(&saved)).as_deref(),
+        Some("2026-11-01")
+    );
+    assert!(!pending.current());
+    newraw.as_object_mut().unwrap().remove("initial_date");
+    let removed = super_platinum_core::block_actions::form::parse_message_date(&newraw).unwrap();
+    assert_eq!(sync(&first, &removed, Some(&saved)), None);
+    let pending = first.capture(&owner(), &key()).unwrap();
+    first.unmount();
+    assert!(!pending.current());
+    assert!(!pending.commit(Some("2026-12-01")));
+}
+
+#[test]
+fn time_mounts_keep_wall_time_on_timezone_change_and_reset_only_changed_initial() {
+    let raw = json!({"type":"timepicker","action_id":"pick","initial_time":"09:30","timezone":"America/New_York"});
+    let field = super_platinum_core::block_actions::form::parse_message_time(&raw).unwrap();
+    let first = Mounted::new();
+    let second = Mounted::new();
+    sync(&first, &field, None);
+    sync(&second, &field, None);
+    assert!(
+        first
+            .capture(&owner(), &key())
+            .unwrap()
+            .commit(Some("10:45"))
+    );
+    let saved = json!("10:45");
+    assert_eq!(
+        sync(&second, &field, Some(&saved)).as_deref(),
+        Some("09:30")
+    );
+    assert_eq!(
+        sync(&Mounted::new(), &field, Some(&saved)).as_deref(),
+        Some("10:45")
+    );
+    let mut changed = raw;
+    changed["timezone"] = json!("Asia/Tokyo");
+    let updated = super_platinum_core::block_actions::form::parse_message_time(&changed).unwrap();
+    assert_eq!(
+        sync(&first, &updated, Some(&saved)).as_deref(),
+        Some("10:45")
+    );
+    let pending = first.capture(&owner(), &key()).unwrap();
+    changed["initial_time"] = json!("12:00");
+    let updated = super_platinum_core::block_actions::form::parse_message_time(&changed).unwrap();
+    assert_eq!(
+        sync(&first, &updated, Some(&saved)).as_deref(),
+        Some("12:00")
+    );
+    assert!(!pending.current());
+    changed.as_object_mut().unwrap().remove("initial_time");
+    let removed = super_platinum_core::block_actions::form::parse_message_time(&changed).unwrap();
+    assert_eq!(sync(&first, &removed, Some(&saved)), None);
+    let pending = first.capture(&owner(), &key()).unwrap();
+    first.unmount();
+    assert!(!pending.commit(Some("13:15")));
+}
+
+#[test]
+fn user_mount_uses_saved_identity_and_resets_only_when_initial_prop_changes() {
+    use super_platinum_core::block_actions::form::parse_message_user;
+    let field =
+        parse_message_user(&json!({"type":"users_select","initial_user":"U00000001"})).unwrap();
+    let mounted = Mounted::new();
+    let saved = json!("W00000002");
+    assert_eq!(
+        sync(&mounted, &field, Some(&saved)).as_deref(),
+        Some("W00000002")
+    );
+    assert_eq!(
+        sync(&mounted, &field, Some(&json!("U00000003"))).as_deref(),
+        Some("W00000002")
+    );
+    let pending = mounted.capture(&owner(), &key()).unwrap();
+    let changed =
+        parse_message_user(&json!({"type":"users_select","initial_user":"U00000004"})).unwrap();
+    assert_eq!(
+        sync(&mounted, &changed, Some(&saved)).as_deref(),
+        Some("U00000004")
+    );
+    assert!(!pending.current());
+    assert_eq!(
+        sync(&Mounted::new(), &changed, Some(&saved)).as_deref(),
+        Some("W00000002")
+    );
+    let pending = mounted.capture(&owner(), &key()).unwrap();
+    mounted.unmount();
+    assert!(!pending.current());
+}

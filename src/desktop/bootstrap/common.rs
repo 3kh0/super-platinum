@@ -83,6 +83,8 @@ pub(super) async fn refresh_history_at(
     match result {
         Ok(page) => {
             let mut shell = state.write();
+            let upload_ids =
+                crate::messaging::upload_recovery::incoming(&shell, team, &channel, &page.messages);
             if let Some(workspace) = shell.core.workspaces.get_mut(team) {
                 let messages = workspace.messages.entry(channel.clone()).or_default();
                 for message in page.messages {
@@ -96,6 +98,12 @@ pub(super) async fn refresh_history_at(
                 messages.history_refreshing = false;
                 messages.has_more_older = page.has_more;
             }
+            crate::messaging::upload_recovery::reconcile(
+                &mut shell,
+                team,
+                &channel,
+                Some(&upload_ids),
+            );
             shell.refresh_from_core();
             drop(shell);
             dioxus::prelude::spawn(crate::performance::mark_history_painted(
@@ -121,37 +129,58 @@ pub(super) async fn refresh_history_at(
 }
 
 pub(crate) fn persist_workspace(state: &Signal<ShellState>, team: &str) {
+    persist_snapshot(state, team, false);
+}
+
+pub(crate) fn persist_workspace_metadata(state: &Signal<ShellState>, team: &str) {
+    persist_snapshot(state, team, true);
+}
+
+fn persist_snapshot(state: &Signal<ShellState>, team: &str, metadata_only: bool) {
     let state = state.read();
     if state.core.cache.is_none() {
         return;
     }
     let (Some(account), Some(workspace)) = (
         state.core.active_account.clone(),
-        state.core.workspaces.get(team).cloned(),
+        state.core.workspaces.get(team),
     ) else {
         return;
     };
+    let snapshot = if metadata_only {
+        super_platinum_core::cache::WorkspaceSnapshot::metadata(workspace)
+    } else {
+        super_platinum_core::cache::WorkspaceSnapshot::full(workspace)
+    };
     drop(state);
-    persistence_worker().enqueue(account, workspace);
+    persistence_worker().enqueue(account, snapshot);
 }
 
 // Only the newest unsaved snapshot per account/team is needed. Never discard a
 // new snapshot just because a previous save is still on disk.
 struct PersistenceQueue {
     pending: std::sync::Mutex<
-        std::collections::HashMap<(String, String), super_platinum_core::state::Workspace>,
+        std::collections::HashMap<(String, String), super_platinum_core::cache::WorkspaceSnapshot>,
     >,
     ready: std::sync::Condvar,
 }
 
 impl PersistenceQueue {
-    fn enqueue(&self, account: String, workspace: super_platinum_core::state::Workspace) {
+    fn enqueue(
+        &self,
+        account: String,
+        mut snapshot: super_platinum_core::cache::WorkspaceSnapshot,
+    ) {
         let mut pending = self.pending.lock().unwrap();
-        pending.insert((account, workspace.team_id.clone()), workspace);
+        let key = (account, snapshot.team_id().to_owned());
+        if let Some(older) = pending.remove(&key) {
+            snapshot.retain_older_transcripts(older);
+        }
+        pending.insert(key, snapshot);
         self.ready.notify_one();
     }
 
-    fn next(&self) -> (String, super_platinum_core::state::Workspace) {
+    fn next(&self) -> (String, super_platinum_core::cache::WorkspaceSnapshot) {
         let mut pending = self.pending.lock().unwrap();
         loop {
             if let Some(key) = pending.keys().next().cloned() {
@@ -176,11 +205,11 @@ fn persistence_worker() -> &'static PersistenceQueue {
                 loop {
                     let (account, workspace) = persistence_worker().next();
                     let result = super_platinum_core::cache::Cache::open_default(&account, false)
-                        .and_then(|cache| cache.save_workspace(&workspace));
+                        .and_then(|cache| workspace.save(&cache));
                     if let Err(error) = result {
                         eprintln!(
                             "super-platinum: cache save failed for {}: {error}",
-                            workspace.team_id
+                            workspace.team_id()
                         );
                     }
                 }
@@ -193,6 +222,62 @@ fn persistence_worker() -> &'static PersistenceQueue {
 #[cfg(test)]
 mod persistence_tests {
     use super::*;
+
+    #[test]
+    fn metadata_enqueue_keeps_earlier_unsaved_transcript() {
+        use super_platinum_core::{
+            cache::{Cache, WorkspaceSnapshot},
+            config::WorkspaceSession,
+            slack::models::{Channel, Message},
+            state::{ChannelMessages, Workspace},
+        };
+        let session = WorkspaceSession {
+            team_id: "T".into(),
+            enterprise_id: None,
+            user_id: "U".into(),
+            name: "old".into(),
+            url: "https://example.slack.com".into(),
+            token: String::new(),
+        };
+        let mut ws = Workspace::from_session(&session);
+        ws.channels.insert(
+            "C".into(),
+            Channel {
+                id: "C".into(),
+                ..Default::default()
+            },
+        );
+        ws.messages.insert(
+            "C".into(),
+            ChannelMessages {
+                loaded: true,
+                messages: vec![Message {
+                    ts: Some("1.000001".into()),
+                    text: Some("unsaved".into()),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+        );
+        let queue = PersistenceQueue {
+            pending: Default::default(),
+            ready: std::sync::Condvar::new(),
+        };
+        queue.enqueue("account".into(), WorkspaceSnapshot::full(&ws));
+        ws.name = "new metadata".into();
+        ws.messages.clear();
+        queue.enqueue("account".into(), WorkspaceSnapshot::metadata(&ws));
+        assert_eq!(queue.pending.lock().unwrap().len(), 1);
+        let (_, snapshot) = queue.next();
+        let cache = Cache::open(":memory:").unwrap();
+        snapshot.save(&cache).unwrap();
+        let loaded = cache.load_workspace(&session).unwrap().unwrap();
+        assert_eq!(loaded.name, "new metadata");
+        assert_eq!(
+            loaded.messages["C"].messages[0].text.as_deref(),
+            Some("unsaved")
+        );
+    }
 
     #[test]
     fn pending_snapshots_keep_latest_per_account_and_team() {
@@ -210,19 +295,41 @@ mod persistence_tests {
                 token: String::new(),
             },
         );
-        queue.enqueue("account".into(), first.clone());
+        queue.enqueue(
+            "account".into(),
+            super_platinum_core::cache::WorkspaceSnapshot::full(&first),
+        );
         first.name = "new".into();
-        queue.enqueue("account".into(), first.clone());
-        queue.enqueue("other".into(), first);
+        queue.enqueue(
+            "account".into(),
+            super_platinum_core::cache::WorkspaceSnapshot::full(&first),
+        );
+        queue.enqueue(
+            "other".into(),
+            super_platinum_core::cache::WorkspaceSnapshot::full(&first),
+        );
         assert_eq!(queue.pending.lock().unwrap().len(), 2);
         let jobs = [queue.next(), queue.next()];
+        for (_, snapshot) in &jobs {
+            let cache = super_platinum_core::cache::Cache::open(":memory:").unwrap();
+            snapshot.save(&cache).unwrap();
+            let session = super_platinum_core::config::WorkspaceSession {
+                team_id: "T".into(),
+                enterprise_id: None,
+                user_id: "U".into(),
+                name: String::new(),
+                url: String::new(),
+                token: String::new(),
+            };
+            assert_eq!(cache.load_workspace(&session).unwrap().unwrap().name, "new");
+        }
         assert!(
             jobs.iter()
-                .any(|(account, ws)| account == "account" && ws.name == "new")
+                .any(|(account, ws)| account == "account" && ws.team_id() == "T")
         );
         assert!(
             jobs.iter()
-                .any(|(account, ws)| account == "other" && ws.name == "new")
+                .any(|(account, ws)| account == "other" && ws.team_id() == "T")
         );
     }
 }

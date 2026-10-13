@@ -48,3 +48,10 @@ fn positive_flag_does_not_hide_a_missing_or_malformed_message_receipt() {
         ));
     }
 }
+
+#[test]
+fn explicit_send_rejection_is_not_lost_response() {
+    assert!(
+        matches!(decode_sent_message(json!({"ok":false,"error":"not_in_channel"})),Err(Error::Api(code)) if code=="not_in_channel")
+    );
+}

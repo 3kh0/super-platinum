@@ -12,6 +12,17 @@ use wreq_util::Emulation;
 use super::Error;
 use super::client::{PreparedRequest, RequestBody, redact_secrets};
 
+mod canvas_collab;
+mod canvas_edit;
+mod draft_mutation;
+pub use canvas_edit::CanvasEditFailure;
+mod list_record_delete;
+mod mention_search;
+mod upload_readback;
+mod notification_preferences;
+pub(super) use notification_preferences::notification_preferences_success;
+pub use list_record_delete::ListDeleteFailure;
+
 #[cfg(test)]
 mod file_viewing_tests;
 #[cfg(test)]
@@ -39,6 +50,9 @@ pub enum Health {
 #[derive(Clone)]
 pub struct Transport {
     http: wreq::Client,
+    /// Strict single-attempt mutations also disable HTTP-library protocol retries.
+    /// Lazily pooled so ordinary boot/read paths do not construct another client.
+    canvas_http: Arc<std::sync::OnceLock<wreq::Client>>,
     d_cookie: String,
     /// Shared with every clone: the shell holds one and the workers hold others,
     /// and all of them have to agree about whether the network is up. A watch
@@ -84,6 +98,7 @@ impl Transport {
             .map_err(|e| Error::Transport(format!("client build: {e}")))?;
         Ok(Self {
             http,
+            canvas_http: Arc::new(std::sync::OnceLock::new()),
             d_cookie: d_cookie.into(),
             health: Arc::new(watch::Sender::new(Health::Unknown)),
         })
@@ -231,7 +246,10 @@ impl Transport {
             || !url::Url::parse(&req.url).is_ok_and(|url| {
                 matches!(
                     url.path(),
-                    "/api/lists.open" | "/api/files.markRead" | "/api/lists.getDefaultView"
+                    "/api/lists.open"
+                        | "/api/lists.records.open"
+                        | "/api/files.markRead"
+                        | "/api/lists.getDefaultView"
                 )
             })
         {
@@ -274,7 +292,16 @@ impl Transport {
                 "List item creation not sent while offline".into(),
             ));
         }
-        self.execute_once(&req).await
+        // Once dispatch starts, a timeout/reset can mean Slack accepted the
+        // new record but its response was lost. The generic transport uses
+        // Offline for those failures too; it is not proof of non-delivery.
+        // Keep its health update, but preserve an uncertain creation outcome.
+        self.execute_once(&req).await.map_err(|error| match error {
+            Error::Offline(_) => {
+                Error::Transport("List item creation response was lost after dispatch".into())
+            }
+            error => error,
+        })
     }
 
     pub async fn upload_bytes(
@@ -320,10 +347,20 @@ impl Transport {
         req: &PreparedRequest,
         structured_block_response: bool,
     ) -> Result<Value, Error> {
+        self.execute_once_using(req, structured_block_response, &self.http)
+            .await
+    }
+
+    async fn execute_once_using(
+        &self,
+        req: &PreparedRequest,
+        structured_block_response: bool,
+        http: &wreq::Client,
+    ) -> Result<Value, Error> {
         let req_url = req.url.clone();
         let mut builder = match req.method {
-            "POST" => self.http.post(&req.url),
-            "GET" => self.http.get(&req.url),
+            "POST" => http.post(&req.url),
+            "GET" => http.get(&req.url),
             other => return Err(Error::Transport(format!("unsupported method {other}"))),
         };
         builder = builder.timeout(API_TIMEOUT);

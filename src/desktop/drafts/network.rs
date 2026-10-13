@@ -21,6 +21,7 @@ pub(crate) use readback::Readback;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Block {
     Session,
+    Offline,
     Scope,
     Unsupported,
     Cooldown { until_ms: u64 },
@@ -150,8 +151,10 @@ impl Binding {
             .map_err(|_| Block::Unsupported)
     }
     pub async fn execute(&self, operation: &Operation, now_ms: u64) -> Attempt {
-        self.execute_with(operation, now_ms, |request| self.transport.execute(request))
-            .await
+        self.execute_with(operation, now_ms, |request| {
+            self.transport.execute_draft_mutation(request)
+        })
+        .await
     }
     async fn execute_with<F, Fut>(&self, operation: &Operation, now_ms: u64, send: F) -> Attempt
     where
@@ -204,6 +207,9 @@ impl Binding {
 }
 
 fn failure(error: &Error, now_ms: u64) -> Attempt {
+    if matches!(error, Error::Api(code) if code == "draft_mutation_not_sent_offline") {
+        return Attempt::blocked(Block::Offline);
+    }
     let retry = match error {
         Error::RateLimited { retry_after_secs }
         | Error::HttpStatus {

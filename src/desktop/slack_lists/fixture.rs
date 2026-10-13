@@ -6,24 +6,34 @@ use super_platinum_core::{
     slack::{api, client::RequestBody},
 };
 mod board_views;
+mod channel_edit;
 mod creation;
 mod date_edit;
 mod date_views;
+mod link_edit;
 mod record_detail;
+mod record_open;
+mod user_edit;
 pub(crate) use board_views::{add_board_views, enable_board_tasks, restore_board_views};
+pub(crate) use channel_edit::{add_channel_edits, channel_edit_value, restore_channel_edits};
+pub(super) use creation::dispatch_creation;
 pub(crate) use creation::{
     add_creation_views, complete_creation, created_record, creation_attempts,
-    creation_prepared_valid, dispatch_creation, restore_creation_views, set_creation_limit,
-    set_creation_uncertain,
+    creation_prepared_valid, restore_creation_views, set_creation_limit, set_creation_uncertain,
 };
 pub(crate) use date_edit::{
     add_date_edits, change_date_edit_due, date_edit_value, restore_date_edits,
 };
 pub(crate) use date_views::{add_date_views, remove_date_views, set_date_clock};
+pub(crate) use link_edit::{add_link_edits, link_edit_value, restore_link_edits};
 pub(crate) use record_detail::{add_record_details, change_detail_number};
+pub(super) use record_open::record_open;
+pub(crate) use record_open::{record_open_count, record_open_valid};
+pub(crate) use user_edit::{add_user_edits, restore_user_edits, user_edit_value};
 
 #[derive(Clone)]
 pub(crate) struct Fixture {
+    record_open: record_open::State,
     creation: creation::State,
     document: Value,
     records: Value,
@@ -92,6 +102,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     }).collect::<Vec<_>>();
     let file: File = serde_json::from_value(document.clone()).expect("fixture file");
     shell.slack_lists.fixture = Some(Fixture {
+        record_open: record_open::State::default(),
         creation: creation::State::default(),
         document,
         records: json!({"ok":true,"records":records}),
@@ -190,7 +201,7 @@ pub(crate) fn complete_pending(shell: &mut ShellState) {
     let Some(attempt) = fixture.pending.take() else {
         return;
     };
-    let cells = attempt.edit.cells();
+    let cells = link_edit::canonical_cells(&attempt.edit.cells());
     if let Some(cell) = cells.as_array().and_then(|cells| cells.first()) {
         for record in fixture.records["records"].as_array_mut().unwrap() {
             if record["id"] != attempt.edit.record_id() {
@@ -205,7 +216,16 @@ pub(crate) fn complete_pending(shell: &mut ShellState) {
                     fields.len() - 1
                 });
             let field = &mut fields[index];
-            for key in ["checkbox", "rich_text", "number", "select", "date"] {
+            for key in [
+                "checkbox",
+                "rich_text",
+                "number",
+                "select",
+                "date",
+                "user",
+                "channel",
+                "link",
+            ] {
                 if let Some(value) = cell.get(key) {
                     field[key] = value.clone();
                     if key == "rich_text" {
@@ -233,7 +253,7 @@ pub(crate) fn complete_pending(shell: &mut ShellState) {
     let result = if uncertain {
         Err(Error::Transport("fixture dropped reply".into()))
     } else {
-        Ok(json!({"ok":true,"cells":attempt.edit.cells()}))
+        Ok(json!({"ok":true,"cells":cells}))
     };
     finish_edit(shell, &attempt, result);
 }
@@ -357,6 +377,11 @@ pub(crate) fn add_saved_views(shell: &mut ShellState) {
     let all_columns = schema.iter().enumerate().map(|(i, c)| {
         json!({"id":c["id"],"key":c["key"],"visible":true,"position":(5_000_000_000u64+i as u64).to_string()})
     }).collect::<Vec<_>>();
+    let mut wide_reordered = all_columns.clone();
+    wide_reordered.swap(0, 1);
+    for (index, column) in wide_reordered.iter_mut().enumerate() {
+        column["position"] = json!(index.to_string());
+    }
     let reordered = json!([
         column("C_SELECT", "status", true),
         column("C_NAME", "NAME", true),
@@ -379,6 +404,7 @@ pub(crate) fn add_saved_views(shell: &mut ShellState) {
     fixture.document["list_metadata"]["views"] = json!([
         {"id":"V_LIST_ALL","name":"All items","type":"table","position":"1","is_all_items_view":true,"default_view_key":"all_items","show_completed_items":true,"columns":all_columns,"filters":[],"sorts":[]},
         {"id":"V_LIST_REORDERED","name":"Compact status","type":"table","position":"2","columns":reordered,"filters":[],"sorts":[]},
+        {"id":"V_LIST_REORDERED_WIDE","name":"Wide reordered columns","type":"table","position":"7","columns":wide_reordered,"filters":[],"sorts":[]},
         {"id":"V_LIST_FILTERED","name":"Open high estimates","type":"table","position":"3","columns":compact,"filters":[
             {"key":"done","column_id":"C_CHECK","operator":"is_empty","values":[]},
             {"key":"estimate","column_id":"C_NUMBER","operator":"greater_than_or_equal","values":[68]}
@@ -427,4 +453,32 @@ pub(super) fn edit_backend_for_test(
         .as_mut()
         .expect("disconnected list fixture");
     edit(&mut fixture.document, &mut fixture.records);
+}
+
+// Narrow disconnected backend access for the deletion fixture. No production path
+// can use these without the same no-transport/no-session fixture gate.
+pub(super) fn deletion_loaded(shell: &ShellState) -> Option<Loaded> {
+    enabled(shell).then(|| loaded(shell.slack_lists.fixture.as_ref().unwrap()))
+}
+pub(super) fn deletion_remove(shell: &mut ShellState, id: &str) {
+    if !enabled(shell) {
+        return;
+    }
+    let records = shell.slack_lists.fixture.as_mut().unwrap().records["records"]
+        .as_array_mut()
+        .unwrap();
+    records.retain(|record| record["id"] != id && record["parent_record_id"] != id);
+}
+pub(super) fn deletion_restore(shell: &mut ShellState, restored: &[Value]) {
+    if !enabled(shell) {
+        return;
+    }
+    let records = shell.slack_lists.fixture.as_mut().unwrap().records["records"]
+        .as_array_mut()
+        .unwrap();
+    for record in restored {
+        if !records.iter().any(|current| current["id"] == record["id"]) {
+            records.push(record.clone());
+        }
+    }
 }

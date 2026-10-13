@@ -367,6 +367,7 @@ impl ShellState {
             profile_hover_card_active: false,
             overlay: None,
             reaction_target: None,
+            composer_emoji: Default::default(),
             forward_target: None,
             emoji_catalog_loaded: HashMap::new(),
             settings_section: SettingsSection::Appearance,
@@ -408,10 +409,13 @@ impl ShellState {
             self_menu_notifications_open: false,
             slack_lists: crate::slack_lists::State::default(),
             self_status: crate::self_status::State::default(),
+            channel_mute: crate::channel_mute::State::default(),
+            upload_checks: crate::messaging::delivery_check::State::default(),
             self_menu_mutations: Default::default(),
             profile_vip_pending: Default::default(),
             viewer: None,
             canvas: None,
+            canvas_checklist: Default::default(),
             canvas_create: None,
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
@@ -498,6 +502,7 @@ impl ShellState {
             profile_hover_card_active: false,
             overlay: None,
             reaction_target: None,
+            composer_emoji: Default::default(),
             forward_target: None,
             emoji_catalog_loaded: HashMap::new(),
             settings_section: SettingsSection::Appearance,
@@ -539,10 +544,13 @@ impl ShellState {
             self_menu_notifications_open: false,
             slack_lists: crate::slack_lists::State::default(),
             self_status: crate::self_status::State::default(),
+            channel_mute: crate::channel_mute::State::default(),
+            upload_checks: crate::messaging::delivery_check::State::default(),
             self_menu_mutations: Default::default(),
             profile_vip_pending: Default::default(),
             viewer: None,
             canvas: None,
+            canvas_checklist: Default::default(),
             canvas_create: None,
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
@@ -816,6 +824,7 @@ impl ShellState {
             profile_hover_card_active: false,
             overlay: None,
             reaction_target: None,
+            composer_emoji: Default::default(),
             forward_target: None,
             emoji_catalog_loaded: HashMap::new(),
             settings_section: SettingsSection::Appearance,
@@ -857,10 +866,13 @@ impl ShellState {
             self_menu_notifications_open: false,
             slack_lists: crate::slack_lists::State::default(),
             self_status: crate::self_status::State::default(),
+            channel_mute: crate::channel_mute::State::default(),
+            upload_checks: crate::messaging::delivery_check::State::default(),
             self_menu_mutations: Default::default(),
             profile_vip_pending: Default::default(),
             viewer: None,
             canvas: None,
+            canvas_checklist: Default::default(),
             canvas_create: None,
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
@@ -944,12 +956,42 @@ impl ShellState {
             "self-status-editor" | "self-status-editor-narrow" => {
                 crate::self_status::fixture::install(&mut state)
             }
+            "thread-broadcast" | "thread-broadcast-narrow" => {
+                crate::messaging::thread_broadcast_check::install(&mut state)
+            }
+            "message-broadcast" | "message-broadcast-narrow" => {
+                crate::message_vm::broadcast_check::install(&mut state)
+            }
+            "upload-delivery-check" | "upload-delivery-check-narrow" => {
+                crate::messaging::delivery_check::fixture::install(&mut state)
+            }
+            "composer-emoji" | "composer-emoji-narrow" => {
+                crate::composer_emoji::check::install(&mut state)
+            }
+            "channel-mute" | "channel-mute-narrow" => {
+                crate::channel_mute::fixture::install(&mut state)
+            }
             "system-messages" => crate::fixture::system_messages(&mut state),
             "slack-links" | "slack-links-narrow" => crate::slack_links_check::install(&mut state),
             "app-modal-form"
             | "app-modal-form-narrow"
             | "app-modal-lifecycle"
             | "app-modal-lifecycle-narrow" => crate::app_modal::fixture::install(&mut state),
+            "message-users-select" | "message-users-select-narrow" => {
+                crate::message_buttons::user_fixture::install(&mut state)
+            }
+            "message-conversations-select" | "message-conversations-select-narrow" => {
+                crate::message_buttons::conversation_fixture::install(&mut state)
+            }
+            "message-timepicker" | "message-timepicker-narrow" => {
+                crate::message_buttons::time_fixture::install(&mut state)
+            }
+            "message-datepicker" | "message-datepicker-narrow" => {
+                crate::message_buttons::date_fixture::install(&mut state)
+            }
+            "message-multi-controls" | "message-multi-controls-narrow" => {
+                crate::message_buttons::multi_fixture::install(&mut state)
+            }
             "message-radio-buttons" | "message-radio-buttons-narrow" => {
                 crate::message_buttons::radio_fixture::install(&mut state)
             }
@@ -1182,6 +1224,12 @@ impl ShellState {
             }
             "canvas"
             | "canvas-narrow"
+            | "canvas-checklist"
+            | "canvas-checklist-narrow"
+            | "canvas-text"
+            | "canvas-text-narrow"
+            | "canvas-checklist-saving"
+            | "canvas-checklist-uncertain"
             | "canvas-loading"
             | "canvas-error"
             | "canvas-rename"
@@ -1198,6 +1246,8 @@ impl ShellState {
             "dms" => state.main_view = MainView::Dms,
             "files"
             | "files-narrow"
+            | "files-density"
+            | "files-density-narrow"
             | "files-empty"
             | "files-error"
             | "channel-files"
@@ -1221,6 +1271,9 @@ impl ShellState {
                 };
                 let page=serde_json::from_value(serde_json::json!({"items":items,"pagination":{"page":1,"page_count":if items.is_empty(){1}else{3},"total_count":if items.is_empty(){0}else{124}}})).unwrap();
                 state.core.files.apply(generation, page);
+                if matches!(name, "files-density" | "files-density-narrow") {
+                    crate::view::files::check::fixture(&mut state);
+                }
                 if matches!(name, "channel-files" | "channel-files-narrow") {
                     state.main_view = MainView::Home;
                     state.channel_tab = ChannelTab::Files;
@@ -1367,6 +1420,8 @@ impl ShellState {
                 }
             }
             "activity-paging"
+            | "activity-navigation"
+            | "activity-navigation-narrow"
             | "activity-loading"
             | "activity-error"
             | "activity-more-error"
@@ -1916,6 +1971,8 @@ impl ShellState {
                 }
                 state.core.pending_file_messages.push(
                     super_platinum_core::domain::PendingFileMessage {
+                        finalized: None,
+                        reply_broadcast: false,
                         team: "T1".into(),
                         channel: "C2".into(),
                         thread_ts: None,

@@ -488,3 +488,115 @@ fn response_rejects_missing_acknowledgement_and_malformed_failure_fields() {
         );
     }
 }
+
+#[test]
+fn date_request_requires_matching_committed_state_and_preserves_siblings() {
+    use crate::block_actions::validation::CapturedMessageDate;
+    let mut message = message(false);
+    message.blocks = vec![
+        json!({"type":"actions","block_id":"date","elements":[{"type":"datepicker","action_id":"pick","initial_date":"2026-10-13"}]}),
+    ];
+    let owner = owner();
+    for selected in [None, Some("2028-02-29")] {
+        let captured =
+            CapturedMessageDate::capture(owner.clone(), &message, "date", "pick", selected)
+                .unwrap();
+        let current = captured.revalidate(&owner, &message).unwrap();
+        let values = json!({"date":{"pick":{"type":"datepicker","selected_date":selected}},"other":{"choice":{"type":"static_select","selected_option":{"value":"a","text":{"type":"plain_text","text":"A"}}}}});
+        let request = block_action_date(
+            &SlackClient::default(),
+            &workspace(),
+            &current,
+            "A1",
+            "T1",
+            "date-token",
+            Some(&values),
+        )
+        .unwrap();
+        assert!(!request.retry_safe());
+        let fields = fields(request);
+        assert_eq!(
+            serde_json::from_str::<Value>(&fields["state"]).unwrap(),
+            json!({"values":values})
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>(&fields["actions"]).unwrap()[0]["selected_date"],
+            json!(selected)
+        );
+        for bad in [
+            None,
+            Some(json!({})),
+            Some(json!({"date":{"pick":{"type":"datepicker","selected_date":"2026-01-01"}}})),
+        ] {
+            assert!(
+                block_action_date(
+                    &SlackClient::default(),
+                    &workspace(),
+                    &current,
+                    "A1",
+                    "T1",
+                    "date-token",
+                    bad.as_ref()
+                )
+                .is_err()
+            );
+        }
+    }
+}
+
+#[test]
+fn time_request_requires_exact_timezone_and_selected_wall_time() {
+    use crate::block_actions::validation::CapturedMessageTime;
+    let mut message = message(false);
+    message.blocks = vec![
+        json!({"type":"actions","block_id":"time","elements":[{"type":"timepicker","action_id":"pick","timezone":"Pacific/Honolulu"}]}),
+    ];
+    let owner = owner();
+    for selected in [None, Some("00:00")] {
+        let captured =
+            CapturedMessageTime::capture(owner.clone(), &message, "time", "pick", selected)
+                .unwrap();
+        let current = captured.revalidate(&owner, &message).unwrap();
+        let values = json!({"time":{"pick":{"type":"timepicker","selected_time":selected,"timezone":"Pacific/Honolulu"}},"other":{"date":{"type":"datepicker","selected_date":"2026-10-13"}}});
+        let request = block_action_time(
+            &SlackClient::default(),
+            &workspace(),
+            &current,
+            "A1",
+            "T1",
+            "time-token",
+            Some(&values),
+        )
+        .unwrap();
+        assert!(!request.retry_safe());
+        let fields = fields(request);
+        assert_eq!(
+            serde_json::from_str::<Value>(&fields["state"]).unwrap(),
+            json!({"values":values})
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>(&fields["actions"]).unwrap()[0]["selected_time"],
+            json!(selected)
+        );
+        for (key, value) in [
+            ("timezone", Value::Null),
+            ("timezone", json!("UTC")),
+            ("selected_time", json!("12:30")),
+        ] {
+            let mut bad = values.clone();
+            bad["time"]["pick"][key] = value;
+            assert!(
+                block_action_time(
+                    &SlackClient::default(),
+                    &workspace(),
+                    &current,
+                    "A1",
+                    "T1",
+                    "time-token",
+                    Some(&bad)
+                )
+                .is_err()
+            );
+        }
+    }
+}

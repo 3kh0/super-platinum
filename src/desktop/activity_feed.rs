@@ -1,4 +1,10 @@
 //! Native Activity loading. Fetching or paging never marks notifications read.
+mod admission;
+pub(crate) mod check;
+pub(crate) use admission::Navigation;
+mod navigation;
+pub(crate) use navigation::thread_destination;
+
 use crate::state::{MainView, ShellState};
 use dioxus::prelude::*;
 use super_platinum_core::slack::api;
@@ -108,6 +114,7 @@ pub(crate) fn fixture(shell: &mut ShellState, name: &str) {
     feed.loaded = true;
     feed.next_cursor = Some("older-notifications".into());
     match name {
+        "activity-navigation" | "activity-navigation-narrow" => check::install(shell),
         "activity-loading" => {
             feed.items.clear();
             feed.loaded = false;

@@ -29,7 +29,8 @@ pub(super) fn dispatch(mut state: Signal<ShellState>, attempt: Attempt) {
                 return;
             }
         };
-        if let Err(error) = validate(&mut state.write(), &attempt, &loaded) {
+        let validation = validate(&mut state.write(), &attempt, &loaded);
+        if let Err(error) = validation {
             rejected(&mut state.write(), &attempt, error, None);
             return;
         }

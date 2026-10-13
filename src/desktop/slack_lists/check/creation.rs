@@ -7,6 +7,7 @@ pub(super) async fn run(
     desktop: &dioxus::desktop::DesktopContext,
 ) -> Result<Value, String> {
     let cell_attempts = fixture::attempt_count(&state.peek());
+    let opens = fixture::record_open_count(&state.peek());
     let snapshot = fixture::add_creation_views(&mut state.write())
         .ok_or("Creation checks require the disconnected fixture")?;
     wait_dom(desktop,r#"({ok:!!document.querySelector('#slack-list-view-select option[value="V_CREATE_FILTER"]')})"#).await?;
@@ -24,6 +25,7 @@ pub(super) async fn run(
     begin(state, desktop, 1).await?;
     let first = complete(state, desktop).await?;
     detail(desktop, &first).await?;
+    super::record_detail::wait_record_opens(state, opens + 1).await?;
     let record = fixture::created_record(&state.peek(), &first).ok_or("Created record missing")?;
     if record["fields"] != json!([]) {
         return Err("Header create guessed filter or grouping defaults".into());
@@ -37,6 +39,7 @@ pub(super) async fn run(
     begin(state, desktop, 2).await?;
     let second = complete(state, desktop).await?;
     detail(desktop, &second).await?;
+    super::record_detail::wait_record_opens(state, opens + 2).await?;
     let record =
         fixture::created_record(&state.peek(), &second).ok_or("Completed record missing")?;
     if record["fields"]
@@ -57,6 +60,7 @@ pub(super) async fn run(
     begin(state, desktop, 3).await?;
     let third = complete(state, desktop).await?;
     detail(desktop, &third).await?;
+    super::record_detail::wait_record_opens(state, opens + 3).await?;
     close_detail(desktop).await?;
     ready(desktop).await?;
 
@@ -77,6 +81,7 @@ pub(super) async fn run(
     checked(desktop,r#"(()=>{document.getElementById('slack-list-create-retire').click();return {ok:true};})()"#).await?;
     ready(desktop).await?;
     attempts(state, 4)?;
+    super::record_detail::assert_record_opens(state, opens + 3)?;
     if !fixture::creation_prepared_valid(&state.peek()) {
         return Err("Creation request shape or retry policy did not match capture".into());
     }
@@ -85,7 +90,7 @@ pub(super) async fn run(
     wait_dom(desktop,r#"({ok:!document.querySelector('#slack-list-view-select option[value="V_CREATE_FILTER"]')&&!document.getElementById('slack-list-record-detail')&&!document.getElementById('slack-list-create-status')&&document.querySelector('.slack-list-grid tbody tr[data-row-id]')?.cells.length===11})"#).await?;
     assert_attempts(state, cell_attempts)?;
     Ok(
-        json!({"unknownLimitBlocked":true,"overLimitBlocked":true,"singleAttempt":true,"filteredDetail":true,"completedSeed":true,"boardCreate":true,"pendingDuplicateBlocked":true,"canonicalReadback":true,"uncertainNoReplay":true,"explicitRetirement":true,"cleanup":true,"captures":{"created":created,"uncertain":uncertain}}),
+        json!({"unknownLimitBlocked":true,"overLimitBlocked":true,"singleAttempt":true,"filteredDetail":true,"completedSeed":true,"boardCreate":true,"pendingDuplicateBlocked":true,"canonicalReadback":true,"createdRecordOpenTracking":true,"uncertainNoReplay":true,"explicitRetirement":true,"cleanup":true,"captures":{"created":created,"uncertain":uncertain}}),
     )
 }
 async fn choose(desktop: &dioxus::desktop::DesktopContext, id: &str) -> Result<(), String> {

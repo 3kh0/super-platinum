@@ -260,6 +260,7 @@ pub fn saved(mut state: Signal<ShellState>, ctx: &Context, draft: ScheduledMessa
 pub fn failure(error: &super_platinum_core::slack::Error) -> String {
     use super_platinum_core::slack::Error;
     match error {
+        Error::Api(code) if code == "draft_mutation_not_sent_offline" => "Reconnect to Slack to manage scheduled messages. Nothing was sent.".into(),
         Error::Api(code) if code=="draft_not_active"=>"This draft was already sent or deleted. Refresh the list to see its current state.".into(),
         Error::Api(code) if code=="draft_not_loaded"=>"Refresh and load more drafts before changing this message.".into(),
         Error::Api(code) if code=="draft_multiple_destinations"=>"Sending drafts to multiple destinations is not supported yet. Open this draft in Slack to send it.".into(),

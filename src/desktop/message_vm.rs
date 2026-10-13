@@ -1,3 +1,5 @@
+pub(crate) mod broadcast;
+pub(crate) mod broadcast_check;
 use super_platinum_core::MediaAssetKind;
 
 use crate::blocks::{BlockCtx, block_nodes, custom_emoji_media, plain_inline_nodes};
@@ -91,7 +93,16 @@ pub(crate) fn message_vm_with_pending(
                 String::new()
             }
         });
+    let broadcast_root = broadcast::root(message);
+    let broadcast_parent_preview = broadcast_root.as_deref().and_then(|root| {
+        message
+            .channel
+            .as_deref()
+            .and_then(|channel| broadcast::preview(workspace, message, root, channel, media))
+    });
     MessageVm {
+        broadcast_root,
+        broadcast_parent_preview,
         id: raw_ts.clone(),
         thread_ts: message.thread_ts.clone(),
         ts: message.ts.clone().unwrap_or_else(|| raw_ts.clone()),

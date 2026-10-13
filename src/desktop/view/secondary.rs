@@ -2,6 +2,8 @@ use dioxus::prelude::*;
 
 use crate::state::{ActivityTab, MainView, ShellState};
 
+mod dm_channels;
+
 pub(crate) fn secondary_view(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
     let workspace = snapshot
         .core
@@ -141,6 +143,11 @@ async fn load_more_dms_if_needed(state: Signal<ShellState>) {
 }
 
 pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
+    let channel_index = if snapshot.core.dms.entries.is_empty() {
+        Default::default()
+    } else {
+        dm_channels::index(&snapshot.channels)
+    };
     let workspace = snapshot
         .core
         .active_team
@@ -215,6 +222,7 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                             .unwrap_or_else(|| "?".into());
                         let unread = dm_entry_unread(workspace, entry);
                         let is_active = entry.id == active_id;
+                        let projected_channel = channel_index.get(entry.id.as_str()).copied();
                         let avatar = workspace
                             .and_then(|ws| {
                                 let channel = ws.channels.get(&entry.id).or(entry.channel.as_ref())?;
@@ -222,16 +230,9 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                                 ws.avatar_url(user)
                             })
                             .and_then(|_url| {
-                                snapshot
-                                    .channels
-                                    .iter()
-                                    .find(|channel| channel.id == entry.id)
-                                    .and_then(|channel| channel.avatar.clone())
+                                projected_channel.and_then(|channel| channel.avatar.clone())
                             });
-                        let presence = snapshot
-                            .channels
-                            .iter()
-                            .find(|channel| channel.id == entry.id)
+                        let presence = projected_channel
                             .map(|channel| channel.presence)
                             .unwrap_or_default();
                         rsx! {
@@ -483,6 +484,7 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                                 div { class: "activity-day", "{label}" }
                             }
                             button {
+                                "data-activity-key": "{item.key}",
                                 class: if snapshot.core.activity.selected.as_deref() == Some(item.key.as_str()) {
                                     if item.is_pending() { "activity-row active unread" } else { "activity-row active" }
                                 } else if item.is_pending() { "activity-row unread" } else { "activity-row" },
@@ -490,22 +492,20 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                                     let key = item.key.clone();
                                     let channel = item.channel().map(str::to_owned);
                                     let ts = item.ts().map(str::to_owned);
-                                    let root = item.thread_ts().map(str::to_owned);
+                                    let thread = crate::activity_feed::thread_destination(item);
                                     move |_| {
-                                        let opened = state.write().select_activity_item(
+                                        let navigation = {
+                                            let mut shell = state.write();
+                                            let opened = shell.select_activity_item(
                                             key.clone(),
                                             channel.as_deref(),
                                             ts.as_deref(),
-                                            root.as_deref(),
-                                        );
-                                        spawn(crate::bootstrap::mark_activity_read(state, key.clone()));
-                                        let Some(channel) = channel.clone().filter(|_| opened) else {
-                                            return;
+                                            thread.as_ref().map(|destination| destination.root.as_str()),
+                                            );
+                                            opened.then(|| crate::activity_feed::Navigation::capture(&shell, &key)).flatten()
                                         };
-                                        if let Some(root) = root.clone() {
-                                            spawn(crate::bootstrap::open_thread(state, channel, root));
-                                        } else {
-                                            spawn(crate::bootstrap::refresh_selected_channel(state));
+                                        if let Some(navigation) = navigation {
+                                            spawn(navigation.run(state));
                                         }
                                     }
                                 },

@@ -44,6 +44,9 @@ impl FormatMark {
 pub struct ComposerState {
     pub text: String,
     pub selection: TextRange,
+    /// Explicit thread destination intent; absent in legacy local drafts.
+    #[serde(default)]
+    pub reply_broadcast: bool,
 }
 
 impl ComposerState {
@@ -53,6 +56,7 @@ impl ComposerState {
         Self {
             text,
             selection: TextRange::new(end, end),
+            reply_broadcast: false,
         }
     }
 

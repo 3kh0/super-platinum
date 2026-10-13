@@ -9,11 +9,15 @@ pub(super) async fn run(
     let initial_attempts = fixture::attempt_count(&state.peek());
     fixture::add_saved_views(&mut state.write());
     wait_dom(desktop,r#"({ok:!!document.querySelector('#slack-list-view-select option[value="V_LIST_GROUPED"]')})"#).await?;
+    choose(desktop, "V_LIST_REORDERED_WIDE").await?;
+    wait_dom(desktop,r#"({ok:document.querySelector('.slack-list-grid tbody tr[data-row-id]')?.cells[1]?.dataset.columnId==='C_NAME'})"#).await?;
+    let horizontal = super::horizontal::verify(desktop, 1).await?;
     choose(desktop, "V_LIST_REORDERED").await?;
     wait_dom(desktop,r#"(()=>{const row=document.querySelector('.slack-list-grid tbody tr[data-row-id]');return {ok:row&&JSON.stringify([...row.cells].map(c=>c.dataset.columnId))===JSON.stringify(['C_SELECT','C_NAME','C_CHECK'])&&!document.querySelector('.slack-list-grid [data-column-id="C_NUMBER"]')};})()"#).await?;
     let compact = capture_stage(desktop, "saved-view-columns").await?;
     choose(desktop, "V_LIST_NONAME").await?;
     wait_dom(desktop,r#"({ok:document.querySelector('.slack-list-grid tbody tr[data-row-id]')?.cells.length===2})"#).await?;
+    super::horizontal::hidden(desktop).await?;
     checked(
         desktop,
         r#"(()=>{document.getElementById('slack-list-next').click();return {ok:true};})()"#,
@@ -103,7 +107,7 @@ pub(super) async fn run(
     wait_dom(desktop,r#"({ok:document.querySelector('.slack-list-grid tbody tr[data-row-id]')?.cells.length===11&&document.querySelector('.slack-list-notices').textContent.includes('without saved-view')})"#).await?;
     assert_attempts(state, initial_attempts + 2)?;
     Ok(
-        json!({"columns":true,"filterSort":true,"duplicateGroupIdentity":true,"collapseFocus":true,"groupKeyboard":true,"canonicalDuplicateWrite":true,"groupedEditFocus":true,"incompletePreserved":true,"unsupportedExplicit":true,"fallback":true,"captures":{"columns":compact,"groups":grouped}}),
+        json!({"columns":true,"reorderedHorizontal":horizontal,"hiddenPrimaryUnpinned":true,"filterSort":true,"duplicateGroupIdentity":true,"collapseFocus":true,"groupKeyboard":true,"canonicalDuplicateWrite":true,"groupedEditFocus":true,"incompletePreserved":true,"unsupportedExplicit":true,"fallback":true,"captures":{"columns":compact,"groups":grouped}}),
     )
 }
 

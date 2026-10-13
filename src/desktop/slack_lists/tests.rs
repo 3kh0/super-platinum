@@ -6,16 +6,16 @@ use super_platinum_core::{
     slack::Transport,
 };
 
-fn file() -> File {
+pub(super) fn file() -> File {
     serde_json::from_value(json!({"id":"FL1","mode":"list","title":"Plan","access":"write","is_locked":false,
     "list_metadata":{"schema":[{"id":"name","key":"name","name":"Item","type":"rich_text"},{"id":"done","key":"done","name":"Done","type":"checkbox"}]}})).unwrap()
 }
-fn loaded(checked: bool) -> Loaded {
+pub(super) fn loaded(checked: bool) -> Loaded {
     Loaded {document:Document::from_file(&file()).unwrap(),records:RecordsPage::parse(json!({"ok":true,"records":[
         {"id":"row1","date_created":100,"created_by":"U1","updated_timestamp":"100.0","fields":[
             {"key":"name","text":"Ship","rich_text":[]},{"key":"done","column_id":"done","checkbox":checked}]}]})).unwrap(),allow_lists:Some("full".into()),personal_task_lists:None,list_experiments:None}
 }
-fn make_shell() -> ShellState {
+pub(super) fn make_shell() -> ShellState {
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
     let team = shell.core.active_team.clone().unwrap();
     let user = shell.core.workspaces[&team].self_user_id.clone();
@@ -40,11 +40,11 @@ fn make_shell() -> ShellState {
     read(&mut shell, loaded(false));
     shell
 }
-fn read(shell: &mut ShellState, loaded: Loaded) {
+pub(super) fn read(shell: &mut ShellState, loaded: Loaded) {
     let request = begin_read(shell).unwrap();
     finish_read(shell, &request, Ok(loaded));
 }
-fn saving(shell: &mut ShellState) -> EditAttempt {
+pub(super) fn saving(shell: &mut ShellState) -> EditAttempt {
     let attempt = begin_edit(shell, "row1", "done").unwrap();
     validate_edit(shell, &attempt, loaded(false)).unwrap();
     attempt
@@ -305,6 +305,7 @@ fn stale_write_completion_cannot_touch_another_account_or_list_visit() {
     );
     assert!(poll(&mut shell));
     assert!(shell.slack_lists.operations.is_empty());
+    assert!(cell_receipts::get(&shell, &attempt).is_some_and(|m| m.phase == Phase::Uncertain));
     let mut shell = make_shell();
     let attempt = begin_edit(&mut shell, "row1", "done").unwrap();
     close_shell(&mut shell);

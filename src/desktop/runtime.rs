@@ -12,11 +12,15 @@ use crate::state::ShellState;
 const MEDIA_SWEEP_TICKS: u32 = 5;
 
 pub async fn ticks(mut state: Signal<ShellState>) {
+    let mut runtime_probe = crate::performance::runtime_probe::heartbeat();
     let mut interval = tokio::time::interval(std::time::Duration::from_millis(200));
     let mut tick: u32 = 0;
     let mut draft_save_error = None;
     loop {
         interval.tick().await;
+        if runtime_probe.is_some_and(|probe| !probe.beat()) {
+            runtime_probe = None;
+        }
         tick = tick.wrapping_add(1);
         let now = std::time::Instant::now();
         // Bookkeeping (probe deadlines, route checks, etc.) must not repaint the
@@ -28,6 +32,7 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         let mut connection = crate::connection::Next::Nothing;
         let mut changed = crate::app_modal::poll(&mut shell);
         changed |= crate::self_status::poll(&mut shell);
+        changed |= crate::channel_mute::poll(&mut shell);
         changed |= crate::slack_lists::poll(&mut shell);
         changed |= crate::message_buttons::poll(&mut shell);
         changed |= crate::drafts::integration::poll(&mut shell);

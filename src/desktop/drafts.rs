@@ -157,10 +157,10 @@ fn local_snapshot(key: &DraftKey, local: &LocalDraft) -> Result<Option<Snapshot>
     if !local.attachments.is_empty() {
         return Err(Fault::Unsupported);
     }
-    if local.empty() {
+    if local.composer.text.is_empty() && local.attachments.is_empty() {
         return Ok(None);
     }
-    codec::encode(key, &local.composer.text)
+    codec::encode_composer(key, &local.composer)
         .map(Some)
         .map_err(|_| Fault::Unsupported)
 }

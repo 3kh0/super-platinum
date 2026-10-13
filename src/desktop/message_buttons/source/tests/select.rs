@@ -182,7 +182,7 @@ fn select_confirmation_rejects_changed_options_and_unsupported_sibling_state() {
             .capture_select(&shell, "review", "choice", Some(""))
             .is_ok()
     );
-    canonical(&mut shell).blocks.push(json!({"type":"section","block_id":"other","accessory":{"type":"datepicker","action_id":"date"}}));
+    canonical(&mut shell).blocks.push(json!({"type":"section","block_id":"other","accessory":{"type":"datetimepicker","action_id":"datetime"}}));
     let source = capture(&shell);
     assert!(
         source

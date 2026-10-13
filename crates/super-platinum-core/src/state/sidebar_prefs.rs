@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 
 use crate::slack::models::{BootPrefs, ChannelId, ChannelSection};
-use crate::state::{Workspace, linked_list_order};
+use crate::state::{Workspace, linked_list_order, notifications::NotificationConfig};
 
 /// The client-local section Slack synthesizes for VIP unreads. Its prefs are
 /// keyed by this literal in the `channel_sections` pref, not by a section id.
@@ -53,6 +53,11 @@ pub struct SidebarConfig {
     /// Channels muted in `all_notifications_prefs`.
     #[serde(default)]
     pub muted: HashSet<ChannelId>,
+    /// Local projection bookkeeping is rebuilt once after loading a cache.
+    #[serde(skip)]
+    mute_projection_initialized: bool,
+    #[serde(skip)]
+    next_mute_expiry: Option<i64>,
     /// Slack's `filter_dormant_channels` rollout: sections that would show
     /// every read row instead hide the ones Slack marked dormant. On for every
     /// account it has been seen on.
@@ -78,6 +83,8 @@ impl Default for SidebarConfig {
             separate_private_channels: false,
             undo_channel_intermix: false,
             muted: HashSet::new(),
+            mute_projection_initialized: false,
+            next_mute_expiry: None,
             filter_dormant: true,
         }
     }
@@ -151,7 +158,50 @@ impl SidebarConfig {
         self.show_muted = flag("show_muted_items_outside_sidebar_menus").unwrap_or(false);
         self.separate_private_channels = flag("separate_private_channels").unwrap_or(false);
         self.undo_channel_intermix = flag("undo_channel_intermix").unwrap_or(false);
-        self.muted = muted_channels(&text("all_notifications_prefs"));
+        let mut notifications = NotificationConfig::default();
+        notifications.apply_prefs(prefs);
+        self.sync_notification_mutes(&notifications, crate::state::now_secs());
+    }
+
+    /// Rebuild the sidebar's mute projection from canonical notification prefs.
+    /// Expiry changes presentation only; it never changes or writes preferences.
+    pub fn sync_notification_mutes(
+        &mut self,
+        notifications: &NotificationConfig,
+        now: i64,
+    ) -> bool {
+        let muted = notifications
+            .channels
+            .keys()
+            .filter(|channel| notifications.muted(channel, now))
+            .cloned()
+            .collect();
+        self.next_mute_expiry = notifications
+            .channels
+            .keys()
+            .filter_map(|channel| notifications.temporary_mute_expiration(channel))
+            .filter(|expiry| *expiry > now)
+            .min();
+        self.mute_projection_initialized = true;
+        let changed = self.muted != muted;
+        self.muted = muted;
+        changed
+    }
+
+    /// A constant-time deadline check between preference changes. Channel prefs
+    /// are scanned only after cache restore or when a scheduled expiry arrives.
+    pub fn refresh_notification_mutes_if_due(
+        &mut self,
+        notifications: &NotificationConfig,
+        now: i64,
+    ) -> bool {
+        if !notifications.loaded
+            || (self.mute_projection_initialized
+                && self.next_mute_expiry.is_none_or(|expiry| expiry > now))
+        {
+            return false;
+        }
+        self.sync_notification_mutes(notifications, now)
     }
 
     pub fn is_muted(&self, channel: &str) -> bool {
@@ -243,26 +293,6 @@ fn split_ids(value: Option<&str>) -> HashSet<String> {
         .filter(|id| !id.is_empty())
         .map(str::to_owned)
         .collect()
-}
-
-/// `all_notifications_prefs` is a JSON string: `{"channels":{"C1":{"muted":true}}}`.
-fn muted_channels(json: &str) -> HashSet<ChannelId> {
-    let Ok(value) = serde_json::from_str::<serde_json::Value>(json) else {
-        return HashSet::new();
-    };
-    value
-        .get("channels")
-        .and_then(serde_json::Value::as_object)
-        .map(|channels| {
-            channels
-                .iter()
-                .filter(|(_, pref)| {
-                    pref.get("muted").and_then(serde_json::Value::as_bool) == Some(true)
-                })
-                .map(|(id, _)| id.clone())
-                .collect()
-        })
-        .unwrap_or_default()
 }
 
 /// `getChannelSectionName`: Slack renames its built-in sections client-side,
@@ -393,6 +423,80 @@ mod tests {
         assert!(!config.is_muted("C2"));
         assert_eq!(config.filter("L1", "channels"), SectionFilter::All);
         assert_eq!(config.sort("priority", "priority"), SectionSort::Recent);
+    }
+
+    #[test]
+    fn boot_projects_temporary_mutes_from_string_and_object_preferences() {
+        let now = crate::state::now_secs();
+        let raw = serde_json::json!({"channels":{
+            "temporary":{"muted":false,"temp_mute_expiration_ts":(now + 600).to_string()},
+            "expired":{"muted":false,"temp_mute_expiration_ts":now - 1},
+            "permanent":{"muted":true,"temp_mute_expiration_ts":now - 1}
+        }});
+        for value in [raw.clone(), serde_json::Value::String(raw.to_string())] {
+            let mut config = SidebarConfig::default();
+            config.apply_prefs(&prefs(serde_json::json!({"all_notifications_prefs":value})));
+            assert!(config.is_muted("temporary"));
+            assert!(config.is_muted("permanent"));
+            assert!(!config.is_muted("expired"));
+            assert_eq!(config.next_mute_expiry, Some(now + 600));
+        }
+    }
+
+    #[test]
+    fn expiry_projection_changes_only_when_due_and_preserves_canonical_preferences() {
+        let mut notifications = NotificationConfig::default();
+        notifications.apply_change(
+            "all_notifications_prefs",
+            serde_json::json!({"channels":{
+                "first":{"temp_mute_expiration_ts":"120","unknown":{"keep":true}},
+                "second":{"temp_mute_expiration_ts":140},
+                "permanent":{"muted":true,"temp_mute_expiration_ts":120}
+            }}),
+        );
+        let original = serde_json::to_value(&notifications).unwrap();
+        let mut config = SidebarConfig::default();
+        assert!(config.sync_notification_mutes(&notifications, 100));
+        assert!(!config.refresh_notification_mutes_if_due(&notifications, 119));
+        assert!(config.refresh_notification_mutes_if_due(&notifications, 120));
+        assert!(!config.is_muted("first"));
+        assert!(config.is_muted("second"));
+        assert!(config.is_muted("permanent"));
+        assert_eq!(config.next_mute_expiry, Some(140));
+        assert!(!config.refresh_notification_mutes_if_due(&notifications, 120));
+        assert!(config.refresh_notification_mutes_if_due(&notifications, 140));
+        assert_eq!(config.next_mute_expiry, None);
+        assert!(!config.refresh_notification_mutes_if_due(&notifications, 999));
+        assert_eq!(serde_json::to_value(&notifications).unwrap(), original);
+    }
+
+    #[test]
+    fn cache_rebuild_and_new_preference_deadlines_cannot_leave_stale_mutes() {
+        let mut notifications = NotificationConfig::default();
+        notifications.apply_change(
+            "all_notifications_prefs",
+            serde_json::json!({"channels":{
+                "temporary":{"temp_mute_expiration_ts":120}
+            }}),
+        );
+        let mut config = SidebarConfig::default();
+        config.sync_notification_mutes(&notifications, 100);
+        let mut restored: SidebarConfig =
+            serde_json::from_value(serde_json::to_value(&config).unwrap()).unwrap();
+        assert!(!restored.mute_projection_initialized);
+        assert!(restored.refresh_notification_mutes_if_due(&notifications, 130));
+        assert!(!restored.is_muted("temporary"));
+        assert!(!restored.refresh_notification_mutes_if_due(&notifications, 131));
+        notifications.apply_change(
+            "all_notifications_prefs",
+            serde_json::json!({"channels":{
+                "temporary":{"temp_mute_expiration_ts":200}
+            }}),
+        );
+        assert!(restored.sync_notification_mutes(&notifications, 130));
+        assert_eq!(restored.next_mute_expiry, Some(200));
+        assert!(!restored.refresh_notification_mutes_if_due(&notifications, 199));
+        assert!(restored.refresh_notification_mutes_if_due(&notifications, 200));
     }
 
     #[test]

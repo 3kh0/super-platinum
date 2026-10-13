@@ -304,3 +304,53 @@ fn blocked_choice_is_exact_and_sync_receipt_revision_invalidates_review() {
     };
     assert_eq!(local.composer.text, "selected first blocked");
 }
+
+#[test]
+fn choosing_thread_alternate_preserves_broadcast_but_flag_only_is_not_a_message() {
+    for text in ["Restored reply", ""] {
+        let db = Database::new();
+        let scope = scope();
+        let mut store = db.open();
+        enroll(&mut store, &scope);
+        let mut chosen = local(text);
+        chosen.composer.reply_broadcast = true;
+        store
+            .save_owned_local_alternate(&scope, &chosen, &LocalWriter::default(), 1)
+            .unwrap();
+        let review = store.read_local_review(&scope).unwrap();
+        let LocalSettlement::Applied {
+            stored: Some(row),
+            local,
+        } = store
+            .settle_local_versions(&review, &alternate(&review.alternates[0]))
+            .unwrap()
+        else {
+            panic!()
+        };
+        assert_eq!(
+            serde_json::to_value(local).unwrap(),
+            serde_json::to_value(chosen).unwrap()
+        );
+        if text.is_empty() {
+            assert!(row.state.desired().is_none());
+        } else {
+            assert_eq!(
+                row.state.desired().unwrap().destinations[0]["broadcast"],
+                true
+            );
+            assert_eq!(
+                row.state.desired().unwrap().destinations[0]["thread_ts"],
+                "1.2"
+            );
+        }
+        drop(store);
+        assert!(
+            db.open()
+                .read_local_review(&scope)
+                .unwrap()
+                .local
+                .composer
+                .reply_broadcast
+        );
+    }
+}

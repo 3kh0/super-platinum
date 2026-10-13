@@ -6,7 +6,9 @@
 use serde_json::{Value, json};
 
 use crate::block_actions::validation::{
-    CurrentMessageButton, CurrentMessageRadio, CurrentMessageSelect, MessageActionOwner,
+    CurrentMessageButton, CurrentMessageConversation, CurrentMessageDate, CurrentMessageMulti,
+    CurrentMessageRadio, CurrentMessageSelect, CurrentMessageTime, CurrentMessageUser,
+    MessageActionOwner,
 };
 use crate::config::WorkspaceSession;
 
@@ -96,6 +98,197 @@ pub fn block_action_radio(
     if selected.is_none_or(|value| {
         value.get("type").and_then(Value::as_str) != Some("radio_buttons")
             || value.get("selected_option") != action.get("selected_option")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
+/// Prepare the captured datepicker action after local state is committed.
+/// `state` is the complete current message values map, not `{ "values": ... }`.
+pub fn block_action_date(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageDate<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != Some("datepicker")
+            || value.get("selected_date") != action.get("selected_date")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
+/// Prepare the captured conversations_select action after local state is committed.
+/// `state` is the complete current message values map, not `{ "values": ... }`.
+pub fn block_action_conversation(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageConversation<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != Some("conversations_select")
+            || value.get("selected_conversation") != action.get("selected_conversation")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
+/// Prepare the captured users_select action after local state is committed.
+/// `state` is the complete current message values map, not `{ "values": ... }`.
+pub fn block_action_user(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageUser<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != Some("users_select")
+            || value.get("selected_user") != action.get("selected_user")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
+/// Prepare the captured timepicker action after local state is committed.
+/// `state` is the complete current message values map, not `{ "values": ... }`.
+pub fn block_action_time(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageTime<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != Some("timepicker")
+            || value.get("selected_time") != action.get("selected_time")
+            || value.get("timezone") != action.get("timezone")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
+/// Prepare the captured multiple-choice action after local state is committed.
+/// `state` is the complete current message values map, not `{ "values": ... }`.
+pub fn block_action_multi(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageMulti<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != action.get("type").and_then(Value::as_str)
+            || value.get("selected_options") != action.get("selected_options")
     }) {
         return Err(Error::Api("block_action_state_invalid".into()));
     }
@@ -220,3 +413,6 @@ pub fn decode_block_action_response(value: &Value) -> Result<BlockActionResponse
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod multi_tests;

@@ -264,7 +264,7 @@ fn input(element: &Value) -> Result<(InputKind, InputValue), FormError> {
     })
 }
 
-fn options(element: &Value) -> Result<Vec<OptionSpec>, FormError> {
+pub(super) fn options(element: &Value) -> Result<Vec<OptionSpec>, FormError> {
     let mut result = vec![];
     let mut push = |raw: &Value, group: Option<String>| -> Result<(), FormError> {
         let value = raw

@@ -2,19 +2,33 @@
 use super::{CheckboxEdit, Column, Document, ListError, PersonalTaskLists, Record, RecordsPage};
 use serde_json::{Number, Value, json};
 
+#[cfg(test)]
+mod channel_tests;
 mod comparison;
+mod link;
+pub use link::LinkValue;
 #[cfg(test)]
 mod date_tests;
 #[cfg(test)]
+mod link_tests;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod user_tests;
 mod value;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CellEditValue {
+    /// Ordinary Link cell content; storage does not authorize opening its URL.
+    Link(Option<LinkValue>),
     Boolean(bool),
     RichText(Vec<Value>),
     Number(Option<Number>),
     Select(Vec<String>),
+    /// Ordinary User-column identities; personal To-do assignees use another protocol.
+    Users(Vec<String>),
+    /// Existing channel references; never joins, creates, or shares a channel.
+    Channels(Vec<String>),
     /// An ordinary calendar date, never a Unix timestamp or the Later sentinel.
     Date(Option<String>),
 }
@@ -53,6 +67,17 @@ impl Column {
             || (self.kind == "select"
                 && self.raw.pointer("/options/format").and_then(Value::as_str)
                     == Some("multi_select"))
+    }
+    /// Captured entity columns default to single_entity; only multi_entity
+    /// enables multiple users. Eligibility separately rejects unknown formats.
+    pub fn is_multi_user(&self) -> bool {
+        self.kind == "user"
+            && self.raw.pointer("/options/format").and_then(Value::as_str) == Some("multi_entity")
+    }
+    /// Channel reference columns use the same source-backed entity cardinality.
+    pub fn is_multi_channel(&self) -> bool {
+        self.kind == "channel"
+            && self.raw.pointer("/options/format").and_then(Value::as_str) == Some("multi_entity")
     }
     /// Projection check without cloning the rich-text tree. Permissions on the
     /// document are separate; dispatch still captures and revalidates everything.

@@ -2,6 +2,9 @@
 //! No server HTML, styles, event attributes, or executable elements reach the renderer.
 use scraper::{ElementRef, Html, Node, Selector};
 
+pub mod edit;
+pub mod wire;
+
 pub const MAX_CANVAS_BYTES: usize = 2 * 1024 * 1024;
 const MAX_NODES: usize = 20_000;
 const MAX_DEPTH: usize = 64;

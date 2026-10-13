@@ -56,6 +56,7 @@ fn stale_account_or_epoch_callbacks_do_not_replace_delivery_labels() {
         let (mut shell, visit) = ready();
         let first = shell.core.workspaces["T1"].messages["C2"].messages[0].clone();
         let pending = PendingSend {
+            reply_broadcast: false,
             account: shell.core.active_account.clone(),
             account_epoch: shell.core.account_epoch,
             team: "T1".into(),
@@ -94,6 +95,7 @@ fn positive_confirmation_and_realtime_removal_clear_transient_status_only() {
     let (mut shell, visit) = ready();
     let first = shell.core.workspaces["T1"].messages["C2"].messages[0].clone();
     let pending = PendingSend {
+        reply_broadcast: false,
         account: shell.core.active_account.clone(),
         account_epoch: shell.core.account_epoch,
         team: "T1".into(),

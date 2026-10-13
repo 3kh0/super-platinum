@@ -274,9 +274,54 @@ fn rich_node_with_source(
             } else if let Some(source) = source.filter(|_| {
                 matches!(&metadata.source,
                     super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                        if kind == "datepicker")
+            }) {
+                rsx! {super::message_date::MessageDatepicker {
+                    state,source:source.clone(),metadata:metadata.as_ref().clone(),
+                    accessibility_label:metadata.accessibility_label.clone().unwrap_or_default(),
+                }}
+            } else if let Some(source) = source.filter(|_| {
+                matches!(&metadata.source,
+                    super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                        if matches!(kind.as_str(), "users_select" | "conversations_select"))
+            }) {
+                rsx! {super::message_user::MessageUserSelect {
+                    state,source:source.clone(),metadata:metadata.as_ref().clone(),
+                    accessibility_label:metadata.accessibility_label.clone().unwrap_or_default(),
+                }}
+            } else if let Some(source) = source.filter(|_| {
+                matches!(&metadata.source,
+                    super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                        if kind == "timepicker")
+            }) {
+                rsx! {super::message_time::MessageTimepicker {
+                    state,source:source.clone(),metadata:metadata.as_ref().clone(),
+                    accessibility_label:metadata.accessibility_label.clone().unwrap_or_default(),
+                }}
+            } else if let Some(source) = source.filter(|_| {
+                matches!(&metadata.source,
+                    super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
                         if kind == "radio_buttons")
             }) {
                 rsx! {super::message_radio::MessageRadioGroup {
+                    state,source:source.clone(),metadata:metadata.as_ref().clone(),
+                    accessibility_label:metadata.accessibility_label.clone().unwrap_or_default(),
+                }}
+            } else if let Some(source) = source.filter(|_| {
+                matches!(&metadata.source,
+                    super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                        if kind == "checkboxes")
+            }) {
+                rsx! {super::message_checkboxes::MessageCheckboxGroup {
+                    state,source:source.clone(),metadata:metadata.as_ref().clone(),
+                    accessibility_label:metadata.accessibility_label.clone().unwrap_or_default(),
+                }}
+            } else if let Some(source) = source.filter(|_| {
+                matches!(&metadata.source,
+                    super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                        if kind == "multi_static_select")
+            }) {
+                rsx! {super::message_multi::MessageMultiSelect {
                     state,source:source.clone(),metadata:metadata.as_ref().clone(),
                     accessibility_label:metadata.accessibility_label.clone().unwrap_or_default(),
                 }}

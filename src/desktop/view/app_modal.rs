@@ -230,7 +230,7 @@ fn ModalField(
                 }
             }}
         }
-        InputKind::Unsupported { .. } => {
+        InputKind::Conversation | InputKind::User | InputKind::Unsupported { .. } => {
             rsx! {p {class:"app-modal-hint","This field is not supported yet."}}
         }
     };
@@ -300,6 +300,8 @@ fn control_shape(kind: &InputKind) -> String {
         } => "select",
         InputKind::Checkboxes { .. } => "checkboxes",
         InputKind::Radio { .. } => "radio",
+        InputKind::Conversation => "conversation",
+        InputKind::User => "user",
         InputKind::Date => "date",
         InputKind::Time { .. } => "time",
         InputKind::DateTime => "datetime",

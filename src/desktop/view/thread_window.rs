@@ -1,7 +1,7 @@
 //! Thread viewport sampling mirrors channel windowing and shares its DOM anchor.
 use crate::state::ShellState;
+use crate::thread_window::PaintPiece;
 use dioxus::prelude::*;
-use std::collections::HashMap;
 
 pub(super) fn rows(
     state: Signal<ShellState>,
@@ -18,47 +18,21 @@ pub(super) fn rows(
             }
         }};
     }
-    enum Piece<'a> {
-        Spacer(usize, f64),
-        Row(usize, &'a crate::model::MessageVm),
-    }
-    let projected = shell
-        .thread_messages
-        .iter()
-        .map(|m| (m.ts.as_str(), m))
-        .collect::<HashMap<_, _>>();
-    let mut pieces = Vec::new();
-    let mut omitted = 0.0;
-    let mut spacer_start = 0;
-    for (index, row) in shell
-        .thread_window
-        .rows
-        .iter()
-        .enumerate()
-        .filter(|(_, r)| r.history == history)
-    {
-        if let Some(message) = projected.get(row.ts.as_str()) {
-            if omitted > 0.0 {
-                pieces.push(Piece::Spacer(spacer_start, omitted));
-                omitted = 0.0;
+    let valid = shell.thread_messages.len() == shell.thread_window.selected_indices().len();
+    rsx! {for piece in shell.thread_window.pieces(history) {match *piece {
+        PaintPiece::Spacer{index,height}=>rsx! {div {key:"thread-spacer-{index}","data-thread-spacer":true,style:"height:{height}px;flex-shrink:0","aria-hidden":true}},
+        PaintPiece::Row{index,projected}=> {
+            let message = valid.then(|| shell.thread_messages.get(projected)).flatten().filter(|message| shell.thread_window.rows[index].ts == message.ts);
+            if let Some(message)=message {
+                rsx! {div {key:"thread-{message.id}","data-row-id":"{message.id}","data-thread-index":index,
+                    if message.show_unread_divider {div {class:"unread-divider",span {"New"}}}
+                    {super::message::message_row(state,shell,message,channel,None,super::message::RowSurface::Thread,shell.thread_root.clone().map(|root|crate::message_buttons::source::Bag::Thread{root}))}
+                }}
+            } else {
+                let height=shell.thread_window.height(&shell.thread_window.rows[index].ts);
+                rsx! {div {key:"thread-missing-{index}","data-thread-spacer":true,style:"height:{height}px;flex-shrink:0","aria-hidden":true}}
             }
-            pieces.push(Piece::Row(index, *message));
-        } else {
-            if omitted == 0.0 {
-                spacer_start = index;
-            }
-            omitted += shell.thread_window.height(&row.ts);
         }
-    }
-    if omitted > 0.0 {
-        pieces.push(Piece::Spacer(spacer_start, omitted));
-    }
-    rsx! {for piece in pieces {match piece {
-        Piece::Spacer(index,height)=>rsx! {div {key:"thread-spacer-{index}","data-thread-spacer":true,style:"height:{height}px;flex-shrink:0","aria-hidden":true}},
-        Piece::Row(index,message)=>rsx! {div {key:"thread-{message.id}","data-row-id":"{message.id}","data-thread-index":index,
-            if message.show_unread_divider {div {class:"unread-divider",span {"New"}}}
-            {super::message::message_row(state,shell,message,channel,None,super::message::RowSurface::Thread,shell.thread_root.clone().map(|root|crate::message_buttons::source::Bag::Thread{root}))}
-        }}
     }}}
 }
 
@@ -84,6 +58,7 @@ pub(super) fn schedule(
 async fn measure(mut state: Signal<ShellState>, mut queued: Signal<bool>) {
     let scope = state.peek().thread_scope();
     let input_generation = state.peek().thread_window.input_generation;
+    let projection_generation = state.peek().thread_window.projection_generation;
     let mut eval = dioxus::document::eval(
         r#"await (async()=>{
       await new Promise(requestAnimationFrame);
@@ -97,7 +72,7 @@ async fn measure(mut state: Signal<ShellState>, mut queued: Signal<bool>) {
       const earlier=body.querySelector('[data-thread-page="earlier"]');
       const newer=body.querySelector('[data-thread-page="newer"]');
       const extent=element=>{if(!element)return 0;const style=getComputedStyle(element);return element.getBoundingClientRect().height+parseFloat(style.marginTop||0)+parseFloat(style.marginBottom||0);};
-      dioxus.send({scope:body.dataset.timelineScope,first:visible[0],last:visible[visible.length-1],
+      dioxus.send({scope:body.dataset.timelineScope,projectionGeneration:body.dataset.threadProjectionGeneration,first:visible[0],last:visible[visible.length-1],
         top:Math.max(0,body.scrollTop-8-extent(earlier)),height:body.clientHeight,
         gap:extent(newer),rows:rows.map(r=>[r.id,r.height]),
         atBottom:body.scrollHeight-body.scrollTop-body.clientHeight<48});
@@ -112,6 +87,15 @@ async fn measure(mut state: Signal<ShellState>, mut queued: Signal<bool>) {
         || state.peek().thread_scope() != scope
         || value["scope"].as_str() != Some(&scope)
     {
+        return;
+    }
+    // Require both the current canonical projection and its committed DOM.
+    // A same-visit content edit can retain every timestamp but change heights.
+    if !state.peek().thread_window.projection_receipt_is_current(
+        projection_generation,
+        value["projectionGeneration"].as_str(),
+    ) {
+        queued.set(true);
         return;
     }
     // A receipt sampled before input must not restore bottom intent after
@@ -187,7 +171,7 @@ async fn measure(mut state: Signal<ShellState>, mut queued: Signal<bool>) {
         if !target {
             shell.thread_at_bottom = bottom;
         }
-        shell.refresh_thread_from_core();
+        shell.reproject_thread_window();
         crate::thread_unread::annotate(&mut shell);
     }
 }

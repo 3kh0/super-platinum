@@ -161,7 +161,7 @@ async fn run(
     Ok(receipt)
 }
 
-async fn wait_state(
+pub(crate) async fn wait_state(
     state: Signal<ShellState>,
     predicate: impl Fn(&ShellState) -> bool,
 ) -> Result<(), String> {
@@ -191,7 +191,7 @@ async fn click(desktop: &dioxus::desktop::DesktopContext, label: &str) -> Result
         .map_err(|error| format!("Click {label}: {error}"))
 }
 
-async fn wait_dom(
+pub(crate) async fn wait_dom(
     desktop: &dioxus::desktop::DesktopContext,
     script: &str,
 ) -> Result<Value, String> {

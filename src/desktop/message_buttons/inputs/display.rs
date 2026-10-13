@@ -16,6 +16,8 @@ struct State {
     binding: Option<Binding>,
     raw: Value,
     selected: Option<String>,
+    selected_options: Vec<Value>,
+    options_present: bool,
     revision: u64,
 }
 
@@ -24,6 +26,11 @@ struct Binding {
     owner: ContainerKey,
     key: InputKey,
     radio: bool,
+    date: bool,
+    time: bool,
+    user: bool,
+    conversation: bool,
+    multi: Option<bool>,
 }
 
 #[derive(Clone)]
@@ -56,7 +63,48 @@ impl Mounted {
             owner,
             key,
             radio: matches!(field.kind, InputKind::Radio { .. }),
+            date: matches!(field.kind, InputKind::Date),
+            time: matches!(field.kind, InputKind::Time { .. }),
+            conversation: matches!(field.kind, InputKind::Conversation),
+            user: matches!(field.kind, InputKind::User),
+            multi: None,
         };
+        if binding.conversation || binding.user || binding.date || binding.time {
+            let initial_key = if binding.conversation {
+                "initial_conversation"
+            } else if binding.user {
+                "initial_user"
+            } else if binding.time {
+                "initial_time"
+            } else {
+                "initial_date"
+            };
+            if state.binding.as_ref() != Some(&binding) {
+                state.selected = saved
+                    .and_then(Value::as_str)
+                    .filter(|s| !s.is_empty())
+                    .or_else(|| {
+                        field
+                            .raw
+                            .get(initial_key)
+                            .and_then(Value::as_str)
+                            .filter(|s| !s.is_empty())
+                    })
+                    .map(str::to_owned);
+                state.binding = Some(binding);
+                state.revision = next_id();
+            } else if state.raw.get(initial_key) != field.raw.get(initial_key) {
+                state.selected = field
+                    .raw
+                    .get(initial_key)
+                    .and_then(Value::as_str)
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_owned);
+                state.revision = next_id();
+            }
+            state.raw = field.raw.clone();
+            return state.selected.clone();
+        }
         if state.binding.as_ref() != Some(&binding) {
             // Radio uses saved.value || initial.value; a static select keeps a
             // saved empty value. Null shared state is already mapped to None.
@@ -104,6 +152,84 @@ impl Mounted {
         state.selected.clone()
     }
 
+    pub(super) fn sync_multi(
+        &self,
+        owner: ContainerKey,
+        key: InputKey,
+        field: &FormField,
+        saved: Option<&[Value]>,
+    ) -> Vec<Value> {
+        let mut state = self.0.lock().unwrap();
+        if state.unmounted {
+            return vec![];
+        }
+        let checkbox = matches!(field.kind, InputKind::Checkboxes { .. });
+        let binding = Binding {
+            owner,
+            key,
+            radio: false,
+            date: false,
+            time: false,
+            user: false,
+            conversation: false,
+            multi: Some(checkbox),
+        };
+        if state.binding.as_ref() != Some(&binding) {
+            state.options_present = checkbox
+                || saved.is_some()
+                || field
+                    .raw
+                    .get("initial_options")
+                    .is_some_and(Value::is_array);
+            state.selected_options = saved
+                .map(<[Value]>::to_vec)
+                .or_else(|| {
+                    field
+                        .raw
+                        .get("initial_options")
+                        .and_then(Value::as_array)
+                        .cloned()
+                })
+                .unwrap_or_default();
+            state.binding = Some(binding);
+            state.revision = next_id();
+        } else if !checkbox && state.raw.get("initial_options") != field.raw.get("initial_options")
+        {
+            // etBz resets only for a truthy array prop, including [] but not null.
+            if let Some(initial) = field.raw.get("initial_options").and_then(Value::as_array) {
+                state.selected_options = initial.clone();
+                state.options_present = true;
+                state.revision = next_id();
+            }
+        }
+        state.raw = field.raw.clone();
+        state.selected_options.clone()
+    }
+
+    pub(super) fn retained_multi(
+        &self,
+        owner: &ContainerKey,
+        key: &InputKey,
+    ) -> Option<Vec<Value>> {
+        let state = self.0.lock().unwrap();
+        (!state.unmounted
+            && state
+                .binding
+                .as_ref()
+                .is_some_and(|b| &b.owner == owner && &b.key == key && b.multi.is_some()))
+        .then(|| state.selected_options.clone())
+    }
+
+    pub(super) fn options_present(&self, owner: &ContainerKey, key: &InputKey) -> Option<bool> {
+        let state = self.0.lock().unwrap();
+        (!state.unmounted
+            && state
+                .binding
+                .as_ref()
+                .is_some_and(|b| &b.owner == owner && &b.key == key && b.multi.is_some()))
+        .then_some(state.options_present)
+    }
+
     pub(super) fn capture(&self, owner: &ContainerKey, key: &InputKey) -> Option<Action> {
         let state = self.0.lock().unwrap();
         if state.unmounted
@@ -127,6 +253,24 @@ impl Action {
             let state = mounted.lock().unwrap();
             !state.unmounted && state.revision == self.revision
         })
+    }
+
+    #[cfg(test)]
+    pub(crate) fn commit_multi(&self, selected: &[Value]) -> bool {
+        self.commit_multi_optional(Some(selected))
+    }
+    pub(crate) fn commit_multi_optional(&self, selected: Option<&[Value]>) -> bool {
+        let Some(mounted) = self.mounted.upgrade() else {
+            return false;
+        };
+        let mut state = mounted.lock().unwrap();
+        if state.unmounted || state.revision != self.revision {
+            return false;
+        }
+        state.selected_options = selected.unwrap_or_default().to_vec();
+        state.options_present = selected.is_some();
+        state.revision = next_id();
+        true
     }
 
     pub(crate) fn commit(&self, selected: Option<&str>) -> bool {

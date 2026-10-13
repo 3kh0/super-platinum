@@ -12,6 +12,46 @@ fn select(shell: &mut ShellState, id: Option<&str>) {
     assert!(select_shell(shell, id.map(str::to_owned), visit, layout));
 }
 #[test]
+fn column_geometry_preserves_actual_primary_and_typed_widths_across_views() {
+    let mut shell = shell();
+    let view = presentation(&shell).unwrap();
+    assert_eq!(
+        view.columns
+            .iter()
+            .filter(|c| c.pinned)
+            .map(|c| c.id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["C_NAME"]
+    );
+    assert_eq!(
+        view.columns
+            .iter()
+            .find(|c| c.id == "C_CHECK")
+            .unwrap()
+            .size,
+        "checkbox"
+    );
+    for id in ["C_NUMBER", "C_CURRENCY"] {
+        assert_eq!(
+            view.columns.iter().find(|c| c.id == id).unwrap().size,
+            "number"
+        );
+    }
+    select(&mut shell, Some("V_LIST_REORDERED_WIDE"));
+    let view = presentation(&shell).unwrap();
+    assert!(!view.columns[0].pinned);
+    assert_eq!(view.columns[1].id, "C_NAME");
+    assert!(view.columns[1].pinned);
+    select(&mut shell, Some("V_LIST_NONAME"));
+    assert!(
+        presentation(&shell)
+            .unwrap()
+            .columns
+            .iter()
+            .all(|c| !c.pinned)
+    );
+}
+#[test]
 fn selected_columns_rows_and_unsupported_state_are_cached_and_explicit() {
     let mut shell = shell();
     let visit = generation(&shell).unwrap();

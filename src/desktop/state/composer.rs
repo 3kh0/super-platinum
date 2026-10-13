@@ -1,5 +1,6 @@
 use super::ShellState;
 use crate::model::*;
+mod broadcast;
 
 /// Which composer a file is being attached to.
 ///
@@ -84,6 +85,7 @@ impl ShellState {
                     team,
                     channel,
                     thread_ts: None,
+                    reply_broadcast: false,
                     text,
                     client_msg_id,
                     optimistic_ts,
@@ -129,6 +131,7 @@ impl ShellState {
             self.core.active_channel.clone()?,
             self.thread_root.clone()?,
         );
+        let reply_broadcast = self.core.thread_composer.reply_broadcast;
         let (client_msg_id, optimistic_ts) = Self::optimistic_identity("super-platinum-thread");
         let user = self.core.workspaces.get(&team)?.self_user_id.clone();
         let message = super_platinum_core::slack::models::Message {
@@ -139,6 +142,7 @@ impl ShellState {
             text: Some(text.clone()),
             channel: Some(channel.clone()),
             thread_ts: Some(root.clone()),
+            subtype: reply_broadcast.then(|| "thread_broadcast".into()),
             ..Default::default()
         };
         let messages = self
@@ -157,6 +161,7 @@ impl ShellState {
             team,
             channel,
             thread_ts: Some(root),
+            reply_broadcast,
             text,
             client_msg_id,
             optimistic_ts,
@@ -205,6 +210,49 @@ impl ShellState {
                 )
             })
             .unwrap_or_default();
+    }
+
+    /// Scroll/height receipts change only viewport geometry. Canonical history
+    /// refreshes retain the full sync path above.
+    pub(crate) fn reproject_thread_window(&mut self) {
+        let Some((team, channel, root)) = self
+            .core
+            .active_team
+            .as_ref()
+            .zip(self.core.active_channel.as_ref())
+            .zip(self.thread_root.as_ref())
+            .map(|((team, channel), root)| (team, channel, root))
+        else {
+            self.thread_messages.clear();
+            return;
+        };
+        self.thread_window
+            .align_viewport(self.thread_target.as_deref(), self.thread_at_bottom);
+        self.thread_messages = self
+            .core
+            .workspaces
+            .get(team)
+            .zip(
+                self.core
+                    .threads
+                    .get(&(team.clone(), channel.clone(), root.clone())),
+            )
+            .map(|(workspace, bag)| {
+                crate::thread_vm::project_window(
+                    workspace,
+                    bag,
+                    &self.thread_history,
+                    root,
+                    &self.media,
+                    &self.thread_window,
+                )
+            })
+            .unwrap_or_default();
+        if self.thread_messages.len() != self.thread_window.selected_indices().len() {
+            // Defensive fallback if a caller changed the bag before its normal
+            // refresh. Never paint a partially shifted metadata/VM window.
+            self.refresh_thread_from_core();
+        }
     }
 
     pub fn start_edit(&mut self, channel: String, ts: String, text: String) {

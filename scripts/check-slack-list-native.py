@@ -67,6 +67,19 @@ for fixture in ("slack-list", "slack-list-narrow"):
                     receipt = json.loads(receipts[-1])
                     if receipt.get("ok") is not True:
                         raise RuntimeError(f"{capture_name}: native assertion failed: {receipt}")
+                    for stage, proof in (("table", receipt.get("horizontal", {})),
+                                         ("reordered", receipt.get("savedViews", {}).get("reorderedHorizontal", {}))):
+                        for flag in ("compactColumns", "primaryPinned", "opaqueFocusState", "syntheticNavigationHitTest", "homeRestoresLeft"):
+                            if proof.get(flag) is not True:
+                                raise RuntimeError(f"{capture_name}: missing {stage} horizontal proof: {flag}")
+                    if receipt.get("savedViews", {}).get("hiddenPrimaryUnpinned") is not True:
+                        raise RuntimeError(f"{capture_name}: hidden primary kept stale scroll clearance")
+                    for surface, proof in (("table", receipt.get("keyboardHelp", {})),
+                                           ("board", receipt.get("boardViews", {}).get("keyboardHelp", {})),
+                                           ("record", receipt.get("recordDetails", {}).get("keyboardHelp", {}))):
+                        for flag in ("collapsedAccessible", "descriptionPreserved", "nativeDisclosure", "expandedBounded", "closeRestoresContent", "focusRestored"):
+                            if proof.get(flag) is not True:
+                                raise RuntimeError(f"{capture_name}: missing {surface} keyboard help proof: {flag}")
                     for stage in ("rich", "references", "hierarchy"):
                         path = CAPTURES / f"{capture_name}-{stage}.png"
                         if receipt.get("captures", {}).get(stage) != str(path) or not path.is_file():
@@ -97,6 +110,24 @@ for fixture in ("slack-list", "slack-list-narrow"):
                         date_editor = CAPTURES / f"{capture_name}-{stage}.png"
                         if receipt.get("dateEdits", {}).get("captures", {}).get(kind) != str(date_editor) or not date_editor.is_file():
                             raise RuntimeError(f"{capture_name}: missing date {kind} capture")
+                    for flag in ("cancelNoWrite", "cancelPendingNormalization", "uncontrolledDrafts", "normalizedSave", "rename", "displayModes", "removeLink", "unsafeStorageInert", "duplicateLocked", "keyboardFocus", "boundedLayout", "cleanup"):
+                        if receipt.get("linkEdits", {}).get(flag) is not True:
+                            raise RuntimeError(f"{capture_name}: missing Link editor proof: {flag}")
+                    link_editor = CAPTURES / f"{capture_name}-link-editor.png"
+                    if receipt.get("linkEdits", {}).get("captures", {}).get("editor") != str(link_editor) or not link_editor.is_file():
+                        raise RuntimeError(f"{capture_name}: missing Link editor capture")
+                    user_editor = CAPTURES / f"{capture_name}-user-editor.png"
+                    if receipt.get("userEdits", {}).get("captures", {}).get("editor") != str(user_editor) or not user_editor.is_file():
+                        raise RuntimeError(f"{capture_name}: missing people editor capture")
+                    for flag in ("candidateFilters", "guestAndExternal", "typingAndCancelNoWrite", "inputSurvivesResultRender", "singleReplace", "clear", "uncachedRemoval", "multiSelection", "taskAssigneeReadOnly", "keyboardEntryAndFocus", "duplicateLocked", "canonicalWrites", "cleanup"):
+                        if receipt.get("userEdits", {}).get(flag) is not True:
+                            raise RuntimeError(f"{capture_name}: missing people editor verification {flag}")
+                    channel_editor = CAPTURES / f"{capture_name}-channel-editor.png"
+                    if receipt.get("channelEdits", {}).get("captures", {}).get("editor") != str(channel_editor) or not channel_editor.is_file():
+                        raise RuntimeError(f"{capture_name}: missing channel editor capture")
+                    for flag in ("candidateFilters", "privateAndExternal", "typingAndCancelNoWrite", "inputSurvivesResultRender", "singleReplace", "clear", "uncachedRemoval", "multiSelection", "keyboardEntryAndFocus", "duplicateLocked", "canonicalWrites", "cleanup"):
+                        if receipt.get("channelEdits", {}).get(flag) is not True:
+                            raise RuntimeError(f"{capture_name}: missing channel editor verification {flag}")
                     for kind, stage in (("created", "list-created"), ("uncertain", "list-create-uncertain")):
                         path = CAPTURES / f"{capture_name}-{stage}.png"
                         if receipt.get("creation", {}).get("captures", {}).get(kind) != str(path) or not path.is_file():

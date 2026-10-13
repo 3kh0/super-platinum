@@ -27,6 +27,7 @@ pub(super) async fn run(
       const stops=[...document.querySelectorAll('[data-board-cell][tabindex="0"]')].map(c=>({row:c.closest('.slack-list-card')?.dataset.rowId,column:c.dataset.columnId})),keyboardMounted=document.querySelector('.slack-list-board')?.dataset.keyboardMounted;
       return {ok:keyboardMounted==='true'&&copies.length===2&&new Set(copies.map(c=>c.dataset.instanceId)).size===2&&fields.every(f=>JSON.stringify(f.columns)===JSON.stringify(['C_NAME','C_NUMBER','C_CHECK']))&&stops.length===1,copies:copies.map(c=>c.dataset.instanceId),fields,stops,keyboardMounted};
     })()"#).await?;
+    let keyboard_help = keyboard_help::run(desktop, "board").await?;
     checked(desktop,r#"(()=>{
       const first=document.querySelector('.slack-list-lane[data-group-key="OPT_ENGINEERING"] [data-column-id="C_NAME"]');first.focus();
       first.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));
@@ -163,7 +164,7 @@ pub(super) async fn run(
     fixture::restore_board_views(&mut state.write(), snapshot);
     wait_dom(desktop,r#"({ok:!!document.querySelector('.slack-list-grid')&&!document.querySelector('.slack-list-board')&&document.querySelector('.slack-list-grid tbody tr[data-row-id]')?.cells.length===11})"#).await?;
     Ok(
-        json!({"laneOrder":true,"duplicateIdentity":true,"primaryFields":true,"emptyLanes":true,
+        json!({"laneOrder":true,"keyboardHelp":keyboard_help,"duplicateIdentity":true,"primaryFields":true,"emptyLanes":true,
         "filterMembership":true,"checkboxGroups":true,"keyboard":true,"horizontalScroll":true,
         "boundedPaging":true,"pagingFocus":true,"sameLanePagingFocus":true,"emptyLanePageFocus":true,"emptyCardFocus":true,"canonicalDuplicateWrite":true,"typedEditor":true,
         "headingCompletion":true,"completionFocus":true,"cleanup":true,

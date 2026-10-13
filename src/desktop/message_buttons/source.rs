@@ -1,7 +1,12 @@
 //! Exact rendered-message ownership. Never search other bags or infer a channel
 //! from whichever conversation happens to be active at click/confirmation time.
 mod action;
+mod conversation;
+mod date;
+mod multi;
 mod revision;
+mod time;
+mod user;
 use action::Action;
 pub(crate) use action::Current;
 
@@ -468,6 +473,14 @@ impl Captured {
         self.display
             .as_ref()
             .is_none_or(|display| display.commit(selected))
+    }
+    pub(crate) fn selected_options(&self) -> Option<(Option<&[Value]>, &[Value])> {
+        self.action.selected_options()
+    }
+    pub(crate) fn commit_display_multi(&self, selected: Option<&[Value]>) -> bool {
+        self.display
+            .as_ref()
+            .is_none_or(|display| display.commit_multi_optional(selected))
     }
     pub(crate) fn selected_value(&self) -> Option<Option<&str>> {
         self.action.selected_value()

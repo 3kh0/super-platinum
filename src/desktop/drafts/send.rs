@@ -14,7 +14,11 @@ use super_platinum_core::{
 
 /// Return true when this action was handled (including an explicit safe stop).
 /// Unsupported unmanaged content continues through the existing rich/file path.
-pub(crate) fn intercept(mut state: Signal<ShellState>) -> bool {
+pub(crate) fn intercept(state: Signal<ShellState>) -> bool {
+    intercept_target(state, ComposerTarget::Channel)
+}
+
+pub(crate) fn intercept_target(mut state: Signal<ShellState>, target: ComposerTarget) -> bool {
     if crate::fixture::is_fixture() {
         return false;
     }
@@ -23,7 +27,7 @@ pub(crate) fn intercept(mut state: Signal<ShellState>) -> bool {
         let Some(account_id) = shell.core.active_account.clone() else {
             return false;
         };
-        let Some(key) = shell.composer_key(ComposerTarget::Channel) else {
+        let Some(key) = shell.composer_key(target) else {
             return false;
         };
         let epoch = shell.core.account_epoch;
@@ -38,7 +42,7 @@ pub(crate) fn intercept(mut state: Signal<ShellState>) -> bool {
             shell.show_toast("Saved local versions need review in Drafts before sending. Your current draft is still here.");
             return true;
         }
-        let local = current_local(&shell);
+        let local = current_local_for(&shell, target);
         let managed = shell
             .managed_drafts
             .entry(&account_id, &key)
@@ -74,7 +78,7 @@ pub(crate) fn intercept(mut state: Signal<ShellState>) -> bool {
         {
             return true;
         }
-        let field_scope = crate::view::composer::channel_field_scope(&shell);
+        let field_scope = crate::view::composer::field_scope(&shell, target);
         Captured {
             account_id,
             epoch,
@@ -83,6 +87,8 @@ pub(crate) fn intercept(mut state: Signal<ShellState>) -> bool {
             account,
             binding,
             field_scope,
+            thread_generation: (target == ComposerTarget::Thread)
+                .then_some(shell.thread_generation),
         }
     };
     // Component-scoped tasks can disappear when navigating away from a composer.
@@ -114,6 +120,7 @@ struct Captured {
     account: Arc<Account>,
     binding: Binding,
     field_scope: String,
+    thread_generation: Option<u64>,
 }
 impl Captured {
     fn current(&self, shell: &ShellState) -> bool {
@@ -123,14 +130,37 @@ impl Captured {
     }
     fn unchanged(&self, shell: &ShellState) -> bool {
         self.binding.current(shell)
-            && shell.composer_key(ComposerTarget::Channel).as_ref() == Some(&self.key)
-            && super::same_local(&current_local(shell), &self.local)
+            && self
+                .thread_generation
+                .is_none_or(|generation| generation == shell.thread_generation)
+            && shell.composer_key(target_for(&self.key)).as_ref() == Some(&self.key)
+            && super::same_local(
+                &current_local_for(shell, target_for(&self.key)),
+                &self.local,
+            )
     }
 }
+fn target_for(key: &DraftKey) -> ComposerTarget {
+    if key.thread.is_some() {
+        ComposerTarget::Thread
+    } else {
+        ComposerTarget::Channel
+    }
+}
+#[cfg(test)]
 fn current_local(shell: &ShellState) -> LocalDraft {
-    LocalDraft {
-        composer: shell.core.composer.clone(),
-        attachments: shell.core.composer_attachments.clone(),
+    current_local_for(shell, ComposerTarget::Channel)
+}
+fn current_local_for(shell: &ShellState, target: ComposerTarget) -> LocalDraft {
+    match target {
+        ComposerTarget::Channel => LocalDraft {
+            composer: shell.core.composer.clone(),
+            attachments: shell.core.composer_attachments.clone(),
+        },
+        ComposerTarget::Thread => LocalDraft {
+            composer: shell.core.thread_composer.clone(),
+            attachments: shell.core.thread_composer_attachments.clone(),
+        },
     }
 }
 fn can_consume(view: &View) -> bool {
@@ -244,12 +274,19 @@ async fn run(mut state: Signal<ShellState>, captured: &Captured) -> Result<(), F
                 captured.key.clone(),
                 editor.snapshot().view,
             );
-            let cleared = clear_consumed(&mut shell, &captured.key, &captured.local);
+            let same_visit = captured
+                .thread_generation
+                .is_none_or(|generation| generation == shell.thread_generation);
+            let cleared = clear_consumed_at(&mut shell, &captured.key, &captured.local, same_visit);
             let pending = append_pending(&mut shell, &intent, &captured.local);
             drop(shell);
             if cleared {
                 crate::view::composer::clear_delivered_field(
-                    "channel-composer",
+                    if captured.key.thread.is_some() {
+                        "thread-composer"
+                    } else {
+                        "channel-composer"
+                    },
                     &captured.field_scope,
                     &captured.local.composer.text,
                 );
@@ -424,7 +461,16 @@ async fn release_editor(
 
 /// The paired durable clear already happened. Mutate only the matching in-memory
 /// copy; checkpointing an empty field here would race newer queued typing.
+#[cfg(test)]
 fn clear_consumed(shell: &mut ShellState, key: &DraftKey, expected: &LocalDraft) -> bool {
+    clear_consumed_at(shell, key, expected, true)
+}
+fn clear_consumed_at(
+    shell: &mut ShellState,
+    key: &DraftKey,
+    expected: &LocalDraft,
+    same_visit: bool,
+) -> bool {
     if shell
         .core
         .drafts
@@ -434,118 +480,26 @@ fn clear_consumed(shell: &mut ShellState, key: &DraftKey, expected: &LocalDraft)
     {
         shell.core.drafts.items.remove(key);
     }
-    if shell.composer_key(ComposerTarget::Channel).as_ref() == Some(key)
-        && super::same_local(&current_local(shell), expected)
+    if same_visit
+        && shell.composer_key(target_for(key)).as_ref() == Some(key)
+        && super::same_local(&current_local_for(shell, target_for(key)), expected)
     {
-        shell.core.composer = Default::default();
-        shell.core.composer_attachments.clear();
+        if key.thread.is_some() {
+            shell.core.thread_composer = Default::default();
+            shell.core.thread_composer_attachments.clear();
+        } else {
+            shell.core.composer = Default::default();
+            shell.core.composer_attachments.clear();
+        }
         true
     } else {
         false
     }
 }
 
-fn append_pending(
-    shell: &mut ShellState,
-    intent: &ConsumeIntent,
-    local: &LocalDraft,
-) -> Option<PendingSend> {
-    let key = &intent.scope.key;
-    let workspace = shell.core.workspaces.get_mut(&key.team)?;
-    let (_, optimistic_ts) = ShellState::optimistic_identity("super-platinum-durable");
-    let message = Message {
-        user: Some(workspace.self_user_id.clone()),
-        kind: Some("message".into()),
-        ts: Some(optimistic_ts.clone()),
-        client_msg_id: Some(intent.client_msg_id.clone()),
-        text: Some(local.composer.text.clone()),
-        channel: Some(key.channel.clone()),
-        blocks: intent.snapshot.blocks.clone(),
-        ..Default::default()
-    };
-    let messages = workspace.messages.entry(key.channel.clone()).or_default();
-    messages.upsert(message);
-    messages.pending.push(optimistic_ts.clone());
-    shell
-        .message_arrivals
-        .insert(optimistic_ts.clone(), std::time::Instant::now());
-    if shell.composer_key(ComposerTarget::Channel).as_ref() == Some(key) {
-        shell.core.pending_scroll_to = Some((
-            key.channel.clone(),
-            super_platinum_core::domain::PendingScrollTarget::Latest,
-        ));
-        shell.stick_to_bottom = true;
-    }
-    shell.refresh_from_core();
-    Some(PendingSend {
-        account: Some(intent.scope.account_id.clone()),
-        account_epoch: shell.core.account_epoch,
-        team: key.team.clone(),
-        channel: key.channel.clone(),
-        thread_ts: None,
-        text: local.composer.text.clone(),
-        client_msg_id: intent.client_msg_id.clone(),
-        optimistic_ts,
-    })
-}
-
-fn apply_outcome(
-    shell: &mut ShellState,
-    pending: &PendingSend,
-    intent: &ConsumeIntent,
-    local: &LocalDraft,
-    outcome: &Outcome,
-    applied: bool,
-) {
-    match outcome {
-        Outcome::Sent { ts, .. } if applied => {
-            if let Some(workspace) = shell.core.workspaces.get_mut(&pending.team) {
-                let user = workspace.self_user_id.clone();
-                if let Some(messages) = workspace.messages.get_mut(&pending.channel) {
-                    // A positive late receipt must not overwrite newer realtime
-                    // edits or resurrect a message deleted during the request.
-                    if messages.was_deleted(ts)
-                        || messages.messages.iter().any(|m| m.ts.as_ref() == Some(ts))
-                    {
-                        messages.remove(&pending.optimistic_ts);
-                    } else {
-                        messages.confirm(
-                            &pending.client_msg_id,
-                            Message {
-                                ts: Some(ts.clone()),
-                                client_msg_id: Some(pending.client_msg_id.clone()),
-                                channel: Some(pending.channel.clone()),
-                                user: Some(user),
-                                kind: Some("message".into()),
-                                text: Some(local.composer.text.clone()),
-                                blocks: intent.snapshot.blocks.clone(),
-                                ..Default::default()
-                            },
-                        );
-                    }
-                }
-            }
-            shell.pending_delivery.remove(&pending.optimistic_ts);
-        }
-        outcome => {
-            let rejected = applied && matches!(outcome, Outcome::Rejected);
-            shell.pending_delivery.insert(
-                pending.optimistic_ts.clone(),
-                if rejected {
-                    PendingDeliveryStatus::Failed
-                } else {
-                    PendingDeliveryStatus::Unconfirmed
-                },
-            );
-            shell.show_toast(if rejected {
-                "Message not sent. Its saved content is available in Drafts."
-            } else {
-                "Delivery is unconfirmed. Use Check delivery in Drafts before sending again."
-            });
-        }
-    }
-    shell.refresh_from_core();
-}
+#[path = "send_projection.rs"]
+mod projection;
+use projection::{append_pending, apply_outcome};
 
 pub(super) fn now_ms() -> u64 {
     std::time::SystemTime::now()

@@ -35,6 +35,8 @@ pub(super) fn ChannelDetailsButton(
         matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
             Ok("channel-details"
+                | "channel-mute"
+                | "channel-mute-narrow"
                 | "channel-leave"
                 | "channel-leave-last"
                 | "channel-join"
@@ -228,6 +230,7 @@ fn DetailsDialog(
                 if !data.loaded&&!data.loading{button{onclick:move |_|{spawn(load_info(state,details,retry_channel.clone()));},"Retry"}}
                 if let Some(info)=&data.info{
                     p{class:"scheduled-hint",if info.is_archived{"Archived · "}if info.is_mpim{"Group direct message"}else if info.is_private||info.is_group{"Private channel"}else{"Public channel"}}
+                    MuteControl {state,channel:channel.clone(),disabled:!data.loaded||saving()||editing.read().is_some()||archive_confirmation.read().is_some()}
                     for field in [ChannelTextField::Name,ChannelTextField::Topic,ChannelTextField::Description].into_iter().filter(|field|*field!=ChannelTextField::Name||(!info.is_im&&!info.is_mpim)){
                         {let original=field.value(info);let value=original.clone();let save_channel=channel.clone();let nodes=workspace.map(|w|crate::blocks::mrkdwn_blocks(crate::blocks::BlockCtx::new(w,&shell.media),&value)).unwrap_or_default();
                         rsx!{section{class:"channel-detail-field",
@@ -320,6 +323,83 @@ fn DetailsDialog(
                 if data.members_loaded&&!data.members_loading {button{disabled:saving(),onclick:{let channel=channel.clone();move |_|{spawn(load_members(state,details,channel.clone(),true));}},"Reload members"}}
                 if data.members_loaded&&names.is_empty(){p{class:"scheduled-hint","No matching loaded members."}}
                 }
+            }
+        }
+    }
+}
+/// Personal notification state lives in the shared controller, so closing this
+/// dialog cannot discard an in-flight or unconfirmed preference change.
+#[component]
+fn MuteControl(state: Signal<ShellState>, channel: String, disabled: bool) -> Element {
+    let alive = use_hook(|| std::rc::Rc::new(std::cell::Cell::new(true)));
+    let drop_alive = alive.clone();
+    use_drop(move || drop_alive.set(false));
+    let change_alive = alive.clone();
+    let temporary_alive = alive.clone();
+    let show_alive = alive.clone();
+    let mut choosing = use_signal(|| false);
+    let mut duration = use_signal(|| String::from("hour"));
+    let Some(view) = crate::channel_mute::presentation(&state.read(), &channel) else {
+        return rsx! {};
+    };
+    let change_token = view.token.clone();
+    let check_token = view.token.clone();
+    let temporary_token = view.token.clone();
+    let temporary_disabled = disabled || !view.can_temporary;
+    let tomorrow_disabled = !view.can_mute_until_tomorrow;
+    rsx! {
+        section {class:"channel-mute-control","aria-label":"Channel notifications","aria-busy":view.busy,
+            div {class:"channel-mute-actions",
+                button {id:"channel-mute-action",r#type:"button",disabled:disabled||!view.can_change,
+                    "aria-describedby":"channel-mute-status",
+                    onclick:move |_|if change_alive.get()&&!disabled {crate::channel_mute::change(state,change_token.clone());},
+                    {icon(Icon::Notifications,"icon sm")}
+                    "{view.label}"
+                }
+                button {id:"channel-mute-temporary",r#type:"button",disabled:temporary_disabled,
+                    "aria-expanded":choosing(),"aria-controls":"channel-mute-duration-controls",
+                    title:view.temporary_reason.clone().unwrap_or_else(||"Choose how long to mute this channel".into()),
+                    onclick:move |_|if show_alive.get()&&!temporary_disabled {let open=!choosing();duration.set("hour".into());choosing.set(open);},
+                    "Mute temporarily"}
+                if view.uncertain {
+                    button {id:"channel-mute-check",r#type:"button",disabled:disabled||!view.can_check,
+                        onclick:move |_|if alive.get()&&!disabled {crate::channel_mute::check(state,check_token.clone());},"Check status"}
+                }
+            }
+            if choosing() {
+                div {id:"channel-mute-duration-controls",class:"channel-mute-actions channel-mute-duration-controls",
+                    label {r#for:"channel-mute-duration","Mute for"}
+                    select {id:"channel-mute-duration",value:"{duration}",disabled:temporary_disabled,
+                        onmounted:move |_|{dioxus::document::eval("document.getElementById('channel-mute-duration')?.focus();");},
+                        onchange:move |event|duration.set(event.value()),
+                        option {value:"hour","1 hour"}
+                        option {value:"tomorrow",disabled:tomorrow_disabled,"Until tomorrow"}
+                    }
+                    button {id:"channel-mute-temporary-save",r#type:"button",
+                        disabled:temporary_disabled||(duration()=="tomorrow"&&tomorrow_disabled),
+                        onclick:move |_| {
+                            if !temporary_alive.get()||temporary_disabled {return;}
+                            let selected=match duration().as_str() {
+                                "hour"=>api::TemporaryMuteDuration::OneHour,
+                                "tomorrow" if !tomorrow_disabled=>api::TemporaryMuteDuration::UntilTomorrow,
+                                _=>return,
+                            };
+                            choosing.set(false);
+                            crate::channel_mute::temporarily_mute(state,temporary_token.clone(),selected);
+                        },if duration()=="tomorrow" {"Mute until tomorrow"}else{"Mute for 1 hour"}}
+                    button {id:"channel-mute-temporary-cancel",r#type:"button",onclick:move |_|{choosing.set(false);dioxus::document::eval("document.getElementById('channel-mute-temporary')?.focus();");},"Cancel"}
+                }
+                if let Some(reason)=view.temporary_reason.as_ref() {
+                    p {id:"channel-mute-temporary-help",class:"scheduled-hint","{reason}"}
+                }
+            }
+            p {id:"channel-mute-status",role:"status",class:"scheduled-hint",
+                if let Some(message)=view.message {"{message}"}
+                else if let Some(expiration)=view.temporary_until {
+                    "Muted until {super_platinum_core::state::format_ts_date_label(&expiration.to_string())} at {super_platinum_core::state::format_ts_hm(&expiration.to_string())}."
+                }
+                else if view.muted {"Muted for you."}
+                else {"Using your notification preferences."}
             }
         }
     }

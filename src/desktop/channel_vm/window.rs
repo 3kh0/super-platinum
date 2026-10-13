@@ -96,6 +96,9 @@ pub(crate) fn project_channel_window(
             }
             let mut vm =
                 crate::message_vm::message_vm_with_pending(workspace, message, media, row.pending);
+            vm.broadcast_parent_preview = vm.broadcast_root.as_deref().and_then(|root| {
+                crate::message_vm::broadcast::preview(workspace, message, root, channel_id, media)
+            });
             vm.compact = row.compact;
             vm.date_label = row.date_label.clone();
             vm.show_unread_divider = row.show_unread_divider;

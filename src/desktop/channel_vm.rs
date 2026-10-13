@@ -129,7 +129,12 @@ pub(crate) fn project_messages_for_channel(
         .iter()
         .map(|message| {
             let pending = message.ts.as_deref().is_some_and(|ts| bag.is_pending(ts));
-            crate::message_vm::message_vm_with_pending(workspace, message, media, pending)
+            let mut vm =
+                crate::message_vm::message_vm_with_pending(workspace, message, media, pending);
+            vm.broadcast_parent_preview = vm.broadcast_root.as_deref().and_then(|root| {
+                crate::message_vm::broadcast::preview(workspace, message, root, channel_id, media)
+            });
+            vm
         })
         .collect::<Vec<_>>();
     crate::message_vm::annotate_timeline(

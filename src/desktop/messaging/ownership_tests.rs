@@ -176,7 +176,7 @@ fn malformed_or_contradictory_positive_text_receipt_retains_original_payload() {
 }
 
 #[test]
-fn matching_explicit_text_receipt_accepts_server_generated_client_id() {
+fn matching_explicit_text_receipt_requires_matching_echoed_client_id() {
     for thread in [false, true] {
         let (mut shell, visit, pending) = queued(thread);
         let mut receipt = sent(&pending);
@@ -188,8 +188,7 @@ fn matching_explicit_text_receipt_accepts_server_generated_client_id() {
                 .clone()
                 .unwrap_or_else(|| receipt.ts.clone()),
         );
-        // chat.postMessage currently does not transmit the optimistic UUID.
-        receipt.message.client_msg_id = Some("server-generated-id".into());
+        receipt.message.client_msg_id = Some(pending.client_msg_id.clone());
         assert!(apply_text_result(
             &mut shell,
             &visit,
@@ -280,6 +279,7 @@ fn upload_history_cannot_merge_or_report_errors_into_another_account_visit() {
             ..Default::default()
         };
         let expected = UploadReadback {
+            reply_broadcast: false,
             team: pending.team.clone(),
             channel: pending.channel.clone(),
             thread_ts: None,
@@ -308,6 +308,7 @@ fn upload_readback_requires_exact_files_sender_and_destination() {
     for thread in [false, true] {
         let (mut shell, visit, pending) = queued(thread);
         let expected = UploadReadback {
+            reply_broadcast: false,
             team: pending.team.clone(),
             channel: pending.channel.clone(),
             thread_ts: pending.thread_ts.clone(),
@@ -388,6 +389,7 @@ fn upload_readback_preserves_newer_rows_deletions_and_navigation_paging_state() 
     for thread in [false, true] {
         let (mut shell, visit, pending) = queued(thread);
         let expected = UploadReadback {
+            reply_broadcast: false,
             team: pending.team.clone(),
             channel: pending.channel.clone(),
             thread_ts: pending.thread_ts.clone(),
@@ -458,6 +460,7 @@ fn upload_readback_cannot_confirm_or_resurrect_a_remotely_deleted_matching_row()
         for row_was_loaded in [false, true] {
             let (mut shell, visit, pending) = queued(thread);
             let expected = UploadReadback {
+                reply_broadcast: false,
                 team: pending.team.clone(),
                 channel: pending.channel.clone(),
                 thread_ts: pending.thread_ts.clone(),
@@ -539,6 +542,8 @@ fn stale_upload_failure_cannot_restore_private_caption_or_remove_new_account_pen
             .core
             .pending_file_messages
             .push(super_platinum_core::domain::PendingFileMessage {
+                finalized: None,
+                reply_broadcast: false,
                 team: pending.team.clone(),
                 channel: pending.channel.clone(),
                 thread_ts: pending.thread_ts.clone(),
@@ -584,6 +589,8 @@ fn failed_upload_preserves_original_payload_when_newer_draft_exists() {
             .core
             .pending_file_messages
             .push(super_platinum_core::domain::PendingFileMessage {
+                finalized: None,
+                reply_broadcast: false,
                 team: pending.team.clone(),
                 channel: pending.channel.clone(),
                 thread_ts: pending.thread_ts.clone(),
@@ -633,6 +640,8 @@ fn failed_upload_after_navigation_restores_original_empty_draft() {
         .core
         .pending_file_messages
         .push(super_platinum_core::domain::PendingFileMessage {
+            finalized: None,
+            reply_broadcast: false,
             team: pending.team.clone(),
             channel: pending.channel.clone(),
             thread_ts: None,
@@ -661,4 +670,99 @@ fn failed_upload_after_navigation_restores_original_empty_draft() {
             .contains(&pending.optimistic_ts)
     );
     assert!(shell.core.composer.text.is_empty());
+}
+
+#[test]
+fn broadcast_upload_readback_projects_original_channel_and_thread_without_overwriting_realtime() {
+    for condition in ["new", "newer", "channel-deleted", "thread-deleted"] {
+        let (mut shell, visit, pending) = queued(true);
+        // A sparse/lost files.share ACK still carries validated private file IDs.
+        // The production branch must choose readback, never another upload.
+        let uncertain: Result<api::CompletedUpload, api::UploadMessageError> =
+            Err(api::UploadMessageError::CompletionWithFiles {
+                error: Error::Transport("lost share acknowledgement".into()),
+                finalized: api::CompletedUpload {
+                    file_ids: vec!["F1".into()],
+                },
+            });
+        let readback_ids = super::super::upload_readback_files(&uncertain).unwrap();
+        let expected = UploadReadback {
+            reply_broadcast: true,
+            team: pending.team.clone(),
+            channel: pending.channel.clone(),
+            thread_ts: pending.thread_ts.clone(),
+            sender: shell.core.workspaces[&pending.team].self_user_id.clone(),
+            file_ids: readback_ids,
+        };
+        let message: Message = serde_json::from_value(serde_json::json!({
+            "ts":"9999999999.123456", "user":expected.sender, "channel":expected.channel,
+            "thread_ts":expected.thread_ts, "subtype":"thread_broadcast", "text":"Canonical upload", "files":[{"id":"F1"}]
+        })).unwrap();
+        let mut missing_flag = message.clone();
+        missing_flag.subtype = None;
+        assert!(!expected.confirms(&missing_flag));
+        let channel = shell
+            .core
+            .workspaces
+            .get_mut(&pending.team)
+            .unwrap()
+            .messages
+            .entry(pending.channel.clone())
+            .or_default();
+        if condition == "newer" {
+            let mut newer = message.clone();
+            newer.text = Some("Newer realtime edit".into());
+            channel.upsert(newer);
+        }
+        if condition == "channel-deleted" {
+            channel.record_remote_deletion("9999999999.123456");
+        }
+        if condition == "thread-deleted" {
+            shell
+                .core
+                .threads
+                .get_mut(&(
+                    pending.team.clone(),
+                    pending.channel.clone(),
+                    pending.thread_ts.clone().unwrap(),
+                ))
+                .unwrap()
+                .record_remote_deletion("9999999999.123456");
+        }
+        shell.core.active_channel = Some("another-channel".into());
+        let accepted = apply_upload_history(
+            &mut shell,
+            &visit,
+            &expected,
+            Ok(HistoryPage {
+                messages: vec![message],
+                ..Default::default()
+            }),
+        );
+        let deleted = condition.ends_with("deleted");
+        assert_eq!(accepted, !deleted);
+        let channel = &shell.core.workspaces[&pending.team].messages[&pending.channel];
+        let canonical = channel
+            .messages
+            .iter()
+            .find(|m| m.ts.as_deref() == Some("9999999999.123456"));
+        if deleted {
+            assert!(canonical.is_none());
+        } else {
+            assert_eq!(
+                canonical.unwrap().text.as_deref(),
+                Some(if condition == "newer" {
+                    "Newer realtime edit"
+                } else {
+                    "Canonical upload"
+                })
+            );
+            assert!(
+                bag(&shell, &pending)
+                    .messages
+                    .iter()
+                    .any(|m| m.ts.as_deref() == Some("9999999999.123456"))
+            );
+        }
+    }
 }

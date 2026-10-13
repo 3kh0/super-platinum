@@ -6,6 +6,7 @@ use crate::{
 use dioxus::prelude::*;
 mod board;
 mod create;
+mod delete;
 mod editor;
 mod record;
 mod row;
@@ -24,6 +25,9 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
     let Some(view) = crate::slack_lists::presentation(&state.read()) else {
         return rsx! {};
     };
+    let deletion = crate::slack_lists::delete::presentation(&state.read()).operation;
+    let deletion_unresolved = deletion.is_some();
+    let deleting = deletion.as_ref().is_some_and(|operation| operation.pending);
     let detail_generation = view.detail.as_ref().map(|detail| detail.generation);
     let detail_open = view.detail.as_ref().map(|detail| detail.open_generation);
     let is_board = view.layout_kind == crate::slack_lists::ProjectionLayout::Board;
@@ -111,15 +115,16 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                     }
                 }
                 {create::action(state,generation,layout)}
-                button{id:"slack-list-refresh",r#type:"button",class:"slack-list-action",disabled:view.loading,onclick:move |_|crate::slack_lists::refresh(state),"Refresh"}
+                button{id:"slack-list-refresh",r#type:"button",class:"slack-list-action",disabled:view.loading||deleting,onclick:move |_|crate::slack_lists::refresh(state),"Refresh"}
                 button{id:"slack-list-close",r#type:"button",class:"icon-btn","aria-label":"Close list",onclick:move |_|crate::slack_lists::close_shell(&mut state.write()),{icon(Icon::Close,"icon")}}
             }
             div{class:"slack-list-notices","aria-live":"polite",
                 {create::status(state,generation)}
+                {delete::status(state)}
                 if detail_generation.is_none()&&view.selected_view.is_none(){p{class:"slack-list-view-note","Showing loaded items without saved-view filters or grouping."}}
                 if let Some(reason)=&view.view_notice{p{class:"slack-list-warning",role:"status","{reason} Choose another view or All loaded items."}}
                 if let Some(reason)=&view.read_only_reason{p{class:"slack-list-read-only","{reason}"}}
-                if view.stale&&shown>0{p{class:"slack-list-warning","This list has changed. Refresh to continue editing."}}
+                if view.stale&&shown>0&&!deletion_unresolved{p{class:"slack-list-warning","This list has changed. Refresh to continue editing."}}
                 if view.incomplete{p{class:"slack-list-warning","Only part of this list is available. More items may exist."}}
                 if let Some(error)=&view.error{p{class:"slack-list-error",role:"alert","{error}"}}
                 if view.loading{p{role:"status","Loading list…"}}
@@ -132,10 +137,10 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                 board::Board{key:"board-{selected}",state}
             } else if !view.columns.is_empty()&&count>0 {
                 p{id:"slack-list-keyboard",class:"slack-list-help","{KEYBOARD_HELP}"}
-                details{class:"slack-list-keyboard-disclosure",summary{tabindex:"0",{icon(Icon::ChevronRight,"icon")}"Keyboard shortcuts"}p{"{KEYBOARD_HELP}"}}
+                KeyboardHelp{id:"slack-list-shortcuts",label:"List keyboard shortcuts",help:KEYBOARD_HELP}
                 div{class:"slack-list-scroll","aria-busy":view.loading,
                     table{class:"slack-list-grid",role:if view.selected_view.is_none(){"treegrid"}else{"grid"},"aria-labelledby":"slack-list-title","aria-describedby":"slack-list-keyboard","aria-rowcount":row_count,"aria-colcount":column_count,
-                        thead{tr{"aria-rowindex":1,for (index,column) in view.columns.iter().enumerate(){th{key:"{column.id}",scope:"col","aria-colindex":index+1,"{column.label}"}}}}
+                        thead{tr{"aria-rowindex":1,for (index,column) in view.columns.iter().enumerate(){th{key:"{column.id}",scope:"col","aria-colindex":index+1,"data-column-id":"{column.id}","data-pinned":column.pinned.to_string(),"data-column-size":column.size,"{column.label}"}}}}
                         tbody{ {rendered_rows.into_iter()} }
                     }
                 }
@@ -147,9 +152,20 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
             }
             }
             if let Some(open)=detail_open {record::RecordDetail{key:"record-detail-{open}",state}}
+            {delete::confirmation(state,generation)}
             if let Some(editor)=view.editor {editor::CellEditor{key:"list-cell-editor-{editor.generation}",state,editor,visit:generation}}
         }
     }
+}
+/// Native disclosure keeps shortcut help keyboard-accessible without taking
+/// transcript-sized space from the List. The separate hidden descriptions stay
+/// attached to the grid/detail through aria-describedby.
+#[component]
+fn KeyboardHelp(id: &'static str, label: &'static str, help: &'static str) -> Element {
+    rsx! {details{id,class:"slack-list-keyboard-disclosure",
+        summary{tabindex:"0","aria-label":label,{icon(Icon::ChevronRight,"icon")}"Keyboard shortcuts"}
+        p{"{help}"}
+    }}
 }
 fn reset_scroll() {
     dioxus::document::eval(

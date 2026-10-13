@@ -61,3 +61,12 @@
 .member-remove-button:hover { color:var(--danger); background:var(--hover-overlay); }
 .member-remove:has(.member-remove-confirm) { flex:0 0 100%; }
 .member-remove-confirm { display:flex; flex-direction:column; gap:8px; padding:8px; background:var(--surface-raised); border-radius:8px; font-size:var(--text-sm); }
+
+.channel-mute-control { display:flex; flex-direction:column; gap:8px; }
+.channel-mute-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.channel-mute-actions button { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:32px; margin:0; padding:4px 8px; border-radius:8px; background:var(--surface-raised); color:var(--text); white-space:nowrap; }
+.channel-mute-actions button:hover:not(:disabled) { background:var(--hover-overlay); }
+
+.channel-mute-duration-controls { align-items:center; }
+.channel-mute-duration-controls label { font-size:var(--text-sm); color:var(--muted); }
+.channel-mute-duration-controls select { height:32px; min-width:120px; margin:0; padding:4px 8px; border:1px solid var(--border); border-radius:8px; background:var(--surface-raised); color:var(--text); font:inherit; }

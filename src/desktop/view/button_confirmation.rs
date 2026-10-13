@@ -83,7 +83,7 @@ fn ConfirmationDialog(state: Signal<ShellState>) -> Element {
 
 // Composition labels stay literal. Decode Slack's three escapes exactly once;
 // neither plain text nor unknown formatting is interpreted as links or HTML.
-fn plain_label(text: &BlockText) -> String {
+pub(super) fn plain_label(text: &BlockText) -> String {
     let decoded = text
         .text
         .replace("&lt;", "<")

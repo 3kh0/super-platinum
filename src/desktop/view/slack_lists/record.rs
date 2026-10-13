@@ -11,6 +11,8 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
     let Some(detail) = view.detail.as_ref() else {
         return rsx! {};
     };
+    let deletion = crate::slack_lists::delete::presentation(&state.read());
+    let delete_blocked = crate::slack_lists::delete::blocks_mutation(&state.read());
     let title = if detail.title.trim().is_empty() {
         "Untitled item"
     } else {
@@ -31,7 +33,7 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
             let column_id=cell.column_id.clone();let edit_column=column_id.clone();
             let mutation=view.mutation.as_ref().filter(|m|m.record_id==detail.record_id&&m.column_id==cell.column_id);
             let pending=mutation.is_some_and(|m|!m.uncertain);let uncertain=mutation.is_some_and(|m|m.uncertain);
-            let blocked=detail.unavailable||view.loading||view.stale||view.mutation.is_some();
+            let blocked=detail.unavailable||view.loading||view.stale||view.mutation.is_some()||delete_blocked;
             let checked=vec![Attribute::new("checked",cell.checkbox.unwrap_or(false),None,true)];
             let value=if cell.checkbox.is_some(){rsx!{input{r#type:"checkbox",tabindex:"-1",disabled:blocked||!cell.editable,"aria-label":"{column.label}, {title}",
                 onchange:move |_|crate::slack_lists::toggle_detail_checkbox(state,generation,column_id.clone()),..checked}}}
@@ -51,12 +53,13 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
             }}
         }).collect::<Vec<_>>();
     rsx! {section{id:"slack-list-record-detail",class:"slack-list-record-detail",role:"region","aria-labelledby":"slack-list-record-title","aria-describedby":"slack-list-record-help","data-record-id":"{detail.record_id}","data-detail-generation":generation,"data-detail-open-generation":open_generation,"data-escape-local":"true",tabindex:"-1",
-        onmounted:move |_|{dioxus::document::eval(&format!("{MOUNT}\nmountListRecordDetail({open_generation},{visit},{record_id});"));},
+        onmounted:move |_|{dioxus::document::eval(&format!("{MOUNT}\nmountListRecordDetail({open_generation},{visit},{record_id});"));crate::slack_lists::track_open(state,open_generation);},
         header{class:"slack-list-record-header",button{id:"slack-list-record-back",r#type:"button",class:"slack-list-action",onclick:move |_|crate::slack_lists::close_record_detail(state,generation),{icon(Icon::ChevronRight,"icon")}"Back to list"}
             h3{id:"slack-list-record-title","{title}"}
+            button{id:"slack-list-record-delete",r#type:"button",class:"slack-list-action slack-list-delete-action",disabled:!deletion.enabled,title:deletion.reason.clone().unwrap_or_else(||"Delete item".into()),onclick:move |_|crate::slack_lists::delete::begin_delete(state,generation),{icon(Icon::Delete,"icon")}"Delete item"}
         }
         p{id:"slack-list-record-help",class:"slack-list-help","{HELP}"}
-        details{class:"slack-list-keyboard-disclosure",summary{tabindex:"0",{icon(Icon::ChevronRight,"icon")}"Keyboard shortcuts"}p{"{HELP}"}}
+        KeyboardHelp{id:"slack-list-record-shortcuts",label:"Item keyboard shortcuts",help:HELP}
         if detail.unavailable{p{class:"slack-list-warning",role:"status","This item is no longer available. Its last loaded fields are shown below."}}
         div{class:"slack-list-detail-scroll","aria-busy":view.loading,{fields.into_iter()}}
         if pages>1{footer{class:"slack-list-detail-pagination",span{role:"status","Fields {start+1}–{end} of {count}"}

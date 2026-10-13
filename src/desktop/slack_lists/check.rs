@@ -3,12 +3,19 @@ use crate::state::ShellState;
 use dioxus::prelude::*;
 use serde_json::{Value, json};
 mod board_views;
+mod channel_edit;
 mod creation;
 mod date_edit;
 mod date_views;
+pub(crate) mod delete;
 mod editor;
+mod entity_edit;
+mod horizontal;
+mod keyboard_help;
+mod link_edit;
 mod record_detail;
 mod saved_views;
+mod user_edit;
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     if std::env::var("SUPER_PLATINUM_SLACK_LIST_CHECK").as_deref() != Ok("1")
@@ -49,6 +56,8 @@ async fn run(
       const indexed=rows.every((r,i)=>Number(r.getAttribute('aria-rowindex'))===i+2&&[...r.cells].every((c,j)=>Number(c.getAttribute('aria-colindex'))===j+1));
       return {ok:named&&indexed&&rows.length===50&&cells.length===11&&Number(grid.getAttribute('aria-rowcount'))===72&&check?.getAttribute('aria-label')?.length>0&&dialog.textContent.includes('All loaded items')&&dialog.querySelector('.slack-list-pagination').textContent.includes('73 loaded'),rows:rows.length,columns:cells.length};
     })()"#).await?;
+    let keyboard_help = keyboard_help::run(desktop, "table").await?;
+    let horizontal = horizontal::run(desktop).await?;
     checked(desktop, r#"(()=>{
       const first=document.querySelector('.slack-list-grid tbody td');first.focus();
       first.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));
@@ -220,9 +229,12 @@ async fn run(
     let board_view_checks = board_views::run(state, desktop).await?;
     let record_detail_checks = record_detail::run(state, desktop).await?;
     let date_edit_checks = date_edit::run(state, desktop).await?;
+    let user_edit_checks = user_edit::run(state, desktop).await?;
+    let channel_edit_checks = channel_edit::run(state, desktop).await?;
+    let link_edit_checks = link_edit::run(state, desktop).await?;
     let creation_checks = creation::run(state, desktop).await?;
     Ok(
-        json!({"ok":true,"boundedRows":true,"semanticGrid":true,"keyboardMovement":true,"richCellPresentation":rich,"emptyPrimaryFallback":true,"cellControlsReturnFocus":true,"hierarchyExpansion":true,"hierarchyKeyboard":true,"collapseRecoversParentFocus":true,"expansionSurvivesRefresh":true,"localPaging":true,"pagingFocusRecovered":true,"reorderPreservedFocus":true,"deletedRowRecoveredFocus":true,"refreshPreservedRows":true,"falseZeroAndFallback":true,"keyboardCheckboxEdit":true,"duplicateLocked":true,"pendingRestoresCanonicalCheckbox":true,"uncertainReadbackWithoutReplay":true,"readOnlyIncompleteAndErrorRecovery":true,"cellEditors":editor_checks,"savedViews":saved_view_checks,"dateViews":date_view_checks,"boardViews":board_view_checks,"recordDetails":record_detail_checks,"dateEdits":date_edit_checks,"creation":creation_checks,"preparedWrites":super::fixture::attempt_count(&state.peek()),"captures":{"rich":rich_capture,"references":references_capture,"hierarchy":hierarchy_capture},"initial":initial,"layout":layout}),
+        json!({"ok":true,"boundedRows":true,"semanticGrid":true,"keyboardHelp":keyboard_help,"horizontal":horizontal,"keyboardMovement":true,"richCellPresentation":rich,"emptyPrimaryFallback":true,"cellControlsReturnFocus":true,"hierarchyExpansion":true,"hierarchyKeyboard":true,"collapseRecoversParentFocus":true,"expansionSurvivesRefresh":true,"localPaging":true,"pagingFocusRecovered":true,"reorderPreservedFocus":true,"deletedRowRecoveredFocus":true,"refreshPreservedRows":true,"falseZeroAndFallback":true,"keyboardCheckboxEdit":true,"duplicateLocked":true,"pendingRestoresCanonicalCheckbox":true,"uncertainReadbackWithoutReplay":true,"readOnlyIncompleteAndErrorRecovery":true,"cellEditors":editor_checks,"savedViews":saved_view_checks,"dateViews":date_view_checks,"boardViews":board_view_checks,"recordDetails":record_detail_checks,"dateEdits":date_edit_checks,"userEdits":user_edit_checks,"channelEdits":channel_edit_checks,"linkEdits":link_edit_checks,"creation":creation_checks,"preparedWrites":super::fixture::attempt_count(&state.peek()),"captures":{"rich":rich_capture,"references":references_capture,"hierarchy":hierarchy_capture},"initial":initial,"layout":layout}),
     )
 }
 
@@ -238,13 +250,15 @@ async fn capture_columns(
     checked(desktop, &format!(r#"(()=>{{
       const columns={columns},s=document.querySelector('.slack-list-scroll'),row=document.querySelector('[data-row-id="R_LIST_000"]');
       const cell=[...row.cells].find(c=>c.dataset.columnId===columns[0]);s.scrollTop=0;
-      s.scrollLeft+=cell.getBoundingClientRect().left-s.getBoundingClientRect().left;return {{ok:true}};
+      const pin=row.querySelector('[data-pinned="true"]');
+      const clearance=pin&&cell.cellIndex>pin.cellIndex?pin.getBoundingClientRect().width:0;
+      s.scrollLeft+=cell.getBoundingClientRect().left-s.getBoundingClientRect().left-clearance;return {{ok:true}};
     }})()"#)).await?;
     wait_dom(desktop, &format!(r#"(()=>{{
       const columns={columns},s=document.querySelector('.slack-list-scroll'),bounds=s.getBoundingClientRect();
       const row=document.querySelector('[data-row-id="R_LIST_000"]');
       const cells=columns.map(id=>[...row.cells].find(c=>c.dataset.columnId===id));
-      return {{ok:cells.every(cell=>{{const r=cell.getBoundingClientRect();return r.left>=bounds.left-1&&r.right<=bounds.right+1&&r.top>=bounds.top&&r.bottom<=bounds.bottom;}})}};
+      return {{ok:cells.every(cell=>{{const r=cell.getBoundingClientRect();return r.left>=Math.max(bounds.left,row.querySelector('[data-pinned="true"]')?.getBoundingClientRect().right||bounds.left)-1&&r.right<=bounds.right+1&&r.top>=bounds.top&&r.bottom<=bounds.bottom;}})}};
     }})()"#)).await?;
     capture_stage(desktop, stage).await
 }

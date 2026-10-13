@@ -103,34 +103,47 @@ impl Column {
                 _ => CellPresentation::Text(ids.join(", ")),
             },
             CellValue::Link(value) => {
-                let Some(url) = value
-                    .get("original_url")
-                    .and_then(Value::as_str)
-                    .filter(|url| !url.is_empty())
-                else {
-                    return CellPresentation::Unsupported {
-                        fallback: fallback().unwrap_or("Unsupported link").into(),
-                    };
-                };
-                // Captured LinkField: displayAsUrl overrides displayName.
-                let label = if value["display_as_url"] == true {
-                    url
-                } else {
-                    value
-                        .get("display_name")
-                        .and_then(Value::as_str)
-                        .unwrap_or(url)
-                };
-                CellPresentation::Link {
-                    url: url.into(),
-                    label: label.into(),
-                }
+                link_presentation(&value).unwrap_or_else(|| CellPresentation::Unsupported {
+                    fallback: fallback().unwrap_or("Unsupported link").into(),
+                })
             }
             CellValue::Unsupported(_) => CellPresentation::Unsupported {
                 fallback: fallback().unwrap_or("Unsupported field").into(),
             },
         }
     }
+}
+
+// Slack readback may use camelCase while stored/fixture fields use snake_case.
+// Equal aliases are harmless; conflicting values must not select a destination
+// or label by key precedence. This is display projection, not edit eligibility.
+fn link_presentation(value: &Value) -> Option<CellPresentation> {
+    fn alias<'a>(value: &'a Value, snake: &str, camel: &str) -> Result<Option<&'a Value>, ()> {
+        let a = value.get(snake);
+        let b = value.get(camel);
+        if a.zip(b).is_some_and(|(a, b)| a != b) {
+            return Err(());
+        }
+        Ok(a.or(b).filter(|value| !value.is_null()))
+    }
+    let url = alias(value, "original_url", "originalUrl")
+        .ok()??
+        .as_str()
+        .filter(|url| !url.is_empty())?;
+    let name = match alias(value, "display_name", "displayName").ok()? {
+        None => url,
+        Some(Value::String(name)) => name,
+        _ => return None,
+    };
+    let display = match alias(value, "display_as_url", "displayAsUrl").ok()? {
+        None => false,
+        Some(Value::Bool(display)) => *display,
+        _ => return None,
+    };
+    Some(CellPresentation::Link {
+        url: url.into(),
+        label: if display { url } else { name }.into(),
+    })
 }
 
 fn select_labels(column: &Column, ids: Vec<String>) -> Vec<SelectLabel> {

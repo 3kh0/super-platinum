@@ -6,6 +6,11 @@ use std::collections::{BTreeMap, HashSet};
 mod cell_edit;
 mod creation;
 pub use creation::{CreationIntent, ListClock, ListTimestamp};
+mod deletion;
+pub use deletion::{
+    AcceptedDeletion, AcceptedDeletionState, DeletionIntent, DeletionStateIntent,
+    ListRecordReadback,
+};
 mod cells;
 mod edits;
 mod hierarchy;
@@ -15,7 +20,7 @@ mod policy;
 pub mod saved_views;
 pub use hierarchy::{HierarchyRow, ParentRelation};
 mod presentation;
-pub use cell_edit::{CellEdit, CellEditValue};
+pub use cell_edit::{CellEdit, CellEditValue, LinkValue};
 pub use cells::CellValue;
 pub use edits::CheckboxEdit;
 pub use policy::PersonalTaskLists;

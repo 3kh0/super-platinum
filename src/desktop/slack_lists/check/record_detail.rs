@@ -7,6 +7,7 @@ pub(super) async fn run(
     desktop: &dioxus::desktop::DesktopContext,
 ) -> Result<Value, String> {
     let attempts = fixture::attempt_count(&state.peek());
+    let opens = fixture::record_open_count(&state.peek());
     let snapshot = fixture::add_record_details(&mut state.write())
         .ok_or("Record checks require a disconnected fixture")?;
     wait_dom(desktop,r#"({ok:!!document.querySelector('#slack-list-view-select option[value="V_DETAIL_TABLE"]')})"#).await?;
@@ -14,6 +15,8 @@ pub(super) async fn run(
     wait_dom(desktop,r#"({ok:!!document.querySelector('.slack-list-grid tr[data-row-id="R_LIST_002"] [data-column-id="C_NAME"]')&&!document.querySelector('.slack-list-grid [data-column-id="C_MULTI"]')&&document.querySelector('.slack-list-dialog')?.dataset.listKeyboardMounted==='true'})"#).await?;
     checked(desktop,r#"(()=>{const cell=document.querySelector('.slack-list-grid tr[data-row-id="R_LIST_002"] [data-column-id="C_NAME"]');window.__detailOrigin=cell;cell.focus();cell.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',altKey:true,bubbles:true,cancelable:true}));return {ok:true};})()"#).await?;
     detail_ready(desktop).await?;
+    wait_record_opens(state, opens + 1).await?;
+    let keyboard_help = keyboard_help::run(desktop, "record").await?;
     checked(desktop,r#"(()=>{const panel=document.getElementById('slack-list-record-detail'),fields=[...panel.querySelectorAll('.slack-list-detail-field')],scroll=panel.querySelector('.slack-list-detail-scroll'),back=document.getElementById('slack-list-record-back'),rect=panel.getBoundingClientRect();return {ok:fields.length===30&&fields[0].dataset.columnId==='C_NAME'&&!!panel.querySelector('[data-column-id="C_MULTI"]')&&panel.querySelector('.slack-list-detail-pagination').textContent.includes('35')&&document.querySelector('.slack-list-grid').closest('[hidden],[inert]')!==null&&rect.left>=0&&rect.right<=innerWidth&&rect.bottom<=innerHeight&&scroll.clientHeight>0&&back.getBoundingClientRect().bottom<=innerHeight,fields:fields.length,height:scroll.clientHeight,panel:{left:rect.left,right:rect.right,bottom:rect.bottom}};})()"#).await?;
     checked(desktop,r#"(()=>{const fields=[...document.querySelectorAll('#slack-list-record-detail .slack-list-detail-field')];fields[0].focus();fields[0].dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));return {ok:document.activeElement===fields[1]&&document.querySelectorAll('#slack-list-record-detail .slack-list-detail-field[tabindex="0"]').length===1};})()"#).await?;
     checked(desktop,r#"(()=>{window.__detailFirst=document.querySelector('#slack-list-record-detail .slack-list-detail-field');const next=document.getElementById('slack-list-detail-next');next.focus();next.click();return {ok:true};})()"#).await?;
@@ -22,6 +25,7 @@ pub(super) async fn run(
     checked(desktop,r#"(()=>{const panel=document.getElementById('slack-list-record-detail'),fields=[...panel.querySelectorAll('.slack-list-detail-field')];window.__detailRefresh={panel,fields,focus:document.activeElement,action:panel.dataset.detailGeneration,open:panel.dataset.detailOpenGeneration};return {ok:fields.length===5&&document.activeElement===fields[0]&&!!panel.dataset.detailOpenGeneration};})()"#).await?;
     crate::slack_lists::refresh(state);
     wait_dom(desktop,r#"(()=>{const before=window.__detailRefresh,panel=document.getElementById('slack-list-record-detail'),fields=[...panel.querySelectorAll('.slack-list-detail-field')],sameFields=fields.length===before.fields.length&&fields.every((field,i)=>field===before.fields[i]);return {ok:panel===before.panel&&panel.dataset.detailGeneration!==before.action&&panel.dataset.detailOpenGeneration===before.open&&sameFields&&fields.length===5&&document.activeElement===before.focus&&before.focus.isConnected&&document.getElementById('slack-list-detail-next').disabled&&!document.getElementById('slack-list-detail-previous').disabled,samePanel:panel===before.panel,sameFields,fields:fields.map(field=>field.dataset.columnId),actionBefore:before.action,actionAfter:panel.dataset.detailGeneration,openBefore:before.open,openAfter:panel.dataset.detailOpenGeneration,focusPreserved:document.activeElement===before.focus,active:{tag:document.activeElement?.tagName,id:document.activeElement?.id,column:document.activeElement?.dataset.columnId}};})()"#).await?;
+    assert_record_opens(state, opens + 1)?;
     checked(desktop,r#"(()=>{const previous=document.getElementById('slack-list-detail-previous');previous.focus();previous.click();return {ok:true};})()"#).await?;
     wait_dom(desktop,r#"({ok:document.querySelectorAll('#slack-list-record-detail .slack-list-detail-field').length===30&&document.activeElement===document.querySelector('#slack-list-record-detail .slack-list-detail-field')})"#).await?;
 
@@ -35,6 +39,7 @@ pub(super) async fn run(
     checked(desktop,r#"(()=>{const design=document.querySelector('#slack-list-cell-editor input[value="OPT_DESIGN"]'),engineering=document.querySelector('#slack-list-cell-editor input[value="OPT_ENGINEERING"]');if(!design?.checked||!engineering?.checked)return {ok:false};design.click();return {ok:true};})()"#).await?;
     save(state, desktop, attempts + 1).await?;
     wait_dom(desktop,r#"(()=>{const options=[...document.querySelectorAll('#slack-list-record-detail [data-column-id="C_MULTI"] .slack-list-option')].map(e=>e.textContent);return {ok:JSON.stringify(options)===JSON.stringify(['Engineering'])};})()"#).await?;
+    assert_record_opens(state, opens + 1)?;
     let table = capture_detail(desktop, "detail-table").await?;
     close(desktop).await?;
     wait_dom(desktop,r#"({ok:document.activeElement===window.__detailOrigin&&window.__detailOrigin.isConnected&&!window.__detailOrigin.closest('[hidden],[inert]')})"#).await?;
@@ -43,6 +48,7 @@ pub(super) async fn run(
     wait_dom(desktop,r#"({ok:document.querySelector('.slack-list-board')?.dataset.keyboardMounted==='true'&&!!document.querySelector('.slack-list-lane[data-group-key="OPT_ENGINEERING"] .slack-list-card[data-row-id="R_LIST_002"]')&&!document.querySelector('.slack-list-card [data-column-id="C_MULTI"]')})"#).await?;
     checked(desktop,r#"(()=>{const card=document.querySelector('.slack-list-lane[data-group-key="OPT_ENGINEERING"] .slack-list-card[data-row-id="R_LIST_002"]'),field=card.querySelector('[data-column-id="C_NAME"]');window.__detailBoardOrigin={instance:card.dataset.instanceId,field};field.focus();card.querySelector('.slack-list-record-open').click();return {ok:true};})()"#).await?;
     detail_ready(desktop).await?;
+    wait_record_opens(state, opens + 2).await?;
     edit(desktop, "C_MULTI").await?;
     checked(desktop,r#"(()=>{const design=document.querySelector('#slack-list-cell-editor input[value="OPT_DESIGN"]'),engineering=document.querySelector('#slack-list-cell-editor input[value="OPT_ENGINEERING"]');if(design?.checked||!engineering?.checked)return {ok:false};engineering.click();design.click();return {ok:true};})()"#).await?;
     save(state, desktop, attempts + 2).await?;
@@ -54,6 +60,7 @@ pub(super) async fn run(
     // Selecting another view retires an open detail draft before it can send.
     checked(desktop,r#"(()=>{document.querySelector('.slack-list-card[data-row-id="R_LIST_002"] .slack-list-record-open').click();return {ok:true};})()"#).await?;
     detail_ready(desktop).await?;
+    wait_record_opens(state, opens + 3).await?;
     edit(desktop, "C_NUMBER").await?;
     checked(desktop,r#"(()=>{const input=document.getElementById('slack-list-number-draft');input.value='777';input.dispatchEvent(new Event('input',{bubbles:true}));return {ok:true};})()"#).await?;
     choose(desktop, "V_DETAIL_TABLE").await?;
@@ -62,6 +69,7 @@ pub(super) async fn run(
 
     checked(desktop,r#"(()=>{const field=document.querySelector('.slack-list-grid tr[data-row-id="R_LIST_002"] [data-column-id="C_NAME"]');field.focus();field.closest('tr').querySelector('.slack-list-record-open').click();return {ok:true};})()"#).await?;
     detail_ready(desktop).await?;
+    wait_record_opens(state, opens + 4).await?;
     edit(desktop, "C_NUMBER").await?;
     checked(desktop,r#"(()=>{const input=document.getElementById('slack-list-number-draft');if(input.value!=='2')return {ok:false};input.value='999';input.dispatchEvent(new Event('input',{bubbles:true}));return {ok:true};})()"#).await?;
     if !fixture::change_detail_number(&mut state.write(), "R_LIST_002", 19) {
@@ -87,8 +95,9 @@ pub(super) async fn run(
     fixture::restore_board_views(&mut state.write(), snapshot);
     wait_dom(desktop,r#"({ok:!document.getElementById('slack-list-record-detail')&&document.querySelector('.slack-list-grid tbody tr[data-row-id]')?.cells.length===11&&!document.querySelector('#slack-list-view-select option[value="V_DETAIL_TABLE"]')})"#).await?;
     assert_attempts(state, attempts + 2)?;
+    assert_record_opens(state, opens + 4)?;
     Ok(
-        json!({"tableOpen":true,"boardOpen":true,"hiddenFields":true,"fieldPaging":true,"refreshPreservesPanelPageFocus":true,
+        json!({"tableOpen":true,"keyboardHelp":keyboard_help,"boardOpen":true,"hiddenFields":true,"fieldPaging":true,"refreshPreservesPanelPageFocus":true,"recordOpenTracking":true,"recordOpenNoRefreshReplay":true,
         "keyboard":true,"nestedEscape":true,"hiddenFieldWrites":true,"canonicalReturnFocus":true,
         "viewChangeCancelsDraft":true,"eventStaleGuard":true,"readbackPreservesDraft":true,
         "removedRecordUnavailable":true,"boundedLayout":true,"cleanup":true,
@@ -136,4 +145,36 @@ async fn capture_detail(
     checked(desktop,r#"(()=>{document.querySelector('#slack-list-record-detail [data-column-id="C_MULTI"]').scrollIntoView({block:'center'});return {ok:true};})()"#).await?;
     wait_dom(desktop,r#"(()=>{const field=document.querySelector('#slack-list-record-detail [data-column-id="C_MULTI"]'),scroll=document.querySelector('.slack-list-detail-scroll'),r=field.getBoundingClientRect(),s=scroll.getBoundingClientRect();return {ok:r.top>=s.top&&r.bottom<=s.bottom&&s.left>=0&&s.right<=innerWidth};})()"#).await?;
     capture_stage(desktop, stage).await
+}
+
+/// Mount tracking can finish after the first DOM paint; wait for its observable request.
+pub(super) async fn wait_record_opens(
+    state: Signal<ShellState>,
+    expected: usize,
+) -> Result<(), String> {
+    for _ in 0..40 {
+        if fixture::record_open_count(&state.peek()) >= expected {
+            return assert_record_opens(state, expected);
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    }
+    assert_record_opens(state, expected)
+}
+pub(super) fn assert_record_opens(
+    state: Signal<ShellState>,
+    expected: usize,
+) -> Result<(), String> {
+    let shell = state.peek();
+    let actual = fixture::record_open_count(&shell);
+    if actual != expected {
+        return Err(format!(
+            "Expected {expected} record-open requests, got {actual}"
+        ));
+    }
+    if !fixture::record_open_valid(&shell) {
+        return Err(
+            "Record-open request lost its canonical identity or captured wire shape".into(),
+        );
+    }
+    Ok(())
 }

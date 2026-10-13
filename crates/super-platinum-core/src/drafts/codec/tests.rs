@@ -206,7 +206,10 @@ fn rejects_unsupported_blocks_files_threads_and_multiple_destinations() {
     }
     let mut thread = key();
     thread.thread = Some("1.2".into());
-    assert_eq!(encode(&thread, "text"), Err(Unsupported::Destination));
+    assert_eq!(
+        encode(&thread, "text").unwrap().destinations,
+        vec![json!({"channel_id":thread.channel,"thread_ts":"1.2"})]
+    );
     assert_eq!(
         decode(&thread, &base).unwrap_err(),
         Unsupported::Destination
@@ -245,4 +248,32 @@ fn every_accepted_short_local_string_is_reversible() {
             }
         }
     }
+}
+
+#[test]
+fn thread_broadcast_projection_keeps_false_absence_and_true_without_crossing_channel() {
+    let mut thread = key();
+    thread.thread = Some("123.456".into());
+    let mut composer = ComposerState::with_text("Reply");
+    composer.reply_broadcast = true;
+    let true_wire = encode_composer(&thread, &composer).unwrap();
+    assert_eq!(true_wire.destinations[0]["broadcast"], true);
+    assert!(
+        decode(&thread, &true_wire)
+            .unwrap()
+            .composer()
+            .reply_broadcast
+    );
+    assert!(encode_composer(&key(), &composer).is_err());
+    let mut false_wire = true_wire.clone();
+    false_wire.destinations[0]["broadcast"] = json!(false);
+    let projected = decode(&thread, &false_wire).unwrap();
+    assert!(!projected.composer().reply_broadcast);
+    assert_eq!(
+        projected.snapshot_for(projected.composer()).unwrap(),
+        false_wire
+    );
+    let mut changed = projected.composer().clone();
+    changed.reply_broadcast = true;
+    assert_eq!(projected.snapshot_for(&changed).unwrap(), true_wire);
 }

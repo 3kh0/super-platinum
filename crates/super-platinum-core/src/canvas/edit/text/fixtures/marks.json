@@ -1,0 +1,78 @@
+[
+  {
+    "name": "bold_unicode_entity_softbreak",
+    "rtml": "<b>A&amp;😀<br>B</b>",
+    "text": "A&amp;😀<br>B",
+    "marks": [
+      {
+        "name": "b",
+        "value": true,
+        "start": 0,
+        "end": 13
+      }
+    ]
+  },
+  {
+    "name": "utf16_prefix",
+    "rtml": "前😀<b>a&amp;</b>",
+    "text": "前😀a&amp;",
+    "marks": [
+      {
+        "name": "b",
+        "value": true,
+        "start": 3,
+        "end": 9
+      }
+    ]
+  },
+  {
+    "name": "link_unicode_entity_softbreak",
+    "rtml": "<a href=\"https://example.test/?a=1&amp;b=2\">go😀<br>&amp;</a>",
+    "text": "go😀<br>&amp;",
+    "marks": [
+      {
+        "name": "a",
+        "value": "{\"href\":\"https://example.test/?a=1&b=2\"}",
+        "start": 0,
+        "end": 13
+      }
+    ]
+  },
+  {
+    "name": "nested_marks",
+    "rtml": "<b><i>😀</i>&amp;</b>",
+    "text": "😀&amp;",
+    "marks": [
+      {
+        "name": "i",
+        "value": true,
+        "start": 0,
+        "end": 2
+      },
+      {
+        "name": "b",
+        "value": true,
+        "start": 0,
+        "end": 7
+      }
+    ]
+  },
+  {
+    "name": "control_normalization",
+    "rtml": "a\tb\nc\r\u0001",
+    "text": "a b c ",
+    "marks": []
+  },
+  {
+    "name": "bold_break_only",
+    "rtml": "<b><br></b>",
+    "text": "<br>",
+    "marks": []
+  },
+  {
+    "name": "link_break_only",
+    "rtml": "<a href=\"https://example.test\"><br></a>",
+    "text": "<br>",
+    "marks": []
+  }
+]

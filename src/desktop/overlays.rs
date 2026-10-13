@@ -11,6 +11,12 @@ pub fn overlay_view(
     if overlay == Overlay::ButtonConfirmation {
         return crate::view::button_confirmation::button_confirmation(state);
     }
+    if overlay == Overlay::MessageUserSelect {
+        return crate::view::message_user::dialog(state);
+    }
+    if overlay == Overlay::MessageMultiSelect {
+        return crate::view::message_multi::dialog(state);
+    }
     if overlay == Overlay::AppModal {
         return crate::view::app_modal::app_modal(state);
     }
@@ -37,6 +43,9 @@ pub fn overlay_view(
     if overlay == Overlay::SelfMenu {
         return self_menu_view(state, snapshot);
     }
+    if overlay == Overlay::ComposerEmoji {
+        return rsx! { crate::composer_emoji::Picker { state } };
+    }
     if overlay == Overlay::ReactionPicker {
         return rsx! { crate::reaction_picker::ReactionPicker { state } };
     }
@@ -45,6 +54,8 @@ pub fn overlay_view(
     }
     let (title, input_value, placeholder) = match overlay {
         Overlay::ButtonConfirmation => unreachable!("button confirmation owns its dialog"),
+        Overlay::MessageUserSelect => unreachable!("message user select owns its dialog"),
+        Overlay::MessageMultiSelect => unreachable!("message multi select owns its dialog"),
         Overlay::AppModal => unreachable!("app form owns its dialog"),
         Overlay::SelfMenu => unreachable!("self menu renders as a rail popover"),
         Overlay::SlackList => unreachable!("list owns its dialog"),
@@ -73,6 +84,7 @@ pub fn overlay_view(
             "",
         ),
         Overlay::Forward => unreachable!("forward dialog owns its surface"),
+        Overlay::ComposerEmoji => unreachable!("composer emoji owns its dialog"),
         Overlay::ReactionPicker => unreachable!("reaction picker owns its dialog"),
     };
     let compact = overlay == Overlay::Palette;

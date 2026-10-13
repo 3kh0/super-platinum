@@ -183,3 +183,68 @@ fn direct_send_requires_clean_local_ownership_and_no_prior_consumption() {
         .unwrap();
     assert!(!can_consume(&view));
 }
+
+#[test]
+fn thread_consumption_captures_broadcast_and_projects_only_the_original_destination() {
+    for broadcast in [false, true] {
+        let (mut shell, mut key) = shell();
+        key.thread = Some("100.000001".into());
+        shell.thread_root = key.thread.clone();
+        let mut original = local("Original");
+        original.composer.reply_broadcast = broadcast;
+        shell.core.thread_composer = original.composer.clone();
+        shell
+            .core
+            .drafts
+            .items
+            .insert(key.clone(), original.clone());
+        let intent = intent(key.clone());
+        let pending = append_pending(&mut shell, &intent, &original).unwrap();
+        assert_eq!(pending.thread_ts, key.thread);
+        assert_eq!(pending.reply_broadcast, broadcast);
+        assert!(clear_consumed(&mut shell, &key, &original));
+        assert!(!shell.core.thread_composer.reply_broadcast);
+        assert_eq!(shell.core.composer.text, "Original");
+        shell.begin_thread("100.000002".into(), None);
+        shell.core.thread_composer = super_platinum_core::ComposerState::with_text("New thread");
+        let outcome = Outcome::Sent {
+            ts: "200.000001".into(),
+            client_msg_id: pending.client_msg_id.clone(),
+            draft_id: None,
+        };
+        apply_outcome(&mut shell, &pending, &intent, &original, &outcome, true);
+        let thread = &shell.core.threads[&(
+            key.team.clone(),
+            key.channel.clone(),
+            key.thread.clone().unwrap(),
+        )];
+        assert!(
+            thread
+                .messages
+                .iter()
+                .any(|m| m.ts.as_deref() == Some("200.000001"))
+        );
+        let channel = &shell.core.workspaces[&key.team].messages[&key.channel];
+        assert_eq!(
+            channel
+                .messages
+                .iter()
+                .any(|m| m.ts.as_deref() == Some("200.000001")),
+            broadcast
+        );
+        assert_eq!(shell.core.thread_composer.text, "New thread");
+    }
+}
+
+#[test]
+fn changing_only_broadcast_during_consumption_keeps_the_new_draft() {
+    let (mut shell, mut key) = shell();
+    key.thread = Some("100.000001".into());
+    shell.thread_root = key.thread.clone();
+    let original = local("Original");
+    shell.core.thread_composer = original.composer.clone();
+    shell.core.thread_composer.reply_broadcast = true;
+    assert!(!clear_consumed(&mut shell, &key, &original));
+    assert!(shell.core.thread_composer.reply_broadcast);
+    assert_eq!(shell.core.thread_composer.text, "Original");
+}

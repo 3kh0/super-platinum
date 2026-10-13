@@ -2,9 +2,21 @@ requestAnimationFrame(()=>{
  const dialog=document.querySelector('.slack-list-dialog');if(!dialog||dialog.dataset.listKeyboardMounted)return;
  dialog.dataset.listKeyboardMounted='true';
  let retainedCell,lastFocus,interactionCell,retainedIdentity;
+ let observedGrid;
+ const clearance=()=>{
+   const scroll=dialog.querySelector('.slack-list-scroll'),grid=scroll?.querySelector('table');if(!scroll)return;
+   const primary=grid?.querySelector('th[data-pinned="true"]'),header=grid?.querySelector('thead');
+   for(const [name,value] of [['--list-pinned-width',primary?.getBoundingClientRect().width||0],['--list-header-height',header?.getBoundingClientRect().height||0]]){
+     const pixels=`${value}px`;if(scroll.style.getPropertyValue(name)!==pixels)scroll.style.setProperty(name,pixels);
+   }
+   if(observedGrid!==grid){if(observedGrid)resize.unobserve(observedGrid);observedGrid=grid;if(grid)resize.observe(grid);}
+ };
+ const resize=new ResizeObserver(clearance);
+ const reveal=cell=>{clearance();if(cell.cellIndex===0)cell.closest('.slack-list-scroll').scrollLeft=0;cell.scrollIntoView({block:'nearest',inline:'nearest'});};
  const cellOf=element=>element?.closest?.('td');
  const controlsOf=cell=>[...cell.querySelectorAll('a[href],button,input,select,textarea')].filter(e=>!e.matches(':disabled,.slack-list-tree-toggle,input[type=checkbox]'));
  const normalize=()=>{
+   clearance();
    if(dialog.querySelector('.slack-list-board,#slack-list-record-detail'))return;
    const cells=[...dialog.querySelectorAll('td')],active=document.activeElement;
    const activeCell=cellOf(active);
@@ -33,14 +45,14 @@ requestAnimationFrame(()=>{
    if(!editorOwnedFocus&&focusUnclaimed&&(lostGridFocus||lostButtonFocus)){
      const target=cell||dialog.querySelector('#slack-list-close');
      target?.focus({preventScroll:true});
-     if(cell)cell.scrollIntoView({block:'nearest',inline:'nearest'});
+     if(cell)reveal(cell);
    }
  };
  // Dioxus only patches changed attributes. Reconcile its initial tabindex
  // values with the current native focus after keyed rows move or disappear.
  const observer=new MutationObserver(normalize);
  observer.observe(dialog,{childList:true,subtree:true,attributes:true,attributeFilter:['tabindex','disabled']});
- const removal=new MutationObserver(()=>{if(!dialog.isConnected){observer.disconnect();removal.disconnect();}});
+ const removal=new MutationObserver(()=>{if(!dialog.isConnected){observer.disconnect();resize.disconnect();removal.disconnect();}});
  removal.observe(dialog.parentNode,{childList:true});
  const refresh=dialog.querySelector('#slack-list-refresh');
  (refresh?.disabled?dialog.querySelector('#slack-list-close'):refresh)?.focus({preventScroll:true});
@@ -97,7 +109,7 @@ requestAnimationFrame(()=>{
    if(event.altKey||event.metaKey)return;
    const rows=[...cell.closest('tbody').rows],r=rows.indexOf(cell.parentElement),c=cell.cellIndex;
    const row=rows[r],primary=cell.dataset.treePrimary==='true'||row.hasAttribute('data-group-key');
-   const move=target=>{if(!target)return;event.preventDefault();event.stopPropagation();target.focus({preventScroll:true});target.scrollIntoView({block:'nearest',inline:'nearest'});};
+   const move=target=>{if(!target)return;event.preventDefault();event.stopPropagation();target.focus({preventScroll:true});reveal(target);};
    if(primary&&event.key==='ArrowRight'&&toggle){
      if(toggle.getAttribute('aria-expanded')==='false'){event.preventDefault();event.stopPropagation();toggle.click();return;}
      const child=rows[r+1];if(row.hasAttribute('data-group-key')&&child?.dataset.rowId){move(child.cells[0]);return;}if(child?.dataset.parentId===row.dataset.rowId){move(child.querySelector('[data-tree-primary=true]'));return;}

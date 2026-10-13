@@ -79,7 +79,7 @@ pub(crate) fn set_creation_uncertain(shell: &mut ShellState) {
             .uncertain = true;
     }
 }
-pub(crate) fn dispatch_creation(shell: &mut ShellState, attempt: create::Attempt) {
+pub(in crate::slack_lists) fn dispatch_creation(shell: &mut ShellState, attempt: create::Attempt) {
     if !enabled(shell) {
         return;
     }

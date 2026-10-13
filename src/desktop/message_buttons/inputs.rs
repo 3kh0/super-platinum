@@ -1,10 +1,18 @@
 //! Container state survives rendered bags and navigation, but never account ownership.
 use super::{Captured, Pending, Source, next_id};
+pub(crate) mod date;
+#[cfg(test)]
+mod date_tests;
 pub(crate) mod display;
+pub(crate) mod multi;
 #[cfg(test)]
 mod radio_tests;
 #[cfg(test)]
 mod tests;
+pub(crate) mod time;
+#[cfg(test)]
+mod time_tests;
+pub(crate) mod user;
 use crate::state::{Overlay, ShellState};
 use dioxus::prelude::*;
 use std::collections::BTreeMap;
@@ -80,6 +88,17 @@ fn candidate(shell: &ShellState, source: &Source) -> Result<Entry, &'static str>
         .iter()
         .filter_map(|(key, field)| {
             let metadata = match &field.kind {
+                InputKind::Conversation => {
+                    source.conversation_metadata(shell, &key.block_id, &key.action_id)
+                }
+                InputKind::User => source.user_metadata(shell, &key.block_id, &key.action_id),
+                InputKind::Time { .. } => {
+                    source.time_metadata(shell, &key.block_id, &key.action_id)
+                }
+                InputKind::Date => source.date_metadata(shell, &key.block_id, &key.action_id),
+                InputKind::Checkboxes { .. } | InputKind::StaticSelect { multiple: true, .. } => {
+                    source.multi_metadata(shell, &key.block_id, &key.action_id)
+                }
                 InputKind::Radio { .. } => {
                     source.radio_metadata(shell, &key.block_id, &key.action_id)
                 }
@@ -159,6 +178,8 @@ pub(crate) struct SelectPresentation {
     pub selected: Option<String>,
     pub placeholder: String,
     pub revision: u64,
+    pub selected_values: Vec<String>,
+    pub max_selected: Option<usize>,
 }
 pub(crate) fn presentation(
     shell: &ShellState,
@@ -173,6 +194,8 @@ pub(crate) fn presentation(
         selected: None,
         placeholder: "Choose an option".into(),
         revision: 0,
+        selected_values: vec![],
+        max_selected: None,
     };
     let Some(entry) = shell
         .message_buttons
@@ -186,10 +209,21 @@ pub(crate) fn presentation(
         return view;
     };
     let options = match &field.kind {
-        InputKind::StaticSelect { options, .. } | InputKind::Radio { options } => options,
+        InputKind::StaticSelect { options, .. }
+        | InputKind::Radio { options }
+        | InputKind::Checkboxes { options } => options,
         _ => return view,
     };
     view.options = options.clone();
+    if let InputKind::StaticSelect {
+        max_selected_items, ..
+    } = &field.kind
+    {
+        view.max_selected = *max_selected_items;
+    }
+    if let InputValue::Selected(values) = &field.value {
+        view.selected_values = values.clone();
+    }
     view.selected = match &field.value {
         InputValue::Selected(values) => values.first().cloned(),
         _ => None,
@@ -221,7 +255,7 @@ pub(crate) fn change(
     ensure(state, source.clone());
     let captured = {
         let mut shell = state.write();
-        if shell.overlay.is_some() || !presentation(&shell, &source, &metadata).enabled {
+        if shell.overlay.is_some() || !date::enabled_or_choice(&shell, &source, &metadata) {
             invalidate(&mut shell, &source);
             return;
         }
@@ -229,6 +263,31 @@ pub(crate) fn change(
             return;
         };
         let captured = match &metadata.source {
+            super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                if kind == "conversations_select" =>
+            {
+                source.capture_conversation(
+                    &shell,
+                    &key.block_id,
+                    &key.action_id,
+                    selected.as_deref(),
+                )
+            }
+            super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                if kind == "users_select" =>
+            {
+                source.capture_user(&shell, &key.block_id, &key.action_id, selected.as_deref())
+            }
+            super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                if kind == "timepicker" =>
+            {
+                source.capture_time(&shell, &key.block_id, &key.action_id, selected.as_deref())
+            }
+            super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                if kind == "datepicker" =>
+            {
+                source.capture_date(&shell, &key.block_id, &key.action_id, selected.as_deref())
+            }
             super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
                 if kind == "radio_buttons" =>
             {
@@ -276,7 +335,14 @@ pub(super) fn prepare(
     }
     let current = captured.revalidate(shell).map_err(|_| UNAVAILABLE)?;
     let mut entry = candidate(shell, captured.source())?;
-    if let Some(selected) = captured.selected_value() {
+    if let Some((selected, retained)) = captured.selected_options() {
+        let key = field_key(captured.metadata()).ok_or(UNAVAILABLE)?;
+        entry
+            .model
+            .commit_multi_optional(&key, selected, retained)
+            .map_err(|_| UNAVAILABLE)?;
+        entry.revision = next_id();
+    } else if let Some(selected) = captured.selected_value() {
         let key = field_key(captured.metadata()).ok_or(UNAVAILABLE)?;
         entry
             .model
@@ -299,6 +365,11 @@ pub(super) fn prepare(
         .map_err(|_| UNAVAILABLE)?;
     if let Some(selected) = captured.selected_value() {
         if !captured.commit_display(selected) {
+            return Err(UNAVAILABLE);
+        }
+    }
+    if let Some((selected, _)) = captured.selected_options() {
+        if !captured.commit_display_multi(selected) {
             return Err(UNAVAILABLE);
         }
     }
@@ -334,6 +405,16 @@ pub(crate) fn display_selected(
         ContainerKey::new(source),
         key.clone(),
         field,
-        entry.model.saved_option(&key),
+        if matches!(field.kind, InputKind::Date) {
+            entry.model.saved_date(&key)
+        } else if matches!(field.kind, InputKind::Conversation) {
+            entry.model.saved_conversation(&key)
+        } else if matches!(field.kind, InputKind::User) {
+            entry.model.saved_user(&key)
+        } else if matches!(field.kind, InputKind::Time { .. }) {
+            entry.model.saved_time(&key)
+        } else {
+            entry.model.saved_option(&key)
+        },
     )
 }

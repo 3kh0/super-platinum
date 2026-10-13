@@ -12,6 +12,8 @@ pub(super) fn wire_type(kind: &InputKind) -> &str {
         InputKind::Checkboxes { .. } => "checkboxes",
         InputKind::Radio { .. } => "radio_buttons",
         InputKind::Date => "datepicker",
+        InputKind::Conversation => "conversations_select",
+        InputKind::User => "users_select",
         InputKind::Time { .. } => "timepicker",
         InputKind::DateTime => "datetimepicker",
         InputKind::Unsupported { kind } => kind,
@@ -28,6 +30,8 @@ pub(super) fn matches(kind: &InputKind, value: &InputValue) -> bool {
                 InputValue::Selected(_)
             )
             | (InputKind::Date, InputValue::Date(_))
+            | (InputKind::User, InputValue::User(_))
+            | (InputKind::Conversation, InputValue::Conversation(_))
             | (InputKind::Time { .. }, InputValue::Time(_))
             | (InputKind::DateTime, InputValue::DateTime(_))
     )
@@ -54,9 +58,10 @@ pub(super) fn error(field: &FormField) -> Option<String> {
     let empty = match &field.value {
         InputValue::Text(text) => text.is_empty(),
         InputValue::Selected(values) => values.is_empty(),
-        InputValue::Date(value) | InputValue::Time(value) => {
-            value.as_ref().is_none_or(|v| v.is_empty())
-        }
+        InputValue::Conversation(value)
+        | InputValue::User(value)
+        | InputValue::Date(value)
+        | InputValue::Time(value) => value.as_ref().is_none_or(|v| v.is_empty()),
         InputValue::DateTime(value) => value.is_none(),
         InputValue::Unsupported => true,
     };
@@ -105,6 +110,14 @@ pub(super) fn error(field: &FormField) -> Option<String> {
             if max.is_some_and(|max| selected.len() > max) {
                 return Some(format!("Choose no more than {} options.", max.unwrap()));
             }
+        }
+        (InputKind::Conversation, InputValue::Conversation(Some(id)))
+            if !valid_message_conversation(id) =>
+        {
+            return Some("Choose a valid conversation.".into());
+        }
+        (InputKind::User, InputValue::User(Some(user))) if !valid_message_user(user) => {
+            return Some("Choose a valid user.".into());
         }
         (InputKind::Date, InputValue::Date(Some(date))) => {
             if date.len() != 10
@@ -168,6 +181,8 @@ pub(super) fn wire(field: &FormField) -> Value {
                 value["selected_option"] = selected.into_iter().next().unwrap_or(Value::Null);
             }
         }
+        InputValue::Conversation(id) => value["selected_conversation"] = json!(id),
+        InputValue::User(user) => value["selected_user"] = json!(user),
         InputValue::Date(date) => {
             value["selected_date"] = json!(date.as_ref().filter(|v| !v.is_empty()))
         }
@@ -199,6 +214,8 @@ pub(super) fn from_wire(kind: &InputKind, value: &Value) -> Result<InputValue, F
     };
     Ok(match kind {
         InputKind::Text { .. } => InputValue::Text(string("value")?.unwrap_or_default()),
+        InputKind::Conversation => InputValue::Conversation(string("selected_conversation")?),
+        InputKind::User => InputValue::User(string("selected_user")?),
         InputKind::Date => InputValue::Date(string("selected_date")?),
         InputKind::Time { .. } => InputValue::Time(string("selected_time")?),
         InputKind::DateTime => InputValue::DateTime(match value.get("selected_date_time") {

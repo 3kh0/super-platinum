@@ -12,6 +12,29 @@ pub(super) struct Scope {
     session: Option<WorkspaceSession>,
 }
 impl Scope {
+    /// Stable receipt ownership survives credential/transport rotation. Dispatch
+    /// still requires current(), including epoch, session and transport identity.
+    pub(super) fn stable_owner(&self) -> (Option<String>, String, String) {
+        (self.account.clone(), self.team.clone(), self.user.clone())
+    }
+    /// Receipt reconciliation needs identities, never retained credentials or a client.
+    pub(super) fn receipt_only(&self) -> Self {
+        Self {
+            transport: None,
+            session: None,
+            ..self.clone()
+        }
+    }
+    pub(super) fn stable_current(&self, shell: &ShellState) -> bool {
+        self.account == shell.core.active_account
+            && shell
+                .core
+                .workspaces
+                .get(&self.team)
+                .is_some_and(|workspace| {
+                    workspace.team_id == self.team && workspace.self_user_id == self.user
+                })
+    }
     pub fn capture(shell: &ShellState) -> Option<Self> {
         let team = shell.core.active_team.as_ref()?;
         let workspace = shell.core.workspaces.get(team)?;

@@ -12,6 +12,12 @@ pub(super) fn value_matches(left: &CellEditValue, right: &CellEditValue) -> bool
     }
 }
 pub(super) fn wire_matches(member: &str, left: &Value, right: &Value) -> bool {
+    if member == "link" {
+        return super::link::read(Some(left))
+            .ok()
+            .zip(super::link::read(Some(right)).ok())
+            .is_some_and(|(left, right)| left == right);
+    }
     if member == "rich_text" {
         return left
             .as_array()

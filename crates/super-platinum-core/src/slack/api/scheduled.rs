@@ -129,18 +129,35 @@ pub async fn schedule_message(
     message: &ScheduleMessage,
     id: Option<&str>,
 ) -> Result<ScheduledMessage, Error> {
+    decode_scheduled_mutation(
+        transport
+            .execute_draft_mutation(drafts_schedule(client, workspace, message, id))
+            .await?,
+    )
+}
+fn decode_scheduled_mutation(value: serde_json::Value) -> Result<ScheduledMessage, Error> {
+    if value.get("ok").and_then(serde_json::Value::as_bool) == Some(false) {
+        return Err(Error::Api(
+            value
+                .get("error")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unknown_error")
+                .into(),
+        ));
+    }
+    if value.get("ok").and_then(serde_json::Value::as_bool) != Some(true) {
+        return Err(Error::Transport(
+            "Slack did not explicitly confirm the scheduled draft".into(),
+        ));
+    }
     #[derive(serde::Deserialize)]
     struct Created {
         draft: ScheduledMessage,
     }
-    let response: Created = decode(
-        transport
-            .execute(drafts_schedule(client, workspace, message, id))
-            .await?,
-        "scheduled draft",
-    )?;
+    let response: Created = decode(value, "scheduled draft")?;
     Ok(response.draft)
 }
+
 pub async fn delete_scheduled_message(
     transport: &Transport,
     client: &SlackClient,
@@ -309,5 +326,53 @@ mod tests {
             confirmed_send_timestamp(&serde_json::json!({"file_msg_ts":"123.456"}), true).unwrap(),
             "123.456"
         );
+    }
+    #[tokio::test]
+    async fn broadcast_schedule_offline_is_definitively_not_dispatched_without_holding() {
+        let transport = Transport::new("synthetic-cookie").unwrap();
+        transport.set_health(crate::slack::transport::Health::Offline);
+        let workspace = WorkspaceSession {
+            team_id: "T1".into(),
+            enterprise_id: None,
+            user_id: "U1".into(),
+            name: "Fixture".into(),
+            url: "https://fixture.slack.com".into(),
+            token: "synthetic-token".into(),
+        };
+        let mut message =
+            ScheduleMessage::new("C1".into(), Some("100.000001".into()), vec![], 2000000000);
+        message.destinations[0]["broadcast"] = true.into();
+        for id in [None, Some("DrFixture")] {
+            let result = tokio::time::timeout(
+                std::time::Duration::from_millis(100),
+                schedule_message(
+                    &transport,
+                    &SlackClient::default(),
+                    &workspace,
+                    &message,
+                    id,
+                ),
+            )
+            .await
+            .unwrap();
+            assert!(
+                matches!(result, Err(Error::Api(code)) if code == "draft_mutation_not_sent_offline")
+            );
+        }
+    }
+    #[test]
+    fn scheduled_mutation_requires_explicit_success_and_preserves_rejection() {
+        assert!(
+            matches!(decode_scheduled_mutation(serde_json::json!({"ok":false,"error":"time_in_past","draft":{}})),Err(Error::Api(code)) if code=="time_in_past")
+        );
+        for value in [
+            serde_json::json!({"draft":{}}),
+            serde_json::json!({"ok":null,"draft":{}}),
+        ] {
+            assert!(matches!(
+                decode_scheduled_mutation(value),
+                Err(Error::Transport(_))
+            ));
+        }
     }
 }

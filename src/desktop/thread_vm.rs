@@ -26,39 +26,42 @@ pub(crate) fn project_window(
     media: &MediaRegistry,
     window: &crate::thread_window::ThreadWindow,
 ) -> Vec<MessageVm> {
-    let selected = window
-        .rows
+    if !window.source_shape_matches(bag) {
+        return Vec::new();
+    }
+    let mut previous: Option<(usize, &super_platinum_core::slack::models::Message)> = None;
+    window
+        .selected_indices()
         .iter()
-        .enumerate()
-        .filter(|(i, _)| window.selected(*i, root))
-        .map(|(_, r)| r.ts.as_str())
-        .collect::<std::collections::HashSet<_>>();
-    let mut previous: Option<&super_platinum_core::slack::models::Message> = None;
-    bag.messages
-        .iter()
-        .filter_map(|message| {
+        .map(|&index| {
+            let row = window.rows.get(index)?;
+            let message = bag.messages.get(row.source_index)?;
             let ts = message.ts.as_deref()?;
-            if !selected.contains(ts) {
-                previous = None;
+            // Source positions are valid only for the synchronized canonical bag.
+            // Reject the entire projection on drift so VM positions never shift.
+            if ts != row.ts
+                || bag.is_pending(ts) != row.pending
+                || history.contains(root, ts) != row.history
+                || !(history.visible(root, ts) || row.pending)
+            {
                 return None;
             }
-            let mut vm = crate::message_vm::message_vm_with_pending(
-                workspace,
-                message,
-                media,
-                bag.is_pending(ts),
-            );
-            vm.compact = previous.is_some_and(|previous| {
-                previous.ts.as_deref() != Some(root)
-                    && previous.ts.as_deref().is_some_and(|ts| {
-                        history.contains(root, ts) == history.contains(root, &vm.ts)
-                    })
+            let mut vm =
+                crate::message_vm::message_vm_with_pending(workspace, message, media, row.pending);
+            vm.compact = previous.is_some_and(|(previous_index, previous)| {
+                row.previous_source_index == Some(previous_index)
+                    && previous.ts.as_deref() != Some(root)
+                    && previous
+                        .ts
+                        .as_deref()
+                        .is_some_and(|ts| history.contains(root, ts) == row.history)
                     && super_platinum_core::state::same_message_group(previous, message)
             });
-            previous = Some(message);
+            previous = Some((row.source_index, message));
             Some(vm)
         })
-        .collect()
+        .collect::<Option<Vec<_>>>()
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -201,3 +204,6 @@ pub(crate) fn fixture_bag(count: usize) -> ChannelMessages {
 
     bag
 }
+
+#[cfg(test)]
+mod index_tests;

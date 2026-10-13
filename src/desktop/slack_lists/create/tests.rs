@@ -1,5 +1,74 @@
 use super::*;
 use serde_json::json;
+use super_platinum_core::slack_lists::ListRecordReadback;
+
+#[test]
+fn deletion_retires_only_same_owner_known_created_identity() {
+    for mismatch in ["record", "list", "owner", "present", "none"] {
+        let mut shell = shell();
+        let attempt = begin_current(&mut shell);
+        let data = loaded(&shell);
+        validate(&mut shell, &attempt, &data).unwrap();
+        assert!(finish(
+            &mut shell,
+            &attempt,
+            Ok(json!({"ok":true,"record":created()}))
+        ));
+        let list = if mismatch == "list" {
+            "F_OTHER"
+        } else {
+            "F_LIST_FIXTURE"
+        };
+        let id = if mismatch == "record" {
+            "R_OTHER"
+        } else {
+            "R_CREATED"
+        };
+        let response = if mismatch == "present" {
+            json!({"ok":true,"record":created()})
+        } else {
+            json!({"ok":false,"error":"record_deleted"})
+        };
+        let tombstone = ListRecordReadback::from_response(list, id, &response).unwrap();
+        if mismatch == "owner" {
+            shell.core.active_account = Some("different-account".into());
+        }
+        let scope = Scope::capture(&shell).unwrap();
+        reconcile_deleted(&mut shell, &scope, &tombstone);
+        assert_eq!(
+            shell.slack_lists.create.receipts.is_empty(),
+            mismatch == "none",
+            "{mismatch}"
+        );
+    }
+}
+
+#[test]
+fn deletion_clears_matching_created_notice_but_preserves_unrelated_notice() {
+    let mut shell = shell();
+    let attempt = begin_current(&mut shell);
+    let data = loaded(&shell);
+    validate(&mut shell, &attempt, &data).unwrap();
+    assert!(finish(
+        &mut shell,
+        &attempt,
+        Ok(json!({"ok":true,"record":created()}))
+    ));
+    read(&mut shell, with_record(data, created()));
+    assert!(presentation(&shell).notice.is_some());
+    let scope = Scope::capture(&shell).unwrap();
+    for id in ["R_OTHER", "R_CREATED"] {
+        let deleted = ListRecordReadback::from_response(
+            "F_LIST_FIXTURE",
+            id,
+            &json!({"ok":false,"error":"record_deleted"}),
+        )
+        .unwrap();
+        reconcile_deleted(&mut shell, &scope, &deleted);
+        assert_eq!(presentation(&shell).notice.is_none(), id == "R_CREATED");
+    }
+    assert!(!presentation(&shell).can_open);
+}
 fn shell() -> ShellState {
     let mut shell =
         ShellState::fixture_variant(crate::media::MediaRegistry::default(), "slack-list");
@@ -89,27 +158,47 @@ fn readback_uses_only_confirmed_identity_and_opens_canonical_detail() {
     assert_eq!(presentation(&shell).notice.as_deref(), Some("Item added."));
 }
 #[test]
-fn lost_response_survives_reopen_and_never_guesses_new_blank_identity() {
+fn post_dispatch_transport_failure_stays_uncertain_without_replay_across_reopen() {
     let mut shell = shell();
     let attempt = begin_current(&mut shell);
     let data = loaded(&shell);
     validate(&mut shell, &attempt, &data).unwrap();
+    // Successful preflight consumes Preparing and enters the dispatch boundary.
+    // A transport failure from that boundary cannot prove Slack did not create.
+    assert!(receipt(&shell).unwrap().stage == Stage::Sending);
     assert!(finish(
         &mut shell,
         &attempt,
         Err(Error::Transport("lost response".into()))
     ));
     assert!(presentation(&shell).operation.unwrap().can_retire);
+    assert!(receipt(&shell).unwrap().stage == Stage::Uncertain);
+    assert!(!dismiss(&mut shell, attempt.serial));
+    assert!(!cancel(&mut shell, attempt.serial));
+    assert!(validate(&mut shell, &attempt, &data).is_err());
     close_shell(&mut shell);
     let file = serde_json::from_value(data.document.raw.clone()).unwrap();
     assert!(open_shell(&mut shell, file));
     read(&mut shell, with_record(data, created()));
     assert!(blocks_mutation(&shell));
     assert!(shell.slack_lists.view.as_ref().unwrap().detail.is_none());
+    let view = shell.slack_lists.view.as_ref().unwrap();
+    let (visit, layout) = (view.generation, view.layout.generation);
+    assert!(begin(&mut shell, visit, layout).is_err());
+    assert_eq!(receipt(&shell).unwrap().attempt.serial, attempt.serial);
+    assert_eq!(shell.slack_lists.create.receipts.len(), 1);
+    assert!(!finish(
+        &mut shell,
+        &attempt,
+        Ok(json!({"ok":true,"record":created()}))
+    ));
     assert!(!retire(&mut shell, attempt.serial + 1));
     assert!(retire(&mut shell, attempt.serial));
     assert!(!blocks_mutation(&shell));
     assert!(presentation(&shell).enabled);
+    assert!(shell.slack_lists.create.receipts.is_empty());
+    // Acknowledgment only retires local evidence; no dispatch is scheduled.
+    assert_eq!(fixture::creation_attempts(&shell), 0);
 }
 #[test]
 fn stale_visit_selection_scope_and_fresh_access_reject_preflight() {
@@ -261,6 +350,7 @@ fn confirmed_but_missing_item_can_be_dismissed_without_replaying_creation() {
     let data = loaded(&shell);
     validate(&mut shell, &attempt, &data).unwrap();
     assert!(!dismiss(&mut shell, attempt.serial));
+    assert!(!retire(&mut shell, attempt.serial));
     finish(
         &mut shell,
         &attempt,
@@ -269,6 +359,8 @@ fn confirmed_but_missing_item_can_be_dismissed_without_replaying_creation() {
     read(&mut shell, data);
     assert!(blocks_mutation(&shell));
     assert!(presentation(&shell).operation.unwrap().can_dismiss);
+    assert!(!presentation(&shell).operation.unwrap().can_retire);
+    assert!(!retire(&mut shell, attempt.serial));
     assert!(!dismiss(&mut shell, attempt.serial + 1));
     assert!(dismiss(&mut shell, attempt.serial));
     assert!(!blocks_mutation(&shell));

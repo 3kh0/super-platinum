@@ -52,11 +52,13 @@ pub(super) fn begin_edit_with_authority(
         return Err("Refresh this list before changing it.");
     }
     if create::blocks_mutation(shell)
+        || delete::blocks_mutation(shell)
         || shell.slack_lists.operations.contains_key(&view.id)
         || view.editor.is_some()
     {
         return Err("Finish the current edit before changing another checkbox.");
     }
+    cell_receipts::capacity(shell)?;
     if shell.overlay != Some(Overlay::SlackList) {
         return Err("This item is no longer visible. Open it again before changing it.");
     }
@@ -121,6 +123,7 @@ pub(super) fn validate_edit(
     loaded: Loaded,
 ) -> Result<(), &'static str> {
     if !attempt.visible(shell)
+        || delete::blocks_mutation(shell)
         || shell.overlay != Some(Overlay::SlackList)
         || attempt.scope.deleted(shell, attempt.edit.list_id())
         || shell.slack_lists.view.as_ref().is_none_or(|v| {
@@ -167,15 +170,10 @@ pub(super) fn finish_edit(
     attempt: &EditAttempt,
     result: Result<Value, Error>,
 ) {
-    if !attempt.current(shell)
-        || shell
-            .slack_lists
-            .operations
-            .get(attempt.edit.list_id())
-            .is_none_or(|m| m.phase != Phase::Saving)
-    {
+    if cell_receipts::get(shell, attempt).is_none_or(|m| m.phase != Phase::Saving) {
         return;
     }
+    let visible = attempt.visible(shell);
     let result = result.and_then(|response| {
         attempt
             .edit
@@ -184,15 +182,11 @@ pub(super) fn finish_edit(
             .map(|_| response)
     });
     let uncertain = result.as_ref().is_ok() || result.as_ref().err().is_some_and(outcome_uncertain);
-    if uncertain {
-        shell
-            .slack_lists
-            .operations
-            .get_mut(attempt.edit.list_id())
-            .unwrap()
-            .phase = Phase::Uncertain;
-    } else {
-        shell.slack_lists.operations.remove(attempt.edit.list_id());
+    cell_receipts::settle(shell, attempt, uncertain);
+    // A late response can settle its own retained receipt, but not write UI
+    // state into a replacement account, credentials, or dialog visit.
+    if !visible {
+        return;
     }
     if let Some(view) = shell
         .slack_lists

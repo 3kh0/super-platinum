@@ -14,6 +14,7 @@ pub(crate) struct ComposeSource {
     pub channel: String,
     pub thread: Option<String>,
     pub text: String,
+    pub reply_broadcast: bool,
     pub attachments: Vec<(u64, std::path::PathBuf, String)>,
 }
 impl ComposeSource {
@@ -24,7 +25,7 @@ impl ComposeSource {
             thread: self.thread.clone(),
         }
     }
-    fn capture(shell: &ShellState, target: ComposerTarget) -> Option<Self> {
+    pub(crate) fn capture(shell: &ShellState, target: ComposerTarget) -> Option<Self> {
         let thread = match target {
             ComposerTarget::Channel => None,
             ComposerTarget::Thread => Some(shell.thread_root.clone()?),
@@ -46,11 +47,25 @@ impl ComposeSource {
             channel: shell.core.active_channel.clone()?,
             thread,
             text: text.clone(),
+            reply_broadcast: target == ComposerTarget::Thread
+                && shell.core.thread_composer.reply_broadcast,
             attachments: attachments
                 .iter()
                 .map(|a| (a.id, a.path.clone(), a.name.clone()))
                 .collect(),
         })
+    }
+    pub(crate) fn request(&self, shell: &ShellState, post_at: i64) -> api::ScheduleMessage {
+        let mut request = api::ScheduleMessage::new(
+            self.channel.clone(),
+            self.thread.clone(),
+            compose_blocks(shell, &self.text),
+            post_at,
+        );
+        if self.thread.is_some() && self.reply_broadcast {
+            request.destinations[0]["broadcast"] = serde_json::Value::Bool(true);
+        }
+        request
     }
     fn clear_if_unchanged(&self, shell: &mut ShellState) -> Option<&'static str> {
         if shell.core.account_epoch != self.epoch {
@@ -71,7 +86,9 @@ impl ComposeSource {
                 draft
                     .attachments
                     .retain(|a| !self.attachments.iter().any(|(id, _, _)| *id == a.id));
-                if draft.composer.text == self.text {
+                if draft.composer.text == self.text
+                    && draft.composer.reply_broadcast == self.reply_broadcast
+                {
                     draft.composer = Default::default();
                 }
                 shell
@@ -104,7 +121,7 @@ impl ComposeSource {
         };
         // Preserve input typed while the request was in flight, and new attachments.
         attachments.retain(|a| !self.attachments.iter().any(|(id, _, _)| *id == a.id));
-        if composer.text == self.text {
+        if composer.text == self.text && composer.reply_broadcast == self.reply_broadcast {
             *composer = Default::default();
             Some(id)
         } else {
@@ -263,13 +280,7 @@ fn ScheduleDialog(
             let Some(source) = source.as_ref() else {
                 return api::ScheduleMessage::new(String::new(), None, vec![], 0);
             };
-            let blocks = compose_blocks(&state.peek(), &source.text);
-            api::ScheduleMessage::new(
-                source.channel.clone(),
-                source.thread.clone(),
-                blocks,
-                super_platinum_core::state::now_secs() + 3600,
-            )
+            source.request(&state.peek(), super_platinum_core::state::now_secs() + 3600)
         }
     });
     let mut date = use_signal(String::new);
@@ -588,5 +599,26 @@ mod tests {
         assert!(source.clear_if_unchanged(&mut shell).is_none());
         assert!(!shell.core.drafts.items.contains_key(&key));
         assert_eq!(shell.core.composer.text, "Keep new channel");
+    }
+    #[test]
+    fn scheduled_thread_captures_choice_and_does_not_clear_a_newer_choice() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        shell.thread_root = Some("100.000001".into());
+        shell.core.thread_composer.text = "Reply".into();
+        shell.core.thread_composer.reply_broadcast = true;
+        let source = ComposeSource::capture(&shell, ComposerTarget::Thread).unwrap();
+        assert!(source.reply_broadcast);
+        let request = source.request(&shell, 2000000000);
+        assert_eq!(request.destinations[0]["broadcast"], true);
+        assert_eq!(request.destinations[0]["thread_ts"], "100.000001");
+        shell.core.thread_composer.reply_broadcast = false;
+        assert_eq!(source.clear_if_unchanged(&mut shell), None);
+        assert_eq!(shell.core.thread_composer.text, "Reply");
+        shell.core.thread_composer.reply_broadcast = true;
+        assert_eq!(
+            source.clear_if_unchanged(&mut shell),
+            Some("thread-composer")
+        );
+        assert!(!shell.core.thread_composer.reply_broadcast);
     }
 }

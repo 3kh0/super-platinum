@@ -100,7 +100,11 @@ pub(crate) fn MessageRadioGroup(
     }}
 }
 
-fn composition(state: Signal<ShellState>, value: Option<&Value>, fallback: &str) -> Element {
+pub(super) fn composition(
+    state: Signal<ShellState>,
+    value: Option<&Value>,
+    fallback: &str,
+) -> Element {
     let Some(raw) = value else {
         return rsx! {"{fallback}"};
     };

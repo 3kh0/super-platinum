@@ -482,7 +482,35 @@ pub async fn send_message(
     decode_sent_message(value)
 }
 
+/// Legacy syntax still carries the same immutable message identity and thread intent.
+#[allow(clippy::too_many_arguments)]
+pub async fn send_message_with_broadcast(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    channel: ChannelId,
+    text: String,
+    thread_ts: Option<MessageTs>,
+    client_msg_id: String,
+    reply_broadcast: bool,
+) -> Result<SentMessage, Error> {
+    if client_msg_id.is_empty() || (reply_broadcast && thread_ts.is_none()) {
+        return Err(Error::Api("invalid_arguments".into()));
+    }
+    let mut request = chat_post_message(client, workspace, channel, text, thread_ts);
+    if let super::super::client::RequestBody::Form(fields) = &mut request.body {
+        fields.push(("client_msg_id".into(), client_msg_id));
+        fields.push(("reply_broadcast".into(), reply_broadcast.to_string()));
+    }
+    decode_sent_message(transport.execute_draft_mutation(request).await?)
+}
+
 fn decode_sent_message(value: serde_json::Value) -> Result<SentMessage, Error> {
+    if value.get("ok").and_then(serde_json::Value::as_bool) == Some(false)
+        && let Some(code) = value.get("error").and_then(serde_json::Value::as_str)
+    {
+        return Err(Error::Api(code.to_owned()));
+    }
     if value.get("ok").and_then(serde_json::Value::as_bool) != Some(true) {
         return Err(Error::Transport(
             "Slack did not explicitly confirm the sent message".into(),
@@ -504,6 +532,8 @@ struct UploadUrl {
 /// What to upload and where, separate from the connection context that every
 /// call in this module already threads through.
 pub struct UploadRequest {
+    pub reply_broadcast: bool,
+    pub client_msg_id: String,
     pub channel: ChannelId,
     pub thread_ts: Option<MessageTs>,
     pub initial_comment: String,
@@ -520,17 +550,44 @@ pub enum UploadMessageError {
     BeforeDelivery(Error),
     #[error("upload message completion failed: {0}")]
     Completion(Error),
+    #[error("upload sharing response uncertain: {error}")]
+    CompletionWithFiles {
+        error: Error,
+        finalized: CompletedUpload,
+    },
 }
 impl UploadMessageError {
     pub fn error(&self) -> &Error {
         match self {
-            Self::BeforeDelivery(error) | Self::Completion(error) => error,
+            Self::BeforeDelivery(error)
+            | Self::Completion(error)
+            | Self::CompletionWithFiles { error, .. } => error,
+        }
+    }
+    /// Validated private finalization identities, not proof of message delivery.
+    /// These permit an exact read-only reconciliation after a lost share ACK.
+    pub fn finalized_files(&self) -> Option<&[String]> {
+        match self {
+            Self::CompletionWithFiles { finalized, .. } if self.delivery_uncertain() => {
+                Some(&finalized.file_ids)
+            }
+            _ => None,
+        }
+    }
+    fn retain_finalized(self, finalized: &CompletedUpload) -> Self {
+        if self.delivery_uncertain() {
+            Self::CompletionWithFiles {
+                error: self.error().clone(),
+                finalized: finalized.clone(),
+            }
+        } else {
+            self
         }
     }
     pub fn delivery_uncertain(&self) -> bool {
         match self {
             Self::BeforeDelivery(_) => false,
-            Self::Completion(error) => {
+            Self::Completion(error) | Self::CompletionWithFiles { error, .. } => {
                 matches!(error, Error::Offline(_) | Error::Transport(_))
                     || matches!(error, Error::Api(code) if matches!(code.as_str(), "internal_error" | "fatal_error"))
                     || matches!(error, Error::HttpStatus { status, .. } if *status >= 500 || *status == 408)
@@ -585,6 +642,8 @@ pub async fn upload_files(
     request: UploadRequest,
 ) -> Result<CompletedUpload, UploadMessageError> {
     let UploadRequest {
+        reply_broadcast,
+        client_msg_id,
         channel,
         thread_ts,
         initial_comment,
@@ -592,9 +651,30 @@ pub async fn upload_files(
         canceled,
     } = request;
 
+    if reply_broadcast
+        && (thread_ts.as_deref().is_none_or(str::is_empty) || client_msg_id.is_empty())
+    {
+        return Err(UploadMessageError::BeforeDelivery(Error::Api(
+            "invalid_arguments".into(),
+        )));
+    }
     let files = stage_files(transport, client, workspace, files_to_upload, &canceled)
         .await
         .map_err(UploadMessageError::BeforeDelivery)?;
+    if reply_broadcast {
+        return upload_broadcast::complete_and_share(
+            transport,
+            client,
+            workspace,
+            &channel,
+            thread_ts.as_deref().unwrap(),
+            &initial_comment,
+            &client_msg_id,
+            &files,
+            &canceled,
+        )
+        .await;
+    }
 
     let mut fields = vec![
         (
@@ -626,6 +706,9 @@ pub async fn upload_files(
 #[cfg(test)]
 #[path = "execute_upload_tests.rs"]
 mod upload_tests;
+
+#[path = "execute_upload_broadcast.rs"]
+mod upload_broadcast;
 
 /// Upload and finalize private files without posting to a conversation.
 /// Scheduling attaches these ids later, so no early file message is created.

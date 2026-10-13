@@ -7,6 +7,16 @@ use std::sync::Arc;
 
 use crate::slack::models::Message;
 
+mod conversation;
+mod time;
+mod user;
+pub use conversation::{CapturedMessageConversation, CurrentMessageConversation};
+pub use time::{CapturedMessageTime, CurrentMessageTime};
+pub use user::{CapturedMessageUser, CurrentMessageUser};
+mod date;
+pub use date::{CapturedMessageDate, CurrentMessageDate};
+mod multi;
+pub use multi::{CapturedMessageMulti, CurrentMessageMulti};
 mod radio;
 pub use radio::{CapturedMessageRadio, CurrentMessageRadio};
 mod revision;

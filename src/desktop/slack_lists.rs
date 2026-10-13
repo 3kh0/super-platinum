@@ -11,9 +11,11 @@ use super_platinum_core::{
     slack::{Error, models::File},
     slack_lists::{CellEdit, CheckboxEdit, Document, PersonalTaskLists, RecordsPage},
 };
+mod cell_receipts;
 pub(crate) mod check;
 pub(crate) mod create;
 pub(crate) mod date_context;
+pub(crate) mod delete;
 mod edit_trace;
 mod editor;
 pub(crate) mod events;
@@ -29,12 +31,15 @@ use mutations::{
 };
 mod read_state;
 mod record_detail;
-pub(crate) use editor::{EditorKind, EditorView, begin_cell_editor, cancel_editor, save_editor};
+pub(crate) use editor::entities;
+pub(crate) use editor::{
+    EditorKind, EditorView, begin_cell_editor, cancel_editor, link_normalization_slot, save_editor,
+};
 pub(crate) use layout::{TableEntry, select_view, toggle_group};
 use record_detail::EditAuthority;
 pub(crate) use record_detail::{
     RecordDetailView, begin_detail_cell_editor, close_record_detail, open_record_detail,
-    toggle_detail_checkbox,
+    toggle_detail_checkbox, track_open,
 };
 pub(crate) use super_platinum_core::slack_lists::{CellEditValue, saved_views::ProjectionLayout};
 #[cfg(test)]
@@ -53,8 +58,10 @@ pub(crate) struct State {
     scope: Option<Scope>,
     view: Option<View>,
     operations: BTreeMap<String, Mutation>,
+    retained_cells: cell_receipts::Retained,
     viewing: lifecycle::State,
     create: create::State,
+    delete: delete::State,
     pub(crate) fixture: Option<fixture::Fixture>,
 }
 #[derive(Clone)]
@@ -137,10 +144,14 @@ pub(super) fn open_shell(shell: &mut ShellState, file: File) -> bool {
     let Some(scope) = Scope::capture(shell) else {
         return false;
     };
+    if !cell_receipts::restore(shell, &scope) {
+        return false;
+    }
     let unavailable = scope.deleted(shell, &id)
         || super_platinum_core::file_actions::deleted(&file)
         || !super_platinum_core::slack_lists::is_list(&file);
     create::close_visit(shell);
+    delete::close_visit(shell);
     record_detail::dismiss_shell(shell);
     shell.slack_lists.scope = Some(scope);
     shell.slack_lists.view = Some(View {
@@ -168,6 +179,7 @@ pub(super) fn open_shell(shell: &mut ShellState, file: File) -> bool {
 }
 pub(crate) fn close_shell(shell: &mut ShellState) {
     create::close_visit(shell);
+    delete::close_visit(shell);
     record_detail::dismiss_shell(shell);
     // In-flight mutations retain their ownership and receipt independently of
     // the dialog visit; reopening cannot repeat an uncertain request.
@@ -178,6 +190,7 @@ pub(crate) fn close_shell(shell: &mut ShellState) {
 }
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
     let creation_changed = create::poll(shell);
+    let deletion_changed = delete::poll(shell);
     if shell
         .slack_lists
         .scope
@@ -185,7 +198,7 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
         .is_some_and(|scope| !scope.current(shell))
     {
         shell.slack_lists.view = None;
-        shell.slack_lists.operations.clear();
+        cell_receipts::retire(shell);
         shell.slack_lists.scope = None;
         if shell.overlay == Some(Overlay::SlackList) {
             shell.overlay = None;
@@ -215,7 +228,7 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
         shell.slack_lists.view.as_mut().unwrap().retry_at = 0;
     }
     let calendar_changed = date_context::poll(shell);
-    creation_changed || deleted || expired || calendar_changed
+    creation_changed || deletion_changed || deleted || expired || calendar_changed
 }
 /// A verified realtime event names the file/list. Its payload is not trusted as
 /// a complete document or cell response: invalidate and require a fresh read.
@@ -264,6 +277,7 @@ pub(super) fn begin_read(shell: &mut ShellState) -> Option<ReadAttempt> {
     if view.loading
         || view.unavailable
         || view.retry_at > now()
+        || delete::blocks_read(shell)
         || shell
             .slack_lists
             .operations
@@ -365,6 +379,9 @@ pub(super) fn finish_read(
             view.revision = next_id();
             rebuild_rows(shell);
             create::reconcile(shell);
+            // Page absence never settles deletion; this only retires a stale
+            // unsent confirmation/preflight after the canonical read changed.
+            delete::poll(shell);
         }
         Ok(_) => read_failure(shell, Error::Api("list_id_mismatch".into())),
         Err(error) => read_failure(shell, error),

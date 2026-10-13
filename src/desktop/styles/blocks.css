@@ -415,7 +415,7 @@
 }
 
 /* Native message menus share the compact Block Kit control surface. */
-.block-select {
+.block-select, .block-datepicker, .block-timepicker {
   min-width: 0;
   width: min(280px, 100%);
   max-width: 100%;
@@ -428,9 +428,9 @@
   font-size: var(--text-sm);
   text-overflow: ellipsis;
 }
-.block-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.block-select:disabled { color: var(--muted); cursor: default; }
-.block-accessory:has(> .block-select) { flex: 0 1 280px; min-width: 0; max-width: 100%; }
+.block-select:focus-visible, .block-datepicker:focus-visible, .block-timepicker:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.block-select:disabled, .block-datepicker:disabled, .block-timepicker:disabled { color: var(--muted); cursor: default; }
+.block-accessory:has(> .block-select), .block-accessory:has(> .block-datepicker) { flex: 0 1 280px; min-width: 0; max-width: 100%; }
 
 .block-radio-group { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; max-width: 100%; }
 .block-radio-option { display: flex; align-items: flex-start; gap: var(--space-2); min-width: 0; min-height: var(--control-height); cursor: pointer; }
@@ -442,3 +442,33 @@
 .block-radio-group[aria-disabled="true"] .block-radio-option { cursor: default; }
 .block-radio-group[aria-disabled="true"] .block-radio-label, .block-radio-unavailable { color: var(--muted); }
 .block-accessory:has(> .block-radio-group) { flex: 0 1 280px; min-width: 0; max-width: 100%; }
+
+.block-checkbox-group { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; max-width: 100%; }
+.block-checkbox-group[aria-disabled="true"] .block-radio-option { cursor: default; }
+.block-checkbox-group[aria-disabled="true"] .block-radio-label { color: var(--muted); }
+.block-accessory:has(> .block-checkbox-group) { flex: 0 1 280px; min-width: 0; max-width: 100%; }
+.block-multi-select, .block-users-select, .block-conversations-select { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); text-align: left; }
+.block-multi-select > span, .block-users-select > span, .block-conversations-select > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.block-multi-chevron { flex: 0 0 auto; transform: rotate(90deg); }
+.modal.message-multi-dialog { width: min(440px, calc(100vw - 32px)); }
+.modal.message-multi-dialog > form { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+.message-multi-content { overflow: auto; min-height: 0; padding: 0 var(--space-4); }
+.message-multi-body { margin-bottom: var(--space-3); white-space: pre-wrap; overflow-wrap: anywhere; }
+#message-multi-search, #message-user-search { width: 100%; min-height: var(--control-height); height: var(--control-height); padding: 0 var(--space-2); border: 0; appearance: none; background: var(--surface); border-radius: var(--radius-md); }
+.message-multi-options { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-2) 0; }
+.message-multi-group { color: var(--muted); font-size: var(--text-sm); font-weight: 600; padding-top: var(--space-1); }
+.message-multi-status { color: var(--muted); font-size: var(--text-sm); padding: var(--space-2) var(--space-4); min-height: var(--control-height); }
+
+.message-multi-selected { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-bottom: var(--space-2); }
+.message-multi-selected-option { display: flex; align-items: center; gap: var(--space-1); min-width: 0; max-width: 100%; padding-left: var(--space-2); border-radius: var(--radius-sm); background: var(--surface); font-size: var(--text-sm); }
+.message-multi-selected-option > span { min-width: 0; overflow-wrap: anywhere; }
+.message-multi-selected-option > button { flex: 0 0 auto; }
+
+.block-time-control { display: inline-flex; flex-direction: column; gap: var(--space-1); min-width: 0; max-width: 100%; }
+.block-timezone { color: var(--muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.block-accessory:has(> .block-time-control) { flex: 0 1 280px; min-width: 0; max-width: 100%; }
+
+.message-user-options { display: flex; flex-direction: column; gap: var(--space-1); max-height: min(320px, 40vh); overflow-y: auto; }
+.message-user-option { min-height: 32px; flex-shrink: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.message-user-dialog > .message-multi-content { min-height: 0; overflow-y: auto; }
+.message-user-dialog #message-user-search:focus-visible { outline-offset: -2px; }

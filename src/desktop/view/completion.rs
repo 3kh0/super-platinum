@@ -8,9 +8,11 @@ use dioxus::{core::Task, prelude::*};
 use std::{cell::RefCell, rc::Rc};
 use super_platinum_core::{
     composer_completion::{self, Kind, LIMIT, Suggestion, Target, Trigger},
-    slack::{api, models::User},
+    slack::models::User,
     state::Workspace,
 };
+
+mod directory;
 
 #[derive(serde::Deserialize)]
 struct Event {
@@ -267,13 +269,13 @@ pub(super) fn ComposerCompletion(
             }
             let _ = bridge.send(&results);
             if lookup {
-                let ctx = context.unwrap();
+                let ctx = Rc::new(context.unwrap());
                 let remote = remote.clone();
                 let current = current.clone();
                 task = Some(spawn(async move {
                     let valid = |shell: &ShellState| {
                         current(shell)
-                            && ctx.current(shell)
+                            && directory::owner_current(shell, &ctx)
                             && shell.channel_generation == channel_generation
                             && shell.thread_generation == thread_generation
                     };
@@ -281,13 +283,8 @@ pub(super) fn ComposerCompletion(
                     if !valid(&state.peek()) {
                         return;
                     }
-                    let fetched = api::fetch_users_search(
-                        &ctx.transport,
-                        &ctx.client,
-                        &ctx.session,
-                        trigger.query.clone(),
-                    )
-                    .await;
+                    let fetched =
+                        directory::fetch(state, ctx.clone(), trigger.query.clone(), &valid).await;
                     let shell = state.peek();
                     if !valid(&shell) {
                         return;
@@ -309,9 +306,7 @@ pub(super) fn ComposerCompletion(
                                 results.status = "No matches";
                             }
                         }
-                        Err(_) => {
-                            results.status = "Directory unavailable. Edit your search to retry."
-                        }
+                        Err(status) => results.status = status,
                     }
                     let _ = bridge.send(&results);
                 }));

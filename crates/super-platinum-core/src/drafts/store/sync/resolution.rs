@@ -159,10 +159,10 @@ impl DraftStore {
         let mut stored = current.stored.clone();
         if let Some(row) = &mut stored {
             if !same_local(&current.local, &local) {
-                let desired = if local.empty() {
+                let desired = if local.composer.text.is_empty() && local.attachments.is_empty() {
                     Ok(None)
                 } else if local.attachments.is_empty() {
-                    codec::encode(&scope.key, &local.composer.text).map(Some)
+                    codec::encode_composer(&scope.key, &local.composer).map(Some)
                 } else {
                     Err(codec::Unsupported::Files)
                 };

@@ -17,15 +17,25 @@ use super_platinum_core::{
 };
 
 pub(crate) mod check;
+pub(crate) mod conversation_check;
+pub(crate) mod conversation_fixture;
+pub(crate) mod date_check;
+pub(crate) mod date_fixture;
 pub(crate) mod fixture;
 pub(crate) mod hydration;
 pub(crate) mod inputs;
+pub(crate) mod multi_check;
+pub(crate) mod multi_fixture;
 pub(crate) mod radio_check;
 pub(crate) mod radio_fixture;
 pub(crate) mod select_check;
 pub(crate) mod select_fixture;
 pub(crate) mod service;
 pub(crate) mod source;
+pub(crate) mod time_check;
+pub(crate) mod time_fixture;
+pub(crate) mod user_check;
+pub(crate) mod user_fixture;
 use source::{Captured, Source};
 #[cfg(test)]
 mod tests;
@@ -35,8 +45,16 @@ pub(crate) struct State {
     pub(crate) hydration_revision: u64,
     pub(crate) fixture: Option<fixture::Fixture>,
     pub(crate) select_fixture: Option<select_fixture::Fixture>,
+    pub(crate) time_fixture: Option<time_fixture::Fixture>,
+    pub(crate) date_fixture: Option<date_fixture::Fixture>,
     pub(crate) radio_fixture: Option<radio_fixture::Fixture>,
+    pub(crate) multi_fixture: Option<multi_fixture::Fixture>,
+    pub(crate) user_fixture: Option<user_fixture::Fixture>,
+    user_picker: Option<inputs::user::Picker>,
+    user_retry: BTreeMap<(u64, String), std::time::Instant>,
+    user_labels: BTreeMap<(u64, String, String, String), String>,
     inputs: inputs::Cache,
+    multi_picker: Option<inputs::multi::Picker>,
     confirmation: Option<Pending>,
     operations: BTreeMap<Key, Operation>,
 }
@@ -268,7 +286,11 @@ fn dispatch(mut state: Signal<ShellState>, captured: Captured) {
     if captured.revalidate(&state.read()).is_err() {
         return;
     }
-    if radio_fixture::dispatch(state, captured.clone())
+    if user_fixture::dispatch(state, captured.clone())
+        || time_fixture::dispatch(state, captured.clone())
+        || date_fixture::dispatch(state, captured.clone())
+        || multi_fixture::dispatch(state, captured.clone())
+        || radio_fixture::dispatch(state, captured.clone())
         || select_fixture::dispatch(state, captured.clone())
         || fixture::dispatch(state, captured.clone())
     {
@@ -454,6 +476,7 @@ fn finish(
 /// validates its one source. No periodic full-message/operation scan.
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
     inputs::prune(shell);
+    let picker_changed = inputs::multi::poll(shell) | inputs::user::poll(shell);
     shell
         .message_buttons
         .operations
@@ -472,7 +495,7 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
             return true;
         }
     }
-    false
+    picker_changed
 }
 
 use inputs::prepare as prepare_request;

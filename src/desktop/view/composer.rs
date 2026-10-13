@@ -73,13 +73,33 @@ pub(crate) fn replace_reviewed_field(id: &str, scope: &str, expected: &str, text
 }
 
 pub(crate) fn field_scope(shell: &ShellState, target: ComposerTarget) -> String {
-    format!(
+    let scope = format!(
         "{}:{}:{:?}:{:?}",
         shell.draft_writes.view_id,
         shell.core.account_epoch,
         shell.core.active_account,
         shell.composer_key(target)
-    )
+    );
+    match target {
+        ComposerTarget::Channel => scope,
+        ComposerTarget::Thread => format!("{scope}:{}", shell.thread_generation),
+    }
+}
+
+#[cfg(test)]
+mod scope_tests {
+    use super::*;
+
+    #[test]
+    fn reopening_same_thread_retires_dom_scope_without_changing_channel_scope() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        shell.thread_root = Some("100.000001".into());
+        let thread = field_scope(&shell, ComposerTarget::Thread);
+        let channel = field_scope(&shell, ComposerTarget::Channel);
+        shell.thread_generation += 1;
+        assert_ne!(thread, field_scope(&shell, ComposerTarget::Thread));
+        assert_eq!(channel, field_scope(&shell, ComposerTarget::Channel));
+    }
 }
 
 /// Focuses a text field that may not be mounted yet, caret at the end.
@@ -201,6 +221,10 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
     let account = snapshot.core.active_account.clone();
     let field_key = field_scope(snapshot, ComposerTarget::Thread);
     let upload_epoch = snapshot.upload_ui_epoch;
+    let broadcast_scope = field_key.clone();
+    let broadcast_generation = snapshot.thread_generation;
+    let broadcast_label = snapshot.thread_broadcast_label();
+    let broadcast_disabled = snapshot.thread_broadcast_disabled();
     rsx! {
         footer { key: "{field_key}", class: "thread-composer",
             super::completion::ComposerCompletion {state,target:ComposerTarget::Thread,field_id:"thread-composer"}
@@ -251,6 +275,14 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
                     {crate::icons::icon(crate::icons::Icon::Send, "icon sm")}
                 }
                 super::scheduled::ScheduleButton {state,target:ComposerTarget::Thread}
+            }
+            label {class:"thread-broadcast", r#for:"thread-reply-broadcast",
+                input {id:"thread-reply-broadcast", r#type:"checkbox",
+                    checked:snapshot.core.thread_composer.reply_broadcast,
+                    disabled:broadcast_disabled,
+                    onchange:move |event| {state.write().set_thread_broadcast(&broadcast_scope,broadcast_generation,event.checked());}
+                }
+                span {"{broadcast_label}"}
             }
         }
     }
@@ -311,6 +343,7 @@ fn format_toolbar(state: Signal<ShellState>, target: ComposerTarget) -> Element 
                     {icon(symbol, "icon sm")}
                 }
             }
+            crate::composer_emoji::EmojiButton {state,target}
         }
     }
 }

@@ -125,6 +125,13 @@ pub(crate) fn prepare(
         return None;
     }
     let scope = Scope::capture(&shell.core, team, generation)?;
+    let deleted_id = match event {
+        RtEvent::Unknown(raw) => policy::deleted_event(raw),
+        _ => None,
+    };
+    let id = deleted_id.or_else(|| changed_id(event))?;
+    // Retire canonical/preflight reads before applying this validated event.
+    crate::canvas::checklist::invalidate(shell, team, id);
     let tracker = &mut shell.file_events;
     if tracker.scope.as_ref().is_none_or(|(epoch, transport)| {
         *epoch != scope.epoch
@@ -138,11 +145,6 @@ pub(crate) fn prepare(
     }
     // Pending work from a replaced socket cannot suppress fresh reads.
     tracker.pending.retain(|_, p| p.scope.current(&shell.core));
-    let deleted_id = match event {
-        RtEvent::Unknown(raw) => policy::deleted_event(raw),
-        _ => None,
-    };
-    let id = deleted_id.or_else(|| changed_id(event))?;
     tracker.serial = tracker.serial.wrapping_add(1);
     let revision = tracker.serial;
     let key = (team.into(), id.into());

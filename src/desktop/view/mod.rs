@@ -9,7 +9,7 @@ mod channel_window_check;
 mod chrome;
 mod completion;
 pub(crate) mod composer;
-mod files;
+pub(crate) mod files;
 mod huddle;
 mod huddle_stage;
 mod later;
@@ -18,8 +18,13 @@ pub(crate) mod media_image;
 mod member_admin;
 mod message;
 mod message_button;
+mod message_checkboxes;
+mod message_date;
+pub(crate) mod message_multi;
 mod message_radio;
 mod message_select;
+mod message_time;
+pub(crate) mod message_user;
 mod new_channel;
 mod new_reminder;
 mod pins;
@@ -426,6 +431,7 @@ pub fn shell() -> Element {
                         id: "thread-body",
                         class: "thread-body",
                         "data-timeline-scope":snapshot.thread_scope(),
+                        "data-thread-projection-generation":snapshot.thread_window.projection_generation.to_string(),
                         "data-scroll-pending":snapshot.thread_target.is_some(),
                         onmounted:move |_| {dioxus::document::eval(&format!("{}(\"thread-body\",\"superPlatinumThreadAnchor\");",include_str!("../timeline_anchor.js")));spawn(thread_window_check::run(state));},
                         onscroll: move |_| {thread_window::schedule(state,thread_measurement_pending,thread_measurement_queued);},
