@@ -13,34 +13,50 @@ pub(crate) fn project(
     root: &str,
     media: &MediaRegistry,
 ) -> Vec<MessageVm> {
-    let raw = bag
-        .messages
+    let mut window = crate::thread_window::ThreadWindow::default();
+    window.sync("projection", bag, history, root, None, true);
+    project_window(workspace, bag, history, root, media, &window)
+}
+
+pub(crate) fn project_window(
+    workspace: &Workspace,
+    bag: &ChannelMessages,
+    history: &ThreadHistory,
+    root: &str,
+    media: &MediaRegistry,
+    window: &crate::thread_window::ThreadWindow,
+) -> Vec<MessageVm> {
+    let selected = window
+        .rows
         .iter()
-        .filter(|message| {
-            message
-                .ts
-                .as_deref()
-                .is_some_and(|ts| history.visible(root, ts))
-        })
-        .collect::<Vec<_>>();
-    raw.iter()
         .enumerate()
-        .map(|(index, message)| {
+        .filter(|(i, _)| window.selected(*i, root))
+        .map(|(_, r)| r.ts.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    let mut previous: Option<&super_platinum_core::slack::models::Message> = None;
+    bag.messages
+        .iter()
+        .filter_map(|message| {
+            let ts = message.ts.as_deref()?;
+            if !selected.contains(ts) {
+                previous = None;
+                return None;
+            }
             let mut vm = crate::message_vm::message_vm_with_pending(
                 workspace,
                 message,
                 media,
-                message.ts.as_deref().is_some_and(|ts| bag.is_pending(ts)),
+                bag.is_pending(ts),
             );
-            vm.compact = index.checked_sub(1).is_some_and(|previous| {
-                let previous = raw[previous];
+            vm.compact = previous.is_some_and(|previous| {
                 previous.ts.as_deref() != Some(root)
                     && previous.ts.as_deref().is_some_and(|ts| {
                         history.contains(root, ts) == history.contains(root, &vm.ts)
                     })
                     && super_platinum_core::state::same_message_group(previous, message)
             });
-            vm
+            previous = Some(message);
+            Some(vm)
         })
         .collect()
 }
@@ -131,4 +147,57 @@ mod tests {
         assert!(!vms[4].pending);
         assert!(vms[4].compact);
     }
+    #[test]
+    fn skipped_replies_start_a_group_and_unread_boundary_stays_exact() {
+        let mut shell = crate::state::ShellState::fixture(MediaRegistry::default());
+        let root = "1719800400.000000";
+        let mut bag = fixture_bag(2000);
+        bag.last_read = Some("1719800430.000000".into());
+        shell.thread_root = Some(root.into());
+        shell.core.threads.insert(
+            (
+                "T1".into(),
+                shell.core.active_channel.clone().unwrap(),
+                root.into(),
+            ),
+            bag,
+        );
+        shell.refresh_thread_from_core();
+        crate::thread_unread::annotate(&mut shell);
+        assert_eq!(shell.thread_messages.len(), 101);
+        assert!(!shell.thread_messages[1].compact);
+        assert!(
+            !shell.thread_messages.iter().any(|m| m.show_unread_divider),
+            "offscreen unread divider must not move to visible tail"
+        );
+        shell.thread_at_bottom = false;
+        shell.thread_target = Some("1719800431.000000".into());
+        shell.refresh_thread_from_core();
+        crate::thread_unread::annotate(&mut shell);
+        assert_eq!(
+            shell
+                .thread_messages
+                .iter()
+                .find(|m| m.show_unread_divider)
+                .map(|m| m.ts.as_str()),
+            Some("1719800431.000000")
+        );
+    }
+}
+
+#[cfg(test)]
+mod benchmark;
+
+// Shared synthetic data for the named disconnected fixtures and timing probe.
+pub(crate) fn fixture_bag(count: usize) -> ChannelMessages {
+    let mut bag = super_platinum_core::state::ChannelMessages::default();
+    bag.messages=(0..=count).map(|i|serde_json::from_value(serde_json::json!({
+   "ts":format!("{}.000000",1719800400+i),"user":if i%4==0 {"U2"}else{"U1"},
+   "text":"A mixed thread reply with *formatting* and <https://example.com|link> :wave:",
+   "blocks":[{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":format!("Synthetic reply {i} with rich text. ")},{"type":"text","text":"Emphasis","style":{"bold":true}},{"type":"link","url":"https://example.com","text":"Reference"}]}]}],
+   "reactions":if i%3==0 {serde_json::json!([{"name":"eyes","count":2,"users":["U1","U2"]}])}else{serde_json::json!([])},
+   "attachments":if i%5==0 {serde_json::json!([{"title":"Preview","text":"A mixed-content preview with a description.","footer":"Synthetic fixture"}])}else{serde_json::json!([])}
+  })).unwrap()).collect();
+
+    bag
 }

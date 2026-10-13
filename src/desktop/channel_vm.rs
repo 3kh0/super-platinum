@@ -1,3 +1,8 @@
+mod window;
+pub(crate) use window::{ChannelRow, channel_rows, project_channel_window};
+mod channel_window_checks;
+pub(crate) use channel_window_checks::fixture as channel_window_fixture;
+
 use crate::media::MediaRegistry;
 use crate::model::{ChannelVm, PresenceVm, SidebarSectionVm};
 
@@ -102,6 +107,7 @@ pub(crate) fn project_channels(
     (channels, sidebar_sections, active_channel, active_id)
 }
 
+#[cfg(test)]
 pub(crate) fn project_messages_for_channel(
     workspace: &super_platinum_core::state::Workspace,
     channel_id: &str,
@@ -133,3 +139,9 @@ pub(crate) fn project_messages_for_channel(
     );
     messages
 }
+
+#[cfg(test)]
+mod benchmark;
+
+#[cfg(test)]
+mod regression;

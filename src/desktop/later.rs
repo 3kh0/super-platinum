@@ -1,4 +1,8 @@
 //! Native async orchestration for Slack's Later surface.
+pub(crate) mod file_actions;
+mod file_check;
+pub(crate) mod file_fixture;
+mod files;
 mod navigation;
 use crate::state::{MainView, ShellState};
 use dioxus::prelude::*;
@@ -15,6 +19,7 @@ struct Context {
     client: SlackClient,
     session: WorkspaceSession,
     epoch: u64,
+    account: Option<String>,
 }
 impl Context {
     fn get(state: &Signal<ShellState>) -> Option<Self> {
@@ -26,10 +31,12 @@ impl Context {
             client,
             session: sessions.into_iter().find(|s| &s.team_id == team)?,
             epoch: shell.core.account_epoch,
+            account: shell.core.active_account.clone(),
         })
     }
     fn current(&self, shell: &ShellState) -> bool {
-        shell.core.account_epoch == self.epoch
+        shell.core.active_account == self.account
+            && shell.core.account_epoch == self.epoch
             && shell
                 .core
                 .later
@@ -120,6 +127,13 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
         groups.into_iter().collect::<Vec<_>>()
     };
     for chunk in groups.chunks(20) {
+        let hydration_revision = {
+            let mut shell = state.write();
+            if !ctx.current(&shell) || shell.core.later.generation != generation {
+                return;
+            }
+            shell.core.later.begin_hydration()
+        };
         let result =
             api::fetch_messages_list(&ctx.transport, &ctx.client, &ctx.session, chunk.to_vec())
                 .await;
@@ -132,10 +146,12 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
                 for (channel, data) in page.messages_data {
                     for message in data.messages {
                         if let Some(ts) = message.ts.clone() {
-                            shell
-                                .core
-                                .later
-                                .hydrate_message(SavedKey::message(channel.clone(), ts), message);
+                            shell.core.hydrate_later_message(
+                                &ctx.session.team_id,
+                                SavedKey::message(channel.clone(), ts),
+                                message,
+                                hydration_revision,
+                            );
                         }
                     }
                 }
@@ -146,6 +162,10 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
                 ));
             }
         }
+    }
+    files::hydrate(state, Some(ctx), generation).await;
+    if !ctx.current(&state.peek()) || state.peek().core.later.generation != generation {
+        return;
     }
     // Hydrate names for saved messages from conversations not visited this run.
     let (users, channels) = {
@@ -171,6 +191,13 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
             {
                 if !workspace.users.contains_key(user) {
                     users.insert(user.clone());
+                }
+            }
+        }
+        for file in shell.core.later.files.values() {
+            if let Some(user) = super_platinum_core::state::file_uploader_id(file) {
+                if !workspace.users.contains_key(user) {
+                    users.insert(user.to_owned());
                 }
             }
         }
@@ -224,6 +251,10 @@ pub async fn hydrate_visible(state: Signal<ShellState>) {
 }
 
 pub fn change(state: Signal<ShellState>, key: SavedKey, action: SavedAction) {
+    if key.item_type == "file" {
+        file_actions::change_from_later(state, key, action);
+        return;
+    }
     let Some(ctx) = Context::get(&state) else {
         return;
     };

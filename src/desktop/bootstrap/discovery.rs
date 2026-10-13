@@ -3,147 +3,13 @@ use super_platinum_core::slack::api;
 
 use super::common::{credentials, persist_workspace};
 use super::session::refresh_media;
-use crate::state::ChannelOpen;
 use crate::state::MainView;
 use crate::state::ShellState;
-
-pub async fn search(mut state: Signal<ShellState>) {
-    let query = state.read().search_query.trim().to_owned();
-    if query.is_empty() {
-        state.write().search_results.clear();
-        return;
-    }
-    let Some((transport, client, workspaces)) = credentials(&state) else {
-        return;
-    };
-    let Some(team) = state.read().core.active_team.clone() else {
-        return;
-    };
-    let Some(workspace_session) = workspaces
-        .into_iter()
-        .find(|workspace| workspace.team_id == team)
-    else {
-        return;
-    };
-    state.write().search_loading = true;
-    match api::fetch_search_messages(
-        &transport,
-        &client,
-        &workspace_session,
-        super_platinum_core::slack::api::SearchArgs::new(query.clone()),
-    )
-    .await
-    {
-        Ok(page) => {
-            let requested_users = page
-                .items
-                .iter()
-                .flat_map(|item| &item.messages)
-                .filter_map(|message| message.user.clone())
-                .collect::<std::collections::HashSet<_>>();
-            let missing_users = {
-                let shell = state.read();
-                let workspace = shell.core.workspaces.get(&team);
-                requested_users
-                    .into_iter()
-                    .filter(|user| {
-                        workspace.is_none_or(|workspace| !workspace.users.contains_key(user))
-                    })
-                    .collect::<Vec<_>>()
-            };
-            let mut loaded_users = Vec::new();
-            for chunk in missing_users.chunks(100) {
-                if let Ok(users) =
-                    api::fetch_users_info(&transport, &client, &workspace_session, chunk.to_vec())
-                        .await
-                {
-                    loaded_users.extend(users);
-                }
-            }
-            if !loaded_users.is_empty() {
-                let mut shell = state.write();
-                if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-                    for user in loaded_users {
-                        workspace.users.insert(user.id.clone(), user);
-                    }
-                }
-            }
-            if state.read().search_query.trim() != query {
-                return;
-            }
-            let results = {
-                let shell = state.read();
-                let workspace = shell.core.workspaces.get(&team);
-                let media = &shell.media;
-                page.items
-                    .into_iter()
-                    .flat_map(|item| {
-                        let channel_id = item
-                            .channel
-                            .as_ref()
-                            .map(|channel| channel.id.clone())
-                            .unwrap_or_default();
-                        let channel_name = item
-                            .channel
-                            .as_ref()
-                            .map(|channel| {
-                                workspace
-                                    .map(|workspace| {
-                                        super_platinum_core::state::channel_display_name(
-                                            workspace, channel,
-                                        )
-                                    })
-                                    .unwrap_or_else(|| {
-                                        super_platinum_core::state::channel_name(channel)
-                                    })
-                            })
-                            .unwrap_or_else(|| "conversation".into());
-                        item.messages.into_iter().map(move |message| {
-                            let author = workspace
-                                .map(|workspace| {
-                                    super_platinum_core::state::message_author_name(
-                                        workspace, &message,
-                                    )
-                                })
-                                .unwrap_or_else(|| "Slack".into());
-                            let text = workspace
-                                .map(|workspace| {
-                                    let vm =
-                                        crate::message_vm::message_vm(workspace, &message, media);
-                                    crate::view::rich::message_plain_text(&vm)
-                                })
-                                .unwrap_or_else(|| {
-                                    super_platinum_core::state::message_text(&message)
-                                })
-                                .replace(['\u{e000}', '\u{e001}'], "");
-                            crate::state::SearchResultVm {
-                                channel_id: channel_id.clone(),
-                                channel_name: channel_name.clone(),
-                                ts: message.ts.clone().unwrap_or_default(),
-                                author,
-                                text,
-                            }
-                        })
-                    })
-                    .collect::<Vec<_>>()
-            };
-            let mut shell = state.write();
-            shell.search_results = results;
-            shell.search_loading = false;
-        }
-        Err(error) => {
-            let mut shell = state.write();
-            shell.search_loading = false;
-            shell.report_failure(&error, "Search needs a connection", || {
-                format!("Search failed: {error}")
-            });
-        }
-    }
-}
 
 pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
     {
         let mut shell = state.write();
+        shell.close_profile();
         shell.profile_user = Some(user.clone());
         shell.group_panel = None;
         shell.profile_hover = None;
@@ -155,6 +21,9 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
             error: None,
         });
     }
+    let Some(visit) = super::profile_navigation::ProfileVisit::capture(&state.read()) else {
+        return;
+    };
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         if let Some(pane) = state.write().core.profile_pane.as_mut() {
             pane.loading = false;
@@ -162,6 +31,7 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
         return;
     }
     let Some((transport, client, workspaces)) = credentials(&state) else {
+        visit.unavailable(&mut state.write());
         return;
     };
     let Some(team) = state.read().core.active_team.clone() else {
@@ -171,6 +41,7 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
         .into_iter()
         .find(|workspace| workspace.team_id == team)
     else {
+        visit.unavailable(&mut state.write());
         return;
     };
     if let Some(super_platinum_core::state::RealtimeStatus::Connected(connection)) = state
@@ -230,7 +101,7 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
             }
         },
     );
-    if state.read().profile_user.as_deref() != Some(&user) {
+    if !visit.current(&state.read()) {
         return;
     }
     let profile_emojis = profile
@@ -270,6 +141,13 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
+    let channel_revision = state
+        .read()
+        .core
+        .workspaces
+        .get(&team)
+        .map(|w| w.channel_lifecycle.revision())
+        .unwrap_or(0);
     let (recent_channels, hydrated_emojis) = tokio::join!(
         async {
             if missing_dm_ids.is_empty() {
@@ -294,11 +172,14 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
             }
         },
     );
-    if state.read().profile_user.as_deref() != Some(&user) {
+    if !visit.current(&state.read()) {
         return;
     }
     let mut shell = state.write();
-    let profile_error = profile.as_ref().err().map(ToString::to_string);
+    let profile_error = profile
+        .as_ref()
+        .err()
+        .map(|_| "Try opening this profile again.".to_owned());
     if hydrated_emojis.is_ok() {
         shell.core.emoji_hydrated.extend(
             profile_emojis
@@ -324,9 +205,13 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
             member.im_mpim_ids = extras.im_mpim_ids;
             member.has_more_mpims = extras.has_more_mpims;
         }
-        for channel in recent_channels {
-            workspace.channels.insert(channel.id.clone(), channel);
-        }
+        workspace.apply_channel_refresh_since(
+            super_platinum_core::slack::models::GenericInfoPage {
+                channels: recent_channels,
+                ..Default::default()
+            },
+            channel_revision,
+        );
         if let Ok(emojis) = hydrated_emojis {
             workspace.apply_emojis(emojis);
         }
@@ -391,128 +276,6 @@ fn visit_profile_field_strings(value: &serde_json::Value, visit: &mut impl FnMut
             }
         }
         _ => {}
-    }
-}
-
-pub async fn open_profile_dm(mut state: Signal<ShellState>, user: String) {
-    let existing =
-        {
-            state.read().channels.iter().position(|channel| {
-                channel.is_im && channel.user_id.as_deref() == Some(user.as_str())
-            })
-        };
-    if let Some(index) = existing {
-        state.write().select_channel(index, ChannelOpen::Global);
-        state.write().close_profile();
-        super::history::refresh_selected_channel(state).await;
-        return;
-    }
-    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
-        state
-            .write()
-            .show_toast("No direct message channel is loaded yet.");
-        return;
-    }
-    let Some((transport, client, workspaces)) = credentials(&state) else {
-        return;
-    };
-    let Some(team) = state.read().core.active_team.clone() else {
-        return;
-    };
-    let Some(workspace_session) = workspaces
-        .into_iter()
-        .find(|workspace| workspace.team_id == team)
-    else {
-        return;
-    };
-    match api::open_dm(&transport, &client, &workspace_session, user.clone()).await {
-        Ok(channel_id) => {
-            let mut shell = state.write();
-            if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-                workspace
-                    .channels
-                    .entry(channel_id.clone())
-                    .or_insert_with(|| super_platinum_core::slack::models::Channel {
-                        id: channel_id.clone(),
-                        is_im: true,
-                        user: Some(user),
-                        ..Default::default()
-                    });
-            }
-            shell.refresh_from_core();
-            if let Some(index) = shell
-                .channels
-                .iter()
-                .position(|channel| channel.id == channel_id)
-            {
-                shell.select_channel(index, ChannelOpen::Global);
-                shell.close_profile();
-                drop(shell);
-                super::history::refresh_selected_channel(state).await;
-            } else {
-                shell.show_toast("Slack opened the DM, but it is not available yet.");
-            }
-        }
-        Err(error) => {
-            state
-                .write()
-                .report_failure(&error, "Cannot open that message while offline", || {
-                    format!("Could not open message: {error}")
-                })
-        }
-    }
-}
-
-pub async fn toggle_profile_vip(mut state: Signal<ShellState>, user: String) {
-    if state.read().profile_vip_loading {
-        return;
-    }
-    let Some((transport, client, workspaces)) = credentials(&state) else {
-        return;
-    };
-    let Some(team) = state.read().core.active_team.clone() else {
-        return;
-    };
-    let Some(workspace_session) = workspaces
-        .into_iter()
-        .find(|workspace| workspace.team_id == team)
-    else {
-        return;
-    };
-    let is_vip = state
-        .read()
-        .core
-        .workspaces
-        .get(&team)
-        .is_some_and(|workspace| workspace.vip_users.contains(&user));
-    state.write().profile_vip_loading = true;
-    let result = if is_vip {
-        api::remove_priority_user(&transport, &client, &workspace_session, user.clone()).await
-    } else {
-        api::add_priority_user(&transport, &client, &workspace_session, user.clone()).await
-    };
-    let mut shell = state.write();
-    shell.profile_vip_loading = false;
-    match result {
-        Ok(()) => {
-            if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-                if is_vip {
-                    workspace.vip_users.remove(&user);
-                } else {
-                    workspace.vip_users.insert(user);
-                }
-            }
-            shell.show_toast(if is_vip {
-                "Removed from VIPs"
-            } else {
-                "Added to VIPs"
-            });
-            drop(shell);
-            persist_workspace(&state, &team);
-        }
-        Err(error) => shell.report_failure(&error, "VIP change needs a connection", || {
-            format!("Could not update VIP: {error}")
-        }),
     }
 }
 

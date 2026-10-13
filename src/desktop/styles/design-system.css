@@ -384,6 +384,8 @@
   bottom: 76px;
 }
 .toast:hover { border-color: transparent; background: color-mix(in srgb, var(--surface-raised) 92%, var(--accent)); }
+/* Keep status notices readable without covering an active mention choice. */
+body:has(.composer-completion:not([hidden])) .toast { top: 64px; bottom: auto; }
 .toast-dismiss {
   display: grid;
   width: 24px;

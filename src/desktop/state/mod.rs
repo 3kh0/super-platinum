@@ -10,6 +10,8 @@ mod timeline;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod timeline_geometry_tests;
 
 pub use composer::ComposerTarget;
 pub use shell::*;

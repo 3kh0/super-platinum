@@ -250,7 +250,7 @@ async fn scroll_to_target(
         serde_json::json!({
             "scope":shell.timeline_scope(),
             "selector":selector,
-            "latestId":shell.messages.last().map(|message| &message.id),
+            "latestId":shell.channel_rows.last().map(|message| &message.id),
         })
     };
     // Keep the evaluation alive through the animation frames. Returning before

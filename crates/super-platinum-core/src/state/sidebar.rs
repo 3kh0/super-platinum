@@ -106,10 +106,12 @@ mod tests {
             );
         }
         Workspace {
+            deleted_files: Default::default(),
             team_id: "T".into(),
             name: "Test".into(),
             url: "https://test.slack.com".into(),
             self_user_id: "U_SELF".into(),
+            locale: None,
             activity_unread_count: None,
             thread_counts: Default::default(),
             channels: channels
@@ -124,9 +126,11 @@ mod tests {
             frecency: BTreeMap::new(),
             priority_sidebar_section: false,
             vip_users: std::collections::HashSet::new(),
+            vip_revisions: Default::default(),
             sidebar: Default::default(),
             notifications: Default::default(),
             users: HashMap::new(),
+            bots: Default::default(),
             usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
             messages,

@@ -4,7 +4,31 @@ use dioxus::prelude::*;
 use crate::state::{AttachmentVm, MessageVm, Overlay, ReactionVm, RichNode, ShellState};
 
 pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellState>) -> Element {
+    rich_node_with_source(node, media_epoch, state, None)
+}
+
+/// Only canonical message bodies provide action ownership. Attachments, app
+/// forms, scheduled messages and drafts continue through ownerless rich_node.
+pub(crate) fn rich_node_for_message(
+    node: &RichNode,
+    media_epoch: u64,
+    state: Signal<ShellState>,
+    source: &crate::message_buttons::source::Source,
+) -> Element {
+    rich_node_with_source(node, media_epoch, state, Some(source))
+}
+
+fn rich_node_with_source(
+    node: &RichNode,
+    media_epoch: u64,
+    state: Signal<ShellState>,
+    source: Option<&crate::message_buttons::source::Source>,
+) -> Element {
     match node {
+        RichNode::Canvas(target) => {
+            let target = target.clone();
+            rsx! {button {class:"file-link",onclick:move |_|crate::canvas::open_target(state,target.clone()),{crate::icons::icon(crate::icons::Icon::AttachFile,"file-link-icon")} "{target.title}"}}
+        }
         RichNode::Text(text) => rsx! { span { "{text}" } },
         RichNode::StyledText {
             text,
@@ -29,7 +53,7 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                     href: "{url}",
                     onclick: move |event| {
                         event.prevent_default();
-                        open_link(&destination);
+                        open_link(state, &destination);
                     },
                     "{label}"
                 }
@@ -81,10 +105,10 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
         }
         RichNode::Code(code) => rsx! { code { "{code}" } },
         RichNode::Paragraph(nodes) => {
-            rsx! { p { for node in nodes { {rich_node(node, media_epoch, state)} } } }
+            rsx! { p { for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } } }
         }
         RichNode::Quote(nodes) => {
-            rsx! { blockquote { for node in nodes { {rich_node(node, media_epoch, state)} } } }
+            rsx! { blockquote { for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } } }
         }
         RichNode::Emoji { name, glyph } => rsx! {
             span { class: "custom-emoji", title: ":{name}:", "{glyph}" }
@@ -108,9 +132,11 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
             }
         }
         RichNode::Media {
+            file,
             id,
             full,
             name,
+            download_name,
             mime,
             size,
         } => {
@@ -126,7 +152,9 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
             let Some(target) = full.as_ref().or(id.as_ref()) else {
                 return rsx! { span { class: "file-link", {crate::icons::icon(crate::icons::Icon::AttachFile, "file-link-icon")} "{name}" } };
             };
-            let viewer = viewer_vm(target, name, mime);
+            let mut viewer = viewer_vm(target, name, mime);
+            viewer.download_name = download_name.clone();
+            viewer.file = file.clone();
             let Some(id) = id.as_ref() else {
                 return rsx! {
                     button {
@@ -181,10 +209,10 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
         // ── Block Kit layout ─────────────────────────────────────────────
         RichNode::Divider => rsx! { div { class: "block-divider" } },
         RichNode::Header(nodes) => rsx! {
-            h3 { class: "block-header", for node in nodes { {rich_node(node, media_epoch, state)} } }
+            h3 { class: "block-header", for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } }
         },
         RichNode::Context(nodes) => rsx! {
-            div { class: "block-context", for node in nodes { {rich_node(node, media_epoch, state)} } }
+            div { class: "block-context", for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } }
         },
         RichNode::Section {
             text,
@@ -193,48 +221,84 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
         } => rsx! {
             div { class: "block-section",
                 div { class: "block-section-text",
-                    for node in text { {rich_node(node, media_epoch, state)} }
+                    for node in text { {rich_node_with_source(node, media_epoch, state, source)} }
                     if !fields.is_empty() {
                         div { class: "block-fields",
                             for (index, field) in fields.iter().enumerate() {
                                 div { key: "field-{index}", class: "block-field",
-                                    for node in field { {rich_node(node, media_epoch, state)} }
+                                    for node in field { {rich_node_with_source(node, media_epoch, state, source)} }
                                 }
                             }
                         }
                     }
                 }
                 if let Some(accessory) = accessory.as_ref() {
-                    div { class: "block-accessory", {rich_node(accessory, media_epoch, state)} }
+                    div { class: "block-accessory", {rich_node_with_source(accessory, media_epoch, state, source)} }
                 }
             }
         },
         RichNode::Actions(nodes) => rsx! {
-            div { class: "block-actions", for node in nodes { {rich_node(node, media_epoch, state)} } }
+            div { class: "block-actions", for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } }
         },
-        RichNode::Button { label, url, style } => match url {
-            Some(url) => {
+        RichNode::Button {
+            label,
+            url,
+            style,
+            metadata,
+        } => {
+            let accessible_label = metadata
+                .accessibility_label
+                .as_deref()
+                .filter(|label| !label.trim().is_empty())
+                .unwrap_or(label);
+            if let Some(source) = source.filter(|_| {
+                matches!(
+                    metadata.source,
+                    super_platinum_core::block_actions::BlockElementSource::Button
+                )
+            }) {
+                rsx! {super::message_button::MessageAppButton {
+                    state,source:source.clone(),metadata:metadata.as_ref().clone(),
+                    label:label.clone(),accessibility_label:accessible_label.to_owned(),
+                    url:url.clone(),style:*style,
+                }}
+            } else if let Some(source) = source.filter(|_| {
+                matches!(&metadata.source,
+                    super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                        if kind == "static_select")
+            }) {
+                rsx! {super::message_select::MessageStaticSelect {
+                    state,source:source.clone(),metadata:metadata.as_ref().clone(),
+                    accessibility_label:metadata.accessibility_label.clone().unwrap_or_default(),
+                }}
+            } else if let Some(source) = source.filter(|_| {
+                matches!(&metadata.source,
+                    super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                        if kind == "radio_buttons")
+            }) {
+                rsx! {super::message_radio::MessageRadioGroup {
+                    state,source:source.clone(),metadata:metadata.as_ref().clone(),
+                    accessibility_label:metadata.accessibility_label.clone().unwrap_or_default(),
+                }}
+            } else if let Some(url) = url.as_ref().filter(|_| {
+                matches!(
+                    metadata.confirm,
+                    super_platinum_core::block_actions::BlockConfirmationState::Missing
+                )
+            }) {
                 let destination = url.clone();
-                rsx! {
-                    button {
-                        class: "{style.class()}",
-                        title: "{url}",
-                        onclick: move |_| open_link(&destination),
-                        "{label}"
-                    }
-                }
+                rsx! {button {
+                    class:"{style.class()}",title:"{url}","aria-label":"{accessible_label}",
+                    onclick:move |_|open_link(state, &destination),"{label}"
+                }}
+            } else {
+                rsx! {button {
+                    class:"{style.class()} inert",disabled:true,
+                    title:"This action is unavailable here", "aria-label":"{accessible_label}","{label}"
+                }}
             }
-            // Menus and submit buttons need a Slack interaction round-trip we
-            // do not implement; keep the shape, drop the affordance.
-            None => rsx! {
-                button {
-                    class: "{style.class()} inert",
-                    disabled: true,
-                    title: "Interactive Slack element",
-                    "{label}"
-                }
-            },
-        },
+        }
+
         RichNode::InlineImage { id, alt } => {
             rsx! {
                 MediaImage {
@@ -289,7 +353,7 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                     ol { class: "block-list", style: "{indent}", start: "{offset + 1}",
                         for (index, item) in items.iter().enumerate() {
                             li { key: "li-{index}",
-                                for node in item { {rich_node(node, media_epoch, state)} }
+                                for node in item { {rich_node_with_source(node, media_epoch, state, source)} }
                             }
                         }
                     }
@@ -297,7 +361,7 @@ pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellSt
                     ul { class: "block-list", style: "{indent}",
                         for (index, item) in items.iter().enumerate() {
                             li { key: "li-{index}",
-                                for node in item { {rich_node(node, media_epoch, state)} }
+                                for node in item { {rich_node_with_source(node, media_epoch, state, source)} }
                             }
                         }
                     }
@@ -313,24 +377,40 @@ fn viewer_vm(
     mime: &str,
 ) -> crate::state::ViewerVm {
     crate::state::ViewerVm {
+        file: None,
         id: id.clone(),
         name: name.to_owned(),
+        download_name: name.to_owned(),
         mime: mime.to_owned(),
     }
 }
 
 fn open_viewer(mut state: Signal<ShellState>, viewer: crate::state::ViewerVm) {
     let mut shell = state.write();
+    if shell
+        .core
+        .active_team
+        .as_ref()
+        .and_then(|t| shell.core.workspaces.get(t))
+        .is_some_and(|w| {
+            viewer
+                .file
+                .as_ref()
+                .map(|f| &f.id)
+                .is_some_and(|id| w.deleted_files.contains(id))
+        })
+    {
+        shell.show_toast("This file has been deleted.");
+        return;
+    }
     // Full-resolution bytes are deferred until exactly this moment.
     shell.media.request(&viewer.id);
     shell.viewer = Some(viewer);
     shell.overlay = Some(Overlay::Viewer);
 }
 
-fn open_link(url: &str) {
-    if let Err(error) = crate::media::open_external(url) {
-        eprintln!("super-platinum: blocked external navigation: {error}");
-    }
+fn open_link(state: Signal<ShellState>, url: &str) {
+    crate::slack_links::open(state, url);
 }
 
 fn open_channel(mut state: Signal<ShellState>, channel: &str) {
@@ -429,7 +509,7 @@ fn attachment_embed(
                                 href: "{link}",
                                 onclick: move |event| {
                                     event.prevent_default();
-                                    open_link(&link);
+                                    open_link(state, &link);
                                 },
                                 "{title}"
                             }
@@ -518,7 +598,7 @@ fn attachment_embed(
                                 href: "{url}",
                                 onclick: move |event| {
                                     event.prevent_default();
-                                    open_link(&url);
+                                    open_link(state, &url);
                                 },
                                 "{label}"
                             }

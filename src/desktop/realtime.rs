@@ -8,16 +8,26 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
     // The supervisor watches the same link verdict the shell paints on the
     // rail, so a dead socket is dropped in seconds and the reconnect waits for
     // the network to be confirmed back instead of dialling into nothing.
-    let health = state
-        .read()
-        .core
-        .transport
-        .as_ref()
-        .map(|transport| transport.health_watch());
+    let Some((epoch, transport)) = worker_source(&state.peek().core, &params) else {
+        return;
+    };
+    let health = Some(transport.health_watch());
     let mut updates = realtime::connect(params, health);
     let mut notifications = crate::notification::NotificationTracker::default();
     while let Some((team, update)) = updates.recv().await {
         let mut shell = state.write();
+        // A replaced account may reuse the same team and socket generation.
+        // Events belong to the transport that opened this worker, never the
+        // credentials that happen to be current when a queued frame arrives.
+        if shell.core.account_epoch != epoch
+            || shell
+                .core
+                .transport
+                .as_ref()
+                .is_none_or(|current| !std::sync::Arc::ptr_eq(current, &transport))
+        {
+            return;
+        }
         match update {
             RtUpdate::Connected {
                 generation,
@@ -45,6 +55,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 // it opens fetches itself.
                 let reconnected = generation > 1;
                 let refresh_later = reconnected && shell.core.active_team.as_ref() == Some(&team);
+                if refresh_later {
+                    crate::slack_lists::invalidate_visible_for_reconnect(&mut shell);
+                }
                 let refresh_threads =
                     refresh_later && shell.main_view == crate::state::MainView::Threads;
                 let refresh_drafts = refresh_later
@@ -63,6 +76,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                         generation,
                     ));
                     if refresh_later {
+                        crate::slack_lists::refresh(state);
                         dioxus::prelude::spawn(refresh_open_metadata(state, generation));
                         dioxus::prelude::spawn(crate::later::load(state, later_filter, false));
                     }
@@ -80,6 +94,11 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
             }
             RtUpdate::Event { generation, event } => {
+                let list_refresh =
+                    crate::slack_lists::events::prepare(&mut shell, &team, generation, &event);
+                let file_read = crate::file_events::prepare(&mut shell, &team, generation, &event);
+                let file_change =
+                    matches!(event.as_ref(), RtEvent::Unknown(raw) if raw.kind == "file_change");
                 let discovery =
                     crate::channel_discovery::prepare(&mut shell.core, &team, generation, &event);
                 let needs_group_hydration = match event.as_ref() {
@@ -112,6 +131,14 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                             .is_some_and(|workspace| user.id == workspace.self_user_id)
                 );
                 let prefs_changed = matches!(event.as_ref(), RtEvent::PreferencesChanged { .. });
+                let locale_changed = matches!(event.as_ref(), RtEvent::PreferencesChanged { name, .. } if name == "locale");
+                let old_locale = locale_changed.then(|| {
+                    shell
+                        .core
+                        .workspaces
+                        .get(&team)
+                        .and_then(|workspace| workspace.locale.clone())
+                });
                 let notification = notifications.for_event_in_view(
                     &shell.core,
                     &team,
@@ -149,6 +176,8 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 };
                 // Typing and thread totals are read directly from the workspace;
                 // neither requires rebuilding channel or transcript projections.
+                let bookmarks_channel =
+                    crate::bookmarks::event_channel(&shell, &team, generation, &event);
                 let pin_event = matches!(event.as_ref(),RtEvent::Unknown(raw) if matches!(raw.kind.as_str(),"pin_added"|"pin_removed"));
                 let pins_generation = shell.core.pins.generation;
                 let saved_event = matches!(event.as_ref(),RtEvent::Unknown(raw) if matches!(raw.kind.as_str(),"saved_added"|"saved_updated"|"saved_deleted"));
@@ -165,10 +194,12 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                             .and_then(|w| w.thread_counts.snapshot.clone())
                     })
                     .flatten();
-                let typing_only = thread_totals_event
+                let typing_only = bookmarks_channel.is_some()
+                    || thread_totals_event
                     || matches!(event.as_ref(), RtEvent::UserTyping { .. })
                     || saved_event
-                    || draft_event;
+                    || draft_event
+                    || file_change;
                 let metadata_revision = shell
                     .core
                     .workspaces
@@ -176,6 +207,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     .map(|w| w.channel_lifecycle.revision());
                 let thread_marked = matches!(event.as_ref(), RtEvent::ThreadMarked { .. });
                 let transcript_visible = shell.reading_latest(crate::read_visibility::focused());
+                let modal_load = crate::app_modal::realtime(&mut shell, &team, generation, &event);
+                let list_labels =
+                    crate::slack_lists::labels::prepare(&shell, &team, generation, &event);
                 apply_in_view(
                     &mut shell.core,
                     &team,
@@ -183,6 +217,18 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     *event,
                     transcript_visible,
                 );
+                if let Some(change) = list_labels {
+                    change.apply(&mut shell);
+                }
+                if old_locale.is_some_and(|old| {
+                    old != shell
+                        .core
+                        .workspaces
+                        .get(&team)
+                        .and_then(|workspace| workspace.locale.clone())
+                }) {
+                    crate::slack_lists::locale_changed(&mut shell, &team);
+                }
                 if thread_marked {
                     crate::thread_unread::reconcile(&mut shell);
                 }
@@ -216,8 +262,20 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     shell.refresh_from_core();
                 }
                 drop(shell);
+                if list_refresh {
+                    crate::slack_lists::refresh(state);
+                }
+                if modal_load {
+                    crate::app_modal::load(state);
+                }
+                if let Some(read) = file_read {
+                    dioxus::core::spawn_forever(read.run(state));
+                }
                 if let Some(discovery) = discovery {
                     dioxus::prelude::spawn(discovery.run(state));
+                }
+                if let Some(channel) = bookmarks_channel {
+                    dioxus::core::spawn_forever(crate::bookmarks::load(state, channel));
                 }
                 if pins_changed {
                     if let Some(channel) = pins_channel {
@@ -259,6 +317,21 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
             }
         }
     }
+}
+
+fn worker_source(
+    core: &super_platinum_core::CoreAppState,
+    params: &ConnectParams,
+) -> Option<(u64, std::sync::Arc<super_platinum_core::slack::Transport>)> {
+    let session = core.session.as_ref()?;
+    let workspace = session.workspaces.get(&params.team)?;
+    // The spawned future can first poll after the account was replaced.
+    if params.d_cookie != session.d_cookie
+        || params.ws_url != realtime::flannel_url(&workspace.token, &params.team)
+    {
+        return None;
+    }
+    Some((core.account_epoch, core.transport.clone()?))
 }
 
 async fn refresh_open_metadata(mut state: Signal<ShellState>, generation: u64) {
@@ -329,6 +402,12 @@ fn apply_in_view(
     if generation != workspace.rt_generation {
         return;
     }
+    if let RtEvent::Unknown(raw) = &event
+        && let Some(id) = super_platinum_core::file_actions::deleted_event(raw)
+    {
+        core.remove_file(team, id);
+        return;
+    }
     if core.active_team.as_deref() == Some(team)
         && core.threads_view.matches_scope(core.account_epoch, team)
     {
@@ -353,6 +432,9 @@ fn apply_in_view(
     match event {
         RtEvent::DesktopNotification(_) => {}
         RtEvent::PreferencesChanged { name, value } => {
+            if name == "locale" {
+                workspace.locale = value.as_str().map(str::to_owned);
+            }
             workspace.notifications.apply_change(&name, value.clone());
             // Sidebar and notifications share the same mute preference.
             if name == "all_notifications_prefs" {
@@ -369,13 +451,15 @@ fn apply_in_view(
                     .collect();
             }
             if name == "vip_users" {
-                workspace.vip_users = value
-                    .as_str()
-                    .unwrap_or_default()
-                    .split(',')
-                    .filter(|id| !id.is_empty())
-                    .map(str::to_owned)
-                    .collect();
+                workspace.apply_vip_snapshot(
+                    value
+                        .as_str()
+                        .unwrap_or_default()
+                        .split(',')
+                        .filter(|id| !id.is_empty())
+                        .map(str::to_owned)
+                        .collect(),
+                );
             }
         }
         RtEvent::Message(message) => {
@@ -449,12 +533,16 @@ fn apply_in_view(
             if core.later.matches_scope(core.account_epoch, team) {
                 core.later.delete_message(&channel, &deleted_ts);
             }
-            if let Some(messages) = workspace.messages.get_mut(&channel) {
-                messages.remove(&deleted_ts);
-            }
+            // Retain the event even when this channel or row has not loaded:
+            // an upload verification page already on the wire may contain it.
+            workspace
+                .messages
+                .entry(channel.clone())
+                .or_default()
+                .record_remote_deletion(&deleted_ts);
             for ((thread_team, thread_channel, _), messages) in &mut core.threads {
                 if thread_team == team && thread_channel == &channel {
-                    messages.remove(&deleted_ts);
+                    messages.record_remote_deletion(&deleted_ts);
                 }
             }
         }

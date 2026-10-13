@@ -2,6 +2,55 @@
 use super::*;
 use crate::files::{FileOwner, FilesPage, FilesQuery};
 
+pub fn file_info(c: &SlackClient, w: &WorkspaceSession, id: &str) -> PreparedRequest {
+    c.rest_form(w, "files.info", vec![("file", id.into())])
+}
+
+pub async fn fetch_file(
+    t: &Transport,
+    c: &SlackClient,
+    w: &WorkspaceSession,
+    id: &str,
+) -> Result<super::super::models::File, Error> {
+    let response = t.execute(file_info(c, w, id)).await?;
+    let file: super::super::models::File = decode(
+        response
+            .get("file")
+            .cloned()
+            .ok_or_else(|| Error::Api("file_missing".into()))?,
+        "file",
+    )?;
+    if file.id.as_deref() != Some(id) {
+        return Err(Error::Api("file_id_mismatch".into()));
+    }
+    Ok(file)
+}
+
+/// No automatic transport retry: a failed response can follow a completed write.
+pub fn file_delete(c: &SlackClient, w: &WorkspaceSession, id: &str) -> PreparedRequest {
+    c.rest_form(w, "files.delete", vec![("file", id.into())])
+}
+
+/// Title-only edit observed in Slack's shipped filesEditFetcher. Never retry a
+/// write automatically: another client may have renamed the file meanwhile.
+pub fn file_rename(
+    c: &SlackClient,
+    w: &WorkspaceSession,
+    id: &str,
+    title: &str,
+) -> Result<PreparedRequest, Error> {
+    let title = crate::file_actions::rename_title(title)
+        .map_err(|_| Error::Api("invalid_file_title".into()))?;
+    if id.is_empty() {
+        return Err(Error::Api("invalid_file_id".into()));
+    }
+    Ok(c.rest_form(
+        w,
+        "files.edit",
+        vec![("file", id.into()), ("title", title.into())],
+    ))
+}
+
 pub fn files_search(
     client: &SlackClient,
     workspace: &WorkspaceSession,

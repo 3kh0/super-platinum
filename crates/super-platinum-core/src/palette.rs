@@ -96,6 +96,28 @@ struct Scored {
     entry: PaletteEntry,
 }
 
+fn compare(a: &Scored, b: &Scored) -> std::cmp::Ordering {
+    b.score
+        .cmp(&a.score)
+        .then_with(|| b.unread.cmp(&a.unread))
+        .then_with(|| a.sort_label.cmp(&b.sort_label))
+}
+
+/// Keep only the visible results, in the same order as a stable full sort.
+/// Broad queries can match tens of thousands of people; retaining and sorting
+/// all their owned labels made every keystroke pay for results never rendered.
+fn retain_best(best: &mut Vec<Scored>, candidate: Scored) {
+    if best.len() == MAX_RESULTS
+        && compare(&candidate, best.last().unwrap()) != std::cmp::Ordering::Less
+    {
+        return;
+    }
+    // Insert after equals so encounter order is preserved for exact ties.
+    let at = best.partition_point(|existing| compare(existing, &candidate).is_le());
+    best.insert(at, candidate);
+    best.truncate(MAX_RESULTS);
+}
+
 fn entry_for_channel(ws: &Workspace, id: &ChannelId) -> Option<PaletteEntry> {
     let channel = ws.channels.get(id)?;
     if channel.is_archived {
@@ -181,6 +203,15 @@ pub fn rank(
     query: &str,
     remote_channels: &BTreeMap<ChannelId, Channel>,
 ) -> Vec<PaletteEntry> {
+    rank_with(ws, query, remote_channels, retain_best)
+}
+
+fn rank_with(
+    ws: &Workspace,
+    query: &str,
+    remote_channels: &BTreeMap<ChannelId, Channel>,
+    mut retain: impl FnMut(&mut Vec<Scored>, Scored),
+) -> Vec<PaletteEntry> {
     let needle = query.trim().to_lowercase();
     if needle.is_empty() {
         return recents(ws);
@@ -201,7 +232,7 @@ pub fn rank(
             continue;
         }
         if let Some(scored_entry) = score_channel(ws, channel, &needle, &frecency) {
-            scored.push(scored_entry);
+            retain(&mut scored, scored_entry);
         }
     }
 
@@ -213,12 +244,12 @@ pub fn rank(
             continue;
         }
         if let Some(scored_entry) = score_channel(ws, channel, &needle, &frecency) {
-            scored.push(scored_entry);
+            retain(&mut scored, scored_entry);
         }
     }
 
     for user in ws.users.values() {
-        if user.deleted || user.is_bot || user.id == ws.self_user_id {
+        if user.deleted || user.is_bot {
             continue;
         }
         let label = ws.display_name(&user.id);
@@ -234,30 +265,34 @@ pub fn rank(
             .and_then(|id| ws.channels.get(id))
             .map(|c| ws.unread_total(c))
             .unwrap_or(0);
-        scored.push(Scored {
-            score: score + frecency.bonus(ws, dm.as_deref()),
-            unread,
-            sort_label: label.to_lowercase(),
-            entry: PaletteEntry {
-                label,
-                sublabel: handle,
-                target: PaletteTarget::User {
-                    user: user.id.clone(),
-                    dm,
+        retain(
+            &mut scored,
+            Scored {
+                score: score + frecency.bonus(ws, dm.as_deref()),
+                unread,
+                sort_label: label.to_lowercase(),
+                entry: PaletteEntry {
+                    label,
+                    sublabel: handle,
+                    target: PaletteTarget::User {
+                        user: user.id.clone(),
+                        dm,
+                    },
                 },
             },
-        });
+        );
     }
 
-    scored.sort_by(|a, b| {
-        b.score
-            .cmp(&a.score)
-            .then_with(|| b.unread.cmp(&a.unread))
-            .then_with(|| a.sort_label.cmp(&b.sort_label))
-    });
+    // Sorting twelve entries is trivial; this also lets the opt-in benchmark
+    // compare the former full-sort algorithm in the same process and fixture.
+    scored.sort_by(compare);
     scored.truncate(MAX_RESULTS);
     scored.into_iter().map(|s| s.entry).collect()
 }
+
+#[cfg(test)]
+#[path = "palette_bench.rs"]
+mod bench;
 
 #[cfg(test)]
 mod tests {
@@ -267,12 +302,49 @@ mod tests {
     use crate::slack::models::{Channel, User, UserProfile};
     use crate::state::{RealtimeStatus, Workspace};
 
-    fn ws() -> Workspace {
+    #[test]
+    fn bounded_results_match_full_stable_sort_for_every_prefix() {
+        fn candidate(index: usize) -> Scored {
+            // Deliberate ties, late winners, unread ordering, and Unicode labels.
+            Scored {
+                score: ((index * 37) % 9) as i32,
+                unread: ((index * 13) % 3) as u32,
+                sort_label: ["alice", "álvaro", "東京"][index % 3].into(),
+                entry: PaletteEntry {
+                    target: PaletteTarget::Channel(format!("C{index}")),
+                    label: index.to_string(),
+                    sublabel: String::new(),
+                },
+            }
+        }
+        let mut bounded = Vec::new();
+        for index in 0..512 {
+            retain_best(&mut bounded, candidate(index));
+            let mut reference = (0..=index).map(candidate).collect::<Vec<_>>();
+            reference.sort_by(|a, b| {
+                b.score
+                    .cmp(&a.score)
+                    .then_with(|| b.unread.cmp(&a.unread))
+                    .then_with(|| a.sort_label.cmp(&b.sort_label))
+            });
+            assert_eq!(
+                bounded.iter().map(|s| &s.entry).collect::<Vec<_>>(),
+                reference
+                    .iter()
+                    .take(MAX_RESULTS)
+                    .map(|s| &s.entry)
+                    .collect::<Vec<_>>()
+            );
+        }
+    }
+
+    pub(super) fn ws() -> Workspace {
         Workspace {
             team_id: "T".into(),
             name: "Test".into(),
             url: "https://test.slack.com".into(),
             self_user_id: "U_SELF".into(),
+            locale: None,
             activity_unread_count: None,
             thread_counts: Default::default(),
             channels: BTreeMap::new(),
@@ -284,10 +356,13 @@ mod tests {
             frecency: BTreeMap::new(),
             priority_sidebar_section: false,
             vip_users: std::collections::HashSet::new(),
+            vip_revisions: Default::default(),
             sidebar: Default::default(),
             notifications: Default::default(),
             users: HashMap::new(),
+            bots: Default::default(),
             usergroups: HashMap::new(),
+            deleted_files: Default::default(),
             custom_emoji: HashMap::new(),
             messages: HashMap::new(),
             typing: HashMap::new(),
@@ -390,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    fn skips_self_deleted_and_bots() {
+    fn includes_self_but_skips_deleted_and_bots() {
         let mut ws = ws();
         ws.users.insert("U_SELF".into(), user("U_SELF", "me", "Me"));
         let mut gone = user("U_GONE", "ghost", "Ghost");
@@ -400,9 +475,32 @@ mod tests {
         bot.is_bot = true;
         ws.users.insert("U_BOT".into(), bot);
 
-        assert!(rank(&ws, "me", &BTreeMap::new()).is_empty());
+        assert_eq!(
+            rank(&ws, "me", &BTreeMap::new())[0].target,
+            PaletteTarget::User {
+                user: "U_SELF".into(),
+                dm: None
+            }
+        );
         assert!(rank(&ws, "ghost", &BTreeMap::new()).is_empty());
         assert!(rank(&ws, "botty", &BTreeMap::new()).is_empty());
+    }
+
+    #[test]
+    fn self_search_reuses_the_existing_notes_conversation() {
+        let mut ws = ws();
+        ws.users
+            .insert("U_SELF".into(), user("U_SELF", "morgan", "Morgan"));
+        insert_channel(&mut ws, im("D_SELF", "U_SELF"));
+        let hits = rank(&ws, "morgan", &BTreeMap::new());
+        assert_eq!(hits.len(), 1);
+        assert_eq!(
+            hits[0].target,
+            PaletteTarget::User {
+                user: "U_SELF".into(),
+                dm: Some("D_SELF".into())
+            }
+        );
     }
 
     #[test]

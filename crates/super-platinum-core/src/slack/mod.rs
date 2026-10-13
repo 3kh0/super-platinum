@@ -28,8 +28,9 @@ pub enum Error {
     },
     #[error("transport error: {0}")]
     Transport(String),
-    /// The request never reached Slack: no route, no DNS, a refused connect, or
-    /// a socket that died mid-flight. Held apart from `Transport` because the
+    /// The link is unavailable: no route, no DNS, a refused connect, timeout, or
+    /// a socket that died mid-flight. A write may already have reached Slack.
+    /// Held apart from `Transport` because the
     /// shell answers it with the rail's connection indicator instead of pasting
     /// a signed Slack URL into a toast the reader cannot act on.
     #[error("network unavailable: {0}")]

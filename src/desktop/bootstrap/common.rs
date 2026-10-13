@@ -234,7 +234,9 @@ mod persistence_tests {
 /// saying "Loading replies…", and the reader is left with a screen that quietly
 /// stopped being true. Only reached on the transition back to connected, so
 /// this costs one round of the same calls the surface makes on arrival.
-pub async fn reload_after_outage(state: Signal<ShellState>) {
+pub async fn reload_after_outage(mut state: Signal<ShellState>) {
+    crate::slack_lists::invalidate_visible_for_reconnect(&mut state.write());
+    crate::slack_lists::refresh(state);
     let resources_visible = {
         let shell = state.peek();
         shell.detail_open() && shell.channel_tab != crate::state::ChannelTab::Messages

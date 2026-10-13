@@ -11,18 +11,24 @@ export SUPER_PLATINUM_UI_CAPTURE_DIR="${SUPER_PLATINUM_UI_CAPTURE_DIR:-tmp/agent
 mkdir -p "$SUPER_PLATINUM_UI_CAPTURE_DIR"
 
 MANIFEST="Cargo.toml"
-BINARY="target/debug/super-platinum"
+BINARY="${SUPER_PLATINUM_BINARY:-target/debug/super-platinum}"
 FIXTURES=(
   login opening loading channel main-general-new-message-motion unreads threads
   rail-account-snoozed
-  animated-reaction reaction-picker later later-empty later-error later-reminder later-new-reminder
+  animated-reaction reaction-picker later later-files later-files-narrow later-empty later-error later-reminder later-new-reminder
+  bookmarks bookmarks-narrow bookmarks-edit bookmarks-remove bookmarks-error bookmarks-folder bookmarks-folder-remove bookmarks-move
+  canvas-create canvas-create-narrow canvas-create-error
+  canvas canvas-narrow canvas-loading canvas-error canvas-rename canvas-rename-error canvas-readonly
   files files-narrow files-empty files-error
   channel-files channel-files-narrow channel-links channel-links-narrow channel-links-empty channel-links-error
   pins pins-narrow pins-empty pins-error channel-pinned-message
-  forward forward-narrow forward-error
+  forward forward-narrow forward-error forward-partial forward-partial-narrow forward-people forward-people-narrow
   scheduled scheduled-empty scheduled-error scheduled-edit scheduled-send-confirm
   drafts drafts-empty drafts-edit drafts-conflict drafts-no-destination channel-details channel-create channel-leave channel-leave-last channel-join channel-join-composer
-  profile-hover-card profile-pane profile-pane-rich-fields
+  new-dm-directory new-dm-directory-loading new-dm-directory-error new-dm-directory-empty new-dm-directory-error-narrow
+  local-drafts local-drafts-loading local-drafts-error local-drafts-error-narrow
+  new-dm new-dm-selected new-dm-pending new-dm-error new-dm-narrow
+  profile-hover-card profile-pane profile-dm-opening profile-vip-pending profile-pane-rich-fields
   profile-pane-min-width dm-header-compact
   channel-thread-profile-headers channel-huddle huddle-connected huddle-invite
   huddle-video huddle-video-expanded huddle-settings huddle-people huddle-captions
@@ -30,18 +36,29 @@ FIXTURES=(
   thread-follow-on thread-follow-off thread-follow-pending thread-follow-narrow
   thread-feed thread-feed-empty thread-feed-error thread-feed-loading thread-feed-updated thread-feed-narrow
   thread-counts-mentions thread-counts-unread thread-counts-clear thread-counts-narrow
-  thread-unread-divider thread-list-unread thread-marked-unread thread-marked-unread-narrow thread-target thread-error thread-paging thread-paging-error thread-grouped thread-grouped-pending main-dev settings settings-storage appearance-countertop
+  thread-unread-divider thread-list-unread thread-marked-unread thread-marked-unread-narrow thread-target thread-error thread-paging thread-paging-error thread-grouped thread-grouped-pending thread-window-200 thread-window-2000 thread-window-10000 thread-window-target thread-window-gap main-dev settings settings-storage appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background
   image-viewer-upload image-viewer-embed-compact gif-picker-attachment
-  video-viewer search palette activity-unread activity-channel-post
+  pdf-preview pdf-preview-narrow pdf-preview-error pdf-preview-search-long
+  viewer-actions-files viewer-actions-message viewer-actions-narrow viewer-actions-pdf
+  file-actions file-actions-narrow file-actions-channel-narrow file-rename file-rename-narrow file-rename-channel-narrow file-recovery file-recovery-narrow file-preview-renamed-files file-preview-renamed-message
+  file-preview-text file-preview-narrow file-preview-large file-preview-utf16 file-preview-empty file-preview-binary file-preview-audio
+  video-viewer search search-opening search-loading search-empty search-error search-more-error search-narrow search-filters search-filters-narrow palette palette-people activity-unread activity-channel-post
   activity-thread-tools activity-paging activity-loading activity-error activity-more-error activity-empty activity-narrow dms
   dm-history-failed dm-cached-refresh-failed toast-long-error
   connection-connecting connection-no-network composer-multiline
   composer-upload-progress
   edit-message-composer accounts self-menu self-menu-notifications
-  multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout
+  multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout button-metadata button-metadata-narrow block-control-values block-control-values-narrow
+  app-modal-form app-modal-form-narrow app-modal-lifecycle app-modal-lifecycle-narrow
+  slack-list slack-list-narrow slack-list-readonly slack-list-incomplete slack-list-error slack-list-loading
+  self-status-editor self-status-editor-narrow
+  message-radio-buttons message-radio-buttons-narrow
+  message-static-select message-static-select-narrow
+  message-button-actions message-button-actions-narrow message-button-metadata message-button-metadata-narrow
+  slack-links slack-links-narrow
   media-loading-state media-failed timeline-variable-height timeline-latest-opening
-  usergroup-members usergroup-channels system-messages message-marked-unread message-marked-unread-narrow member-live-refresh channel-members member-add member-add-error member-remove member-add-narrow member-remove-narrow
+  usergroup-members usergroup-channels system-messages send-outcomes send-outcomes-narrow send-outcomes-thread managed-draft-recovery managed-draft-recovery-narrow message-marked-unread message-marked-unread-narrow member-live-refresh channel-members member-add member-add-error member-remove member-add-narrow member-remove-narrow
 )
 
 # Optional fixture names allow a focused recheck after the full sweep.
@@ -112,6 +129,7 @@ for fixture in "${FIXTURES[@]}"; do
   # painted frame. Give the native window one animation frame plus compositor
   # slack so a successful capture cannot be an all-white pre-paint surface.
   sleep 0.25
+  if [[ "$fixture" == pdf-preview* ]]; then sleep 1; fi
 
   # The window can still have no capturable surface for a beat after that, which
   # `screencapture` reports as a plain failure. Retry before giving up on the

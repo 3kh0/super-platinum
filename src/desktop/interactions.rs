@@ -65,6 +65,7 @@ impl ShellState {
     }
 
     pub fn toggle_self_menu(&mut self) {
+        self.cancel_profile_dm();
         if self.overlay == Some(crate::state::Overlay::SelfMenu) {
             self.overlay = None;
             self.self_menu_notifications_open = false;
@@ -75,6 +76,7 @@ impl ShellState {
     }
 
     pub fn open_preferences(&mut self) {
+        self.cancel_profile_dm();
         self.self_menu_notifications_open = false;
         self.settings_section = crate::state::SettingsSection::Appearance;
         self.overlay = Some(crate::state::Overlay::Settings);
@@ -198,10 +200,6 @@ impl ShellState {
         } else {
             self.core.threads.clear();
         }
-        match active {
-            Some(channel) => self.messages_by_channel.retain(|id, _| id == &channel),
-            None => self.messages_by_channel.clear(),
-        }
     }
 
     pub fn notify_typing(&mut self) {
@@ -238,86 +236,6 @@ impl ShellState {
         }
     }
 
-    pub fn palette_matches(&self) -> Vec<usize> {
-        let Some(team) = self.core.active_team.as_ref() else {
-            return self.palette_matches_fallback();
-        };
-        let Some(workspace) = self.core.workspaces.get(team) else {
-            return self.palette_matches_fallback();
-        };
-        let entries = super_platinum_core::palette::rank(
-            workspace,
-            &self.palette_query,
-            &std::collections::BTreeMap::new(),
-        );
-        let mut indices = Vec::new();
-        for entry in entries {
-            let channel_id = match entry.target {
-                super_platinum_core::palette::PaletteTarget::Channel(id) => id,
-                super_platinum_core::palette::PaletteTarget::User { dm: Some(id), .. } => id,
-                super_platinum_core::palette::PaletteTarget::User { user, dm: None } => {
-                    // Fall back to an IM channel for this user if one is loaded.
-                    self.channels
-                        .iter()
-                        .find(|channel| {
-                            channel.is_im && channel.user_id.as_deref() == Some(user.as_str())
-                        })
-                        .map(|channel| channel.id.clone())
-                        .unwrap_or_default()
-                }
-            };
-            if channel_id.is_empty() {
-                continue;
-            }
-            if let Some(index) = self
-                .channels
-                .iter()
-                .position(|channel| channel.id == channel_id)
-                && !indices.contains(&index)
-            {
-                indices.push(index);
-            }
-        }
-        if indices.is_empty() {
-            if self.palette_query.trim().is_empty() {
-                // Empty recents should not dump every loaded conversation.
-                return Vec::new();
-            }
-            return self.palette_matches_fallback();
-        }
-        indices
-    }
-
-    fn palette_matches_fallback(&self) -> Vec<usize> {
-        let query = self.palette_query.to_lowercase();
-        self.channels
-            .iter()
-            .enumerate()
-            .filter(|(_, channel)| query.is_empty() || channel.name.to_lowercase().contains(&query))
-            .map(|(index, _)| index)
-            .collect()
-    }
-
-    pub fn move_palette(&mut self, delta: isize) {
-        let count = self.palette_matches().len();
-        if count == 0 {
-            self.palette_selected = 0;
-            return;
-        }
-        self.palette_selected =
-            (self.palette_selected as isize + delta).rem_euclid(count as isize) as usize;
-    }
-
-    pub fn submit_palette(&mut self) -> bool {
-        let matches = self.palette_matches();
-        let Some(index) = matches.get(self.palette_selected).copied() else {
-            return false;
-        };
-        self.select_channel(index, ChannelOpen::Global);
-        self.overlay = None;
-        true
-    }
-
     /// Opens one Activity item in the right pane. Returns false when the item's
     /// channel is not part of the loaded workspace, so the caller can report it.
     ///
@@ -348,6 +266,23 @@ impl ShellState {
     /// Opens a search hit. Search is global navigation, so like Slack's own
     /// client it lands in Home rather than inside whichever list was open.
     pub fn open_search_result(&mut self, channel: &str, ts: &str) -> bool {
+        // Archived/filtered conversations can be known without a projected row.
+        // Add the row before navigation, keeping the old draft destination bound.
+        if !self.channels.iter().any(|row| row.id == channel) {
+            let Some(workspace) = self
+                .core
+                .active_team
+                .as_ref()
+                .and_then(|team| self.core.workspaces.get(team))
+            else {
+                return false;
+            };
+            let Some(info) = workspace.channels.get(channel) else {
+                return false;
+            };
+            self.channels
+                .push(crate::channel_vm::channel_vm(workspace, info, &self.media));
+        }
         self.open_message(channel, ts, ChannelOpen::Global)
     }
 

@@ -6,13 +6,21 @@ use dioxus::prelude::{ReadableExt, Signal, WritableExt};
 use super_platinum_core::domain::{ComposerAttachment, PendingFileMessage};
 use super_platinum_core::slack::api;
 
-use crate::bootstrap::{credentials, persist_workspace, refresh_history};
+use crate::bootstrap::{credentials, persist_workspace};
 use crate::state::{PendingSend, ShellState};
+
+mod outcomes;
+mod ownership;
+pub(crate) use outcomes::fixture as send_outcomes_fixture;
+use ownership::SendVisit;
 
 pub async fn send_composer(mut state: Signal<ShellState>) {
     let unavailable = state.peek().composer_unavailable();
     if let Some(reason) = unavailable {
         state.write().show_toast(reason);
+        return;
+    }
+    if crate::drafts::send::intercept(state) {
         return;
     }
     if !state.read().core.composer_attachments.is_empty() {
@@ -34,6 +42,14 @@ pub async fn send_thread_composer(mut state: Signal<ShellState>) {
         state.write().show_toast(reason);
         return;
     }
+    let guard = state
+        .peek()
+        .composer_key(crate::state::ComposerTarget::Thread)
+        .map(|key| crate::drafts::integration::legacy_allowed(&state.peek(), &key));
+    if let Some(Err(reason)) = guard {
+        state.write().show_toast(reason);
+        return;
+    }
     if !state.read().core.thread_composer_attachments.is_empty() {
         send_thread_attachments(state).await;
         return;
@@ -50,12 +66,16 @@ pub async fn send_thread_composer(mut state: Signal<ShellState>) {
 }
 
 async fn send_pending(mut state: Signal<ShellState>, pending: PendingSend, label: &str) {
+    if !SendVisit::queued_is_current(&state.peek(), &pending) {
+        return;
+    }
     let Some((transport, client, workspaces)) = credentials(&state) else {
         state
             .write()
             .show_toast("Message is queued until Slack reconnects");
         return;
     };
+    let visit = SendVisit::capture(&state.peek(), &transport);
     let Some(workspace_session) = workspaces
         .into_iter()
         .find(|workspace| workspace.team_id == pending.team)
@@ -65,71 +85,18 @@ async fn send_pending(mut state: Signal<ShellState>, pending: PendingSend, label
             .show_toast("Active workspace session is unavailable");
         return;
     };
-    match api::send_message(
+    let result = api::send_message(
         &transport,
         &client,
         &workspace_session,
         pending.channel.clone(),
-        pending.text,
+        pending.text.clone(),
         pending.thread_ts.clone(),
     )
-    .await
-    {
-        Ok(sent) => {
-            let mut shell = state.write();
-            let message = super_platinum_core::slack::models::Message {
-                ts: Some(sent.ts),
-                channel: Some(pending.channel.clone()),
-                thread_ts: pending.thread_ts.clone(),
-                ..sent.message
-            };
-            if let Some(root) = pending.thread_ts.as_ref() {
-                if let Some(messages) = shell.core.threads.get_mut(&(
-                    pending.team.clone(),
-                    pending.channel.clone(),
-                    root.clone(),
-                )) {
-                    messages.confirm(&pending.client_msg_id, message);
-                }
-                shell.refresh_thread_from_core();
-            } else if let Some(messages) = shell
-                .core
-                .workspaces
-                .get_mut(&pending.team)
-                .and_then(|workspace| workspace.messages.get_mut(&pending.channel))
-            {
-                messages.confirm(&pending.client_msg_id, message);
-            }
-            shell.refresh_from_core();
-            drop(shell);
-            persist_workspace(&state, &pending.team);
-        }
-        Err(error) => {
-            let mut shell = state.write();
-            if let Some(root) = pending.thread_ts.as_ref() {
-                if let Some(messages) = shell.core.threads.get_mut(&(
-                    pending.team.clone(),
-                    pending.channel.clone(),
-                    root.clone(),
-                )) {
-                    messages.remove(&pending.optimistic_ts);
-                }
-                shell.refresh_thread_from_core();
-            } else if let Some(messages) = shell
-                .core
-                .workspaces
-                .get_mut(&pending.team)
-                .and_then(|workspace| workspace.messages.get_mut(&pending.channel))
-            {
-                messages.remove(&pending.optimistic_ts);
-            }
-            shell.refresh_from_core();
-            shell.report_failure(
-                &error,
-                &format!("{label} not sent — you are offline"),
-                || format!("{label} failed: {error}"),
-            );
-        }
+    .await;
+    let persist = ownership::apply_text_result(&mut state.write(), &visit, &pending, label, result);
+    if persist {
+        persist_workspace(&state, &pending.team);
     }
 }
 
@@ -148,6 +115,7 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
             .show_toast("File upload unavailable while offline");
         return;
     };
+    let visit = SendVisit::capture(&state.peek(), &transport);
     let prepared = {
         let mut shell = state.write();
         let (Some(team), Some(channel)) = (
@@ -212,12 +180,7 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
             })
             .collect();
 
-        let stamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|duration| duration.as_nanos())
-            .unwrap_or(0);
-        let client_msg_id = format!("super-platinum-file-{stamp}");
-        let message_ts = format!("{}.000000", stamp / 1_000_000_000);
+        let (client_msg_id, message_ts) = ShellState::optimistic_identity("super-platinum-file");
         let pending_message = super_platinum_core::slack::models::Message {
             user: Some(self_user),
             kind: Some("message".into()),
@@ -299,7 +262,12 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
         .into_iter()
         .find(|workspace| workspace.team_id == prepared.team)
     else {
-        restore_failed_upload(&mut state, &prepared.client_msg_id, None);
+        restore_failed_upload(
+            &mut state,
+            &visit,
+            &prepared.client_msg_id,
+            prepared.thread_ts.as_ref(),
+        );
         state
             .write()
             .show_toast("Active workspace session is unavailable");
@@ -320,8 +288,11 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
     )
     .await;
 
+    if !visit.current(&state.peek()) {
+        return;
+    }
     match result {
-        Ok(()) => {
+        Ok(completed) => {
             {
                 let mut shell = state.write();
                 if let Some(pending) = shell
@@ -339,22 +310,40 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
                     }
                 }
             }
-            refresh_history(
+            let refreshed = ownership::refresh_upload_history(
                 &mut state,
-                &transport,
+                &visit,
                 &client,
                 &workspace_session,
-                &prepared.team,
-                prepared.channel.clone(),
+                &ownership::UploadReadback {
+                    team: prepared.team.clone(),
+                    channel: prepared.channel.clone(),
+                    thread_ts: prepared.thread_ts.clone(),
+                    sender: workspace_session.user_id.clone(),
+                    file_ids: completed.file_ids,
+                },
             )
             .await;
+            if !visit.current(&state.peek()) {
+                return;
+            }
+            if !refreshed {
+                outcomes::mark_upload_status(
+                    &mut state.write(),
+                    &visit,
+                    &prepared.client_msg_id,
+                    crate::state::PendingDeliveryStatus::Unconfirmed,
+                );
+                return;
+            }
             {
                 let mut shell = state.write();
                 shell
                     .core
                     .pending_file_messages
                     .retain(|pending| pending.client_msg_id != prepared.client_msg_id);
-                // Drop the optimistic pending message; history refresh should have the real one.
+                shell.pending_delivery.remove(&prepared.message_ts);
+                // Readback found the exact files under the original sender and destination.
                 if let Some(root) = prepared.thread_ts.as_ref() {
                     if let Some(messages) = shell.core.threads.get_mut(&(
                         prepared.team.clone(),
@@ -377,17 +366,33 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
             persist_workspace(&state, &prepared.team);
         }
         Err(error) => {
-            let canceled = matches!(error, super_platinum_core::slack::Error::UploadCanceled);
-            restore_failed_upload(
+            if error.delivery_uncertain() {
+                outcomes::mark_upload_status(
+                    &mut state.write(),
+                    &visit,
+                    &prepared.client_msg_id,
+                    crate::state::PendingDeliveryStatus::Unconfirmed,
+                );
+                state.write().show_toast(
+                    "Upload delivery is unconfirmed; check the conversation before uploading again",
+                );
+                return;
+            }
+            let canceled = matches!(
+                error.error(),
+                super_platinum_core::slack::Error::UploadCanceled
+            );
+            let retained = restore_failed_upload(
                 &mut state,
+                &visit,
                 &prepared.client_msg_id,
                 prepared.thread_ts.as_ref(),
             );
             if !canceled {
                 state
                     .write()
-                    .report_failure(&error, "Upload needs a connection", || {
-                        format!("Upload failed: {error}")
+                    .report_failure(error.error(), if retained { "Upload not sent; its caption and files remain in the conversation. Your newer draft is unchanged." } else { "Upload not sent; its caption and files were restored" }, || {
+                        if retained { "Upload not sent; its caption and files remain in the conversation. Your newer draft is unchanged.".into() } else { format!("Upload failed: {error}") }
                     });
             }
         }
@@ -407,10 +412,65 @@ struct PreparedUpload {
 
 fn restore_failed_upload(
     state: &mut Signal<ShellState>,
+    visit: &SendVisit,
     client_msg_id: &str,
     thread_ts: Option<&String>,
-) {
-    let mut shell = state.write();
+) -> bool {
+    restore_upload_to_shell(&mut state.write(), visit, client_msg_id, thread_ts)
+}
+
+fn restore_upload_to_shell(
+    shell: &mut ShellState,
+    visit: &SendVisit,
+    client_msg_id: &str,
+    thread_ts: Option<&String>,
+) -> bool {
+    if !visit.current(shell) {
+        return false;
+    }
+    shell.checkpoint_composers();
+    if let Some(pending) = shell
+        .core
+        .pending_file_messages
+        .iter()
+        .find(|pending| pending.client_msg_id == client_msg_id)
+    {
+        let key = super_platinum_core::drafts::DraftKey {
+            team: pending.team.clone(),
+            channel: pending.channel.clone(),
+            thread: pending.thread_ts.clone(),
+        };
+        if shell
+            .core
+            .drafts
+            .items
+            .get(&key)
+            .is_some_and(|draft| !draft.empty())
+        {
+            let pending = shell
+                .core
+                .pending_file_messages
+                .iter_mut()
+                .find(|pending| pending.client_msg_id == client_msg_id)
+                .unwrap();
+            for attachment in &mut pending.attachments {
+                attachment.uploading = false;
+                attachment.upload_started = None;
+                attachment.upload_cancel = None;
+                attachment.upload_progress = None;
+            }
+            shell.pending_delivery.insert(
+                pending.message_ts.clone(),
+                crate::state::PendingDeliveryStatus::Failed,
+            );
+            shell.show_toast("Upload not sent; its caption and files remain in the conversation. Your newer draft is unchanged.");
+            shell.refresh_from_core();
+            if thread_ts.is_some() {
+                shell.refresh_thread_from_core();
+            }
+            return true;
+        }
+    }
     let pending = shell
         .core
         .pending_file_messages
@@ -418,7 +478,7 @@ fn restore_failed_upload(
         .position(|pending| pending.client_msg_id == client_msg_id)
         .map(|index| shell.core.pending_file_messages.remove(index));
     let Some(pending) = pending else {
-        return;
+        return false;
     };
     if let Some(root) = thread_ts {
         if let Some(messages) = shell.core.threads.get_mut(&(
@@ -437,6 +497,7 @@ fn restore_failed_upload(
     {
         messages.remove(&pending.message_ts);
     }
+    shell.pending_delivery.remove(&pending.message_ts);
     let mut attachments = pending.attachments;
     for attachment in &mut attachments {
         attachment.uploading = false;
@@ -478,6 +539,7 @@ fn restore_failed_upload(
     }
     shell.checkpoint_composers();
     shell.refresh_from_core();
+    false
 }
 
 pub async fn toggle_reaction(
@@ -565,74 +627,209 @@ pub async fn toggle_reaction(
     }
 }
 
-pub async fn save_edit(mut state: Signal<ShellState>) {
-    let (channel, ts, text) = {
-        let shell = state.read();
-        let Some((channel, ts)) = shell.core.editing.clone() else {
-            return;
-        };
-        (channel, ts, shell.core.edit_composer.text.trim().to_owned())
-    };
-    if text.is_empty() {
-        return;
-    }
-    let Some((transport, client, workspaces)) = credentials(&state) else {
-        return;
-    };
-    let Some(team) = state.read().core.active_team.clone() else {
-        return;
-    };
-    let Some(workspace_session) = workspaces
-        .into_iter()
-        .find(|workspace| workspace.team_id == team)
-    else {
-        return;
-    };
-    match api::edit_message(
-        &transport,
-        &client,
-        &workspace_session,
-        channel.clone(),
-        ts.clone(),
-        text,
+type EditContent = (
+    Option<String>,
+    Vec<serde_json::Value>,
+    Option<serde_json::Value>,
+);
+fn edit_content(message: &super_platinum_core::slack::models::Message) -> EditContent {
+    (
+        message.text.clone(),
+        message.blocks.clone(),
+        message.edited.clone(),
     )
-    .await
+}
+fn edit_baseline(
+    messages: &super_platinum_core::state::ChannelMessages,
+    ts: &str,
+) -> Option<EditContent> {
+    messages
+        .messages
+        .iter()
+        .find(|message| message.ts.as_deref() == Some(ts))
+        .map(edit_content)
+}
+struct EditVisit {
+    session: SendVisit,
+    team: String,
+    channel: String,
+    ts: String,
+    generation: u64,
+    raw_text: String,
+    channel_baseline: Option<EditContent>,
+    thread_baselines: std::collections::HashMap<String, EditContent>,
+}
+impl EditVisit {
+    fn capture(
+        shell: &ShellState,
+        transport: &Arc<super_platinum_core::slack::Transport>,
+    ) -> Option<Self> {
+        let (channel, ts) = shell.core.editing.clone()?;
+        let team = shell.core.active_team.clone()?;
+        let channel_baseline = shell
+            .core
+            .workspaces
+            .get(&team)
+            .and_then(|workspace| workspace.messages.get(&channel))
+            .and_then(|messages| edit_baseline(messages, &ts));
+        let thread_baselines = shell
+            .core
+            .threads
+            .iter()
+            .filter_map(|((thread_team, thread_channel, root), messages)| {
+                (thread_team == &team && thread_channel == &channel)
+                    .then(|| edit_baseline(messages, &ts).map(|baseline| (root.clone(), baseline)))
+                    .flatten()
+            })
+            .collect();
+        Some(Self {
+            session: SendVisit::capture(shell, transport),
+            team,
+            channel_baseline,
+            thread_baselines,
+            channel,
+            ts,
+            generation: shell.edit_generation,
+            raw_text: shell.core.edit_composer.text.clone(),
+        })
+    }
+    fn editing(&self, shell: &ShellState) -> bool {
+        self.session.current(shell)
+            && shell.core.active_team.as_ref() == Some(&self.team)
+            && shell.edit_generation == self.generation
+            && shell.core.editing.as_ref() == Some(&(self.channel.clone(), self.ts.clone()))
+            && shell.core.edit_composer.text == self.raw_text
+    }
+}
+
+fn merge_edit_if_unchanged(
+    messages: &mut super_platinum_core::state::ChannelMessages,
+    ts: &str,
+    baseline: Option<&EditContent>,
+    updated: &super_platinum_core::slack::models::Message,
+) {
+    // A response cannot reverse a newer HTTP/realtime edit or introduce this
+    // message into an unrelated thread. Reactions are outside this comparison
+    // and outside the edit-only patch, so independent reaction updates survive.
+    if !messages.was_deleted(ts)
+        && baseline.is_some()
+        && edit_baseline(messages, ts).as_ref() == baseline
     {
+        messages.merge_update(updated.clone());
+    }
+}
+
+fn apply_edit_result(
+    shell: &mut ShellState,
+    visit: &EditVisit,
+    result: Result<
+        super_platinum_core::slack::models::SentMessage,
+        super_platinum_core::slack::Error,
+    >,
+) -> bool {
+    if !visit.session.current(shell) {
+        return false;
+    }
+    match result {
         Ok(sent) => {
-            let mut shell = state.write();
+            if sent.channel != visit.channel
+                || sent.ts != visit.ts
+                || sent.message.ts.as_ref().is_some_and(|ts| ts != &visit.ts)
+                || sent
+                    .message
+                    .channel
+                    .as_ref()
+                    .is_some_and(|channel| channel != &visit.channel)
+            {
+                if visit.editing(shell) {
+                    shell.show_toast("Slack did not confirm this edit. Your text is still here.");
+                }
+                return false;
+            }
             let updated = super_platinum_core::slack::models::Message {
-                ts: Some(sent.ts),
-                channel: Some(channel.clone()),
-                ..sent.message
+                ts: Some(visit.ts.clone()),
+                channel: Some(visit.channel.clone()),
+                text: sent.message.text,
+                blocks: sent.message.blocks,
+                edited: sent.message.edited,
+                ..Default::default()
             };
             if let Some(messages) = shell
                 .core
                 .workspaces
-                .get_mut(&team)
-                .and_then(|workspace| workspace.messages.get_mut(&channel))
+                .get_mut(&visit.team)
+                .and_then(|workspace| workspace.messages.get_mut(&visit.channel))
             {
-                messages.merge_update(updated.clone());
+                merge_edit_if_unchanged(
+                    messages,
+                    &visit.ts,
+                    visit.channel_baseline.as_ref(),
+                    &updated,
+                );
             }
-            for ((thread_team, thread_channel, _), messages) in &mut shell.core.threads {
-                if thread_team == &team && thread_channel == &channel {
-                    messages.merge_update(updated.clone());
+            for ((team, channel, root), messages) in &mut shell.core.threads {
+                if team == &visit.team && channel == &visit.channel {
+                    merge_edit_if_unchanged(
+                        messages,
+                        &visit.ts,
+                        visit.thread_baselines.get(root),
+                        &updated,
+                    );
                 }
             }
-            shell.cancel_edit();
+            if visit.editing(shell) {
+                shell.cancel_edit();
+            }
             shell.refresh_from_core();
             shell.refresh_thread_from_core();
-            drop(shell);
-            persist_workspace(&state, &team);
+            true
         }
         Err(error) => {
-            state
-                .write()
-                .report_failure(&error, "Edit not saved — you are offline", || {
-                    format!("Edit failed: {error}")
-                })
+            if visit.editing(shell) {
+                shell.report_failure(&error, "Edit not saved — you are offline", || {
+                    "Edit could not be confirmed. Your text is still here.".into()
+                });
+            }
+            false
         }
     }
 }
+
+pub async fn save_edit(mut state: Signal<ShellState>) {
+    let Some((transport, client, workspaces)) = credentials(&state) else {
+        return;
+    };
+    let Some(visit) = EditVisit::capture(&state.read(), &transport) else {
+        return;
+    };
+    let text = visit.raw_text.trim().to_owned();
+    if text.is_empty() || !visit.session.current(&state.peek()) {
+        return;
+    }
+    let Some(workspace_session) = workspaces
+        .into_iter()
+        .find(|workspace| workspace.team_id == visit.team)
+    else {
+        return;
+    };
+    let result = api::edit_message(
+        &transport,
+        &client,
+        &workspace_session,
+        visit.channel.clone(),
+        visit.ts.clone(),
+        text,
+    )
+    .await;
+    let changed = apply_edit_result(&mut state.write(), &visit, result);
+    if changed {
+        persist_workspace(&state, &visit.team);
+    }
+}
+
+#[cfg(test)]
+#[path = "messaging/edit_tests.rs"]
+mod edit_tests;
 
 pub async fn delete_message(mut state: Signal<ShellState>, channel: String, ts: String) {
     let Some((transport, client, workspaces)) = credentials(&state) else {

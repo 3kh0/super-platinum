@@ -11,6 +11,8 @@ pub fn tabs(state: Signal<ShellState>, selected: ChannelTab) -> Element {
                 onclick:move |_|crate::channel_resources::select(state,ChannelTab::Messages),"Messages"}
             button {class:if matches!(selected,ChannelTab::Files|ChannelTab::Links) {"active"} else {""},"aria-pressed":matches!(selected,ChannelTab::Files|ChannelTab::Links),
                 onclick:move |_|crate::channel_resources::select(state,ChannelTab::Files),"Files & links"}
+            button {class:if selected==ChannelTab::Bookmarks {"active"}else{""},"aria-pressed":selected==ChannelTab::Bookmarks,
+                onclick:move |_|crate::channel_resources::select(state,ChannelTab::Bookmarks),"Bookmarks"}
             button {class:if selected==ChannelTab::Pins {"active"}else{""},"aria-pressed":selected==ChannelTab::Pins,
                 onclick:move |_|crate::channel_resources::select(state,ChannelTab::Pins),"Pins"}
         }

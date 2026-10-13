@@ -1,3 +1,5 @@
+pub use super_platinum_core::block_actions::{BlockElementMetadata, BlockElementSource};
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum ChannelTab {
     #[default]
@@ -5,6 +7,7 @@ pub enum ChannelTab {
     Files,
     Links,
     Pins,
+    Bookmarks,
 }
 
 use super_platinum_core::MediaAssetId;
@@ -131,6 +134,7 @@ impl ButtonStyle {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RichNode {
+    Canvas(CanvasTarget),
     Text(String),
     StyledText {
         text: String,
@@ -169,6 +173,7 @@ pub enum RichNode {
         name: String,
     },
     Media {
+        file: Option<super_platinum_core::file_actions::FileIdentity>,
         /// What is painted inline: a thumbnail, or a video's poster frame.
         /// `None` for a file with no preview — a PDF, or a clip Slack has not
         /// finished transcoding — which renders as a chip instead.
@@ -177,6 +182,7 @@ pub enum RichNode {
         /// it. `None` when the preview already is the full thing.
         full: Option<MediaAssetId>,
         name: String,
+        download_name: String,
         mime: String,
         /// Intrinsic size of the preview, so the row holds its height before
         /// the bytes land.
@@ -202,6 +208,7 @@ pub enum RichNode {
         label: String,
         url: Option<String>,
         style: ButtonStyle,
+        metadata: Box<BlockElementMetadata>,
     },
     /// A small inline image (context element or section accessory).
     InlineImage {
@@ -242,6 +249,7 @@ impl RichNode {
             output.push('\n');
         };
         match self {
+            Self::Canvas(target) => output.push_str(&target.title),
             Self::Text(text) | Self::StyledText { text, .. } | Self::Code(text) => {
                 output.push_str(text)
             }
@@ -645,6 +653,8 @@ pub struct AccountVm {
 }
 
 pub struct PendingSend {
+    pub account: Option<String>,
+    pub account_epoch: u64,
     pub team: String,
     pub channel: String,
     pub thread_ts: Option<String>,
@@ -655,6 +665,7 @@ pub struct PendingSend {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SearchResultVm {
+    pub thread_ts: Option<String>,
     pub channel_id: String,
     pub channel_name: String,
     pub ts: String,
@@ -664,28 +675,41 @@ pub struct SearchResultVm {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ViewerVm {
+    pub file: Option<super_platinum_core::file_actions::FileIdentity>,
     pub id: MediaAssetId,
+    /// User-visible Slack title, independent of the original filename.
     pub name: String,
+    pub download_name: String,
     pub mime: String,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct PerformanceVm {
     pub scroll_frame_ms: Vec<f64>,
+    pub thread_scroll_frame_ms: Vec<f64>,
+    pub scroll_start_delay_ms: Vec<f64>,
+    pub thread_scroll_start_delay_ms: Vec<f64>,
     pub channel_switch_ms: Option<f64>,
     pub realtime_insert_ms: Option<f64>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Overlay {
+    ButtonConfirmation,
+    AppModal,
     Accounts,
     SelfMenu,
+    SelfStatus,
+    SlackList,
     Palette,
     Search,
     Settings,
     Viewer,
+    Canvas,
+    CanvasCreate,
     ReactionPicker,
     Forward,
+    NewDm,
 }
 
 #[derive(Debug, Clone)]
@@ -814,4 +838,11 @@ pub struct ThreadFeedRowVm {
     pub avatar: Option<MediaAssetId>,
     pub avatar_initials: String,
     pub timestamp: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CanvasTarget {
+    pub id: String,
+    pub title: String,
+    pub permalink: Option<String>,
 }

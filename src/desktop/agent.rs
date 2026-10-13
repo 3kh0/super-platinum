@@ -23,6 +23,29 @@ pub async fn serve(
     if std::env::var_os("SUPER_PLATINUM_AGENT").is_none() {
         return Ok(());
     }
+    crate::blocks::check_button_metadata_native(desktop.clone());
+    crate::app_modal::check::start(state, desktop.clone());
+    crate::self_status::check::start(state, desktop.clone());
+    crate::slack_lists::check::start(state, desktop.clone());
+    crate::message_buttons::check::start(state, desktop.clone());
+    crate::message_buttons::select_check::start(state, desktop.clone());
+    crate::message_buttons::radio_check::start(state, desktop.clone());
+    crate::slack_links_check::start(state, desktop.clone());
+    // Fixture-only diagnostics bypass the Dioxus eval bridge when investigating
+    // an interpreter that never reaches its initial DOM handshake.
+    if crate::fixture::is_fixture() && std::env::var_os("SUPER_PLATINUM_UI_DOM_TRACE").is_some() {
+        let window = desktop.clone();
+        dioxus::core::spawn_forever(async move {
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            let result = window.webview.evaluate_script_with_callback(
+                "JSON.stringify({url:location.href,ready:document.readyState,body:document.body?.innerHTML.slice(0,1500),scripts:[...document.scripts].map(s=>({src:s.src,chars:s.textContent.length})),interpreter:typeof window.interpreter})",
+                |value| eprintln!("fixture DOM trace: {value}"),
+            );
+            if let Err(error) = result {
+                eprintln!("fixture DOM trace request failed: {error}");
+            }
+        });
+    }
     #[cfg(unix)]
     {
         serve_unix(state, desktop).await
@@ -187,19 +210,17 @@ fn dispatch(
         AgentCommand::State => AgentResponse::ok(id, state_snapshot(&state.read())),
         AgentCommand::OpenPalette => {
             let mut shell = state.write();
-            shell.overlay = Some(Overlay::Palette);
-            shell.palette_selected = 0;
+            shell.open_palette();
             AgentResponse::ok(id, json!({ "palette_open": true }))
         }
         AgentCommand::ClosePalette => {
-            state.write().overlay = None;
+            state.write().dismiss_overlay();
             AgentResponse::ok(id, json!({ "palette_open": false }))
         }
         AgentCommand::SetQuery { query } | AgentCommand::Type { text: query } => {
             {
                 let mut shell = state.write();
-                shell.palette_query = query.clone();
-                shell.palette_selected = 0;
+                shell.set_palette_query(query.clone());
             }
             // The field renders `initial_value`, so a driven query has to be
             // typed into the DOM as well, or screenshots show an empty box.
@@ -210,21 +231,15 @@ fn dispatch(
             state.write().move_palette(delta);
             AgentResponse::ok(id, json!({ "selected": state.read().palette_selected }))
         }
-        AgentCommand::Submit | AgentCommand::SelectEntry { index: 0 } => {
-            if state.write().submit_palette() {
-                dioxus::prelude::spawn(crate::bootstrap::refresh_selected_channel(*state));
+        AgentCommand::Submit => {
+            if crate::bootstrap::open_palette_entry(*state, None) {
                 AgentResponse::ok(id, json!({ "submitted": true }))
             } else {
                 AgentResponse::err(id, "palette has no matching entry")
             }
         }
         AgentCommand::SelectEntry { index } => {
-            let channel_index = state.read().palette_matches().get(index).copied();
-            if let Some(channel_index) = channel_index {
-                state
-                    .write()
-                    .select_channel(channel_index, crate::state::ChannelOpen::Global);
-                dioxus::prelude::spawn(crate::bootstrap::refresh_selected_channel(*state));
+            if crate::bootstrap::open_palette_entry(*state, Some(index)) {
                 AgentResponse::ok(id, json!({ "index": index }))
             } else {
                 AgentResponse::err(id, format!("no palette entry at {index}"))
@@ -264,14 +279,14 @@ fn dispatch(
             let signal = *state;
             {
                 let mut shell = state.write();
-                shell.search_query = query.clone();
+                shell.replace_search_query(query.clone());
                 shell.overlay = Some(Overlay::Search);
             }
             dioxus::prelude::spawn(crate::bootstrap::search(signal));
             AgentResponse::ok(id, json!({ "query": query }))
         }
         AgentCommand::ClearSearch => {
-            state.write().overlay = None;
+            state.write().dismiss_overlay();
             AgentResponse::ok(id, json!({ "search_active": false }))
         }
         AgentCommand::OpenSettings => {
@@ -565,7 +580,11 @@ fn state_snapshot(state: &ShellState) -> Value {
         "main"
     };
     let active_channel = state.channels.get(state.active_channel);
-    let palette_matches = state.palette_matches();
+    let palette_matches = if state.overlay == Some(Overlay::Palette) {
+        state.palette_matches()
+    } else {
+        Vec::new()
+    };
     let profile = state.profile_user.as_ref().map(|user_id| {
         let workspace = state
             .core
@@ -579,6 +598,8 @@ fn state_snapshot(state: &ShellState) -> Value {
             "name": user.map(|user| super_platinum_core::state::display_name(Some(user), user_id)),
             "loading": state.core.profile_pane.as_ref().is_some_and(|pane| pane.user == *user_id && pane.loading),
             "is_vip": workspace.is_some_and(|workspace| workspace.vip_users.contains(user_id)),
+            "updating_vip": crate::profile_vip::busy(state, user_id),
+            "opening_dm": state.profile_dm_opening.as_ref() == Some(user_id),
             "recent_dm_count": user.map(|user| user.im_mpim_ids.len()).unwrap_or(0),
             "custom_field_count": profile.map(|profile| profile.fields.len()).unwrap_or(0),
             "pane_width": state.profile_pane_width,
@@ -602,6 +623,44 @@ fn state_snapshot(state: &ShellState) -> Value {
             "selected_pictures": state.storage.selected_picture_bytes(),
         })
     };
+    let search = (state.overlay == Some(Overlay::Search)).then(|| {
+        json!({
+            "query": state.search_query,
+            "loading": state.search_pager.loading,
+            "sort": state.search_pager.sort.label(),
+            "filters_open": state.search_filters.is_some(),
+            "opening": state.search_opening.is_some(),
+            "filter_error": state.search_filter_error,
+            "page": state.search_pager.page,
+            "total": state.search_pager.total,
+            "has_more": state.search_pager.has_more(),
+            "failed": state.search_pager.failed,
+            "hit_count": state.search_results.len(),
+            "hits": state.search_results.iter().map(|hit| json!({
+                "channel": hit.channel_id,
+                "channel_name": hit.channel_name,
+                "ts": hit.ts,
+                "thread_ts": hit.thread_ts,
+                "author": hit.author,
+                "text": hit.text,
+            })).collect::<Vec<_>>(),
+        })
+    });
+    let performance = json!({
+        "startup": crate::performance::startup_snapshot(),
+        "channel_switch_ms": state.performance.channel_switch_ms,
+        "realtime_insert_ms": state.performance.realtime_insert_ms,
+        "scroll_frame_ms": state.performance.scroll_frame_ms,
+        "thread_scroll_frame_ms": state.performance.thread_scroll_frame_ms,
+        "scroll_start_delay_ms": state.performance.scroll_start_delay_ms,
+        "thread_scroll_start_delay_ms": state.performance.thread_scroll_start_delay_ms,
+        "summaries": {
+            "channel_frames": crate::performance::sample_summary(&state.performance.scroll_frame_ms),
+            "thread_frames": crate::performance::sample_summary(&state.performance.thread_scroll_frame_ms),
+            "channel_start_delays": crate::performance::sample_summary(&state.performance.scroll_start_delay_ms),
+            "thread_start_delays": crate::performance::sample_summary(&state.performance.thread_scroll_start_delay_ms),
+        },
+    });
     let mut snapshot = json!({
         "screen": screen,
         "signed_in": state.signed_in,
@@ -660,10 +719,14 @@ fn state_snapshot(state: &ShellState) -> Value {
             "query": state.palette_query,
             "selected": state.palette_selected,
             "entry_count": palette_matches.len(),
-            "entries": palette_matches.iter().enumerate().map(|(selection, index)| json!({
+            "opening": state.palette_opening.is_some(),
+            "entries": palette_matches.iter().enumerate().map(|(selection, entry)| json!({
                 "index": selection,
-                "label": state.channels[*index].name,
-                "target": { "kind": "channel", "id": state.channels[*index].id },
+                "label": entry.row.name,
+                "target": match &entry.target {
+                    super_platinum_core::palette::PaletteTarget::Channel(id) => json!({"kind":"channel","id":id}),
+                    super_platinum_core::palette::PaletteTarget::User {user,dm} => json!({"kind":"user","id":user,"channel":dm}),
+                },
                 "selected": selection == state.palette_selected,
             })).collect::<Vec<_>>()
         })),
@@ -673,18 +736,7 @@ fn state_snapshot(state: &ShellState) -> Value {
         "settings_section": settings_section,
         "storage": storage,
         "search_input": state.search_query,
-        "search": (state.overlay == Some(Overlay::Search)).then(|| json!({
-            "query": state.search_query,
-            "loading": state.search_loading,
-            "hit_count": state.search_results.len(),
-            "hits": state.search_results.iter().map(|hit| json!({
-                "channel": hit.channel_id,
-                "channel_name": hit.channel_name,
-                "ts": hit.ts,
-                "author": hit.author,
-                "text": hit.text,
-            })).collect::<Vec<_>>(),
-        })),
+        "search": search,
         "workspaces": state.workspaces.iter().map(|workspace| json!({
             "team_id": workspace.id,
             "name": workspace.name,
@@ -714,7 +766,8 @@ fn state_snapshot(state: &ShellState) -> Value {
         // The rendered slice, so a blank transcript can be told apart from an
         // empty one without a screenshot.
         "timeline": json!({
-            "messages": state.messages.len(),
+            "messages": state.channel_rows.len(),
+            "projected_messages": state.messages.len(),
             "start": state.timeline_start,
             "end": state.timeline_end,
             "stick_to_bottom": state.stick_to_bottom,
@@ -745,14 +798,10 @@ fn state_snapshot(state: &ShellState) -> Value {
         "toasts": state.toast.iter().map(|toast| toast.text.clone()).collect::<Vec<_>>(),
         "connection": state.connection.status.key(),
         "allow_destructive": allow_destructive(),
-        "performance": {
-            "startup": crate::performance::startup_snapshot(),
-            "channel_switch_ms": state.performance.channel_switch_ms,
-            "realtime_insert_ms": state.performance.realtime_insert_ms,
-            "scroll_frame_ms": state.performance.scroll_frame_ms,
-        },
+        "performance": performance,
         "agent_socket": agent_endpoint(),
     });
+    snapshot["recent_messages_scope"] = json!("rendered_window");
     snapshot["thread_read_state"] = crate::thread_unread::key(state)
         .map(|key| {
             json!({

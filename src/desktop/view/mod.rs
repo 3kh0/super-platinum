@@ -1,9 +1,13 @@
 //! Typed DOM view for the Dioxus desktop shell.
 
+pub(crate) mod app_modal;
+pub(crate) mod button_confirmation;
 mod channel_details;
 mod channel_membership;
 mod channel_resources;
+mod channel_window_check;
 mod chrome;
+mod completion;
 pub(crate) mod composer;
 mod files;
 mod huddle;
@@ -13,16 +17,27 @@ mod local_drafts;
 pub(crate) mod media_image;
 mod member_admin;
 mod message;
+mod message_button;
+mod message_radio;
+mod message_select;
 mod new_channel;
 mod new_reminder;
 mod pins;
 pub(crate) mod rich;
 pub(crate) mod rich_editor;
 pub(crate) mod scheduled;
+pub(crate) mod search;
 mod secondary;
+mod selection;
+mod selection_check;
+pub(crate) mod self_status;
+mod send_outcomes_check;
 pub(crate) mod settings;
+pub(crate) mod slack_lists;
 pub(crate) mod theme;
 mod thread_paging;
+mod thread_window;
+mod thread_window_check;
 mod threads;
 
 use dioxus::prelude::*;
@@ -31,9 +46,7 @@ use crate::overlays::overlay_view;
 use crate::state::{ChannelTab, ComposerTarget, MainView, Overlay, ShellState};
 
 use chrome::{channel_sidebar, conversation_header, rail_view};
-use composer::{
-    composer, load_older_if_needed, measure_thread, schedule_timeline_measure, thread_composer,
-};
+use composer::{composer, load_older_if_needed, schedule_timeline_measure, thread_composer};
 use message::{RowSurface, message_row};
 use secondary::{activity_list_panel, dm_list_panel, secondary_view};
 use theme::theme_css;
@@ -44,6 +57,8 @@ const CSS: &str = concat!(
     include_str!("../styles/lists.css"),
     include_str!("../styles/later.css"),
     include_str!("../styles/files.css"),
+    include_str!("../styles/canvas.css"),
+    include_str!("../styles/bookmarks.css"),
     include_str!("../styles/pins.css"),
     include_str!("../styles/forward.css"),
     include_str!("../styles/scheduled.css"),
@@ -52,6 +67,10 @@ const CSS: &str = concat!(
     include_str!("../styles/blocks.css"),
     include_str!("../styles/composer.css"),
     include_str!("../styles/overlays.css"),
+    include_str!("../styles/app-modal.css"),
+    include_str!("../styles/button-confirmation.css"),
+    include_str!("../styles/self-status.css"),
+    include_str!("../styles/slack-lists.css"),
     include_str!("../styles/settings.css"),
     include_str!("../styles/profile.css"),
     include_str!("../styles/huddle.css"),
@@ -63,6 +82,17 @@ pub fn shell() -> Element {
     let mut state = consume_context::<Signal<ShellState>>();
     let measurement_pending = use_signal(|| false);
     let measurement_queued = use_signal(|| false);
+    let thread_measurement_pending = use_signal(|| false);
+    let thread_measurement_queued = use_signal(|| false);
+    use_future(move || {
+        selection::run(
+            state,
+            measurement_pending,
+            measurement_queued,
+            thread_measurement_pending,
+            thread_measurement_queued,
+        )
+    });
     let timeline_lifecycle = use_memo(move || {
         let shell = state.read();
         (
@@ -120,21 +150,14 @@ pub fn shell() -> Element {
         .get(snapshot.active_channel)
         .map(|channel| channel.name.as_str())
         .unwrap_or("general");
-    let timeline_start = snapshot.timeline_start.min(snapshot.messages.len());
+    let timeline_start = snapshot.timeline_start.min(snapshot.channel_rows.len());
     let timeline_end = snapshot
         .timeline_end
         .max(timeline_start)
-        .min(snapshot.messages.len());
-    // Unmeasured rows keep a stable estimate. A moving average changes every
-    // unknown row above the reader whenever a large image is measured.
-    let top_height = snapshot.messages[..timeline_start]
-        .iter()
-        .map(|message| snapshot.estimated_row_height(&message.id))
-        .sum::<f64>();
-    let bottom_height = snapshot.messages[timeline_end..]
-        .iter()
-        .map(|message| snapshot.estimated_row_height(&message.id))
-        .sum::<f64>();
+        .min(snapshot.channel_rows.len());
+    let (top_height, bottom_height) = snapshot
+        .channel_geometry
+        .spacer_heights(timeline_start, timeline_end);
     let active_workspace = snapshot
         .core
         .active_team
@@ -266,7 +289,9 @@ pub fn shell() -> Element {
                             {conversation_header(state, &snapshot, channel_name, huddle.as_ref())}
                         }
                         {channel_resources::tabs(state, snapshot.channel_tab)}
-                        if snapshot.channel_tab == ChannelTab::Pins {
+                        if snapshot.channel_tab == ChannelTab::Bookmarks {
+                            crate::bookmarks::BookmarksPanel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}",state,channel:active_channel_id.to_owned()}
+                        } else if snapshot.channel_tab == ChannelTab::Pins {
                             pins::PinsPanel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}-{active_channel_id}",state,channel:active_channel_id.to_owned()}
                         } else if snapshot.channel_tab != ChannelTab::Messages {
                             channel_resources::ChannelResources {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}-{active_channel_id}",state,channel:active_channel_id.to_owned()}
@@ -275,8 +300,10 @@ pub fn shell() -> Element {
                             id: "message-timeline",
                             class: "timeline",
                             "data-timeline-scope":snapshot.timeline_scope(),
+                            "data-window-start":timeline_start,
+                            "data-window-end":timeline_end,
                             "data-scroll-pending":snapshot.core.pending_scroll_to.is_some().to_string(),
-                            onmounted:move |_| {dioxus::document::eval(&format!("{}();",include_str!("../timeline_anchor.js")));},
+                            onmounted:move |_| {dioxus::document::eval(&format!("{}();",include_str!("../timeline_anchor.js")));spawn(send_outcomes_check::run(state));dioxus::core::spawn_forever(channel_window_check::run(state));},
                             onscroll: move |_| {
                                 if !state.read().selection_pinned {
                                     schedule_timeline_measure(state, measurement_pending, measurement_queued);
@@ -289,13 +316,9 @@ pub fn shell() -> Element {
                                     shell.core.pending_scroll_to = None;
                                 }
                             },
-                            onselectstart: move |_| state.write().pin_selection(),
-                            onmouseup: move |_| {
-                                state.write().unpin_selection();
-                                schedule_timeline_measure(state, measurement_pending, measurement_queued);
-                            },
+                            "data-selection-pinned":snapshot.selection_pinned.to_string(),
                         div { class: "timeline-spacer", style: "height: {top_height}px" }
-                        for (offset, message) in snapshot.messages[timeline_start..timeline_end].iter().enumerate() {
+                        for (offset, message) in snapshot.messages.iter().enumerate() {
                             div {
                                 key: "{message.id}",
                                 class: "message-block",
@@ -311,7 +334,7 @@ pub fn shell() -> Element {
                                         span { "New" }
                                     }
                                 }
-                                {message_row(state, &snapshot, message, active_channel_id, Some(timeline_start + offset), RowSurface::Timeline)}
+                                {message_row(state, &snapshot, message, active_channel_id, Some(timeline_start + offset), RowSurface::Timeline, Some(crate::message_buttons::source::Bag::Timeline))}
                             }
                         }
                         div { class: "timeline-spacer", style: "height: {bottom_height}px" }
@@ -353,7 +376,7 @@ pub fn shell() -> Element {
                                 } else if snapshot.main_view == MainView::Activity {
                                     "Select a notification to view the details."
                                 } else if snapshot.main_view == MainView::Later {
-                                    "Select a saved message to open its conversation."
+                                    "Select a saved item to open it."
                                 } else {
                                     "Select a conversation."
                                 }
@@ -382,6 +405,8 @@ pub fn shell() -> Element {
                         {crate::thread_subscription::control(state, &snapshot)}
                         button {
                             class: "thread-close",
+                            "aria-label": "Close thread",
+                            title: "Close thread",
                             onclick: move |_| {
                                 let mut shell = state.write();
                                 // In Activity the thread *is* the surface, so
@@ -402,27 +427,31 @@ pub fn shell() -> Element {
                         class: "thread-body",
                         "data-timeline-scope":snapshot.thread_scope(),
                         "data-scroll-pending":snapshot.thread_target.is_some(),
-                        onmounted:move |_| {dioxus::document::eval(&format!("{}(\"thread-body\",\"superPlatinumThreadAnchor\");",include_str!("../timeline_anchor.js")));},
-                        onscroll: move |_| { spawn(measure_thread(state)); },
+                        onmounted:move |_| {dioxus::document::eval(&format!("{}(\"thread-body\",\"superPlatinumThreadAnchor\");",include_str!("../timeline_anchor.js")));spawn(thread_window_check::run(state));},
+                        onscroll: move |_| {thread_window::schedule(state,thread_measurement_pending,thread_measurement_queued);},
+                        "data-selection-pinned":snapshot.thread_window.selection_pinned.to_string(),
                         onwheel:move |_| {
                             let mut shell = state.write();
+                            shell.thread_window.user_navigation();
+                            shell.thread_target = None;
+                            shell.thread_at_bottom = false;
+                        },
+                        onpointerdown:move |_| {
+                            let mut shell = state.write();
+                            shell.thread_window.user_navigation();
+                            shell.thread_target = None;
+                            shell.thread_at_bottom = false;
+                        },
+                        ontouchmove:move |_| {
+                            let mut shell = state.write();
+                            shell.thread_window.user_navigation();
                             shell.thread_target = None;
                             shell.thread_at_bottom = false;
                         },
                         {crate::view::thread_paging::page_control(state, &snapshot, super_platinum_core::thread_history::Direction::Earlier)}
-                        for message in snapshot.thread_messages.iter().filter(|m| snapshot.thread_history.contains(root, &m.ts)) {
-                            div { key: "thread-{message.id}", "data-row-id":"{message.id}",
-                                if message.show_unread_divider { div {class:"unread-divider", span {"New"}} }
-                                {message_row(state, &snapshot, message, active_channel_id, None, RowSurface::Thread)}
-                            }
-                        }
+                        {thread_window::rows(state,&snapshot,active_channel_id,true)}
                         {crate::view::thread_paging::page_control(state, &snapshot, super_platinum_core::thread_history::Direction::Newer)}
-                        for message in snapshot.thread_messages.iter().filter(|m| !snapshot.thread_history.contains(root, &m.ts)) {
-                            div { key: "thread-{message.id}", "data-row-id":"{message.id}",
-                                if message.show_unread_divider { div {class:"unread-divider", span {"New"}} }
-                                {message_row(state, &snapshot, message, active_channel_id, None, RowSurface::Thread)}
-                            }
-                        }
+                        {thread_window::rows(state,&snapshot,active_channel_id,false)}
                         if let Some(error) = &snapshot.thread_error {
                             div { class:"thread-load-notice", role:"status",
                                 p { "{error}" }
@@ -451,7 +480,14 @@ pub fn shell() -> Element {
                 {crate::usergroups::pane(state, &snapshot)}
             }
             {huddle_stage::stage(state, &snapshot)}
-            if let Some(overlay) = snapshot.overlay { {overlay_view(state, overlay, &snapshot)} }
+            div {
+                id: "shell-overlays",
+                style: "display: contents",
+                onmounted: move |_| {
+                    dioxus::document::eval("window.superPlatinumOverlayKeyboard?.observe(document.getElementById('shell-overlays'));");
+                },
+                if let Some(overlay) = snapshot.overlay { {overlay_view(state, overlay, &snapshot)} }
+            }
             if let Some(hover) = snapshot.profile_hover.as_ref() {
                 {crate::profile::profile_hover_card(state, &snapshot, hover)}
             }

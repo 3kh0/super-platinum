@@ -1,0 +1,37 @@
+.modal.self-status-editor {
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(440px, calc(100vw - 32px)); max-height: calc(100vh - 24px);
+  padding: 0; display: flex; flex-direction: column; overflow: hidden;
+}
+.self-status-editor > header { flex: 0 0 auto; margin: 0; padding: 16px 20px; gap: 12px; }
+.self-status-editor > header h2 { flex: 1; min-width: 0; margin: 0; }
+.self-status-editor form { min-height: 0; display: flex; flex-direction: column; }
+.self-status-body { min-height: 0; overflow: auto; padding: 0 20px 20px; }
+.self-status-body > label, .self-status-custom > label { display: block; margin: 12px 0 6px; font-size: var(--text-sm); font-weight: 600; }
+.self-status-body > label:first-child { margin-top: 0; }
+.self-status-input-row { display: flex; align-items: center; gap: 8px; }
+.self-status-input-row input, .self-status-body select, .self-status-custom input {
+  min-width: 0; width: 100%; min-height: var(--control-height); margin: 0;
+  padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-md);
+  color: var(--text); background: var(--surface-raised);
+}
+.self-status-input-row input { flex: 1; }
+.self-status-emoji { flex: 0 0 36px; width: 36px; height: 36px; display: grid; place-items: center; overflow: hidden; background: var(--surface-raised); border-radius: var(--radius-md); font-size: 22px; }
+.self-status-emoji-image { width: 24px; height: 24px; object-fit: contain; }
+.self-status-hint-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 6px; }
+.self-status-hint-row p, .self-status-custom p { margin: 0; color: var(--muted); font-size: var(--text-sm); }
+.self-status-hint-row button { padding: 0; background: transparent; color: var(--muted); font-size: var(--text-sm); }
+.self-status-custom p { margin-top: 6px; }
+.self-status-error, .self-status-notice { margin: 12px 0 0; overflow-wrap: anywhere; font-size: var(--text-sm); }
+.self-status-error { color: var(--danger); }
+.self-status-notice { color: var(--muted); }
+.self-status-editor footer { flex: 0 0 auto; display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border); }
+.self-status-editor footer button { min-height: var(--control-height); padding: 0 12px; border-radius: var(--radius-md); background: var(--surface); color: var(--text); font-size: var(--text-sm); }
+.self-status-editor footer .self-status-save { background: var(--text); color: var(--bg); }
+.self-status-editor :is(button,input,select):disabled { opacity: .55; cursor: default; }
+.self-status-editor :is(button,input,select):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-height: 500px) {
+  .self-status-editor > header { padding: 12px 16px; }
+  .self-status-body { padding: 0 16px 12px; }
+  .self-status-editor footer { padding: 8px 16px; }
+}

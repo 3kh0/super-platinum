@@ -11,9 +11,9 @@ use dioxus::prelude::*;
 
 use super::rich::{
     attachment_embeds, message_plain_text, pending_attachment_strip, reactions_row, reply_bar,
-    rich_node,
+    rich_node, rich_node_for_message,
 };
-use crate::state::{MessageVm, ShellState};
+use crate::state::{MessageVm, RichNode, ShellState};
 
 /// Which surface a row is being rendered into.
 ///
@@ -173,11 +173,7 @@ fn message_meta(
             if message.edited { span { "(edited)" } }
             if message.pending {
                 span { class: "pending-label",
-                    if snapshot.pending_attachments_for_message(&message.id).is_some() {
-                        "Uploading…"
-                    } else {
-                        "Sending…"
-                    }
+                    "{snapshot.pending_delivery_label(&message.id)}"
                 }
             }
         }
@@ -250,7 +246,15 @@ pub(crate) fn message_row(
     channel_id: &str,
     index: Option<usize>,
     surface: RowSurface,
+    action_bag: Option<crate::message_buttons::source::Bag>,
 ) -> Element {
+    // Ordinary rows never need canonical bag scans or action revision clones.
+    // This allocation-free walk short-circuits at the first supported app control.
+    let action_source = action_bag
+        .filter(|_| !message.pending && body_has_app_control(&message.body))
+        .and_then(|bag| {
+            crate::message_buttons::source::Source::capture(snapshot, message, channel_id, bag).ok()
+        });
     let in_thread = surface.in_thread();
     let compact = message.compact && !message.pending;
     let class = if in_thread {
@@ -334,7 +338,11 @@ pub(crate) fn message_row(
                     }
                 } else {
                     div { class: if message.is_system { "message-body message-system" } else { "message-body" },
-                        for node in &message.body { {rich_node(node, snapshot.media_epoch, state)} }
+                        for node in &message.body {
+                            {if let Some(source)=action_source.as_ref() {
+                                rich_node_for_message(node,snapshot.media_epoch,state,source)
+                            } else {rich_node(node,snapshot.media_epoch,state)}}
+                        }
                         if compact && message.edited {span {class:"message-edited"," (edited)"}}
                     }
                     if !message.attachments.is_empty() {
@@ -354,6 +362,133 @@ pub(crate) fn message_row(
                     {reply_bar(state, &snapshot.media, snapshot.media_epoch, channel_id, message)}
                 }
             }
+        }
+    }
+}
+
+fn body_has_app_control(nodes: &[RichNode]) -> bool {
+    nodes.iter().any(node_has_app_control)
+}
+
+fn node_has_app_control(node: &RichNode) -> bool {
+    match node {
+        RichNode::Button { metadata, .. } => match &metadata.source {
+            super_platinum_core::block_actions::BlockElementSource::Button => true,
+            super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind } => {
+                matches!(kind.as_str(), "static_select" | "radio_buttons")
+            }
+        },
+        RichNode::Paragraph(nodes)
+        | RichNode::Quote(nodes)
+        | RichNode::Header(nodes)
+        | RichNode::Context(nodes)
+        | RichNode::Actions(nodes) => body_has_app_control(nodes),
+        RichNode::Section {
+            text,
+            fields,
+            accessory,
+        } => {
+            body_has_app_control(text)
+                || fields.iter().any(|field| body_has_app_control(field))
+                || accessory.as_deref().is_some_and(node_has_app_control)
+        }
+        RichNode::List { items, .. } => items.iter().any(|item| body_has_app_control(item)),
+        _ => false,
+    }
+}
+
+#[cfg(test)]
+mod button_presence_tests {
+    use super::*;
+    use crate::model::ButtonStyle;
+    use super_platinum_core::block_actions::{
+        BlockConfirmationState, BlockElementMetadata, BlockElementSource,
+    };
+
+    fn button(source: BlockElementSource) -> RichNode {
+        RichNode::Button {
+            label: "Review".into(),
+            url: None,
+            style: ButtonStyle::Default,
+            metadata: Box::new(BlockElementMetadata {
+                source,
+                block_id: Some("review".into()),
+                action_id: Some("open".into()),
+                value: None,
+                confirm: BlockConfirmationState::Missing,
+                accessibility_label: None,
+            }),
+        }
+    }
+
+    #[test]
+    fn ordinary_text_links_and_inert_controls_need_no_source_capture() {
+        let body = vec![
+            RichNode::Paragraph(vec![
+                RichNode::Text("A normal message".into()),
+                RichNode::Link {
+                    label: "Reference".into(),
+                    url: "https://example.test".into(),
+                },
+            ]),
+            RichNode::Actions(vec![button(BlockElementSource::UnsupportedControl {
+                kind: "multi_static_select".into(),
+            })]),
+        ];
+        assert!(!body_has_app_control(&body));
+    }
+
+    #[test]
+    fn supported_static_select_keeps_ownership_even_without_a_button() {
+        assert!(body_has_app_control(&[RichNode::Actions(vec![button(
+            BlockElementSource::UnsupportedControl {
+                kind: "static_select".into()
+            }
+        )])]));
+    }
+
+    #[test]
+    fn supported_radio_group_keeps_ownership_without_a_button() {
+        assert!(body_has_app_control(&[RichNode::Actions(vec![button(
+            BlockElementSource::UnsupportedControl {
+                kind: "radio_buttons".into()
+            }
+        )])]));
+    }
+
+    #[test]
+    fn app_buttons_in_every_recursive_body_container_keep_ownership() {
+        let button = button(BlockElementSource::Button);
+        let containers = vec![
+            RichNode::Paragraph(vec![button.clone()]),
+            RichNode::Quote(vec![button.clone()]),
+            RichNode::Header(vec![button.clone()]),
+            RichNode::Context(vec![button.clone()]),
+            RichNode::Actions(vec![button.clone()]),
+            RichNode::Section {
+                text: vec![button.clone()],
+                fields: vec![],
+                accessory: None,
+            },
+            RichNode::Section {
+                text: vec![],
+                fields: vec![vec![button.clone()]],
+                accessory: None,
+            },
+            RichNode::Section {
+                text: vec![],
+                fields: vec![],
+                accessory: Some(Box::new(button.clone())),
+            },
+            RichNode::List {
+                ordered: false,
+                indent: 0,
+                offset: 0,
+                items: vec![vec![button]],
+            },
+        ];
+        for container in containers {
+            assert!(body_has_app_control(&[container]));
         }
     }
 }

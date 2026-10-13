@@ -17,6 +17,10 @@ const SCHEMA_VERSION: i64 = 1;
 #[derive(serde::Deserialize)]
 struct CachedSidebar {
     #[serde(default)]
+    locale: Option<String>,
+    #[serde(default)]
+    deleted_files: std::collections::HashSet<String>,
+    #[serde(default)]
     thread_counts: Option<crate::slack::models::ThreadCounts>,
     #[serde(default)]
     notifications: crate::state::NotificationConfig,
@@ -32,6 +36,8 @@ struct CachedSidebar {
 
 #[derive(serde::Serialize)]
 struct CachedSidebarRef<'a> {
+    locale: Option<&'a str>,
+    deleted_files: &'a std::collections::HashSet<String>,
     thread_counts: Option<&'a crate::slack::models::ThreadCounts>,
     notifications: &'a crate::state::NotificationConfig,
     config: &'a crate::state::SidebarConfig,
@@ -157,10 +163,12 @@ impl Cache {
             .unwrap_or_default();
 
         let mut ws = Workspace {
+            deleted_files: Default::default(),
             team_id: session.team_id.clone(),
             name,
             url,
             self_user_id,
+            locale: None,
             activity_unread_count: None,
             thread_counts: Default::default(),
             channels: Default::default(),
@@ -172,9 +180,11 @@ impl Cache {
             frecency,
             priority_sidebar_section: false,
             vip_users: std::collections::HashSet::new(),
+            vip_revisions: Default::default(),
             sidebar: Default::default(),
             notifications: Default::default(),
             users: HashMap::new(),
+            bots: Default::default(),
             usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
             messages: HashMap::new(),
@@ -192,8 +202,10 @@ impl Cache {
             .and_then(|json| serde_json::from_str::<CachedSidebar>(json).ok())
         {
             ws.thread_counts = crate::state::ThreadCountsState::from_cache(sidebar.thread_counts);
+            ws.deleted_files = sidebar.deleted_files;
             ws.sidebar = sidebar.config;
             ws.notifications = sidebar.notifications;
+            ws.locale = sidebar.locale;
             ws.vip_users = sidebar.vip_users;
             ws.priority_sidebar_section = sidebar.priority_section;
             ws.starred_order = sidebar.starred_order;
@@ -305,6 +317,8 @@ impl Cache {
                 serde_json::to_string(&ws.recent_channels)?,
                 serde_json::to_string(&ws.frecency)?,
                 serde_json::to_string(&CachedSidebarRef {
+                    locale: ws.locale.as_deref(),
+                    deleted_files: &ws.deleted_files,
                     thread_counts: ws.thread_counts.snapshot.as_ref(),
                     notifications: &ws.notifications,
                     config: &ws.sidebar,
@@ -545,12 +559,15 @@ mod tests {
             mention_count_by_channel: [("C1".into(), 7)].into(),
         };
         workspace.thread_counts.apply_live(counts.clone());
+        workspace.deleted_files.insert("FDELETED".into());
         cache.save_workspace(&workspace).unwrap();
         let loaded = cache.load_workspace_for_startup(&session).unwrap().unwrap();
         assert_eq!(loaded.thread_counts.snapshot, Some(counts));
         assert_eq!(loaded.thread_counts.revision(), 0);
+        assert!(loaded.deleted_files.contains("FDELETED"));
         let old: CachedSidebar = serde_json::from_str(r#"{"priority_section":true}"#).unwrap();
         assert!(old.thread_counts.is_none());
+        assert!(old.deleted_files.is_empty());
         assert!(old.priority_section);
         workspace.thread_counts.apply_live(ThreadCounts::default());
         cache.save_workspace(&workspace).unwrap();
@@ -715,6 +732,7 @@ mod tests {
         let cache = Cache::open(":memory:").unwrap();
         let session = session();
         let mut ws = Workspace::from_session(&session);
+        ws.locale = Some("de-DE".into());
         ws.priority_sidebar_section = true;
         ws.vip_users.insert("U_VIP".into());
         ws.sidebar.behavior = "hide_read_channels_unless_starred".into();
@@ -745,6 +763,7 @@ mod tests {
         let loaded = cache.load_workspace(&session).unwrap().unwrap();
 
         assert!(loaded.priority_sidebar_section);
+        assert_eq!(loaded.locale.as_deref(), Some("de-DE"));
         assert!(loaded.vip_users.contains("U_VIP"));
         assert_eq!(loaded.sidebar.behavior, "hide_read_channels_unless_starred");
         assert!(loaded.sidebar.boost_mentions);

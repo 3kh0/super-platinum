@@ -2,16 +2,29 @@ use dioxus::prelude::*;
 
 mod activity_feed;
 mod agent;
+mod app_modal;
 mod appearance;
 mod auth;
 mod blocks;
+mod bookmarks;
+mod bookmarks_check;
 mod bootstrap;
+mod canvas;
+mod canvas_check;
+mod canvas_create;
 mod channel_discovery;
 mod channel_resources;
 mod channel_vm;
 mod clipboard;
+mod clipboard_check;
+mod completion_check;
 mod connection;
 mod download;
+mod drafts;
+mod file_actions;
+mod file_actions_check;
+mod file_events;
+mod file_preview;
 mod files;
 mod fixture;
 mod fonts;
@@ -19,30 +32,44 @@ mod forward;
 mod huddle;
 mod icons;
 mod interactions;
+mod keyboard_check;
 mod later;
 mod media;
+mod message_buttons;
 mod message_vm;
 mod messaging;
 mod model;
+mod new_dm;
 mod notification;
 mod overlays;
+mod palette;
+mod pdf_assets;
+mod pdf_preview;
 mod performance;
 mod pins;
 mod profile;
+mod profile_vip;
 mod reaction_picker;
 mod read_visibility;
 mod realtime;
 mod runtime;
 mod scheduled;
+mod self_status;
+mod slack_links;
+mod slack_links_check;
+mod slack_lists;
 mod state;
 mod thread_feed;
 mod thread_subscription;
 mod thread_unread;
 mod thread_vm;
+mod thread_window;
+mod timeline_geometry;
 mod unfurl;
 mod unread;
 mod usergroups;
 mod view;
+mod viewer_actions_check;
 
 use state::ShellState;
 pub(crate) use super_platinum_core::{config, slack};
@@ -109,11 +136,11 @@ fn app() -> Element {
         let state = state.read();
         (
             state.timeline_scope(),
-            state.messages.len(),
+            state.channel_rows.len(),
             state.stick_to_bottom,
             state.loading,
             state.signed_in,
-            state.messages.last().map(|message| message.id.clone()),
+            state.channel_rows.last().map(|message| message.id.clone()),
             state.core.pending_scroll_to.clone(),
         )
     });
@@ -174,17 +201,30 @@ fn app() -> Element {
         (
             state.thread_root.clone(),
             state.thread_scope(),
-            state.thread_messages.len(),
+            state
+                .thread_messages
+                .last()
+                .map(|message| message.id.clone()),
             state.thread_at_bottom,
             state.thread_target.clone(),
+            state.thread_window.input_generation,
         )
     });
     use_effect(move || {
-        let (root, scope, _, at_bottom, target) = thread_identity();
+        let (root, scope, _, at_bottom, target, input_generation) = thread_identity();
         if root.is_some() && (at_bottom || target.is_some()) {
             spawn(async move {
-                if state.peek().thread_scope() != scope {
-                    return;
+                // Input may retire this intention before the spawned task starts.
+                // Scope alone does not distinguish a reader scrolling this thread.
+                {
+                    let current = state.peek();
+                    if current.thread_scope() != scope
+                        || current.thread_target != target
+                        || current.thread_window.input_generation != input_generation
+                        || (target.is_none() && !current.thread_at_bottom)
+                    {
+                        return;
+                    }
                 }
                 if crate::bootstrap::scroll_thread(state, target.clone()).await
                     && state.peek().thread_scope() == scope
@@ -206,20 +246,39 @@ fn app() -> Element {
     });
     dioxus::desktop::use_asset_handler(huddle::ASSET_ROUTE, huddle::serve_asset);
     dioxus::desktop::use_asset_handler("fonts", fonts::serve_asset);
+    dioxus::desktop::use_asset_handler("pdf", move |request, responder| {
+        pdf_preview::serve_asset(state, request, responder)
+    });
     use_future(move || huddle::bridge(state));
     use_future(move || bootstrap::initialize(state));
     use_future(move || clipboard::watch(state));
     use_future(move || runtime::ticks(state));
     use_future(move || performance::watch_scroll(state));
+    use_future(move || keyboard_check::run(state));
+    use_future(move || completion_check::run(state));
+    use_future(move || clipboard_check::run(state));
+    use_future(move || canvas_check::run(state));
+    use_future(move || bookmarks_check::run(state));
+    use_future(move || file_preview::native_check(state));
+    use_future(move || file_actions_check::run(state));
+    use_future(move || viewer_actions_check::run(state));
+    use_future(move || pdf_preview::check::run(state));
     use_future(move || async move {
-        // Global shortcuts: ⌘/Ctrl+K palette, Esc closes overlays/hover.
+        dioxus::document::eval(include_str!("overlay_keyboard.js"));
+        // Global shortcuts: K palette, G workspace search, F conversation search.
         let mut bridge = dioxus::document::eval(
             r#"window.addEventListener('keydown', event => {
                  const meta = event.metaKey || event.ctrlKey;
                  if (meta && (event.key === 'k' || event.key === 'K')) {
                    event.preventDefault();
+                   window.superPlatinumOverlayKeyboard?.prepare('palette');
                    dioxus.send({type:'palette'});
+                 } else if (meta && !event.altKey && !event.shiftKey && ['f','F','g','G'].includes(event.key)) {
+                   event.preventDefault();
+                   window.superPlatinumOverlayKeyboard?.prepare('search');
+                   dioxus.send({type:'search', conversation:event.key.toLowerCase()==='f'});
                  } else if (event.key === 'Escape') {
+                   if (event.target?.closest?.('[data-escape-local]')) return;
                    dioxus.send({type:'escape', huddle: !!event.target.closest?.('[data-huddle-stage]')});
                  }
                });"#,
@@ -230,15 +289,23 @@ fn app() -> Element {
                 .and_then(|value| value.as_str())
                 .unwrap_or_default();
             match kind {
+                "search" => {
+                    state.write().open_search(
+                        payload
+                            .get("conversation")
+                            .and_then(serde_json::Value::as_bool)
+                            .unwrap_or(false),
+                    );
+                }
                 "palette" => {
                     let mut shell = state.write();
                     if shell.signed_in && !shell.loading {
-                        shell.overlay = Some(state::Overlay::Palette);
-                        shell.profile_hover = None;
+                        shell.open_palette();
                     }
                 }
                 "escape" => {
                     let mut shell = state.write();
+                    shell.cancel_profile_dm();
                     if payload.get("huddle").and_then(serde_json::Value::as_bool) == Some(true) {
                         if shell.huddle_ui.settings || shell.huddle_ui.invite {
                             shell.huddle_ui.settings = false;
@@ -253,7 +320,8 @@ fn app() -> Element {
                     if shell.profile_hover.take().is_some() {
                         continue;
                     }
-                    if shell.overlay.take().is_some() {
+                    if shell.overlay.is_some() {
+                        shell.dismiss_overlay();
                         continue;
                     }
                     if shell.profile_user.is_some() || shell.group_panel.is_some() {

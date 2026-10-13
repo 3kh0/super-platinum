@@ -61,9 +61,11 @@ pub(crate) fn FilesPanel(
             header {class:"files-header",
                 h2 {if channel.is_some() {"Shared files"} else {"Files"}}
                 span {class:"spacer"}
+                button {class:"later-refresh",onclick:move |_|crate::canvas_create::open(state),"New canvas"}
                 button {class:"later-refresh",disabled:loading,onclick:move |_|{dioxus::core::spawn_forever(crate::files::load(state,refresh.clone(),page));},"Refresh"}
             }
             }
+            if channel.is_none() {crate::file_actions::recovery_list::RecoveryList {state}}
             form {class:"files-search",onsubmit:move |event|{event.prevent_default();let value=text();reload(state,scope.peek().as_deref(),|q|q.text=value);},
                 {icon(Icon::Search,"icon")}
                 input {type:"search","aria-label":"Search files",placeholder:if channel.is_some() {"Search files in this conversation"} else {"Search files, or use in:channel and from:person"},value:"{text}",oninput:move |event|text.set(event.value())}
@@ -109,10 +111,13 @@ pub(crate) fn FilesPanel(
                                 let author=uploader.map(|id|super_platinum_core::state::display_name(workspace.and_then(|ws|ws.users.get(id)),id)).unwrap_or_default();
                                 let created=file.extra.get("created").and_then(|v|v.as_i64()).and_then(|t|super_platinum_core::state::date_key_for_ts(&t.to_string())).unwrap_or_default();
                                 let thumbnail=file.preview().map(|p|snapshot.media.register_image(super_platinum_core::MediaAssetKind::Attachment,&p.url,p.mime)).filter(|id|snapshot.media.is_ready(id));
-                                let external=matches!(file.filetype.as_deref(),Some("quip"|"canvas"|"list"|"lists"));
+                                let external=matches!(file.filetype.as_deref(),Some("list"|"lists"))
+                                    && !super_platinum_core::slack_lists::is_list(file);
                                 let open=file.clone();
+                                let target=crate::file_actions::Target::new(&snapshot,file);
+                                let epoch=target.epoch;let team=target.team.clone();
                                 rsx! {
-                                    div {role:"listitem",key:"{id}",
+                                    div {class:"file-result",role:"listitem",key:"{epoch}-{team}-{id}",
                                         button {class:"files-row",onclick:move |_|crate::files::open(state,open.clone()),
                                             span {class:"files-thumbnail",
                                                 if let Some(id)=thumbnail {super::media_image::MediaImage {state,id,media_epoch:snapshot.media_epoch,compact:true,loading:"lazy",fallback:icon(Icon::AttachFile,"icon")}}else{{icon(Icon::AttachFile,"icon")}}
@@ -124,6 +129,7 @@ pub(crate) fn FilesPanel(
                                             span {class:"files-date","{created}"}
                                             if external {span {class:"files-open-hint","Open in Slack"}}
                                         }
+                                        crate::file_actions::Actions {state,target}
                                     }
                                 }
                             }

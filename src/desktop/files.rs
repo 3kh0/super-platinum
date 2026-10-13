@@ -65,6 +65,13 @@ pub async fn load(mut state: Signal<ShellState>, query: FilesQuery, page: u32) {
         }
         match result {
             Ok(page) => {
+                let deleted = shell
+                    .core
+                    .workspaces
+                    .get(&team)
+                    .map(|w| w.deleted_files.clone())
+                    .unwrap_or_default();
+                store(&mut shell, channel).deleted.extend(deleted);
                 store(&mut shell, channel).apply(generation, page);
             }
             Err(error) => {
@@ -117,21 +124,29 @@ pub async fn load(mut state: Signal<ShellState>, query: FilesQuery, page: u32) {
 }
 
 pub fn open(mut state: Signal<ShellState>, file: File) {
-    if matches!(
-        file.filetype.as_deref(),
-        Some("quip" | "canvas" | "list" | "lists")
-    ) {
-        if let Some(url) = file.extra.get("permalink").and_then(|v| v.as_str()) {
-            if crate::media::open_external(url).is_err() {
-                state
-                    .write()
-                    .show_toast("This file link could not be opened.");
-            }
-        } else {
-            state
-                .write()
-                .show_toast("This file does not have an available link.");
-        }
+    let deleted = super_platinum_core::file_actions::deleted(&file) || {
+        let shell = state.peek();
+        shell
+            .core
+            .active_team
+            .as_ref()
+            .and_then(|team| shell.core.workspaces.get(team))
+            .is_some_and(|w| {
+                file.id
+                    .as_ref()
+                    .is_some_and(|id| w.deleted_files.contains(id))
+            })
+    };
+    if deleted {
+        state.write().show_toast("This file has been deleted.");
+        return;
+    }
+    if matches!(file.filetype.as_deref(), Some("quip" | "canvas")) {
+        crate::canvas::open(state, file);
+        return;
+    }
+    if super_platinum_core::slack_lists::is_list(&file) {
+        crate::slack_lists::open(state, file);
         return;
     }
     let Some(url) = file.full_url() else {
@@ -141,17 +156,16 @@ pub fn open(mut state: Signal<ShellState>, file: File) {
         return;
     };
     let mut shell = state.write();
-    let mime = file
-        .mimetype
-        .clone()
-        .unwrap_or_else(|| "application/octet-stream".into());
+    let mime = super_platinum_core::file_preview::mime_for_file(&file).to_owned();
     let id = shell
         .media
         .register_deferred(MediaAssetKind::Attachment, url, mime.clone());
     shell.media.request(&id);
     shell.viewer = Some(ViewerVm {
+        file: super_platinum_core::file_actions::identity(&file),
         id,
         name: super_platinum_core::state::file_title(&file),
+        download_name: super_platinum_core::state::file_download_name(&file),
         mime,
     });
     shell.overlay = Some(Overlay::Viewer);

@@ -1,11 +1,22 @@
 use std::collections::HashMap;
 
-use crate::channel_vm::{project_channels, project_messages_for_channel};
+use crate::channel_vm::{ChannelRow, channel_rows, project_channels};
 use crate::media::MediaRegistry;
 pub use crate::model::*;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PendingDeliveryStatus {
+    Failed,
+    Unconfirmed,
+}
+
 pub struct ShellState {
+    pub(crate) message_buttons: crate::message_buttons::State,
+    pub(crate) app_modal: Option<crate::app_modal::Session>,
+    pub(crate) app_modal_closes: Vec<crate::app_modal::CloseTicket>,
     pub core: super_platinum_core::CoreAppState,
+    pub(crate) managed_drafts: crate::drafts::session::Session,
+    pub(crate) draft_writes: crate::drafts::integration::Desktop,
     pub huddle_ui: super::HuddleUi,
     pub media: MediaRegistry,
     pub media_epoch: u64,
@@ -21,15 +32,23 @@ pub struct ShellState {
     /// What the sidebar layout carries between passes (see `SidebarMemory`).
     pub sidebar_memory: super_platinum_core::state::SidebarMemory,
     pub active_channel: usize,
+    /// Complete cheap row metadata; rich messages cover only the absolute window.
+    pub channel_rows: Vec<ChannelRow>,
+    pub(crate) channel_geometry: crate::timeline_geometry::Geometry,
     pub messages: Vec<MessageVm>,
-    pub messages_by_channel: HashMap<String, Vec<MessageVm>>,
+    pub(super) fixture_channel_messages: Option<Vec<MessageVm>>,
     pub timeline_start: usize,
     pub timeline_end: usize,
     pub row_heights: HashMap<String, f64>,
     pub message_arrivals: HashMap<String, std::time::Instant>,
+    /// Transient outcomes for globally unique optimistic timestamps. All send
+    /// writers guard account epoch and transport; account reloads replace this
+    /// map with the fresh ShellState. These labels are not durable recovery.
+    pub pending_delivery: HashMap<String, PendingDeliveryStatus>,
     pub selection_pinned: bool,
     /// Bumped while file uploads are in flight so progress UI re-renders.
     pub upload_ui_epoch: u64,
+    pub(crate) file_events: crate::file_events::Tracker,
     pub stick_to_bottom: bool,
     pub loading_older: bool,
     pub chat_paused: bool,
@@ -54,9 +73,19 @@ pub struct ShellState {
     pub storage: StoragePanel,
     pub palette_query: String,
     pub palette_selected: usize,
+    pub palette_generation: u64,
+    /// UI acknowledgement for a shortcut opening a fresh dialog visit.
+    pub shortcut_generation: u64,
+    pub palette_opening: Option<String>,
     pub search_query: String,
+    pub search_input_revision: u64,
+    pub search_focus_at_end: bool,
+    pub search_open_generation: u64,
+    pub search_opening: Option<(String, String)>,
+    pub search_filters: Option<super_platinum_core::search_query::SearchFilters>,
+    pub search_filter_error: Option<&'static str>,
     pub search_results: Vec<SearchResultVm>,
-    pub search_loading: bool,
+    pub search_pager: super_platinum_core::search::SearchPager,
     /// Cancels metadata resolution when another saved item is opened.
     pub later_open_generation: u64,
     /// Channel and `last_read` captured when the conversation was opened. The
@@ -67,6 +96,7 @@ pub struct ShellState {
     pub thread_unread: crate::thread_unread::ThreadUnreadState,
     pub thread_root: Option<String>,
     pub thread_messages: Vec<MessageVm>,
+    pub(crate) thread_window: crate::thread_window::ThreadWindow,
     /// Thread pane scroll anchor: true while the reader is parked at the newest
     /// reply, so arriving replies keep the pane pinned to the bottom.
     pub thread_at_bottom: bool,
@@ -76,13 +106,21 @@ pub struct ShellState {
     pub thread_error: Option<String>,
     pub thread_history: super_platinum_core::thread_history::ThreadHistory,
     pub profile_user: Option<String>,
+    pub profile_generation: u64,
+    pub profile_dm_generation: u64,
+    pub profile_dm_opening: Option<String>,
     pub group_panel: Option<crate::usergroups::GroupPanel>,
     pub profile_pane_width: f64,
     pub profile_menu_open: bool,
     /// Nested pause-notifications list inside the signed-in user's menu.
     pub self_menu_notifications_open: bool,
-    pub profile_vip_loading: bool,
+    pub(crate) slack_lists: crate::slack_lists::State,
+    pub(crate) self_status: crate::self_status::State,
+    pub self_menu_mutations: crate::bootstrap::SelfMenuMutations,
+    pub profile_vip_pending: crate::profile_vip::Pending,
     pub viewer: Option<ViewerVm>,
+    pub canvas: Option<CanvasTarget>,
+    pub canvas_create: Option<crate::canvas_create::Draft>,
     pub toast: Option<ToastVm>,
     /// What the rail says about the link to Slack.
     pub connection: ConnectionVm,
@@ -93,6 +131,9 @@ pub struct ShellState {
     /// moved on, so a slow history fetch cannot scroll or mark the conversation
     /// that replaced it.
     pub channel_generation: u64,
+    /// Supersedes unresolved Slack-link intents without cancelling history loads.
+    pub(crate) slack_link_generation: u64,
+    pub edit_generation: u64,
     pub realtime_insert_started: Option<std::time::Instant>,
 }
 
@@ -101,6 +142,33 @@ pub struct ShellState {
 pub const TOAST_LIFE: std::time::Duration = std::time::Duration::from_secs(5);
 
 impl ShellState {
+    pub(crate) fn pending_delivery_label(&self, ts: &str) -> &'static str {
+        match self.pending_delivery.get(ts) {
+            Some(PendingDeliveryStatus::Failed) => "Not sent",
+            Some(PendingDeliveryStatus::Unconfirmed) => "Delivery unconfirmed",
+            None if self.pending_attachments_for_message(ts).is_some() => "Uploading…",
+            None => "Sending…",
+        }
+    }
+
+    pub(crate) fn prune_pending_delivery(&mut self) {
+        if self.pending_delivery.is_empty() {
+            return;
+        }
+        let core = &self.core;
+        self.pending_delivery.retain(|ts, _| {
+            core.workspaces.values().any(|workspace| {
+                workspace
+                    .messages
+                    .values()
+                    .any(|messages| messages.pending.contains(ts))
+            }) || core
+                .threads
+                .values()
+                .any(|messages| messages.pending.contains(ts))
+        });
+    }
+
     /// Shows a transient status line, replacing whatever is on screen and
     /// restarting its five-second life.
     pub fn show_toast(&mut self, text: impl Into<String>) {
@@ -152,11 +220,13 @@ impl ShellState {
     /// pane must not linger with the previous item's replies when a channel
     /// item is opened next.
     pub fn close_thread(&mut self) {
+        self.cancel_profile_dm();
         self.checkpoint_composers();
         self.thread_generation = self.thread_generation.wrapping_add(1);
         self.thread_root = None;
         self.sync_composer_drafts();
         self.thread_messages.clear();
+        self.thread_window = Default::default();
         self.thread_at_bottom = true;
         self.thread_target = None;
         self.thread_loading = false;
@@ -248,11 +318,17 @@ impl ShellState {
         self.profile_hover_card_active = true;
     }
 
+    pub fn cancel_profile_dm(&mut self) {
+        self.profile_dm_generation = self.profile_dm_generation.wrapping_add(1);
+        self.profile_dm_opening = None;
+    }
+
     pub fn close_profile(&mut self) {
+        self.profile_generation = self.profile_generation.wrapping_add(1);
+        self.cancel_profile_dm();
         self.profile_user = None;
         self.group_panel = None;
         self.profile_menu_open = false;
-        self.profile_vip_loading = false;
         self.core.profile_pane = None;
     }
 
@@ -269,15 +345,16 @@ impl ShellState {
     }
 
     pub fn refresh_from_core(&mut self) {
+        self.prune_pending_delivery();
         let held_window = (self.core.pending_scroll_to.is_none()
             && self.channels.get(self.active_channel).map(|c| &c.id)
                 == self.core.active_channel.as_ref())
         .then(|| {
-            self.messages[self.timeline_start.min(self.messages.len())
+            self.channel_rows[self.timeline_start.min(self.channel_rows.len())
                 ..self
                     .timeline_end
-                    .min(self.messages.len())
-                    .max(self.timeline_start.min(self.messages.len()))]
+                    .min(self.channel_rows.len())
+                    .max(self.timeline_start.min(self.channel_rows.len()))]
                 .iter()
                 .map(|m| m.id.clone())
                 .collect::<Vec<_>>()
@@ -288,6 +365,27 @@ impl ShellState {
         let Some(workspace) = self.core.workspaces.get(&team) else {
             return;
         };
+        if self
+            .viewer
+            .as_ref()
+            .and_then(|v| v.file.as_ref().map(|f| &f.id))
+            .is_some_and(|id| workspace.deleted_files.contains(id))
+        {
+            self.viewer = None;
+            if self.overlay == Some(Overlay::Viewer) {
+                self.overlay = None;
+            }
+        }
+        if self
+            .canvas
+            .as_ref()
+            .is_some_and(|v| workspace.deleted_files.contains(&v.id))
+        {
+            self.canvas = None;
+            if self.overlay == Some(Overlay::Canvas) {
+                self.overlay = None;
+            }
+        }
         self.self_account = project_self_account(workspace, &self.media);
         let preferred_active = self.core.active_channel.clone();
         let (mut channels, sidebar_sections, default_active, _) = project_channels(
@@ -315,61 +413,35 @@ impl ShellState {
             .as_ref()
             .and_then(|id| channels.iter().position(|channel| &channel.id == id))
             .unwrap_or(active_channel.min(channels.len().saturating_sub(1)));
-        let active_messages = channels.get(active_channel).map(|channel| {
-            (
-                channel.id.clone(),
-                project_messages_for_channel(
-                    workspace,
-                    &channel.id,
-                    &self.media,
-                    self.divider_at(&channel.id),
-                ),
-            )
-        });
-        let mut messages_by_channel = std::mem::take(&mut self.messages_by_channel);
-        if let Some((channel, messages)) = &active_messages {
-            messages_by_channel.insert(channel.clone(), messages.clone());
-        }
+        let rows = channels
+            .get(active_channel)
+            .map(|channel| channel_rows(workspace, &channel.id, self.divider_at(&channel.id)))
+            .unwrap_or_default();
         self.active_channel = active_channel;
         self.sidebar_sections = sidebar_sections;
         self.channels = channels;
-        self.messages = active_messages
-            .map(|(_, messages)| messages)
-            .unwrap_or_default();
-        self.messages_by_channel = messages_by_channel;
-        if let (Some(channel), Some(root)) =
-            (self.core.active_channel.as_ref(), self.thread_root.as_ref())
-            && let Some(messages) =
-                self.core
-                    .threads
-                    .get(&(team.clone(), channel.clone(), root.clone()))
-        {
-            self.thread_messages = crate::thread_vm::project(
-                workspace,
-                messages,
-                &self.thread_history,
-                root,
-                &self.media,
-            );
-        }
-        crate::thread_unread::annotate(self);
+        self.fixture_channel_messages = None;
+        self.channel_rows = rows;
+        self.rebuild_channel_geometry();
+        self.refresh_thread_from_core();
         if let Some(ids) = held_window {
             self.restore_timeline_window(&ids);
-            if self.stick_to_bottom {
+            if self.stick_to_bottom && !self.selection_pinned {
                 // Keep the measured bottom neighborhood instead of mounting
                 // 100 rows again on every presence/reaction/metadata refresh.
                 // Include arrivals, with a bound for large history merges.
-                self.timeline_end = self.messages.len();
+                self.timeline_end = self.channel_rows.len();
                 self.timeline_start = self
                     .timeline_start
                     .max(self.timeline_end.saturating_sub(100));
             }
         } else {
-            self.reset_timeline_window();
+            self.reset_timeline_bounds();
         }
         if let Some(channel) = self.channels.get(active_channel) {
             self.core.active_channel = Some(channel.id.clone());
         }
+        self.reproject_channel_window();
         self.sync_composer_drafts();
     }
 }
@@ -403,11 +475,15 @@ pub(crate) fn project_self_account(
 }
 
 pub(crate) fn keep_recent_messages(state: &mut ShellState, count: usize) {
-    let len = state.messages.len();
+    let mut messages = state
+        .fixture_channel_messages
+        .take()
+        .unwrap_or_else(|| state.messages.clone());
+    let len = messages.len();
     if len > count {
-        state.messages = state.messages.split_off(len - count);
+        messages = messages.split_off(len - count);
     }
-    state.reset_timeline_window();
+    state.install_fixture_messages(messages);
 }
 
 pub(crate) fn account_vms(accounts: &super_platinum_core::config::Accounts) -> Vec<AccountVm> {
@@ -425,4 +501,95 @@ pub(crate) fn account_vms(accounts: &super_platinum_core::config::Accounts) -> V
             active: id == &accounts.active_account,
         })
         .collect()
+}
+
+impl ShellState {
+    pub fn replace_search_query(&mut self, query: String) {
+        self.search_focus_at_end = false;
+        self.cancel_search_open();
+        self.search_input_revision = self.search_input_revision.wrapping_add(1);
+        self.set_search_query(query);
+    }
+
+    pub fn set_search_query(&mut self, query: String) {
+        if self.search_query.trim() != query.trim() {
+            self.cancel_search_open();
+            self.search_pager.reset();
+            self.search_results.clear();
+            self.search_filters = None;
+            self.search_filter_error = None;
+        }
+        self.search_query = query;
+    }
+}
+
+impl ShellState {
+    pub fn apply_search_filters(&mut self) -> bool {
+        let Some(filters) = self.search_filters.as_ref() else {
+            return false;
+        };
+        match filters.apply(&self.search_query) {
+            Ok(query) => {
+                self.replace_search_query(query);
+                self.search_filters = None;
+                self.search_filter_error = None;
+                true
+            }
+            Err(error) => {
+                self.search_filter_error = Some(error);
+                false
+            }
+        }
+    }
+}
+
+impl ShellState {
+    pub fn cancel_search_open(&mut self) {
+        self.search_open_generation = self.search_open_generation.wrapping_add(1);
+        self.search_opening = None;
+    }
+
+    pub fn dismiss_overlay(&mut self) {
+        if self.overlay == Some(Overlay::ButtonConfirmation) {
+            crate::message_buttons::cancel_local(self);
+            return;
+        }
+        if self.overlay == Some(Overlay::AppModal) {
+            crate::app_modal::dismiss_local(self);
+            return;
+        }
+        if self.overlay == Some(Overlay::SlackList) {
+            crate::slack_lists::close_shell(self);
+            return;
+        }
+        if self.overlay == Some(Overlay::SelfStatus) {
+            crate::self_status::close_shell(self);
+            return;
+        }
+        self.cancel_profile_dm();
+        self.cancel_palette_open();
+        self.cancel_search_open();
+        self.overlay = None;
+    }
+
+    pub fn open_search(&mut self, conversation: bool) {
+        if !self.signed_in || self.loading {
+            return;
+        }
+        self.shortcut_generation = self.shortcut_generation.wrapping_add(1);
+        self.cancel_profile_dm();
+        self.cancel_search_open();
+        if conversation && self.detail_open() {
+            if let Some(channel) = self.core.active_channel.clone() {
+                self.replace_search_query(format!("in:<#{channel}> "));
+                self.search_focus_at_end = true;
+            }
+        } else {
+            // Reopening a workspace search retains the previous query/results.
+            self.search_focus_at_end = false;
+            self.search_input_revision = self.search_input_revision.wrapping_add(1);
+        }
+        self.profile_hover = None;
+        self.overlay = Some(Overlay::Search);
+    }
 }

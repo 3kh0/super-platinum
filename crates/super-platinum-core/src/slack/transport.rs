@@ -12,6 +12,15 @@ use wreq_util::Emulation;
 use super::Error;
 use super::client::{PreparedRequest, RequestBody, redact_secrets};
 
+#[cfg(test)]
+mod file_viewing_tests;
+#[cfg(test)]
+mod list_cell_update_tests;
+#[cfg(test)]
+mod list_read_state_tests;
+#[cfg(test)]
+mod list_record_create_tests;
+
 /// What the last Slack API call said about the link to Slack.
 ///
 /// This is the shell's recovery signal as much as its failure signal: a request
@@ -23,7 +32,7 @@ pub enum Health {
     Unknown,
     /// Slack answered — even with an error, which still means the link is up.
     Online,
-    /// The request never reached Slack.
+    /// The link failed; an in-flight write may already have reached Slack.
     Offline,
 }
 
@@ -170,6 +179,104 @@ impl Transport {
         }
     }
 
+    /// Preserve structured app feedback for the narrow Block Kit protocol.
+    /// Unlike generic API errors, these payloads contain form-field feedback.
+    /// Typed endpoint decoders must interpret `ok`; callers must not log values.
+    /// Every call is a single attempt, including views.get, so action writes
+    /// cannot become retryable through a future generic endpoint policy change.
+    /// Writes never wait for recovery: the caller's validated owner and source
+    /// may change while offline. The internal unsent marker distinguishes that
+    /// preflight rejection from an ambiguous network failure after sending.
+    pub async fn execute_block_interaction(&self, req: PreparedRequest) -> Result<Value, Error> {
+        if !is_block_interaction_request(&req) {
+            return Err(Error::Api("unsupported_block_interaction_request".into()));
+        }
+        let read_only = url::Url::parse(&req.url).is_ok_and(|url| url.path() == "/api/views.get");
+        if read_only {
+            self.await_link().await?;
+        } else if self.health() == Health::Offline {
+            return Err(Error::Api("block_interaction_not_sent_offline".into()));
+        }
+        self.execute_once_with_response(&req, true).await
+    }
+
+    /// File-view presence belongs to the caller's current visible visit. Never
+    /// hold it for recovery or retry after sending: that visit may have closed.
+    /// Known-offline rejection happens before dispatch; errors after
+    /// execute_once starts retain the ordinary transport semantics.
+    pub async fn execute_file_viewing(&self, req: PreparedRequest) -> Result<Value, Error> {
+        if req.method != "POST"
+            || !url::Url::parse(&req.url).is_ok_and(|url| {
+                matches!(
+                    url.path(),
+                    "/api/files.open" | "/api/files.ping" | "/api/files.close"
+                )
+            })
+        {
+            return Err(Error::Api("unsupported_file_viewing_request".into()));
+        }
+        if self.health() == Health::Offline {
+            return Err(Error::Offline(
+                "file viewing request not sent while offline".into(),
+            ));
+        }
+        self.execute_once(&req).await
+    }
+
+    /// List-open/read tracking changes server state and belongs to one visible
+    /// visit. The caller revalidates that visit immediately before this call.
+    /// Never hold for reconnection or replay a request after an uncertain reply.
+    pub async fn execute_list_read_state(&self, req: PreparedRequest) -> Result<Value, Error> {
+        if req.method != "POST"
+            || !url::Url::parse(&req.url).is_ok_and(|url| {
+                matches!(
+                    url.path(),
+                    "/api/lists.open" | "/api/files.markRead" | "/api/lists.getDefaultView"
+                )
+            })
+        {
+            return Err(Error::Api("unsupported_list_read_state_request".into()));
+        }
+        if self.health() == Health::Offline {
+            return Err(Error::Offline(
+                "List read-state request not sent while offline".into(),
+            ));
+        }
+        self.execute_once(&req).await
+    }
+
+    /// A List cell write is authorized against a fresh caller-owned snapshot.
+    /// Never hold that authorization across recovery or replay an uncertain write.
+    pub async fn execute_list_cell_update(&self, req: PreparedRequest) -> Result<Value, Error> {
+        if req.method != "POST"
+            || !url::Url::parse(&req.url).is_ok_and(|url| url.path() == "/api/lists.cells.update")
+        {
+            return Err(Error::Api("unsupported_list_cell_update_request".into()));
+        }
+        if self.health() == Health::Offline {
+            return Err(Error::Offline(
+                "List cell update not sent while offline".into(),
+            ));
+        }
+        self.execute_once(&req).await
+    }
+
+    /// A new List record has a server-generated identity and no replay key.
+    /// Send once against the caller's fresh authorization; never queue offline.
+    pub async fn execute_list_record_create(&self, req: PreparedRequest) -> Result<Value, Error> {
+        if req.method != "POST"
+            || !url::Url::parse(&req.url).is_ok_and(|url| url.path() == "/api/lists.records.create")
+        {
+            return Err(Error::Api("unsupported_list_record_create_request".into()));
+        }
+        if self.health() == Health::Offline {
+            return Err(Error::Offline(
+                "List item creation not sent while offline".into(),
+            ));
+        }
+        self.execute_once(&req).await
+    }
+
     pub async fn upload_bytes(
         &self,
         url: &str,
@@ -205,6 +312,14 @@ impl Transport {
     }
 
     async fn execute_once(&self, req: &PreparedRequest) -> Result<Value, Error> {
+        self.execute_once_with_response(req, false).await
+    }
+
+    async fn execute_once_with_response(
+        &self,
+        req: &PreparedRequest,
+        structured_block_response: bool,
+    ) -> Result<Value, Error> {
         let req_url = req.url.clone();
         let mut builder = match req.method {
             "POST" => self.http.post(&req.url),
@@ -227,6 +342,11 @@ impl Transport {
         };
 
         let response = builder.send().await.map_err(|error| {
+            let error = if structured_block_response {
+                error.without_uri()
+            } else {
+                error
+            };
             let error = send_error(error);
             if error.is_offline() {
                 self.set_health(Health::Offline);
@@ -243,22 +363,37 @@ impl Transport {
             return Err(Error::RateLimited { retry_after_secs });
         }
         if !status.is_success() {
-            tracing::warn!(
-                url = %redact_secrets(&req_url),
-                status = %status,
-                retry_after_secs = ?retry_after_secs,
-                "slack http error"
-            );
+            if !structured_block_response {
+                tracing::warn!(
+                    url = %redact_secrets(&req_url),
+                    status = %status,
+                    retry_after_secs = ?retry_after_secs,
+                    "slack http error"
+                );
+            }
             return Err(Error::HttpStatus {
                 status: status.as_u16(),
                 retry_after_secs,
             });
         }
 
-        let value: Value = response
-            .json()
-            .await
-            .map_err(|e| Error::Transport(format!("decode ({status}): {e}")))?;
+        let value: Value = response.json().await.map_err(|e| {
+            if structured_block_response {
+                Error::Transport("invalid block interaction JSON response".into())
+            } else {
+                Error::Transport(format!("decode ({status}): {e}"))
+            }
+        })?;
+
+        if structured_block_response {
+            return if value.is_object() {
+                Ok(value)
+            } else {
+                Err(Error::Transport(
+                    "invalid block interaction response object".into(),
+                ))
+            };
+        }
 
         if value.get("ok").and_then(Value::as_bool) == Some(false) {
             let err = value
@@ -368,6 +503,20 @@ impl Transport {
         read_media_body(response, MAX_MEDIA_BYTES).await
     }
 }
+
+fn is_block_interaction_request(req: &PreparedRequest) -> bool {
+    req.method == "POST"
+        && url::Url::parse(&req.url).is_ok_and(|url| {
+            matches!(
+                url.path(),
+                "/api/blocks.actions" | "/api/views.get" | "/api/views.submit" | "/api/views.close"
+            )
+        })
+}
+
+#[cfg(test)]
+#[path = "transport/block_interaction_tests.rs"]
+mod block_interaction_tests;
 
 async fn read_media_body(response: wreq::Response, limit: usize) -> Result<Vec<u8>, Error> {
     if response

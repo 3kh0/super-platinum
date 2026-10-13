@@ -6,7 +6,13 @@
 //! `mrkdwn`, `<…>` entities, emoji, mentions — lives in [`text`]. Nothing here
 //! touches the DOM; `view/rich.rs` renders the nodes this module produces.
 
+pub(crate) mod action;
+mod controls;
 mod text;
+
+pub(crate) use action::fixture::apply as button_metadata_fixture;
+pub(crate) use action::fixture::check_native as check_button_metadata_native;
+pub(crate) use controls::fixture::apply as controls_fixture;
 
 use text::{channel_mention, emoji_node};
 pub(crate) use text::{custom_emoji_media, mrkdwn_blocks, mrkdwn_inline, plain_inline_nodes};
@@ -16,7 +22,7 @@ use super_platinum_core::MediaAssetKind;
 use super_platinum_core::state::Workspace;
 
 use crate::media::MediaRegistry;
-use crate::model::{ButtonStyle, RichNode};
+use crate::model::{BlockElementSource, ButtonStyle, RichNode};
 
 /// Everything block translation needs to resolve names, emoji, and media.
 #[derive(Clone, Copy)]
@@ -47,6 +53,14 @@ impl<'a> BlockCtx<'a> {
 
 /// Translate one Block Kit block (or nested element) into rich nodes.
 pub(crate) fn block_nodes(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {
+    block_nodes_in(ctx, value, None)
+}
+
+fn block_nodes_in(
+    ctx: BlockCtx<'_>,
+    value: &Value,
+    parent_block_id: Option<&str>,
+) -> Vec<RichNode> {
     match value.get("type").and_then(Value::as_str) {
         // ── rich_text family ─────────────────────────────────────────────
         Some("rich_text") => elements(value)
@@ -93,7 +107,15 @@ pub(crate) fn block_nodes(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {
                 .unwrap_or_default(),
             accessory: value
                 .get("accessory")
-                .and_then(|accessory| block_nodes(ctx, accessory).into_iter().next())
+                .and_then(|accessory| {
+                    block_nodes_in(
+                        ctx,
+                        accessory,
+                        value.get("block_id").and_then(Value::as_str),
+                    )
+                    .into_iter()
+                    .next()
+                })
                 .map(Box::new),
         }],
         Some("context") => vec![RichNode::Context(
@@ -103,12 +125,15 @@ pub(crate) fn block_nodes(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {
         )],
         Some("actions") => vec![RichNode::Actions(
             elements(value)
-                .flat_map(|element| block_nodes(ctx, element))
+                .flat_map(|element| {
+                    block_nodes_in(ctx, element, value.get("block_id").and_then(Value::as_str))
+                })
                 .collect(),
         )],
         Some("image") => image_block(ctx, value),
 
         // ── interactive elements ─────────────────────────────────────────
+        Some("button") if !action::visible_to(value, &ctx.workspace.self_user_id) => Vec::new(),
         Some("button") => vec![RichNode::Button {
             label: text_object_plain(value.get("text")).unwrap_or_else(|| "Button".into()),
             url: value
@@ -117,9 +142,14 @@ pub(crate) fn block_nodes(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {
                 .map(str::to_owned)
                 .filter(|url| !url.is_empty()),
             style: ButtonStyle::from_block(value.get("style").and_then(Value::as_str)),
+            metadata: Box::new(action::metadata(
+                value,
+                parent_block_id,
+                BlockElementSource::Button,
+            )),
         }],
         // Menus, pickers, and inputs cannot round-trip to Slack from here.
-        // Render their placeholder so the block's layout still reads right.
+        // Preserve their supplied initial value, falling back to the placeholder.
         Some(
             kind @ ("static_select"
             | "external_select"
@@ -127,6 +157,7 @@ pub(crate) fn block_nodes(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {
             | "conversations_select"
             | "channels_select"
             | "multi_static_select"
+            | "multi_external_select"
             | "multi_users_select"
             | "multi_channels_select"
             | "multi_conversations_select"
@@ -139,11 +170,16 @@ pub(crate) fn block_nodes(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {
             | "plain_text_input"
             | "workflow_button"),
         ) => vec![RichNode::Button {
-            label: text_object_plain(value.get("placeholder"))
-                .or_else(|| text_object_plain(value.get("text")))
-                .unwrap_or_else(|| placeholder_label(kind).to_owned()),
+            label: controls::label(ctx, kind, value),
             url: None,
             style: ButtonStyle::Default,
+            metadata: Box::new(action::metadata(
+                value,
+                parent_block_id,
+                BlockElementSource::UnsupportedControl {
+                    kind: kind.to_owned(),
+                },
+            )),
         }],
 
         // ── inline leaves ────────────────────────────────────────────────
@@ -227,17 +263,6 @@ pub(crate) fn block_nodes(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {
                 .to_owned(),
         )],
         _ => Vec::new(),
-    }
-}
-
-fn placeholder_label(kind: &str) -> &'static str {
-    match kind {
-        "overflow" => "More",
-        "datepicker" => "Select a date",
-        "timepicker" => "Select a time",
-        "datetimepicker" => "Select a date and time",
-        "plain_text_input" => "Text input",
-        _ => "Select",
     }
 }
 

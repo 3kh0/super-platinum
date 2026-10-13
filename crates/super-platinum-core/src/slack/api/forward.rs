@@ -1,8 +1,8 @@
 use super::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ForwardMessage {
     pub source: String,
     pub timestamp: String,

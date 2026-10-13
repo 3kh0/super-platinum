@@ -290,6 +290,14 @@ fn deserialize_conversations_open() {
     )
     .unwrap();
     assert_eq!(opened.channel.id, "D0ALICE");
+    let group: OpenedConversation = serde_json::from_value(serde_json::json!({
+        "channel": {"id":"G1", "is_mpim":true, "is_private":true, "name":"mpdm-alice--bob-1", "members":["U1","U2","SELF"]}
+    })).unwrap();
+    assert!(group.channel.is_mpim);
+    assert_eq!(
+        group.channel.extra["members"],
+        serde_json::json!(["U1", "U2", "SELF"])
+    );
 }
 
 #[test]

@@ -102,9 +102,21 @@ pub(crate) fn annotate(shell: &mut ShellState) {
                 .and_then(|key| shell.core.thread_cursor(&key))
                 .map(str::to_owned)
         });
+    let exact = shell
+        .thread_window
+        .rows
+        .iter()
+        .find(|row| {
+            shell.thread_root.as_ref() != Some(&row.ts)
+                && cursor.as_deref().is_some_and(|cursor| {
+                    super_platinum_core::state::cmp_ts(Some(&row.ts), Some(cursor)).is_gt()
+                })
+        })
+        .map(|row| row.ts.as_str());
     let mut found = false;
     for message in &mut shell.thread_messages {
-        message.show_unread_divider = !found
+        message.show_unread_divider = exact.is_none_or(|ts| ts == message.ts)
+            && !found
             && shell.thread_root.as_ref() != Some(&message.ts)
             && cursor.as_deref().is_some_and(|cursor| {
                 super_platinum_core::state::cmp_ts(Some(&message.ts), Some(cursor)).is_gt()

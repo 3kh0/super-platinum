@@ -52,6 +52,36 @@ pub(crate) fn set_field_text(id: &str, text: &str) {
     ));
 }
 
+pub(crate) fn clear_delivered_field(id: &str, scope: &str, expected: &str) {
+    let args = serde_json::to_string(&(id, scope, expected)).unwrap();
+    dioxus::document::eval(&format!(
+        "{}; clearDeliveredComposer(...{args});",
+        include_str!("../composer_delivery.js"),
+    ));
+}
+
+pub(crate) fn channel_field_scope(shell: &ShellState) -> String {
+    field_scope(shell, ComposerTarget::Channel)
+}
+
+pub(crate) fn replace_reviewed_field(id: &str, scope: &str, expected: &str, text: &str) {
+    let args = serde_json::to_string(&(id, scope, expected, text)).unwrap();
+    dioxus::document::eval(&format!(
+        "{}; replaceReviewedComposer(...{args});",
+        include_str!("../composer_delivery.js"),
+    ));
+}
+
+pub(crate) fn field_scope(shell: &ShellState, target: ComposerTarget) -> String {
+    format!(
+        "{}:{}:{:?}:{:?}",
+        shell.draft_writes.view_id,
+        shell.core.account_epoch,
+        shell.core.active_account,
+        shell.composer_key(target)
+    )
+}
+
 /// Focuses a text field that may not be mounted yet, caret at the end.
 ///
 /// The thread pane renders a frame after `thread_root` is set, so the field is
@@ -96,11 +126,12 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
     };
     let destination = state.read().composer_key(ComposerTarget::Channel);
     let account = state.read().core.active_account.clone();
-    let field_key = format!("{account:?}:{destination:?}");
+    let field_key = channel_field_scope(&state.read());
     let upload_epoch = state.read().upload_ui_epoch;
     let composer_attachments = state.read().core.composer_attachments.clone();
     rsx! {
         footer { key: "{field_key}", class: "composer-wrap",
+            super::completion::ComposerCompletion {state,target:ComposerTarget::Channel,field_id:"channel-composer"}
             {format_toolbar(state, ComposerTarget::Channel)}
             if !composer_attachments.is_empty() {
                 div { class: "attachment-chips",
@@ -116,6 +147,7 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
                 }
                 textarea {
                     id: "channel-composer",
+                    "data-draft-scope": "{field_key}",
                     initial_value: "{text}",
                     placeholder: "{placeholder}",
                     onmounted: move |_| mount_autosize("channel-composer"),
@@ -134,6 +166,7 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
                         // is exactly what makes typing feel gluey.
                     },
                     onkeydown: move |event| {
+                        if event.is_composing() { return; }
                         if let Some(mark) = format_shortcut(&event) {
                             event.prevent_default();
                             spawn(format_composer_dom(state, ComposerTarget::Channel, mark));
@@ -166,10 +199,11 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
     }
     let destination = snapshot.composer_key(ComposerTarget::Thread);
     let account = snapshot.core.active_account.clone();
-    let field_key = format!("{account:?}:{destination:?}");
+    let field_key = field_scope(snapshot, ComposerTarget::Thread);
     let upload_epoch = snapshot.upload_ui_epoch;
     rsx! {
         footer { key: "{field_key}", class: "thread-composer",
+            super::completion::ComposerCompletion {state,target:ComposerTarget::Thread,field_id:"thread-composer"}
             {format_toolbar(state, ComposerTarget::Thread)}
             if !snapshot.core.thread_composer_attachments.is_empty() {
                 div { class: "attachment-chips",
@@ -185,6 +219,7 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
                 }
                 textarea {
                     id: "thread-composer",
+                    "data-draft-scope": "{field_key}",
                     onmounted: move |_| mount_autosize("thread-composer"),
                     initial_value: "{snapshot.core.thread_composer.text}",
                     placeholder: "Reply…",
@@ -199,6 +234,7 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
                         shell.checkpoint_composers();
                     },
                     onkeydown: move |event| {
+                        if event.is_composing() { return; }
                         if let Some(mark) = format_shortcut(&event) {
                             event.prevent_default();
                             spawn(format_composer_dom(state, ComposerTarget::Thread, mark));
@@ -230,6 +266,8 @@ fn mount_autosize(id: &str) {
              editor.style.height = Math.min(160, Math.max(28, editor.scrollHeight)) + 'px';
            }};
            editor.addEventListener('input', resize);
+           editor.addEventListener('compositionstart', () => editor.dataset.composing = 'true');
+           editor.addEventListener('compositionend', () => editor.dataset.composing = 'false');
            resize();"#,
     ));
 }
@@ -365,12 +403,13 @@ pub(crate) fn schedule_timeline_measure(
 }
 
 async fn measure_timeline(mut state: Signal<ShellState>, queued: Signal<bool>) {
-    let (generation, team, channel, first_measurement) = {
+    let (generation, team, channel, window, first_measurement) = {
         let shell = state.read();
         (
             shell.channel_generation,
             shell.core.active_team.clone(),
             shell.core.active_channel.clone(),
+            (shell.timeline_start, shell.timeline_end),
             shell.row_heights.is_empty()
                 && shell.stick_to_bottom
                 && !matches!(
@@ -394,6 +433,8 @@ async fn measure_timeline(mut state: Signal<ShellState>, queued: Signal<bool>) {
               }));
               const visible = rows.filter(row => row.bottom >= bounds.top && row.top <= bounds.bottom);
               dioxus.send({
+                windowStart: Number(timeline.dataset.windowStart),
+                windowEnd: Number(timeline.dataset.windowEnd),
                 visible: visible.length > 0,
                 scrollTop: timeline.scrollTop,
                 viewportHeight: timeline.clientHeight,
@@ -461,12 +502,24 @@ async fn measure_timeline(mut state: Signal<ShellState>, queued: Signal<bool>) {
         if shell.channel_generation != generation
             || shell.core.active_team != team
             || shell.core.active_channel != channel
+        {
+            return;
+        }
+        // A target jump can replace the window within the same conversation.
+        // The old row IDs still exist in full metadata, so identity alone does
+        // not authorize its late measurement to move the new window back.
+        if window != (shell.timeline_start, shell.timeline_end)
+            || value.get("windowStart").and_then(serde_json::Value::as_u64) != Some(window.0 as u64)
+            || value.get("windowEnd").and_then(serde_json::Value::as_u64) != Some(window.1 as u64)
             || (visible
                 && (value.get("firstId").and_then(serde_json::Value::as_str)
-                    != shell.messages.get(first).map(|m| m.id.as_str())
+                    != shell.channel_rows.get(first).map(|m| m.id.as_str())
                     || value.get("lastId").and_then(serde_json::Value::as_str)
-                        != shell.messages.get(last).map(|m| m.id.as_str())))
+                        != shell.channel_rows.get(last).map(|m| m.id.as_str())))
         {
+            drop(shell);
+            let mut queued = queued;
+            queued.set(true);
             return;
         }
     }
@@ -491,26 +544,6 @@ async fn measure_timeline(mut state: Signal<ShellState>, queued: Signal<bool>) {
     }
     if stick_to_bottom || first_measurement {
         spawn(crate::bootstrap::mark_visible_read(state));
-    }
-}
-
-/// Tracks whether the thread pane is parked on its newest reply. The pane only
-/// auto-scrolls while it is, so a reader who scrolled up to read history is not
-/// yanked back down by every arriving reply.
-pub(crate) async fn measure_thread(mut state: Signal<ShellState>) {
-    let scope = state.peek().thread_scope();
-    let at_bottom = dioxus::document::eval(
-        "const body = document.getElementById('thread-body');
-         dioxus.send(Boolean(body && body.scrollHeight - body.scrollTop - body.clientHeight < 48));",
-    )
-    .recv::<bool>()
-    .await
-    .unwrap_or(true);
-    if state.peek().thread_scope() == scope
-        && state.peek().thread_target.is_none()
-        && state.peek().thread_at_bottom != at_bottom
-    {
-        state.write().thread_at_bottom = at_bottom;
     }
 }
 

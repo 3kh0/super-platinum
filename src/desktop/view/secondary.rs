@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::state::{ActivityTab, MainView, Overlay, ShellState};
+use crate::state::{ActivityTab, MainView, ShellState};
 
 pub(crate) fn secondary_view(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
     let workspace = snapshot
@@ -166,8 +166,9 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                 }
                 button {
                     class: "icon-btn",
-                    title: "Compose",
-                    onclick: move |_| state.write().overlay = Some(Overlay::Palette),
+                    title: "New message",
+                    "aria-label": "New message",
+                    onclick: move |_| crate::new_dm::open(state),
                     {crate::icons::icon(crate::icons::Icon::Compose, "icon sm")}
                 }
             }
@@ -430,7 +431,7 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                 }
                 div { class: "spacer" }
             }
-            div { class: "activity-tabs",
+            div { class: "activity-tabs", role: "group", "aria-label": "Activity filters",
                 {activity_tab_btn(state, tab, ActivityTab::All, count_all)}
                 {activity_tab_btn(state, tab, ActivityTab::Dms, count_dms)}
                 {activity_tab_btn(state, tab, ActivityTab::Mentions, count_mentions)}
@@ -567,6 +568,7 @@ pub(crate) fn activity_tab_btn(
     rsx! {
         button {
             class: if active == tab { "activity-tab on" } else { "activity-tab" },
+            "aria-pressed": active == tab,
             onclick: move |_| state.write().activity_tab = tab,
             "{tab.label()}"
             if count > 0 {

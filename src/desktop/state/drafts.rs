@@ -69,11 +69,7 @@ impl ShellState {
     }
     fn persist_draft_changes(&mut self) {
         let changes = self.core.drafts.take_changes();
-        if let Some(account) = &self.core.active_account
-            && !crate::fixture::is_fixture()
-        {
-            super_platinum_core::drafts::store::enqueue(account.clone(), changes);
-        }
+        crate::drafts::integration::route(self, changes);
     }
 }
 

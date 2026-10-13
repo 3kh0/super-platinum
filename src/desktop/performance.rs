@@ -116,19 +116,108 @@ pub async fn watch_scroll(state: Signal<ShellState>) {
         include_str!("scroll_performance.js")
     );
     let mut bridge = dioxus::document::eval(&script);
-    while let Ok(samples) = bridge.recv::<Vec<f64>>().await {
+    while let Ok(samples) = bridge.recv::<ScrollBatch>().await {
         // Metrics are read on demand by the agent. Updating them must not
         // rerender the conversation while the user is actively scrolling.
         #[allow(deprecated)]
         let mut shell = state.write_silent();
-        shell.performance.scroll_frame_ms.extend(
-            samples
-                .into_iter()
-                .filter(|sample| sample.is_finite() && *sample < 250.0),
-        );
-        if shell.performance.scroll_frame_ms.len() > 600 {
-            let drain = shell.performance.scroll_frame_ms.len() - 600;
-            shell.performance.scroll_frame_ms.drain(..drain);
+        match samples.surface {
+            ScrollSurface::Channel => {
+                retain_samples(&mut shell.performance.scroll_frame_ms, samples.frames);
+                retain_samples(
+                    &mut shell.performance.scroll_start_delay_ms,
+                    samples.start_delays,
+                );
+            }
+            ScrollSurface::Thread => {
+                retain_samples(
+                    &mut shell.performance.thread_scroll_frame_ms,
+                    samples.frames,
+                );
+                retain_samples(
+                    &mut shell.performance.thread_scroll_start_delay_ms,
+                    samples.start_delays,
+                );
+            }
         }
+    }
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum ScrollSurface {
+    Channel,
+    Thread,
+}
+
+#[derive(serde::Deserialize)]
+struct ScrollBatch {
+    surface: ScrollSurface,
+    frames: Vec<f64>,
+    start_delays: Vec<f64>,
+}
+
+fn retain_samples(target: &mut Vec<f64>, samples: impl IntoIterator<Item = f64>) {
+    target.extend(
+        samples
+            .into_iter()
+            .filter(|sample| sample.is_finite() && *sample >= 0.0),
+    );
+    if target.len() > 600 {
+        target.drain(..target.len() - 600);
+    }
+}
+
+/// Statistics describe the retained sample window, not lifetime totals.
+/// p95 uses nearest rank; an empty window has no percentile or maximum.
+pub(crate) fn sample_summary(samples: &[f64]) -> serde_json::Value {
+    let mut sorted = samples
+        .iter()
+        .copied()
+        .filter(|sample| sample.is_finite() && *sample >= 0.0)
+        .collect::<Vec<_>>();
+    sorted.sort_by(f64::total_cmp);
+    let count = sorted.len();
+    let median = (!sorted.is_empty()).then(|| {
+        if count % 2 == 0 {
+            (sorted[count / 2 - 1] + sorted[count / 2]) / 2.0
+        } else {
+            sorted[count / 2]
+        }
+    });
+    serde_json::json!({
+        "samples":count,
+        "p50_ms":median,
+        "p95_ms":(!sorted.is_empty()).then(|| sorted[(95 * count).div_ceil(100) - 1]),
+        "max_ms":sorted.last(),
+        "over_50_ms":sorted.iter().filter(|sample| **sample > 50.0).count(),
+        "at_least_250_ms":sorted.iter().filter(|sample| **sample >= 250.0).count(),
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn retention_keeps_visible_stalls_and_only_bounds_sample_count() {
+        let mut samples = vec![16.0; 600];
+        retain_samples(&mut samples, [250.0, 1800.0, f64::NAN, -1.0, f64::INFINITY]);
+        assert_eq!(samples.len(), 600);
+        assert_eq!(&samples[598..], &[250.0, 1800.0]);
+        assert_eq!(sample_summary(&samples)["at_least_250_ms"], 2);
+    }
+
+    #[test]
+    fn summary_distinguishes_empty_samples_and_reports_stall_thresholds() {
+        assert_eq!(
+            sample_summary(&[]),
+            json!({"samples":0,"p50_ms":null,"p95_ms":null,"max_ms":null,"over_50_ms":0,"at_least_250_ms":0})
+        );
+        assert_eq!(
+            sample_summary(&[16.0, 50.0, 250.0, 1000.0]),
+            json!({"samples":4,"p50_ms":150.0,"p95_ms":1000.0,"max_ms":1000.0,"over_50_ms":2,"at_least_250_ms":2})
+        );
     }
 }

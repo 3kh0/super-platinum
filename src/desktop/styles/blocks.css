@@ -88,17 +88,25 @@
 .block-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 6px;
   margin: 7px 0 3px;
 }
-.block-button {
-  padding: 3px 9px;
+.block-button,
+.block-button.primary,
+.block-button.danger {
+  margin: 0;
+  min-height: var(--control-height);
+  max-width: 100%;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--border-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background: var(--surface-raised);
   color: var(--text);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 .block-button:hover { border-color: var(--accent); background: var(--accent-faint); }
@@ -115,8 +123,14 @@
 }
 /* Menus and submit buttons have no local action; keep the shape, drop the hover. */
 .block-button.inert {
-  color: var(--muted-2);
+  color: var(--muted);
   cursor: default;
+}
+.block-button.primary.inert,
+.block-button.danger.inert {
+  background: var(--surface-raised);
+  color: var(--muted);
+  box-shadow: none;
 }
 .block-button.inert:hover { border-color: var(--border-strong); background: var(--surface-raised); }
 
@@ -399,3 +413,32 @@
   min-height: 0;
   padding: 0;
 }
+
+/* Native message menus share the compact Block Kit control surface. */
+.block-select {
+  min-width: 0;
+  width: min(280px, 100%);
+  max-width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+}
+.block-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.block-select:disabled { color: var(--muted); cursor: default; }
+.block-accessory:has(> .block-select) { flex: 0 1 280px; min-width: 0; max-width: 100%; }
+
+.block-radio-group { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; max-width: 100%; }
+.block-radio-option { display: flex; align-items: flex-start; gap: var(--space-2); min-width: 0; min-height: var(--control-height); cursor: pointer; }
+.block-radio-option input { flex: 0 0 auto; margin: 3px 0 0; accent-color: var(--accent); }
+.block-radio-option input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.block-radio-copy { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.block-radio-label { color: var(--text); overflow-wrap: anywhere; }
+.block-radio-description { color: var(--muted); font-size: var(--text-sm); overflow-wrap: anywhere; }
+.block-radio-group[aria-disabled="true"] .block-radio-option { cursor: default; }
+.block-radio-group[aria-disabled="true"] .block-radio-label, .block-radio-unavailable { color: var(--muted); }
+.block-accessory:has(> .block-radio-group) { flex: 0 1 280px; min-width: 0; max-width: 100%; }

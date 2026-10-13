@@ -16,7 +16,7 @@ use super_platinum_core::{
 /// covers Windows' `http://dioxus.index.html`), it spins workers up from
 /// `blob:` URLs, and its optional telemetry posts to `*.chime.aws`. Signalling
 /// and TURN ride the existing `wss:` allowance.
-const CSP: &str = "default-src 'none'; img-src 'self' super-platinum-media: data: blob:; media-src 'self' super-platinum-media: blob: mediastream:; style-src 'unsafe-inline'; script-src 'self' dioxus: 'unsafe-inline' 'unsafe-eval'; worker-src blob:; child-src blob:; connect-src dioxus: ipc: ws: wss: https://*.chime.aws; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+const CSP: &str = "default-src 'none'; img-src 'self' super-platinum-media: data: blob:; media-src 'self' super-platinum-media: blob: mediastream:; style-src 'unsafe-inline'; script-src 'self' dioxus: 'unsafe-inline' 'unsafe-eval'; worker-src 'self' dioxus: blob:; child-src blob:; connect-src 'self' dioxus: ipc: ws: wss: https://*.chime.aws; font-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
 
 /// WebView2 serves the app from `http://dioxus.index.html`, which is not a
 /// secure context, so the microphone and WebRTC are unavailable there. This
@@ -792,11 +792,44 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
     let config = Config::new();
     let initial_size = if matches!(
         std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
-        Ok("files-narrow"
+        Ok("pdf-preview-narrow"
+            | "file-preview-narrow"
+            | "file-actions-narrow"
+            | "file-rename-narrow"
+            | "file-recovery-narrow"
+            | "file-rename-channel-narrow"
+            | "viewer-actions-narrow"
+            | "viewer-actions-pdf"
+            | "file-actions-channel-narrow"
+            | "bookmarks-narrow"
+            | "canvas-create-narrow"
+            | "canvas-narrow"
+            | "files-narrow"
             | "channel-links-narrow"
             | "channel-files-narrow"
             | "pins-narrow"
+            | "forward-recovery-narrow"
             | "forward-narrow"
+            | "forward-partial-narrow"
+            | "forward-people-narrow"
+            | "new-dm-narrow"
+            | "new-dm-directory-error-narrow"
+            | "local-drafts-error-narrow"
+            | "later-files-narrow"
+            | "send-outcomes-narrow"
+            | "managed-draft-recovery-narrow"
+            | "block-control-values-narrow"
+            | "button-metadata-narrow"
+            | "slack-list-narrow"
+            | "self-status-editor-narrow"
+            | "message-radio-buttons-narrow"
+            | "message-static-select-narrow"
+            | "message-button-actions-narrow"
+            | "message-button-metadata-narrow"
+            | "slack-links-narrow"
+            | "app-modal-form-narrow"
+            | "app-modal-lifecycle-narrow"
+            | "rejected-send-narrow"
             | "member-add-narrow"
             | "member-remove-narrow"
             | "message-marked-unread-narrow"
@@ -804,7 +837,9 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
             | "thread-counts-narrow"
             | "thread-feed-narrow"
             | "thread-follow-narrow"
-            | "activity-narrow")
+            | "activity-narrow"
+            | "search-narrow"
+            | "search-filters-narrow")
     ) {
         WINDOW_MIN_INNER_SIZE
     } else {

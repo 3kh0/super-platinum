@@ -37,6 +37,31 @@ window.runTimelineNavigationTests = async (navigate, attach = () => {}) => {
   assert(!await cancelled,'navigation overrode intervening user input');
   assert(root.scrollTop===100,'cancelled navigation changed scroll position');
   results.push('user scrolling cancels a pending navigation frame');
+  const pointerCancelled=navigate({scope:'new',selector:'',latestId:'later'});
+  root.dispatchEvent(new PointerEvent('pointerdown',{button:0,buttons:1,bubbles:true}));
+  root.scrollTop=70;
+  document.dispatchEvent(new PointerEvent('pointerup',{button:0,buttons:0,bubbles:true}));
+  assert(!await pointerCancelled,'pending navigation overrode scrollbar pointer input');
+  assert(root.scrollTop===70,'cancelled pointer navigation changed scroll position');
+  results.push('scrollbar pointer input cancels an already pending navigation frame');
+  const beforeInput=window.superPlatinumTimelineAnchor.inputGeneration();
+  root.dispatchEvent(new PointerEvent('pointerdown',{button:0,buttons:1,bubbles:true}));
+  root.scrollTop=60;
+  document.dispatchEvent(new PointerEvent('pointerup',{button:0,buttons:0,bubbles:true}));
+  assert(!await navigate({scope:'new',selector:'',latestId:'later',inputGeneration:beforeInput}),
+    'queued eval missed input before its cancellation listener was installed');
+  assert(root.scrollTop===60,'stale eval overrode a completed scrollbar gesture');
+  results.push('input before eval execution retires the captured native navigation generation');
+  root.dispatchEvent(new PointerEvent('pointerdown',{button:2,buttons:2,bubbles:true}));
+  assert(window.superPlatinumTimelineAnchor.inputGeneration()===beforeInput+2,
+    'right pointer input diverged from native generation');
+  root.dataset.timelineScope='replacement';
+  assert(window.superPlatinumTimelineAnchor.inputGeneration()===0,'replacement scope retained old input generation');
+  assert(await navigate({scope:'replacement',selector:'',latestId:'later',inputGeneration:0}),
+    'fresh scope generation blocked navigation');
+  root.dataset.timelineScope='new';
+  results.push('all pointer buttons count and replacement scope resets input generation');
+  root.scrollTop=100;await frame();
   const thread=document.createElement('section');thread.id='thread-body';thread.dataset.timelineScope='thread-one';
   thread.style.cssText='height:200px;overflow:auto';
   thread.innerHTML='<article style="height:1200px"></article><article data-message-id="later" style="height:100px">thread reply</article>';

@@ -3,14 +3,14 @@ use super::{Context, MainView, SavedKey, ShellState, api};
 use dioxus::prelude::*;
 use super_platinum_core::slack::models::{Message, MessagesListPage};
 
-struct OpenVisit {
+pub(super) struct OpenVisit {
     request: u64,
     channel: u64,
     list: u64,
     thread: u64,
 }
 impl OpenVisit {
-    fn begin(shell: &mut ShellState) -> Self {
+    pub(super) fn begin(shell: &mut ShellState) -> Self {
         shell.later_open_generation = shell.later_open_generation.wrapping_add(1);
         Self {
             request: shell.later_open_generation,
@@ -19,7 +19,7 @@ impl OpenVisit {
             thread: shell.thread_generation,
         }
     }
-    fn current(&self, shell: &ShellState) -> bool {
+    pub(super) fn current(&self, shell: &ShellState) -> bool {
         shell.main_view == MainView::Later
             && shell.later_open_generation == self.request
             && shell.channel_generation == self.channel
@@ -37,6 +37,10 @@ fn selected_message(mut page: MessagesListPage, key: &SavedKey) -> Option<Messag
 }
 
 pub fn open(mut state: Signal<ShellState>, key: SavedKey) {
+    if key.item_type == "file" {
+        super::files::open(state, key);
+        return;
+    }
     if key.item_type != "message" || state.peek().main_view != MainView::Later {
         return;
     }
@@ -60,6 +64,7 @@ pub fn open(mut state: Signal<ShellState>, key: SavedKey) {
         let message = if let Some(message) = cached {
             message
         } else {
+            let hydration_revision = state.write().core.later.begin_hydration();
             let result = api::fetch_messages_list(
                 &ctx.transport,
                 &ctx.client,
@@ -79,7 +84,12 @@ pub fn open(mut state: Signal<ShellState>, key: SavedKey) {
                         return;
                     };
                     let mut shell = state.write();
-                    shell.core.later.hydrate_message(key.clone(), message);
+                    shell.core.hydrate_later_message(
+                        &ctx.session.team_id,
+                        key.clone(),
+                        message,
+                        hydration_revision,
+                    );
                     shell.core.later.hydrated[&key].clone()
                 }
                 Err(error) => {

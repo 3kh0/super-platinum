@@ -13,6 +13,18 @@ pub enum ComposerTarget {
 }
 
 impl ShellState {
+    /// All optimistic message surfaces share one monotonically increasing local
+    /// microsecond clock. Two sends in the same clock tick must not replace one
+    /// another in ChannelMessages, which indexes rows by timestamp.
+    pub(crate) fn optimistic_identity(prefix: &str) -> (String, String) {
+        static LAST: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let micros = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| u64::try_from(duration.as_micros()).unwrap_or(u64::MAX - 1))
+            .unwrap_or(0);
+        allocate_optimistic_identity(&LAST, micros, prefix)
+    }
+
     pub fn composer_unavailable(&self) -> Option<&'static str> {
         let team = self.core.active_team.as_ref()?;
         let channel = self.core.active_channel.as_ref()?;
@@ -47,12 +59,7 @@ impl ShellState {
             .clone()
             .zip(self.core.active_channel.clone());
         if let Some((team, channel)) = domain_target {
-            let stamp = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|duration| duration.as_nanos())
-                .unwrap_or(0);
-            let client_msg_id = format!("super-platinum-{stamp}");
-            let optimistic_ts = format!("{}.000000", stamp / 1_000_000_000);
+            let (client_msg_id, optimistic_ts) = Self::optimistic_identity("super-platinum");
             if let Some(workspace) = self.core.workspaces.get_mut(&team) {
                 let message = super_platinum_core::slack::models::Message {
                     user: Some(workspace.self_user_id.clone()),
@@ -72,6 +79,8 @@ impl ShellState {
                 self.checkpoint_composers();
                 self.refresh_from_core();
                 return Some(PendingSend {
+                    account: self.core.active_account.clone(),
+                    account_epoch: self.core.account_epoch,
                     team,
                     channel,
                     thread_ts: None,
@@ -83,7 +92,7 @@ impl ShellState {
         }
 
         // Offline visual fixtures have no authenticated workspace domain.
-        let id = format!("local-{}", self.messages.len());
+        let id = format!("local-{}", self.channel_rows.len());
         let message = MessageVm {
             id: id.clone(),
             ts: id,
@@ -95,13 +104,12 @@ impl ShellState {
             pending: true,
             ..Default::default()
         };
-        self.messages.push(message.clone());
-        if let Some(channel) = self.channels.get(self.active_channel) {
-            self.messages_by_channel
-                .entry(channel.id.clone())
-                .or_default()
-                .push(message);
-        }
+        let mut messages = self
+            .fixture_channel_messages
+            .take()
+            .unwrap_or_else(|| self.messages.clone());
+        messages.push(message);
+        self.install_fixture_messages(messages);
         self.core.composer = super_platinum_core::ComposerState::default();
         self.checkpoint_composers();
         self.show_toast("Message queued by the fixture dispatcher");
@@ -121,12 +129,7 @@ impl ShellState {
             self.core.active_channel.clone()?,
             self.thread_root.clone()?,
         );
-        let stamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|duration| duration.as_nanos())
-            .unwrap_or(0);
-        let client_msg_id = format!("super-platinum-thread-{stamp}");
-        let optimistic_ts = format!("{}.000000", stamp / 1_000_000_000);
+        let (client_msg_id, optimistic_ts) = Self::optimistic_identity("super-platinum-thread");
         let user = self.core.workspaces.get(&team)?.self_user_id.clone();
         let message = super_platinum_core::slack::models::Message {
             user: Some(user),
@@ -149,6 +152,8 @@ impl ShellState {
         self.checkpoint_composers();
         self.refresh_thread_from_core();
         Some(PendingSend {
+            account: self.core.active_account.clone(),
+            account_epoch: self.core.account_epoch,
             team,
             channel,
             thread_ts: Some(root),
@@ -159,6 +164,7 @@ impl ShellState {
     }
 
     pub fn refresh_thread_from_core(&mut self) {
+        self.prune_pending_delivery();
         let Some((team, channel, root)) = self
             .core
             .active_team
@@ -170,6 +176,7 @@ impl ShellState {
             self.thread_messages.clear();
             return;
         };
+        let scope = self.thread_scope();
         let bag = self
             .core
             .threads
@@ -180,17 +187,34 @@ impl ShellState {
             .get(&team)
             .zip(bag)
             .map(|(workspace, bag)| {
-                crate::thread_vm::project(workspace, bag, &self.thread_history, &root, &self.media)
+                self.thread_window.sync(
+                    &scope,
+                    bag,
+                    &self.thread_history,
+                    &root,
+                    self.thread_target.as_deref(),
+                    self.thread_at_bottom,
+                );
+                crate::thread_vm::project_window(
+                    workspace,
+                    bag,
+                    &self.thread_history,
+                    &root,
+                    &self.media,
+                    &self.thread_window,
+                )
             })
             .unwrap_or_default();
     }
 
     pub fn start_edit(&mut self, channel: String, ts: String, text: String) {
+        self.edit_generation = self.edit_generation.wrapping_add(1);
         self.core.editing = Some((channel, ts));
         self.core.edit_composer = super_platinum_core::ComposerState::with_text(text);
     }
 
     pub fn cancel_edit(&mut self) {
+        self.edit_generation = self.edit_generation.wrapping_add(1);
         self.core.editing = None;
         self.core.edit_composer = super_platinum_core::ComposerState::default();
     }
@@ -277,6 +301,7 @@ impl ShellState {
 
     pub fn unpin_selection(&mut self) {
         self.selection_pinned = false;
+        self.reproject_channel_window();
     }
 
     pub fn pending_attachments_for_message(
@@ -310,5 +335,104 @@ impl ShellState {
             super_platinum_core::MediaAssetId::new(super_platinum_core::MediaAssetKind::Background);
         self.media.insert(id.clone(), mime, bytes);
         self.background_uri = Some(id.uri());
+    }
+}
+
+fn allocate_optimistic_identity(
+    last: &std::sync::atomic::AtomicU64,
+    now_micros: u64,
+    prefix: &str,
+) -> (String, String) {
+    use std::sync::atomic::Ordering;
+    let previous = last
+        .try_update(Ordering::Relaxed, Ordering::Relaxed, |previous| {
+            Some(
+                now_micros.max(
+                    previous
+                        .checked_add(1)
+                        .expect("optimistic timestamp exhausted"),
+                ),
+            )
+        })
+        .expect("optimistic timestamp update always succeeds");
+    let stamp = now_micros.max(previous + 1);
+    (
+        format!("{prefix}-{stamp}"),
+        format!("{}.{:06}", stamp / 1_000_000, stamp % 1_000_000),
+    )
+}
+
+#[cfg(test)]
+mod optimistic_identity_tests {
+    use super::*;
+    use std::sync::atomic::AtomicU64;
+    use super_platinum_core::{slack::models::Message, state::ChannelMessages};
+
+    #[test]
+    fn same_microsecond_channel_thread_and_upload_rows_keep_separate_identities() {
+        for prefix in [
+            "super-platinum",
+            "super-platinum-thread",
+            "super-platinum-file",
+        ] {
+            for confirm_first in [false, true] {
+                let clock = AtomicU64::new(0);
+                let now = 1_800_000_000_123_456;
+                let (first_id, first_ts) = allocate_optimistic_identity(&clock, now, prefix);
+                let (second_id, second_ts) = allocate_optimistic_identity(&clock, now, prefix);
+                assert_ne!(first_id, second_id);
+                assert_ne!(first_ts, second_ts);
+                assert_eq!(first_ts, "1800000000.123456");
+                assert_eq!(second_ts, "1800000000.123457");
+                let mut messages = ChannelMessages::default();
+                for (id, ts, text) in [
+                    (&first_id, &first_ts, "First"),
+                    (&second_id, &second_ts, "Second"),
+                ] {
+                    messages.upsert(Message {
+                        ts: Some(ts.clone()),
+                        client_msg_id: Some(id.clone()),
+                        text: Some(text.into()),
+                        ..Default::default()
+                    });
+                    messages.pending.push(ts.clone());
+                }
+                assert_eq!(messages.messages.len(), 2);
+                if confirm_first {
+                    assert!(messages.confirm(
+                        &first_id,
+                        Message {
+                            ts: Some("1800000001.000000".into()),
+                            text: Some("First confirmed".into()),
+                            ..Default::default()
+                        }
+                    ));
+                } else {
+                    assert!(messages.remove(&first_ts));
+                }
+                assert_eq!(messages.pending, vec![second_ts.clone()]);
+                assert!(
+                    messages
+                        .messages
+                        .iter()
+                        .any(|message| message.ts.as_ref() == Some(&second_ts)
+                            && message.client_msg_id.as_ref() == Some(&second_id)
+                            && message.text.as_deref() == Some("Second"))
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn optimistic_clock_is_shared_across_surfaces_and_survives_clock_rollback() {
+        let clock = AtomicU64::new(0);
+        let first = allocate_optimistic_identity(&clock, 1_800_000_000_999_999, "super-platinum");
+        let second =
+            allocate_optimistic_identity(&clock, 1_800_000_000_999_999, "super-platinum-file");
+        let third =
+            allocate_optimistic_identity(&clock, 1_700_000_000_000_000, "super-platinum-thread");
+        assert_eq!(first.1, "1800000000.999999");
+        assert_eq!(second.1, "1800000001.000000");
+        assert_eq!(third.1, "1800000001.000001");
     }
 }

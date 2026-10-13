@@ -17,6 +17,13 @@ pub(crate) struct ComposeSource {
     pub attachments: Vec<(u64, std::path::PathBuf, String)>,
 }
 impl ComposeSource {
+    fn key(&self) -> super_platinum_core::drafts::DraftKey {
+        super_platinum_core::drafts::DraftKey {
+            team: self.team.clone(),
+            channel: self.channel.clone(),
+            thread: self.thread.clone(),
+        }
+    }
     fn capture(shell: &ShellState, target: ComposerTarget) -> Option<Self> {
         let thread = match target {
             ComposerTarget::Channel => None,
@@ -142,7 +149,9 @@ pub(crate) fn ScheduledPanel(mut state: Signal<ShellState>) -> Element {
     let shell = state.read();
     let queue = scheduled::visible(&shell);
     let loading = queue.is_some_and(|q| q.loading);
-    let filter = queue.map(|q| q.filter).unwrap_or_default();
+    let filter = queue
+        .map(|q| q.filter)
+        .unwrap_or(shell.core.scheduled.filter);
     let workspace = shell
         .core
         .active_team
@@ -154,7 +163,8 @@ pub(crate) fn ScheduledPanel(mut state: Signal<ShellState>) -> Element {
         .items
         .keys()
         .filter(|key| Some(&key.team) == shell.core.active_team.as_ref())
-        .count();
+        .count()
+        + crate::drafts::session::recovery_rows(&shell).len();
     let counts = [DraftFilter::Drafts, DraftFilter::Scheduled].map(|tab| {
         (
             tab,
@@ -184,7 +194,7 @@ pub(crate) fn ScheduledPanel(mut state: Signal<ShellState>) -> Element {
         div{class:"scheduled-body",
           if let Some(error)=queue.and_then(|q|q.error.as_ref()){p{class:"later-error",role:"alert","{error}"}}
           if loading{p{class:"files-status",role:"status","Loading drafts…"}}
-          if filter==DraftFilter::Drafts {super::local_drafts::LocalDraftRows{state}}
+          if filter==DraftFilter::Drafts {crate::forward::inventory::SavedForwards{state}super::local_drafts::LocalDraftRows{state}}
           if let Some(queue)=queue{
             for item in queue.sorted(){
               {let id=item.id.clone();let edit=id.clone();let schedule=id.clone();let confirm=item.clone();let send=item.clone();let unschedule=id.clone();
@@ -343,6 +353,7 @@ fn ScheduleDialog(
           if read.get("text").and_then(|v|v.as_str()).is_none_or(|t|t.trim().is_empty())&&file_count==0{return Err("Add a message or a file.".into());}
           let ctx=Context::get(&state).ok_or("Connect to Slack to schedule this message.")?;
           if (ctx.epoch,Some(ctx.session.team_id.clone()))!=scope{return Err("The active account changed.".into());}
+          if let Some(source)=&source{crate::drafts::integration::legacy_allowed(&state.peek(),&source.key()).map_err(str::to_owned)?;}
           if let Some(expected)=&expected{
            let limit=state.peek().core.scheduled.limit;
            let fetched=api::fetch_active_draft(&ctx.transport,&ctx.client,&ctx.session,&expected.id,limit).await;
@@ -358,6 +369,9 @@ fn ScheduleDialog(
           }}
           if !ctx.current(&state.peek()){return Err("The active account changed.".into());}
           if let Ok(mut value)=request.try_write(){*value=args.clone();}
+          // Ownership may change during draft verification or attachment upload.
+          // Recheck the exact captured destination immediately before dispatch.
+          if let Some(source)=&source{crate::drafts::integration::legacy_allowed(&state.peek(),&source.key()).map_err(str::to_owned)?;}
           let saved=api::schedule_message(&ctx.transport,&ctx.client,&ctx.session,&args,id.as_deref()).await.map_err(|e|scheduled::failure(&e))?;
           if !ctx.current(&state.peek()){return Ok(());}
           scheduled::saved(state,&ctx,saved);
@@ -418,6 +432,12 @@ pub(super) fn destination_label(shell: &ShellState, destinations: &[serde_json::
         .join(", ")
 }
 fn can_schedule(shell: &ShellState, target: ComposerTarget) -> bool {
+    let Some(key) = shell.composer_key(target) else {
+        return false;
+    };
+    if crate::drafts::integration::legacy_allowed(shell, &key).is_err() {
+        return false;
+    }
     match target {
         ComposerTarget::Channel => {
             !shell.core.composer.text.trim().is_empty()

@@ -1,7 +1,6 @@
 use dioxus::prelude::{ReadableExt, Signal, WritableExt};
 use super_platinum_core::slack::api;
 
-use super::common::credentials;
 use super::session::remove_account;
 use crate::state::{PresenceVm, ShellState};
 
@@ -17,22 +16,119 @@ pub(crate) fn minutes_until_local_hour(now_unix: i64, tz_offset: i32, hour: i32)
     (remaining / 60).max(1) as u32
 }
 
-fn active_workspace_session(
-    state: &Signal<ShellState>,
-) -> Option<(
-    std::sync::Arc<super_platinum_core::slack::Transport>,
-    super_platinum_core::slack::SlackClient,
-    super_platinum_core::config::WorkspaceSession,
-)> {
-    let (transport, client, workspaces) = credentials(state)?;
-    let team = state.read().core.active_team.clone()?;
-    let workspace = workspaces
-        .into_iter()
-        .find(|workspace| workspace.team_id == team)?;
-    Some((transport, client, workspace))
+/// Self-menu completions belong to the exact account, session and viewer that
+/// supplied the request. The active menu may belong to someone else after await.
+#[derive(Clone, Default)]
+pub(crate) struct SelfMenuMutations {
+    presence: u64,
+    dnd: u64,
+    status: u64,
+}
+#[derive(Clone, Copy)]
+enum MutationKind {
+    Presence,
+    Dnd,
+    Status,
+}
+impl SelfMenuMutations {
+    fn counter(&mut self, kind: MutationKind) -> &mut u64 {
+        match kind {
+            MutationKind::Presence => &mut self.presence,
+            MutationKind::Dnd => &mut self.dnd,
+            MutationKind::Status => &mut self.status,
+        }
+    }
+    fn generation(&self, kind: MutationKind) -> u64 {
+        match kind {
+            MutationKind::Presence => self.presence,
+            MutationKind::Dnd => self.dnd,
+            MutationKind::Status => self.status,
+        }
+    }
+}
+pub(crate) struct SelfMenuContext(crate::scheduled::Context, MutationKind, u64);
+impl SelfMenuContext {
+    pub(crate) fn begin_status(shell: &mut ShellState) -> Option<Self> {
+        Self::begin(shell, MutationKind::Status)
+    }
+    pub(crate) fn request(&self) -> &crate::scheduled::Context {
+        &self.0
+    }
+
+    fn begin(shell: &mut ShellState, kind: MutationKind) -> Option<Self> {
+        let generation = shell.self_menu_mutations.counter(kind);
+        *generation = generation.wrapping_add(1);
+        let generation = *generation;
+        let context = Self(crate::scheduled::Context::capture(shell)?, kind, generation);
+        context.current(shell).then_some(context)
+    }
+
+    pub(crate) fn current(&self, shell: &ShellState) -> bool {
+        let request = &self.0;
+        request.current(shell)
+            && shell.self_menu_mutations.generation(self.1) == self.2
+            && shell.self_account.user_id == request.session.user_id
+            && shell
+                .core
+                .workspaces
+                .get(&request.session.team_id)
+                .is_some_and(|workspace| {
+                    workspace.team_id == request.session.team_id
+                        && workspace.self_user_id == request.session.user_id
+                })
+            && shell
+                .core
+                .session
+                .as_ref()
+                .and_then(|session| session.workspaces.get(&request.session.team_id))
+                .is_some_and(|session| {
+                    session.team_id == request.session.team_id
+                        && session.user_id == request.session.user_id
+                        && session.token == request.session.token
+                        && session.url == request.session.url
+                })
+    }
+
+    fn apply_profile(
+        &self,
+        shell: &mut ShellState,
+        profile: super_platinum_core::slack::models::UserProfile,
+    ) {
+        if !self.current(shell) {
+            return;
+        }
+        if let Some(user) = shell
+            .core
+            .workspaces
+            .get_mut(&self.0.session.team_id)
+            .and_then(|workspace| workspace.users.get_mut(&self.0.session.user_id))
+        {
+            let current = user.profile.get_or_insert_with(Default::default);
+            // A realtime status set after our optimistic clear wins over an
+            // older HTTP acknowledgement. Unrelated profile fields always stay.
+            if !current
+                .status_text
+                .as_deref()
+                .unwrap_or_default()
+                .is_empty()
+                || !current
+                    .status_emoji
+                    .as_deref()
+                    .unwrap_or_default()
+                    .is_empty()
+                || current.status_expiration.unwrap_or_default() != 0
+            {
+                return;
+            }
+            current.status_text = profile.status_text;
+            current.status_emoji = profile.status_emoji;
+            current.status_expiration = profile.status_expiration;
+        }
+    }
 }
 
 pub async fn set_self_presence(mut state: Signal<ShellState>, away: bool) {
+    let context = SelfMenuContext::begin(&mut state.write(), MutationKind::Presence);
     let presence = if away {
         PresenceVm::Away
     } else {
@@ -42,11 +138,22 @@ pub async fn set_self_presence(mut state: Signal<ShellState>, away: bool) {
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         return;
     }
-    let Some((transport, client, workspace)) = active_workspace_session(&state) else {
+    let Some(context) = context else {
         return;
     };
     let value = if away { "away" } else { "auto" };
-    if let Err(error) = api::set_presence(&transport, &client, &workspace, value.into()).await {
+    let request = &context.0;
+    let result = api::set_presence(
+        &request.transport,
+        &request.client,
+        &request.session,
+        value.into(),
+    )
+    .await;
+    if !context.current(&state.read()) {
+        return;
+    }
+    if let Err(error) = result {
         state
             .write()
             .report_failure(&error, "Presence needs a connection", || {
@@ -56,6 +163,7 @@ pub async fn set_self_presence(mut state: Signal<ShellState>, away: bool) {
 }
 
 pub async fn pause_notifications(mut state: Signal<ShellState>, minutes: u32) {
+    let context = SelfMenuContext::begin(&mut state.write(), MutationKind::Dnd);
     {
         let mut shell = state.write();
         shell.self_menu_notifications_open = false;
@@ -64,10 +172,21 @@ pub async fn pause_notifications(mut state: Signal<ShellState>, minutes: u32) {
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         return;
     }
-    let Some((transport, client, workspace)) = active_workspace_session(&state) else {
+    let Some(context) = context else {
         return;
     };
-    match api::set_snooze(&transport, &client, &workspace, minutes).await {
+    let request = &context.0;
+    let result = api::set_snooze(
+        &request.transport,
+        &request.client,
+        &request.session,
+        minutes,
+    )
+    .await;
+    if !context.current(&state.read()) {
+        return;
+    }
+    match result {
         Ok(dnd) => state.write().merge_self_snooze(dnd),
         Err(error) => state
             .write()
@@ -78,6 +197,7 @@ pub async fn pause_notifications(mut state: Signal<ShellState>, minutes: u32) {
 }
 
 pub async fn resume_notifications(mut state: Signal<ShellState>) {
+    let context = SelfMenuContext::begin(&mut state.write(), MutationKind::Dnd);
     {
         let mut shell = state.write();
         shell.self_menu_notifications_open = false;
@@ -86,10 +206,15 @@ pub async fn resume_notifications(mut state: Signal<ShellState>) {
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         return;
     }
-    let Some((transport, client, workspace)) = active_workspace_session(&state) else {
+    let Some(context) = context else {
         return;
     };
-    match api::end_snooze(&transport, &client, &workspace).await {
+    let request = &context.0;
+    let result = api::end_snooze(&request.transport, &request.client, &request.session).await;
+    if !context.current(&state.read()) {
+        return;
+    }
+    match result {
         Ok(dnd) => state.write().merge_self_dnd(dnd),
         Err(error) => state
             .write()
@@ -100,11 +225,12 @@ pub async fn resume_notifications(mut state: Signal<ShellState>) {
 }
 
 pub async fn clear_self_status(mut state: Signal<ShellState>) {
+    let context = SelfMenuContext::begin(&mut state.write(), MutationKind::Status);
     state.write().clear_self_status();
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         return;
     }
-    let Some((transport, client, workspace)) = active_workspace_session(&state) else {
+    let Some(context) = context else {
         return;
     };
     let profile = serde_json::json!({
@@ -113,17 +239,19 @@ pub async fn clear_self_status(mut state: Signal<ShellState>) {
         "status_expiration": 0
     })
     .to_string();
-    match api::set_user_profile(&transport, &client, &workspace, profile).await {
-        Ok(profile) => {
-            let mut shell = state.write();
-            let user = shell.self_account.user_id.clone();
-            if let Some(team) = shell.core.active_team.clone()
-                && let Some(workspace) = shell.core.workspaces.get_mut(&team)
-                && let Some(user) = workspace.users.get_mut(&user)
-            {
-                user.profile = Some(profile);
-            }
-        }
+    let request = &context.0;
+    let result = api::set_user_profile(
+        &request.transport,
+        &request.client,
+        &request.session,
+        profile,
+    )
+    .await;
+    if !context.current(&state.read()) {
+        return;
+    }
+    match result {
+        Ok(profile) => context.apply_profile(&mut state.write(), profile),
         Err(error) => {
             state
                 .write()
@@ -168,14 +296,4 @@ pub async fn sign_out_workspace(mut state: Signal<ShellState>) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::minutes_until_local_hour;
-
-    #[test]
-    fn until_morning_uses_the_next_8am_in_the_local_offset() {
-        let ten_am = 10 * 3_600;
-        assert_eq!(minutes_until_local_hour(ten_am, 0, 8), 22 * 60);
-        let seven_am = 7 * 3_600;
-        assert_eq!(minutes_until_local_hour(seven_am, 0, 8), 60);
-    }
-}
+mod tests;

@@ -5,7 +5,7 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
-  overflow: hidden;
+  overflow: visible;
 }
 .composer-row {
   display: flex;
@@ -276,6 +276,36 @@
 }
 /* The reply box is the channel composer's row in a narrower pane: the same
    field metrics keep its attach and send buttons level with the text. */
+
+.composer-wrap, .thread-composer { position: relative; }
+.composer-completion {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: min(420px, 100%);
+  max-height: min(320px, 50vh);
+  overflow-y: auto;
+  z-index: 9;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-popover);
+}
+.composer-completion[hidden] { display: none; }
+.composer-completion-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: var(--text-md);
+}
+.composer-completion-option > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer-completion-option[aria-selected="true"], .composer-completion-option:hover { background: var(--hover-overlay); }
+.composer-completion-detail, .composer-completion-status { color: var(--muted); font-size: var(--text-xs); }
+.composer-completion-status { padding: 8px; }
 
 /* Overlays / modals */
 .scrim { position: absolute; inset: 0; z-index: 10; background: rgba(0,0,0,.55); }

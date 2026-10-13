@@ -8,6 +8,32 @@ pub fn overlay_view(
     overlay: Overlay,
     snapshot: &ShellState,
 ) -> Element {
+    if overlay == Overlay::ButtonConfirmation {
+        return crate::view::button_confirmation::button_confirmation(state);
+    }
+    if overlay == Overlay::AppModal {
+        return crate::view::app_modal::app_modal(state);
+    }
+    if overlay == Overlay::CanvasCreate {
+        return rsx! {crate::canvas_create::CreateDialog {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{snapshot.shortcut_generation}",state}};
+    }
+    if overlay == Overlay::Canvas {
+        let transport_identity = snapshot
+            .core
+            .transport
+            .as_ref()
+            .map(|t| std::sync::Arc::as_ptr(t) as usize);
+        return snapshot.canvas.as_ref().map(|target|rsx! {crate::canvas::CanvasDialog {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{snapshot.shortcut_generation}-{transport_identity:?}-{target.id}",state,target:target.clone()}}).unwrap_or_else(||rsx!{});
+    }
+    if overlay == Overlay::NewDm {
+        return rsx! { crate::new_dm::NewDmDialog {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{snapshot.palette_generation}", state } };
+    }
+    if overlay == Overlay::SlackList {
+        return crate::view::slack_lists::dialog(state);
+    }
+    if overlay == Overlay::SelfStatus {
+        return crate::view::self_status::self_status(state);
+    }
     if overlay == Overlay::SelfMenu {
         return self_menu_view(state, snapshot);
     }
@@ -18,7 +44,12 @@ pub fn overlay_view(
         return rsx! { crate::forward::ForwardDialog {key:"{snapshot.forward_target.as_ref().map(|t|t.id.as_str()).unwrap_or_default()}", state } };
     }
     let (title, input_value, placeholder) = match overlay {
+        Overlay::ButtonConfirmation => unreachable!("button confirmation owns its dialog"),
+        Overlay::AppModal => unreachable!("app form owns its dialog"),
         Overlay::SelfMenu => unreachable!("self menu renders as a rail popover"),
+        Overlay::SlackList => unreachable!("list owns its dialog"),
+        Overlay::SelfStatus => unreachable!("status editor owns its dialog"),
+        Overlay::NewDm => unreachable!("recipient picker owns its dialog"),
         Overlay::Accounts => ("Accounts", "", ""),
         Overlay::Palette => (
             "Jump to…",
@@ -31,41 +62,56 @@ pub fn overlay_view(
             "Search in workspace",
         ),
         Overlay::Settings => ("Settings", "", ""),
-        Overlay::Viewer => ("Media viewer", "", ""),
+        Overlay::Canvas | Overlay::CanvasCreate => unreachable!("canvas owns its dialog"),
+        Overlay::Viewer => (
+            snapshot
+                .viewer
+                .as_ref()
+                .map(|v| v.name.as_str())
+                .unwrap_or("File preview"),
+            "",
+            "",
+        ),
         Overlay::Forward => unreachable!("forward dialog owns its surface"),
         Overlay::ReactionPicker => unreachable!("reaction picker owns its dialog"),
     };
     let compact = overlay == Overlay::Palette;
     rsx! {
-        div { class: "scrim", onclick: move |_| state.write().overlay = None }
-        section { class: if compact { "modal compact" } else { "modal" }, role: "dialog", "aria-modal": "true",
+        div { class: "scrim", onclick: move |_| state.write().dismiss_overlay() }
+        section { class: if compact { "modal compact" } else if overlay == Overlay::Search { "modal search-dialog" } else if overlay == Overlay::Viewer { "modal file-viewer-dialog" } else { "modal" }, role: "dialog", "aria-label": "{title}", "aria-modal": "true",
+            id: "shell-overlay-dialog",
+            tabindex: "-1",
+            "data-keyboard-dialog": "true",
+            "data-dialog-generation": snapshot.shortcut_generation,
+            "data-dialog-kind": if compact { "palette" } else if overlay == Overlay::Search { "search" } else { "other" },
             if !compact {
                 header {
                     h2 { "{title}" }
-                    button { "aria-label": "Close", onclick: move |_| state.write().overlay = None, {crate::icons::icon(crate::icons::Icon::Close, "icon")} }
+                    button { "aria-label": "Close", onclick: move |_| state.write().dismiss_overlay(), {crate::icons::icon(crate::icons::Icon::Close, "icon")} }
                 }
             }
             if matches!(overlay, Overlay::Palette | Overlay::Search) {
                 input {
                     id: "overlay-input",
-                    autofocus: true,
-                    onmounted: move |_| {
-                        dioxus::document::eval(
-                            r#"requestAnimationFrame(() => {
-                                 const field = document.getElementById('overlay-input');
-                                 if (field) { field.focus(); field.select(); }
-                               });"#,
-                        );
-                    },
+                    autocomplete: "off",
+                    "autocorrect": "off",
+                    autocapitalize: "none",
+                    spellcheck: "false",
+                    "data-focus-at-end": overlay == Overlay::Search && snapshot.search_focus_at_end,
+                    "data-dialog-input": "true",
+                    "data-dialog-value": "{input_value}",
+                    // Keep native typing uncontrolled: round-trip value updates
+                    // can overwrite newer keystrokes in the desktop WebView.
+                    key: "{overlay:?}-{snapshot.search_input_revision}",
                     initial_value: "{input_value}",
                     placeholder: "{placeholder}",
+                    "aria-label": "{placeholder}",
                     oninput: move |event| match overlay {
                         Overlay::Palette => {
                             let mut shell = state.write();
-                            shell.palette_query = event.value();
-                            shell.palette_selected = 0;
+                            shell.set_palette_query(event.value());
                         },
-                        Overlay::Search => state.write().search_query = event.value(),
+                        Overlay::Search => state.write().set_search_query(event.value()),
                         _ => {}
                     },
                     onkeydown: move |event| {
@@ -77,65 +123,69 @@ pub fn overlay_view(
                                 Key::ArrowUp => { event.prevent_default(); state.write().move_palette(-1); }
                                 Key::Enter => {
                                     event.prevent_default();
-                                    if state.write().submit_palette() { spawn(crate::bootstrap::refresh_selected_channel(state)); }
+                                    crate::bootstrap::open_palette_entry(state, None);
                                 }
                                 _ => {}
                             }
                         }
                     },
                 }
-                div { class: "results",
+                if overlay == Overlay::Search { {crate::view::search::controls(state, snapshot)} }
+                div { class: "results", hidden: overlay == Overlay::Search && snapshot.search_filters.is_some(),
                     if overlay == Overlay::Search {
-                        if snapshot.search_loading { p { class: "results-empty", "Searching…" } }
+                        if snapshot.search_pager.loading && snapshot.search_results.is_empty() {
+                            p { class: "results-empty", role: "status", "Searching…" }
+                        }
+                        if snapshot.search_pager.page > 0 {
+                            p { class: "search-summary", role: "status", "{snapshot.search_results.len()} of {snapshot.search_pager.total} results · {snapshot.search_pager.sort.label()}" }
+                        }
+                        if snapshot.search_opening.is_some() { p { class: "results-empty", role: "status", "Opening conversation…" } }
                         for result in &snapshot.search_results {
                             button {
+                                key: "{result.channel_id}-{result.ts}",
                                 class: "search-result",
                                 onclick: {
-                                    let channel = result.channel_id.clone();
-                                    let ts = result.ts.clone();
-                                    move |_| {
-                                        if state.write().open_search_result(&channel, &ts) { spawn(crate::bootstrap::refresh_selected_channel(state)); }
-                                    }
+                                    let hit = result.clone();
+                                    move |_| crate::bootstrap::open_search_hit(state, hit.clone())
                                 },
                                 strong { "# {result.channel_name} · {result.author}" }
                                 span { "{result.text}" }
-                                span { class: "search-time", {super_platinum_core::state::format_relative_ts(&result.ts)} }
+                                span { class: "search-time",
+                                    {super_platinum_core::state::format_relative_ts(&result.ts)}
+                                    if result.thread_ts.is_some() { " · Thread reply" }
+                                }
                             }
                         }
-                        if !snapshot.search_loading && snapshot.search_results.is_empty() {
-                            p { class: "results-empty", "Press Enter to search messages" }
+                        if !snapshot.search_pager.loading && !snapshot.search_pager.failed && snapshot.search_results.is_empty() {
+                            p { class: "results-empty",
+                                if snapshot.search_pager.page > 0 { "No messages found. Try a different search." }
+                                else { "Press Enter to search. Use in:channel, from:person, or has:file to narrow results." }
+                            }
                         }
                     } else {
                         {palette_results(state, snapshot)}
                     }
                 }
-            } else if overlay == Overlay::Viewer {
-                if let Some(viewer) = snapshot.viewer.as_ref() {
-                    // Full-resolution bytes are fetched on open, so the element
-                    // has to re-request when they land: an unstamped `src` is
-                    // painted once and never asked for again.
-                    {
-                        let uri = viewer.id.uri_at(snapshot.media_epoch);
-                        let ready = snapshot.media.is_ready(&viewer.id);
-                        rsx! {
-                            div { class: "viewer",
-                                if !ready {
-                                    if snapshot.media.image_state(&viewer.id).1 {
-                                        p {class:"media-unavailable", "Preview unavailable"}
-                                    } else {
-                                        p { class: "viewer-loading", "Loading {viewer.name}…" }
-                                    }
-                                } else if viewer.mime.starts_with("image/") {
-                                    crate::view::media_image::MediaImage {state,id:viewer.id.clone(),media_epoch:snapshot.media_epoch,alt:viewer.name.clone()}
-                                } else if viewer.mime.starts_with("video/") {
-                                    video { key: "viewer-{uri}", src: "{uri}", controls: true, autoplay: true, "{viewer.name}" }
-                                } else {
-                                    p { "This file type cannot be previewed in the system WebView." }
-                                }
-                                crate::download::DownloadButton {key:"{viewer.id.uri()}",state,id:viewer.id.clone(),name:viewer.name.clone(),ready}
-                            }
+                if overlay == Overlay::Search && snapshot.search_filters.is_none() && (snapshot.search_pager.has_more() || snapshot.search_pager.failed) {
+                    div { class: "search-footer",
+                        if snapshot.search_pager.failed {
+                            p { role: "status", "Search couldn’t load. Try again." }
+                        }
+                        button { class: "chip", disabled: snapshot.search_pager.loading,
+                            onclick: move |_| {
+                                if state.peek().search_pager.page > 0 { spawn(crate::bootstrap::search_more(state)); }
+                                else { spawn(crate::bootstrap::search(state)); }
+                            },
+                            if snapshot.search_pager.loading { "Loading…" }
+                            else if snapshot.search_pager.failed { "Retry search" }
+                            else { "Load more results" }
                         }
                     }
+                }
+            } else if overlay == Overlay::Viewer {
+                if let Some(viewer) = snapshot.viewer.as_ref() {
+                    crate::file_preview::FileViewer {state,viewer:viewer.clone(),media_epoch:snapshot.media_epoch}
+
                 }
             } else if overlay == Overlay::Accounts {
                 div { class: "account-list",
@@ -265,6 +315,12 @@ fn self_menu_view(mut state: Signal<ShellState>, snapshot: &ShellState) -> Eleme
                         {crate::icons::icon(crate::icons::Icon::Close, "icon sm")}
                     }
                 }
+            }
+            button {
+                class: "self-menu-item",
+                role: "menuitem",
+                onclick: move |_| crate::self_status::open(state),
+                "Set your status"
             }
             button {
                 class: "self-menu-item",
@@ -409,7 +465,7 @@ mod tests {
     }
 }
 
-fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
+fn palette_results(state: Signal<ShellState>, snapshot: &ShellState) -> Element {
     let matches = snapshot.palette_matches();
     let query_empty = snapshot.palette_query.trim().is_empty();
     let empty = matches.is_empty();
@@ -418,8 +474,9 @@ fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
         if show_recents {
             div { class: "palette-section", "Recent" }
         }
-        for (selection, index) in matches.into_iter().enumerate() {
-            if let Some(channel) = snapshot.channels.get(index) {
+        if snapshot.palette_opening.is_some() { p { class: "results-empty", role: "status", "Opening direct message…" } }
+        for (selection, entry) in matches.into_iter().enumerate() {
+            {let channel = &entry.row; rsx! {
                 {
                     let selected = selection == snapshot.palette_selected;
                     let class = palette_row_class(channel.unread, selected);
@@ -436,16 +493,15 @@ fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
                     let member_count = channel.member_count;
                     let show_dm_badge = is_im && unread && mention_count == 0 && unread_count > 0;
                     let row_key = channel.id.clone();
+                    let target = entry.target.clone();
                     rsx! {
                         button {
                             class: "{class}",
                             key: "palette-{row_key}",
                             onclick: move |_| {
-                                state.write().select_channel(index, crate::state::ChannelOpen::Global);
-                                state.write().overlay = None;
-                                spawn(crate::bootstrap::refresh_selected_channel(state));
+                                crate::bootstrap::open_palette_target(state, target.clone());
                             },
-                            span { class: "palette-icon",
+                            span { class: "palette-icon", "aria-hidden": "true",
                                 if is_im {
                                     span { class: "palette-avatar-wrap",
                                         if let Some(avatar) = avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
@@ -467,7 +523,9 @@ fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
                                     span { class: "palette-hash", {crate::icons::icon(crate::icons::Icon::Tag, "icon sm")} }
                                 }
                             }
-                            span { class: "palette-name", "{name}" }
+                            span { class: "palette-name", "{name}"
+                                if is_im && !entry.handle.is_empty() { span { class: "palette-handle", "{entry.handle}" } }
+                            }
                             if mention_count > 0 {
                                 span { class: "ping-badge",
                                     if mention_count > 99 { "99+" } else { "{mention_count}" }
@@ -482,7 +540,7 @@ fn palette_results(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
                         }
                     }
                 }
-            }
+            }}
         }
         if empty && query_empty {
             p { class: "results-empty", "No recent conversations yet" }

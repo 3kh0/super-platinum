@@ -8,7 +8,7 @@ pub(crate) fn is_fixture() -> bool {
 
 pub(crate) fn system_messages(state: &mut crate::state::ShellState) {
     let workspace = &state.core.workspaces["T1"];
-    state.messages = [
+    let messages = [
         (None, "The design review is ready. Regular conversation stays easy to read."),
         (Some("channel_topic"), "set the channel topic: Design review"),
         (Some("channel_name"), "renamed the channel from “desktop-review” to “ship”"),
@@ -24,11 +24,7 @@ pub(crate) fn system_messages(state: &mut crate::state::ShellState) {
         })).expect("system activity fixture");
         crate::message_vm::message_vm(workspace, &message, &state.media)
     }).collect();
-    state
-        .messages_by_channel
-        .insert("C2".into(), state.messages.clone());
-    state.timeline_start = 0;
-    state.timeline_end = state.messages.len();
+    state.install_fixture_messages(messages);
 }
 
 pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {

@@ -7,6 +7,55 @@ const CHANNEL: &str = "C1";
 const ROOT: &str = "1.0";
 
 #[test]
+fn locale_preferences_follow_workspace_socket_generation() {
+    let mut core = core();
+    let event = || RtEvent::PreferencesChanged {
+        name: "locale".into(),
+        value: serde_json::json!("de-DE"),
+    };
+    apply(&mut core, TEAM, 1, event());
+    assert_eq!(core.workspaces[TEAM].locale, None);
+    apply(&mut core, TEAM, 0, event());
+    assert_eq!(core.workspaces[TEAM].locale.as_deref(), Some("de-DE"));
+    apply(
+        &mut core,
+        "MISSING",
+        0,
+        RtEvent::PreferencesChanged {
+            name: "locale".into(),
+            value: serde_json::json!("fr-FR"),
+        },
+    );
+    assert_eq!(core.workspaces[TEAM].locale.as_deref(), Some("de-DE"));
+}
+
+#[test]
+fn remote_message_deletion_records_unloaded_channel_and_existing_thread_tombstones() {
+    let mut core = core();
+    core.workspaces.get_mut(TEAM).unwrap().rt_generation = 4;
+    let channel = "never-loaded-channel";
+    let ts = "1234567890.123456";
+    let key = (TEAM.into(), channel.into(), ROOT.into());
+    core.threads
+        .entry(key.clone())
+        .or_default()
+        .upsert(message(ts, Some(ROOT)));
+    let event = || RtEvent::MessageDeleted {
+        channel: channel.into(),
+        deleted_ts: ts.into(),
+    };
+    apply(&mut core, TEAM, 3, event());
+    assert!(!core.workspaces[TEAM].messages.contains_key(channel));
+    assert!(!core.threads[&key].was_deleted(ts));
+    apply(&mut core, TEAM, 4, event());
+    assert!(core.workspaces[TEAM].messages[channel].was_deleted(ts));
+    assert!(core.workspaces[TEAM].messages[channel].messages.is_empty());
+    assert!(core.threads[&key].was_deleted(ts));
+    assert!(core.threads[&key].messages.is_empty());
+    assert!(!core.workspaces[TEAM].messages[CHANNEL].was_deleted(ts));
+}
+
+#[test]
 fn thread_feed_edits_follow_the_socket_generation_and_workspace() {
     let mut core = core();
     core.active_team = Some(TEAM.into());
@@ -559,4 +608,66 @@ fn thread_subscription_events_update_all_copies_without_moving_read_cursors() {
         core.workspaces[TEAM].messages[CHANNEL].messages[0].extra["subscribed"],
         false
     );
+}
+
+#[test]
+fn file_deletions_respect_socket_generation_and_mask_late_file_projections() {
+    let mut core = core();
+    core.active_team = Some(TEAM.into());
+    core.workspaces.get_mut(TEAM).unwrap().rt_generation = 4;
+    let event = || {
+        RtEvent::Unknown(
+            serde_json::from_value(serde_json::json!({"type":"file_deleted","file_id":"F1"}))
+                .unwrap(),
+        )
+    };
+    apply(&mut core, TEAM, 3, event());
+    assert!(!core.workspaces[TEAM].deleted_files.contains("F1"));
+    apply(&mut core, TEAM, 4, event());
+    assert!(core.workspaces[TEAM].deleted_files.contains("F1"));
+    let file = serde_json::from_value(
+        serde_json::json!({"id":"F1","title":"old","url_private":"https://files.slack.com/stale"}),
+    )
+    .unwrap();
+    assert!(
+        matches!(crate::message_vm::workspace_file_node(&core.workspaces[TEAM],&crate::media::MediaRegistry::default(),&file),crate::state::RichNode::Text(text) if text=="Deleted file")
+    );
+}
+
+#[test]
+fn realtime_worker_rejects_credentials_replaced_before_first_poll() {
+    use std::sync::Arc;
+    use super_platinum_core::{
+        config::{Session, WorkspaceSession},
+        slack::Transport,
+    };
+    let mut core = core();
+    core.transport = Some(Arc::new(Transport::new("fixture-cookie").unwrap()));
+    core.session = Some(Session {
+        d_cookie: "fixture-cookie".into(),
+        workspaces: [(
+            TEAM.into(),
+            WorkspaceSession {
+                team_id: TEAM.into(),
+                enterprise_id: None,
+                user_id: "U1".into(),
+                name: "Fixture".into(),
+                url: "https://example.invalid".into(),
+                token: "fixture-token".into(),
+            },
+        )]
+        .into(),
+    });
+    let mut params = ConnectParams {
+        team: TEAM.into(),
+        ws_url: realtime::flannel_url("fixture-token", TEAM),
+        d_cookie: "fixture-cookie".into(),
+        user_agent: String::new(),
+    };
+    assert!(worker_source(&core, &params).is_some());
+    params.ws_url = realtime::flannel_url("old-token", TEAM);
+    assert!(worker_source(&core, &params).is_none());
+    params.ws_url = realtime::flannel_url("fixture-token", TEAM);
+    params.d_cookie = "old-cookie".into();
+    assert!(worker_source(&core, &params).is_none());
 }

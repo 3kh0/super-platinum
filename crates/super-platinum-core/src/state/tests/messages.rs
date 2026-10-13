@@ -3,6 +3,18 @@ use super::common::msg;
 use crate::slack::models::File;
 
 #[test]
+fn remote_deletion_retains_missing_row_evidence_without_marking_optimistic_removal() {
+    let mut messages = ChannelMessages::default();
+    messages.record_remote_deletion("123.000001");
+    assert!(messages.was_deleted("123.000001"));
+    assert!(messages.messages.is_empty());
+    messages.upsert(msg("124.000001", "optimistic"));
+    messages.remove("124.000001");
+    assert!(!messages.was_deleted("124.000001"));
+    assert!(!ChannelMessages::default().was_deleted("123.000001"));
+}
+
+#[test]
 fn upsert_keeps_ascending_order_and_dedupes() {
     let mut cm = ChannelMessages::default();
     assert!(cm.upsert(msg("1783372360.741769", "b")));

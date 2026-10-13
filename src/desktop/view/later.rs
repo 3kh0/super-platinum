@@ -28,6 +28,7 @@ pub(crate) fn LaterPanel(state: Signal<ShellState>) -> Element {
         .and_then(|team| snapshot.core.workspaces.get(team));
     rsx! {
         aside {class:"list-panel later-panel", "aria-label":"Later",
+            onmounted:move |_|{spawn(crate::later::file_fixture::native_check(state));},
             header {class:"list-panel-header",
                 h2 {"Later"}
                 span {class:"spacer"}
@@ -44,6 +45,7 @@ pub(crate) fn LaterPanel(state: Signal<ShellState>) -> Element {
                 }
             }
             div {class:"list-body later-body",
+                crate::file_actions::later::RecoveryInventory {state}
                 if let Some(error)=later.and_then(|later|later.error.as_ref()) {
                     div {class:"later-error",role:"alert",
                         p {"{error}"}
@@ -57,11 +59,22 @@ pub(crate) fn LaterPanel(state: Signal<ShellState>) -> Element {
                             {
                                 let description=item.description_message();
                                 let message=if key.item_type=="reminder" {Some(&description)}else{later.hydrated.get(key)};
-                                let title=if key.item_type=="reminder" {"Reminder".into()}else{workspace.and_then(|ws|ws.channels.get(&key.item_id).map(|channel|super_platinum_core::state::channel_display_name(ws,channel))).unwrap_or_else(||key.item_id.clone())};
-                                let author=if key.item_type=="reminder" {String::new()}else{workspace.zip(message).map(|(ws,message)|super_platinum_core::state::message_author_name(ws,message)).unwrap_or_default()};
-                                let preview=workspace.zip(message).map(|(ws,message)|super::rich::message_plain_text(&crate::message_vm::message_vm(ws,message,&snapshot.media))).unwrap_or_else(||{
+                                let mut title=if key.item_type=="reminder" {"Reminder".into()}else{workspace.and_then(|ws|ws.channels.get(&key.item_id).map(|channel|super_platinum_core::state::channel_display_name(ws,channel))).unwrap_or_else(||key.item_id.clone())};
+                                let mut author=if key.item_type=="reminder" {String::new()}else{workspace.zip(message).map(|(ws,message)|super_platinum_core::state::message_author_name(ws,message)).unwrap_or_default()};
+                                let mut preview=workspace.zip(message).map(|(ws,message)|super::rich::message_plain_text(&crate::message_vm::message_vm(ws,message,&snapshot.media))).unwrap_or_else(||{
                                     item.extra.get("text").and_then(|value|value.as_str()).map(str::to_owned).unwrap_or_else(||if key.item_type=="message" {"Message preview unavailable".into()}else{format!("Saved {}",key.item_type)})
                                 });
+                                let mut deleted=false;
+                                if key.item_type=="file" {
+                                    let file=later.files.get(&key.item_id);
+                                    deleted=workspace.is_some_and(|ws|ws.deleted_files.contains(&key.item_id))
+                                        || matches!(later.file_errors.get(&key.item_id),Some(super_platinum_core::later::FileHydrationFailure::Deleted));
+                                    title=file.map(super_platinum_core::state::file_title).unwrap_or_else(||"Saved file".into());
+                                    author=file.and_then(super_platinum_core::state::file_uploader_id).map(|id|super_platinum_core::state::display_name(workspace.and_then(|ws|ws.users.get(id)),id)).unwrap_or_default();
+                                    preview=if deleted {"This file was deleted. You can remove it from Later.".into()}
+                                        else if matches!(later.file_errors.get(&key.item_id),Some(super_platinum_core::later::FileHydrationFailure::Unavailable)) {"File unavailable. Open to try again, or remove it from Later.".into()}
+                                        else {file.map(super_platinum_core::state::file_summary).unwrap_or_else(||"Open to load file details.".into())};
+                                }
                                 let busy=later.busy.contains(key);
                                 let open_key=key.clone();
                                 let done_key=key.clone();
@@ -72,8 +85,8 @@ pub(crate) fn LaterPanel(state: Signal<ShellState>) -> Element {
                                 let complete=item.filter()==LaterFilter::Completed;
                                 let due=if item.date_due>1 && !archived && !complete {Some(item.date_due)}else{None};
                                 rsx! {
-                                    article {class:"later-item",key:"{key.item_type}-{key.item_id}-{key.ts}","aria-busy":busy,
-                                        button {class:"later-entry",onclick:move |_|if open_key.item_type=="reminder" {reminder.set(Some(open_key.clone()))}else{crate::later::open(state,open_key.clone())},
+                                    article {class:"later-item",key:"{key.item_type}-{key.item_id}-{key.ts}","aria-busy":busy,"data-saved-file":if key.item_type=="file"{key.item_id.clone()}else{String::new()},
+                                        button {class:"later-entry",disabled:deleted,onclick:move |_|if open_key.item_type=="reminder" {reminder.set(Some(open_key.clone()))}else{crate::later::open(state,open_key.clone())},
                                             span {class:"later-channel","{title}"}
                                             if let Some(due)=due {
                                                 span {class:if due<super_platinum_core::state::now_secs(){"later-due overdue"}else{"later-due"},
@@ -105,7 +118,7 @@ pub(crate) fn LaterPanel(state: Signal<ShellState>) -> Element {
                     }
                     if later.loaded && later.visible.is_empty() && !loading && later.error.is_none() {
                         p {class:"list-empty",
-                            if filter==LaterFilter::Saved {"Save messages to keep them here, then add a reminder or mark them complete."}
+                            if filter==LaterFilter::Saved {"Save messages and files to keep them here, then add a reminder or mark them complete."}
                             else if filter==LaterFilter::Completed {"Completed items will appear here."}
                             else {"Archived items will appear here."}
                         }

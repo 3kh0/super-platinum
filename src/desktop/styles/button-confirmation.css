@@ -1,0 +1,22 @@
+.modal.button-confirmation {
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(440px, calc(100vw - 32px)); max-height: calc(100vh - 32px);
+  padding: 0; display: flex; flex-direction: column; overflow: hidden;
+}
+.button-confirmation > header { flex: 0 0 auto; margin: 0; padding: 16px 20px; gap: 12px; }
+.button-confirmation > header h2 { min-width: 0; flex: 1; margin: 0; overflow-wrap: anywhere; }
+.button-confirmation-body { min-height: 0; overflow: auto; padding: 0 20px 20px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.button-confirmation-body p { margin: 0 0 8px; }
+.button-confirmation-body p:last-child { margin-bottom: 0; }
+.button-confirmation > form { flex: 0 0 auto; }
+.button-confirmation footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border); }
+.button-confirmation footer button { min-height: 32px; padding: 0 12px; border-radius: 8px; background: var(--surface); color: var(--text); font-size: var(--text-sm); overflow-wrap: anywhere; }
+.button-confirmation footer .button-confirmation-submit { background: var(--text); color: var(--bg); }
+.button-confirmation footer .button-confirmation-submit.danger { background: var(--danger); color: var(--bg); }
+.button-confirmation button:disabled { opacity: .55; cursor: default; }
+@media (max-height: 500px) {
+  .modal.button-confirmation { max-height: calc(100vh - 16px); }
+  .button-confirmation > header { padding: 12px 16px; }
+  .button-confirmation-body { padding: 0 16px 16px; }
+  .button-confirmation footer { padding: 8px 16px; }
+}

@@ -1,35 +1,68 @@
-// Sample only while the timeline is moving. An idle client must not keep a
-// requestAnimationFrame chain alive merely to measure a future scroll.
-let activeUntil = 0;
-let previous = 0;
+// One RAF chain serves both moving surfaces; no work is scheduled while idle.
+// Record the awaited interval even if a visible stall crosses the 180ms deadline.
+const surfaces = new Map([
+  ['message-timeline', { name: 'channel', until: 0, previous: null, started: null, frames: [], starts: [] }],
+  ['thread-body', { name: 'thread', until: 0, previous: null, started: null, frames: [], starts: [] }],
+]);
 let scheduled = false;
-let samples = [];
 
-function report() {
-  if (samples.length) dioxus.send(samples.splice(0));
+function report(surface) {
+  if (surface.frames.length || surface.starts.length) {
+    dioxus.send({ surface: surface.name, frames: surface.frames.splice(0), start_delays: surface.starts.splice(0) });
+  }
+}
+
+function stop(surface) {
+  surface.until = 0;
+  surface.previous = null;
+  surface.started = null;
+  report(surface);
 }
 
 function frame(now) {
-  if (now >= activeUntil || document.hidden) {
-    scheduled = false;
-    previous = 0;
-    report();
+  scheduled = false;
+  if (document.hidden) {
+    for (const surface of surfaces.values()) stop(surface);
     return;
   }
-  if (previous) samples.push(now - previous);
-  previous = now;
-  if (samples.length >= 10) report();
-  requestAnimationFrame(frame);
+  let active = false;
+  for (const surface of surfaces.values()) {
+    if (surface.started === null && surface.previous === null) continue;
+    if (surface.started !== null) {
+      surface.starts.push(now - surface.started);
+      surface.started = null;
+    }
+    if (surface.previous !== null) surface.frames.push(now - surface.previous);
+    if (now >= surface.until) {
+      stop(surface);
+    } else {
+      surface.previous = now;
+      active = true;
+      if (surface.frames.length >= 10) report(surface);
+    }
+  }
+  if (active) {
+    scheduled = true;
+    requestAnimationFrame(frame);
+  }
 }
 
 document.addEventListener('scroll', event => {
-  if (event.target?.id !== 'message-timeline') return;
-  activeUntil = performance.now() + 180;
-  if (!scheduled && !document.hidden) {
+  const surface = surfaces.get(event.target?.id);
+  if (!surface || document.hidden) return;
+  const now = performance.now();
+  if (surface.previous === null && surface.started === null) surface.started = now;
+  surface.until = now + 180;
+  if (!scheduled) {
     scheduled = true;
     requestAnimationFrame(frame);
   }
 }, { capture: true, passive: true });
+
+// A hidden interval must not leak into the next visible callback or scroll.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) for (const surface of surfaces.values()) stop(surface);
+});
 
 if (autoScroll) setTimeout(() => {
   const timeline = document.getElementById('message-timeline');

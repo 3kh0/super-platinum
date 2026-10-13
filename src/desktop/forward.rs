@@ -1,7 +1,13 @@
 //! Message forwarding and copying links, with account-scoped async work.
 use crate::state::{MessageVm, Overlay, ShellState};
 use dioxus::prelude::*;
-use std::{collections::BTreeMap, sync::Arc};
+use std::sync::Arc;
+pub(crate) mod check;
+mod delivery;
+pub(crate) mod inventory;
+mod people;
+mod recovery;
+mod recovery_check;
 use super_platinum_core::{
     config::WorkspaceSession,
     slack::{SlackClient, Transport, api},
@@ -9,6 +15,7 @@ use super_platinum_core::{
 
 #[derive(Debug, Clone)]
 pub struct ForwardTarget {
+    pub recovery_only: bool,
     pub epoch: u64,
     pub team: String,
     pub channel: String,
@@ -23,6 +30,7 @@ pub fn open(mut state: Signal<ShellState>, channel: String, message: MessageVm) 
     let id = api::ForwardMessage::new(channel.clone(), message.ts.clone(), String::new(), vec![])
         .client_msg_id;
     shell.forward_target = Some(ForwardTarget {
+        recovery_only: false,
         epoch: shell.core.account_epoch,
         team,
         channel,
@@ -69,6 +77,7 @@ struct Destination {
     name: String,
     private: bool,
     dm: bool,
+    person: Option<crate::new_dm::Person>,
 }
 fn destinations(shell: &ShellState, query: &str, selected: &[Destination]) -> Vec<Destination> {
     let Some(workspace) = shell
@@ -79,11 +88,16 @@ fn destinations(shell: &ShellState, query: &str, selected: &[Destination]) -> Ve
     else {
         return vec![];
     };
+    let only_channels = query.trim_start().starts_with('#');
     let query = query.trim().trim_start_matches('#').to_lowercase();
     let mut result = workspace
         .channels
         .values()
-        .filter(|c| !c.is_archived && !selected.iter().any(|d| d.id == c.id))
+        .filter(|c| {
+            !c.is_archived
+                && (!only_channels || !(c.is_im || c.is_mpim))
+                && !selected.iter().any(|d| d.id == c.id)
+        })
         .filter_map(|c| {
             let name = super_platinum_core::state::channel_display_name(workspace, c);
             name.to_lowercase().contains(&query).then(|| Destination {
@@ -91,6 +105,7 @@ fn destinations(shell: &ShellState, query: &str, selected: &[Destination]) -> Ve
                 name,
                 private: c.is_private || c.is_group,
                 dm: c.is_im || c.is_mpim,
+                person: None,
             })
         })
         .collect::<Vec<_>>();
@@ -129,7 +144,13 @@ fn close(mut state: Signal<ShellState>) {
 #[component]
 pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
     let target = use_hook(|| state.peek().forward_target.clone()).unwrap();
-    let mut query = use_signal(String::new);
+    let mut query = use_signal(|| {
+        if std::env::var("SUPER_PLATINUM_FIXTURE").is_ok_and(|s| s.starts_with("forward-people")) {
+            "alex".into()
+        } else {
+            String::new()
+        }
+    });
     let mut selected = use_signal(Vec::<Destination>::new);
     let mut active = use_signal(|| 0usize);
     let mut sending = use_signal(|| false);
@@ -141,8 +162,42 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
             String::new()
         }
     });
-    let mut requests = use_signal(BTreeMap::<String, api::ForwardMessage>::new);
-    let matches = use_memo(move || destinations(&state.read(), &query.read(), &selected.read()));
+    use_effect(move || {
+        if !error.read().is_empty() {
+            document::eval(
+                "requestAnimationFrame(()=>document.querySelector('#forward-dialog [role=alert]')?.scrollIntoView({block:'nearest'}));",
+            );
+        }
+    });
+    let deliveries = use_signal(delivery::fixture);
+    let mut saved = use_signal(recovery::Saved::fixture);
+    let load_target = target.clone();
+    use_future(move || recovery::load(state, load_target.clone(), saved, deliveries, error));
+    let open_retry = use_signal(|| 0u64);
+    let directory_query = use_memo(move || {
+        let query = query.read();
+        if sending() || query.trim_start().starts_with('#') {
+            String::new()
+        } else {
+            query.trim().trim_start_matches('@').to_lowercase()
+        }
+    });
+    let (directory, mut retry) = crate::new_dm::directory::use_search(state, directory_query);
+    let matches =
+        use_memo(move || {
+            let ledger = deliveries.read();
+            let mut excluded = selected();
+            excluded.extend(ledger.0.iter().filter(|(id, _)| ledger.excluded(id)).map(
+                |(id, d)| Destination {
+                    id: id.clone(),
+                    name: d.name.clone(),
+                    private: false,
+                    dm: false,
+                    person: None,
+                },
+            ));
+            people::matches(&state.read(), &query.read(), &excluded, &directory.read())
+        });
     use_effect(move || {
         let index = active();
         if index < matches.read().len() {
@@ -170,16 +225,22 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
                 .map(|w| super_platinum_core::state::channel_display_name(w, c))
         })
         .unwrap_or_default();
-    let title = if private {
+    let title = if target.recovery_only {
+        "Saved forwarding delivery"
+    } else if private {
         "Forward private message"
     } else {
         "Forward message"
     };
     let preview = target.message.clone();
     let copy_target = target.clone();
+    let retry_target = target.clone();
     let dialog_id = target.id.clone();
-    let initial_blocks = if std::env::var("SUPER_PLATINUM_FIXTURE")
-        .is_ok_and(|name| name.starts_with("forward"))
+    let initial_blocks = if let Some(receipt) =
+        saved.read().receipts.values().find(|r| r.unresolved())
+    {
+        serde_json::to_string(&receipt.delivery.request.blocks).unwrap_or_else(|_| "[]".into())
+    } else if std::env::var("SUPER_PLATINUM_FIXTURE").is_ok_and(|name| name.starts_with("forward"))
     {
         serde_json::json!([{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"Worth a look 🚀","style":{"bold":true}},{"type":"text","text":"\nThe original conversation stays attached."}]}]}]).to_string()
     } else {
@@ -187,20 +248,22 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
     };
     rsx! {
         div {class:"scrim",onclick:move |_|if !sending(){close(state)}}
-        section {id:"forward-dialog","data-forward-id":dialog_id,class:"modal forward-dialog",role:"dialog","aria-modal":"true","aria-labelledby":"forward-title",
+        section {id:"forward-dialog","data-keyboard-dialog":"true","data-dialog-kind":"forward","data-dialog-generation":dialog_id.clone(),"data-escape-local":"true","data-forward-id":dialog_id,class:"modal forward-dialog",role:"dialog","aria-modal":"true","aria-labelledby":"forward-title",
+            onmounted:move |_|{dioxus::core::spawn_forever(check::run(state));dioxus::core::spawn_forever(recovery_check::run(state));},
             onkeydown:move |event|if event.key()==Key::Escape {event.stop_propagation();if !sending(){close(state)}},
             header {
                 h2 {id:"forward-title","{title}"}
                 button {"aria-label":"Close forward dialog",disabled:sending(),onclick:move |_|close(state),{crate::icons::icon(crate::icons::Icon::Close,"icon")}}
             }
             div {class:"forward-body",
+            if !target.recovery_only {
             label {r#for:"forward-destination","To"}
             div {class:"forward-selected",
                 for destination in selected.read().iter() {
                     {let id=destination.id.clone();rsx!{button {class:"forward-chip",disabled:sending(),"aria-label":"Remove {destination.name}",onclick:move |_|selected.write().retain(|d|d.id!=id),"{destination.name}",{crate::icons::icon(crate::icons::Icon::Close,"icon sm")}}}}
                 }
             }
-            input {id:"forward-destination",initial_value:"",placeholder:"Search conversations",disabled:sending(),
+            input {id:"forward-destination",initial_value:query(),placeholder:"Search people or conversations",disabled:sending(),
                 role:"combobox","aria-expanded":true,"aria-controls":"forward-options","aria-autocomplete":"list",
                 "aria-activedescendant":(!matches.read().is_empty()).then(||format!("forward-option-{}",active().min(matches.read().len().saturating_sub(1)))),
                 onmounted:move |_|crate::view::composer::focus_field_when_mounted("forward-destination"),
@@ -208,22 +271,31 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
                 onkeydown:move |event|match event.key(){
                     Key::ArrowDown=>{event.prevent_default();active.set((active()+1).min(matches.read().len().saturating_sub(1)));},
                     Key::ArrowUp=>{event.prevent_default();active.set(active().saturating_sub(1));},
-                    Key::Enter=>{event.prevent_default();let choice=matches.read().get(active()).cloned();if let Some(choice)=choice {selected.write().push(choice);query.set(String::new());active.set(0);crate::view::composer::set_field_text("forward-destination","");}},
+                    Key::Enter=>{event.prevent_default();let choice=matches.read().get(active()).cloned();if let Some(choice)=choice {if people::choose(state,selected,directory,choice,error){query.set(String::new());active.set(0);crate::view::composer::set_field_text("forward-destination","");}}},
                     _=>{}
                 },
             }
             div {class:"forward-options",role:"listbox",id:"forward-options","aria-label":"Conversations",
                 for (index,destination) in matches.read().iter().enumerate() {
-                    {let destination=destination.clone();rsx!{button {id:"forward-option-{index}",role:"option","aria-selected":index==active(),disabled:sending(),
+                    {let destination=destination.clone();rsx!{button {id:"forward-option-{index}","data-destination":destination.id.clone(),role:"option","aria-selected":index==active(),disabled:sending(),
                         class:if index==active(){"forward-option selected"}else{"forward-option"},
-                        onclick:move |_|{selected.write().push(destination.clone());query.set(String::new());active.set(0);crate::view::composer::set_field_text("forward-destination","");crate::view::composer::focus_field_when_mounted("forward-destination");},
+                        onclick:move |_|{if people::choose(state,selected,directory,destination.clone(),error){query.set(String::new());active.set(0);crate::view::composer::set_field_text("forward-destination","");crate::view::composer::focus_field_when_mounted("forward-destination");}},
                         {crate::icons::icon(if destination.dm {crate::icons::Icon::DirectMessages}else if destination.private {crate::icons::Icon::Lock}else{crate::icons::Icon::Tag},"icon sm")}
                         span {"{destination.name}"}
+                        if let Some(person)=&destination.person {if !person.handle.is_empty() {small {"@{person.handle}"}}}
                     }}}
                 }
-                if matches.read().is_empty() {p {class:"forward-hint","No matching conversations"}}
+                if matches.read().is_empty() {p {class:"forward-hint","No matching people or conversations"}}
             }
-            crate::view::rich_editor::RichEditor {id:"forward-note",label:"Add a message (optional)",blocks:initial_blocks,disabled:sending()}
+            if directory.read().loading {p {class:"forward-hint",role:"status","Searching workspace…"}}
+            if !query.read().trim().is_empty() && !query.read().trim_start().starts_with('#') {
+                if let Some(message)=directory.read().error {div {class:"forward-directory-error",role:"status",span {"{message}"}button {disabled:sending(),onclick:move |_|retry+=1,"Retry search"}}}
+            }
+            }
+            if !target.recovery_only {
+            if saved.read().loaded {crate::view::rich_editor::RichEditor {id:"forward-note",autofocus:false,label:"Add a message (optional)",blocks:initial_blocks,disabled:sending()||deliveries.read().uncertain()}}
+            if deliveries.read().uncertain() {p {class:"forward-hint","Saved notes are shown with their delivery records below."}}
+            if saved.read().mixed_notes() {p {class:"forward-hint","These saved forwards have different notes. Resolve their delivery before forwarding to another conversation."}}
             div {class:"forward-preview",
                 strong {"{preview.author}"}
                 span {class:"forward-source","From {source_name}"}
@@ -231,9 +303,16 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
                 {crate::view::rich::attachment_embeds(state,snapshot.media_epoch,&preview.attachments)}
             }
             if private {p {class:"forward-hint","Recipients will see a copy of this private message."}}
+            }
+            if !saved.read().loaded {
+                if saved.read().load_failed {button {onclick:move |_|{saved.write().load_failed=false;error.set(String::new());spawn(recovery::load(state,retry_target.clone(),saved,deliveries,error));},"Retry saved forwards"}}
+                else {p {class:"forward-hint",role:"status","Loading saved forwards…"}}
+            }
+            if target.recovery_only {p {class:"forward-hint","Review earlier forwards here, even when the original message is no longer loaded."}}
+            delivery::Results {state,deliveries,saved,selected,busy:sending,error,open_retry}
             if !error.read().is_empty() {p {role:"alert",class:"forward-error","{error}"}}
             }
-            footer {
+            if !target.recovery_only {footer {
                 button {disabled:copying(),onclick:move |_|{
                     if copying(){return;}copying.set(true);error.set(String::new());
                     let target=copy_target.clone();
@@ -243,85 +322,28 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
                         if let Err(message)=result {if let Ok(mut value)=error.try_write(){*value=message;}}
                     });
                 },if copying(){"Copying…"}else{"Copy link"}}
-                button {class:"primary",disabled:sending()||selected.read().is_empty(),onclick:move |_|{
+                button {class:"primary",disabled:sending()||!saved.read().loaded||saved.read().mixed_notes()||selected.read().is_empty(),onclick:move |_|{
                     if sending(){return;}sending.set(true);error.set(String::new());
                     let target=target.clone();let destinations=selected();
-                    dioxus::core::spawn_forever(async move {
-                        let blocks=read_note(&target.id).await;
-                        if !same_dialog(&state.peek(),&target){return;}
-                        let Some(ctx)=Context::get(&state,&target) else {if let Ok(mut busy)=sending.try_write(){*busy=false;}return;};
-                        let Some(blocks)=blocks else {if let Ok(mut busy)=sending.try_write(){*busy=false;}if let Ok(mut e)=error.try_write(){*e="The note could not be read. Please try again.".into();}return;};
-                        // Snapshot every request before the first network await;
-                        // closing the dialog must not cancel later destinations.
-                        let batch=destinations.into_iter().map(|destination| {
-                                let Ok(mut cached)=requests.try_write() else {return None;};
-                                let entry=cached.entry(destination.id.clone()).or_insert_with(||api::ForwardMessage::new(target.channel.clone(),target.message.ts.clone(),destination.id.clone(),blocks.clone()));
-                                if entry.blocks!=blocks {*entry=api::ForwardMessage::new(target.channel.clone(),target.message.ts.clone(),destination.id.clone(),blocks.clone());}
-                                Some((destination,entry.clone()))
-                        }).collect::<Option<Vec<_>>>();
-                        let Some(batch)=batch else {return;};
-                        let mut successful=Vec::new();let mut errors=Vec::new();
-                        for (destination,request) in batch {
-                            if !ctx.current(&state.peek()){return;}
-                            match api::forward_message(&ctx.transport,&ctx.client,&ctx.session,&request).await {
-                                Ok(_)=>successful.push(destination.id),
-                                Err(failure)=>errors.push(format!("{}: {}",destination.name,failure_message(&failure))),
-                            }
-                        }
-                        if !ctx.current(&state.peek()){return;}
-                        if same_dialog(&state.peek(),&target) {
-                            if let Ok(mut value)=selected.try_write(){value.retain(|d|!successful.contains(&d.id));}
-                            if let Ok(mut value)=sending.try_write(){*value=false;}
-                            if errors.is_empty(){close(state);state.write().show_toast("Message forwarded.");}
-                            else if let Ok(mut value)=error.try_write(){*value=format!("{} Your note is still here.",errors.join(" "));}
-                        } else if !errors.is_empty() {state.write().show_toast("Some forwards could not be confirmed. Check the destination conversations.");}
-                        if state.peek().core.active_channel.as_ref().is_some_and(|c|successful.contains(c)) {
-                            crate::bootstrap::refresh_selected_channel(state).await;
-                        }
-                    });
-                },if sending(){"Forwarding…"}else{"Forward"}}
-            }
+                    let ui=delivery::Ui {state,deliveries,saved,selected,busy:sending,error,open_retry};
+                    dioxus::core::spawn_forever(ui.submit(target,destinations,None));
+                },if sending(){"Working…"}else{"Forward"}}
+            }}
         }
-    }
-}
-fn failure_message(error: &super_platinum_core::slack::Error) -> String {
-    use super_platinum_core::slack::Error;
-    match error {
-        Error::RateLimited {
-            retry_after_secs: Some(seconds),
-        } => format!("Slack asked you to wait {seconds} seconds before trying again."),
-        Error::RateLimited { .. } => "Slack is limiting requests. Try again shortly.".into(),
-        Error::Api(code)
-            if matches!(
-                code.as_str(),
-                "channel_not_found" | "not_in_channel" | "is_archived"
-            ) =>
-        {
-            "This conversation is unavailable for forwarding.".into()
-        }
-        Error::Api(code)
-            if matches!(
-                code.as_str(),
-                "restricted_action" | "not_allowed" | "permission_denied" | "no_permission"
-            ) =>
-        {
-            "You do not have permission to forward this message here.".into()
-        }
-        Error::Api(_) => "Slack could not forward this message.".into(),
-        Error::Offline(_) | Error::TransportNotConfigured => {
-            "Reconnect to Slack to forward this message.".into()
-        }
-        _ => "Delivery could not be confirmed. Check the conversation before retrying.".into(),
     }
 }
 async fn read_note(dialog: &str) -> Option<Vec<serde_json::Value>> {
     let dialog = serde_json::to_string(dialog).unwrap();
-    dioxus::document::eval(&format!(
-        "try{{const root=document.getElementById('forward-dialog');dioxus.send(root?.dataset.forwardId==={dialog}?window.superPlatinumRichEditor.read('forward-note'):null);}}catch{{dioxus.send(null);}}"
-    ))
-    .recv::<Option<Vec<serde_json::Value>>>()
-    .await
-    .ok().flatten()
+    let mut eval = dioxus::document::eval(&format!(
+        "await (async()=>{{let note=null;try{{const root=document.getElementById('forward-dialog');note=root?.dataset.forwardId==={dialog}?window.superPlatinumRichEditor.read('forward-note'):null;}}catch{{}}dioxus.send(note);await dioxus.recv();}})();"
+    ));
+    let note = eval
+        .recv::<Option<Vec<serde_json::Value>>>()
+        .await
+        .ok()
+        .flatten();
+    let _ = eval.send("received");
+    note
 }
 async fn copy_link(mut state: Signal<ShellState>, target: &ForwardTarget) -> Result<(), String> {
     let Some(ctx) = Context::get(&state, target) else {
@@ -341,7 +363,11 @@ async fn copy_link(mut state: Signal<ShellState>, target: &ForwardTarget) -> Res
         return Ok(());
     }
     let value = serde_json::to_string(&link).unwrap();
-    let copied=dioxus::document::eval(&format!("try{{await navigator.clipboard.writeText({value});dioxus.send(true);}}catch{{dioxus.send(false);}}" )).recv::<bool>().await.unwrap_or(false);
+    let mut eval = dioxus::document::eval(&format!(
+        "await (async()=>{{let copied=false;try{{await navigator.clipboard.writeText({value});copied=true;}}catch{{}}dioxus.send(copied);await dioxus.recv();}})();"
+    ));
+    let copied = eval.recv::<bool>().await.unwrap_or(false);
+    let _ = eval.send("received");
     if !ctx.current(&state.peek()) {
         return Ok(());
     }
@@ -382,6 +408,7 @@ mod tests {
     fn old_dialog_completion_cannot_close_a_new_dialog_or_other_account() {
         let mut shell = fixture();
         let target = ForwardTarget {
+            recovery_only: false,
             epoch: shell.core.account_epoch,
             team: "T1".into(),
             channel: "C2".into(),

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use super_platinum_core::MediaAssetKind;
 
 use super::{ShellState, account_vms, keep_recent_messages};
-use crate::channel_vm::{project_channels, project_messages_for_channel};
+use crate::channel_vm::{channel_rows, project_channel_window, project_channels};
 use crate::fixture::fixture_core;
 use crate::media::MediaRegistry;
 use crate::model::*;
@@ -57,17 +57,61 @@ impl ShellState {
                 state.overlay = Some(Overlay::Settings);
                 state
             }
-            "search" => {
+            "search"
+            | "search-loading"
+            | "search-empty"
+            | "search-error"
+            | "search-more-error"
+            | "search-narrow"
+            | "search-opening"
+            | "search-filters"
+            | "search-filters-narrow" => {
                 let mut state = Self::fixture(media);
-                state.overlay = Some(Overlay::Search);
-                state.search_query = "launch".into();
-                state.search_results = vec![SearchResultVm {
-                    channel_id: "C2".into(),
-                    channel_name: "ship".into(),
-                    ts: "1719800400.000200".into(),
-                    author: "Jules".into(),
-                    text: "The launch checklist is ready for desktop review.".into(),
-                }];
+                crate::bootstrap::search_fixture(&mut state, &fixture);
+                state
+            }
+            "thread-window-200"
+            | "thread-window-2000"
+            | "thread-window-10000"
+            | "thread-window-target"
+            | "thread-window-gap" => {
+                let mut state = Self::fixture(media);
+                let count = match fixture.as_str() {
+                    "thread-window-200" => 200,
+                    "thread-window-2000" => 2000,
+                    _ => 10000,
+                };
+                let root = "1719800400.000000";
+                let mut bag = crate::thread_vm::fixture_bag(count);
+                bag.pending.push(format!("{}.000000", 1719800400 + count));
+                state.thread_root = Some(root.into());
+                if fixture == "thread-window-target" || fixture == "thread-window-gap" {
+                    state.thread_target = Some("1719800650.000000".into());
+                    state.thread_at_bottom = false;
+                }
+                if fixture == "thread-window-gap" {
+                    use super_platinum_core::thread_history::ThreadHistory;
+                    state.thread_history.watch_live(1719810300);
+                    let page = super_platinum_core::slack::models::HistoryPage {
+                        messages: bag.messages[250..450].to_vec(),
+                        has_more: true,
+                        ..Default::default()
+                    };
+                    state.thread_history.start(
+                        &ThreadHistory::initial(Some("1719800650.000000"), 1719810400),
+                        root,
+                        &page,
+                    );
+                }
+                state.core.threads.insert(
+                    (
+                        "T1".into(),
+                        state.core.active_channel.clone().unwrap(),
+                        root.into(),
+                    ),
+                    bag,
+                );
+                state.refresh_thread_from_core();
                 state
             }
             "threads"
@@ -257,17 +301,23 @@ impl ShellState {
             .as_ref()
             .and_then(|id| channels.iter().position(|channel| &channel.id == id))
             .unwrap_or(default_active);
-        let (messages_by_channel, messages) = channels
+        let channel_rows = channels
+            .get(active_channel)
+            .map(|channel| channel_rows(workspace, &channel.id, None))
+            .unwrap_or_default();
+        let timeline_end = channel_rows.len();
+        let messages = channels
             .get(active_channel)
             .map(|channel| {
-                let messages = project_messages_for_channel(workspace, &channel.id, &media, None);
-                (
-                    HashMap::from([(channel.id.clone(), messages.clone())]),
-                    messages,
+                project_channel_window(
+                    workspace,
+                    &channel.id,
+                    &media,
+                    &channel_rows,
+                    timeline_end.saturating_sub(100)..timeline_end,
                 )
             })
             .unwrap_or_default();
-        let timeline_end = messages.len();
         let self_account = crate::state::project_self_account(workspace, &media);
         core.active_channel = channels
             .get(active_channel)
@@ -275,6 +325,8 @@ impl ShellState {
 
         let state = Self {
             core,
+            managed_drafts: Default::default(),
+            draft_writes: Default::default(),
             media,
             media_epoch: 0,
             huddle_ui: Default::default(),
@@ -289,14 +341,18 @@ impl ShellState {
             sidebar_sections,
             sidebar_memory,
             active_channel,
+            channel_rows,
+            channel_geometry: crate::timeline_geometry::Geometry::uniform(timeline_end),
+            fixture_channel_messages: None,
             messages,
-            messages_by_channel,
             timeline_start: timeline_end.saturating_sub(100),
             timeline_end,
             row_heights: HashMap::new(),
             message_arrivals: HashMap::new(),
+            pending_delivery: HashMap::new(),
             selection_pinned: false,
             upload_ui_epoch: 0,
+            file_events: Default::default(),
             stick_to_bottom: true,
             loading_older: false,
             chat_paused: false,
@@ -317,15 +373,25 @@ impl ShellState {
             storage: StoragePanel::default(),
             palette_query: String::new(),
             palette_selected: 0,
+            palette_generation: 0,
+            shortcut_generation: 0,
+            palette_opening: None,
             search_query: String::new(),
+            search_input_revision: 0,
+            search_focus_at_end: false,
+            search_open_generation: 0,
+            search_opening: None,
+            search_filters: None,
+            search_filter_error: None,
             search_results: Vec::new(),
-            search_loading: false,
+            search_pager: Default::default(),
             later_open_generation: 0,
             unread_anchor: None,
             manual_unread: Default::default(),
             thread_unread: Default::default(),
             thread_root: None,
             thread_messages: Vec::new(),
+            thread_window: Default::default(),
             thread_at_bottom: true,
             thread_generation: 0,
             thread_target: None,
@@ -333,17 +399,30 @@ impl ShellState {
             thread_error: None,
             thread_history: Default::default(),
             profile_user: None,
+            profile_generation: 0,
+            profile_dm_generation: 0,
+            profile_dm_opening: None,
             group_panel: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
             self_menu_notifications_open: false,
-            profile_vip_loading: false,
+            slack_lists: crate::slack_lists::State::default(),
+            self_status: crate::self_status::State::default(),
+            self_menu_mutations: Default::default(),
+            profile_vip_pending: Default::default(),
             viewer: None,
+            canvas: None,
+            canvas_create: None,
+            app_modal: None,
+            message_buttons: crate::message_buttons::State::default(),
+            app_modal_closes: Vec::new(),
             toast: None,
             connection: ConnectionVm::default(),
             performance: PerformanceVm::default(),
             channel_switch_started: None,
             channel_generation: 0,
+            slack_link_generation: 0,
+            edit_generation: 0,
             realtime_insert_started: None,
         };
         state
@@ -377,6 +456,8 @@ impl ShellState {
         let core = super_platinum_core::CoreAppState::new(settings);
         let state = Self {
             core,
+            managed_drafts: Default::default(),
+            draft_writes: Default::default(),
             media,
             media_epoch: 0,
             huddle_ui: Default::default(),
@@ -391,14 +472,18 @@ impl ShellState {
             sidebar_sections: Vec::new(),
             sidebar_memory: Default::default(),
             active_channel: 0,
+            channel_rows: Vec::new(),
+            channel_geometry: Default::default(),
+            fixture_channel_messages: None,
             messages: Vec::new(),
-            messages_by_channel: HashMap::new(),
             timeline_start: 0,
             timeline_end: 0,
             row_heights: HashMap::new(),
             message_arrivals: HashMap::new(),
+            pending_delivery: HashMap::new(),
             selection_pinned: false,
             upload_ui_epoch: 0,
+            file_events: Default::default(),
             stick_to_bottom: true,
             loading_older: false,
             chat_paused: false,
@@ -419,15 +504,25 @@ impl ShellState {
             storage: StoragePanel::default(),
             palette_query: String::new(),
             palette_selected: 0,
+            palette_generation: 0,
+            shortcut_generation: 0,
+            palette_opening: None,
             search_query: String::new(),
+            search_input_revision: 0,
+            search_focus_at_end: false,
+            search_open_generation: 0,
+            search_opening: None,
+            search_filters: None,
+            search_filter_error: None,
             search_results: Vec::new(),
-            search_loading: false,
+            search_pager: Default::default(),
             later_open_generation: 0,
             unread_anchor: None,
             manual_unread: Default::default(),
             thread_unread: Default::default(),
             thread_root: None,
             thread_messages: Vec::new(),
+            thread_window: Default::default(),
             thread_at_bottom: true,
             thread_generation: 0,
             thread_target: None,
@@ -435,17 +530,30 @@ impl ShellState {
             thread_error: None,
             thread_history: Default::default(),
             profile_user: None,
+            profile_generation: 0,
+            profile_dm_generation: 0,
+            profile_dm_opening: None,
             group_panel: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
             self_menu_notifications_open: false,
-            profile_vip_loading: false,
+            slack_lists: crate::slack_lists::State::default(),
+            self_status: crate::self_status::State::default(),
+            self_menu_mutations: Default::default(),
+            profile_vip_pending: Default::default(),
             viewer: None,
+            canvas: None,
+            canvas_create: None,
+            app_modal: None,
+            message_buttons: crate::message_buttons::State::default(),
+            app_modal_closes: Vec::new(),
             toast: None,
             connection: ConnectionVm::default(),
             performance: PerformanceVm::default(),
             channel_switch_started: None,
             channel_generation: 0,
+            slack_link_generation: 0,
+            edit_generation: 0,
             realtime_insert_started: None,
         };
         state
@@ -628,22 +736,22 @@ impl ShellState {
             .iter()
             .position(|channel| channel.id == "C2")
             .unwrap_or(default_active);
-        let mut messages_by_channel = HashMap::from([("C2".into(), messages.clone())]);
-        messages_by_channel.insert(
-            "D1".into(),
-            vec![MessageVm {
-                id: "dm1".into(),
-                ts: "1719801000.000400".into(),
-                user_id: Some("U1".into()),
-                author: "Maya Chen".into(),
-                timestamp: super_platinum_core::state::format_ts_hm("1719801000.000400"),
-                avatar_initials: "MC".into(),
-                avatar: Some(maya_avatar.clone()),
-                body: vec![RichNode::Text("Can you review the desktop capture?".into())],
-                ..Default::default()
-            }],
-        );
         let timeline_end = messages.len();
+        let channel_rows = messages
+            .iter()
+            .enumerate()
+            .map(|(source_index, message)| crate::channel_vm::ChannelRow {
+                id: message.id.clone(),
+                ts: message.ts.clone(),
+                pending: message.pending,
+                source_index,
+                compact: message.compact,
+                date_label: message.date_label.clone(),
+                show_unread_divider: message.show_unread_divider,
+            })
+            .collect();
+        let fixture_channel_messages = Some(messages.clone());
+        let messages = messages[timeline_end.saturating_sub(100)..].to_vec();
         let self_fixture_account = core
             .workspaces
             .get("T1")
@@ -651,6 +759,8 @@ impl ShellState {
             .unwrap_or_default();
         Self {
             core,
+            managed_drafts: Default::default(),
+            draft_writes: Default::default(),
             media,
             media_epoch: 0,
             huddle_ui: Default::default(),
@@ -680,14 +790,18 @@ impl ShellState {
             sidebar_sections,
             sidebar_memory,
             active_channel,
+            channel_rows,
+            channel_geometry: crate::timeline_geometry::Geometry::uniform(timeline_end),
+            fixture_channel_messages,
             messages,
-            messages_by_channel,
             timeline_start: timeline_end.saturating_sub(100),
             timeline_end,
             row_heights: HashMap::new(),
             message_arrivals: HashMap::new(),
+            pending_delivery: HashMap::new(),
             selection_pinned: false,
             upload_ui_epoch: 0,
+            file_events: Default::default(),
             stick_to_bottom: true,
             loading_older: false,
             chat_paused: false,
@@ -708,15 +822,25 @@ impl ShellState {
             storage: StoragePanel::default(),
             palette_query: String::new(),
             palette_selected: 0,
+            palette_generation: 0,
+            shortcut_generation: 0,
+            palette_opening: None,
             search_query: String::new(),
+            search_input_revision: 0,
+            search_focus_at_end: false,
+            search_open_generation: 0,
+            search_opening: None,
+            search_filters: None,
+            search_filter_error: None,
             search_results: Vec::new(),
-            search_loading: false,
+            search_pager: Default::default(),
             later_open_generation: 0,
             unread_anchor: None,
             manual_unread: Default::default(),
             thread_unread: Default::default(),
             thread_root: None,
             thread_messages: Vec::new(),
+            thread_window: Default::default(),
             thread_at_bottom: true,
             thread_generation: 0,
             thread_target: None,
@@ -724,17 +848,30 @@ impl ShellState {
             thread_error: None,
             thread_history: Default::default(),
             profile_user: None,
+            profile_generation: 0,
+            profile_dm_generation: 0,
+            profile_dm_opening: None,
             group_panel: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
             self_menu_notifications_open: false,
-            profile_vip_loading: false,
+            slack_lists: crate::slack_lists::State::default(),
+            self_status: crate::self_status::State::default(),
+            self_menu_mutations: Default::default(),
+            profile_vip_pending: Default::default(),
             viewer: None,
+            canvas: None,
+            canvas_create: None,
+            app_modal: None,
+            message_buttons: crate::message_buttons::State::default(),
+            app_modal_closes: Vec::new(),
             toast: None,
             connection: ConnectionVm::default(),
             performance: PerformanceVm::default(),
             channel_switch_started: None,
             channel_generation: 0,
+            slack_link_generation: 0,
+            edit_generation: 0,
             realtime_insert_started: None,
         }
     }
@@ -742,6 +879,7 @@ impl ShellState {
     pub(crate) fn fixture_variant(media: MediaRegistry, name: &str) -> Self {
         let mut state = Self::fixture(media);
         match name {
+            "channel-window-10000" => crate::channel_vm::channel_window_fixture(&mut state),
             "member-add"
             | "member-live-refresh"
             | "member-add-error"
@@ -797,7 +935,48 @@ impl ShellState {
             | "thread-follow-pending"
             | "thread-follow-narrow" => crate::thread_subscription::fixture(&mut state, name),
             "thread-list-unread" => crate::thread_unread::list_fixture(&mut state),
+            "slack-list"
+            | "slack-list-narrow"
+            | "slack-list-readonly"
+            | "slack-list-incomplete"
+            | "slack-list-error"
+            | "slack-list-loading" => crate::slack_lists::fixture::install(&mut state, name),
+            "self-status-editor" | "self-status-editor-narrow" => {
+                crate::self_status::fixture::install(&mut state)
+            }
             "system-messages" => crate::fixture::system_messages(&mut state),
+            "slack-links" | "slack-links-narrow" => crate::slack_links_check::install(&mut state),
+            "app-modal-form"
+            | "app-modal-form-narrow"
+            | "app-modal-lifecycle"
+            | "app-modal-lifecycle-narrow" => crate::app_modal::fixture::install(&mut state),
+            "message-radio-buttons" | "message-radio-buttons-narrow" => {
+                crate::message_buttons::radio_fixture::install(&mut state)
+            }
+            "message-static-select" | "message-static-select-narrow" => {
+                crate::message_buttons::select_fixture::install(&mut state)
+            }
+            "message-button-actions" | "message-button-actions-narrow" => {
+                crate::message_buttons::fixture::install(&mut state)
+            }
+            "message-button-metadata" | "message-button-metadata-narrow" => {
+                crate::message_buttons::fixture::install_metadata(&mut state)
+            }
+            "button-metadata" | "button-metadata-narrow" => {
+                crate::blocks::button_metadata_fixture(&mut state)
+            }
+            "block-control-values" | "block-control-values-narrow" => {
+                crate::blocks::controls_fixture(&mut state)
+            }
+            "managed-draft-recovery" | "managed-draft-recovery-narrow" => {
+                crate::drafts::session::fixture(&mut state)
+            }
+            "rejected-send" | "rejected-send-narrow" => {
+                crate::drafts::rejected_fixture::apply(&mut state)
+            }
+            "send-outcomes" | "send-outcomes-narrow" | "send-outcomes-thread" => {
+                crate::messaging::send_outcomes_fixture(&mut state, name)
+            }
             "message-marked-unread" | "message-marked-unread-narrow" => {
                 crate::unread::fixture(&mut state)
             }
@@ -836,6 +1015,49 @@ impl ShellState {
             "rail-account-snoozed" => {
                 state.self_account.snoozed = true;
                 state.self_account.presence = PresenceVm::Away;
+            }
+            "local-drafts"
+            | "local-drafts-loading"
+            | "local-drafts-error"
+            | "local-drafts-error-narrow" => {
+                state.main_view = MainView::Scheduled;
+                let team = state.core.active_team.clone().unwrap();
+                state
+                    .core
+                    .scheduled
+                    .ensure_scope(state.core.account_epoch, &team);
+                let (generation, limit) = state.core.scheduled.begin(false).unwrap();
+                state.core.scheduled.apply(
+                    generation,
+                    super_platinum_core::scheduled::ScheduledPage {
+                        drafts: vec![],
+                        has_more: false,
+                    },
+                    limit,
+                );
+                state.core.scheduled.filter = super_platinum_core::scheduled::DraftFilter::Drafts;
+                for (channel, thread, text) in [
+                    (
+                        "C_COLD",
+                        None,
+                        "A saved draft survives a missing conversation cache. 🚀",
+                    ),
+                    (
+                        "C2",
+                        Some("1719800000.000001"),
+                        "An unfinished reply stays in its original thread.",
+                    ),
+                ] {
+                    state.core.drafts.capture(
+                        &super_platinum_core::drafts::DraftKey {
+                            team: team.clone(),
+                            channel: channel.into(),
+                            thread: thread.map(str::to_owned),
+                        },
+                        &super_platinum_core::ComposerState::with_text(text),
+                        &[],
+                    );
+                }
             }
             "scheduled"
             | "scheduled-empty"
@@ -886,6 +1108,91 @@ impl ShellState {
                             .into(),
                     );
                 }
+            }
+            "bookmarks"
+            | "bookmarks-narrow"
+            | "bookmarks-edit"
+            | "bookmarks-remove"
+            | "bookmarks-error"
+            | "bookmarks-folder"
+            | "bookmarks-folder-remove"
+            | "bookmarks-move" => {
+                state.channel_tab = ChannelTab::Bookmarks;
+                let team = state.core.active_team.clone().unwrap();
+                let channel = state.core.active_channel.clone().unwrap();
+                let store = &mut state.core.bookmarks;
+                store.ensure_scope(state.core.account_epoch, &team, &channel);
+                let g = store.begin().unwrap();
+                let items=serde_json::from_value(serde_json::json!([
+                    {"id":"Bk1","title":"Design system","link":"https://vercel.com/geist/introduction","type":"link","rank":"a"},
+                    {"id":"Bk2","title":"Launch references","type":"local_folder","rank":"b"},
+                    {"id":"Bk3","title":"Release checklist · 日本語","link":"https://example.com/release","type":"link","parent_id":"Bk2","rank":"c"},
+                    {"id":"Bk4","title":"Product handbook and the decisions behind our next release","link":"https://example.com/docs/handbook","type":"link","rank":"d"}
+                ])).unwrap();
+                store.apply(g, items);
+                if name == "bookmarks-edit" || name == "bookmarks-remove" {
+                    store.draft = Some(super_platinum_core::bookmarks::Draft::new(
+                        Some(store.items[0].clone()),
+                        name == "bookmarks-remove",
+                    ));
+                }
+                if name == "bookmarks-folder" {
+                    let mut draft = super_platinum_core::bookmarks::Draft::new(None, false);
+                    draft.folder = true;
+                    store.draft = Some(draft);
+                }
+                if name == "bookmarks-folder-remove" {
+                    let mut draft = super_platinum_core::bookmarks::Draft::new(
+                        Some(store.items[1].clone()),
+                        true,
+                    );
+                    draft.contents =
+                        super_platinum_core::bookmarks::descendants(&store.items, "Bk2")
+                            .into_iter()
+                            .cloned()
+                            .collect();
+                    store.draft = Some(draft);
+                }
+                if name == "bookmarks-move" {
+                    let mut draft = super_platinum_core::bookmarks::Draft::new(
+                        Some(store.items[0].clone()),
+                        false,
+                    );
+                    draft.movement = Some(super_platinum_core::bookmarks::Movement {
+                        parent: "Bk2".into(),
+                        before: "Bk3".into(),
+                    });
+                    store.draft = Some(draft);
+                }
+                if name == "bookmarks-error" {
+                    store.error = Some(
+                        "Bookmarks could not refresh. Your previous links are still here.".into(),
+                    );
+                }
+            }
+            "canvas-create" | "canvas-create-narrow" | "canvas-create-error" => {
+                state.main_view = MainView::Files;
+                let mut draft = crate::canvas_create::Draft::fixture(&state);
+                if name == "canvas-create-error" {
+                    draft.uncertain = true;
+                    draft.error=Some("Slack may have created this canvas. Check Files before creating another. Your draft is retained.".into());
+                }
+                state.canvas_create = Some(draft);
+                state.overlay = Some(Overlay::CanvasCreate);
+            }
+            "canvas"
+            | "canvas-narrow"
+            | "canvas-loading"
+            | "canvas-error"
+            | "canvas-rename"
+            | "canvas-rename-error"
+            | "canvas-readonly" => {
+                state.canvas = Some(crate::model::CanvasTarget {
+                    id: "Ffixture".into(),
+                    title: "Project handbook".into(),
+                    permalink: None,
+                });
+                state.overlay = Some(Overlay::Canvas);
             }
             "unreads" => state.main_view = MainView::Unreads,
             "dms" => state.main_view = MainView::Dms,
@@ -998,6 +1305,7 @@ impl ShellState {
                     );
                 }
             }
+            "later-files" | "later-files-narrow" => crate::later::file_fixture::apply(&mut state),
             "later" | "later-empty" | "later-error" | "later-reminder" | "later-new-reminder" => {
                 use super_platinum_core::later::{SavedItem, SavedPage};
                 state.main_view = MainView::Later;
@@ -1157,6 +1465,23 @@ impl ShellState {
                     fixture: true,
                 };
             }
+            "palette-people" => {
+                let workspace = state.core.workspaces.get_mut("T1").unwrap();
+                workspace.users.insert(
+                    "U_PALETTE_NEW".into(),
+                    super_platinum_core::slack::models::User {
+                        id: "U_PALETTE_NEW".into(),
+                        name: Some("avery.park".into()),
+                        profile: Some(super_platinum_core::slack::models::UserProfile {
+                            display_name: Some("Avery Park".into()),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    },
+                );
+                state.open_palette();
+                state.set_palette_query("avery".into());
+            }
             "palette" => state.overlay = Some(Overlay::Palette),
             "reaction-picker" => {
                 let channel = state.core.active_channel.clone().unwrap_or_default();
@@ -1169,15 +1494,31 @@ impl ShellState {
                 state.reaction_target = Some(ReactionTarget { team, channel, ts });
                 state.overlay = Some(Overlay::ReactionPicker);
             }
-            "forward" | "forward-narrow" | "forward-error" => {
+            "forward-recovery"
+            | "forward-recovery-narrow"
+            | "forward"
+            | "forward-narrow"
+            | "forward-error"
+            | "forward-partial"
+            | "forward-partial-narrow"
+            | "forward-people"
+            | "forward-people-narrow" => {
                 let team = state.core.active_team.clone().unwrap();
-                let channel = if name == "forward-narrow" {
+                let channel = if name.ends_with("narrow") && !name.starts_with("forward-recovery") {
                     "C5".into()
                 } else {
                     state.core.active_channel.clone().unwrap()
                 };
-                let message = state.messages.first().cloned().unwrap();
+                let mut message = state.messages.first().cloned().unwrap();
+                if name.starts_with("forward-recovery") {
+                    message.ts = "1719800000.000100".into();
+                    state.core.active_account = Some("00000000-0000-4000-8000-000000000071".into());
+                    state.main_view = MainView::Scheduled;
+                    state.core.scheduled.filter =
+                        super_platinum_core::scheduled::DraftFilter::Drafts;
+                }
                 state.forward_target = Some(crate::forward::ForwardTarget {
+                    recovery_only: name.starts_with("forward-recovery"),
                     epoch: state.core.account_epoch,
                     team,
                     channel,
@@ -1185,6 +1526,32 @@ impl ShellState {
                     id: "fixture-forward".into(),
                 });
                 state.overlay = Some(Overlay::Forward);
+            }
+            "new-dm-directory"
+            | "new-dm-directory-loading"
+            | "new-dm-directory-error"
+            | "new-dm-directory-empty"
+            | "new-dm-directory-error-narrow" => {
+                state.overlay = Some(Overlay::NewDm);
+                if let Some(ws) = state
+                    .core
+                    .active_team
+                    .clone()
+                    .and_then(|t| state.core.workspaces.get_mut(&t))
+                {
+                    ws.users.insert(
+                        "ULOCAL".into(),
+                        super_platinum_core::slack::models::User {
+                            id: "ULOCAL".into(),
+                            name: Some("alex_local".into()),
+                            real_name: Some("Alex Local".into()),
+                            ..Default::default()
+                        },
+                    );
+                }
+            }
+            "new-dm" | "new-dm-selected" | "new-dm-pending" | "new-dm-error" | "new-dm-narrow" => {
+                state.overlay = Some(Overlay::NewDm);
             }
             "animated-reaction" => {
                 keep_recent_messages(&mut state, 8);
@@ -1216,6 +1583,8 @@ impl ShellState {
                 });
             }
             "profile-pane"
+            | "profile-dm-opening"
+            | "profile-vip-pending"
             | "profile-pane-rich-fields"
             | "profile-pane-min-width"
             | "channel-thread-profile-headers" => {
@@ -1225,6 +1594,12 @@ impl ShellState {
                     loading: false,
                     error: None,
                 });
+                if name == "profile-vip-pending" {
+                    crate::profile_vip::fixture_pending(&mut state, "U1");
+                }
+                if name == "profile-dm-opening" {
+                    state.profile_dm_opening = Some("U1".into());
+                }
                 if name == "profile-pane-rich-fields" {
                     state.channels.retain(|channel| {
                         !(channel.is_im && channel.user_id.as_deref() == Some("U1"))
@@ -1399,7 +1774,32 @@ impl ShellState {
             "image-viewer-upload" | "image-viewer-embed-compact" => {
                 state.open_fixture_viewer("image/png")
             }
+            "pdf-preview"
+            | "pdf-preview-narrow"
+            | "pdf-preview-error"
+            | "pdf-preview-search-long" => crate::pdf_preview::fixture::apply(&mut state, &name),
             "video-viewer" => state.open_fixture_viewer("video/mp4"),
+            "viewer-actions-files"
+            | "viewer-actions-message"
+            | "viewer-actions-narrow"
+            | "viewer-actions-pdf" => crate::viewer_actions_check::fixture(&mut state, &name),
+            "file-actions"
+            | "file-actions-narrow"
+            | "file-actions-channel-narrow"
+            | "file-rename"
+            | "file-rename-narrow"
+            | "file-recovery"
+            | "file-recovery-narrow"
+            | "file-rename-channel-narrow" => crate::file_actions_check::fixture(&mut state),
+            "file-preview-text"
+            | "file-preview-narrow"
+            | "file-preview-large"
+            | "file-preview-utf16"
+            | "file-preview-empty"
+            | "file-preview-binary"
+            | "file-preview-renamed-files"
+            | "file-preview-renamed-message"
+            | "file-preview-audio" => crate::file_preview::fixture(&mut state, &name),
             "gif-picker-attachment" => {
                 let id = super_platinum_core::MediaAssetId::new(MediaAssetKind::Attachment);
                 state.media.insert(
@@ -1409,9 +1809,11 @@ impl ShellState {
                 );
                 if let Some(message) = state.messages.last_mut() {
                     message.body.push(RichNode::Paragraph(vec![RichNode::Media {
+                        file: None,
                         id: Some(id),
                         full: None,
                         name: "celebration.gif".into(),
+                        download_name: "celebration.png".into(),
                         mime: "image/png".into(),
                         size: None,
                     }]));
@@ -1647,9 +2049,11 @@ impl ShellState {
                             },
                         ]),
                         RichNode::Media {
+                            file: None,
                             id: Some(valid),
                             full: None,
                             name: "Valid control image".into(),
+                            download_name: "control.png".into(),
                             mime: "image/png".into(),
                             size: Some((96, 96)),
                         },
@@ -1673,6 +2077,9 @@ impl ShellState {
                 state.sync_fixture_messages();
             }
             _ => {}
+        }
+        if state.fixture_channel_messages.is_some() {
+            state.sync_fixture_messages();
         }
         state
     }
@@ -1712,6 +2119,9 @@ impl ShellState {
             .expect("fixture emoji"),
         ]);
         let workspace = &self.core.workspaces["T1"];
+        if let Some(all) = self.fixture_channel_messages.take() {
+            self.messages = all;
+        }
         for value in raw {
             let message: super_platinum_core::slack::models::Message =
                 serde_json::from_value(value.clone()).expect("fixture slack message");
@@ -1733,8 +2143,15 @@ impl ShellState {
         };
         self.media.insert(id.clone(), mime, bytes);
         self.viewer = Some(ViewerVm {
+            file: None,
             id,
             name: if mime.starts_with("video/") {
+                "demo.mp4"
+            } else {
+                "super-platinum.png"
+            }
+            .into(),
+            download_name: if mime.starts_with("video/") {
                 "demo.mp4"
             } else {
                 "super-platinum.png"
@@ -1743,12 +2160,6 @@ impl ShellState {
             mime: mime.into(),
         });
         self.overlay = Some(Overlay::Viewer);
-    }
-
-    fn sync_fixture_messages(&mut self) {
-        self.messages_by_channel
-            .insert("C2".into(), self.messages.clone());
-        self.reset_timeline_window();
     }
 }
 

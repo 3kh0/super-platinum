@@ -86,6 +86,10 @@ impl Presence {
 #[derive(Debug, Clone, Default)]
 pub struct ChannelMessages {
     pub messages: Vec<SlackMessage>,
+    /// Realtime deletion evidence for this in-memory account/workspace/channel.
+    /// Upload verification must not reinsert a row from an older readback page.
+    /// Ordinary optimistic removal does not populate this set.
+    pub remote_deletions: HashSet<MessageTs>,
     pub loaded: bool,
     pub history_refreshing: bool,
     pub has_more_older: bool,
@@ -106,6 +110,15 @@ pub struct ChannelMessages {
 }
 
 impl ChannelMessages {
+    pub fn record_remote_deletion(&mut self, ts: &str) {
+        self.remote_deletions.insert(ts.to_owned());
+        self.remove(ts);
+    }
+
+    pub fn was_deleted(&self, ts: &str) -> bool {
+        self.remote_deletions.contains(ts)
+    }
+
     pub fn upsert(&mut self, msg: SlackMessage) -> bool {
         let Some(ts) = msg.ts.clone() else {
             self.messages.push(msg);
@@ -246,11 +259,15 @@ impl ChannelMessages {
 
 #[derive(Debug, Clone)]
 pub struct Workspace {
+    /// Confirmed deletions also mask stale history/search responses and warm cache rows.
+    pub deleted_files: HashSet<String>,
     pub channel_lifecycle: ChannelLifecycle,
     pub team_id: TeamId,
     pub name: String,
     pub url: String,
     pub self_user_id: UserId,
+    /// Slack's locale preference, independent of the host operating system.
+    pub locale: Option<String>,
     pub activity_unread_count: Option<u32>,
     pub thread_counts: ThreadCountsState,
     pub channels: BTreeMap<ChannelId, Channel>,
@@ -262,9 +279,11 @@ pub struct Workspace {
     pub frecency: BTreeMap<ChannelId, FrecencyEntry>,
     pub priority_sidebar_section: bool,
     pub vip_users: HashSet<UserId>,
+    pub vip_revisions: HashMap<UserId, u64>,
     pub sidebar: SidebarConfig,
     pub notifications: NotificationConfig,
     pub users: HashMap<UserId, User>,
+    pub bots: bots::BotLookupState,
     pub usergroups: HashMap<String, crate::slack::models::UserGroup>,
     pub custom_emoji: HashMap<String, Emoji>,
     pub messages: HashMap<ChannelId, ChannelMessages>,
@@ -281,10 +300,12 @@ pub struct Workspace {
 impl Workspace {
     pub fn from_session(s: &crate::config::WorkspaceSession) -> Self {
         Workspace {
+            deleted_files: Default::default(),
             team_id: s.team_id.clone(),
             name: s.name.clone(),
             url: s.url.clone(),
             self_user_id: s.user_id.clone(),
+            locale: None,
             activity_unread_count: None,
             thread_counts: Default::default(),
             channels: BTreeMap::new(),
@@ -296,9 +317,11 @@ impl Workspace {
             frecency: BTreeMap::new(),
             priority_sidebar_section: false,
             vip_users: HashSet::new(),
+            vip_revisions: Default::default(),
             sidebar: SidebarConfig::default(),
             notifications: NotificationConfig::default(),
             users: HashMap::new(),
+            bots: Default::default(),
             usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
             messages: HashMap::new(),
@@ -362,17 +385,21 @@ impl Workspace {
         self.starred_order = boot.starred.clone();
         self.priority_scores = boot.channels_priority.clone();
         self.priority_sidebar_section = boot.prefs.priority_sidebar_section;
-        self.vip_users = boot
-            .prefs
-            .vip_users
-            .as_deref()
-            .unwrap_or_default()
-            .split(',')
-            .filter(|id| !id.is_empty())
-            .map(str::to_owned)
-            .collect();
+        self.apply_vip_snapshot(
+            boot.prefs
+                .vip_users
+                .as_deref()
+                .unwrap_or_default()
+                .split(',')
+                .filter(|id| !id.is_empty())
+                .map(str::to_owned)
+                .collect(),
+        );
         self.sidebar.apply_prefs(&boot.prefs);
         self.notifications.apply_prefs(&boot.prefs);
+        if let Some(locale) = boot.prefs.extra.get("locale") {
+            self.locale = locale.as_str().map(str::to_owned);
+        }
         for channel in boot.all_channels() {
             if channel.is_im || channel.is_mpim {
                 append_unique(&mut self.dm_order, channel.id.clone());
@@ -814,12 +841,14 @@ mod sidebar_layout;
 pub use sidebar_layout::*;
 mod sidebar_prefs;
 pub use sidebar_prefs::*;
+pub mod bots;
 mod channel_lifecycle;
 mod member_list_changes;
 pub use channel_lifecycle::ChannelLifecycle;
 mod channel_sync;
 mod thread_counts;
 mod unreads;
+mod vip;
 pub use channel_sync::*;
 pub use thread_counts::ThreadCountsState;
 

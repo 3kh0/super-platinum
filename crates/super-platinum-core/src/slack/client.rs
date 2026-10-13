@@ -249,6 +249,8 @@ impl PreparedRequest {
                 "/api/conversations.replies?",
                 "/api/conversations.teamConnections?",
                 "/api/conversations.info?",
+                "/api/files.info?",
+                "/api/bookmarks.list?",
                 "/api/team.info?",
                 "/api/conversations.members?",
                 "/users/list?",

@@ -166,6 +166,7 @@ pub async fn scroll_thread(state: Signal<ShellState>, target: Option<String>) ->
         let shell = state.peek();
         serde_json::json!({
             "rootId":"thread-body", "scope":shell.thread_scope(),
+            "inputGeneration":shell.thread_window.input_generation,
             "selector":target.map(|ts| format!("[data-message-id={}]", serde_json::to_string(&ts).unwrap())).unwrap_or_default(),
             "latestId":shell.thread_messages.last().map(|message| &message.id),
         })

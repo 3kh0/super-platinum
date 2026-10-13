@@ -217,7 +217,11 @@ fn file_node(
     ctx: BlockCtx<'_>,
     file: &super_platinum_core::slack::models::File,
 ) -> Option<RichNode> {
-    Some(crate::message_vm::file_node(ctx.media, file))
+    Some(crate::message_vm::workspace_file_node(
+        ctx.workspace,
+        ctx.media,
+        file,
+    ))
 }
 
 fn image(ctx: BlockCtx<'_>, url: &str, kind: MediaAssetKind) -> super_platinum_core::MediaAssetId {

@@ -448,7 +448,7 @@ pub async fn fetch_emojis_info(
     Ok(page.results)
 }
 
-async fn fetch_conversation_info(
+pub async fn fetch_conversation_info(
     transport: &Transport,
     client: &SlackClient,
     workspace: &WorkspaceSession,
@@ -479,8 +479,21 @@ pub async fn send_message(
             client, workspace, channel, text, thread_ts,
         ))
         .await?;
+    decode_sent_message(value)
+}
+
+fn decode_sent_message(value: serde_json::Value) -> Result<SentMessage, Error> {
+    if value.get("ok").and_then(serde_json::Value::as_bool) != Some(true) {
+        return Err(Error::Transport(
+            "Slack did not explicitly confirm the sent message".into(),
+        ));
+    }
     decode(value, "chat.postMessage")
 }
+
+#[cfg(test)]
+#[path = "execute_send_tests.rs"]
+mod send_tests;
 
 #[derive(serde::Deserialize)]
 struct UploadUrl {
@@ -499,12 +512,78 @@ pub struct UploadRequest {
     pub canceled: Arc<AtomicBool>,
 }
 
+/// Uploading bytes is not message delivery. Only the final completion call can
+/// publish the caption/files into the destination conversation.
+#[derive(Debug, thiserror::Error)]
+pub enum UploadMessageError {
+    #[error("upload stopped before message delivery: {0}")]
+    BeforeDelivery(Error),
+    #[error("upload message completion failed: {0}")]
+    Completion(Error),
+}
+impl UploadMessageError {
+    pub fn error(&self) -> &Error {
+        match self {
+            Self::BeforeDelivery(error) | Self::Completion(error) => error,
+        }
+    }
+    pub fn delivery_uncertain(&self) -> bool {
+        match self {
+            Self::BeforeDelivery(_) => false,
+            Self::Completion(error) => {
+                matches!(error, Error::Offline(_) | Error::Transport(_))
+                    || matches!(error, Error::Api(code) if matches!(code.as_str(), "internal_error" | "fatal_error"))
+                    || matches!(error, Error::HttpStatus { status, .. } if *status >= 500 || *status == 408)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CompletedUpload {
+    pub file_ids: Vec<String>,
+}
+
+fn completed_upload(
+    value: &serde_json::Value,
+    staged: &[serde_json::Value],
+) -> Result<CompletedUpload, UploadMessageError> {
+    let ids = |values: &[serde_json::Value]| -> Option<std::collections::BTreeSet<String>> {
+        let ids = values
+            .iter()
+            .map(|file| {
+                file.get("id")?
+                    .as_str()
+                    .filter(|id| !id.is_empty())
+                    .map(str::to_owned)
+            })
+            .collect::<Option<std::collections::BTreeSet<_>>>()?;
+        (ids.len() == values.len() && !ids.is_empty()).then_some(ids)
+    };
+    let expected = ids(staged);
+    let confirmed = value
+        .get("files")
+        .and_then(serde_json::Value::as_array)
+        .and_then(|files| ids(files));
+    if value.get("ok").and_then(serde_json::Value::as_bool) != Some(true)
+        || expected.is_none()
+        || confirmed != expected
+    {
+        return Err(UploadMessageError::Completion(Error::Transport(
+            "Slack did not confirm the exact uploaded files".into(),
+        )));
+    }
+    Ok(CompletedUpload {
+        file_ids: expected.unwrap().into_iter().collect(),
+    })
+}
+
 pub async fn upload_files(
     transport: &Transport,
     client: &SlackClient,
     workspace: &WorkspaceSession,
     request: UploadRequest,
-) -> Result<(), Error> {
+) -> Result<CompletedUpload, UploadMessageError> {
     let UploadRequest {
         channel,
         thread_ts,
@@ -513,13 +592,18 @@ pub async fn upload_files(
         canceled,
     } = request;
 
-    let files = stage_files(transport, client, workspace, files_to_upload, &canceled).await?;
+    let files = stage_files(transport, client, workspace, files_to_upload, &canceled)
+        .await
+        .map_err(UploadMessageError::BeforeDelivery)?;
 
     let mut fields = vec![
         (
             "files",
-            serde_json::to_string(&files)
-                .map_err(|error| Error::Transport(format!("encode upload files: {error}")))?,
+            serde_json::to_string(&files).map_err(|error| {
+                UploadMessageError::BeforeDelivery(Error::Transport(format!(
+                    "encode upload files: {error}"
+                )))
+            })?,
         ),
         ("channel_id", channel),
     ];
@@ -530,13 +614,18 @@ pub async fn upload_files(
         fields.push(("thread_ts", thread_ts));
     }
     if canceled.load(Ordering::Relaxed) {
-        return Err(Error::UploadCanceled);
+        return Err(UploadMessageError::BeforeDelivery(Error::UploadCanceled));
     }
-    transport
+    let value = transport
         .execute(client.rest_form(workspace, "files.completeUploadExternal", fields))
-        .await?;
-    Ok(())
+        .await
+        .map_err(UploadMessageError::Completion)?;
+    completed_upload(&value, &files)
 }
+
+#[cfg(test)]
+#[path = "execute_upload_tests.rs"]
+mod upload_tests;
 
 /// Upload and finalize private files without posting to a conversation.
 /// Scheduling attaches these ids later, so no early file message is created.
@@ -643,6 +732,19 @@ pub async fn open_dm(
         .await?;
     let opened: OpenedConversation = decode(value, "conversations.open")?;
     Ok(opened.channel.id)
+}
+
+pub async fn open_direct_conversation(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    recipients: &crate::direct_messages::Recipients,
+) -> Result<Channel, Error> {
+    let value = transport
+        .execute(conversations_open_recipients(client, workspace, recipients))
+        .await?;
+    let opened: OpenedConversation = decode(value, "conversations.open")?;
+    Ok(opened.channel)
 }
 
 pub async fn fetch_search_messages(

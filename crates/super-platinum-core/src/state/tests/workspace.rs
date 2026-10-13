@@ -1,12 +1,33 @@
 use super::super::*;
 
 #[test]
+fn boot_locale_changes_preserve_raw_preference_and_missing_warm_value() {
+    let mut workspace = Workspace::from_session(&crate::config::WorkspaceSession {
+        team_id: "T1".into(),
+        user_id: "U1".into(),
+        enterprise_id: None,
+        name: "Fixture".into(),
+        url: "https://example.test".into(),
+        token: "fixture-not-a-token".into(),
+    });
+    workspace.locale = Some("fr-FR".into());
+    let boot = |value| serde_json::from_value::<crate::slack::models::BootData>(value).unwrap();
+    workspace.apply_boot(boot(serde_json::json!({"prefs":{}})));
+    assert_eq!(workspace.locale.as_deref(), Some("fr-FR"));
+    workspace.apply_boot(boot(serde_json::json!({"prefs":{"locale":"de-DE"}})));
+    assert_eq!(workspace.locale.as_deref(), Some("de-DE"));
+    workspace.apply_boot(boot(serde_json::json!({"prefs":{"locale":null}})));
+    assert_eq!(workspace.locale, None);
+}
+
+#[test]
 fn prune_typing_drops_stale() {
     let mut ws = Workspace {
         team_id: "T1".into(),
         name: "test".into(),
         url: "https://t".into(),
         self_user_id: "USELF".into(),
+        locale: None,
         activity_unread_count: None,
         thread_counts: Default::default(),
         channels: BTreeMap::new(),
@@ -18,10 +39,13 @@ fn prune_typing_drops_stale() {
         frecency: BTreeMap::new(),
         priority_sidebar_section: false,
         vip_users: HashSet::new(),
+        vip_revisions: Default::default(),
         sidebar: SidebarConfig::default(),
         notifications: NotificationConfig::default(),
         users: HashMap::new(),
+        bots: Default::default(),
         usergroups: HashMap::new(),
+        deleted_files: Default::default(),
         custom_emoji: HashMap::new(),
         messages: HashMap::new(),
         typing: HashMap::new(),

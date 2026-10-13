@@ -1,0 +1,6 @@
+PDF.js 6.4.299
+Mozilla and contributors; Apache-2.0 (see LICENSE and subdirectory licenses).
+https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-6.4.299.tgz
+sha512-AVl138zALtfaAPvADulE0PZThbYzCBS79nL4pOSL/6Sm/4AH5A21BD9VHt97OlCuzJuCpmeZtAtkinisF4Vb1g==
+Legacy display/worker builds, CMaps, fonts, color profiles, and image decoders.
+PDF scripting sandbox and QuickJS are intentionally not bundled.

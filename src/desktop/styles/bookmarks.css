@@ -1,0 +1,25 @@
+.bookmarks-panel { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.bookmarks-content { overflow:auto; min-height:0; padding:0 24px 24px; }
+.bookmark-row { display:flex; align-items:center; gap:8px; min-width:0; border-radius:8px; }
+.bookmark-row:hover { background:var(--surface); }
+.bookmark-open { display:flex; flex:1; align-items:center; gap:12px; min-width:0; padding:12px 8px; text-align:left; color:var(--text); }
+.bookmark-open > .icon { color:var(--muted); flex-shrink:0; }
+.bookmark-open:disabled { cursor:default; }
+.bookmark-row .files-meta { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.bookmark-action { display:grid; place-items:center; height:32px; min-width:32px; padding:0 8px; color:var(--muted); font-size:var(--text-sm); border-radius:8px; }
+.bookmark-action:hover { color:var(--text); background:var(--surface-raised); }
+.bookmark-action:disabled { opacity:.45; cursor:default; }
+.bookmark-editor { display:flex; flex-direction:column; gap:8px; padding:16px; margin:0 0 16px; background:var(--surface); border-radius:12px; }
+.bookmark-editor h3 { margin:0 0 4px; font-size:var(--text-md); font-weight:600; }
+.bookmark-editor label { font-size:var(--text-sm); color:var(--muted); }
+.bookmark-editor input { height:32px; padding:0 10px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); font:inherit; min-width:0; }
+.bookmark-editor input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.bookmark-editor p { margin:4px 0; font-size:var(--text-sm); color:var(--muted); line-height:1.5; }
+.bookmark-editor-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
+.bookmark-editor-actions button { min-height:32px; padding:0 12px; border-radius:8px; background:var(--surface-raised); color:var(--text); font-size:var(--text-sm); }
+.bookmark-editor-actions button[type=submit] { color:var(--bg); background:var(--text); }
+.bookmark-editor-actions button:disabled { opacity:.45; cursor:default; }
+@media(max-width:700px) { .bookmarks-content { padding-inline:12px; } .bookmarks-panel .files-header { padding-inline:12px; gap:8px; } }
+.bookmark-editor select { min-width:0; height:32px; padding:0 10px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); font:inherit; }
+.bookmarks-panel .files-header { flex-wrap:wrap; }
+.bookmark-open[aria-expanded=true] > .icon { transform:rotate(90deg); }

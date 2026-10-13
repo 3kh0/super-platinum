@@ -6,8 +6,11 @@
   const clone = value => JSON.parse(JSON.stringify(value));
   const knownStyles = ['bold', 'italic', 'strike', 'code'];
   const blockTags = new Set(['DIV', 'P', 'BLOCKQUOTE', 'PRE', 'UL', 'OL']);
-  function mount(id, blocks, labels = {}) {
+  function mount(id, blocks, labels = {}, autofocus = true, expectedGeneration = null) {
     const root = document.getElementById(id);
+    // Delayed native evals may arrive after a different cell reuses this ID.
+    // Check ownership before the WeakMap can claim the newer DOM element.
+    if (expectedGeneration !== null && root?.closest('[data-editor-generation]')?.dataset.editorGeneration !== String(expectedGeneration)) return;
     if (!root || editors.has(root)) return;
     const originals = new WeakMap();
     const initial = clone(blocks);
@@ -80,7 +83,7 @@
         event.preventDefault(); first?.focus();
       }
     });
-    root.focus();
+    if (autofocus) root.focus();
   }
   function read(id) {
     const root = document.getElementById(id), model = root && editors.get(root);

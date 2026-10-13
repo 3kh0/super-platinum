@@ -37,9 +37,23 @@ pub struct Connection {
     tx: mpsc::Sender<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EnqueueError {
+    Full,
+    Closed,
+}
+
 impl Connection {
     pub fn send(&self, frame: String) {
-        let _ = self.tx.try_send(frame);
+        let _ = self.try_send(frame);
+    }
+
+    /// Reports local queue acceptance only, not socket delivery or server ACK.
+    pub fn try_send(&self, frame: String) -> Result<(), EnqueueError> {
+        self.tx.try_send(frame).map_err(|error| match error {
+            mpsc::error::TrySendError::Full(_) => EnqueueError::Full,
+            mpsc::error::TrySendError::Closed(_) => EnqueueError::Closed,
+        })
     }
 
     pub fn from_sender(tx: mpsc::Sender<String>) -> Self {
@@ -68,6 +82,15 @@ pub fn user_typing_frame(channel: &str) -> String {
 
 pub fn presence_query_frame(ids: &[String]) -> String {
     serde_json::json!({ "type": "presence_query", "ids": ids }).to_string()
+}
+
+/// Captured B WBU9/00Dn file-view subscriptions reuse the current socket.
+pub fn temp_channel_sub_frame(file_id: &str) -> String {
+    serde_json::json!({"channel_id":file_id,"type":"temp_channel_sub"}).to_string()
+}
+
+pub fn temp_channel_unsub_frame(file_id: &str) -> String {
+    serde_json::json!({"channel_id":file_id,"type":"temp_channel_unsub"}).to_string()
 }
 
 /// Standing presence subscription. Captured from the real client over CDP: the
@@ -461,6 +484,44 @@ fn parse_reaction_event(value: Value, added: bool) -> Option<RtEvent> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn connection_enqueue_distinguishes_acceptance_full_and_closed() {
+        let (sender, mut receiver) = tokio::sync::mpsc::channel(1);
+        let connection = super::Connection::from_sender(sender);
+        assert_eq!(connection.try_send("first".into()), Ok(()));
+        assert_eq!(
+            connection.try_send("dropped".into()),
+            Err(super::EnqueueError::Full)
+        );
+        assert_eq!(receiver.try_recv().unwrap(), "first");
+        assert_eq!(connection.try_send("second".into()), Ok(()));
+        assert_eq!(receiver.try_recv().unwrap(), "second");
+        drop(receiver);
+        assert_eq!(
+            connection.try_send("closed".into()),
+            Err(super::EnqueueError::Closed)
+        );
+        // Existing fire-and-forget callers retain their non-panicking behavior.
+        connection.send("legacy".into());
+    }
+
+    #[test]
+    fn temporary_file_subscription_frames_use_channel_id_and_escape_input() {
+        let file_id = "F_\"test\\id";
+        for (frame, kind) in [
+            (super::temp_channel_sub_frame(file_id), "temp_channel_sub"),
+            (
+                super::temp_channel_unsub_frame(file_id),
+                "temp_channel_unsub",
+            ),
+        ] {
+            let parsed: serde_json::Value = serde_json::from_str(&frame).unwrap();
+            assert_eq!(
+                parsed,
+                serde_json::json!({"type":kind,"channel_id":file_id})
+            );
+        }
+    }
     use super::*;
 
     #[test]

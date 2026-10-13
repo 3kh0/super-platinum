@@ -20,6 +20,21 @@ pub(crate) fn message_vm(
     message_vm_with_pending(workspace, message, media, pending)
 }
 
+/// Identity shared by lightweight geometry and rich projection, including
+/// optimistic/malformed cached messages without a server timestamp.
+pub(crate) fn message_id(message: &super_platinum_core::slack::models::Message) -> String {
+    message
+        .ts
+        .clone()
+        .or_else(|| message.client_msg_id.clone())
+        .unwrap_or_else(|| {
+            format!(
+                "cached-{}",
+                super_platinum_core::state::message_text(message)
+            )
+        })
+}
+
 pub(crate) fn message_vm_with_pending(
     workspace: &super_platinum_core::state::Workspace,
     message: &super_platinum_core::slack::models::Message,
@@ -63,16 +78,7 @@ pub(crate) fn message_vm_with_pending(
             icon,
         })
     });
-    let raw_ts = message
-        .ts
-        .clone()
-        .or_else(|| message.client_msg_id.clone())
-        .unwrap_or_else(|| {
-            format!(
-                "cached-{}",
-                super_platinum_core::state::message_text(message)
-            )
-        });
+    let raw_ts = message_id(message);
     let timestamp = message
         .ts
         .as_deref()
@@ -251,6 +257,7 @@ fn reply_avatars(
 }
 
 /// Annotate date separators, compact grouping, and the first-unread divider.
+#[cfg(test)]
 pub(crate) fn annotate_timeline(
     messages: &mut [MessageVm],
     raw_messages: &[&super_platinum_core::slack::models::Message],
@@ -321,7 +328,9 @@ fn message_body(
         }
     }
     for file in &message.files {
-        nodes.push(RichNode::Paragraph(vec![file_node(media, file)]));
+        nodes.push(RichNode::Paragraph(vec![workspace_file_node(
+            workspace, media, file,
+        )]));
     }
     nodes
 }
@@ -329,38 +338,67 @@ fn message_body(
 /// One attached file. What is painted is always a Slack-side thumbnail — the
 /// original is registered alongside it but stays out of the download queue
 /// until the viewer opens it.
+pub(crate) fn workspace_file_node(
+    workspace: &super_platinum_core::state::Workspace,
+    media: &MediaRegistry,
+    file: &super_platinum_core::slack::models::File,
+) -> RichNode {
+    if file
+        .id
+        .as_ref()
+        .is_some_and(|id| workspace.deleted_files.contains(id))
+    {
+        return RichNode::Text("Deleted file".into());
+    }
+    file_node(media, file)
+}
+
 pub(crate) fn file_node(
     media: &MediaRegistry,
     file: &super_platinum_core::slack::models::File,
 ) -> RichNode {
-    let name = file
-        .title
-        .clone()
-        .or_else(|| file.name.clone())
-        .unwrap_or_else(|| "Attachment".into());
-    let mime = file
-        .mimetype
-        .clone()
-        .unwrap_or_else(|| "application/octet-stream".into());
+    if super_platinum_core::file_actions::deleted(file) {
+        return RichNode::Text("Deleted file".into());
+    }
+    let name = super_platinum_core::state::file_title(file);
+    let download_name = super_platinum_core::state::file_download_name(file);
+    if matches!(file.filetype.as_deref(), Some("quip" | "canvas")) {
+        if let Some(id) = file.id.as_ref().filter(|id| !id.is_empty()) {
+            return RichNode::Canvas(crate::model::CanvasTarget {
+                id: id.clone(),
+                title: name,
+                permalink: file
+                    .extra
+                    .get("permalink")
+                    .and_then(|v| v.as_str())
+                    .and_then(super_platinum_core::canvas::link_url),
+            });
+        }
+    }
+    let mime = super_platinum_core::file_preview::mime_for_file(&file).to_owned();
     let full = file
         .full_url()
         .map(|url| media.register_deferred(MediaAssetKind::Attachment, url, mime.clone()));
     match file.preview() {
         Some(preview) => RichNode::Media {
+            file: super_platinum_core::file_actions::identity(&file),
             // `register_image` picks the cookie by host: an external image must
             // never be fetched with the session cookie attached.
             id: Some(media.register_image(MediaAssetKind::Attachment, &preview.url, preview.mime)),
             full,
             name,
+            download_name,
             mime,
             size: preview.size,
         },
         // A PDF, or a clip Slack has not finished transcoding: nothing to draw,
         // and nothing downloaded until the reader opens it.
         None if full.is_some() => RichNode::Media {
+            file: super_platinum_core::file_actions::identity(&file),
             id: None,
             full,
             name,
+            download_name,
             mime,
             size: None,
         },
@@ -371,6 +409,18 @@ pub(crate) fn file_node(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn canvas_attachment_keeps_its_native_target_instead_of_a_media_download() {
+        let media = MediaRegistry::default();
+        let file=serde_json::from_value(serde_json::json!({"id":"F123","filetype":"quip","title":"Handbook","mimetype":"text/html","url_private":"https://files.slack.com/test","permalink":"https://example.slack.com/docs/F123"})).unwrap();
+        let RichNode::Canvas(target) = file_node(&media, &file) else {
+            panic!("canvas must open the native reader")
+        };
+        assert_eq!(target.id, "F123");
+        assert_eq!(target.title, "Handbook");
+        assert!(!media.has_pending());
+    }
 
     #[test]
     fn system_activity_is_muted_but_authored_message_subtypes_are_not() {

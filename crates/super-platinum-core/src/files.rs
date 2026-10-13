@@ -161,6 +161,8 @@ pub struct FilesPage {
 }
 #[derive(Debug, Default)]
 pub struct FilesState {
+    /// Search indexing can lag deletion. Keep removed IDs across queries in this scope.
+    pub deleted: std::collections::HashSet<String>,
     pub scope: Option<(u64, String)>,
     pub generation: u64,
     pub query: FilesQuery,
@@ -173,6 +175,17 @@ pub struct FilesState {
     pub error: Option<String>,
 }
 impl FilesState {
+    pub fn remove(&mut self, id: &str) {
+        if id.is_empty() {
+            return;
+        }
+        self.deleted.insert(id.into());
+        let before = self.items.len();
+        self.items.retain(|f| f.id.as_deref() != Some(id));
+        self.total = self
+            .total
+            .saturating_sub((before - self.items.len()) as u64);
+    }
     pub fn matches_scope(&self, epoch: u64, team: &str) -> bool {
         self.scope
             .as_ref()
@@ -213,10 +226,18 @@ impl FilesState {
         self.total = pagination
             .total_count
             .unwrap_or(response.items.len() as u64);
+        self.total = self.total.saturating_sub(
+            response
+                .items
+                .iter()
+                .filter(|f| f.id.as_ref().is_some_and(|id| self.deleted.contains(id)))
+                .count() as u64,
+        );
         let mut ids = std::collections::HashSet::new();
         self.items = response
             .items
             .into_iter()
+            .filter(|f| !f.id.as_ref().is_some_and(|id| self.deleted.contains(id)))
             .filter(|f| f.id.as_ref().is_some_and(|id| ids.insert(id.clone())))
             .take(50)
             .collect();

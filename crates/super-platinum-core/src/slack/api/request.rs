@@ -366,6 +366,22 @@ pub fn conversations_open(
     )
 }
 
+/// Opens a validated DM or group DM, requesting metadata for immediate navigation.
+pub fn conversations_open_recipients(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    recipients: &crate::direct_messages::Recipients,
+) -> PreparedRequest {
+    client.rest_form(
+        workspace,
+        "conversations.open",
+        vec![
+            ("users", recipients.parameter()),
+            ("return_im", "true".to_owned()),
+        ],
+    )
+}
+
 pub fn chat_post_message(
     client: &SlackClient,
     workspace: &WorkspaceSession,
@@ -380,6 +396,7 @@ pub fn chat_post_message(
 
 #[derive(Debug, Clone)]
 pub struct SearchArgs {
+    pub sort: crate::search::SearchSort,
     pub query: String,
     pub count: u32,
     pub page: u32,
@@ -388,6 +405,7 @@ pub struct SearchArgs {
 impl SearchArgs {
     pub fn new(query: impl Into<String>) -> Self {
         SearchArgs {
+            sort: Default::default(),
             query: query.into(),
             count: 20,
             page: 1,
@@ -408,8 +426,8 @@ pub fn search_messages(
             ("query", args.query),
             ("count", args.count.to_string()),
             ("page", args.page.to_string()),
-            ("sort", "timestamp".to_owned()),
-            ("sort_dir", "desc".to_owned()),
+            ("sort", args.sort.api().0.to_owned()),
+            ("sort_dir", args.sort.api().1.to_owned()),
             ("highlight", "true".to_owned()),
             ("extracts", "true".to_owned()),
             ("extra_message_data", "true".to_owned()),

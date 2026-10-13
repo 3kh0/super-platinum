@@ -1,7 +1,9 @@
 //! Recoverable local composers. Slack's server drafts remain a separate queue.
 use crate::{ComposerState, domain::ComposerAttachment};
 use std::collections::BTreeMap;
+pub mod codec;
 pub mod store;
+pub mod sync;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub struct DraftKey {

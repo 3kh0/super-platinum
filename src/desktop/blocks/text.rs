@@ -250,7 +250,10 @@ pub(crate) fn plain_inline_nodes(ctx: BlockCtx<'_>, text: &str) -> Vec<RichNode>
                     code: false,
                 });
             }
-        } else if token.starts_with("https://") || token.starts_with("http://") {
+        } else if token.starts_with("https://")
+            || token.starts_with("http://")
+            || token.starts_with("slack://")
+        {
             let (url, label) = token.split_once('|').unwrap_or((token, token));
             nodes.push(RichNode::Link {
                 label: label.into(),
@@ -384,6 +387,23 @@ mod tests {
         );
         assert!(
             matches!(&plain_inline_nodes(ctx, "<!subteam^missing|@fallback>")[0], RichNode::GroupMention { label, member: false, .. } if label == "@fallback")
+        );
+    }
+
+    #[test]
+    fn slack_deep_links_keep_their_exact_destination_and_visible_label() {
+        let core = crate::fixture::fixture_core();
+        let media = MediaRegistry::default();
+        let url = "slack://channel?team=T1&id=C2&message=1719800001.000001";
+        let nodes = plain_inline_nodes(ctx_with(&core, &media), &format!("<{url}|Open reply>"));
+        assert!(
+            matches!(&nodes[..], [RichNode::Link { label, url: destination }] if label == "Open reply" && destination == url)
+        );
+        let nodes = plain_inline_nodes(ctx_with(&core, &media), "<file:///tmp/example|Local file>");
+        assert!(
+            !nodes
+                .iter()
+                .any(|node| matches!(node, RichNode::Link { .. }))
         );
     }
 

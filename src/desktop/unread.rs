@@ -70,7 +70,7 @@ pub(crate) fn change(mut state: Signal<ShellState>, channel: String, target: Opt
             || busy(&shell, &channel)
             || target
                 .as_ref()
-                .is_some_and(|ts| !shell.messages.iter().any(|m| &m.ts == ts && !m.pending))
+                .is_some_and(|ts| !shell.channel_rows.iter().any(|m| &m.ts == ts && !m.pending))
         {
             return;
         }
@@ -275,10 +275,10 @@ fn restore_hold(shell: &mut ShellState, scope: &str, previous: Option<(String, S
 
 fn local_cursor(shell: &ShellState, target: Option<&str>) -> Option<String> {
     match target {
-        None => shell.messages.last().map(|m| m.ts.clone()),
+        None => shell.channel_rows.last().map(|m| m.ts.clone()),
         Some(target) => Some(
             shell
-                .messages
+                .channel_rows
                 .iter()
                 .filter(|m| super_platinum_core::state::cmp_ts(Some(&m.ts), Some(target)).is_lt())
                 .map(|m| m.ts.as_str())
@@ -309,8 +309,8 @@ pub(crate) fn fixture(shell: &mut ShellState) {
     };
     shell.refresh_from_core();
     let target = shell
-        .messages
-        .get(shell.messages.len().saturating_sub(2))
+        .channel_rows
+        .get(shell.channel_rows.len().saturating_sub(2))
         .map(|m| m.ts.clone());
     let Some(cursor) = local_cursor(shell, target.as_deref()) else {
         return;
@@ -324,6 +324,41 @@ pub(crate) fn fixture(shell: &mut ShellState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn read_cursors_use_complete_history_when_rich_rows_are_windowed() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        shell
+            .core
+            .workspaces
+            .get_mut("T1")
+            .unwrap()
+            .messages
+            .get_mut("C2")
+            .unwrap()
+            .messages = (1..=1000)
+            .map(|index| {
+                serde_json::from_value(serde_json::json!({
+                    "ts":format!("{index}.000001"),"user":"U1","text":"Synthetic history"
+                }))
+                .unwrap()
+            })
+            .collect();
+        shell.core.pending_scroll_to = None;
+        shell.stick_to_bottom = false;
+        shell.refresh_from_core();
+        shell.set_timeline_window(400, 410, [], false);
+        assert!(shell.messages.len() <= 100);
+        assert_eq!(local_cursor(&shell, None).as_deref(), Some("1000.000001"));
+        assert_eq!(
+            local_cursor(&shell, Some("900.000001")).as_deref(),
+            Some("899.000001")
+        );
+        assert_eq!(
+            local_cursor(&shell, Some("1.000001")).as_deref(),
+            Some("0.000000")
+        );
+    }
     use crate::media::MediaRegistry;
 
     #[test]
@@ -357,7 +392,7 @@ mod tests {
     #[test]
     fn first_message_uses_zero_cursor_and_fixture_projects_the_divider() {
         let mut shell = ShellState::fixture(MediaRegistry::default());
-        let first = shell.messages.first().unwrap().ts.clone();
+        let first = shell.channel_rows.first().unwrap().ts.clone();
         assert_eq!(
             local_cursor(&shell, Some(&first)).as_deref(),
             Some("0.000000")
@@ -366,7 +401,7 @@ mod tests {
         assert!(held(&shell));
         assert_eq!(
             shell
-                .messages
+                .channel_rows
                 .iter()
                 .filter(|m| m.show_unread_divider)
                 .count(),

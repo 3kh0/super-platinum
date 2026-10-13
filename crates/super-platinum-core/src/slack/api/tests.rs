@@ -203,6 +203,7 @@ fn search_request_targets_messages_module_with_query_and_page() {
         &SlackClient::default(),
         &workspace(),
         SearchArgs {
+            sort: crate::search::SearchSort::Oldest,
             query: "deploy failed".into(),
             count: 20,
             page: 2,
@@ -213,6 +214,8 @@ fn search_request_targets_messages_module_with_query_and_page() {
     assert!(request.url.contains("/api/search.modules.messages?"));
     assert!(fields.contains(&("module".into(), "messages".into())));
     assert!(fields.contains(&("query".into(), "deploy failed".into())));
+    assert!(fields.contains(&("sort".into(), "timestamp".into())));
+    assert!(fields.contains(&("sort_dir".into(), "asc".into())));
     assert!(fields.contains(&("count".into(), "20".into())));
     assert!(fields.contains(&("page".into(), "2".into())));
     assert!(fields.iter().any(|(k, _)| k == "client_req_id"));
@@ -702,16 +705,19 @@ fn draft_actions_preserve_content_and_atomically_retire_sent_drafts() {
         ("client_msg_id", "stable-id"),
         ("files", "F1,F2"),
         ("thread_ts", "100.001"),
-        ("reply_broadcast", "true"),
+        ("broadcast", "true"),
         ("skip_dlp_user_warning", "false"),
     ] {
         assert!(fields.contains(&(key.into(), value.into())));
     }
+    assert!(!fields.iter().any(|(key, _)| key == "reply_broadcast"));
     let mut text = draft.clone();
     text.file_ids.clear();
     let send = drafts_send(&client, &workspace, &text).unwrap();
     assert!(send.url.contains("/chat.postMessage?"));
     assert!(form_fields(&send).contains(&("draft_id".into(), "Dr1".into())));
+    assert!(form_fields(&send).contains(&("reply_broadcast".into(), "true".into())));
+    assert!(!form_fields(&send).iter().any(|(key, _)| key == "broadcast"));
     text.destinations
         .push(serde_json::json!({"channel_id":"C2"}));
     assert!(drafts_send(&client, &workspace, &text).is_err());
@@ -832,4 +838,179 @@ fn thread_subscription_changes_preserve_the_existing_read_cursor() {
         None,
     );
     assert!(!form_fields(&req).iter().any(|(k, _)| k == "last_read"));
+}
+
+#[test]
+fn group_dm_request_preserves_recipient_order_and_requests_metadata() {
+    let session = workspace();
+    let recipients =
+        crate::direct_messages::Recipients::new(&["U2".into(), "U1".into()], &session.user_id)
+            .unwrap();
+    let req = conversations_open_recipients(&SlackClient::default(), &session, &recipients);
+    assert!(form_fields(&req).contains(&("users".into(), "U2,U1".into())));
+    assert!(form_fields(&req).contains(&("return_im".into(), "true".into())));
+    assert!(!req.retry_safe());
+}
+
+#[test]
+fn canvas_rename_preserves_body_and_permissions_and_rejects_stale_names() {
+    let c = SlackClient::default();
+    let ws = workspace();
+    let req = canvas_rename(&c, &ws, "F1", "  New name 🦊  ").unwrap();
+    assert!(!req.retry_safe());
+    let fields = form_fields(&req);
+    assert!(fields.contains(&("file".into(), "F1".into())));
+    assert!(fields.contains(&("title".into(), "New name 🦊".into())));
+    assert!(
+        fields
+            .iter()
+            .all(|(key, _)| matches!(key.as_str(), "file" | "title" | "token"))
+    );
+    assert!(canvas_rename(&c, &ws, "F1", " ").is_err());
+    let mut file: super::super::models::File = serde_json::from_value(
+        serde_json::json!({"id":"F1","title":"Original","filetype":"quip","editable":true}),
+    )
+    .unwrap();
+    assert!(validate_canvas_rename(&file, "Original").is_ok());
+    assert!(
+        matches!(validate_canvas_rename(&file,"Stale"),Err(Error::Api(code)) if code=="canvas_title_changed")
+    );
+    file.extra
+        .insert("editable".into(), serde_json::json!(false));
+    assert!(
+        matches!(validate_canvas_rename(&file,"Original"),Err(Error::Api(code)) if code=="canvas_not_editable")
+    );
+}
+
+#[test]
+fn canvas_creation_is_standalone_nonretrying_and_preserves_markdown() {
+    let c = SlackClient::default();
+    let ws = workspace();
+    let body = "## Notes 🦊\n\n- [ ] First task\n- [x] Done\n";
+    let request = canvas_create(&c, &ws, "  Project 日本語  ", body).unwrap();
+    assert!(!request.retry_safe());
+    let fields = form_fields(&request);
+    assert!(fields.contains(&("title".into(), "Project 日本語".into())));
+    assert!(fields.contains(&("markdown".into(), body.into())));
+    assert!(
+        fields
+            .iter()
+            .all(|(key, _)| matches!(key.as_str(), "title" | "markdown" | "token"))
+    );
+    assert!(canvas_create(&c, &ws, " ", body).is_err());
+    assert!(
+        canvas_create(
+            &c,
+            &ws,
+            "Title",
+            &"x".repeat(crate::canvas::MAX_CANVAS_BYTES + 1)
+        )
+        .is_err()
+    );
+    assert_eq!(
+        created_canvas_id(&serde_json::json!({"file_id":"F123ABC"})).unwrap(),
+        "F123ABC"
+    );
+    for invalid in [
+        serde_json::json!({}),
+        serde_json::json!({"file_id":""}),
+        serde_json::json!({"file_id":"https://example.com"}),
+    ] {
+        assert!(created_canvas_id(&invalid).is_err());
+    }
+}
+
+#[test]
+fn bookmark_desktop_requests_preserve_metadata_and_never_retry_mutations() {
+    let c = SlackClient::default();
+    let w = workspace();
+    let list = bookmarks_list(&c, &w, "C1");
+    assert!(list.retry_safe());
+    let fields = form_fields(&list);
+    assert!(fields.contains(&("channel".into(), "C1".into())));
+    for id in [None, Some("Bk1")] {
+        let request =
+            bookmark_save(&c, &w, "C1", id, " Docs 🦊 ", " https://example.com ").unwrap();
+        assert!(!request.retry_safe());
+        let fields = form_fields(&request);
+        assert!(fields.contains(&("title".into(), "Docs 🦊".into())));
+        assert!(fields.contains(&("link".into(), "https://example.com".into())));
+        assert_eq!(
+            fields.iter().any(|(key, _)| key == "bookmark"),
+            id.is_some()
+        );
+        assert!(!fields.iter().any(|(key, _)| matches!(
+            key.as_str(),
+            "parent_id" | "emoji" | "icon" | "access_level"
+        )));
+    }
+    assert!(!bookmark_remove(&c, &w, "C1", "Bk1").retry_safe());
+    assert!(bookmark_save(&c, &w, "C1", None, " ", "https://example.com").is_err());
+    assert!(bookmark_save(&c, &w, "C1", None, "X", "javascript:alert(1)").is_err());
+}
+
+#[test]
+fn bookmark_folder_and_order_requests_use_verified_types_and_omit_root_parent() {
+    let c = SlackClient::default();
+    let w = workspace();
+    let folder: crate::bookmarks::Bookmark =
+        serde_json::from_value(serde_json::json!({"id":"BkF","type":"local_folder"})).unwrap();
+    let save = bookmark_folder_save(&c, &w, "C", Some("BkF"), " Folder 🦊 ").unwrap();
+    let fields = form_fields(&save);
+    assert!(fields.contains(&("type".into(), "local_folder".into())));
+    assert!(!fields.iter().any(|(k, _)| k == "link"));
+    assert!(!save.retry_safe());
+    assert!(bookmark_folder_save(&c, &w, "C", None, " ").is_err());
+    assert!(!bookmark_folder_remove(&c, &w, "C", "BkF").retry_safe());
+    let root = crate::bookmarks::Placement {
+        parent: None,
+        left: None,
+        right: Some("BkNext".into()),
+    };
+    let req = bookmark_reorder(&c, &w, "C", &folder, &root).unwrap();
+    let fields = form_fields(&req);
+    assert!(!req.retry_safe());
+    assert!(
+        !fields
+            .iter()
+            .any(|(k, _)| matches!(k.as_str(), "parent_id" | "left"))
+    );
+    assert!(fields.contains(&("bookmark_type".into(), "local_folder".into())));
+    assert!(fields.contains(&("right".into(), "BkNext".into())));
+}
+
+#[test]
+fn file_actions_address_only_the_requested_file_and_never_retry_delete() {
+    let c = SlackClient::default();
+    let w = workspace();
+    let info = file_info(&c, &w, "F1");
+    let delete = file_delete(&c, &w, "F1");
+    let rename = file_rename(&c, &w, "F1", "  Notes · 日本語  ").unwrap();
+    assert!(rename.url.contains("/api/files.edit?"));
+    assert!(!rename.retry_safe());
+    assert_eq!(
+        form_fields(&rename)
+            .iter()
+            .filter(|(k, _)| k != "token")
+            .cloned()
+            .collect::<Vec<_>>(),
+        vec![
+            ("file".into(), "F1".into()),
+            ("title".into(), "Notes · 日本語".into())
+        ]
+    );
+    assert!(file_rename(&c, &w, "", "Name").is_err());
+    assert!(file_rename(&c, &w, "F1", " \n ").is_err());
+    assert!(info.url.contains("/api/files.info?"));
+    assert!(info.retry_safe());
+    assert!(delete.url.contains("/api/files.delete?"));
+    assert!(!delete.retry_safe());
+    assert_eq!(
+        form_fields(&delete)
+            .iter()
+            .filter(|(k, _)| k != "token")
+            .cloned()
+            .collect::<Vec<_>>(),
+        vec![("file".into(), "F1".into())]
+    );
 }

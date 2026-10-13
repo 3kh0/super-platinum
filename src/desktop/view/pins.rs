@@ -57,7 +57,7 @@ pub(crate) fn PinsPanel(state: Signal<ShellState>, channel: String) -> Element {
                                                 let source=message.clone();
                                                 let surface=if message.thread_ts.as_ref().is_some_and(|t|Some(t)!=message.ts.as_ref()) {super::message::RowSurface::Thread}else{super::message::RowSurface::Timeline};
                                                 rsx! {
-                                                    {super::message::message_row(state,&snapshot,&vm,&scope.read(),None,surface)}
+                                                    {super::message::message_row(state,&snapshot,&vm,&scope.read(),None,surface,Some(crate::message_buttons::source::Bag::Pins{item_key:key.clone()}))}
                                                     button {class:"pin-open",onclick:move |_|crate::pins::open(state,scope(),source.clone()),"Show in conversation"}
                                                 }
                                             }

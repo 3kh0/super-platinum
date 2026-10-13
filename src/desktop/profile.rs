@@ -109,15 +109,19 @@ pub(crate) fn profile_hover_card(
                 div { class: "profile-actions profile-hover-actions",
                     button {
                         class: "profile-action profile-action-message",
-                        onclick: move |_| { spawn(crate::bootstrap::open_profile_dm(state, user_for_message.clone())); },
+                        disabled: snapshot.profile_dm_opening.as_deref() == Some(profile.user_id.as_str()),
+                        "aria-busy": snapshot.profile_dm_opening.as_deref() == Some(profile.user_id.as_str()),
+                        onclick: move |_| { crate::bootstrap::open_profile_dm(state, user_for_message.clone()); },
                         {crate::icons::icon(crate::icons::Icon::Message, "profile-action-icon")}
-                        span { "Message" }
+                        span { if snapshot.profile_dm_opening.as_deref() == Some(profile.user_id.as_str()) { "Opening…" } else { "Message" } }
                     }
                     if can_vip {
                         button {
                             class: if profile.is_vip { "profile-action active" } else { "profile-action" },
-                            disabled: snapshot.profile_vip_loading,
-                            onclick: move |_| { spawn(crate::bootstrap::toggle_profile_vip(state, user_for_vip.clone())); },
+                            disabled: crate::profile_vip::busy(snapshot, &profile.user_id),
+                            "aria-busy": crate::profile_vip::busy(snapshot, &profile.user_id),
+                            title: if crate::profile_vip::busy(snapshot, &profile.user_id) { "Updating VIP preference…" } else { vip_label },
+                            onclick: move |_| { crate::bootstrap::toggle_profile_vip(state, user_for_vip.clone()); },
                             {crate::icons::icon(crate::icons::Icon::PersonAdd, "profile-action-icon")}
                             span { "{vip_label}" }
                         }
@@ -233,20 +237,24 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
                     div { class: "profile-actions profile-pane-actions",
                         button {
                             class: "profile-action profile-action-message",
+                            disabled: snapshot.profile_dm_opening.as_deref() == Some(profile.user_id.as_str()),
+                            "aria-busy": snapshot.profile_dm_opening.as_deref() == Some(profile.user_id.as_str()),
                             onclick: move |event| {
                                 event.stop_propagation();
-                                spawn(crate::bootstrap::open_profile_dm(state, user_for_message.clone()));
+                                crate::bootstrap::open_profile_dm(state, user_for_message.clone());
                             },
                             {crate::icons::icon(crate::icons::Icon::Message, "profile-action-icon")}
-                            span { "Message" }
+                            span { if snapshot.profile_dm_opening.as_deref() == Some(profile.user_id.as_str()) { "Opening…" } else { "Message" } }
                         }
                         if can_vip {
                             button {
                                 class: if profile.is_vip { "profile-action active" } else { "profile-action" },
-                                disabled: snapshot.profile_vip_loading,
+                                disabled: crate::profile_vip::busy(snapshot, &profile.user_id),
+                            "aria-busy": crate::profile_vip::busy(snapshot, &profile.user_id),
+                            title: if crate::profile_vip::busy(snapshot, &profile.user_id) { "Updating VIP preference…" } else { vip_label },
                                 onclick: move |event| {
                                     event.stop_propagation();
-                                    spawn(crate::bootstrap::toggle_profile_vip(state, user_for_vip.clone()));
+                                    crate::bootstrap::toggle_profile_vip(state, user_for_vip.clone());
                                 },
                                 {crate::icons::icon(crate::icons::Icon::PersonAdd, "profile-action-icon")}
                                 span { "{vip_label}" }
@@ -650,7 +658,7 @@ fn see_all_conversations(mut state: Signal<ShellState>, name: String) {
 fn open_profile_files(mut state: Signal<ShellState>, user: String) {
     {
         let mut shell = state.write();
-        shell.search_query = format!("from:<@{user}> has:file");
+        shell.replace_search_query(format!("from:<@{user}> has:file"));
         shell.overlay = Some(crate::state::Overlay::Search);
         shell.profile_menu_open = false;
     }

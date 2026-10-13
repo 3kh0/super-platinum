@@ -8,7 +8,10 @@ use crate::{media::MediaRegistry, state::ShellState};
 pub(crate) async fn load_environment(media: MediaRegistry) -> ShellState {
     let fallback = media.clone();
     match tokio::task::spawn_blocking(move || ShellState::from_environment(media)).await {
-        Ok(shell) => shell,
+        Ok(mut shell) => {
+            crate::drafts::session::restore(&mut shell).await;
+            shell
+        }
         Err(error) => {
             eprintln!("super-platinum: startup worker failed: {error}");
             let mut shell = ShellState::opening(fallback);

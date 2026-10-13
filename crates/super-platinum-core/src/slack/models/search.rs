@@ -72,7 +72,7 @@ pub struct SearchInlineItem {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct OpenedConversation {
-    pub channel: OpenedChannel,
+    pub channel: Channel,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

@@ -72,6 +72,8 @@ fn pin_selection_keeps_the_clicked_rows_in_place_and_freezes_window() {
             message
         })
         .collect();
+    let messages = std::mem::take(&mut state.messages);
+    state.install_fixture_messages(messages);
     state.timeline_start = 150;
     state.timeline_end = 180;
     let before = (state.timeline_start, state.timeline_end);
@@ -119,13 +121,13 @@ fn empty_palette_shows_five_recents_not_every_channel() {
     assert_eq!(matches.len(), 5);
     let names: Vec<_> = matches
         .iter()
-        .map(|index| state.channels[*index].name.as_str())
+        .map(|entry| entry.row.name.as_str())
         .collect();
     assert_eq!(names, ["Maya Chen", "Jules", "ship", "general", "design"]);
-    assert!(state.channels[matches[0]].unread);
-    assert!(state.channels[matches[0]].is_im);
-    assert!(!state.channels[matches[1]].unread);
-    assert!(state.channels[matches[1]].is_im);
+    assert!(matches[0].row.unread);
+    assert!(matches[0].row.is_im);
+    assert!(!matches[1].row.unread);
+    assert!(matches[1].row.is_im);
 }
 
 #[test]
@@ -220,16 +222,12 @@ fn trim_cached_history_keeps_the_open_conversation() {
         });
         workspace.messages.insert(other.clone(), messages);
     }
-    state
-        .messages_by_channel
-        .insert(other.clone(), vec![MessageVm::default()]);
     state.trim_cached_history();
 
     let workspace = state.core.workspaces.get("T1").expect("fixture workspace");
     let other_messages = workspace.messages.get(&other).expect("other channel");
     assert!(!other_messages.loaded);
     assert!(other_messages.messages.is_empty());
-    assert!(!state.messages_by_channel.contains_key(&other));
 }
 
 #[test]
@@ -318,7 +316,7 @@ fn saved_message_anchor_survives_a_cold_timeline_bottom_measurement() {
     state.main_view = MainView::Later;
     assert!(state.open_later_item("C1", "900.000001"));
     let target = state.core.pending_scroll_to.clone();
-    state.messages.clear();
+    state.install_fixture_messages(Vec::new());
     state.set_timeline_window(0, 0, None::<(String, f64)>, true);
     assert_eq!(state.core.pending_scroll_to, target);
     assert_eq!(state.main_view, MainView::Later);
@@ -336,6 +334,8 @@ fn saved_message_outside_the_latest_window_is_rendered_until_the_anchor_lands() 
             message
         })
         .collect();
+    let messages = std::mem::take(&mut state.messages);
+    state.install_fixture_messages(messages);
     let channel = state.core.active_channel.clone().unwrap();
     state.core.pending_scroll_to = Some((
         channel,
@@ -354,10 +354,12 @@ fn saved_message_outside_the_latest_window_is_rendered_until_the_anchor_lands() 
         message.id = message.ts.clone();
         message
     });
-    state.messages.splice(0..0, prepended);
+    let mut messages = state.fixture_channel_messages.take().unwrap();
+    messages.splice(0..0, prepended);
+    state.install_fixture_messages(messages);
     state.reset_timeline_window();
     assert!(state.timeline_start <= 130 && state.timeline_end > 130);
-    assert_eq!(state.messages[130].ts, "30.000001");
+    assert_eq!(state.channel_rows[130].ts, "30.000001");
 }
 
 #[test]
@@ -689,4 +691,22 @@ fn confirmed_leave_and_join_preserve_independent_composer_drafts() {
         assert_eq!(state.core.composer.text, "Unsent channel text");
         assert_eq!(state.core.thread_composer.text, "Unsent thread text");
     }
+}
+
+#[test]
+fn shortcut_visit_changes_only_when_a_dialog_is_opened() {
+    let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+    shell.open_palette();
+    let visit = shell.shortcut_generation;
+    shell.set_palette_query("old typing".into());
+    shell.dismiss_overlay();
+    assert_eq!(shell.shortcut_generation, visit);
+    shell.open_palette();
+    assert_ne!(shell.shortcut_generation, visit);
+    let visit = shell.shortcut_generation;
+    shell.open_search(false);
+    assert_ne!(shell.shortcut_generation, visit);
+    let visit = shell.shortcut_generation;
+    shell.set_search_query("new typing".into());
+    assert_eq!(shell.shortcut_generation, visit);
 }

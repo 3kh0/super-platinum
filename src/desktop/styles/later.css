@@ -4,8 +4,8 @@
 .later-refresh { font-size: var(--text-sm); color: var(--muted); padding: 6px 8px; border-radius: 5px; }
 .later-refresh:hover { color: var(--text); background: var(--hover-overlay); }
 .later-tabs { display: flex; gap: 4px; padding: 0 12px 12px; border-bottom: 1px solid var(--border); }
-.later-tabs button { flex: 1; padding: 7px 4px; border-radius: 6px; font-size: var(--text-sm); color: var(--muted); white-space: nowrap; }
-.later-tabs button span { margin-left: 5px; font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+.later-tabs button { flex: 1; min-width: 0; padding: 7px 4px; border-radius: 6px; font-size: var(--text-sm); color: var(--muted); white-space: normal; }
+.later-tabs button span { display: inline-block; margin-left: 5px; font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
 .later-tabs button.active { background: var(--selection-bg); color: var(--text); }
 .later-tabs button:hover { background: var(--hover-overlay); }
 .later-item { padding: 12px; border-bottom: 1px solid var(--border); }
@@ -45,3 +45,15 @@
 .rich-editor-token { border-radius: 3px; background: var(--selection-bg); }
 .rich-editor .format-toolbar { display: flex; gap: 2px; padding: 4px 6px; background: var(--surface); border: 1px solid var(--border); border-bottom: 0; border-radius: 6px 6px 0 0; }
 .reminder-hint { color: var(--muted); font-size: var(--text-xs); margin-top: 6px; }
+
+/* Saved-file recovery stays in the scrollable Later list at every size. */
+.saved-file-recovery > .scheduled-meta { padding: 12px; }
+.saved-file-recovery > .scheduled-meta .spacer { flex: 1; }
+.saved-file-recovery > .scheduled-meta button { min-height: 32px; padding: 4px 8px; border-radius: 6px; }
+.saved-file-recovery > .scheduled-meta button:hover { background: var(--hover-overlay); color: var(--text); }
+.saved-file-recovery .later-item > strong { display: block; font-size: var(--text-sm); font-weight: 600; overflow-wrap: anywhere; }
+.saved-file-control { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.saved-file-control .file-action-note { margin: 0; }
+.saved-file-recovery .saved-file-control { margin-top: 8px; }
+.saved-file-control > button { align-self: flex-start; min-height: 32px; padding: 4px 12px; border-radius: 6px; background: var(--surface-raised); color: var(--text); font-size: var(--text-sm); }
+.saved-file-control > button:hover { background: var(--hover-overlay); }

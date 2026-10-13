@@ -5,14 +5,14 @@ window.runRichEditorTests = () => {
   const results = [];
   const assert = (condition, message) => {if (!condition) throw new Error(message);};
   let serial = 0;
-  function fixture(blocks) {
+  function fixture(blocks, autofocus = true) {
     document.body.replaceChildren();
     const origin=document.createElement('button');origin.textContent='Open';document.body.append(origin);origin.focus();
     const dialog=document.createElement('section');dialog.setAttribute('role','dialog');document.body.append(dialog);
     const first=document.createElement('button');first.textContent='Close';dialog.append(first);
     const root=document.createElement('div');root.id=`editor-${++serial}`;root.contentEditable='true';root.setAttribute('role','textbox');dialog.append(root);
     const last=document.createElement('button');last.textContent='Save';dialog.append(last);
-    api.mount(root.id,blocks,{U1:'@Fixture'});
+    api.mount(root.id,blocks,{U1:'@Fixture'},autofocus);
     return {root,origin,first,last,read:()=>api.read(root.id)};
   }
   const text=(value,style)=>({type:'text',text:value,...(style?{style}:{})});
@@ -72,6 +72,25 @@ window.runRichEditorTests = () => {
     assert(document.activeElement===f.last,'Shift-Tab escaped dialog');
     api.restoreFocus(f.root.id);assert(document.activeElement===f.origin,'focus was not returned to opener');
     results.push('dialog focus containment and restoration');
+  }
+  {
+    const f=fixture(documentBlocks([section([text('Optional note')])]),false);
+    assert(document.activeElement===f.origin,'optional note stole recipient focus');
+    assert(f.root.textContent==='Optional note','non-autofocused editor did not mount');
+    results.push('optional note preserves recipient focus');
+  }
+  {
+    document.body.replaceChildren();
+    const owner=document.createElement('section');owner.dataset.editorGeneration='2';document.body.append(owner);
+    const root=document.createElement('div');root.id='reused-editor';owner.append(root);
+    const old=documentBlocks([section([text('Old cell')])]),current=documentBlocks([section([text('Current cell')])]);
+    api.mount(root.id,old,{},false,'1');
+    assert(!root.childNodes.length,'stale mount claimed a newer editor');
+    api.mount(root.id,current,{},false,'2');
+    assert(JSON.stringify(api.read(root.id))===JSON.stringify(current),'current generation failed to initialize');
+    api.mount(root.id,old,{},false,'1');
+    assert(JSON.stringify(api.read(root.id))===JSON.stringify(current),'late stale mount replaced current draft');
+    results.push('reused editor ID rejects stale mount generation');
   }
   return results;
 };

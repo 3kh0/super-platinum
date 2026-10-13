@@ -25,3 +25,4 @@
 .schedule-toggle { display: flex; align-items: center; gap: 8px; min-height: 32px; }
 .schedule-toggle input { accent-color: var(--accent); }
 .scheduled-actions button:disabled { opacity: .5; cursor: default; }
+.scheduled-actions .draft-resume { min-width: 136px; }

@@ -115,6 +115,7 @@ pub async fn refresh(state: Signal<ShellState>) {
     let tab = state.peek().channel_tab;
     match tab {
         ChannelTab::Messages => {}
+        ChannelTab::Bookmarks => crate::bookmarks::load(state, channel).await,
         ChannelTab::Pins => crate::pins::load(state, channel).await,
         ChannelTab::Files => {
             let (query, page) = crate::files::visible_for(&state.peek(), Some(&channel))

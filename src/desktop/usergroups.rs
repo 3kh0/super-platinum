@@ -16,7 +16,7 @@ pub(crate) async fn open(mut state: Signal<ShellState>, id: String) {
     };
     {
         let mut shell = state.write();
-        shell.profile_user = None;
+        shell.close_profile();
         shell.profile_hover = None;
         shell.group_panel = Some(GroupPanel {
             id: id.clone(),

@@ -1,22 +1,41 @@
 //! Drafts are user data, separate from the disposable transcript cache.
 use super::{DraftKey, LocalDraft};
 use crate::error::AppError;
-use rusqlite::{Connection, params};
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    path::Path,
-    sync::{Condvar, Mutex, OnceLock, mpsc},
+use rusqlite::{Connection, TransactionBehavior, params};
+use std::{collections::BTreeSet, path::Path};
+
+pub mod sync;
+mod worker;
+pub use worker::{
+    LocalWrite, commit_synced, enqueue, load, load_synced, prepare_synced,
+    queue_local_if_unchanged, queue_owned_local_if_unchanged, read_local_review, release_synced,
+    save_failed, save_local_alternate, save_owned_local_alternate, settle_local_versions,
 };
-type Entries = Vec<(DraftKey, LocalDraft)>;
-type Updates = BTreeMap<(String, DraftKey), LocalDraft>;
-type Load = (String, mpsc::SyncSender<Result<Entries, AppError>>);
+pub type Entries = Vec<(DraftKey, LocalDraft)>;
+pub use sync::{LocalAlternate, LocalWriter};
 
 pub struct DraftStore(Connection);
 impl DraftStore {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, AppError> {
         let conn = Connection::open(path)?;
         conn.busy_timeout(std::time::Duration::from_secs(2))?;
-        conn.execute_batch("CREATE TABLE IF NOT EXISTS composer_drafts (destination TEXT PRIMARY KEY, content TEXT NOT NULL);")?;
+        conn.execute_batch("PRAGMA synchronous=FULL;
+            CREATE TABLE IF NOT EXISTS composer_drafts (destination TEXT PRIMARY KEY, content TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS composer_draft_sync (
+                destination TEXT PRIMARY KEY, storage_revision INTEGER NOT NULL CHECK(storage_revision>0),
+                format_version INTEGER NOT NULL, state TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS composer_draft_owner (
+                singleton INTEGER PRIMARY KEY CHECK(singleton=1), account TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS composer_draft_blocked (
+                destination TEXT PRIMARY KEY, token TEXT NOT NULL, content TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS composer_draft_alternates (
+                destination TEXT NOT NULL, writer_id TEXT NOT NULL,
+                revision INTEGER NOT NULL CHECK(revision>0), content TEXT NOT NULL,
+                PRIMARY KEY(destination,writer_id));
+            CREATE TABLE IF NOT EXISTS composer_draft_reviewed_writers (
+                destination TEXT NOT NULL, writer_id TEXT NOT NULL,
+                revision INTEGER NOT NULL CHECK(revision>0),
+                PRIMARY KEY(destination,writer_id));")?;
         Ok(Self(conn))
     }
     fn open_default(account: &str) -> Result<Self, AppError> {
@@ -31,20 +50,47 @@ impl DraftStore {
         &mut self,
         entries: impl IntoIterator<Item = (DraftKey, LocalDraft)>,
     ) -> Result<(), AppError> {
-        let transaction = self.0.transaction()?;
+        let transaction = self
+            .0
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
         for (key, draft) in entries {
-            let key = serde_json::to_string(&key)?;
-            if draft.empty() {
-                transaction.execute(
-                    "DELETE FROM composer_drafts WHERE destination=?1",
-                    params![key],
-                )?;
-            } else {
-                transaction.execute("INSERT INTO composer_drafts(destination,content) VALUES(?1,?2) ON CONFLICT(destination) DO UPDATE SET content=excluded.content",params![key,serde_json::to_string(&draft)?])?;
+            if managed(&transaction, &key)? {
+                return Err(sync::invalid("synced draft requires an atomic paired save"));
             }
+            write_local(&transaction, &key, &draft)?;
         }
         transaction.commit()?;
         Ok(())
+    }
+    /// Preserve a rejected managed-editor input for explicit recovery. This
+    /// never overwrites the paired draft or authorizes an operation dispatch.
+    // The worker keeps rejected edits on disk for explicit recovery instead
+    // of overwriting enrolled state or endlessly retrying a forbidden write.
+    fn save_legacy(&mut self, entries: &Entries) -> Result<BTreeSet<DraftKey>, AppError> {
+        let transaction = self
+            .0
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let mut rejected = BTreeSet::new();
+        for (key, draft) in entries {
+            if managed(&transaction, key)? {
+                rejected.insert(key.clone());
+                transaction.execute("INSERT INTO composer_draft_blocked(destination,token,content) VALUES(?1,?2,?3) ON CONFLICT(destination) DO UPDATE SET token=excluded.token,content=excluded.content",
+                    params![serde_json::to_string(key)?,uuid::Uuid::new_v4().to_string(),serde_json::to_string(draft)?])?;
+            } else {
+                write_local(&transaction, key, draft)?;
+            }
+        }
+        transaction.commit()?;
+        Ok(rejected)
+    }
+    fn managed_keys(&self) -> Result<BTreeSet<DraftKey>, AppError> {
+        let mut statement = self
+            .0
+            .prepare("SELECT destination FROM composer_draft_sync")?;
+        statement
+            .query_map([], |row| row.get::<_, String>(0))?
+            .map(|row| Ok(serde_json::from_str(&row?)?))
+            .collect()
     }
     pub fn load(&self) -> Result<Entries, AppError> {
         let mut statement = self
@@ -62,121 +108,22 @@ impl DraftStore {
     }
 }
 
-#[derive(Default)]
-struct Pending {
-    updates: Updates,
-    loads: Vec<Load>,
-    failed: BTreeSet<String>,
+fn managed(conn: &Connection, key: &DraftKey) -> Result<bool, AppError> {
+    Ok(conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM composer_draft_sync WHERE destination=?1)",
+        [serde_json::to_string(key)?],
+        |row| row.get(0),
+    )?)
 }
-#[derive(Default)]
-struct Worker {
-    pending: Mutex<Pending>,
-    ready: Condvar,
-}
-impl Worker {
-    fn run(&self) {
-        loop {
-            let (updates, loads) = {
-                let mut pending = self.pending.lock().unwrap();
-                while pending.updates.is_empty() && pending.loads.is_empty() {
-                    pending = self.ready.wait(pending).unwrap();
-                }
-                (
-                    std::mem::take(&mut pending.updates),
-                    std::mem::take(&mut pending.loads),
-                )
-            };
-            let mut accounts: BTreeMap<String, Entries> = BTreeMap::new();
-            for ((account, key), draft) in updates {
-                accounts.entry(account).or_default().push((key, draft));
-            }
-            let mut retry = false;
-            for (account, entries) in accounts {
-                let result = DraftStore::open_default(&account)
-                    .and_then(|mut store| store.save(entries.clone()));
-                let mut pending = self.pending.lock().unwrap();
-                if result.is_ok() {
-                    pending.failed.remove(&account);
-                } else {
-                    retry = true;
-                    pending.failed.insert(account.clone());
-                    for (key, draft) in entries {
-                        pending
-                            .updates
-                            .entry((account.clone(), key))
-                            .or_insert(draft);
-                    }
-                }
-            }
-            // A load is a barrier: writes queued before it have been attempted.
-            for (account, reply) in loads {
-                let result = DraftStore::open_default(&account)
-                    .and_then(|store| store.load())
-                    .map(|entries| {
-                        let mut entries: BTreeMap<_, _> = entries.into_iter().collect();
-                        // Preserve unsaved edits across account switches, including
-                        // a disk failure whose updates remain queued for retry.
-                        for ((owner, key), draft) in &self.pending.lock().unwrap().updates {
-                            if owner == &account {
-                                if draft.empty() {
-                                    entries.remove(key);
-                                } else {
-                                    entries.insert(key.clone(), draft.clone());
-                                }
-                            }
-                        }
-                        entries.into_iter().collect()
-                    });
-                let _ = reply.send(result);
-            }
-            if retry {
-                let pending = self.pending.lock().unwrap();
-                let _ = self
-                    .ready
-                    .wait_timeout(pending, std::time::Duration::from_secs(1))
-                    .unwrap();
-            }
-        }
+fn write_local(conn: &Connection, key: &DraftKey, draft: &LocalDraft) -> Result<(), AppError> {
+    let key = serde_json::to_string(key)?;
+    if draft.empty() {
+        conn.execute("DELETE FROM composer_drafts WHERE destination=?1", [key])?;
+    } else {
+        conn.execute("INSERT INTO composer_drafts(destination,content) VALUES(?1,?2) ON CONFLICT(destination) DO UPDATE SET content=excluded.content",
+            params![key, serde_json::to_string(draft)?])?;
     }
-}
-fn worker() -> &'static Worker {
-    static WORKER: OnceLock<Worker> = OnceLock::new();
-    WORKER.get_or_init(|| {
-        std::thread::Builder::new()
-            .name("super-platinum-drafts".into())
-            .spawn(|| worker().run())
-            .expect("draft worker starts");
-        Worker::default()
-    })
-}
-/// No serialization or disk work runs on the UI thread. Repeated edits replace
-/// the pending value, bounding the queue by destinations rather than keystrokes.
-pub fn enqueue(account: String, entries: BTreeMap<DraftKey, LocalDraft>) {
-    if entries.is_empty() {
-        return;
-    }
-    let mut pending = worker().pending.lock().unwrap();
-    for (key, draft) in entries {
-        pending.updates.insert((account.clone(), key), draft);
-    }
-    worker().ready.notify_one();
-}
-/// Call only from the startup/background worker.
-pub fn load(account: &str) -> Result<Entries, AppError> {
-    let (sender, receiver) = mpsc::sync_channel(1);
-    worker()
-        .pending
-        .lock()
-        .unwrap()
-        .loads
-        .push((account.into(), sender));
-    worker().ready.notify_one();
-    receiver
-        .recv()
-        .map_err(|_| std::io::Error::other("draft worker stopped"))?
-}
-pub fn save_failed(account: &str) -> bool {
-    worker().pending.lock().unwrap().failed.contains(account)
+    Ok(())
 }
 
 #[cfg(test)]

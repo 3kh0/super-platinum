@@ -1,0 +1,387 @@
+//! Local editor ownership and explicit Save. Drafts never dispatch during typing,
+//! cancel, refresh, or readback. In-flight receipts live outside this local draft.
+use super::*;
+use std::sync::Arc;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum EditorKind {
+    RichText,
+    Number,
+    Date,
+    Select,
+    MultiSelect,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct EditorChoice {
+    pub id: String,
+    pub label: String,
+}
+#[derive(Clone, PartialEq)]
+pub(crate) struct EditorView {
+    pub generation: u64,
+    pub layout_generation: u64,
+    pub row_id: String,
+    pub column_id: String,
+    pub row_label: String,
+    pub column_label: String,
+    pub kind: EditorKind,
+    pub original: Arc<CellEditValue>,
+    pub choices: Arc<Vec<EditorChoice>>,
+    pub disabled: bool,
+    pub saving: bool,
+    pub stale: bool,
+    pub error: Option<String>,
+}
+#[derive(Clone)]
+pub(super) struct Draft {
+    generation: u64,
+    visit: u64,
+    revision: u64,
+    pub(super) authority: EditAuthority,
+    row_id: String,
+    column_id: String,
+    document_raw: Arc<Value>,
+    record_raw: Arc<Value>,
+    column_raw: Arc<Value>,
+    row_label: String,
+    column_label: String,
+    kind: EditorKind,
+    original: Arc<CellEditValue>,
+    choices: Arc<Vec<EditorChoice>>,
+    pub(super) attempt: Option<u64>,
+    error: Option<String>,
+}
+pub(super) fn presentation(shell: &ShellState) -> Option<EditorView> {
+    let view = shell.slack_lists.view.as_ref()?;
+    let draft = view.editor.as_ref()?;
+    let mutation = shell.slack_lists.operations.get(&view.id);
+    let stale = view.stale
+        || view.unavailable
+        || view.revision != draft.revision
+        || view.generation != draft.visit;
+    let own_mutation = mutation.filter(|mutation| draft.attempt == Some(mutation.attempt.serial));
+    let outcome = own_mutation
+        .filter(|mutation| mutation.phase == Phase::Uncertain)
+        .map(|_| {
+            if view.loading {
+                "Checking this save. Do not submit another change."
+            } else {
+                "This save is unconfirmed. Refresh to check its result before editing again."
+            }
+            .to_owned()
+        })
+        .or_else(|| draft.attempt.and_then(|_| view.error.clone()));
+    let hidden = !draft
+        .authority
+        .admits(view, &draft.row_id, &draft.column_id);
+    let error = outcome.or_else(|| draft.error.clone())
+        .or_else(|| stale.then(|| "This cell changed while the editor was open. Cancel and reopen it to review the current value.".into()))
+        .or_else(|| hidden.then(||"This cell is hidden in the current view. Return to a view showing it to save your draft.".into()))
+        .or_else(|| view.error.clone());
+    Some(EditorView {
+        generation: draft.generation,
+        layout_generation: view.layout.generation,
+        row_id: draft.row_id.as_str().into(),
+        column_id: draft.column_id.as_str().into(),
+        row_label: draft.row_label.clone(),
+        column_label: draft.column_label.clone(),
+        kind: draft.kind,
+        original: draft.original.clone(),
+        choices: draft.choices.clone(),
+        disabled: stale || hidden || view.loading || view.retry_at > now() || mutation.is_some(),
+        saving: mutation.is_some_and(|mutation| mutation.phase != Phase::Uncertain),
+        stale,
+        error,
+    })
+}
+pub(crate) fn begin_cell_editor(
+    mut state: Signal<ShellState>,
+    row: String,
+    column: String,
+    visit: u64,
+    layout_generation: u64,
+) {
+    let Some(row) = layout::instance_record(&state.peek(), &row, &column, visit, layout_generation)
+    else {
+        return;
+    };
+    let result = begin_shell(&mut state.write(), &row, &column, visit);
+    if let Err(error) = result
+        && checkbox_visit_current(&state.peek(), visit)
+    {
+        if let Some(view) = state.write().slack_lists.view.as_mut() {
+            view.error = Some(error.into());
+        }
+    }
+}
+pub(super) fn begin_shell(
+    shell: &mut ShellState,
+    row: &str,
+    column: &str,
+    visit: u64,
+) -> Result<(), &'static str> {
+    begin_with_authority(shell, row, column, visit, EditAuthority::Layout)
+}
+pub(super) fn begin_with_authority(
+    shell: &mut ShellState,
+    row: &str,
+    column: &str,
+    visit: u64,
+    authority: EditAuthority,
+) -> Result<(), &'static str> {
+    poll(shell);
+    if !checkbox_visit_current(shell, visit) {
+        return Err("Open the list again.");
+    }
+    let view = shell.slack_lists.view.as_ref().unwrap();
+    if view.stale || view.loading || view.unavailable || view.retry_at > now() {
+        return Err("Refresh this list before editing it.");
+    }
+    if create::blocks_mutation(shell)
+        || view.editor.is_some()
+        || shell.slack_lists.operations.contains_key(&view.id)
+    {
+        return Err("Finish the current edit before opening another cell.");
+    }
+    let visible = view
+        .all_rows
+        .iter()
+        .find(|candidate| candidate.id == row)
+        .ok_or("This item is no longer visible.")?;
+    if !authority.admits(view, row, column) {
+        return Err("This cell is no longer visible.");
+    }
+    let loaded = view.loaded.as_ref().ok_or("Wait for the list to load.")?;
+    let column = loaded
+        .document
+        .column(column)
+        .ok_or("This column is no longer available.")?;
+    let record = loaded
+        .records
+        .records
+        .iter()
+        .find(|record| record.id == row)
+        .ok_or("This item is no longer available.")?;
+    let kind = match column.kind.as_str() {
+        "text" | "rich_text" => EditorKind::RichText,
+        "number" | "currency" => EditorKind::Number,
+        "date" | "due_date" | "todo_due_date" => EditorKind::Date,
+        "select" | "multi_select" if column.is_multi_select() => EditorKind::MultiSelect,
+        "select" => EditorKind::Select,
+        _ => return Err("This field does not have an editor yet."),
+    };
+    let original = column
+        .edit_value(
+            record,
+            &loaded.document.id,
+            loaded.personal_task_lists.as_ref(),
+        )
+        .map_err(|_| "This cell cannot be safely edited.")?;
+    if !loaded.document.editable(loaded.allow_lists.as_deref()) {
+        return Err("This cell cannot be edited. Check your access.");
+    }
+    let mut choices = Vec::new();
+    if matches!(kind, EditorKind::Select | EditorKind::MultiSelect) {
+        let mut seen = std::collections::HashSet::new();
+        for choice in column
+            .raw
+            .pointer("/options/choices")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            let id = choice
+                .get("value")
+                .and_then(Value::as_str)
+                .filter(|value| !value.is_empty())
+                .ok_or("This field has an unsupported choice.")?;
+            let label = choice
+                .get("label")
+                .and_then(Value::as_str)
+                .ok_or("This field has an unsupported choice.")?;
+            if !seen.insert(id) {
+                return Err("This field has ambiguous choices.");
+            }
+            choices.push(EditorChoice {
+                id: id.into(),
+                label: label.into(),
+            });
+        }
+    }
+    let draft = Draft {
+        generation: next_id(),
+        visit,
+        revision: view.revision,
+        authority,
+        row_id: row.into(),
+        column_id: column.id.clone(),
+        document_raw: Arc::new(loaded.document.raw.clone()),
+        record_raw: Arc::new(record.raw.clone()),
+        column_raw: Arc::new(column.raw.clone()),
+        row_label: visible.label.clone(),
+        column_label: column.name.clone(),
+        kind,
+        original: Arc::new(original),
+        choices: Arc::new(choices),
+        attempt: None,
+        error: None,
+    };
+    let view = shell.slack_lists.view.as_mut().unwrap();
+    layout::protect_selection(view);
+    view.editor = Some(draft);
+    view.error = None;
+    Ok(())
+}
+pub(crate) fn save_editor(
+    mut state: Signal<ShellState>,
+    generation: u64,
+    layout_generation: u64,
+    value: CellEditValue,
+) {
+    if state
+        .peek()
+        .slack_lists
+        .view
+        .as_ref()
+        .is_none_or(|view| view.layout.generation != layout_generation)
+    {
+        return;
+    }
+    let result = begin_save(&mut state.write(), generation, value);
+    match result {
+        Ok(attempt) => network::dispatch(state, attempt),
+        Err(error) => {
+            if let Some(draft) = state
+                .write()
+                .slack_lists
+                .view
+                .as_mut()
+                .and_then(|view| view.editor.as_mut())
+                .filter(|draft| draft.generation == generation)
+            {
+                draft.error = Some(error.into());
+            }
+        }
+    }
+}
+pub(super) fn begin_save(
+    shell: &mut ShellState,
+    generation: u64,
+    value: CellEditValue,
+) -> Result<EditAttempt, &'static str> {
+    poll(shell);
+    let view = shell
+        .slack_lists
+        .view
+        .as_ref()
+        .ok_or("Open the editor again.")?;
+    let draft = view
+        .editor
+        .as_ref()
+        .filter(|draft| draft.generation == generation)
+        .ok_or("Open the editor again.")?;
+    if !checkbox_visit_current(shell, draft.visit)
+        || view.revision != draft.revision
+        || view.stale
+        || view.loading
+        || view.unavailable
+        || view.retry_at > now()
+    {
+        return Err("This editor is out of date. Cancel and reopen the cell before saving.");
+    }
+    if create::blocks_mutation(shell) || shell.slack_lists.operations.contains_key(&view.id) {
+        return Err("Check the previous change before saving another edit.");
+    }
+    if !draft
+        .authority
+        .admits(view, &draft.row_id, &draft.column_id)
+    {
+        return Err("This item is no longer visible. Reopen it before saving.");
+    }
+    let loaded = view.loaded.as_ref().ok_or("Wait for the list to load.")?;
+    if loaded.document.raw != *draft.document_raw
+        || loaded
+            .document
+            .column(&draft.column_id)
+            .is_none_or(|column| column.raw != *draft.column_raw)
+        || loaded
+            .records
+            .records
+            .iter()
+            .find(|row| row.id == draft.row_id)
+            .is_none_or(|row| row.raw != *draft.record_raw)
+    {
+        return Err("This cell or your access changed. Reopen it before saving.");
+    }
+    let edit = CellEdit::capture(
+        &loaded.document,
+        &loaded.records,
+        draft.row_id.as_str(),
+        draft.column_id.as_str(),
+        loaded.allow_lists.as_deref(),
+        loaded.personal_task_lists.as_ref(),
+        value,
+    )
+    .map_err(|_| "This value cannot be saved. Check the value and choices.")?;
+    let attempt = EditAttempt {
+        selection_generation: view.layout.selection_generation,
+        authority: draft.authority,
+        scope: shell
+            .slack_lists
+            .scope
+            .clone()
+            .ok_or("Open the list again.")?,
+        serial: next_id(),
+        generation: view.generation,
+        revision: view.revision,
+        edit,
+    };
+    shell.slack_lists.operations.insert(
+        view.id.clone(),
+        Mutation {
+            attempt: attempt.clone(),
+            phase: Phase::Preparing,
+        },
+    );
+    let draft = shell
+        .slack_lists
+        .view
+        .as_mut()
+        .unwrap()
+        .editor
+        .as_mut()
+        .unwrap();
+    draft.attempt = Some(attempt.serial);
+    draft.error = None;
+    Ok(attempt)
+}
+pub(crate) fn cancel_editor(mut state: Signal<ShellState>, generation: u64) {
+    cancel_shell(&mut state.write(), generation);
+}
+pub(super) fn cancel_shell(shell: &mut ShellState, generation: u64) -> bool {
+    let Some(view) = shell.slack_lists.view.as_mut() else {
+        return false;
+    };
+    let Some(draft) = view
+        .editor
+        .as_ref()
+        .filter(|draft| draft.generation == generation)
+    else {
+        return false;
+    };
+    if shell
+        .slack_lists
+        .operations
+        .get(&view.id)
+        .is_some_and(|mutation| {
+            mutation.phase == Phase::Preparing && draft.attempt == Some(mutation.attempt.serial)
+        })
+    {
+        shell.slack_lists.operations.remove(&view.id);
+    }
+    view.editor = None;
+    true
+}
+
+#[cfg(test)]
+mod tests;

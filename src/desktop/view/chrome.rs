@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::state::{ConnectionStatus, MainView, Overlay, PresenceVm, SelfAccountVm, ShellState};
+use crate::state::{ConnectionStatus, MainView, PresenceVm, SelfAccountVm, ShellState};
 
 /// Presence glyphs traced from the real client (`status-member*`, viewBox
 /// `0 0 20 20`): a ring when away, a filled disc when active, each gaining the
@@ -163,12 +163,17 @@ pub(crate) fn channel_sidebar(
             button {
                 class: "jump-to",
                 title: "Jump to…",
-                onclick: move |_| state.write().overlay = Some(Overlay::Palette),
+                onclick: move |_| state.write().open_palette(),
                 {crate::icons::icon(crate::icons::Icon::Search, "icon sm")}
                 span { "Jump to…" }
                 span { class: "hint", "{shortcut}" }
             }
             nav { class: "sidebar-pages",
+                button { class: "nav-row", title: if cfg!(target_os = "macos") { "Search messages (⌘G)" } else { "Search messages (Ctrl+G)" },
+                    onclick: move |_| state.write().open_search(false),
+                    {crate::icons::icon(crate::icons::Icon::Search, "icon sm")}
+                    span { "Search messages" }
+                }
                 button {
                     class: if snapshot.main_view == MainView::Unreads {
                         if has_unreads { "nav-row active unread" } else { "nav-row active" }

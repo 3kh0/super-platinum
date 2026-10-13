@@ -235,7 +235,14 @@ pub fn drafts_send(
         .get("broadcast")
         .and_then(|v| v.as_bool())
     {
-        fields.push(("reply_broadcast", broadcast.to_string()));
+        fields.push((
+            if draft.file_ids.is_empty() {
+                "reply_broadcast"
+            } else {
+                "broadcast"
+            },
+            broadcast.to_string(),
+        ));
     }
     let method = if draft.file_ids.is_empty() {
         "chat.postMessage"

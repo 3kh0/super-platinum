@@ -16,13 +16,16 @@ pub struct Context {
 }
 impl Context {
     pub fn get(state: &Signal<ShellState>) -> Option<Self> {
-        let (transport, client, sessions) = crate::bootstrap::credentials(state)?;
-        let shell = state.peek();
+        Self::capture(&state.read())
+    }
+    /// Capture credentials from an existing snapshot without subscribing a
+    /// caller's effect to unrelated shell updates.
+    pub fn capture(shell: &ShellState) -> Option<Self> {
         let team = shell.core.active_team.as_ref()?;
         Some(Self {
-            transport,
-            client,
-            session: sessions.into_iter().find(|s| &s.team_id == team)?,
+            transport: shell.core.transport.clone()?,
+            client: shell.core.client.clone(),
+            session: shell.core.session.as_ref()?.workspaces.get(team)?.clone(),
             epoch: shell.core.account_epoch,
         })
     }

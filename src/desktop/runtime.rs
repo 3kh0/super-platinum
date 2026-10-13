@@ -26,7 +26,11 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         #[allow(deprecated)]
         let mut shell = state.write_silent();
         let mut connection = crate::connection::Next::Nothing;
-        let mut changed = false;
+        let mut changed = crate::app_modal::poll(&mut shell);
+        changed |= crate::self_status::poll(&mut shell);
+        changed |= crate::slack_lists::poll(&mut shell);
+        changed |= crate::message_buttons::poll(&mut shell);
+        changed |= crate::drafts::integration::poll(&mut shell);
         if !crate::fixture::is_fixture() {
             let failed_account = shell
                 .core
@@ -35,9 +39,18 @@ pub async fn ticks(mut state: Signal<ShellState>) {
                 .filter(|account| super_platinum_core::drafts::store::save_failed(account))
                 .cloned();
             if failed_account.is_some() && failed_account != draft_save_error {
-                shell.show_toast(
-                    "Local drafts could not be saved. Keep the app open while saving retries.",
-                );
+                let retained_version = shell.managed_drafts.account == failed_account
+                    && shell.managed_drafts.epoch == shell.core.account_epoch
+                    && shell
+                        .managed_drafts
+                        .entries
+                        .values()
+                        .any(|view| view.blocked.is_some());
+                shell.show_toast(if retained_version {
+                    "A local draft version was saved separately. Review saved versions in Drafts."
+                } else {
+                    "Local drafts could not be saved. Keep the app open while saving retries."
+                });
                 changed = true;
             }
             draft_save_error = failed_account;
@@ -110,7 +123,19 @@ pub async fn ticks(mut state: Signal<ShellState>) {
                 .as_ref()
                 .is_none_or(|transport| transport.health() != Health::Offline);
         let transport = sweep.then(|| shell.core.transport.clone()).flatten();
+        let close_pending = !shell.app_modal_closes.is_empty();
+        let list_viewing = crate::slack_lists::lifecycle::plan(
+            &mut shell,
+            dioxus::desktop::window().window.is_focused(),
+            crate::slack_lists::lifecycle::now_ms(),
+        );
         drop(shell);
+        for request in list_viewing {
+            request.spawn(state);
+        }
+        if close_pending {
+            crate::app_modal::flush_closes(state);
+        }
         if changed {
             // A normal write notifies readers of the changes made above.
             drop(state.write());

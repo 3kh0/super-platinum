@@ -20,7 +20,7 @@ pub(super) fn page_control(
         (Direction::Newer, _, _) => "Load newer replies",
     };
     rsx! {
-        div {class:"thread-page-control",
+        div {class:"thread-page-control", "data-thread-page":if direction==Direction::Earlier {"earlier"}else{"newer"},
             button {
                 disabled:snapshot.thread_loading || snapshot.thread_history.loading.is_some(),
                 onclick:move |_| {spawn(crate::bootstrap::load_thread_page(state,direction));},
