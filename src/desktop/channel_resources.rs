@@ -66,6 +66,7 @@ pub fn select(mut state: Signal<ShellState>, tab: ChannelTab) {
                 return;
             }
             use super_platinum_core::domain::PendingScrollTarget;
+            crate::read_preferences::opening::cancel(&mut shell);
             if previous == ChannelTab::Messages {
                 let target = if bookmark
                     .as_ref()

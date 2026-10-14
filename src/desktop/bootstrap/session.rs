@@ -655,8 +655,12 @@ pub async fn sign_in(mut state: Signal<ShellState>) {
         .await;
     match status {
         Ok(status) if status.success() => {
-            let loaded = super::startup::load_environment(media).await;
-            *state.write() = loaded;
+            let mut loaded = super::startup::load_environment(media).await;
+            {
+                let mut previous = state.write();
+                crate::read_preferences::settings::carry_pending(&mut previous, &mut loaded);
+                *previous = loaded;
+            }
             super::startup::restore_transcripts(state).await;
             crate::messaging::upload_journal::load(state);
             refresh(state).await;
@@ -708,8 +712,12 @@ pub async fn remove_account(mut state: Signal<ShellState>, account_id: String) {
 
 async fn reload_account(mut state: Signal<ShellState>) {
     let media = state.read().media.clone();
-    let loaded = super::startup::load_environment(media).await;
-    *state.write() = loaded;
+    let mut loaded = super::startup::load_environment(media).await;
+    {
+        let mut previous = state.write();
+        crate::read_preferences::settings::carry_pending(&mut previous, &mut loaded);
+        *previous = loaded;
+    }
     super::startup::restore_transcripts(state).await;
     crate::messaging::upload_journal::load(state);
     refresh(state).await;

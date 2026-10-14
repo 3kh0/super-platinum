@@ -90,9 +90,9 @@ fn formats_one_two_three_load_and_upgrade_without_inventing_observation_evidence
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(actual, 4);
-        // The previous binary's decoder accepted only 1, 2 and 3.
-        assert!(!matches!(actual, 1 | 2 | 3));
+        assert_eq!(actual, FORMAT);
+        // Earlier decoders accepted only formats through 4.
+        assert!(!matches!(actual, 1 | 2 | 3 | 4));
         drop(store);
         let loaded = db
             .open()

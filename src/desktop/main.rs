@@ -59,6 +59,8 @@ mod profile_edit;
 mod profile_title;
 mod profile_vip;
 mod reaction_picker;
+mod read_preferences;
+mod read_shortcuts;
 mod read_visibility;
 mod realtime;
 mod runtime;
@@ -303,6 +305,7 @@ fn app() -> Element {
     use_future(move || pdf_preview::check::run(state));
     use_future(move || async move {
         dioxus::document::eval(include_str!("overlay_keyboard.js"));
+        crate::read_shortcuts::install_keyboard();
         // Global shortcuts: K palette, G workspace search, F conversation search.
         let mut bridge = dioxus::document::eval(
             r#"window.addEventListener('keydown', event => {
@@ -316,8 +319,16 @@ fn app() -> Element {
                    window.superPlatinumOverlayKeyboard?.prepare('search');
                    dioxus.send({type:'search', conversation:event.key.toLowerCase()==='f'});
                  } else if (event.key === 'Escape') {
-                   if (event.target?.closest?.('[data-escape-local]')) return;
-                   dioxus.send({type:'escape', huddle: !!event.target.closest?.('[data-huddle-stage]')});
+                   if (event.defaultPrevented || event.repeat || event.isComposing || event.keyCode === 229
+                       || event.ctrlKey || event.metaKey || event.altKey || !document.hasFocus()
+                       || document.visibilityState !== 'visible') return;
+                   if (event.target?.closest?.('[data-escape-local], [data-local-keyboard]')) return;
+                   const read = window.superPlatinumReadShortcuts?.capture(event);
+                   if (event.shiftKey) {
+                     if (read) dioxus.send({type:'read-shortcut', read});
+                   } else {
+                     dioxus.send({type:'escape', read, huddle: !!event.target.closest?.('[data-huddle-stage]')});
+                   }
                  }
                });"#,
         );
@@ -366,15 +377,18 @@ fn app() -> Element {
                         shell.close_profile();
                         continue;
                     }
-                    if shell.thread_root.is_some() {
-                        // Esc out of an Activity thread returns to the empty
-                        // pane; elsewhere the thread is a side panel and the
-                        // conversation behind it stays.
-                        if shell.main_view == crate::state::MainView::Activity {
-                            shell.forget_surface();
-                        } else {
-                            shell.close_thread();
-                        }
+                    drop(shell);
+                    if let Some(read) = payload.get("read").cloned().and_then(|v| {
+                        serde_json::from_value::<crate::read_shortcuts::Payload>(v).ok()
+                    }) {
+                        spawn(crate::read_shortcuts::handle(state, read));
+                    }
+                }
+                "read-shortcut" => {
+                    if let Some(read) = payload.get("read").cloned().and_then(|v| {
+                        serde_json::from_value::<crate::read_shortcuts::Payload>(v).ok()
+                    }) {
+                        spawn(crate::read_shortcuts::handle(state, read));
                     }
                 }
                 _ => {}

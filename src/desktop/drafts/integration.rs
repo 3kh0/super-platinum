@@ -135,6 +135,10 @@ fn legacy_ownership(shell: &ShellState, key: &DraftKey) -> Result<(), &'static s
 }
 
 pub(crate) fn route(shell: &mut ShellState, changes: BTreeMap<DraftKey, LocalDraft>) {
+    if super::recovery::update_fixture::enabled() {
+        super::recovery::update_fixture::route(shell, changes);
+        return;
+    }
     if super::remote_review_fixture::enabled() {
         super::remote_review_fixture::route(shell, changes);
         return;

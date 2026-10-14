@@ -146,17 +146,26 @@ impl ShellState {
     }
 
     pub(super) fn reset_timeline_bounds(&mut self) {
-        if let Some((
-            channel,
-            super_platinum_core::domain::PendingScrollTarget::Message(ts)
-            | super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(ts),
-        )) = &self.core.pending_scroll_to
-            && self.core.active_channel.as_ref() == Some(channel)
-            && let Some(index) = self
-                .channel_rows
-                .iter()
-                .position(|message| &message.ts == ts)
-        {
+        let index = self
+            .core
+            .pending_scroll_to
+            .as_ref()
+            .and_then(|(channel, target)| {
+                if self.core.active_channel.as_ref() != Some(channel) {
+                    return None;
+                }
+                match target {
+                    super_platinum_core::domain::PendingScrollTarget::Message(ts) => self
+                        .channel_rows
+                        .iter()
+                        .position(|message| &message.ts == ts),
+                    super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(cursor) => {
+                        crate::read_preferences::opening::first_after(self, cursor)
+                    }
+                    super_platinum_core::domain::PendingScrollTarget::Latest => None,
+                }
+            });
+        if let Some(index) = index {
             self.timeline_start = index.saturating_sub(24);
             self.timeline_end = (index + 76).min(self.channel_rows.len());
             return;
@@ -174,16 +183,16 @@ impl ShellState {
         measurements: &[(String, f64)],
         stick_to_bottom: bool,
     ) -> bool {
-        if self.stick_to_bottom != stick_to_bottom
-            || (stick_to_bottom
-                && self.core.pending_scroll_to.is_some()
-                && matches!(
-                    self.core.pending_scroll_to,
-                    Some((
-                        _,
-                        super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(_)
-                    ))
+        let stick_to_bottom = stick_to_bottom
+            && !matches!(
+                self.core.pending_scroll_to,
+                Some((
+                    _,
+                    super_platinum_core::domain::PendingScrollTarget::Message(_)
+                        | super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(_)
                 ))
+            );
+        if self.stick_to_bottom != stick_to_bottom
             || measurements
                 .iter()
                 .any(|(id, height)| self.row_heights.get(id) != Some(height))
@@ -220,23 +229,17 @@ impl ShellState {
                 geometry_changed = true;
             }
         }
-        self.stick_to_bottom = stick_to_bottom;
-        // A reader who has reached the newest message has outrun the unread
-        // divider we were still holding; applying it later reads as a random
-        // teleport. A `Latest` anchor is left alone — it asks for the bottom,
-        // which is where they already are, and dropping it early loses the
-        // scroll a cold conversation still owes.
-        if stick_to_bottom
-            && matches!(
+        // An empty/cold mount also reports bottom. Only actual user navigation
+        // cancels an unread/saved opening; a geometry sample cannot do so.
+        self.stick_to_bottom = stick_to_bottom
+            && !matches!(
                 self.core.pending_scroll_to,
                 Some((
                     _,
-                    super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(_)
+                    super_platinum_core::domain::PendingScrollTarget::Message(_)
+                        | super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(_)
                 ))
-            )
-        {
-            self.core.pending_scroll_to = None;
-        }
+            );
         // A newly mounted/empty timeline can report its bottom before the
         // requested saved/search message exists. Keep its render neighborhood
         // and anchor until scroll_to_target confirms the actual row landed.
@@ -245,6 +248,7 @@ impl ShellState {
             Some((
                 _,
                 super_platinum_core::domain::PendingScrollTarget::Message(_)
+                    | super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(_)
                     | super_platinum_core::domain::PendingScrollTarget::Latest
             ))
         ) {
@@ -302,6 +306,7 @@ impl ShellState {
     /// be open, where it would have had no composer and left the row that is
     /// still highlighted pointing at something else entirely.
     pub fn select_channel(&mut self, index: usize, open: ChannelOpen) {
+        crate::read_preferences::opening::cancel(self);
         self.cancel_profile_dm();
         self.checkpoint_composers();
         let Some(channel) = self.channels.get(index) else {
@@ -370,45 +375,11 @@ impl ShellState {
             })
             .unwrap_or_default();
         self.rebuild_channel_geometry();
-        // Prefer first-unread anchoring when the conversation has unreads.
-        if unread
-            && let Some(message) = self
-                .channel_rows
-                .iter()
-                .find(|message| message.show_unread_divider)
-        {
-            let anchor = message.ts.clone();
-            if let Some(idx) = self
-                .channel_rows
-                .iter()
-                .position(|message| message.ts == anchor)
-            {
-                self.stick_to_bottom = false;
-                self.timeline_start = idx.saturating_sub(24);
-                self.timeline_end = (idx + 76).min(self.channel_rows.len());
-                self.core.pending_scroll_to = Some((
-                    channel_id,
-                    super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(anchor),
-                ));
-                self.reproject_channel_window();
-                return;
-            }
-        }
-        // No unread anchor: the conversation opens on its newest message. The
-        // flag alone is not enough — the scroll container keeps the offset of
-        // the channel left behind, so a shorter transcript opens parked below
-        // its last row, showing an empty pane. The anchor is what actually
-        // moves it; `refresh_selected_channel` spends it as soon as the rows
-        // exist, and again after history lands for a cold conversation.
-        self.stick_to_bottom = true;
-        self.core.pending_scroll_to = Some((
-            channel_id,
-            super_platinum_core::domain::PendingScrollTarget::Latest,
-        ));
-        self.reset_timeline_window();
+        crate::read_preferences::opening::apply(self, unread);
     }
 
     pub fn select_workspace(&mut self, index: usize) -> bool {
+        crate::read_preferences::opening::cancel(self);
         self.close_profile();
         self.cancel_palette_open();
         self.checkpoint_composers();
@@ -455,6 +426,11 @@ impl ShellState {
             .or_else(|| workspace.channels.keys().next().cloned());
         self.main_view = MainView::Home;
         self.refresh_from_core();
+        let unread = self
+            .channels
+            .get(self.active_channel)
+            .is_some_and(|channel| channel.unread);
+        crate::read_preferences::opening::apply(self, unread);
         true
     }
 }

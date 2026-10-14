@@ -267,6 +267,9 @@ async fn run(
                 if retained != owned {
                     return Err("Uncertain owner rotation replaced retained lease".into());
                 }
+                // The exact registry lease is synchronous; its newly mounted
+                // recovery row must also reach the WebView before clicking it.
+                wait_dom("resume-ready").await?;
                 dom("resume", json!({})).await?;
                 phase(ops, &retained, EditPhase::Uncertain).await?;
                 stage(d, "resumed", &mut captures, &mut layouts).await?;

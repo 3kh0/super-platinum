@@ -1,4 +1,4 @@
-//! Settings overlay: appearance controls and the Storage cache manager.
+//! Settings overlay: appearance, notifications, reading, and storage.
 
 use dioxus::prelude::*;
 
@@ -25,6 +25,14 @@ pub(crate) fn settings_view(mut state: Signal<ShellState>, snapshot: &ShellState
                 "Notifications"
             }
             button {
+                id: "settings-reading-tab",
+                class: if snapshot.settings_section == SettingsSection::Reading { "settings-tab active" } else { "settings-tab" },
+                role: "tab",
+                "aria-selected": (snapshot.settings_section == SettingsSection::Reading).to_string(),
+                onclick: move |_| state.write().set_settings_section(SettingsSection::Reading),
+                "Reading"
+            }
+            button {
                 class: if snapshot.settings_section == SettingsSection::Storage { "settings-tab active" } else { "settings-tab" },
                 role: "tab",
                 "aria-selected": (snapshot.settings_section == SettingsSection::Storage).to_string(),
@@ -39,6 +47,8 @@ pub(crate) fn settings_view(mut state: Signal<ShellState>, snapshot: &ShellState
             {storage_panel(state, snapshot)}
         } else if snapshot.settings_section == SettingsSection::Notifications {
             NotificationPreferences { key: "notifications-{crate::notification_schedule::mount_key(snapshot)}", state }
+        } else if snapshot.settings_section == SettingsSection::Reading {
+            crate::read_preferences::settings::view::ReadingPreferences { key: "reading-{crate::read_preferences::settings::mount_key(snapshot)}", state }
         } else {
             {appearance_panel(state, snapshot)}
         }

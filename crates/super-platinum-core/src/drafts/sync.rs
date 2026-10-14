@@ -11,10 +11,12 @@ use serde_json::Value;
 mod consume;
 mod direct_local;
 mod observation;
+pub mod owned_index;
 pub(crate) mod reconciliation;
 mod recovery;
 pub use consume::{ConsumeError, ConsumeIntent, ConsumeKind};
 pub use observation::{DraftObservation, ObservationError, ObservationKind};
+pub use recovery::{CheckBlock, CheckTicket};
 
 /// Account identity and the verified destination, never the currently visible
 /// composer. Adapters must derive a remote scope from its own destination.
@@ -126,6 +128,8 @@ pub struct DraftSync {
     #[serde(default)]
     check_deadline: Option<recovery::CheckDeadline>,
     #[serde(default)]
+    check_ticket: Option<CheckTicket>,
+    #[serde(default)]
     observed_events: std::collections::BTreeMap<String, DraftObservation>,
     #[serde(default)]
     blocked_observation: Option<DraftObservation>,
@@ -144,6 +148,7 @@ impl DraftSync {
             retired_ids: vec![],
             consumption: None,
             check_deadline: None,
+            check_ticket: None,
             observed_events: Default::default(),
             blocked_observation: None,
         }
@@ -216,6 +221,7 @@ impl DraftSync {
             retired_ids: vec![],
             consumption: None,
             check_deadline: None,
+            check_ticket: None,
             observed_events: Default::default(),
             blocked_observation: None,
         })

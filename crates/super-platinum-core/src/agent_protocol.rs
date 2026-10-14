@@ -90,6 +90,7 @@ pub enum AgentCommand {
 pub enum SettingsSection {
     Appearance,
     Notifications,
+    Reading,
     Storage,
 }
 
@@ -147,6 +148,7 @@ mod tests {
         for (name, expected) in [
             ("appearance", SettingsSection::Appearance),
             ("notifications", SettingsSection::Notifications),
+            ("reading", SettingsSection::Reading),
             ("storage", SettingsSection::Storage),
         ] {
             let request: AgentRequest = serde_json::from_value(serde_json::json!({

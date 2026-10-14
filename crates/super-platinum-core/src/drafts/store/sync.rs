@@ -19,9 +19,9 @@ pub use resolution::{
     LocalChoice, LocalReview, LocalSettlement, RemoteChoice, RemoteReview, RemoteSettlement,
 };
 
-// Version 4 adds persisted event ordering and unsupported observation evidence.
-// Read earlier rows; older binaries reject v4 rather than discard these guards.
-const FORMAT: i64 = 4;
+// Version 5 adds operation-bound read-check tickets and durable completion.
+// Older binaries reject v5 rather than discard an unresolved admission guard.
+const FORMAT: i64 = 5;
 
 #[derive(Clone, Debug)]
 pub struct Stored {
@@ -102,6 +102,7 @@ fn validate(scope: &Scope, state: &DraftSync) -> Result<(), AppError> {
     if state.scope() != scope
         || !state.consumption_valid()
         || !state.observation_state_valid()
+        || !state.recovery_state_valid()
         || scope.key.team.is_empty()
         || scope.key.channel.is_empty()
         || scope.key.thread.as_ref().is_some_and(String::is_empty)
@@ -123,10 +124,26 @@ fn validate(scope: &Scope, state: &DraftSync) -> Result<(), AppError> {
     Ok(())
 }
 fn decode(scope: &Scope, revision: i64, format: i64, content: String) -> Result<Stored, AppError> {
-    if !matches!(format, 1 | 2 | 3 | FORMAT) || revision <= 0 {
+    if !matches!(format, 1 | 2 | 3 | 4 | FORMAT) || revision <= 0 {
         return Err(invalid("unsupported draft sync record"));
     }
-    let state = serde_json::from_str(&content)?;
+    let mut state: DraftSync = if format == FORMAT {
+        let raw: serde_json::Value = serde_json::from_str(&content)?;
+        // Only legacy schemas may omit recovery fields. In v5 omission is
+        // corruption, not evidence that no read was admitted. Explicit null
+        // remains the valid representation of an absent guard/deadline.
+        if raw.get("check_ticket").is_none() || raw.get("check_deadline").is_none() {
+            return Err(invalid("incomplete draft recovery guard"));
+        }
+        // Decode the original input so duplicate fields still fail instead of
+        // being collapsed by Value (a later null must not erase a ticket).
+        serde_json::from_str(&content)?
+    } else {
+        serde_json::from_str(&content)?
+    };
+    if format < FORMAT {
+        state.migrate_check_deadline();
+    }
     validate(scope, &state)?;
     Ok(Stored {
         revision: revision as u64,
@@ -560,5 +577,7 @@ pub(super) mod tests;
 
 #[cfg(test)]
 mod observation_tests;
+#[cfg(test)]
+mod recovery_tests;
 #[cfg(test)]
 mod release_tests;

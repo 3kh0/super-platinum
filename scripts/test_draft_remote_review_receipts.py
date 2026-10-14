@@ -18,6 +18,16 @@ def local(text, target):
     return {"composer": {"text": text, "reply_broadcast": target == "thread"}, "attachments": []}
 
 
+def geometry():
+    def rect(top, bottom):
+        return {"left": 100, "right": 500, "width": 400, "top": top, "bottom": bottom, "height": bottom - top}
+    shell = {"header": rect(0, 48), "footer": rect(180, 380), "pane": rect(0, 780)}
+    return {"shell": shell, "completion": {"syntheticCompletionGeometry": True, "prePostStateEqual": True,
+            "samples": [{"popup": rect(180, 270), "row": rect(185, 225), "hitVisible": True, "shell": shell},
+                        {"popup": rect(180, 270), "row": rect(225, 265), "hitVisible": True, "shell": shell}]},
+            "readableRows": [{"ok": True, "index": i, "rect": rect(260, 360), "panel": rect(250, 370), "shell": shell} for i in range(6)]}
+
+
 def sample(scenario="remote-channel", phase="exercise"):
     target = "thread" if scenario.endswith("thread") else "channel"
     other = "channel" if target == "thread" else "thread"
@@ -41,7 +51,7 @@ def sample(scenario="remote-channel", phase="exercise"):
                 "blocks": [{"type": "rich_text", "elements": [{"type": "rich_text_section", "elements": [{"type": "text", "text": M["AFTER"]}]}]}],
                 "destinations": [{"channel_id": "C2", **({"thread_ts": "1719800400.000000", "broadcast": True} if target == "thread" else {})}]}}, "inventory": {"scope": scope}}
     result = {"initialNative": native, "native": native, "initialReview": {"selected": 0, "applyDisabled": True,
-        "readableRows": [{"ok": True, "index": i} for i in range(6)], "rows": [{"text": t} for t in (M["BEFORE"], M["BLOCKED"], M["BLOCKED"], M["ALTERNATE"],
+        **geometry(), "rows": [{"text": t} for t in (M["BEFORE"], M["BLOCKED"], M["BLOCKED"], M["ALTERNATE"],
                                       "Previously observed Slack version", M["AFTER"])]},
         "preservedBeforeChoice": {target: {"alternates": [{"local": local(M["NEWER"], target)}]}},
         "finishAfterRemount": {"noAdditionalRead": True, "before": {"text": M["BEFORE"], "visit": "old"},
@@ -62,6 +72,29 @@ def validate(value):
 
 
 class ReviewReceipts(unittest.TestCase):
+    def test_completion_layout_requires_restoration_and_visible_hits(self):
+        for mutate in (lambda r: r.pop("completion"),
+                       lambda r: r["completion"].update(prePostStateEqual=False),
+                       lambda r: r["completion"]["samples"][1].update(hitVisible=False),
+                       lambda r: r["completion"]["samples"][0]["popup"].update(top=100, height=170)):
+            value = sample()
+            mutate(value["result"]["initialReview"])
+            with self.assertRaises(RuntimeError):
+                validate(value)
+
+    def test_readable_row_cannot_extend_past_panel_or_footer(self):
+        value = sample()
+        value["result"]["initialReview"]["readableRows"][4]["rect"].update(bottom=390, height=130)
+        with self.assertRaises(RuntimeError):
+            validate(value)
+
+    def test_clipped_header_and_missing_geometry_are_rejected(self):
+        for mutate in (lambda r: r.pop("shell"), lambda r: r["shell"]["header"].update(top=-8, height=56)):
+            value = sample()
+            mutate(value["result"]["initialReview"])
+            with self.assertRaises(RuntimeError):
+                validate(value)
+
     def test_actual_rest_xparams_url_is_preserved_and_validated(self):
         receipt = sample()
         validate(receipt)

@@ -17,6 +17,9 @@
 .schedule-dialog > input { min-height: 32px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font: inherit; color-scheme: dark; }
 .schedule-dialog .rich-reminder-editor { min-height: 88px; max-height: 240px; overflow-y: auto; }
 .modal.schedule-dialog { display: flex; flex-direction: column; padding: 16px; width: min(520px, calc(100vw - 32px)); overflow-y: auto; }
+/* Attachment inventories can exceed the editor's usual height. Bound the whole
+   floating surface before its own scroll area reveals the recovery footer. */
+.modal#draft-attachments-dialog { position: fixed; top: var(--space-4); max-height: calc(100vh - var(--space-4) - var(--space-4)); box-sizing: border-box; }
 .schedule-dialog header { padding: 0 0 4px; }
 .schedule-dialog > input { margin: 0; width: 100%; box-sizing: border-box; }
 .schedule-dialog footer { display: flex; justify-content: flex-end; gap: 8px; }

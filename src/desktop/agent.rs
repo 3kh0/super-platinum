@@ -50,8 +50,13 @@ pub async fn serve(
     crate::app_modal::multi_external_check::start(state, desktop.clone());
     crate::drafts::projection_check::start(state, desktop.clone());
     crate::drafts::remote_review_check::start(state, desktop.clone());
+    crate::drafts::recovery::update_check::start(state, desktop.clone());
     crate::scheduled::attachments::fixture::check::start(state, desktop.clone());
     crate::slack_links::user_check::start(state, desktop.clone());
+    crate::read_preferences::settings::check::start(state, desktop.clone());
+    crate::read_preferences::navigation_check::start(state, desktop.clone());
+    crate::read_shortcuts::check::start(state, desktop.clone());
+    crate::read_shortcuts::bulk::check::start(state, desktop.clone());
     crate::message_buttons::multi_channel_check::start(state, desktop.clone());
     crate::message_buttons::multi_user_check::start(state, desktop.clone());
     crate::message_buttons::channel_check::start(state, desktop.clone());
@@ -310,6 +315,7 @@ async fn dispatch(
             shell.settings_section = match section.unwrap_or(AgentSettingsSection::Appearance) {
                 AgentSettingsSection::Appearance => crate::state::SettingsSection::Appearance,
                 AgentSettingsSection::Notifications => crate::state::SettingsSection::Notifications,
+                AgentSettingsSection::Reading => crate::state::SettingsSection::Reading,
                 AgentSettingsSection::Storage => crate::state::SettingsSection::Storage,
             };
             shell.overlay = Some(Overlay::Settings);
@@ -503,6 +509,7 @@ fn state_snapshot(state: &ShellState) -> Value {
     let settings_section = match state.settings_section {
         crate::state::SettingsSection::Appearance => "appearance",
         crate::state::SettingsSection::Notifications => "notifications",
+        crate::state::SettingsSection::Reading => "reading",
         crate::state::SettingsSection::Storage => "storage",
     };
     let storage = {
@@ -822,7 +829,7 @@ fn help_data() -> Value {
         "commands": [
             {"cmd": "ping"}, {"cmd": "state"}, {"cmd": "focus-window"}, {"cmd": "open-palette"},
             {"cmd": "set-query"}, {"cmd": "submit"}, {"cmd": "select-channel"},
-            {"cmd": "search"}, {"cmd": "open-settings", "section": "appearance|notifications|storage (optional)"}, {"cmd": "screenshot"},
+            {"cmd": "search"}, {"cmd": "open-settings", "section": "appearance|notifications|reading|storage (optional)"}, {"cmd": "screenshot"},
             {"cmd": "notification-preview"},
             {"cmd": "open-profile"}, {"cmd": "close-profile"}, {"cmd": "open-usergroup"},
             {"cmd": "allow-destructive"}, {"cmd": "send"},

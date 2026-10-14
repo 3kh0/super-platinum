@@ -36,6 +36,32 @@ pub(crate) fn busy(shell: &ShellState) -> bool {
 pub(crate) fn held(shell: &ShellState) -> bool {
     shell.thread_unread.held.as_deref() == Some(shell.thread_scope().as_str())
 }
+pub(crate) fn busy_workspace(shell: &ShellState, epoch: u64, team: &str) -> bool {
+    shell
+        .thread_unread
+        .pending
+        .iter()
+        .any(|(e, (t, _, _))| *e == epoch && t == team)
+}
+
+pub(crate) fn shortcut_initial_cursor(shell: &ShellState) -> Option<&str> {
+    shell
+        .thread_unread
+        .anchor
+        .as_ref()
+        .filter(|(scope, _)| scope == &shell.thread_scope())
+        .map(|(_, cursor)| cursor.as_str())
+}
+
+/// An explicit Escape consumes this pane's retained divider without moving its
+/// scroll position or replacing the local thread draft.
+pub(crate) fn clear_shortcut_divider(shell: &mut ShellState) {
+    let cursor = key(shell)
+        .and_then(|key| shell.core.thread_cursor(&key))
+        .map(str::to_owned);
+    shell.thread_unread.anchor = cursor.map(|cursor| (shell.thread_scope(), cursor));
+    shell.thread_unread.held = None;
+}
 pub(crate) fn blocks_auto_read(shell: &ShellState) -> bool {
     busy(shell) || held(shell)
 }
@@ -132,7 +158,9 @@ pub(crate) fn change(mut state: Signal<ShellState>, target: Option<String>) {
     let (key, epoch, scope, previous_hold) = {
         let mut shell = state.write();
         let Some(key) = key(&shell) else { return };
-        if busy(&shell)
+        if crate::read_shortcuts::bulk::blocks_reads(&shell)
+            || crate::read_shortcuts::busy_thread(&shell)
+            || busy(&shell)
             || shell.thread_loading
             || target.as_ref().is_some_and(|ts| {
                 !shell

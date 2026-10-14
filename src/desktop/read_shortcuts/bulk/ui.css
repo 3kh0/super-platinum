@@ -1,0 +1,14 @@
+.bulk-read-checkbox { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4); padding: var(--space-1); }
+.bulk-read-checkbox input { flex: 0 0 auto; }
+/* The shared toast's 24px second column fits only its dismiss button. Bulk
+   status can also offer Undo or Refresh, so reserve the complete action group. */
+.toast.bulk-read-status { grid-template-columns: minmax(0, 1fr) auto; }
+.bulk-read-status .toast-text p { margin: 0; }
+.bulk-read-status .toast-text { display: block; min-width: 0; -webkit-line-clamp: unset; }
+.bulk-read-status .toast-text p + p { margin-top: var(--space-1); }
+.bulk-read-actions { display: flex; justify-self: end; align-items: center; gap: var(--space-2); }
+.bulk-read-actions > button:not(.toast-dismiss) { min-height: 32px; min-width: 56px; padding: 0 var(--space-2); border-radius: var(--radius-md); }
+.bulk-read-confirm footer button { min-width: 88px; }
+@media (max-width: 700px) {
+  .toast.bulk-read-status { grid-template-columns: minmax(0, 1fr); }
+}

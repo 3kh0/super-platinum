@@ -208,6 +208,8 @@ fn boot_self_user_provides_self_avatar_url() {
         vip_revisions: Default::default(),
         sidebar: SidebarConfig::default(),
         notifications: NotificationConfig::default(),
+        read_preferences: ReadPreferences::default(),
+        clear_unreads_preference: ClearUnreadsPreference::default(),
         users: HashMap::new(),
         bots: Default::default(),
         usergroups: HashMap::new(),

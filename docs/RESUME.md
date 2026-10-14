@@ -2,16 +2,31 @@
 
 ## Windows continuation, 2026-10-14
 
-**Latest completed Windows gate:** independently locked core **1,289 passed /
-5 ignored**, desktop **1,273 passed / 7 ignored**, formatting/whitespace and
-locked dev build **4m49s** pass. Executable SHA:
-`dd5a3aa090147859234f152c0b4b2bdfe70a6f4b077a2b9eedbe79dedcdda2a1`.
-The remote-review retry passes all 12 scenario/restart pairs with 112 inspected
-PNGs, but narrow channel/thread headers clip while review is open. A scoped
-layout correction is pending a new native gate. Post-reboot capture now accepts
-successful empty taskbar enumeration while retaining failed-probe rejection;
-21 focused tests pass. No OS settings changed. Board results below use the
-prior `adaa29ff...` executable; latest single-selector evidence uses `dd5a3aa0...`.
+**Latest completed Windows build gate:** independently locked core **1,384 passed /
+5 ignored**, desktop **1,405 passed / 7 ignored**, formatting/whitespace and
+locked dev build **4m37s** pass. Executable SHA:
+`da7ebcd098b04f1c704a1e4f17f2975d81a5c6caf6d1dd5da4689cccf0e5daec`.
+The full Update recovery matrix is running in `ur-final4/`; final pixel and
+closed-receipt audits remain pending. Previous native gates retain the hashes below.
+The corrected remote-review gate passes all 12 scenario/restart pairs with
+**all 112 PNGs inspected** on the prior `6a77d24e` executable. Conversation headers and review
+rows are readable across their internal scroll positions; second-choice bodies
+and review actions are not simultaneously visible in every capture. Exact durable
+restart dictionaries and owned process/pointer receipts pass. Completion evidence
+is synthetic geometry, not actual suggestion interaction. The prior clipping
+failures are retained in the worklog. Post-reboot capture accepts successful empty
+taskbar enumeration while rejecting failed probes; no OS settings changed.
+All ten attachment native scenarios pass on `271d07ba`, with all 48 successful
+stage PNGs and two retained failure PNGs inspected. Narrow scroll positions show
+the rows, status and footer; upper content is not simultaneously visible.
+Reading settings passes both sizes on `91009832`, with all twenty PNGs inspected,
+including canonical selection, focus preservation and bounded focus rings.
+Escape now passes both sizes on `50c8ca39`, with all twenty PNGs inspected.
+Shift+Escape now passes both sizes on `13e28b39` in `br-final3/`, with all 28 PNGs
+inspected, exact request/Undo/expiry/focus/lifecycle checks passed. Prior status
+overflow and incorrect expiry-oracle failures remain preserved. Corrected reading navigation passes both
+sizes on `271d07ba` with all twenty PNGs inspected.
+User-link evidence uses the prior f0415fe6 executable.
 
 Board lane Add passes both Windows sizes with **all 14 PNGs inspected** in
 `tmp/agent-ui/windows-board-add-pilot/`. Exact ordered typed seeds, four actual
@@ -58,15 +73,18 @@ proof. Fourteen toast JS and fifteen runner tests pass. These are disconnected
 fixtures, not live callback interoperability. Root owns every Cargo/build/native
 launch.
 
-**Current work:** positive `drafts.info`, explicit supported-conflict reconciliation
-core, Board lane Add, and the server-draft attachment edit core model are compiled
-and unit tested. Subsequent serialized worker/Editor remote-review hooks are now
-being integrated with explicit UI and isolated read/commit/projection/restart
-checks. Attachment desktop controller/UI integration is also underway. Those
-new desktop workflows are not part of the latest executable yet. Primary retained
-bundles prove ordinary positive lookup/listing; missing or partial results cannot
-prove deletion. No production ingress, storage-format change or autosave is
-introduced by this preparatory work. Keep the broad remaining matrix open.
+**Current work:** source-backed conversation reading modes, synchronized Reading
+settings, bounded resumable cold unread loading, and renderer scrollmarks are
+implemented and independently reviewed. Core/desktop tests and the new dev build pass below;
+navigation, scheduled attachment editing and draft-review native gates pass with
+all captures inspected. Reading settings focus verification also passes.
+Escape native integration passes after the reviewed bridge correction; thirteen
+Node regressions and both native sizes pass. Shift+Escape's corrected expiry
+receipt expectation and both-size native gate also pass; production feed/history
+reconciliation and live read acknowledgements remain separate gaps.
+Known-human DM/profile links pass the prior frozen native gate. Ordinary
+bidirectional remote autosave and production draft ingress remain disabled.
+Keep the broad remaining matrix open.
 
 The subsequent independently locked core gate passes **1,289 / 5 ignored** in
 20.13s after 20.04s compilation. It includes serialized remote review, exact
@@ -80,14 +98,123 @@ adapter/fixtures and user-link work are now being integrated for the next build,
 while native checks retain the frozen executable. No native outcome is claimed for these changes
 yet. The user rebooted Windows; restart Slack with CDP if live reference work
 requires it. Real sessions, clipboard and drafts remain untouched in these checks.
+Slack CDP9222 is restored on Windows; the client renderer endpoint is verified.
 
 The next independently locked core gate passes **1,294 / 5 ignored** in 19.98s,
 compilation 31.92s. Attachment Source/fixtures and legacy compatibility/queue
 guards, plus known-human DM-and-profile user links, are independently reviewed
-and source-frozen. Desktop compilation awaits the remote-review layout correction
-preserving mention suggestion visibility. Next native gates: corrected review,
-ten attachment cases (48 PNGs), and two user-link cases (16 PNGs). Broad acceptance
+and source-frozen. Desktop now passes **1,296 / 7 ignored** in 4.71s after 2m45s
+compilation; formatting and whitespace checks pass. This includes the review
+layout correction preserving suggestion visibility; the dev build passes in
+4m19s. On that frozen executable, the narrow review pilot fails full-row
+readability. Attachment ordered-rich passes at normal size; empty-body-cancel
+fails a closed-dialog assertion. Both failures are under investigation. User-link
+native checks pass at both sizes with all 16 PNGs inspected; narrow profiles
+cover the composer as an overlay, and their Message button is below the fold. Read preferences are now being integrated into later
+source, outside this frozen executable. Broad acceptance
 remains open; ordinary bidirectional remote autosave is still disabled.
+
+The later read-preference core gate passes **1,322 / 5 ignored**, formatting
+passed, compilation 24.71s/tests 20.36s. Desktop settings/reading source reviews
+are clear. Final desktop gate passes **1,332 / 7 ignored** (compilation 1m57s, tests
+5.06s), formatting and whitespace pass. The earlier stale unread-hold test is
+corrected. The locked dev build passes in 4m30s (6a77d24e above). The corrected review
+pilot is running; attachment/settings/navigation native gates remain next.
+
+Follow-up fixture/focus and idle-reload corrections pass **1,336 desktop tests /
+7 ignored** (compilation 1m50s, tests 4.58s). The locked dev build passes in
+3m37s; SHA is recorded above and in `read-followup-final-sha.log`. Core remains
+unchanged at 1,322 / 5 ignored. Attachment ten-case native verification is
+complete across `windows-scheduled-attachments-final/`, `att-final/`, and
+`att-last/`; retained capture-path and pointer-placement failures are detailed
+in the worklog. Finish corrected Reading settings/navigation gates next.
+Preserve the complete corrected draft-review gate on 6a77d24e. New Escape and
+Shift+Escape source is being integrated outside the frozen executable, with
+independent core/renderer/confirmation/reconciliation and fixture ownership.
+It requires a new compile/test/build gate after the current native runs finish.
+
+Final shortcut review and both formatting checks are clear. Core now passes
+**1,353 / 5 ignored** (22.61s compilation, 20.34s tests); desktop passes
+**1,377 / 7 ignored** (3m02s compilation, 5.00s tests). The locked dev build passes
+in 4m36s in the `read-shortcuts-freeze-*` pipeline, producing `91009832` above.
+Reading settings passes both sizes in `rp-final2/`, all twenty PNGs inspected.
+First normal Escape and bulk runs fail before a prepared request and confirmation
+dialog respectively (`rs-first/`, `br-first/`); all four PNGs are inspected.
+Rebuild the reviewed bridge fix and diagnostics, retry both shortcut sizes, and
+inspect every PNG. Keep the earlier 271d07ba
+attachment/navigation and 6a77d24e draft-review receipts attributed separately.
+
+The next draft prerequisite is active source work outside `91009832`: harden
+raw mutation acknowledgments/denials, add explicit positive frozen Update readback,
+and persist operation-bound read tickets/deadlines across restart. The reviewed
+classifier keeps a raw server `draft_mutation_not_sent_offline` denial dispatched
+and uncertain; only trusted transport evidence can establish known-unsent.
+Contradictory receipts retain raw uncertainty. Additional unrepresented draft fields
+remain conservatively unsupported; full live acknowledgement compatibility is open.
+Core format 5 and Update adapter/UI/fixtures need the next integrated test/build gate.
+The final independently locked core gate now passes **1,368 / 5 ignored**
+(20.65s compilation, 20.51s tests), including fifteen durable-ticket regressions.
+Desktop compilation initially found a fixture `Owner` glob-import collision;
+its return type is now explicitly `crate::drafts::Owner`. The next locked check
+passes in30.50s. A missing RemoteDraft import in a new test is also corrected.
+Full desktop tests now pass **1,401 / 7 ignored** (3m08s compilation, 5.18s tests),
+formatting passes, and the locked dev build passes in4m29s, producing `50c8ca39`
+above. Escape passes in `rs-next/` with all twenty PNGs inspected. Bulk stops at
+its first success notice in `br-next/` (six inspected PNGs); a scoped grid fix is
+reviewed. Update recovery has three normal pairs passing (positive in `ur-first/`,
+cooldown/pending in `ur-tail/`). Typing-before restart shows stale fixture seed
+text while exact durable dictionaries remain correct; its helper now uses the
+existing real unmount/remount and Latest anchor flow. Owner rotation exercise
+passes in `ur-more/`, but restart aborts on pointer placement before readiness.
+Rebuild the fixture/CSS corrections and complete all six Update scenarios at both
+sizes and both phases, plus bulk at both sizes. Prior Reading settings remains
+attributed to `91009832`; keep all failure receipts.
+
+The subsequent renderer/fixture gate passes **1,401 / 7 ignored** again
+(1m57s compilation, 4.66s tests), formatting/whitespace and dev build3m28s.
+Latest SHA is `13e28b39` above. The complete Update matrix is running in
+`ur-final2/`; first five normal pairs pass, including both newer-typing cases.
+Independent normal/narrow PNG/closed-receipt audits are assigned. Bulk
+`br-final2/` has a native-success receipt with fourteen captures, but remains an
+outer-runner failure pending the expiry surface/control expectation correction.
+
+Both corrected bulk runs pass in `br-final3/` with all 28 PNGs inspected and exact
+closed-receipt/lifecycle audit. Update `ur-final2/` passes all 12 pairs with all 52
+PNGs inspected, but narrow thread overlays hide recovery rows. The scoped fixture
+fix closes the thread through the existing checkpointing flow, waits for DOM
+absence, and requires 3x3 unobscured samples plus complete row/button bounds.
+Sixteen strengthened Python tests pass. The `recovery-visibility-final-*` gate
+passes formatting, 1,401 desktop tests / 7 ignored (1m50s compilation, 4.58s tests),
+locked dev build 3m26s and whitespace checks. Fresh `ur-final3/` on `151e9a95`
+passes all six normal pairs (all 26 PNGs independently inspected) and four narrow
+pairs, then fails narrow cooldown: its toast covers the inline row feedback.
+The thread overlay is gone; the stronger visibility check correctly rejects the
+remaining obstruction. Fix duplicate feedback before a fresh native gate; pending
+narrow and cooldown restart remain unrun. Prior native gates retain their original
+executable attribution. The pure owned-index helper was excluded from this gate;
+module integration is now released for the next compile, with ingress disabled.
+Preserve ordinary autosave and realtime ingress as disabled until their full
+integration contract is implemented and verified; this classifier slice alone
+does not establish draft-sync parity.
+
+The duplicate-feedback correction now passes four new tests within the complete
+1,405 / 7 ignored desktop suite (4m09s compilation, 4.90s tests), formatting,
+whitespace and dev build 4m37s. It publishes to the originating live row before
+suppressing an unconfirmed Update toast; confirmation and unavailable-row cases
+retain notification. Full `ur-final4/` captures and audits are running.
+
+The pure durable owned-draft identity index is now integrated and passes all
+sixteen new tests within the independently locked core suite: **1,384 passed /
+5 ignored**, compilation40.40s, tests20.08s. Desktop compilation also passes. It resolves
+acknowledged IDs or pending Create UUIDs within exact account/team scopes, with
+full-row and inventory-instance revalidation. Do not infer ownership from the
+visible channel. Production ingress still needs retained
+socket provenance, ordered/deferred delivery, durable reconciliation-gap guards,
+offscreen Editor routing and the existing native projection handshake. Before
+enabling ordinary enrollment/autosave, extend shared consumption: current
+`drafts/send.rs::can_consume` refuses acknowledged remote drafts, and legacy
+Schedule/upload paths refuse managed ownership. Enabling autosave first would
+therefore disable those workflows. Keep this dependency explicit.
 
 Trusted keyboard/file-paste regressions pass on `ad6f18f2...`, with all **22 PNGs
 inspected**. Normal keyboard captures have taskbar overlap, but edit results are

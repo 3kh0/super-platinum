@@ -62,11 +62,30 @@ async fn cross_view_checks_are_serialized_and_restart_keeps_deadline() {
         fixture.owner.reserve_check(&op, 100),
         other.reserve_check(&op, 100)
     );
-    assert!(matches!(
-        (a, b),
-        (Ok(()), Err(CheckError::Cooldown(30100))) | (Err(CheckError::Cooldown(30100)), Ok(()))
-    ));
+    let ticket = match (a, b) {
+        (Ok(ticket), Err(CheckError::Pending)) | (Err(CheckError::Pending), Ok(ticket)) => ticket,
+        _ => panic!("one exact ticket expected"),
+    };
     let restarted = Account::new(fixture.owner.account.backend.clone()).owner(op.scope.key.clone());
+    assert_eq!(
+        restarted.reserve_check(&op, 30099).await,
+        Err(CheckError::Pending)
+    );
+    fixture
+        .owner
+        .complete_check(
+            ticket,
+            Readback {
+                outcome: None,
+                raw: None,
+                issue: Some(network::Issue::Uncertain),
+                cooldown_until_ms: None,
+                requested: true,
+                has_more: true,
+            },
+        )
+        .await
+        .unwrap();
     assert_eq!(
         restarted.reserve_check(&op, 30099).await,
         Err(CheckError::Cooldown(30100))

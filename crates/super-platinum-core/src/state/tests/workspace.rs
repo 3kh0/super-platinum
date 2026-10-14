@@ -1,5 +1,122 @@
 use super::super::*;
 
+fn counts_read_workspace() -> Workspace {
+    Workspace::from_session(&crate::config::WorkspaceSession {
+        team_id: "T1".into(),
+        user_id: "U1".into(),
+        enterprise_id: None,
+        name: "Fixture".into(),
+        url: "https://example.test".into(),
+        token: "fixture-not-a-token".into(),
+    })
+}
+
+#[test]
+fn exact_counts_row_adopts_backward_cursor_without_touching_membership() {
+    let mut workspace = counts_read_workspace();
+    for id in ["C1", "C2"] {
+        let channel: Channel = serde_json::from_value(serde_json::json!({
+            "id":id,"is_member":true,"name":"Retained", "last_read":"9.000000",
+            "has_unreads":true,"unread_count":8,"mention_count":3,"vip_count":2,
+            "latest":"10.000000"
+        }))
+        .unwrap();
+        workspace.channels.insert(id.into(), channel.clone());
+        workspace.apply_channel_counts_read_state(&channel);
+    }
+    let revision = workspace.messages["C1"].read_revision;
+    let membership = workspace.channel_lifecycle.revision();
+    let unrelated = serde_json::to_value(&workspace.channels["C2"]).unwrap();
+    let row = serde_json::from_value(serde_json::json!({
+        "id":"C1","last_read":"4.000000","has_unreads":true,
+        "unread_count":2,"unread_count_display":2,"mention_count":1,
+        "vip_count":1,"latest":"11.000000","is_member":false,"is_starred":true
+    }))
+    .unwrap();
+    workspace.apply_channel_counts_read_state(&row);
+    let bag = &workspace.messages["C1"];
+    assert_eq!(bag.last_read.as_deref(), Some("4.000000"));
+    assert_eq!(bag.read_revision, revision + 1);
+    assert_eq!(
+        (bag.unread_count, bag.mention_count, bag.vip_count),
+        (2, 1, 1)
+    );
+    assert_eq!(bag.latest.as_deref(), Some("11.000000"));
+    let metadata = &workspace.channels["C1"];
+    assert_eq!(metadata.last_read.as_deref(), Some("4.000000"));
+    assert_eq!(metadata.unread_count, Some(2));
+    assert_eq!(metadata.unread_count_display, Some(2));
+    assert_eq!(metadata.mention_count, Some(1));
+    assert!(metadata.has_unreads);
+    assert!(!metadata.is_starred);
+    assert_eq!(metadata.extra["is_member"], true);
+    assert_eq!(metadata.name.as_deref(), Some("Retained"));
+    assert_eq!(workspace.channel_lifecycle.revision(), membership);
+    assert_eq!(
+        serde_json::to_value(&workspace.channels["C2"]).unwrap(),
+        unrelated
+    );
+    let other = &workspace.messages["C2"];
+    assert_eq!(other.last_read.as_deref(), Some("9.000000"));
+    assert_eq!(
+        (other.unread_count, other.mention_count, other.vip_count),
+        (8, 3, 2)
+    );
+}
+
+#[test]
+fn exact_counts_row_clears_missing_counts_and_preserves_forced_unread() {
+    let mut workspace = counts_read_workspace();
+    let row = |value| serde_json::from_value::<Channel>(value).unwrap();
+    workspace.apply_channel_counts_read_state(&row(serde_json::json!({
+        "id":"C1","has_unreads":true,"unread_count":0,"mention_count":3,"vip_count":2
+    })));
+    workspace.apply_channel_counts_read_state(&row(serde_json::json!({
+        "id":"C1","has_unreads":true
+    })));
+    let bag = &workspace.messages["C1"];
+    assert_eq!(
+        (bag.unread_count, bag.mention_count, bag.vip_count),
+        (1, 0, 0)
+    );
+    workspace.apply_channel_counts_read_state(&row(serde_json::json!({
+        "id":"C1","has_unreads":false
+    })));
+    let bag = &workspace.messages["C1"];
+    assert_eq!(
+        (bag.unread_count, bag.mention_count, bag.vip_count),
+        (0, 0, 0)
+    );
+    assert!(workspace.channels.is_empty());
+}
+
+#[test]
+fn full_counts_still_updates_membership_stars_and_inserts_channels() {
+    let mut workspace = counts_read_workspace();
+    for id in ["C1", "C2"] {
+        workspace.channels.insert(
+            id.into(),
+            serde_json::from_value(serde_json::json!({
+                "id":id,"is_member":true
+            }))
+            .unwrap(),
+        );
+    }
+    workspace.apply_counts(serde_json::from_value(serde_json::json!({"channels":[
+        {"id":"C1","is_starred":true,"last_read":"4.000000","has_unreads":true,"unread_count":2},
+        {"id":"C3","has_unreads":false}
+    ]})).unwrap());
+    assert!(workspace.channels["C1"].is_starred);
+    assert_eq!(workspace.channels["C2"].extra["is_member"], false);
+    assert_eq!(workspace.channels["C3"].extra["is_member"], true);
+    assert_eq!(workspace.channels["C3"].mention_count, Some(0));
+    assert_eq!(
+        workspace.messages["C1"].last_read.as_deref(),
+        Some("4.000000")
+    );
+    assert_eq!(workspace.messages["C1"].unread_count, 2);
+}
+
 #[test]
 fn boot_locale_changes_preserve_raw_preference_and_missing_warm_value() {
     let mut workspace = Workspace::from_session(&crate::config::WorkspaceSession {
@@ -45,6 +162,8 @@ fn prune_typing_drops_stale() {
         vip_revisions: Default::default(),
         sidebar: SidebarConfig::default(),
         notifications: NotificationConfig::default(),
+        read_preferences: ReadPreferences::default(),
+        clear_unreads_preference: ClearUnreadsPreference::default(),
         users: HashMap::new(),
         bots: Default::default(),
         usergroups: HashMap::new(),

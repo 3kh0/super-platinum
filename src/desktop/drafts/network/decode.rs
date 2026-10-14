@@ -27,8 +27,32 @@ pub(super) fn response(
     workspace: &WorkspaceSession,
     value: &Value,
 ) -> (Outcome, Option<Issue>) {
-    if value.get("ok").and_then(Value::as_bool) != Some(true) {
+    if value.get("ok").and_then(Value::as_bool) != Some(true)
+        || value.get("error").is_some_and(|error| !error.is_null())
+    {
         return uncertain(Issue::MalformedResponse);
+    }
+    if operation.kind != OperationKind::Send {
+        let fields: &[&str] = if operation.kind == OperationKind::Delete {
+            &["draft_id", "client_msg_id", "team_id", "user", "user_id"]
+        } else {
+            &[
+                "draft",
+                "draft_id",
+                "client_msg_id",
+                "team_id",
+                "user",
+                "user_id",
+            ]
+        };
+        if !acknowledgement::envelope(value, fields)
+            || !optional_matches(value, "team_id", Some(&workspace.team_id))
+            || !optional_matches(value, "user", Some(&workspace.user_id))
+            || !optional_matches(value, "user_id", Some(&workspace.user_id))
+            || !optional_matches(value, "client_msg_id", Some(&operation.client_msg_id))
+        {
+            return uncertain(Issue::MalformedResponse);
+        }
     }
     match operation.kind {
         OperationKind::Create | OperationKind::Update | OperationKind::Schedule { .. } => {
@@ -76,6 +100,36 @@ fn draft(
     let Some(raw) = value.get("draft") else {
         return uncertain(Issue::MalformedResponse);
     };
+    // Match the conservative positive draft-review shape. A new lifecycle or
+    // routing field is not safe to discard when acknowledging a mutation.
+    // Retained B/S hashes: docs/slack-external-select-protocol.md. B xgGU
+    // 6823050 carries the server flag into the unified draft; S Hxeg 2374208
+    // selects false for channel drafts. B Id6n 6810796 checks the Schedule
+    // response flag is true. Typed optional booleans below are conservative;
+    // absence keeps the existing supported response shape.
+    const FIELDS: &[&str] = &[
+        "id",
+        "client_msg_id",
+        "team_id",
+        "user",
+        "user_id",
+        "last_updated_ts",
+        "blocks",
+        "file_ids",
+        "destinations",
+        "is_deleted",
+        "is_sent",
+        "date_scheduled",
+        "date_created",
+        "attachments",
+        "is_from_composer",
+    ];
+    if raw
+        .as_object()
+        .is_some_and(|object| object.keys().any(|key| !FIELDS.contains(&key.as_str())))
+    {
+        return uncertain(Issue::UnsupportedResponse);
+    }
     let Ok(wire) = serde_json::from_value::<WireDraft>(raw.clone()) else {
         return uncertain(Issue::MalformedResponse);
     };
@@ -89,6 +143,13 @@ fn draft(
         || !optional_matches(raw, "user_id", Some(&workspace.user_id))
         || !optional_matches(raw, "user", Some(&workspace.user_id))
         || !optional_matches(raw, "team_id", Some(&workspace.team_id))
+        || !optional_matches(value, "draft_id", Some(&wire.id))
+        || raw.get("is_from_composer").is_some_and(|value| {
+            value.as_bool() != Some(matches!(operation.kind, OperationKind::Schedule { .. }))
+        })
+        || raw
+            .get("date_created")
+            .is_some_and(|value| epoch(value).is_none_or(|created| created < 0))
     {
         return uncertain(Issue::MalformedResponse);
     }

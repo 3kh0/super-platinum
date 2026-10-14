@@ -734,6 +734,7 @@ pub enum SettingsSection {
     #[default]
     Appearance,
     Notifications,
+    Reading,
     Storage,
 }
 

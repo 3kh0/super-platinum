@@ -1,6 +1,6 @@
 // Evaluated with a captured native navigation scope. Only a mounted target can
 // consume the pending anchor; old virtual rows are not evidence of success.
-(async ({scope, selector, latestId, inputGeneration, rootId = 'message-timeline'}) => {
+(async ({scope, selector, latestId, inputGeneration, offset, rootId = 'message-timeline'}) => {
   let cancelled = false;
   const note = (event, detail) => (rootId === 'message-timeline' ? window.superPlatinumTimelineAnchor : window.superPlatinumThreadAnchor)?.note(event, detail);
   note('navigation-start', {selector, latestId});
@@ -21,7 +21,7 @@
       if (cancelled) return false;
       const root = document.getElementById(rootId);
       if (!root || root.dataset.timelineScope !== scope) continue;
-      if (inputGeneration !== undefined) {
+      if (inputGeneration !== undefined && inputGeneration !== null) {
         const anchor = rootId === 'message-timeline' ? window.superPlatinumTimelineAnchor : window.superPlatinumThreadAnchor;
         if (!anchor) continue;
         if (anchor.inputGeneration() !== inputGeneration) {
@@ -33,7 +33,9 @@
         [...root.querySelectorAll('[data-message-id]')].find(row => row.dataset.messageId === latestId);
       if (!target) continue;
       note('navigation-apply', {selector, latestId});
-      if (selector) target.scrollIntoView({block:'center'});
+      if (selector && Number.isFinite(offset)) {
+        root.scrollTop += target.getBoundingClientRect().top - root.getBoundingClientRect().top - offset;
+      } else if (selector) target.scrollIntoView({block:'center'});
       else root.scrollTop = root.scrollHeight;
       // ResizeObserver can run before the ensuing scroll event. Retire the old
       // reading position now, so it cannot undo this navigation in that gap.

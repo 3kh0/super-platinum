@@ -28,6 +28,13 @@ fn key(shell: &ShellState, channel: &str) -> Option<Key> {
 pub(crate) fn busy(shell: &ShellState, channel: &str) -> bool {
     key(shell, channel).is_some_and(|key| shell.manual_unread.pending.contains(&key))
 }
+pub(crate) fn busy_workspace(shell: &ShellState, epoch: u64, team: &str) -> bool {
+    shell
+        .manual_unread
+        .pending
+        .iter()
+        .any(|(e, t, _)| *e == epoch && t == team)
+}
 
 pub(crate) fn busy_in(shell: &ShellState, epoch: u64, team: &str, channel: &str) -> bool {
     shell
@@ -65,7 +72,9 @@ pub(crate) fn change(mut state: Signal<ShellState>, channel: String, target: Opt
         let Some(request_key) = key(&shell, &channel) else {
             return;
         };
-        if shell.core.active_channel.as_ref() != Some(&channel)
+        if crate::read_shortcuts::bulk::blocks_reads(&shell)
+            || crate::read_shortcuts::busy_channel(&shell)
+            || shell.core.active_channel.as_ref() != Some(&channel)
             || !shell.transcript_visible()
             || busy(&shell, &channel)
             || target
@@ -387,14 +396,31 @@ mod tests {
     #[test]
     fn unread_hold_blocks_automatic_marks_until_reopening() {
         let mut shell = ShellState::fixture(MediaRegistry::default());
+        shell.core.active_account = Some("isolated-unread-hold-test".into());
+        shell
+            .core
+            .workspaces
+            .get_mut("T1")
+            .unwrap()
+            .read_preferences = super_platinum_core::state::ReadPreferences::from_prefs(
+            &super_platinum_core::state::ReadMode::NewestAndRead.patch(),
+        );
         shell.core.pending_scroll_to = None;
         shell.stick_to_bottom = true;
+        crate::read_preferences::renderer::record_fixture_observation(&mut shell, false, true);
+        assert!(shell.reading_latest(true));
         let scope = shell.timeline_scope();
         shell.manual_unread.held = Some((scope, "100.0".into()));
+        crate::read_preferences::renderer::record_fixture_observation(&mut shell, false, true);
         assert!(held(&shell));
         assert!(!shell.reading_latest(true));
         shell.channel_generation += 1;
         assert!(!held(&shell));
+        assert!(
+            !shell.reading_latest(true),
+            "the old visit's attention cannot authorize the new one"
+        );
+        crate::read_preferences::renderer::record_fixture_observation(&mut shell, false, true);
         assert!(shell.reading_latest(true));
     }
 

@@ -25,8 +25,12 @@ pub(crate) async fn load_environment(media: MediaRegistry) -> ShellState {
 pub(crate) async fn initialize(mut state: Signal<ShellState>) {
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_none() {
         let media = state.read().media.clone();
-        let loaded = load_environment(media).await;
-        *state.write() = loaded;
+        let mut loaded = load_environment(media).await;
+        {
+            let mut previous = state.write();
+            crate::read_preferences::settings::carry_pending(&mut previous, &mut loaded);
+            *previous = loaded;
+        }
         crate::performance::record(crate::performance::StartupStage::CacheLoaded);
     }
     #[cfg(target_os = "windows")]

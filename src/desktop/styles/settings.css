@@ -1,8 +1,8 @@
-/* Settings overlay: Appearance, Notifications, and Storage. */
+/* Settings overlay: Appearance, Notifications, Reading, and Storage. */
 
 .settings-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   margin: 0 18px 8px;
   padding: 3px;
@@ -21,6 +21,25 @@
   background: var(--surface-raised);
   color: var(--text);
   box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.modal:has(> .reading-preferences) { top: 20px; display: flex; flex-direction: column; max-height: calc(100vh - 40px); }
+.modal:has(> .reading-preferences) > header,
+.modal:has(> .reading-preferences) > .settings-tabs { flex-shrink: 0; }
+.reading-preferences { padding: var(--space-1) 18px 16px; min-height: 0; overflow-y: auto; }
+.reading-preferences-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.reading-preferences-heading h3 { margin: 0; font-size: var(--text-md); font-weight: 600; }
+.reading-preferences-heading button { height: 32px; min-width: 8em; padding: 0 var(--space-2); border-radius: var(--radius-md); background: var(--surface-raised); }
+.reading-preferences-options { margin: 0; padding: 0; border: 0; }
+.reading-preferences-options legend { margin-bottom: var(--space-2); font-size: var(--text-sm); }
+.reading-preferences-option { display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-2) 0; font-size: var(--text-md); line-height: 1.4; }
+.reading-preferences-option input { width: 16px; height: 16px; margin: 2px 0 0; flex-shrink: 0; accent-color: var(--accent); }
+.reading-preferences :disabled { opacity: .5; }
+.reading-preferences :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-height: 500px) {
+  .modal:has(> .reading-preferences) { top: 8px; max-height: calc(100vh - 16px); }
+  .reading-preferences { padding-bottom: var(--space-2); }
+  .reading-preferences-option { padding: var(--space-1) 0; }
 }
 
 .storage-panel {

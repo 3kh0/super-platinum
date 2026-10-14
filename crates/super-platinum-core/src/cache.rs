@@ -27,6 +27,10 @@ struct CachedSidebar {
     #[serde(default)]
     notifications: crate::state::NotificationConfig,
     #[serde(default)]
+    read_preferences: crate::state::ReadPreferences,
+    #[serde(default)]
+    clear_unreads_preference: crate::state::ClearUnreadsPreference,
+    #[serde(default)]
     config: crate::state::SidebarConfig,
     #[serde(default)]
     vip_users: std::collections::HashSet<String>,
@@ -43,6 +47,8 @@ struct CachedSidebarRef<'a> {
     deleted_files: &'a std::collections::HashSet<String>,
     thread_counts: Option<&'a crate::slack::models::ThreadCounts>,
     notifications: &'a crate::state::NotificationConfig,
+    read_preferences: &'a crate::state::ReadPreferences,
+    clear_unreads_preference: &'a crate::state::ClearUnreadsPreference,
     config: &'a crate::state::SidebarConfig,
     vip_users: &'a std::collections::HashSet<String>,
     priority_section: bool,
@@ -50,6 +56,10 @@ struct CachedSidebarRef<'a> {
 }
 const MAX_CACHED_MESSAGES_PER_CHANNEL: usize = 200;
 
+#[cfg(test)]
+mod read_preferences_tests;
+#[cfg(test)]
+mod read_shortcuts_tests;
 mod snapshot;
 pub use snapshot::WorkspaceSnapshot;
 
@@ -192,6 +202,8 @@ impl Cache {
             vip_revisions: Default::default(),
             sidebar: Default::default(),
             notifications: Default::default(),
+            read_preferences: Default::default(),
+            clear_unreads_preference: Default::default(),
             users: HashMap::new(),
             bots: Default::default(),
             usergroups: HashMap::new(),
@@ -214,6 +226,8 @@ impl Cache {
             ws.deleted_files = sidebar.deleted_files;
             ws.sidebar = sidebar.config;
             ws.notifications = sidebar.notifications;
+            ws.read_preferences = sidebar.read_preferences;
+            ws.clear_unreads_preference = sidebar.clear_unreads_preference;
             ws.locale = sidebar.locale;
             ws.team_plan = sidebar.team_plan;
             ws.vip_users = sidebar.vip_users;
@@ -332,6 +346,8 @@ impl Cache {
                     deleted_files: &ws.deleted_files,
                     thread_counts: ws.thread_counts.snapshot.as_ref(),
                     notifications: &ws.notifications,
+                    read_preferences: &ws.read_preferences,
+                    clear_unreads_preference: &ws.clear_unreads_preference,
                     config: &ws.sidebar,
                     vip_users: &ws.vip_users,
                     priority_section: ws.priority_sidebar_section,

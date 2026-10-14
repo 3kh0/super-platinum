@@ -374,6 +374,7 @@
 .draft-remote-review-versions { flex: 1 1 auto; }
 .draft-remote-review .scheduled-item { padding: 8px 0; }
 .draft-remote-review .scheduled-hint { margin: 8px 0; }
+.draft-remote-review .scheduled-item > :last-child { margin-bottom: 0; }
 
 /* Explicit upload verification is read-only and stays with its pending files. */
 .upload-delivery { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); margin-top:var(--space-2); min-width:0; }

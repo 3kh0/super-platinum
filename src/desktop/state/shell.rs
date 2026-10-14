@@ -98,6 +98,10 @@ pub struct ShellState {
     /// read mark has moved `last_read` past it.
     pub unread_anchor: Option<(String, String)>,
     pub manual_unread: crate::unread::UnreadState,
+    pub(crate) read_presentation: crate::read_preferences::presentation::Presentation,
+    pub(crate) read_settings: crate::read_preferences::settings::State,
+    pub(crate) read_shortcuts: crate::read_shortcuts::State,
+    pub(crate) bulk_read: crate::read_shortcuts::bulk::State,
     pub thread_unread: crate::thread_unread::ThreadUnreadState,
     pub thread_root: Option<String>,
     pub thread_messages: Vec<MessageVm>,

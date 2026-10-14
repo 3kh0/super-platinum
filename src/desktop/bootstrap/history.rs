@@ -5,8 +5,10 @@ use super::common::{credentials, persist_workspace, refresh_history_at};
 use crate::realtime::activity_counts::{CursorOwner, confirm_channel_read, confirm_thread_read};
 use crate::state::ShellState;
 
+mod read_opening;
+
 pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
-    let (team, channel, generation) = {
+    let (team, channel, scope) = {
         let state = state.read();
         let (Some(team), Some(channel)) = (
             state.core.active_team.clone(),
@@ -14,7 +16,7 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
         ) else {
             return;
         };
-        (team, channel, state.channel_generation)
+        (team, channel, state.timeline_scope())
     };
     // Park the conversation before any network work. The scroll container is
     // shared, so a newly opened channel otherwise keeps the offset of the one
@@ -22,15 +24,16 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     // longer one it is a random position in the middle of history.
     let opening = state.read().core.pending_scroll_to.clone();
     let mark_on_open = opening.as_ref().is_some_and(|(_, target)| {
-        !matches!(
-            target,
-            super_platinum_core::domain::PendingScrollTarget::Message(_)
-        )
+        crate::read_preferences::opening::offset(&state.peek(), target).is_some()
+            || !matches!(
+                target,
+                super_platinum_core::domain::PendingScrollTarget::Message(_)
+            )
     });
     if let Some((pending_channel, target)) = opening
         && pending_channel == channel
         && scroll_to_target(state, &target).await
-        && state.read().channel_generation == generation
+        && state.read().timeline_scope() == scope
         // An explicit message can be present in cache before the surrounding
         // history arrives. Keep its identity through that merge: prepended
         // rows change both virtual indices and spacer heights.
@@ -45,7 +48,7 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     let Some((transport, client, workspaces)) = credentials(&state) else {
         return;
     };
-    if state.read().channel_generation != generation {
+    if state.read().timeline_scope() != scope {
         return;
     }
     let Some(workspace_session) = workspaces
@@ -66,20 +69,37 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
             })
             .flatten()
     });
-    refresh_history_at(
-        &mut state,
-        &transport,
-        &client,
-        &workspace_session,
-        &team,
-        channel.clone(),
-        latest,
-    )
-    .await;
+    if let Some((
+        pending_channel,
+        super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(cursor),
+    )) = pending.as_ref()
+        && pending_channel == &channel
+    {
+        read_opening::refresh(
+            state,
+            &transport,
+            &client,
+            &workspace_session,
+            &channel,
+            cursor,
+        )
+        .await;
+    } else {
+        refresh_history_at(
+            &mut state,
+            &transport,
+            &client,
+            &workspace_session,
+            &team,
+            channel.clone(),
+            latest,
+        )
+        .await;
+    }
     // The reader moved on while this was in flight; the conversation on screen
     // now has its own refresh, and scrolling or marking it here would act on the
     // wrong one.
-    if state.read().channel_generation != generation {
+    if state.read().timeline_scope() != scope {
         return;
     }
     let is_connect = state
@@ -96,7 +116,7 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
         // Do not hold a signal read guard in a match guard and then acquire a
         // write guard in its arm. Dioxus keeps that temporary alive for the
         // whole arm, which deadlocks the serial UI dispatcher.
-        if state.read().channel_generation != generation {
+        if state.read().timeline_scope() != scope {
             return;
         }
         match result {
@@ -117,7 +137,7 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
             }
         }
     }
-    if state.read().channel_generation != generation {
+    if state.read().timeline_scope() != scope {
         return;
     }
     super::session::hydrate_current_surface(state).await;
@@ -130,17 +150,26 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     if let Some((pending_channel, target)) = pending
         && pending_channel == channel
         && scroll_to_target(state, &target).await
-        && state.read().channel_generation == generation
+        && state.read().timeline_scope() == scope
     {
         state.write().core.pending_scroll_to = None;
     }
-    if state.read().channel_generation != generation {
+    if state.read().timeline_scope() != scope {
         return;
     }
     mark_channel_read(state, mark_on_open).await;
 }
 
 pub async fn load_older(mut state: Signal<ShellState>) {
+    if state
+        .peek()
+        .read_presentation
+        .unread_loading
+        .as_ref()
+        .is_some_and(|(scope, _)| scope == &state.peek().timeline_scope())
+    {
+        return;
+    }
     let (team, channel, oldest, has_more, generation, epoch) = {
         let shell = state.read();
         let (Some(team), Some(channel)) = (
@@ -228,6 +257,49 @@ async fn scroll_to_target(
     state: Signal<ShellState>,
     target: &super_platinum_core::domain::PendingScrollTarget,
 ) -> bool {
+    let scope = state.peek().timeline_scope();
+    let pending = state.peek().core.pending_scroll_to.clone();
+    let input_generation = if !matches!(
+        target,
+        super_platinum_core::domain::PendingScrollTarget::Latest
+    ) {
+        if pending
+            .as_ref()
+            .is_none_or(|(_, current)| current != target)
+        {
+            return false;
+        }
+        let expected = serde_json::to_string(&scope).unwrap_or_default();
+        let script = format!(
+            "const root=document.getElementById('message-timeline'); return root?.dataset.timelineScope === {expected} ? window.superPlatinumTimelineAnchor?.inputGeneration() ?? null : null;"
+        );
+        let value = dioxus::document::eval(&script)
+            .await
+            .ok()
+            .and_then(|value| value.as_u64());
+        if state.peek().timeline_scope() != scope
+            || state.peek().core.pending_scroll_to != pending
+            || value.is_none()
+        {
+            return false;
+        }
+        value
+    } else {
+        None
+    };
+    if let super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(cursor) = target
+        && state
+            .peek()
+            .read_presentation
+            .unread_loading
+            .as_ref()
+            .is_some_and(|(scope, boundary)| {
+                scope == &state.peek().timeline_scope() && boundary == cursor
+            })
+    {
+        return false;
+    }
+    let offset = crate::read_preferences::opening::offset(&state.peek(), target);
     let selector = match target {
         super_platinum_core::domain::PendingScrollTarget::Message(ts)
         | super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(ts) => {
@@ -239,7 +311,12 @@ async fn scroll_to_target(
                 ".unread-divider".to_owned()
             } else {
                 format!(
-                    "[data-message-id={}]",
+                    "[{}={}]",
+                    if offset.is_some() {
+                        "data-row-id"
+                    } else {
+                        "data-message-id"
+                    },
                     serde_json::to_string(ts).unwrap_or_else(|_| "\"\"".into())
                 )
             }
@@ -252,6 +329,8 @@ async fn scroll_to_target(
             "scope":shell.timeline_scope(),
             "selector":selector,
             "latestId":shell.channel_rows.last().map(|message| &message.id),
+            "offset":offset,
+            "inputGeneration":input_generation,
         })
     };
     // Keep the evaluation alive through the animation frames. Returning before
@@ -271,24 +350,18 @@ pub async fn mark_visible_read(state: Signal<ShellState>) {
     mark_channel_read(state, false).await;
 }
 
-async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
-    if crate::fixture::is_fixture() {
-        return;
-    }
+pub(crate) async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
     let (team, channel, latest, previous, revision, scope) = {
         let shell = state.read();
         let focused = crate::read_visibility::focused();
-        if crate::unread::blocks_auto_read(&shell) {
+        if crate::read_shortcuts::bulk::blocks_reads(&shell)
+            || crate::unread::blocks_auto_read(&shell)
+        {
             return;
         }
         // Opening a conversation retains the existing mark-on-open behavior.
         // Later refreshes must not consume new messages below a history reader.
-        if !shell.reading_latest(focused)
-            && !(opening
-                && focused
-                && shell.transcript_visible()
-                && shell.core.pending_scroll_to.is_none())
-        {
+        if !crate::read_preferences::renderer::can_read(&shell, focused, opening) {
             return;
         }
         let (Some(team), Some(channel)) = (
@@ -302,7 +375,7 @@ async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
             .workspaces
             .get(&team)
             .and_then(|workspace| workspace.messages.get(&channel))
-            .and_then(|messages| messages.messages.last())
+            .and_then(crate::read_preferences::renderer::latest_message)
             .and_then(|message| message.ts.clone())
         else {
             return;
@@ -339,6 +412,18 @@ async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
             shell.timeline_scope(),
         )
     };
+    if crate::fixture::is_fixture() {
+        crate::read_preferences::navigation_fixture::record_mark(
+            &mut state.write(),
+            &team,
+            &channel,
+            &latest,
+            previous.as_deref(),
+            revision,
+            &scope,
+        );
+        return;
+    }
     let target = super_platinum_core::domain::ReadTarget::Conversation {
         team: team.clone(),
         channel: channel.clone(),
@@ -428,7 +513,9 @@ pub async fn mark_thread_read(mut state: Signal<ShellState>, channel: String, ro
     }
     let (team, latest) = {
         let shell = state.read();
-        if !shell.reading_thread(crate::read_visibility::focused(), &channel, &root_ts) {
+        if crate::read_shortcuts::bulk::blocks_reads(&shell)
+            || !shell.reading_thread(crate::read_visibility::focused(), &channel, &root_ts)
+        {
             return;
         }
         let Some(team) = shell.core.active_team.clone() else {
@@ -513,129 +600,6 @@ pub async fn mark_thread_read(mut state: Signal<ShellState>, channel: String, ro
     }
 }
 
-pub async fn mark_all_read(mut state: Signal<ShellState>) {
-    let Some((transport, client, workspaces)) = credentials(&state) else {
-        return;
-    };
-    let Some(team) = state.read().core.active_team.clone() else {
-        return;
-    };
-    let Some(workspace_session) = workspaces
-        .into_iter()
-        .find(|workspace| workspace.team_id == team)
-    else {
-        return;
-    };
-    let targets = state
-        .read()
-        .core
-        .workspaces
-        .get(&team)
-        .map(|workspace| {
-            workspace
-                .messages
-                .iter()
-                .filter_map(|(channel, list)| {
-                    let latest = list.messages.last()?.ts.clone()?;
-                    (list.unread_count > 0 || list.mention_count > 0)
-                        .then(|| (channel.clone(), latest))
-                })
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-    let epoch = state.peek().core.account_epoch;
-    for (channel, latest) in targets {
-        // Explicit unread and bulk read operations share the same ordering as
-        // automatic marks. A batch must not overwrite an unread still in flight.
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
-        while crate::unread::busy_in(&state.peek(), epoch, &team, &channel) {
-            if state.peek().core.account_epoch != epoch || std::time::Instant::now() >= deadline {
-                return;
-            }
-            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-        }
-        let (previous, revision, scope) = {
-            let shell = state.peek();
-            if shell.core.account_epoch != epoch
-                || !shell
-                    .core
-                    .transport
-                    .as_ref()
-                    .is_some_and(|active| std::sync::Arc::ptr_eq(active, &transport))
-            {
-                return;
-            }
-            (
-                shell
-                    .core
-                    .workspaces
-                    .get(&team)
-                    .and_then(|w| w.read_cursor(&channel))
-                    .map(str::to_owned),
-                shell
-                    .core
-                    .workspaces
-                    .get(&team)
-                    .map_or(0, |w| w.read_revision(&channel)),
-                shell.timeline_scope(),
-            )
-        };
-        let target = super_platinum_core::domain::ReadTarget::Conversation {
-            team: team.clone(),
-            channel: channel.clone(),
-        };
-        let Some(owner) = CursorOwner::capture(&state.peek().core, &transport, &workspace_session)
-        else {
-            return;
-        };
-        if !state
-            .write()
-            .core
-            .pending_marks
-            .insert((target.clone(), latest.clone()))
-        {
-            continue;
-        }
-        let result = api::mark_channel(
-            &transport,
-            &client,
-            &workspace_session,
-            channel.clone(),
-            latest.clone(),
-        )
-        .await;
-        let mut shell = state.write();
-        if shell.core.account_epoch != epoch
-            || !shell
-                .core
-                .transport
-                .as_ref()
-                .is_some_and(|active| std::sync::Arc::ptr_eq(active, &transport))
-        {
-            return;
-        }
-        shell.core.pending_marks.remove(&(target, latest.clone()));
-        if !owner.current(&shell.core) {
-            return;
-        }
-        if let Err(error) = result {
-            shell.report_failure(&error, "", || {
-                "Could not mark conversations as read. Please try again.".into()
-            });
-            return;
-        }
-        confirm_channel_read(
-            &mut shell.core,
-            &team,
-            &channel,
-            &latest,
-            previous.as_deref(),
-            revision,
-        );
-        if shell.timeline_scope() == scope && shell.core.active_channel.as_ref() == Some(&channel) {
-            crate::unread::release(&mut shell);
-        }
-        shell.refresh_from_core();
-    }
-    persist_workspace(&state, &team);
+pub async fn mark_all_read(state: Signal<ShellState>) {
+    crate::read_shortcuts::bulk::request(state);
 }

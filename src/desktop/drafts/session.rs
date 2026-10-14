@@ -482,6 +482,11 @@ pub(crate) fn recovery_rows(shell: &ShellState) -> Vec<RecoveryRow> {
         let Some(stored) = &view.stored else {
             continue;
         };
+        if let Some(operation) = super::recovery::operation(view)
+            .filter(|op| op.kind == super_platinum_core::drafts::sync::OperationKind::Update)
+        {
+            rows.push(RecoveryRow {writer_id:None,key:key.clone(),kind:"update",status:"Draft update is unconfirmed",explanation:"Check the saved update in Slack. This checks only the existing draft; your current text will be kept and nothing will be written again.",snapshot:operation.snapshot,local:None});
+        }
         if super::recovery::clean_local(view)
             && shell
                 .managed_drafts

@@ -24,6 +24,8 @@ mod notification_schedule;
 mod own_profile;
 mod presentation_notifications;
 mod profile_sections;
+mod read_preferences;
+mod read_shortcuts;
 mod upload_readback;
 pub use list_record_delete::ListDeleteFailure;
 pub(super) use notification_preferences::notification_preferences_success;

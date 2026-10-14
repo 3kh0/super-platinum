@@ -18,6 +18,7 @@ fn binding() -> Binding {
     Binding {
         account: "00000000-0000-4000-8000-000000000041".into(),
         epoch: 7,
+        cookie: "test-only-cookie".into(),
         transport: Arc::new(Transport::new("test-only-cookie").unwrap()),
         client: SlackClient::default(),
         workspace: WorkspaceSession {
@@ -520,3 +521,5 @@ fn definite_offline_preflight_is_not_reported_as_dispatched_or_uncertain() {
         Outcome::Uncertain
     ));
 }
+
+mod acknowledgement;

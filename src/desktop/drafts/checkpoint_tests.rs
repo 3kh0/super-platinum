@@ -56,6 +56,62 @@ fn local(text: &str) -> LocalDraft {
 const ACCOUNT: &str = "00000000-0000-4000-8000-000000000091";
 
 #[tokio::test]
+async fn receipt_refresh_preserves_pending_serial_writer_and_subsequent_typing() {
+    let (f, editor) = Fixture::new(ACCOUNT).await;
+    let revision = editor.snapshot().view.stored.unwrap().revision;
+    f.owner
+        .dispatch(revision, |op| async move {
+            super::super::dispatch::Outcome::Draft(RemoteDraft {
+                scope: op.scope,
+                client_msg_id: op.client_msg_id,
+                id: "Dr1".into(),
+                last_updated_ts: "100.000001".into(),
+                snapshot: op.snapshot.unwrap(),
+            })
+        })
+        .await
+        .unwrap();
+    // Hold the editor gate, admit refresh first, then submit while it awaits.
+    let gate = editor.gate.lock().await;
+    let refreshing = editor.clone();
+    let refresh = tokio::spawn(async move { refreshing.refresh_receipt().await });
+    tokio::task::yield_now().await;
+    editor.submit(local("New pending input"));
+    let serial = editor.snapshot().serial;
+    drop(gate);
+    refresh.await.unwrap().unwrap();
+    editor.flush().await.unwrap();
+    assert_eq!(editor.snapshot().serial, serial);
+    assert_eq!(
+        f.owner.load().await.unwrap().local.composer.text,
+        "New pending input"
+    );
+    assert!(!editor.state.lock().unwrap().released);
+    editor.submit(local("Still the same managed writer"));
+    editor.flush().await.unwrap();
+    let saved = f.owner.load().await.unwrap();
+    assert!(saved.stored.is_some());
+    assert_eq!(saved.local.composer.text, "Still the same managed writer");
+}
+
+#[tokio::test]
+async fn receipt_refresh_refuses_other_local_edits_without_replacing_editor_input() {
+    let (f, editor) = Fixture::new(ACCOUNT).await;
+    let revision = editor.snapshot().view.stored.unwrap().revision;
+    f.owner
+        .checkpoint(revision, local("Another writer's content"))
+        .await
+        .unwrap();
+    assert!(matches!(editor.refresh_receipt().await, Err(Fault::Stale)));
+    assert_eq!(editor.snapshot().view.local.composer.text, "Original");
+    assert_eq!(
+        f.owner.load().await.unwrap().local.composer.text,
+        "Another writer's content"
+    );
+    assert!(!editor.state.lock().unwrap().released);
+}
+
+#[tokio::test]
 async fn canceled_consume_waiter_does_not_leave_new_typing_on_an_obsolete_base() {
     let (f, editor) = Fixture::new(ACCOUNT).await;
     let owner_gate = f.owner.gate.lock().await;

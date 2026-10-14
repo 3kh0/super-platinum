@@ -15,6 +15,7 @@ fn fixture() -> (Binding, LocalReview, Value) {
             .id()
             .into(),
         epoch: 7,
+        cookie: "fixture-only-cookie".into(),
         transport: Arc::new(Transport::new("fixture-only-cookie").unwrap()),
         client: SlackClient::default(),
         workspace: WorkspaceSession {

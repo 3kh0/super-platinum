@@ -3,6 +3,7 @@
 use super::*;
 use super_platinum_core::drafts::sync::OperationKind;
 
+#[derive(Clone)]
 pub(crate) struct Readback {
     pub outcome: Option<Outcome>,
     pub raw: Option<Value>,
@@ -13,7 +14,29 @@ pub(crate) struct Readback {
     /// rejection merely because the original UUID was not found.
     pub has_more: bool,
 }
+impl Readback {
+    pub(crate) fn blocked(block: Block) -> Self {
+        Self {
+            outcome: None,
+            raw: None,
+            issue: Some(Issue::Blocked(block)),
+            cooldown_until_ms: match block {
+                Block::Cooldown { until_ms } => Some(until_ms),
+                _ => None,
+            },
+            requested: false,
+            has_more: true,
+        }
+    }
+}
 impl Binding {
+    pub async fn check_operation(&self, operation: &Operation, now_ms: u64) -> Readback {
+        match operation.kind {
+            OperationKind::Send => self.check_send(operation, now_ms).await,
+            OperationKind::Update => self.check_update(operation, now_ms).await,
+            _ => Readback::blocked(Block::Unsupported),
+        }
+    }
     pub async fn check_send(&self, operation: &Operation, now_ms: u64) -> Readback {
         self.check_send_with(operation, now_ms, |request| self.transport.execute(request))
             .await

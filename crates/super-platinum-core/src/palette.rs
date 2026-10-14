@@ -362,6 +362,8 @@ mod tests {
             vip_revisions: Default::default(),
             sidebar: Default::default(),
             notifications: Default::default(),
+            read_preferences: Default::default(),
+            clear_unreads_preference: Default::default(),
             users: HashMap::new(),
             bots: Default::default(),
             usergroups: HashMap::new(),

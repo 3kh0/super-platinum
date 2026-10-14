@@ -99,8 +99,13 @@ FIXTURES=(
   rejected-thread-return rejected-thread-return-narrow
   draft-native-projection draft-native-projection-narrow
   draft-remote-review draft-remote-review-narrow
+  draft-update-recovery draft-update-recovery-narrow
   scheduled-attachments scheduled-attachments-narrow
   user-links user-links-narrow
+  read-preferences read-preferences-narrow
+  read-navigation read-navigation-narrow
+  reading-shortcuts reading-shortcuts-narrow
+  bulk-read bulk-read-narrow
   rejected-send rejected-send-narrow
   media-loading-state media-failed timeline-variable-height timeline-latest-opening
   usergroup-members usergroup-channels system-messages send-outcomes send-outcomes-narrow send-outcomes-thread managed-draft-recovery managed-draft-recovery-narrow message-marked-unread message-marked-unread-narrow member-live-refresh channel-members member-add member-add-error member-remove member-add-narrow member-remove-narrow

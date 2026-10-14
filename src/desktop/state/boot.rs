@@ -396,6 +396,10 @@ impl ShellState {
             later_open_generation: 0,
             unread_anchor: None,
             manual_unread: Default::default(),
+            read_presentation: Default::default(),
+            read_settings: Default::default(),
+            read_shortcuts: Default::default(),
+            bulk_read: Default::default(),
             thread_unread: Default::default(),
             thread_root: None,
             thread_messages: Vec::new(),
@@ -539,6 +543,10 @@ impl ShellState {
             later_open_generation: 0,
             unread_anchor: None,
             manual_unread: Default::default(),
+            read_presentation: Default::default(),
+            read_settings: Default::default(),
+            read_shortcuts: Default::default(),
+            bulk_read: Default::default(),
             thread_unread: Default::default(),
             thread_root: None,
             thread_messages: Vec::new(),
@@ -592,6 +600,13 @@ impl ShellState {
 
     pub fn fixture(media: MediaRegistry) -> Self {
         let mut core = fixture_core();
+        // Existing offline scenes intentionally exercise Slack's left-off
+        // opening. Production missing preferences remain unavailable/falsy.
+        for workspace in core.workspaces.values_mut() {
+            workspace.read_preferences = super_platinum_core::state::ReadPreferences::from_prefs(
+                &super_platinum_core::state::ReadMode::LeftOffAndRead.patch(),
+            );
+        }
         if matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
             Ok("channel-join" | "channel-leave" | "channel-leave-last" | "channel-join-composer")
@@ -869,6 +884,10 @@ impl ShellState {
             later_open_generation: 0,
             unread_anchor: None,
             manual_unread: Default::default(),
+            read_presentation: Default::default(),
+            read_settings: Default::default(),
+            read_shortcuts: Default::default(),
+            bulk_read: Default::default(),
             thread_unread: Default::default(),
             thread_root: None,
             thread_messages: Vec::new(),
@@ -1122,11 +1141,26 @@ impl ShellState {
             "draft-remote-review" | "draft-remote-review-narrow" => {
                 crate::drafts::remote_review_fixture::apply(&mut state)
             }
+            "draft-update-recovery" | "draft-update-recovery-narrow" => {
+                crate::drafts::recovery::update_fixture::apply(&mut state)
+            }
             "scheduled-attachments" | "scheduled-attachments-narrow" => {
                 crate::scheduled::attachments::fixture::apply(&mut state)
             }
             "user-links" | "user-links-narrow" => {
                 crate::slack_links::user_fixture::install(&mut state)
+            }
+            "read-preferences" | "read-preferences-narrow" => {
+                crate::read_preferences::settings::fixture::install(&mut state)
+            }
+            "read-navigation" | "read-navigation-narrow" => {
+                crate::read_preferences::navigation_fixture::install(&mut state)
+            }
+            "reading-shortcuts" | "reading-shortcuts-narrow" => {
+                crate::read_shortcuts::fixture::install(&mut state)
+            }
+            "bulk-read" | "bulk-read-narrow" => {
+                crate::read_shortcuts::bulk::fixture::install(&mut state)
             }
             "send-outcomes" | "send-outcomes-narrow" | "send-outcomes-thread" => {
                 crate::messaging::send_outcomes_fixture(&mut state, name)

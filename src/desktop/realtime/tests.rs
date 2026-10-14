@@ -7,6 +7,67 @@ const CHANNEL: &str = "C1";
 const ROOT: &str = "1.0";
 
 #[test]
+fn clear_unreads_confirmation_pref_obeys_socket_generation_and_stays_independent() {
+    use super_platinum_core::state::{ClearUnreadsPreference, ReadMode, ReadPreferences};
+    let mut state = core();
+    let workspace = state.workspaces.get_mut(TEAM).unwrap();
+    workspace.clear_unreads_preference = ClearUnreadsPreference::from_prefs(
+        &[("confirm_clear_all_unreads".into(), true.into())].into(),
+    );
+    workspace.read_preferences = ReadPreferences::from_prefs(&ReadMode::NewestKeepUnseen.patch());
+    state.composer.text = "retained draft".into();
+    let event = || RtEvent::PreferencesChanged {
+        name: "confirm_clear_all_unreads".into(),
+        value: false.into(),
+    };
+    apply(&mut state, TEAM, 1, event());
+    assert_eq!(
+        state.workspaces[TEAM]
+            .clear_unreads_preference
+            .requires_confirmation(),
+        Ok(true)
+    );
+    apply(&mut state, TEAM, 0, event());
+    assert_eq!(
+        state.workspaces[TEAM]
+            .clear_unreads_preference
+            .requires_confirmation(),
+        Ok(false)
+    );
+    assert_eq!(
+        state.workspaces[TEAM].read_preferences.mode(),
+        Ok(ReadMode::NewestKeepUnseen)
+    );
+    assert_eq!(state.composer.text, "retained draft");
+}
+
+#[test]
+fn reading_preferences_follow_socket_generation_without_touching_drafts() {
+    use super_platinum_core::state::{ReadMode, ReadPreferences};
+    let mut state = core();
+    state.workspaces.get_mut(TEAM).unwrap().read_preferences =
+        ReadPreferences::from_prefs(&ReadMode::LeftOffAndRead.patch());
+    state.composer.text = "keep channel draft".into();
+    state.thread_composer.text = "keep thread draft".into();
+    let event = || RtEvent::PreferencesChanged {
+        name: "mark_msgs_read_immediately".into(),
+        value: false.into(),
+    };
+    apply(&mut state, TEAM, 1, event());
+    assert_eq!(
+        state.workspaces[TEAM].read_preferences.mode(),
+        Ok(ReadMode::LeftOffAndRead)
+    );
+    apply(&mut state, TEAM, 0, event());
+    assert_eq!(
+        state.workspaces[TEAM].read_preferences.mode(),
+        Ok(ReadMode::NewestKeepUnseen)
+    );
+    assert_eq!(state.composer.text, "keep channel draft");
+    assert_eq!(state.thread_composer.text, "keep thread draft");
+}
+
+#[test]
 fn locale_preferences_follow_workspace_socket_generation() {
     let mut core = core();
     let event = || RtEvent::PreferencesChanged {
@@ -456,8 +517,26 @@ fn background_and_history_readers_keep_incoming_mentions_unread() {
         shell.core = core();
         shell.core.active_team = Some(TEAM.into());
         shell.core.active_channel = Some(CHANNEL.into());
+        shell.core.active_account = Some("isolated-read-test".into());
         shell.core.pending_scroll_to = None;
         shell.stick_to_bottom = at_bottom;
+        let workspace = shell.core.workspaces.get_mut(TEAM).unwrap();
+        workspace.read_preferences = super_platinum_core::state::ReadPreferences::from_prefs(
+            &super_platinum_core::state::ReadMode::LeftOffAndRead.patch(),
+        );
+        workspace.channels.insert(
+            CHANNEL.into(),
+            serde_json::from_value(serde_json::json!({"id":CHANNEL,"is_member":true})).unwrap(),
+        );
+        let bag = workspace.messages.get_mut(CHANNEL).unwrap();
+        bag.loaded = true;
+        bag.last_read = Some("0.0".into());
+        bag.latest = Some(ROOT.into());
+        bag.unread_count = 1;
+        shell.unread_anchor = Some((CHANNEL.into(), "0.0".into()));
+        crate::read_preferences::renderer::record_fixture_observation(
+            &mut shell, at_bottom, at_bottom,
+        );
         let user = shell.core.workspaces[TEAM].self_user_id.clone();
         let mut ping = message("99.0", None);
         ping.user = Some("another-user".into());

@@ -286,6 +286,8 @@ pub struct Workspace {
     pub vip_revisions: HashMap<UserId, u64>,
     pub sidebar: SidebarConfig,
     pub notifications: NotificationConfig,
+    pub read_preferences: ReadPreferences,
+    pub clear_unreads_preference: ClearUnreadsPreference,
     pub users: HashMap<UserId, User>,
     pub bots: bots::BotLookupState,
     pub usergroups: HashMap<String, crate::slack::models::UserGroup>,
@@ -327,6 +329,8 @@ impl Workspace {
             vip_revisions: Default::default(),
             sidebar: SidebarConfig::default(),
             notifications: NotificationConfig::default(),
+            read_preferences: ReadPreferences::default(),
+            clear_unreads_preference: ClearUnreadsPreference::default(),
             users: HashMap::new(),
             bots: Default::default(),
             usergroups: HashMap::new(),
@@ -410,6 +414,10 @@ impl Workspace {
         );
         self.sidebar.apply_prefs(&boot.prefs);
         self.notifications.apply_prefs(&boot.prefs);
+        if boot.prefs.is_present() {
+            self.read_preferences.apply_boot(&boot.prefs);
+            self.clear_unreads_preference.apply_boot(&boot.prefs);
+        }
         if let Some(locale) = boot.prefs.extra.get("locale") {
             self.locale = locale.as_str().map(str::to_owned);
         }
@@ -515,31 +523,11 @@ impl Workspace {
             // An unread DM without a numeric count contributes the separate
             // forced-unread indicator, not its previous mention total.
             channel.mention_count.get_or_insert(0);
-            self.apply_channel_read_state(&channel);
-            // Counts are the read state, not a hint: a read channel arrives as
-            // `has_unreads: false` with no count at all, and only carries
-            // `vip_count` while it is non-zero.
-            if let Some(cm) = self.messages.get_mut(&channel.id) {
-                if !channel.has_unreads && channel.unread_count.is_none() {
-                    cm.unread_count = 0;
-                }
-                if !channel.extra.contains_key("vip_count") {
-                    cm.vip_count = 0;
-                }
-            }
+            self.apply_channel_counts_read_state(&channel);
             if let Some(existing) = self.channels.get_mut(&channel.id) {
                 if channel.is_starred {
                     existing.is_starred = true;
                 }
-                let cleared = (!channel.has_unreads).then_some(0);
-                existing.unread_count = channel.unread_count.or(cleared).or(existing.unread_count);
-                existing.unread_count_display = channel
-                    .unread_count_display
-                    .or(cleared)
-                    .or(existing.unread_count_display);
-                existing.mention_count = Some(channel.mention_count.unwrap_or(0));
-                existing.has_unreads = channel.has_unreads;
-                existing.last_read = channel.last_read.or_else(|| existing.last_read.take());
                 // Counts carry the server version, not the metadata itself.
                 // Keep the cached version until genericInfo fetches that body.
             } else {
@@ -548,6 +536,41 @@ impl Workspace {
                 }
                 self.channel_lifecycle.overlay(&mut channel, since);
                 self.channels.insert(channel.id.clone(), channel);
+            }
+        }
+    }
+
+    /// Apply one authoritative `client.counts` row, including a backward read
+    /// cursor after Mark Unread. Callers must guard account and read freshness.
+    /// This does not infer membership from other rows' absence, insert channel
+    /// metadata, or update lifecycle, star, thread, activity, or dock state.
+    pub fn apply_channel_counts_read_state(&mut self, channel: &Channel) {
+        // Missing numeric mentions are zero before forced-unread calculation.
+        self.messages
+            .entry(channel.id.clone())
+            .or_default()
+            .mention_count = channel.mention_count.unwrap_or(0);
+        self.apply_channel_read_state(channel);
+        // Canonical read rows omit counts; absent VIP counts also mean zero.
+        if let Some(cm) = self.messages.get_mut(&channel.id) {
+            if !channel.has_unreads && channel.unread_count.is_none() {
+                cm.unread_count = 0;
+            }
+            if !channel.extra.contains_key("vip_count") {
+                cm.vip_count = 0;
+            }
+        }
+        if let Some(existing) = self.channels.get_mut(&channel.id) {
+            let cleared = (!channel.has_unreads).then_some(0);
+            existing.unread_count = channel.unread_count.or(cleared).or(existing.unread_count);
+            existing.unread_count_display = channel
+                .unread_count_display
+                .or(cleared)
+                .or(existing.unread_count_display);
+            existing.mention_count = Some(channel.mention_count.unwrap_or(0));
+            existing.has_unreads = channel.has_unreads;
+            if let Some(last_read) = &channel.last_read {
+                existing.last_read = Some(last_read.clone());
             }
         }
     }
@@ -900,6 +923,10 @@ mod sidebar;
 pub use sidebar::*;
 mod notifications;
 pub use notifications::{DockAttention, NotificationConfig, NotificationOptions};
+mod read_preferences;
+pub use read_preferences::*;
+pub(crate) mod read_shortcuts;
+pub use read_shortcuts::*;
 mod sidebar_layout;
 pub use sidebar_layout::*;
 mod sidebar_prefs;

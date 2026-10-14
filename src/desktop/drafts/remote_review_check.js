@@ -54,7 +54,7 @@ async function draftRemoteReviewCheck(operation, args) {
         const p=rect(popup),f=rect(footer),r=rect(row);
         if(p.top<Math.max(0,f.top)-1||p.bottom>Math.min(innerHeight,f.bottom)+1||!hit(row))
           throw Error("Composer suggestions are clipped while draft review is open");
-        samples.push({popup:p,row:r,shell:shellGeometry()});
+        samples.push({popup:p,row:r,hitVisible:true,shell:shellGeometry()});
       }
       return {syntheticCompletionGeometry:true,prePostStateEqual:true,samples};
     } finally {
@@ -87,7 +87,7 @@ async function draftRemoteReviewCheck(operation, args) {
     const row=rows[args.index];if(!row)throw Error("Missing inventory row");
     await reveal(row,true);
     const r=rect(row),p=rect(panel),shell=shellGeometry();
-    if(r.top<Math.max(0,p.top,shell.footer.top)-1||r.bottom>Math.min(innerHeight,p.bottom,shell.footer.bottom)+1)throw Error("Inventory row is not completely readable");
+    if(r.top<Math.max(0,p.top,shell.footer.top)-1||r.bottom>Math.min(innerHeight,p.bottom,shell.footer.bottom)+1)throw Error("Inventory row is not completely readable: "+JSON.stringify({index:args.index,row:r,panel:p,shell}));
     return {ok:true,index:args.index,text:row.textContent,rect:r,panel:p,shell};
   }
   if(operation==="choose") {

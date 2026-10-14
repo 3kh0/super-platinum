@@ -1,10 +1,69 @@
-# Draft observation integration: next implementation boundary
+# Draft observation integration: implementation and remaining boundaries
 
-This is an implementation plan, not a completion report. The retained projection
-and durable ordered observation APIs exist. **Production realtime observation,
-ordinary remote composer autosave, editor observation handoff and unsolicited
-native composer projection are not wired.** Do not enable a remote write timer as
-part of the editor slice below.
+The Editor observation handoff and native projection APIs are implemented and
+have disconnected Windows verification; see [draft-native-projection.md](draft-native-projection.md)
+and the parity worklog. The original editor plan below is retained as its design
+contract, not an unimplemented backlog. **Production realtime observation and
+ordinary remote composer autosave remain disabled.** No remote write timer is
+authorized merely by completion of the observation/projection APIs.
+
+## Current prerequisite implementation, 2026-10-14
+
+`integration::route` checkpoints existing managed editors or delegates to the
+legacy local writer; it does not enroll ordinary composers or schedule network
+dispatch. Realtime draft frames still do not enter the captured observation owner
+pipeline. Existing explicit conflict review still rejects pending operations.
+The new explicit recovery path checks a frozen uncertain Send or Update; it does
+not enter conflict review or enroll ordinary composers.
+
+The following recovery source changes pass independently locked core tests
+(1,368), desktop tests (1,401), formatting and Windows dev builds. The latest
+recovery binary is `151e9a95`. Native `ur-final3/` passes all six normal pairs
+(26 inspected PNGs) and four narrow pairs (18 inspected PNGs). Narrow cooldown
+fails because duplicate toast feedback covers the inline status; all three
+failure PNGs were inspected. Narrow pending and cooldown restart remain unrun
+on this binary. See the parity worklog for exact evidence and retained failures.
+
+The pure `sync::owned_index` module is now compiled: independently locked core
+tests pass 1,384 / 5 ignored, including sixteen new routing tests. It indexes
+only durable acknowledged IDs and pending Create UUIDs, with historical identities
+as collision barriers and full-row/instance revalidation. Host invalidation on
+account visits, release, re-enrollment and inventory replacement remains required.
+This helper has no production ingress hook; desktop verification is pending.
+
+1. Raw server denial envelopes are separated from trusted transport failures in
+   `drafts/network.rs`. A raw server error named
+   `draft_mutation_not_sent_offline` cannot reach the trusted predispatch
+   sentinel classifier. Clean known
+   denials may release ownership; contradictory mutation evidence, malformed
+   acknowledgments and unexpected outcome fields must retain raw uncertainty.
+2. `network/update_readback.rs` uses a single `drafts.info` POST form read of the
+   acknowledged server draft ID. Positive confirmation requires exact captured
+   account/session, ID, client UUID, destination, supported lifecycle, frozen
+   payload and a strictly newer version. `recovery/ui.rs` preserves current typing
+   and checks the exact optional editor identity at projection. Update confirmation
+   never releases its editor, clears its composer or uses Send delivery cleanup.
+3. Format 5 persists a full-operation check ticket before requesting data. An
+   unresolved ticket remains blocked indefinitely across restart. Completion,
+   monotonic cooldown and any positive receipt commit in one SQLite transaction.
+   Failed receipt storage retains a process-local completion for an explicit
+   storage-only retry; after restart, the unresolved durable ticket remains
+   blocked. There is no automatic request replay or continuous polling.
+
+Required regression cases include the server-spoofed offline sentinel, clean
+versus contradictory denial, wrong identity/content/version, stale callbacks,
+typing during readback, restart-preserved uncertainty/cooldown and failed storage.
+Uncertain Create has no acknowledged ID: do not invent a UUID lookup API.
+Missing info/list results do not confirm Delete. These prerequisites alone do
+not establish ordinary autosave or live synchronization parity.
+
+The strict decoder deliberately refuses unsupported extra draft fields, even
+when their values are empty or zero. Production `Transport::execute` preserves
+positive raw responses but converts negative read envelopes into API errors;
+those errors never confirm an Update. The isolated native fixture covers actual
+prepared POST forms and shared persistence/UI code with synthetic responses; it
+does not prove live Slack payload compatibility or make a live request. Existing
+frozen Reading/Escape captures do not verify this new draft cohort.
 
 ## Existing boundaries
 
@@ -30,9 +89,10 @@ part of the editor slice below.
   compared only with event timestamps; payload revisions use their own ordering.
   Contradictory equal-clock events and unsupported owned evidence block writes.
   A delete event never confirms a Send.
-- `crates/super-platinum-core/src/drafts/store/sync.rs` writes format 4 and reads
-  formats 1, 2 and 3. Event evidence, ordering and local content share the existing
-  SQLite transaction. Older binaries reject format 4 rather than discard guards.
+- `crates/super-platinum-core/src/drafts/store/sync.rs` writes format 5 and reads
+  formats 1 through 4. Event evidence, ordering, read-check tickets and local
+  content share the existing SQLite transaction. Older binaries reject format 5
+  rather than discard guards.
 - `src/desktop/drafts/checkpoint.rs` already serializes local checkpoint,
   consumption, release and explicit settlement. A submitted edit can arrive
   while a storage await is in progress. `rebased` accepts only a changed storage
@@ -40,7 +100,7 @@ part of the editor slice below.
 - `src/desktop/drafts/integration.rs::poll` updates recovery metadata. It
   deliberately does not replace the DraftBook or visible composer.
 
-## Next slice: serialize observation with one editor
+## Implemented editor slice: retained design contract
 
 Add `Editor::observe_event` in a focused
 `src/desktop/drafts/checkpoint_observation.rs` module. Keep realtime ingress and

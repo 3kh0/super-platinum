@@ -182,7 +182,11 @@ pub struct BootData {
     pub starred: Vec<ChannelId>,
     #[serde(default)]
     pub channels_priority: BTreeMap<ChannelId, f64>,
-    #[serde(default)]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_present_boot_prefs",
+        skip_serializing_if = "BootPrefs::is_absent"
+    )]
     pub prefs: BootPrefs,
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
@@ -209,6 +213,10 @@ impl BootData {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BootPrefs {
+    /// Distinguishes omitted boot prefs from an explicit empty snapshot. This
+    /// marker is never a Slack preference or serialized into the preference map.
+    #[serde(skip)]
+    container_present: bool,
     #[serde(default)]
     pub sidebar_behavior: Option<String>,
     #[serde(default)]
@@ -223,4 +231,23 @@ pub struct BootPrefs {
     pub hidden_user_group_sections: Option<String>,
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
+}
+
+impl BootPrefs {
+    pub(crate) fn is_present(&self) -> bool {
+        self.container_present
+    }
+
+    fn is_absent(&self) -> bool {
+        !self.container_present
+    }
+}
+
+fn deserialize_present_boot_prefs<'de, D>(deserializer: D) -> Result<BootPrefs, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let mut prefs = BootPrefs::deserialize(deserializer)?;
+    prefs.container_present = true;
+    Ok(prefs)
 }

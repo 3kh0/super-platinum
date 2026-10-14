@@ -292,7 +292,7 @@ fn activity_item_without_a_message_still_selects() {
 }
 
 #[test]
-fn reaching_the_newest_message_drops_a_pending_anchor() {
+fn only_user_navigation_drops_a_pending_unread_anchor() {
     let media = MediaRegistry::default();
     let mut state = ShellState::fixture(media);
     state.core.pending_scroll_to = Some((
@@ -304,9 +304,11 @@ fn reaching_the_newest_message_drops_a_pending_anchor() {
     state.set_timeline_window(0, 1, None::<(String, f64)>, false);
     assert!(state.core.pending_scroll_to.is_some());
 
-    // Once the reader is at the newest message, a late anchor would teleport
-    // them back up to the unread divider.
+    // Cold/empty geometry also reports bottom and cannot cancel the request.
     state.set_timeline_window(0, 1, None::<(String, f64)>, true);
+    assert!(state.core.pending_scroll_to.is_some());
+    assert!(!state.stick_to_bottom);
+    crate::read_preferences::opening::cancel(&mut state);
     assert!(state.core.pending_scroll_to.is_none());
 }
 

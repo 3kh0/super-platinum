@@ -302,6 +302,7 @@ impl ShellState {
             return false;
         };
         self.select_channel(index, open);
+        crate::read_preferences::opening::cancel(self);
         self.core.pending_scroll_to = Some((
             channel.to_owned(),
             super_platinum_core::domain::PendingScrollTarget::Message(ts.to_owned()),

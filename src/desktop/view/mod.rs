@@ -274,6 +274,7 @@ pub fn shell() -> Element {
         style { {theme_style} }
         main {
             class: "app-shell",
+            "data-read-shortcut-key":crate::read_shortcuts::key(&snapshot),
             ondragover: move |event| event.prevent_default(),
             ondrop: move |event| {
                 event.prevent_default();
@@ -316,6 +317,7 @@ pub fn shell() -> Element {
                         } else if snapshot.channel_tab != ChannelTab::Messages {
                             channel_resources::ChannelResources {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}-{active_channel_id}",state,channel:active_channel_id.to_owned()}
                         } else {
+                        {crate::read_preferences::notice::unread_loading(state, &snapshot)}
                         section {
                             id: "message-timeline",
                             class: "timeline",
@@ -323,7 +325,9 @@ pub fn shell() -> Element {
                             "data-window-start":timeline_start,
                             "data-window-end":timeline_end,
                             "data-scroll-pending":snapshot.core.pending_scroll_to.is_some().to_string(),
-                            onmounted:move |_| {dioxus::document::eval(&format!("{}();",include_str!("../timeline_anchor.js")));spawn(send_outcomes_check::run(state));dioxus::core::spawn_forever(channel_window_check::run(state));},
+                            "data-read-key":crate::read_preferences::renderer::key(&snapshot),
+                            "data-read-ghost":crate::read_preferences::renderer::ghost(&snapshot).to_string(),
+                            onmounted:move |_| {dioxus::document::eval(&format!("{}();",include_str!("../timeline_anchor.js")));spawn(crate::read_preferences::renderer::observe(state));spawn(send_outcomes_check::run(state));dioxus::core::spawn_forever(channel_window_check::run(state));},
                             onscroll: move |_| {
                                 if !state.read().selection_pinned {
                                     schedule_timeline_measure(state, measurement_pending, measurement_queued);
@@ -331,9 +335,12 @@ pub fn shell() -> Element {
                                 }
                             },
                             onwheel: move |_| {
-                                let mut shell = state.write();
-                                if matches!(shell.core.pending_scroll_to, Some((_, super_platinum_core::domain::PendingScrollTarget::Message(_)))) {
-                                    shell.core.pending_scroll_to = None;
+                                crate::read_preferences::opening::cancel(&mut state.write());
+                            },
+                            onpointerdown:move |_| crate::read_preferences::opening::cancel(&mut state.write()),
+                            onkeydown:move |event| {
+                                if matches!(event.key(),Key::PageUp|Key::PageDown|Key::Home|Key::End|Key::ArrowUp|Key::ArrowDown) {
+                                    crate::read_preferences::opening::cancel(&mut state.write());
                                 }
                             },
                             "data-selection-pinned":snapshot.selection_pinned.to_string(),
@@ -508,6 +515,7 @@ pub fn shell() -> Element {
                     dioxus::document::eval("window.superPlatinumOverlayKeyboard?.observe(document.getElementById('shell-overlays'));");
                 },
                 if let Some(overlay) = snapshot.overlay { {overlay_view(state, overlay, &snapshot)} }
+                {crate::read_shortcuts::bulk::view(state, &snapshot)}
             }
             if let Some(hover) = snapshot.profile_hover.as_ref() {
                 {crate::profile::profile_hover_card(state, &snapshot, hover)}

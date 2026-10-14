@@ -28,6 +28,16 @@ pub(crate) struct State {
     fixture: Option<fixture::Fixture>,
     settings_fixture: Option<settings::fixture::Fixture>,
 }
+/// users.prefs Retry-After is owned by the account/workspace/user, not a pane or
+/// one shell snapshot. A shell reload must not reset that server budget.
+pub(crate) fn carry_prefs_cooldowns(previous: &mut ShellState, replacement: &mut ShellState) {
+    for (owner, until) in std::mem::take(&mut previous.channel_mute.cooldowns) {
+        if until > now() {
+            let existing = replacement.channel_mute.cooldowns.entry(owner).or_default();
+            *existing = (*existing).max(until);
+        }
+    }
+}
 pub(crate) struct Presentation {
     pub label: String,
     pub muted: bool,

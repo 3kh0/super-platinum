@@ -157,7 +157,7 @@ impl Owner {
         Err(Fault::Stale)
     }
 }
-fn apply(state: &mut DraftSync, operation: &Operation, outcome: &Outcome) -> bool {
+pub(super) fn apply(state: &mut DraftSync, operation: &Operation, outcome: &Outcome) -> bool {
     match outcome {
         Outcome::Draft(remote) => {
             let accepted = state.confirm(&operation.id, remote.clone());

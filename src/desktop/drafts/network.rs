@@ -14,11 +14,14 @@ use super_platinum_core::{
     drafts::sync::Operation,
     slack::{Error, PreparedRequest, SlackClient, Transport, api},
 };
+mod acknowledgement;
 mod decode;
 mod draft_review;
 pub(crate) use draft_review::RemoteProof;
 mod readback;
 pub(crate) use readback::Readback;
+mod update_readback;
+pub(crate) use update_readback::decode_update;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Block {
@@ -70,6 +73,7 @@ impl Attempt {
 pub(crate) struct Binding {
     account: String,
     epoch: u64,
+    cookie: String,
     transport: Arc<Transport>,
     client: SlackClient,
     workspace: WorkspaceSession,
@@ -81,27 +85,26 @@ impl Binding {
         if !super_platinum_core::drafts::sync::valid_account_id(&account) {
             return Err(Block::Session);
         }
-        let workspace = shell
-            .core
-            .session
-            .as_ref()
-            .and_then(|session| session.workspaces.get(team))
+        let session = shell.core.session.as_ref().ok_or(Block::Session)?;
+        let workspace = session
+            .workspaces
+            .get(team)
             .cloned()
             .ok_or(Block::Session)?;
-        if workspace.team_id != team
+        if session.d_cookie.is_empty()
+            || workspace.team_id != team
             || workspace.token.is_empty()
             || workspace.user_id.is_empty()
-            || shell
-                .core
-                .workspaces
-                .get(team)
-                .is_none_or(|state| state.self_user_id != workspace.user_id)
+            || shell.core.workspaces.get(team).is_none_or(|state| {
+                state.team_id != team || state.self_user_id != workspace.user_id
+            })
         {
             return Err(Block::Session);
         }
         Ok(Self {
             account,
             epoch: shell.core.account_epoch,
+            cookie: session.d_cookie.clone(),
             transport: shell.core.transport.clone().ok_or(Block::Session)?,
             client: shell.core.client.clone(),
             workspace,
@@ -122,10 +125,22 @@ impl Binding {
                 .core
                 .session
                 .as_ref()
+                .filter(|session| session.d_cookie == self.cookie)
                 .and_then(|session| session.workspaces.get(&self.workspace.team_id))
                 .is_some_and(|session| {
-                    session.user_id == self.workspace.user_id
+                    session.team_id == self.workspace.team_id
+                        && session.user_id == self.workspace.user_id
                         && session.token == self.workspace.token
+                        && session.url == self.workspace.url
+                        && session.enterprise_id == self.workspace.enterprise_id
+                })
+            && shell
+                .core
+                .workspaces
+                .get(&self.workspace.team_id)
+                .is_some_and(|state| {
+                    state.team_id == self.workspace.team_id
+                        && state.self_user_id == self.workspace.user_id
                 })
     }
     /// Merge a persisted cooldown before dispatch. The owner must store 429
@@ -174,17 +189,7 @@ impl Binding {
         let attempt = match result {
             Ok(value) => {
                 if value.get("ok").and_then(Value::as_bool) == Some(false) {
-                    let mut attempt = failure(
-                        &Error::Api(
-                            value
-                                .get("error")
-                                .and_then(Value::as_str)
-                                .unwrap_or("unknown_error")
-                                .into(),
-                        ),
-                        received_ms,
-                    );
-                    attempt.raw = Some(value);
+                    let attempt = acknowledgement::denial(value, received_ms);
                     if let Some(deadline) = attempt.cooldown_until_ms {
                         self.defer_until(deadline);
                     }

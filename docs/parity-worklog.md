@@ -16,7 +16,7 @@ data. A passing unit suite is not evidence of live Slack behavior.
 ## Current evidence, reconciled 2026-10-14
 
 The acceptance matrix below incorporates the chronological ledger through
-**Multi-external final Windows gate complete**, including the Windows
+**Attachment/user-link build and review-layout pilot**, including the Windows
 selector, notification, profile, bookmark and performance continuation.
 It preserves completed slices and their remaining boundaries; no row establishes
 full parity. Later dated implementation and verification receipts supersede old
@@ -75,10 +75,10 @@ existing fixtures or unit tests do not replace live interoperability checks.
 
 | Workflow | Current status and latest evidence | Remaining implementation and verification |
 | --- | --- | --- |
-| Native Windows dev environment | Transferred artifacts verified; locked native dev builds, 1,289 core / 1,273 desktop tests passed; isolated TCP ping/state and DPI-correct screenshots inspected. Activity, media, five message-control families, Lists and delete/undo pass normal/narrow checks; latest timestamp checks add 50 inspected List PNGs. Eleven sink stages and six production projection stages have inspected taskbar pixels; boxed startup fixes an observed Windows stack overflow | Adapt remaining platform-assuming runners and verify remaining required workflows on WebView2; live sign-in/reference and full OS integration are not established by fixtures |
-| Conversation reading, unread markers, history, navigation | Channel/thread bounded rich projection, complete row metadata, anchors, exact old targets and thread paging; Mac private warm-start/history/pagination checks and large synthetic native selection/window checks passed; Windows channel and five thread fixture checks pass with all six PNGs inspected, including 10,001-row bounds and selection pin/release | Cold Later/search/draft metadata paths, real 200-plus-reply native pagination, scrollbar/selection edge coverage, delayed live account/outage races, synchronized opening/read preferences and broader cross-client comparison |
+| Native Windows dev environment | Transferred artifacts verified; locked native dev builds, 1,368 core / 1,401 desktop tests passed; isolated TCP ping/state and DPI-correct screenshots inspected. Activity, media, five message-control families, Lists and delete/undo pass normal/narrow checks; latest timestamp checks add 50 inspected List PNGs. Eleven sink stages and six production projection stages have inspected taskbar pixels; boxed startup fixes an observed Windows stack overflow | Adapt remaining platform-assuming runners and verify remaining required workflows on WebView2; live sign-in/reference and full OS integration are not established by fixtures |
+| Conversation reading, unread markers, history, navigation | Channel/thread bounded rich projection, complete row metadata, anchors, exact old targets and thread paging; Mac private warm-start/history/pagination checks and large synthetic native selection/window checks passed; Windows channel and five thread fixture checks pass with all six PNGs inspected, including 10,001-row bounds and selection pin/release; source-backed opening/read preferences, exact settings synchronization and resumable cold unread loading pass core/desktop tests and source review; corrected reading navigation and Reading settings each pass both Windows sizes with all twenty PNGs inspected per workflow, including settings focus preservation; Escape and bulk read pass both sizes with twenty and twenty-eight inspected PNGs respectively | Production bulk Threads/Activity/history reconciliation and live read acknowledgements; cold Later/search/draft metadata paths, real 200-plus-reply native pagination, scrollbar/selection edge coverage, delayed live account/outage races, live synchronized opening/read preference verification and broader cross-client comparison |
 | Compose/reply, formatting, edits/deletes, broadcasts | Native Unicode/reference/IME guards and formatting; private bold/italic send proof; text and file broadcasts plus ordinary thread-only reply proved in **Live composer verification and channel mute integration**; late edit ownership guarded; supported channel/thread text enters the shared durable send journal; Windows trusted Unicode/edit-key and isolated synthetic file-paste checks pass both sizes with 22 inspected PNGs | Remaining edit/delete/list/link/mention and cross-client races; full rich-note/composer parity; actual OS IME sessions; broader rich/file/scheduled journal integration and live thread fault proof; Windows live end-to-end send/upload verification and remaining integration |
-| Drafts, scheduling and local recovery | Local destination-owned persistence, server Drafts/Scheduled queue/realtime, send-now/cancel/conflict copy and private Mac lifecycle proof; supported channel/thread text shares durable direct-send ownership, with thread/broadcast capture and exact destination readback tests; local version settlement and rejected channel-send return verified with isolated SQLite/native fixtures; Windows rejected-thread return and two-process restart pass at both sizes with all ten captures inspected, preserving broadcast and unrelated drafts; Windows scheduling acknowledgments preserve newer native text, attachment changes, synthetic composition and reopened visits; native draft projection passes 20 normal/narrow cases with 120 inspected PNGs and exact two-process durable dictionaries, retaining newer input and rejecting stale mounts | Ordinary bidirectional composer autosave remains disabled; lossless broader blocks/files, server identity/revision and simultaneous edits; scheduled journal integration and live thread fault proof; destination/multi-destination scheduling, attachment editing, large queues, actual timed delivery and live recovery/fault proof |
+| Drafts, scheduling and local recovery | Local destination-owned persistence, server Drafts/Scheduled queue/realtime, send-now/cancel/conflict copy and private Mac lifecycle proof; supported channel/thread text shares durable direct-send ownership, with thread/broadcast capture and exact destination readback tests; local version settlement and rejected channel-send return verified with isolated SQLite/native fixtures; Windows rejected-thread return and two-process restart pass at both sizes with all ten captures inspected, preserving broadcast and unrelated drafts; Windows scheduling acknowledgments preserve newer native text, attachment changes, synthetic composition and reopened visits; native draft projection passes 20 normal/narrow cases with 120 inspected PNGs and exact two-process durable dictionaries, retaining newer input and rejecting stale mounts; scheduled attachment editing passes all ten Windows scenarios with 48 successful captures and two retained failure PNGs inspected, exact request and no-replay checks | Ordinary bidirectional composer autosave remains disabled; lossless broader blocks/files, server identity/revision and simultaneous edits; scheduled journal integration and live thread fault proof; destination/multi-destination scheduling, live attachment-editing verification, large queues, actual timed delivery and live recovery/fault proof |
 | Mentions, emoji, custom emoji and reactions | Native mention/reference completion and in-app clipboard event/model checks; retained mention Retry-After; emoji picker insertion normal/narrow passed; real Mac undo/redo and private custom reaction add/remove across both clients/thread root passed | Live directory mention/send-render proof, broadcast eligibility/member ordering, shortcode emoji completion, tone/recents, arbitrary reply reactions; real system clipboard/cross-window/Slack interoperability and long undo/cold-draft coverage |
 | Search, filters, results navigation | Channel/sender/date controls, sort/paging, literal syntax, shortcuts, exact thread replies and archived private navigation verified; guarded missing-metadata resolution tested; Windows search/filter/loading/empty/error and palette static layouts inspected at available normal/narrow fixture sizes | Additional filter types, current cross-client ranking/filter comparison, live cold metadata, multi-account/outage races and Windows keyboard behavior |
 | Files, upload/download, previews and file actions | Browser/paging, text/code/audio/searchable PDF, channel Files & links, own-file rename/delete/save and viewer actions; pasted Unicode filenames now remain independent of staging paths through display/normal/thread/broadcast/scheduled upload, with exact loopback HTTP and six inspected Windows PNGs; private API round trips; file-name event refresh plus Later copy reconciliation; dense Files normal/narrow native checks passed | Broader non-name/content realtime refresh and late history/index reconciliation; direct attachment actions/share, Office/richer PDF/codecs/password paths, original downloads beyond cache limits, live UI/permission/lost-response/account-race coverage |
@@ -87,7 +87,7 @@ existing fixtures or unit tests do not replace live interoperability checks.
 | Pins, bookmarks and channel tabs | Pins/private realtime round trip and exact saved/pinned reply routing; bookmark links/folders/order/cascade safeguards with private API proof and native fixtures; portable Windows normal/narrow workflow passes with two inspected PNGs plus the inspected singular-copy retake | Custom tabs and combined resources parity, bookmark emoji/non-link actions, live native bookmark mutation/realtime; old targets beyond loaded pages, large lists, offline/permission/reconnect cases |
 | Forwarding and message links | Rich notes, directory recipients/deferred DM opens, per-destination outcomes; durable forwarding journal/inventory with restart/retirement native checks; Windows normal/narrow three-process recovery passes with six inspected PNGs; typed Slack channel/workspace/permalink routing and old reply native checks | Scheduled forwarding/full note controls; live new-DM/multi-destination/ambiguous-delivery recovery; user DM/profile deep links, OS-delivered links and cross-workspace app-button ownership |
 | Channels, membership, details and management | Create/rename/archive/private discovery and websocket outage recovery proved on Mac; About/Members, topic/purpose edits, people invite/remove UI and event/reconnect refresh implemented | Successful live add/remove and nonsingleton self join/leave, app/agent and cross-workspace invitations, large membership paging, policy/offline/uncertain outcomes and broader channel settings |
-| DMs, group DMs and presence | Palette people/self-DM, guarded profile Message navigation, new DM/group recipients and remote directory implemented; cached self-DM and remote search verified; presence-only projection measured; Windows static DM and recipient/directory states pass inspected captures, including narrow dialogs | Real first-DM/group creation and remote recipient selection, directory permission/429 paths, live multi-account races and large DM feed bounds/performance |
+| DMs, group DMs and presence | Palette people/self-DM, guarded profile Message navigation, new DM/group recipients and remote directory implemented; cached self-DM and remote search verified; presence-only projection measured; Windows static DM and recipient/directory states pass inspected captures, including narrow dialogs; known-human user links open DM and profile with both Windows native checks and all 16 PNGs inspected, preserving outgoing drafts and rejecting stale/wrong-recipient responses (narrow profile overlays composer) | Real first-DM/group creation and remote recipient selection, directory permission/429 paths, live multi-account races and large DM feed bounds/performance |
 | Own profile and status | Text/emoji/expiry status and full/display name/pronouns plus modern Header Title editors; owner/readback/no-replay guards and normal/narrow fixtures passed; live read-only capabilities/preferences verified; all six Windows profile/title/status fixtures pass with inspected PNGs and isolated prepared-request checks | Live profile/status/title mutation semantics when authorized, profile photo/custom sections, broader permissions/SCIM cases; fixture writes are not production confirmation |
 | Threads, Activity, read state and subscriptions | Thread unread/follow/unfollow/feed paging/live preview updates privately proved on Mac. Windows cursor-bounded channel/thread ACKs and realtime marks, threaded mentions, raw category deltas, bundle min-unread/latest mapping, page overlays and cursor ABA guards now pass core/desktop tests; normal/narrow native cursor and exact-reply checks passed | Private cross-client cursor proof, remaining read preferences/shortcuts, account/outage races and broader Windows thread workflows |
 | Activity/DM/Dock badge policy | Exact Inbox category gates, authoritative count snapshots/revisions and separate DM rail selector implemented; Mac paired snapshot Activity35/DM46; canonical Dock aggregation/AppKit readback passed. Windows direct taskbar sink, failure/recovery/owner safeguards and eleven inspected numeric/unread/clear stages pass, including synthetic recreation; six production hook stages verify Activity/Later/account retirement with inspected pixels | Authentic unified-user/MRU/org-channel Enterprise context for unknown legacy/ordinary-unread branches; real badge-event delivery and preference controls; actual Windows Explorer-restart recovery |
@@ -95,7 +95,7 @@ existing fixtures or unit tests do not replace live interoperability checks.
 | Huddles, camera, sharing and devices | Existing Slack room/Chime state machine and media bridge/UI | Human-approved controlled private call: join/leave, mute, audio/video, sharing, device/permission changes and reconnect; Windows secure-origin/media/OS behavior |
 | Canvases | Native reader/create/rename; bounded checkbox and existing-paragraph rich editing with private Mac cross-client save/restore, canonical section preservation and retained CRDT reuse; paired first-load/event recovery verified; Windows normal/narrow text and checklist checks pass with all 20 intermediate/final PNGs inspected | General authoring/structure, comments, concurrent collaboration/sharing, unsupported rich shapes/title cases, durable creation drafts, live lost-response/credential rotation and IME; bounded paragraph editing is not full canvas parity |
 | Lists | Saved tables/boards/filter/sort/date groups, details/open tracking, ordinary cell edits, create/delete and same-ID Undo/Redo; private Mac evidence through **Integrated Link verification and private cleanup complete**. Source-backed Duplicate and stable delivery receipts pass Windows fixtures. Readable timestamps, locale/tooltips and minute reprojection pass 72 source oracle cases and normal/narrow native checks; all 50 timestamp PNGs inspected; Board lane Add passes both Windows sizes with all 14 PNGs inspected, exact typed seed requests and stale/uncertain guards | Source-verified server continuation (do not invent cursor contract), saved-view/schema writes, group/subitem creation, drag/lane management, personal To-dos/assignee/reminders and remaining fields/actions/comments; live duplicate copy/parent/subtree semantics, mixed/incomplete orderings, remote-user and fault coverage |
-| App interactions and workflows | Typed modal lifecycle/forms; ordinary buttons, static single/multiple, radio/checkbox, date/time, user/conversation/public-channel, multi-user, multi-channel and overflow controls with full-state and ownership guards; ordinary and modal multi-channel/multi-conversation selectors pass Windows normal/narrow prepared-request checks with 24/26 captures inspected, alongside the earlier families; corrected compact controls pass eight rerun fixtures with all 50 PNGs inspected and exact 32px/alignment checks; bounded modal viewed-origin defaults pass normal/narrow checks, with 36 inspected multi/single regression PNGs; ordinary boolean defaults preserve supplied/absent state without inventing an origin, with all 26 new ordinary/modal regression PNGs inspected; single external selectors pass all four Windows fixtures with 38 inspected PNGs, exact raw state and retained cooldown; multi-external ordinary/modal selectors pass four Windows fixtures with all 50 final PNGs inspected, ordered raw/empty/full-sibling state and unobstructed narrow uncertainty controls; the single clear-label regression is corrected and all four new native checks pass with 38 PNGs inspected (narrow loading images raced ahead to results) | Broader missing/filtered/IM origins and other controls, specialized client actions/Agentforce/Grid restrictions, slash commands, app/workflow discovery/execution; owned private live receipt/response target and complete modal response/error proof |
+| App interactions and workflows | Typed modal lifecycle/forms; ordinary buttons, static single/multiple, radio/checkbox, date/time, user/conversation/public-channel, multi-user, multi-channel and overflow controls with full-state and ownership guards; ordinary and modal multi-channel/multi-conversation selectors pass Windows normal/narrow prepared-request checks with 24/26 captures inspected, alongside the earlier families; corrected compact controls pass eight rerun fixtures with all 50 PNGs inspected and exact 32px/alignment checks; bounded modal viewed-origin defaults pass normal/narrow checks, with 36 inspected multi/single regression PNGs; ordinary boolean defaults preserve supplied/absent state without inventing an origin, with all 26 new ordinary/modal regression PNGs inspected; single external selectors pass all four Windows fixtures with 38 inspected PNGs, exact raw state and retained cooldown; multi-external ordinary/modal selectors pass four Windows fixtures with all 50 final PNGs inspected, ordered raw/empty/full-sibling state and unobstructed narrow uncertainty controls; the single clear-label regression is corrected and all four new native checks pass with 38 PNGs inspected (narrow loading images raced ahead to results); a subsequent held-loading run passes all four with all 38 PNGs inspected and eight exact raw request dictionaries, closing that capture gap | Broader missing/filtered/IM origins and other controls, specialized client actions/Agentforce/Grid restrictions, slash commands, app/workflow discovery/execution; owned private live receipt/response target and complete modal response/error proof |
 | Keyboard, focus, accessibility and narrow windows | Native focus traps, shortcut typing handoff, selected controls/selection and synthetic IME guards; multiple normal/minimum Mac fixtures verified; Windows SendInput Unicode/Backspace/selection/replacement passes channel and thread at both sizes with 16 inspected PNGs and trusted-event receipts | Real OS IME and broader trusted keyboard coverage, screen-reader/labels, full focus restoration and reduced-motion/contrast sweeps, Windows shortcuts/WebView2 controls; isolated DOM events are not trusted-input proof |
 | Geist visual system | Local Geist/Mono, neutral tokens, uniform selection, muted system activity, compact Files/List/settings/control refinements and many inspected Mac fixtures; scoped on-fill/secondary-text contrast corrections pass four Windows palette fixtures, with 12 inspected captures and named actual/probe measurements; 21 Windows search/navigation and 32 resource static fixtures add inspected layouts, with stated taskbar limits and four unobstructed resource recaptures | Inspect every required surface/state at normal/narrow sizes on Windows; loading/error/empty/long labels, selected palettes, keyboard focus, AA contrast and reduced motion; full system consistency review |
 | Speed, memory, idle work and large workspaces | Paired component measurements for palette, channel rich projection/geometry, thread indexing, source validation, DM lookup, metadata/presence/reactions; bounded rendering and idle/tick work; async capture fault test; Windows disconnected idle pairs and six normalized scroll runs have inspected captures, with 6.1ms p50 and 6.2ms median p95 in both arms; three normalized draft-projection idle samples per arm have six inspected PNGs, with tree CPU 0.046875 → 0.0625s per 15s, private commit 260.94 → 262.06 MiB and first paint 577.88 → 626.51ms; no general speedup established | Paired input/startup/scroll and memory/idle coverage for broader live workloads; investigate intermittent native startup/stalls independently; similar Mac frame samples do not prove FPS gains and thread indexing adds measured full-sync cost |
@@ -9581,3 +9581,687 @@ Formatting passes and the complete desktop suite is rerunning. The reviewed
 layout fix now keeps mention suggestions in flow only during version review;
 its isolated geometry probe restores exact DOM/input/scroll state. Revised
 native geometry and actual mention interactions remain separate evidence.
+
+### Read-preference source research and next slice (2026-10-14)
+
+Retained B (`1681ecc18bbfead52efb391b1ccfb3e15f1b4a1093a8475d847b221ce196c537`)
+and S (`f085df09fb4f938caf425ea66fb0244c8f92a8012eea8eb298e4f629b377dbf7`)
+hashes were reverified. B 10080231 maps `mark_msgs_read_immediately` and
+`start_scroll_at_oldest` to left-off/read when both are true, newest/read when
+only immediate is true, and newest/unseen otherwise. S 5314629 reads raw prefs
+without an injected default: missing immediate is falsy. This establishes the
+selector fallback, not new-user server defaults; malformed values must not be
+silently converted to booleans. Current timeline opening and focused history
+marking ignore both fields; boot stores them only in extra prefs.
+
+B 7382351 and S 5014585 prioritize an explicit timestamp. Otherwise left-off
+mode selects first unread, or restores a stored mark/offset for an already-read
+conversation; other modes start newest. Desktop has no equivalent scrollmark
+restoration yet. S 5015789 marks both immediate modes on view with existing
+membership/focus exclusions and no backwards cursor movement. B 6277510 also
+gates subsequent reads on immediate-without-oldest, a real visible unread
+divider, an already-current cursor, or already-read/latest-self state. B 28126472
+excludes loading and ghost dividers; zero unreads plus loaded end/bottom is an
+alternative. B 6281540 debounces visibility changes 350ms and rechecks. Merely
+turning off initial marking would still consume unseen backlog through existing
+focus/realtime `reading_latest()` paths.
+
+B 26072315 writes both JSON booleans together. S 1447048 proves `users.prefs.set`
+with `prefs=JSON.stringify(patch)` and reason
+`prefs-api/setMultipleUserPrefsByApi`; S 1445370 proves comma-separated requested
+names for `users.prefs.get`. S 1445800/5326770 show successful pref-change emission
+and optimistic update/rollback. Prepared unreferenced core helpers/tests are the
+next work; renderer-owned divider visibility and per-conversation scrollmarks,
+guarded settings synchronization, normal/narrow fixtures and private cross-client
+proof remain required. Thread-specific policy and Escape/Shift+Escape behavior
+are not inferred from this evidence.
+
+The corrected desktop gate passes **1,296 / 7 ignored** in **4.71s**, compilation
+**2m45s**. Formatting and whitespace checks pass. This compiles the attachment
+Source/fixtures, legacy compatibility and queue admission, known-human user links,
+and revised review layout/checker. The locked dev build is running before new
+native gates. Read-preference helpers remain unreferenced preparation; none of
+that subsequent behavior is included in these counts.
+
+### Attachment/user-link build and review-layout pilot (2026-10-14)
+
+Locked dev build passes in **4m19s**, executable SHA
+0415fe6dded03a2da3788c6ff752f9420398d243c0f8c36fecaddabfac437eb.
+The independently locked core **1,294 / 5 ignored** and desktop
+**1,296 / 7 ignored** gates above apply to this build. Later read-preference
+integration is outside this executable and has not yet been compiled.
+
+The narrow remote-channel pilot in windows-draft-remote-review-layout/
+fails the new full inventory-row readability assertion; alternate-thread is
+not reached. Attachment ordered-rich passes at normal size in
+windows-scheduled-attachments-first/, then empty-body-cancel fails with a
+closed-dialog native assertion. Both failures and their captures are retained
+for diagnosis; neither workflow is visually accepted yet. Both user-link
+normal/narrow checks pass in windows-user-links-first/; all 16 captures and
+closed receipts are undergoing independent inspection. No real session,
+clipboard, Slack write or production draft path was used.
+
+Both user-link gates pass independent audit, with **all 16 PNGs inspected**.
+Each closed log has one readiness record, 16 ordered capture edges and one
+terminal receipt. Each retains six exact conversations.open POSTs; only the
+last uses the rotated synthetic credential. PIDs 15004/15248 have matched
+creation/exit identities, unchanged f0415fe6 SHA and observed pointer restoration.
+The 65/64 sampled checkpoints pass foreground/bounds/completed taskbar probes.
+Normal profile and DM composer are visible together; the narrow profile is an
+existing overlay covering the composer, with a visible hit-tested Close button.
+Its Message button is below the fold, so synthetic handler verification is not
+visible mouse proof. The narrow error toast covers two lower transcript links
+but clears the composer; the Japanese outgoing draft returns unchanged. No live,
+trusted-input, restart or populated-DM-history claim is made.
+
+All 11 attachment PNGs are inspected (ordered-rich seven, tab failure one,
+uncertain-owner three). The tab failure is checker-only: tab selection succeeded
+but the checker incorrectly required a dialog. Uncertain-owner exposes real
+modal overflow from inherited top:12% plus viewport-height sizing, cropping the
+footer and allowing ancestor scrolling. A scoped fixed-position attachment
+dialog bound and tab-receipt correction are ready; three JS regressions and
+nine Python tests pass. Full ten-case native verification awaits rebuild.
+
+Slack was restarted from the installed Windows package with loopback CDP9222.
+The endpoint reports an app.slack.com/client page and debugger connection. No
+reference navigation, session extraction or Slack mutation was performed. This
+restores reference access after reboot; it is not cross-client parity evidence.
+
+### Read preferences: first core gate (2026-10-14)
+
+Independently locked core formatting and full tests pass: **1,320 passed /
+5 ignored**, compilation **43.85s**, tests **20.29s**. The 26 new focused tests
+cover source-derived policy, request validation, single-attempt transport, cache
+and boot authority. Independent review caught that serde-defaulted missing boot
+prefs had been mistaken for an authoritative empty container; explicit presence
+is now preserved across serialization. Positive malformed snapshots retain raw
+values and revoke old policy. No desktop/native result applies to this source yet.
+
+Renderer review found outstanding cold-history owner/cleanup/bounded-pagination
+issues, pending-anchor cancellation and exact marked timestamp alignment. These
+are being corrected before the desktop gate. Settings lifecycle has eleven new
+unrun tests, a disconnected 10-stage normal/narrow check, and independent review
+in progress. Separate reading/navigation native fixtures are being authored.
+
+All five review-layout pilot PNGs are inspected. Header/footer clipping is fixed;
+the long comparison row still exceeds its inventory viewport. Removing only its
+trailing paragraph margin preserves copy and strict full-row checks. Python now
+independently validates retained completion restoration and shell/row geometry;
+13 Python tests and three JS tests pass. Native verification awaits rebuild.
+
+Read-preference source review found two further write-lifecycle gaps. Actual
+startup/sign-in/account ShellState replacement now transfers unresolved receipts
+and nonexpired owner-bound preference cooldowns; canonical account data and UI
+visits remain replacement-owned. Three added replacement regressions bring
+settings coverage to 14 unrun tests. The dedicated SET transport now accepts
+only unambiguous rejection envelopes; contradictory mutation output remains
+uncertain. Two new core regressions need the independent core rerun.
+
+The first desktop check fails with 40 diagnostics cascading from an ambiguous
+Dioxus/domain Owner import and an unformatted RSX key. Both source issues are
+fixed; the complete desktop test compilation is running. Renderer review also
+added resumable eight-page/20-second cold-history chunks, full owner checks and
+cleanup, explicit-jump cancellation, nonpending mark timestamps, and unknown
+unread-count preservation. Final review is still open. Reading settings and
+navigation runners respectively have 11 and seven passing receipt tests; their
+20-PNG native gates have not run.
+
+Final source rereviews clear both renderer/history and settings after the
+reported corrections. Canonical scrollmarks reject optimistic/unmapped rows;
+the Reading radio remount key is on the outer Dioxus template root, and all ten
+settings stages require canonical checked state. Twelve renderer JS tests pass.
+The first full desktop gate compiles in **3m56s**, then **1,330 pass / one fails /
+7 ignored** in 4.63s: unread_hold_blocks_automatic_marks_until_reopening still
+expects reading_latest without the newly explicit preference/visibility
+authority. The author is checking whether its setup or production behavior needs
+correction; do not count this as a passed desktop gate. Final-source formatting
+passes. The independent core suite is rerunning the two new SET-envelope tests.
+
+The final independently locked core suite passes **1,322 / 5 ignored**,
+compilation **24.71s**, tests **20.36s**, with formatting passed. The desktop
+unread-hold failure is a stale test assumption: reopening retires the hold but
+must not reuse the previous visit viewport evidence. The corrected test uses
+explicit NewestAndRead preferences and current evidence, asserts the hold still
+blocks fresh observations, then requires fresh evidence after reopening. No
+production fallback changed. Final desktop formatting passes and full tests
+are rerunning with all final source-review corrections.
+
+The final desktop gate passes **1,332 / 7 ignored** in **5.06s**, compilation
+**1m57s**. Formatting and whitespace checks pass. This includes the final
+renderer/history review fixes, canonical saved offsets, settings replacement and
+radio state corrections, and the isolated settings/navigation checkers. The
+locked dev build is running; no native result is claimed for these changes yet.
+
+Locked dev build passes in **4m30s**, executable SHA
+6a77d24e212a431fd114326cb5e97907886374100fe298d97a2c9c3e98046671.
+The revised narrow remote-channel/alternate-thread native pilot is running in
+windows-draft-remote-review-layout-verified/. This executable includes the
+core1,322/desktop1,332 gates and final source review corrections above.
+
+The revised narrow remote-channel and alternate-thread pilots both pass on
+6a77d24e, producing 18 PNGs. Root inspected the previously failing long
+comparison row: full copy and the channel header are visible. Independent
+inspection of all pilot pixels/receipts is underway; the remaining ten scenario
+pairs are running against the same executable. Completion evidence remains an
+explicit synthetic geometry/restoration probe, not real mention interaction.
+
+All **12 review scenario/restart pairs pass** on 6a77d24e with 112 PNGs.
+All 18 pilot PNGs and closed receipts are inspected: headers, complete intended
+review copy, thread broadcast, and result/restart Unicode are readable. Exact
+exercise/restart durable dictionaries and sampled lifecycle/pointer evidence
+validate. The channel comparison row uses the existing one-pixel rounding
+tolerance (0.333 CSS px at each edge); copy is visually complete. Remaining
+56 normal and 38 narrow captures are under independent inspection. Full ten-case
+attachment native verification is now running on the same executable.
+
+The Reading settings runner now independently checks canonical radio state at
+all ten stages, including saving/uncertain/mismatch and unavailable states.
+A new speculative-selection rejection regression brings its Python suite to
+12 passing tests. This script-only strengthening does not change the executable.
+
+All **112 corrected review PNGs are now inspected**: 18 pilot, 56 normal,
+38 remaining narrow. All 24 closed process logs, exact readiness/capture edges,
+complete PNG validation, matched owned creation/exit identities, pointer
+restoration and binary checks pass. Whole durable dictionaries match exercise
+to restart; unrelated destination inventory stays exact. Deferred composition
+retains Current local, then Finish yields Latest Slack after remount3-to4
+without another read. Thread broadcast remains checked. Each initial inventory
+row is readable at its own scroll position. In second-choice captures the label
+is visible but full body may be below fold; title/Apply/Cancel are outside some
+row capture positions. No simultaneous-all-content, trusted input, OS IME, live
+Slack, crash recovery or continuous occlusion claim is made.
+
+Both Reading-settings native gates pass on 6a77d24e with 20 PNGs under review.
+Screenshot review has found a clipped Reload/Check status focus ring; the scoped
+padding correction is pending verification. Read-navigation stops after three
+stages with Real unread divider was not visible; all four PNGs are inspected.
+The fixture installed an unread anchor without clearing stick_to_bottom, so the
+normal Latest effect overrode it; correcting that setup and stronger observer
+settlement is underway, with no production bug inferred from this failure.
+
+Attachment ordered-rich and empty-body-cancel normal cases pass. Uncertain-owner
+now has a bounded footer but fails when the checker queries a returned-account
+row before DOM settlement. Known-unsent later fails Control clipped or covered;
+19 PNGs total are retained for inspection. Remaining cases were not reached.
+No complete attachment native acceptance is claimed.
+
+### Reading shortcut source research (2026-10-14, no implementation)
+
+Read-only CDP returned public chunk URLs only; matching public assets were fetched
+without navigation, session extraction or Slack writes. New build aliases must
+not silently replace earlier B/S offsets:
+
+- R: gantry-v2-async-client-boot-render.a66a78eeac9bb080.min.js,
+  SHA6050af061bf031abcf78b5f19300a89f8c328bb4f2413b2bc88de72ee24a9382.
+- B2: gantry-v2-async-gantry-v2-shared-boot-async.457d4b99bff69d13.min.js,
+  SHA7cbc5803c7f0e18ab41d443c254205dae9bc58b9da2e1d7cff2b99c4cd2dc88f.
+- S2: gantry-v2-shared.c8d6ded6605ce42d.min.js,
+  SHA104c0dd99720b7391f5724ea2eb6d439a4249c017fb6f743f664fdc91ec4a693.
+- V2: gantry-v2-vendors-client.c3c571e00152d656.min.js,
+  SHAd86c1c81334d0f50739b5dd137521be3dd843b3d51ff5566fdf0744df6f5c34a.
+
+R614311 global Escape ignores prevented events/error screens/absent chat
+attention; S2 3986675 excludes modal/popover/omnibox and requires focused active
+workspace. B2 4606620 selects the active tab primary channel: unread count or
+retained ghost cursor permits markMostRecentMsgRead and clears ghost state;
+otherwise an eligible view may close. S2 2291322/3705366 picks later channel
+metadata/latest suitable loaded ts, so cold metadata matters. Thread bubbling
+handling (B2 16647897/16648779/29965159) consumes the first eligible Escape to
+read a subscribed/Quip thread and clear its initial divider; subsequent close
+is scope/focus-specific, not merely thread_root.is_some(). Ordinary subscribed
+thread payload uses subscriptions.thread.mark channel/thread_ts/ts/read:1
+(B2 5542869, S2 3476424/1518617); non-real messages are excluded (B2 2518757).
+
+R610819 Shift+Escape ignores repeat and reads raw confirm_clear_all_unreads.
+Truthy confirms; authoritative missing is falsy, while unhydrated local state
+must stay unknown (S2 5337753). R608486 dialog optionally writes that separate
+preference false when Don't ask me again is checked. V2 2299474 calls
+users.markAllRead with no business arguments, reason ShiftEscapeConfirmDialog;
+undo_ts response enables same endpoint with undo_ts, reason
+UndoShiftEscapeMarkAllRead. B2 24500431 shows six-second Undo toast or three
+seconds without Undo. Scope is current workspace/enterprise API context, never
+all signed-in accounts; no guessed enterprise team/filter argument. It clears
+notifications as well as conversations, unlike the current loaded-bag loop.
+
+Next implementation needs pure shortcut decisions, narrow bulk/Undo API and
+uncertainty ownership, independent confirmation-pref authority, renderer focus/
+IME/menu/modifier/thread precedence, and authoritative counts/thread/Activity/
+history reconciliation after success/Undo. Real bulk marking is a broad Slack
+write and is outside read-only research/private fixture evidence. Official
+shortcut/accessibility references:
+https://slack.com/help/articles/201374536-Slack-keyboard-shortcuts-and-commands
+https://slack.com/help/articles/115003340723-Navigate-Slack-with-your-keyboard
+
+Both Reading-settings logs and **all 20 PNGs are inspected**. Each run has
+four SETs/twelve GETs, 16 distinct request IDs, exact canonical radio selection
+at all ten stages, five hit-tested controls and unchanged 6a77d24e binary.
+Owned process creation/exit identities match; pointer restoration is observed
+with 86/83 sampled checkpoints passing bounds/completed-taskbar probes. Eight
+PNG focus rings clip at the panel top. A four-pixel token padding correction and
+explicit focused-control/outline measurements are ready; Python independently
+checks returned panel/ring geometry (13 tests pass). Idle rotated-owner copy now
+says the update is unconfirmed when no follow-up read starts. New native proof
+is required for these visual/copy changes; no live/restart durability is claimed.
+
+All **19 attachment PNGs** are inspected. Known-unsent recoverable controls are
+visibly clear: fixture credential rotation incorrectly incremented account_epoch,
+remounting and canceling the Editing dialog; the checker hit-tested a detached
+node. Rotation now changes synthetic credential generation only, while the
+uncertain-owner case still explicitly exercises foreign/return account epochs.
+The recovery-row query also waits for DOM settlement after checking the exact
+retained lease. Production registry/ownership/UI are unchanged. Eight JS and
+nine Python tests pass. Read-navigation fixture clears stick_to_bottom before
+manual unread/explicit anchors and now compares settled observer geometry to
+current DOM geometry; two new Rust tests are awaiting the running desktop gate.
+All fixture failures remain retained; full corrected native gates are pending.
+
+Follow-up desktop formatting and full tests pass **1,334 / 7 ignored**,
+compilation **2m04s**, tests **4.43s**. A subsequent narrow status correction
+clears obsolete entry messages after successful ordinary reload only when no
+pending write exists; errors and uncertain-write copy remain. Two regressions
+are added. Final tests/build are running sequentially under root ownership.
+Core is unchanged from 1,322 / 5 ignored; no additional core rerun is necessary
+for these renderer/fixture-only edits.
+
+Final desktop formatting and full tests pass **1,336 / 7 ignored**, compilation
+**1m50s**, tests **4.58s**. The sequential locked dev build remains running.
+Shortcut work is new unreferenced preparation only and is excluded from these
+counts. No frozen native executable is claimed until the build/SHA completes.
+
+### Reading follow-up build and attachment verification (2026-10-14)
+
+The locked dev build passes in **3m37s**, SHA
+`271d07bac8060fdcf89ebfbe31d7910a35297faa95c7cfc55914c27e05308e0c`.
+This includes core 1,322 and desktop 1,336 passed tests as recorded above.
+New reading-shortcut integration is outside this executable and still requires
+its own compilation and native gates.
+
+All **ten attachment scenarios pass** on 271d07ba; all **50 PNGs are inspected**
+(48 successful stage captures plus two retained failures). Evidence spans
+`windows-scheduled-attachments-final/` (six passes, 32 PNGs), `att-final/`
+(two passes, ten PNGs), and `att-last/` (two passes, eight PNGs). Independent
+receipt validation confirms 32 prepared requests and 14 update attempts with
+exact payload, credential-generation and no-replay contracts. All twelve owned
+processes exited; all ten passing runs observed pointer restoration. Normal
+dialogs are readable and bounded. Narrow internal scroll positions show readable
+rows, status and footer actions without a covering toast; headers and upper rich
+body are offscreen at those positions, not simultaneous-content proof.
+
+Two failures are preserved: a GDI Bitmap.Save error at a 261-character capture
+path, followed by success with a shorter root; and a pointer-placement mismatch
+before native workflow readiness, with restoration safely skipped. The final
+two scenarios pass in a fresh root. These are disconnected synthetic responses,
+not live Slack writes, restart durability or legacy send proof.
+
+Corrected read navigation passes both sizes on 271d07ba with twenty PNGs awaiting
+full inspection. Reading settings fails its strengthened focus assertion after
+the first update. The failure PNG already shows the correct radio focus ring:
+the checker sampled before the queued focus effect settled. A bounded rAF wait
+for the expected focused control is added, without setting focus from the checker.
+Reload also needs its own restoration identity after becoming disabled; that
+production correction is ready for the next build. The prior successful settings
+behavior receipts remain historical evidence; the corrected focus gate is open.
+
+Escape/Shift+Escape implementation is now integrated source in progress, not
+unreferenced preparation. Composer eligibility research follows R UbRM614311
+through R999130, B2 3TJy16729466/Ov+1 16730070 to o9RR652538: these command
+records omit ignoreInputs, and the registration layer disables Mousetrap's input
+filter unless that flag is true. Thus canonical empty/nonempty composers may
+reach the command only after editor/completion consumption; IME, menus, message
+editing and unknown editors remain excluded. No typing timeout is inferred.
+
+All **twenty read-navigation PNGs are inspected** and both closed receipts pass
+independent validation. Actual unread dividers, newest positions, saved offsets,
+explicit targets, cold-boundary notices and manual unread controls are readable
+at both sizes. Each run admits exactly three actual conversations.mark builders
+(left-off, newest-read, visible divider), with no Session, Transport or ACK.
+Normal PID17932 and narrow PID17828 have matching owned creation/exit identities,
+unchanged 271d07ba executable and observed pointer restoration. Synthetic paused
+controls are hit-tested; this does not prove live cold pagination, OS focus loss,
+cursor persistence or continuous/atomic capture geometry.
+
+The new independently locked shortcut core suite passes **1,350 / 5 ignored**,
+compilation **46.61s**, tests **21.29s**, formatting passed. This includes the
+28 new preference/cache/decision/API/transport tests. Desktop source remains in
+review and is not covered by that core result. Thirteen Reading-settings receipt
+tests and six shortcut keyboard helper tests also pass.
+
+Shortcut integration compilation initially found private imports and a signal
+borrow spanning dispatch; both are corrected. The next compiler check finishes
+in **37.15s** with no errors. An initial focused desktop gate passes **36 tests**
+in 0.02s after **4m02s** compilation. Later review corrections remain outside
+that snapshot: retained uncertain Escape receipts across shell replacement,
+strict readback owner/cursor/revision proof, transient popup/focus invalidation,
+and authoritative thread subscription handling. Final full tests/build are
+required before claiming native readiness. New runner suites pass twelve Escape
+and thirteen bulk receipt tests; their captures have not run yet.
+
+Bulk review also corrected independent preference status/readback ownership,
+confirmation blocking automatic and realtime read authority, delayed dialog
+focus, Undo eligibility during reconciliation, and retention of in-flight Activity
+reads across shell replacement. Undo still expires six seconds after the original
+receipt and invalidates the prior reconciliation generation. Authoritative bulk
+refresh scans typed read metadata across loaded conversations and compares full
+content only for visible bags and loaded feeds, rather than serializing every
+cached transcript. Its native fixture covers counts-only reconciliation; bounded
+production Threads/Activity/history/replies require separate evidence. No general
+performance or live broad-read mutation claim is made.
+
+The first full shortcut desktop suite passes **1,375 / 7 ignored**, compilation
+**2m07s**, tests **5.20s**, with formatting passed. Eleven keyboard/bridge JS
+tests pass, including same-task popup/key changes and one-use receipt invalidation.
+This is not yet the final source gate: review found that thread readback must
+adopt authoritative subscription state, and channel readback must accept a guarded
+backward cursor from another client's manual unread action. A forward-only mark
+ACK reducer cannot serve as that authoritative readback reducer. Corrections and
+focused regressions are in progress before the final full test/build gate.
+
+Final shortcut source review is clear. Channel recovery now applies an exact
+authoritative counts row, including backward cursor and unread/mention counts,
+only if the target's cursor/revision/count/latest baseline still matches; unrelated
+channel changes do not block it. The extracted core reducer has no membership,
+star, lifecycle or aggregate side effects, and the full snapshot retains its
+existing behavior. Thread recovery adopts cursor and subscription together under
+their revision/pending guards; retained proof includes subscription state so
+unsubscribe and ABA changes cannot authorize a stale mark.
+
+Final formatting passes. The independently locked core suite passes **1,353 /
+5 ignored**, compilation **22.61s**, tests **20.34s**. The full desktop suite
+passes **1,377 / 7 ignored**, compilation **3m02s**, tests **5.00s**. The serial
+locked dev build subsequently passes in **4m36s**; native results follow below.
+
+### Reading settings focus gate and first shortcut failures (2026-10-14)
+
+Frozen executable SHA is
+`91009832a77ea9b8b81bfb62729e5f6b797db1736e81ff7371dfe5500f2d4025`.
+The serial `read-shortcuts-freeze-*` pipeline exits zero. Both formatting checks,
+whitespace, independently locked core 1,353/5 ignored and desktop 1,377/7 ignored
+pass as recorded above. Later bridge and draft changes are outside this binary.
+
+Reading settings passes normal and narrow in `tmp/agent-ui/rp-final2/`;
+**all twenty successful PNGs and three prior failure PNGs are inspected**.
+Independent closed-receipt audit confirms canonical selected radios at every
+stage, contained focus rings, all five hit-tested controls, and no clipping or
+overflow. Normal PID13212 has viewport1280x780/PNG1942x1256; narrow PID14908 has
+viewport668x380/PNG1024x656. Each run prepares twelve preference reads and four
+writes, with exact two-boolean patches and synthetic outcomes. Owned creation/
+exit identities, unchanged executable and pointer restoration all pass.
+The prior focus failure remains evidence of an unsettled sample, not a pass:
+the failure image itself shows the subsequently restored ring. The corrected
+checker waits for actual focus without setting it. These checks use synthetic
+input/responses with no Session/Transport; they do not establish live credential
+rotation, network behavior or restart persistence. Sampled geometry is not atomic.
+
+First normal Escape (`rs-first/`) fails before its first prepared request;
+first normal bulk (`br-first/`) fails before the confirmation dialog. All four
+initial/failure PNGs are inspected: composer focus/draft are retained, no first
+mark/dialog is visible, and no narrow run is reached. A reviewed bridge correction
+ignores unchanged attribute writes and empty/unrelated child-list updates while
+preserving popup, focus and shell-key invalidation. Thirteen Node tests pass.
+Fixture-only capture/take/mutation diagnostics and metadata-preparation checks
+are added; twelve Escape and thirteen bulk Python receipt tests previously pass.
+A new compiled native run must establish whether this fixes the observed failure;
+source review alone does not establish the runtime cause.
+
+Slack was restarted after the user's reboot with loopback CDP on port9222;
+the app.slack.com/client renderer is reachable. No session data was extracted or
+real Slack write made during this recovery. The next draft slice is in progress:
+strict raw ACK provenance/session binding, explicit positive frozen Update readback,
+and operation-bound durable read tickets in store format5. Eight classifier and
+thirteen core lifecycle/storage regressions are authored, not yet Cargo-verified.
+The classifier intentionally retains raw uncertainty for extra unrepresented
+fields such as date_stashed, file_permissions and mpdm_name; full real response
+compatibility remains open. Ordinary autosave and realtime draft ingress remain
+disabled. Drafts.info is a POST form read; no readback replays a mutation.
+
+The core recovery review subsequently requires explicit format5 check_ticket and
+check_deadline fields (null is valid), and typed decoding from the original JSON
+so duplicate fields cannot erase a guard. Fifteen new lifecycle/storage tests are
+authored. The initial core run passes 1,367/5 ignored in20.72s but predates the final
+duplicate-field regression; the final independently locked gate is running.
+Desktop review also caught and corrected stale pending-editor text and optional
+writer replacement races. Its focused tests and isolated Update fixture are still
+being finalized; no new desktop build/native result is claimed.
+
+### Ordinary draft scheduling research, not enabled (2026-10-14)
+
+Retained public B/S assets use the hashes already listed in
+`slack-external-select-protocol.md`; offsets below count decoded characters.
+Additional vendor `gantry-v2-vendors.522a064003a98b05.min.js` SHA is
+`819ac26a4c6cd6d2122cb6edb1731a0f99d7070c16971579f52529d1030ae7b3`.
+B fCtk6825864 chooses a three-second remote debounce when
+draft_syncing_reconciliation is on, otherwise ten seconds. S iW732380790 keeps one
+trailing debounce per draft ID; vendor S6U42419535 defaults leading false, trailing
+true and no maxWait. The editor's separate local debounce defaults to one second
+(B18909675), with optional150ms leading/trailing fast lane at18913024.
+Composition suppresses ordinary text updates until compositionEnd
+(18919173/18920372); switching drafts/unmount flushes local callbacks
+(18927500/189138xx), without proving an immediate remote flush.
+
+B9XoJ6813834 merges/equality-checks local input and records Date.now locally before
+choosing Update for an existing server ID or Create otherwise. SwmAi2362879
+generates the attached draft UUID once; Sjd0U2380514 keys channel/optional thread.
+Create B6789421 and Update6815998 reload current local state at timer firing;
+ACKs at6790494/6817086 patch only server identity/revision, preserving newer local
+content. Send5500203 and Schedule6810246 cancel remote timers; S+fn42378721 also
+cancels registered editor callbacks before clear. These source paths do not prove
+a durable disk barrier or authorize automatic enrollment in this client.
+
+Optional response fields have real semantics: date_stashed survives conversion
+(B6823803), and attach resets it to numeric0 (S2371349); file_permissions drives
+separate grant/remove operations (B6804667/5595680); mpdm_name is editable and
+participates in draft equality and rename-on-send (B25662210/S3728160/B5501190).
+No retained ordinary ACK inventory proves which empty/default fields are present.
+The current strict acceptance limitation therefore remains explicit. Finally,
+attached_draft_exists recovery (B6811836) may delete/recreate after a bounded list;
+that observed implementation does not authorize copying destructive recovery.
+Ordinary enrollment still requires positive existing-draft ownership/conflict
+discovery. No live writes or production scheduling/ingress changes were made.
+
+Final independently locked core formatting/tests pass **1,368 / 5 ignored**,
+compilation20.65s/tests20.51s, including all fifteen durable recovery regressions.
+Desktop format passes. Initial desktop check finds a fixture glob-import collision
+between Dioxus Owner and drafts::Owner (five diagnostics from the same return
+type). Explicitly qualifying that return type fixes the ambiguity; the next
+locked check is running. No new executable/native result is claimed yet.
+
+The corrected locked desktop check passes in30.50s. The initial full test compile
+finds a missing RemoteDraft import in the new session regression; adding the
+explicit import resolves it. Final formatting/full tests pass **1,401 / 7 ignored**,
+compilation3m08s/tests5.18s. The dev build is running before native verification.
+The Update fixture/checker and Python runner are independently reviewed; thirteen
+new receipt-validator tests pass. Six scenarios each admit one actual drafts.info
+POST builder in exercise and zero on restart; interrupted pending reads are held
+through controlled owned process termination, not a simulated crash. Native receipts
+and PNGs have not yet been produced for this new gate.
+
+### Update recovery build, Escape gate and native follow-ups (2026-10-14)
+
+The locked dev build passes in **4m29s**, SHA
+`50c8ca39e2d281240ce167db7659b14cab7c767225e39e8ff0ddbb0739f5dad9`.
+Formatting/whitespace pass; this executable contains the independently locked
+core1,368 and desktop1,401 passed tests recorded above. Subsequent CSS/fixture
+corrections are outside this executable.
+
+Escape passes normal/narrow in `rs-next/`, with **all twenty PNGs inspected** and
+both full closed receipts independently revalidated. Each run prepares exactly
+five requests: four conversations.mark and one subscriptions.thread.mark. The
+first metadata-only action now succeeds with C2/1750000099.000001 and an empty
+loaded transcript. Guarded/stale events, ghost clearing and second thread Escape
+add no request. Multiline drafts and backward selection3..8 survive. The first
+thread action reads/removes its divider; the second closes it; focused-primary
+keeps the background unread thread. Normal PID7624/1280x780 and narrow
+PID13740/668x380 have PNG1942x1256/1024x656, matching creation/exit/cleanup
+identities, unchanged SHA and observed pointer restoration. Narrow thread overlays
+part of the primary pane; this is not simultaneous full-pane visibility. These
+are synthetic keyboard/ACK fixtures with no Session/Transport/live HTTP, OS
+keyboard/IME or restart claim. Geometry/pointer observations are sampled.
+
+Bulk first normal run now passes initial admission, confirmation, cancel, checked
+confirmation and Sending before failing the success-notice geometry after five
+prepared requests (`br-next/`). **All six PNGs are inspected.** The notice's
+shared grid allocates24px to its whole Undo+dismiss group: dismiss x1289.3/width24
+lies beyond viewport1280, and the failure PNG visibly clips Undo with a horizontal
+scrollbar. A reviewed scoped CSS rule reserves auto width for the full action group
+and uses one column below700px. Geometry assertions are unchanged. No narrow run
+was reached; corrected normal/narrow verification remains open.
+
+Initial Update recovery runs on50c8ca39: positive-channel normal exercise/restart
+passes (`ur-first/`); typing-before exercise passes but restart fails its strict
+native-text assertion. All nine PNGs in that root are inspected. SQLite readback
+proves canonical dictionaries and both stored states/revisions remain exactly
+equal to the successful exercise, including newer channel text. The fixture
+started Home with static seed text before its async private database load, and
+its helper did not unmount the same-scope composer. The scoped helper correction
+uses the existing remote-review real unmount/remount plus Latest anchor, never
+sets DOM text, and preserves the strict oracle. It also fixes the blank fixture
+timeline visible after navigation.
+
+Owner-rotation normal exercise passes in `ur-more/`; restart aborts on pointer
+placement before workflow readiness, with the user's position retained. Cooldown
+and pending-check normal pairs pass in `ur-tail/`, including zero restart requests.
+All **21 Update PNGs** are now inspected (nineteen successful phase captures and
+two failures), and all eight passing phase receipts independently revalidate.
+Five exercise builders total and zero requests across the three completed
+restarts are recorded. Exact canonical/stored/blocked/alternate dictionaries match
+for every passing pair. All ten owned processes exited with matching identities;
+nine restored the pointer. Owner restart requested971,25 but observed512,25 and
+safely skipped restoration; its log contains readiness only. The independent
+SQLite audit also confirms the typing failure retains both full format5 states,
+storage revisions and canonical content with no blocked/alternate rows.
+The remaining typing-during-commit and narrow workflows have not run. Complete
+the corrected six-scenario/two-size/two-process gate after rebuilding; preserve
+all failures and do not treat a controlled interrupted read as crash durability.
+
+The scoped CSS/remount correction passes formatting and **1,401 desktop tests /
+7 ignored** (1m57s compilation,4.66s tests), then locked dev build **3m28s**. SHA:
+`13e28b398bc82ce3e10cb32b2a1716ca5adcb38c2f4df3af2cf1798a82a9fa52`.
+Core remains the independently verified1,368/5 ignored; it was unchanged.
+
+Bulk `br-final2/` completes all fourteen native stages, but the Python oracle
+incorrectly expects a status notice after expiry. Production poll intentionally
+removes it, so the exact expired expectation is composer/channel-composer with
+unchanged count9 and cleared state. The corrected runner adds explicit focus
+assertions for submit, checked checkbox, cancel and expired return, plus stage/
+field error messages. Sixteen Python tests pass. All fifteen br-final2 PNGs are
+inspected: normal action layout is corrected, focus rings visible, no horizontal
+scrollbar, and statuses remain above the composer. Offline revalidation does not
+turn that original failed outer receipt into a pass: its contemporaneous final
+SHA check was skipped. Fresh `br-final3/` now passes both sizes with28 PNGs pending
+full independent inspection.
+
+Update `ur-final2/` passes all twelve scenario/restart pairs, with **all52 PNGs
+inspected** and full independent normal/narrow closed-receipt audits. Twelve actual
+drafts.info read builders, zero writes, and zero restart requests are recorded.
+All24 owned processes have matching identities/exits, before/after SHA and pointer
+cleanup. Normal six databases were separately opened read-only: both canonical
+values, complete format5 state and storage revisions exactly match restart, with
+no blocked/alternate rows. Newer Unicode channel/thread text visibly survives
+both typing-before and typing-during-commit restart; normal timelines now paint.
+Backward selection is receipt evidence, not visible selection-highlight proof.
+
+The visual gate remains open: narrow initial/checking and unresolved captures
+retain a thread overlay covering most of the recovery row/action. Root also read
+the narrow positive initial PNG and confirms this obstruction. Existing center-hit
+geometry alone did not prove full-row readability. The fixture Drafts navigation
+must close the thread, wait for actual DOM absence, and retain full visibility
+assertions before new captures. No production change or text-oracle relaxation is
+needed. Complete the corrected native gate after that scoped fix. These are
+synthetic input/responses, sampled geometry and controlled process restart, not live Slack,
+OS IME or crash durability.
+
+The recovery visibility fixture correction passes formatting, **1,401 desktop
+ tests / 7 ignored** (1m50s compilation, 4.58s tests), locked dev build **3m26s**
+and whitespace checks. SHA:
+`151e9a9597798a5cd95e6e326a63435d03165a5bc1ac506f4fc20e972d8e4a6d`.
+Core is unchanged at 1,368 / 5 ignored. The strengthened runner's sixteen tests
+pass; all three visibility flags must be exactly true, with complete panel and
+viewport containment on both axes. Fresh `ur-final3/` captures are running;
+independent normal/narrow closed-receipt and pixel audits remain pending.
+
+The next bulk verification slice must exercise the actual asynchronous counts,
+Threads, Activity, visible history and replies reconciliation pipeline. Existing
+seven reducer tests and the successful native fixture cover counts and history
+helpers, not this complete sequence. A disconnected executor seam is being
+prepared without wiring it into the frozen capture binary. Required cases include
+stage failures, stale account/visit/reconciliation generations, concurrent cursor
+or message changes, and Undo while a retired feed request still owns loading.
+The matching old request must settle safely and explicit retry must work; no
+immediate refresh success is assumed while that old loading ticket remains.
+
+Fresh `ur-final3/` on `151e9a95` completes all six normal pairs and four narrow
+pairs before the narrow cooldown exercise fails the strict visibility oracle.
+All 26 normal PNGs and all twelve normal closed phases were independently audited;
+six read-only SQLite inventories exactly match full restart dictionaries.
+The narrow cooldown failure has threadPaneAbsent=true and buttonUnobscured=true,
+but rowUnobscured=false. Root inspected its failure PNG: a duplicate cooldown toast
+covers the inline recovery explanation. The original thread-overlay issue is
+fixed. Preserve this failure and fix the duplicate feedback at its UI source;
+do not dismiss/wait away the toast in the fixture or weaken visibility checks.
+Narrow pending-check and cooldown restart did not run in this matrix.
+
+Pure owned-draft index integration passes the independently locked core suite:
+**1,384 passed / 5 ignored**, compilation40.40s, tests20.08s. All sixteen new
+identity/collision/stale-owner tests pass. The module is exported from sync.rs;
+no production ingress or autosave is enabled. Desktop compile remains pending.
+Before ordinary autosave activation, acknowledged drafts must also be consumable
+through the shared Editor. Current direct-local preservation only permits a Send
+without a remote base; merely deleting send::can_consume's acknowledged guard
+would mishandle unsupported newer typing. A strict terminal-consumption local
+preservation extension is being prepared. Managed Schedule additionally needs an
+exact dialog-payload handoff and uncertainty recovery; its legacy independently
+edited snapshot must not clear a managed composer.
+
+The completed `ur-final3/` audit now covers all **47 available PNGs**: 26 normal,
+18 successful narrow, and three failed narrow cooldown images. Ten complete pairs
+pass full closed-receipt validation. The four narrow pairs also pass 200 sampled
+pointer/window checkpoints. The failed cooldown process has a unique closed false
+terminal, intact PNGs, matching owned-process cleanup and pointer restoration.
+The proposed fix publishes inline feedback to the originating live row signal
+inside the existing owner guard before suppressing any duplicate toast. A newly
+mounted row after navigation is not sufficient proof of that signal's liveness.
+Confirmation and unavailable-row completion must retain their toast notification.
+
+The scoped recovery feedback correction is implemented and independently reviewed.
+Only unconfirmed Update can suppress its duplicate toast: the exact operation,
+account/team/epoch, Drafts filter, absence of thread/general overlay/profile hover
+and bulk confirmation, and successful synchronous publication to the originating
+feedback signal are all required. Confirmations and unavailable/disposed rows keep
+the toast. The existing bulk dialog-presence check is deliberately conservative;
+no bulk UI API was changed. Four focused tests are added; scoped formatting and
+sixteen Python runner regressions pass. Root's `recovery-feedback-final-*` full
+desktop/build gate is running before another complete recovery capture matrix.
+
+The terminal-local preservation preparation is independently reviewed clear after
+a legacy-base correction: a positive receipt must remain persistable even when
+its historical base cannot validate an optional new preservation marker. Such a
+completion omits extra authority. Eighteen tests are authored but unrun in
+`tmp/terminal-local-prep/`; no production source is wired yet. The prepared bulk
+pipeline now also checks authoritative subscription state with a reply cursor and
+rejects subscription ABA/pending changes. Its final independent review is pending;
+all prepared files remain outside the running compile.
+
+The recovery feedback desktop gate passes **1,405 tests / 7 ignored**, including
+all four new feedback regressions; compilation4m09s, tests4.90s. Formatting passes.
+The locked dev build is now running. Core remains 1,384 / 5 ignored from the
+separately locked owned-index gate. New bulk and terminal-local preparations are
+still unreferenced and are not covered by these counts.
+
+Both next preparations are now independently reviewed clear but remain uncompiled.
+The bulk patch is at `src/desktop/read_shortcuts/bulk/reconcile/prepared/` with
+18 asynchronous tests and an execution-only seam shared with production. Final
+patch applicability and exact reconstruction of all eleven targets pass. Its
+replies authority uses exact subscription/cursor metadata; missing/malformed cursor
+or duplicate root leaves that stage unapplied and exposes incomplete refresh.
+Explicit bare zero comes from retained selector semantics, not an observed replies
+wire payload. Successful retry now restores cleared/restored copy while its notice
+remains, avoiding stale failure text. Preserve the earlier counts-only native gate
+as separate evidence. Root will integrate after the recovery capture gate.
+
+Locked dev build for the recovery feedback correction passes in **4m37s**;
+formatting and whitespace checks pass. SHA:
+`da7ebcd098b04f1c704a1e4f17f2975d81a5c6caf6d1dd5da4689cccf0e5daec`.
+This includes the compiled pure owned-index helper. Core1,384 /5 ignored and
+ desktop1,405 /7 ignored are the latest test gates. Full twelve-pair recovery
+matrix `ur-final4/` is now running, with independent normal/narrow pixel and
+closed-receipt audits assigned. Do not attribute prior native gates to this hash.

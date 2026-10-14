@@ -5,6 +5,7 @@ use super::common::{credentials, persist_workspace};
 use super::session::refresh_media;
 use crate::state::MainView;
 use crate::state::ShellState;
+mod activity_read_guard;
 
 pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
     show_profile(&mut state.write(), user.clone());
@@ -299,35 +300,50 @@ fn visit_profile_field_strings(value: &serde_json::Value, visit: &mut impl FnMut
 /// The local clear is optimistic: a failed call leaves the item read only until
 /// the next feed fetch, which is the same self-healing Slack relies on.
 pub async fn mark_activity_read(mut state: Signal<ShellState>, key: String) {
-    let target = {
+    let (target, reservation) = {
         let mut shell = state.write();
+        let Some(reservation) = crate::read_shortcuts::bulk::begin_individual(&mut shell) else {
+            return;
+        };
         let Some(target) = crate::realtime::activity_counts::mark_item_read(&mut shell.core, &key)
+        else {
+            crate::read_shortcuts::bulk::end_individual(&mut shell, reservation);
+            return;
+        };
+        (target, reservation)
+    };
+    let _reservation = activity_read_guard::Reservation {
+        state,
+        id: reservation,
+    };
+    // Keep an individual mark admitted before Clear/Undo visible until its
+    // request completes. The inverse admission guard blocks a new optimistic
+    // Activity clear while the workspace-wide mutation/readback is pending.
+    async {
+        if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+            return;
+        }
+        let Some((transport, client, workspaces)) = credentials(&state) else {
+            return;
+        };
+        let Some(team) = state.read().core.active_team.clone() else {
+            return;
+        };
+        let Some(workspace_session) = workspaces
+            .into_iter()
+            .find(|workspace| workspace.team_id == team)
         else {
             return;
         };
-        target
-    };
-    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
-        return;
+        let (kind, feed_ts) = target;
+        if let Err(error) =
+            api::mark_activity_read(&transport, &client, &workspace_session, kind, feed_ts, key)
+                .await
+        {
+            eprintln!("super-platinum: activity mark read failed: {error}");
+        }
     }
-    let Some((transport, client, workspaces)) = credentials(&state) else {
-        return;
-    };
-    let Some(team) = state.read().core.active_team.clone() else {
-        return;
-    };
-    let Some(workspace_session) = workspaces
-        .into_iter()
-        .find(|workspace| workspace.team_id == team)
-    else {
-        return;
-    };
-    let (kind, feed_ts) = target;
-    if let Err(error) =
-        api::mark_activity_read(&transport, &client, &workspace_session, kind, feed_ts, key).await
-    {
-        eprintln!("super-platinum: activity mark read failed: {error}");
-    }
+    .await;
 }
 
 pub async fn load_more_dms(mut state: Signal<ShellState>) {

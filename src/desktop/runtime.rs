@@ -31,6 +31,8 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         changed |= crate::profile_title::poll(&mut shell);
         changed |= crate::channel_mute::poll(&mut shell);
         changed |= crate::notification_schedule::poll(&mut shell);
+        changed |= crate::read_preferences::settings::poll(&mut shell);
+        changed |= crate::read_shortcuts::bulk::poll(&mut shell);
         changed |= crate::presentation_notifications::poll(&mut shell);
         changed |= crate::global_notifications::poll(&mut shell);
         changed |= crate::slack_lists::poll(&mut shell);

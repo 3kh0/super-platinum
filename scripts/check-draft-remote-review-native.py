@@ -7,6 +7,7 @@ Windows pointer and geometry checks are sampled, not an atomic capture guarantee
 import argparse
 from contextlib import ExitStack
 import json
+import math
 import os
 from pathlib import Path
 import runpy
@@ -37,6 +38,53 @@ SUFFIX = " \u2014 \u65e5\u672c\u8a9e \U0001f680 e\u0301"
 BEFORE, AFTER, NEWER, ALTERNATE, BLOCKED = (s + SUFFIX for s in
     ("Current local", "Latest Slack", "Newer typing", "Saved alternate", "Preserved local"))
 REQUESTS = dict(zip(SCENARIOS, (1, 1, 3, 2, 2, 1)))
+
+
+def validate_review_geometry(review, viewport):
+    if (not isinstance(viewport, list) or len(viewport) != 2
+            or any(type(value) not in (int, float) or not math.isfinite(value) or value <= 0 for value in viewport)):
+        raise RuntimeError("Missing review viewport geometry")
+
+    def rectangle(value):
+        keys = ("left", "top", "right", "bottom", "width", "height")
+        if (not isinstance(value, dict) or any(type(value.get(key)) not in (int, float)
+                or not math.isfinite(value[key]) for key in keys)
+                or value["width"] <= 0 or value["height"] <= 0
+                or abs(value["right"] - value["left"] - value["width"]) > 1
+                or abs(value["bottom"] - value["top"] - value["height"]) > 1):
+            raise RuntimeError("Invalid review rectangle")
+        return value
+
+    def shell(value):
+        if not isinstance(value, dict):
+            raise RuntimeError("Missing review shell geometry")
+        header, footer, pane = (rectangle(value.get(key)) for key in ("header", "footer", "pane"))
+        if (header["top"] < max(0, pane["top"]) - 1
+                or header["bottom"] > min(viewport[1], pane["bottom"]) + 1
+                or footer["top"] < header["bottom"] - 1
+                or footer["bottom"] > min(viewport[1], pane["bottom"]) + 1):
+            raise RuntimeError("Review hides a conversation header or footer")
+        return footer
+
+    shell(review.get("shell"))
+    for row in review.get("readableRows", []):
+        bounds, panel, footer = rectangle(row.get("rect")), rectangle(row.get("panel")), shell(row.get("shell"))
+        if (bounds["top"] < max(0, panel["top"], footer["top"]) - 1
+                or bounds["bottom"] > min(viewport[1], panel["bottom"], footer["bottom"]) + 1):
+            raise RuntimeError("An inventory row was not completely readable")
+    completion = review.get("completion", {})
+    if (completion.get("syntheticCompletionGeometry") is not True
+            or completion.get("prePostStateEqual") is not True
+            or len(completion.get("samples", [])) != 2):
+        raise RuntimeError("Missing restored synthetic completion geometry proof")
+    for sample in completion["samples"]:
+        popup, row, footer = rectangle(sample.get("popup")), rectangle(sample.get("row")), shell(sample.get("shell"))
+        center = (row["top"] + row["bottom"]) / 2
+        if (sample.get("hitVisible") is not True
+                or popup["top"] < max(0, footer["top"]) - 1
+                or popup["bottom"] > min(viewport[1], footer["bottom"]) + 1
+                or center < popup["top"] or center > popup["bottom"]):
+            raise RuntimeError("Review clipped a completion option")
 
 
 def stages(scenario, phase):
@@ -183,6 +231,7 @@ def validate(fixture, scenario, phase, nonce, pid, database, receipt):
         for index, readable in enumerate(review["readableRows"]):
             if readable.get("ok") is not True or readable.get("index") != index:
                 raise RuntimeError("Wrong readable inventory row")
+        validate_review_geometry(review, receipt.get("viewport"))
         if scenario in ("typing-during-read-channel", "typing-during-commit-thread", "changed-thread"):
             preserved = result.get("preservedBeforeChoice", {}).get(target, {})
             if not any(a.get("local", {}).get("composer", {}).get("text") == NEWER for a in preserved.get("alternates", [])):

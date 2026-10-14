@@ -3,10 +3,83 @@ use crate::media::MediaRegistry;
 use super_platinum_core::drafts::{
     codec,
     store::sync::BlockedLocal,
-    sync::{ConsumeKind, DraftSync, Scope},
+    sync::{ConsumeKind, DraftSync, RemoteDraft, Scope},
 };
 
 const ACCOUNT: &str = "00000000-0000-4000-8000-000000000091";
+
+#[test]
+fn uncertain_update_has_its_own_recovery_row_while_local_text_remains_present() {
+    let mut shell = shell();
+    let scope = Scope {
+        account_id: ACCOUNT.into(),
+        key: key(),
+    };
+    let remote = RemoteDraft {
+        scope: scope.clone(),
+        id: "Dr1".into(),
+        client_msg_id: "00000000-0000-4000-8000-000000000092".into(),
+        last_updated_ts: "100.000001".into(),
+        snapshot: codec::encode(&key(), "Before").unwrap(),
+    };
+    let mut state = DraftSync::adopt_remote(&scope, remote).unwrap();
+    state.edit(
+        &scope,
+        Some(codec::encode(&key(), "Frozen update").unwrap()),
+    );
+    let op = state.begin_operation(&scope).unwrap();
+    state.mark_uncertain(&scope, &op.id);
+    let mut saved = loaded(Stored { revision: 4, state });
+    saved.local.push((
+        key(),
+        LocalDraft {
+            composer: super_platinum_core::ComposerState::with_text("Frozen update"),
+            attachments: vec![],
+        },
+    ));
+    shell.managed_drafts.accept(ACCOUNT, 17, saved);
+    let rows = recovery_rows(&shell);
+    assert_eq!(rows.iter().filter(|row| row.kind == "update").count(), 1);
+    assert_eq!(
+        codec::decode(
+            &key(),
+            rows.iter()
+                .find(|row| row.kind == "update")
+                .unwrap()
+                .snapshot
+                .as_ref()
+                .unwrap()
+        )
+        .unwrap()
+        .composer()
+        .text,
+        "Frozen update"
+    );
+    assert_eq!(
+        shell
+            .managed_drafts
+            .entry(ACCOUNT, &key())
+            .unwrap()
+            .local
+            .composer
+            .text,
+        "Frozen update"
+    );
+}
+
+#[test]
+fn projection_identity_requires_same_optional_writer_in_both_directions() {
+    let original = Arc::new(());
+    let replacement = Arc::new(());
+    assert!(same_transport::<()>(&None, &None));
+    assert!(same_transport(
+        &Some(original.clone()),
+        &Some(original.clone())
+    ));
+    assert!(!same_transport(&None, &Some(original.clone())));
+    assert!(!same_transport(&Some(original.clone()), &None));
+    assert!(!same_transport(&Some(original), &Some(replacement)));
+}
 fn key() -> DraftKey {
     DraftKey {
         team: "T1".into(),

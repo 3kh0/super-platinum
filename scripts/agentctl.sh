@@ -53,7 +53,7 @@ Commands:
   select-workspace <team_id>
   search <query>
   clear-search
-  open-settings [appearance|notifications|storage]
+  open-settings [appearance|notifications|reading|storage]
   main-view <home|unreads|threads|dms|activity|later|files|scheduled>   Switch main surface
   activity-select <index>         Open activity item in right panel
   close-settings
@@ -158,12 +158,12 @@ case "$cmd" in
     JSON=$(printf '{"id":%s,"cmd":"clear-search"}' "$REQ_ID")
     ;;
   open-settings)
-    [[ $# -le 1 ]] || { echo "usage: agentctl.sh open-settings [appearance|notifications|storage]" >&2; exit 2; }
+    [[ $# -le 1 ]] || { echo "usage: agentctl.sh open-settings [appearance|notifications|reading|storage]" >&2; exit 2; }
     if [[ $# -eq 0 ]]; then
       JSON=$(printf '{"id":%s,"cmd":"open-settings"}' "$REQ_ID")
     else
       case "$1" in
-        appearance|notifications|storage) ;;
+        appearance|notifications|reading|storage) ;;
         *) echo "invalid settings section: $1" >&2; exit 2 ;;
       esac
       JSON=$(printf '{"id":%s,"cmd":"open-settings","section":"%s"}' "$REQ_ID" "$1")

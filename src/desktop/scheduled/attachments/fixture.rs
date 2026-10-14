@@ -166,21 +166,14 @@ impl State {
         }
         Err(Error::Offline("Synthetic preflight hold expired".into()))
     }
-    pub fn rotate(&self, mut shell: Signal<ShellState>) -> Result<(), String> {
+    pub fn rotate(&self, shell: Signal<ShellState>) -> Result<(), String> {
         if !self.admits(&shell.peek()) {
             return Err("Cannot rotate foreign fixture".into());
         }
+        // Rotate request credentials independently of account navigation. An
+        // epoch change remounts ScheduledPanel and correctly cancels an unsent
+        // editor; the owner-switch case exercises that separate boundary itself.
         self.generation.fetch_add(1, Ordering::SeqCst);
-        let mut s = shell.write();
-        s.core.account_epoch += 1;
-        let epoch = s.core.account_epoch;
-        s.core.scheduled.ensure_scope(epoch, "T1");
-        for raw in self.server.lock().unwrap().values() {
-            s.core
-                .scheduled
-                .accept_remote(serde_json::from_value(raw.clone()).unwrap());
-        }
-        s.core.scheduled.filter = super_platinum_core::scheduled::DraftFilter::Scheduled;
         Ok(())
     }
     pub fn server(&self) -> Value {

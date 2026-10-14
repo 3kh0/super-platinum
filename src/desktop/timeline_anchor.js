@@ -108,6 +108,7 @@
     if (event.type === 'keydown' &&
         (!['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key) ||
          event.target.closest('input,textarea,[contenteditable="true"]'))) return;
+    if (event.type === 'keydown' && service === 'superPlatinumTimelineAnchor') inputGeneration++;
     // User scrolling outranks a correction queued by a background update.
     if (!inputFrame) inputFrame = requestAnimationFrame(() => {inputFrame = 0; capture();});
   }

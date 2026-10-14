@@ -10,6 +10,8 @@ mod observation;
 pub(crate) use observation::ProjectionBarrier;
 #[path = "checkpoint_projection.rs"]
 mod projection;
+#[path = "checkpoint_recovery.rs"]
+mod recovery;
 pub(crate) use projection::{PreservedAlternate, ProjectionTicket};
 #[path = "checkpoint_remote.rs"]
 mod remote;

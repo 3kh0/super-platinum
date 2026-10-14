@@ -483,6 +483,12 @@ pub(crate) fn apply_in_view(
                 workspace.locale = value.as_str().map(str::to_owned);
             }
             workspace.notifications.apply_change(&name, value.clone());
+            workspace
+                .read_preferences
+                .apply_change(&name, value.clone());
+            workspace
+                .clear_unreads_preference
+                .apply_change(&name, value.clone());
             // Sidebar and notifications share the same mute preference.
             if name == "all_notifications_prefs" {
                 workspace.sidebar.sync_notification_mutes(

@@ -60,7 +60,7 @@ pub(super) fn RecoveryRows(state: Signal<ShellState>) -> Element {
                             crate::blocks::mrkdwn_blocks(ctx,&local.composer.text)
                         } else {vec![]}
                     }).unwrap_or_default();
-                    let pending = (row.kind == "delivery").then(|| shell.core.active_account.as_ref().and_then(|account| shell.managed_drafts.entry(account, &row.key)).and_then(recovery::operation)).flatten();
+                    let pending = matches!(row.kind,"delivery"|"update").then(|| shell.core.active_account.as_ref().and_then(|account| shell.managed_drafts.entry(account, &row.key)).and_then(recovery::operation)).flatten().filter(|op| matches!((row.kind,op.kind),("update",super_platinum_core::drafts::sync::OperationKind::Update)|("delivery",super_platinum_core::drafts::sync::OperationKind::Send)));
                     let rejected = (row.kind == "delivery").then(|| shell.core.active_account.as_ref().and_then(|account| shell.managed_drafts.entry(account, &row.key)).and_then(|view| recovery::rejected(view).zip(view.stored.as_ref().map(|stored| stored.revision)))).flatten();
                     let local_revision = (row.kind == "local").then(|| shell.core.active_account.as_ref().and_then(|account| shell.managed_drafts.entry(account, &row.key)).and_then(|view| view.stored.as_ref()).map(|stored| stored.revision)).flatten();
                     let files=row.snapshot.as_ref().map(|snapshot|snapshot.file_ids.len()).or_else(||row.local.as_ref().map(|local|local.attachments.len())).unwrap_or(0);
@@ -95,16 +95,28 @@ pub(super) fn RecoveryRows(state: Signal<ShellState>) -> Element {
 fn DeliveryCheck(state: Signal<ShellState>, operation: Operation) -> Element {
     let mut busy = use_signal(|| false);
     let mut feedback = use_signal(|| None::<&'static str>);
+    let update = operation.kind == super_platinum_core::drafts::sync::OperationKind::Update;
+    let operation_id = operation.id.clone();
     rsx! {
-        div { class:"scheduled-actions",
+        div { class:"scheduled-actions","data-draft-operation":operation_id,"data-draft-operation-kind":if update{"update"}else{"send"},
             button { disabled:busy(), onclick:move |_| {
                 if busy() { return; }
                 busy.set(true);
                 feedback.set(None);
                 let operation = operation.clone();
                 dioxus::core::spawn_forever(async move {
-                    let message = match recovery::check(state, operation).await {
+                    let message = match recovery::check(state, operation, move |message| {
+                        if let Ok(mut value) = feedback.try_write() {
+                            *value = Some(message);
+                            true
+                        } else {
+                            false
+                        }
+                    }).await {
                         Ok(message) => message,
+                        Err(recovery::CheckError::Pending)=>"A previous status check is unresolved. It will not be repeated; the saved draft and current text are retained.",
+                        Err(recovery::CheckError::Cooldown(_)) if update=>"Please wait before checking the update again. The saved cooldown is still active.",
+                        Err(_) if update=>"Update status could not be saved. Check update is paused until storage is available; nothing was written again.",
                         Err(recovery::CheckError::Cooldown(_)) => "Please wait before checking delivery again. The saved cooldown is still active.",
                         Err(recovery::CheckError::Fault(crate::drafts::Fault::Unsupported)) => "Connect to Slack before checking delivery.",
                         Err(recovery::CheckError::Fault(crate::drafts::Fault::Stale)) => "Saved delivery state changed. Refresh Drafts to review it.",
@@ -113,7 +125,7 @@ fn DeliveryCheck(state: Signal<ShellState>, operation: Operation) -> Element {
                     if let Ok(mut value) = feedback.try_write() { *value = Some(message); }
                     if let Ok(mut value) = busy.try_write() { *value = false; }
                 });
-            }, if busy() { "Checking…" } else { "Check delivery" } }
+            }, if busy() { "Checking…" } else if update {"Check update"} else { "Check delivery" } }
         }
         if let Some(message) = feedback() { p {class:"scheduled-hint",role:"status","{message}"} }
     }

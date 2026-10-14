@@ -6,15 +6,13 @@ use crate::state::ShellState;
 
 impl ShellState {
     pub(crate) fn reading_latest(&self, focused: bool) -> bool {
-        focused
-            && self.transcript_visible()
-            && self.stick_to_bottom
-            && self.core.pending_scroll_to.is_none()
-            && !crate::unread::blocks_auto_read(self)
+        crate::read_preferences::renderer::can_read(self, focused, false)
     }
 
     pub(crate) fn reading_thread(&self, focused: bool, channel: &str, root: &str) -> bool {
         focused
+            && !crate::read_shortcuts::busy_thread(self)
+            && !crate::read_shortcuts::bulk::blocks_reads(self)
             && self.detail_open()
             && self.core.active_channel.as_deref() == Some(channel)
             && self.thread_root.as_deref() == Some(root)
@@ -68,13 +66,24 @@ mod tests {
     #[test]
     fn incoming_messages_require_focus_and_a_settled_latest_transcript() {
         let mut shell = ShellState::fixture(MediaRegistry::default());
+        shell.core.active_account = Some("isolated-read-test".into());
         shell.core.pending_scroll_to = None;
         shell.stick_to_bottom = true;
+        let team = shell.core.active_team.clone().unwrap();
+        let channel = shell.core.active_channel.clone().unwrap();
+        let last_read = shell.core.workspaces[&team].messages[&channel]
+            .last_read
+            .clone()
+            .unwrap();
+        shell.unread_anchor = Some((channel, last_read));
+        crate::read_preferences::renderer::record_fixture_observation(&mut shell, true, true);
         assert!(shell.reading_latest(true));
         assert!(!shell.reading_latest(false));
         shell.stick_to_bottom = false;
+        crate::read_preferences::renderer::record_fixture_observation(&mut shell, false, false);
         assert!(!shell.reading_latest(true));
         shell.stick_to_bottom = true;
+        crate::read_preferences::renderer::record_fixture_observation(&mut shell, true, true);
         shell.core.pending_scroll_to = Some((
             "C1".into(),
             super_platinum_core::domain::PendingScrollTarget::Latest,

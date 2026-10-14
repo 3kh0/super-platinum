@@ -31,6 +31,8 @@ impl WorkspaceSnapshot {
         workspace.deleted_files = source.deleted_files.clone();
         workspace.thread_counts = source.thread_counts.clone();
         workspace.notifications = source.notifications.clone();
+        workspace.read_preferences = source.read_preferences.clone();
+        workspace.clear_unreads_preference = source.clear_unreads_preference.clone();
         workspace.sidebar = source.sidebar.clone();
         workspace.vip_users = source.vip_users.clone();
         workspace.priority_sidebar_section = source.priority_sidebar_section;
