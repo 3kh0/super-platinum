@@ -7,6 +7,7 @@ pub(crate) mod date;
 #[cfg(test)]
 mod date_tests;
 pub(crate) mod display;
+pub(crate) mod external;
 pub(crate) mod multi;
 #[cfg(test)]
 mod radio_tests;
@@ -52,6 +53,7 @@ pub(super) struct Entry {
     revision: u64,
     controls: BTreeMap<InputKey, BlockElementMetadata>,
     channel_choices: channels::Proofs,
+    external_proofs: BTreeMap<InputKey, external::Catalog>,
 }
 pub(super) type Cache = BTreeMap<ContainerKey, Entry>;
 const MAX_CONTAINERS: usize = 256;
@@ -59,9 +61,6 @@ const UNAVAILABLE: &str = "This app control is unavailable or has changed";
 
 fn candidate(shell: &ShellState, source: &Source) -> Result<Entry, &'static str> {
     if let Some(reason) = channel::unavailable(shell, source) {
-        return Err(reason);
-    }
-    if let Some(reason) = conversations::unavailable(shell, source) {
         return Err(reason);
     }
     let message = source.message(shell).map_err(|_| UNAVAILABLE)?;
@@ -89,6 +88,7 @@ fn candidate(shell: &ShellState, source: &Source) -> Result<Entry, &'static str>
                 revision: next_id(),
                 controls: BTreeMap::new(),
                 channel_choices: BTreeMap::new(),
+                external_proofs: BTreeMap::new(),
             }
         };
     // Cache canonical eligibility without constructing action snapshots. Current
@@ -99,6 +99,12 @@ fn candidate(shell: &ShellState, source: &Source) -> Result<Entry, &'static str>
         .iter()
         .filter_map(|(key, field)| {
             let metadata = match &field.kind {
+                InputKind::MultiExternalSelect { .. } => {
+                    source.external_options_metadata(shell, &key.block_id, &key.action_id)
+                }
+                InputKind::ExternalSelect { .. } => {
+                    source.external_metadata(shell, &key.block_id, &key.action_id)
+                }
                 InputKind::MultiConversation { .. } => {
                     source.conversations_metadata(shell, &key.block_id, &key.action_id)
                 }
@@ -128,6 +134,14 @@ fn candidate(shell: &ShellState, source: &Source) -> Result<Entry, &'static str>
             metadata.ok().map(|metadata| (key.clone(), metadata))
         })
         .collect();
+    entry.external_proofs.retain(|key, _| {
+        entry.model.fields.get(key).is_some_and(|field| {
+            matches!(
+                field.kind,
+                InputKind::ExternalSelect { .. } | InputKind::MultiExternalSelect { .. }
+            )
+        })
+    });
     Ok(entry)
 }
 pub(super) fn supported(shell: &ShellState, source: &Source) -> bool {
@@ -399,7 +413,30 @@ pub(super) fn prepare(
     }
     let current = captured.revalidate(shell).map_err(|_| UNAVAILABLE)?;
     let mut entry = candidate(shell, captured.source())?;
-    if let Some((selected, proofs)) = captured.selected_conversations() {
+    if let Some(selected) = captured.selected_external_options() {
+        let key = field_key(captured.metadata()).ok_or(UNAVAILABLE)?;
+        let selected = selected
+            .iter()
+            .map(super_platinum_core::block_actions::external::ExternalOption::parse)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| UNAVAILABLE)?;
+        entry
+            .model
+            .commit_external_options(&key, &selected)
+            .map_err(|_| UNAVAILABLE)?;
+        entry.revision = next_id();
+    } else if let Some(selected) = captured.selected_external() {
+        let key = field_key(captured.metadata()).ok_or(UNAVAILABLE)?;
+        let selected = selected
+            .map(super_platinum_core::block_actions::external::ExternalOption::parse)
+            .transpose()
+            .map_err(|_| UNAVAILABLE)?;
+        entry
+            .model
+            .commit_external(&key, selected.as_ref())
+            .map_err(|_| UNAVAILABLE)?;
+        entry.revision = next_id();
+    } else if let Some((selected, proofs)) = captured.selected_conversations() {
         let key = field_key(captured.metadata()).ok_or(UNAVAILABLE)?;
         entry
             .model
@@ -451,6 +488,7 @@ pub(super) fn prepare(
     } else {
         entry.model.initialize();
     }
+    external::validate_entry(shell, &entry)?;
     let values = entry.model.values().map_err(|_| UNAVAILABLE)?;
     let request = current
         .prepare(
@@ -484,6 +522,16 @@ pub(super) fn prepare(
     }
     if let Some((selected, _)) = captured.selected_conversations() {
         if !captured.commit_display_users(&selected) {
+            return Err(UNAVAILABLE);
+        }
+    }
+    if let Some(selected) = captured.selected_external() {
+        if !captured.commit_display_external(selected) {
+            return Err(UNAVAILABLE);
+        }
+    }
+    if let Some(selected) = captured.selected_external_options() {
+        if !captured.commit_display_multi(Some(selected)) {
             return Err(UNAVAILABLE);
         }
     }

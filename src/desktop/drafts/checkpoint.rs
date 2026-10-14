@@ -5,6 +5,12 @@ use super_platinum_core::drafts::sync::ConsumeKind;
 #[path = "checkpoint_poll.rs"]
 mod poll;
 pub(crate) use poll::Signature;
+#[path = "checkpoint_observation.rs"]
+mod observation;
+pub(crate) use observation::ProjectionBarrier;
+#[path = "checkpoint_projection.rs"]
+mod projection;
+pub(crate) use projection::{PreservedAlternate, ProjectionTicket};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Snapshot {
@@ -16,6 +22,8 @@ pub(crate) struct Snapshot {
     /// alternate may nevertheless hold it durably for explicit recovery.
     pub unsaved: bool,
     pub running: bool,
+    pub observing: bool,
+    pub projection: Option<Arc<ProjectionBarrier>>,
 }
 
 impl Snapshot {
@@ -26,7 +34,9 @@ impl Snapshot {
             pending: state.pending.as_ref().map(|(_, local)| local.clone()),
             error: state.error,
             unsaved: state.pending.is_some(),
-            running: state.running || state.settling,
+            running: state.running || state.settling || state.observing,
+            observing: state.observing,
+            projection: state.projection.clone(),
         }
     }
 }
@@ -37,6 +47,8 @@ struct State {
     serial: u64,
     running: bool,
     settling: bool,
+    observing: bool,
+    projection: Option<Arc<ProjectionBarrier>>,
     return_handoff: Option<(u64, u64)>,
     error: Option<Fault>,
     direct_local: Option<super_platinum_core::drafts::sync::ConsumeIntent>,
@@ -76,6 +88,8 @@ impl Editor {
                 serial: 0,
                 running: false,
                 settling: false,
+                observing: false,
+                projection: None,
                 return_handoff: None,
                 error,
             }),
@@ -98,18 +112,28 @@ impl Editor {
     pub fn submit(self: &Arc<Self>, local: LocalDraft) {
         let start = {
             let mut state = self.state.lock().unwrap();
-            state.serial = state
-                .serial
-                .checked_add(1)
-                .expect("editor revision exhausted");
-            state.pending = Some((state.serial, local.clone()));
-            if state.released && !state.settling {
-                self.enqueue_released(&mut state, local);
-            }
-            let start = !state.running;
-            state.running = true;
-            start
+            self.enqueue_locked(&mut state, local).1
         };
+        self.start_runner(start);
+    }
+
+    // Ordinary typing does not allocate a preservation-proof payload. The
+    // explicit projection path retains its own exact submission separately.
+    fn enqueue_locked(&self, state: &mut State, local: LocalDraft) -> (u64, bool) {
+        state.serial = state
+            .serial
+            .checked_add(1)
+            .expect("editor revision exhausted");
+        state.pending = Some((state.serial, local.clone()));
+        if state.released && !state.settling {
+            self.enqueue_released(state, local);
+        }
+        let start = !state.running;
+        state.running = true;
+        (state.serial, start)
+    }
+
+    fn start_runner(self: &Arc<Self>, start: bool) {
         if start {
             let editor = self.clone();
             self.runtime.spawn(async move {
@@ -198,6 +222,11 @@ impl Editor {
     /// Only receipt/control changes with unchanged paired local content and
     /// local revision may advance this editor's storage revision.
     async fn rebased(&self) -> Result<View, Fault> {
+        // flush() may have completed before an observation acquired our gate.
+        // Recheck here so consume/release cannot cross its later handoff.
+        if self.state.lock().unwrap().projection.is_some() {
+            return Err(Fault::Stale);
+        }
         let current = self.owner.load().await?;
         let base = self.state.lock().unwrap().base.clone();
         let previous = base.stored.as_ref().ok_or(Fault::Unmanaged)?;
@@ -250,7 +279,7 @@ impl Editor {
             changed.as_mut().enable();
             {
                 let state = self.state.lock().unwrap();
-                if !state.running && !state.settling {
+                if !state.running && !state.settling && !state.observing {
                     return state.error.map_or_else(|| Ok(state.base.clone()), Err);
                 }
             }

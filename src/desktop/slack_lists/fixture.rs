@@ -5,6 +5,7 @@ use super_platinum_core::{
     config::WorkspaceSession,
     slack::{api, client::RequestBody},
 };
+pub(crate) mod board_creation;
 mod board_views;
 mod channel_edit;
 mod creation;
@@ -35,6 +36,7 @@ pub(crate) use user_edit::{add_user_edits, restore_user_edits, user_edit_value};
 
 #[derive(Clone)]
 pub(crate) struct Fixture {
+    board_creation: board_creation::State,
     record_open: record_open::State,
     creation: creation::State,
     document: Value,
@@ -104,6 +106,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     }).collect::<Vec<_>>();
     let file: File = serde_json::from_value(document.clone()).expect("fixture file");
     shell.slack_lists.fixture = Some(Fixture {
+        board_creation: board_creation::State::default(),
         record_open: record_open::State::default(),
         creation: creation::State::default(),
         document,

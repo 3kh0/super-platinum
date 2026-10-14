@@ -2,6 +2,7 @@
 //! A lost response cannot identify an indistinguishable blank row: never replay.
 use super::*;
 use super_platinum_core::slack_lists::{CreationIntent, ListClock, ListTimestamp, Record};
+pub(crate) mod board;
 pub(crate) mod duplicate;
 mod network;
 #[cfg(test)]
@@ -24,6 +25,7 @@ pub(super) struct Attempt {
     selection: u64,
     selected: Option<String>,
     origin: Option<duplicate::Origin>,
+    board: Option<board::Origin>,
     pub intent: CreationIntent,
     pub timestamp: ListTimestamp,
 }
@@ -238,6 +240,7 @@ fn reserve(
         selection: view.layout.selection_generation,
         selected: view.layout.selected.clone(),
         origin,
+        board: None,
         intent,
         timestamp,
     };
@@ -269,6 +272,10 @@ impl Attempt {
     pub(super) fn current(&self, shell: &ShellState) -> bool {
         self.owns(shell)
             && self.scope.current(shell)
+            && self
+                .board
+                .as_ref()
+                .is_none_or(|origin| origin.current(shell, &self.intent))
             && shell.overlay == Some(Overlay::SlackList)
             && shell.slack_lists.view.as_ref().is_some_and(|view| {
                 view.id == self.intent.list_id()

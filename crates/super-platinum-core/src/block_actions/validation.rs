@@ -12,9 +12,10 @@ pub use channel::{CapturedMessageChannel, CurrentMessageChannel};
 mod conversation;
 mod extended;
 pub use extended::{
-    CapturedMessageChannels, CapturedMessageConversations, CapturedMessageOverflow,
-    CapturedMessageUsers, CurrentMessageChannels, CurrentMessageConversations,
-    CurrentMessageOverflow, CurrentMessageUsers,
+    CapturedMessageChannels, CapturedMessageConversations, CapturedMessageExternal,
+    CapturedMessageExternalOptions, CapturedMessageOverflow, CapturedMessageUsers,
+    CurrentMessageChannels, CurrentMessageConversations, CurrentMessageExternal,
+    CurrentMessageExternalOptions, CurrentMessageOverflow, CurrentMessageUsers,
 };
 mod time;
 mod user;

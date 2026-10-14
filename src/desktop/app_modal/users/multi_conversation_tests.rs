@@ -129,6 +129,45 @@ fn multi_conversation_origin_true_is_unsupported_and_never_defaults_from_modal_o
     assert!(requests::prepare_submission(&s).is_err());
     assert_eq!(s.app_modal.as_ref().unwrap().fixture_attempts, 0);
 }
+
+#[test]
+fn accepted_origin_metadata_remains_authoritative_after_initial_chip_is_removed() {
+    let mut s = setup();
+    choose(&mut s, "reviewers", "C00000002");
+    let t = Ticket::capture(&s, &key("reviewers")).unwrap();
+    assert!(remove_local(&mut s, &t, "C00000006"));
+    assert!(requests::prepare_submission(&s).is_ok());
+    assert!(open_local(&mut s, t.clone()));
+    let p = s.app_modal.as_ref().unwrap().users.as_ref().unwrap();
+    let (serial, revision) = (p.serial, p.query_revision);
+    let archived: Channel = serde_json::from_value(json!({"id":"C00000006","name":"external-room","is_channel":true,"is_ext_shared":true,"is_archived":true,"updated":11})).unwrap();
+    assert!(!complete_entities(
+        &mut s,
+        serial,
+        revision + 1,
+        Ok((vec![], vec![archived.clone()]))
+    ));
+    assert!(requests::prepare_submission(&s).is_ok());
+    assert!(complete_entities(
+        &mut s,
+        serial,
+        revision,
+        Ok((vec![], vec![archived]))
+    ));
+    assert!(!t.current(&s));
+    assert!(Ticket::capture(&s, &key("reviewers")).is_none());
+    assert!(matches!(
+        requests::prepare_submission(&s),
+        Err(FormError::Unsupported(_))
+    ));
+    assert_eq!(
+        s.app_modal.as_ref().unwrap().current_form().unwrap().fields[&key("reviewers")].value,
+        InputValue::Conversations(vec!["C00000002".into()])
+    );
+    // Workspace metadata intentionally stayed old: retained accepted proof wins.
+    assert!(!s.core.workspaces["T1"].channels["C00000006"].is_archived);
+    assert_eq!(s.app_modal.as_ref().unwrap().fixture_attempts, 0);
+}
 #[test]
 fn per_field_filter_is_rechecked_for_all_selected_member_and_channel_records() {
     let mut s = setup();

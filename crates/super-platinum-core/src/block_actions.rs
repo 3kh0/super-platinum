@@ -2,6 +2,7 @@
 //!
 //! Preserving this data does not authorize or implement interaction dispatch.
 
+pub mod external;
 pub mod form;
 pub mod message_state;
 mod metadata;

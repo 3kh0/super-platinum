@@ -972,6 +972,9 @@ impl ShellState {
             | "thread-follow-pending"
             | "thread-follow-narrow" => crate::thread_subscription::fixture(&mut state, name),
             "thread-list-unread" => crate::thread_unread::list_fixture(&mut state),
+            "slack-list-board-add" | "slack-list-board-add-narrow" => {
+                crate::slack_lists::fixture::board_creation::install(&mut state, name)
+            }
             "slack-list"
             | "slack-list-narrow"
             | "slack-list-readonly"
@@ -1025,8 +1028,20 @@ impl ShellState {
             "app-modal-multi-conversation" | "app-modal-multi-conversation-narrow" => {
                 crate::app_modal::multi_conversation_fixture::install(&mut state);
             }
+            "message-external-select"
+            | "message-external-select-narrow"
+            | "app-modal-external-select"
+            | "app-modal-external-select-narrow" => {
+                crate::message_buttons::external_fixture::install(&mut state);
+            }
             "message-multi-conversations-select" | "message-multi-conversations-select-narrow" => {
                 crate::message_buttons::multi_conversation_fixture::install(&mut state);
+            }
+            "message-multi-external-select" | "message-multi-external-select-narrow" => {
+                crate::message_buttons::multi_external_fixture::install(&mut state);
+            }
+            "app-modal-multi-external-select" | "app-modal-multi-external-select-narrow" => {
+                crate::app_modal::multi_external_fixture::install(&mut state);
             }
             "app-modal-multi-channel" | "app-modal-multi-channel-narrow" => {
                 crate::app_modal::multi_channel_fixture::install(&mut state);
@@ -1097,6 +1112,9 @@ impl ShellState {
             }
             "rejected-thread-return" | "rejected-thread-return-narrow" => {
                 crate::drafts::rejected_thread_fixture::apply(&mut state)
+            }
+            "draft-native-projection" | "draft-native-projection-narrow" => {
+                crate::drafts::projection_fixture::apply(&mut state)
             }
             "send-outcomes" | "send-outcomes-narrow" | "send-outcomes-thread" => {
                 crate::messaging::send_outcomes_fixture(&mut state, name)

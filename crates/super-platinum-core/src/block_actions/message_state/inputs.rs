@@ -7,10 +7,10 @@ use super::{Message, MessageStateError, element, kind, stateful};
 use crate::block_actions::form::{
     FormField, InputKey, InputKind, InputValue, parse_message_channel, parse_message_channels,
     parse_message_conversation, parse_message_conversations, parse_message_date,
-    parse_message_multi, parse_message_radio, parse_message_static_select, parse_message_time,
-    parse_message_user, parse_message_users, validate_message_channel,
-    validate_message_conversation, validate_message_date, validate_message_time,
-    validate_message_user,
+    parse_message_external, parse_message_external_options, parse_message_multi,
+    parse_message_radio, parse_message_static_select, parse_message_time, parse_message_user,
+    parse_message_users, validate_message_channel, validate_message_conversation,
+    validate_message_date, validate_message_time, validate_message_user,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -87,6 +87,8 @@ impl MessageInputs {
                         | "multi_conversations_select"
                         | "conversations_select"
                         | "channels_select"
+                        | "external_select"
+                        | "multi_external_select"
                 ) {
                     element(control)?;
                     continue;
@@ -98,6 +100,8 @@ impl MessageInputs {
                     action_id: action_id.ok_or(MessageStateError::MalformedStructure)?,
                 };
                 let field = match control_kind {
+                    "external_select" => parse_message_external(control),
+                    "multi_external_select" => parse_message_external_options(control),
                     "datepicker" => parse_message_date(control),
                     "conversations_select" => parse_message_conversation(control),
                     "channels_select" => parse_message_channel(control),
@@ -130,7 +134,10 @@ impl MessageInputs {
                     result.fields.insert(key, field);
                     continue;
                 }
-                let multiple = matches!(control_kind, "checkboxes" | "multi_static_select");
+                let multiple = matches!(
+                    control_kind,
+                    "checkboxes" | "multi_static_select" | "multi_external_select"
+                );
                 if let Some(option) = control
                     .get(if control_kind == "channels_select" {
                         "initial_channel"
@@ -446,6 +453,43 @@ impl MessageInputs {
             };
             field.dirty = old.dirty;
             field.revision = old.revision;
+            if matches!(field.kind, InputKind::MultiExternalSelect { .. })
+                || matches!(old.kind, InputKind::MultiExternalSelect { .. })
+            {
+                // Outer JQ84 trigger resets on every initial change, including
+                // null/removal; committed arrays remain independently retained.
+                if old.raw.get("type") == field.raw.get("type") {
+                    if old.raw.get("initial_options") == field.raw.get("initial_options") {
+                        field.value = old.value.clone();
+                    } else {
+                        field.revision = old.revision.wrapping_add(1);
+                    }
+                } else {
+                    field.revision = old.revision.wrapping_add(1);
+                }
+                continue;
+            }
+            if matches!(field.kind, InputKind::ExternalSelect { .. })
+                || matches!(old.kind, InputKind::ExternalSelect { .. })
+            {
+                if old.raw.get("type") == field.raw.get("type") {
+                    if old.raw.get("initial_option") == field.raw.get("initial_option") {
+                        field.value = old.value.clone();
+                    } else {
+                        field.revision = old.revision.wrapping_add(1);
+                    }
+                } else {
+                    // iGIl coalesces incoming null; only a saved object overrides initial.
+                    if matches!(field.kind, InputKind::ExternalSelect { .. }) {
+                        if let Some(Some(saved)) = self.saved_external(key) {
+                            field.value = InputValue::External(Some(saved));
+                        }
+                    }
+                    field.revision = old.revision.wrapping_add(1);
+                }
+                continue;
+            }
+
             if matches!(
                 field.kind,
                 InputKind::Channel
@@ -750,6 +794,8 @@ fn scan_owned(
                             | "multi_conversations_select"
                             | "conversations_select"
                             | "channels_select"
+                            | "external_select"
+                            | "multi_external_select"
                     ))
             {
                 return Err(MessageStateError::StatefulControl);
@@ -794,3 +840,6 @@ mod users;
 mod channels;
 
 mod conversations;
+
+mod external;
+mod external_options;

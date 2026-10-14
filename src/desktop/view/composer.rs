@@ -4,6 +4,10 @@ use super_platinum_core::FormatMark;
 use super::rich::attachment_chip;
 use crate::state::{ComposerTarget, ShellState};
 
+mod field;
+pub(crate) mod projection;
+pub(crate) use projection::RendererApplied;
+
 // Dioxus's implicit `.*` filter is passed as a literal extension on macOS.
 // Calling the native dialog without a filter accepts all ordinary file types.
 async fn choose_attachments(mut state: Signal<ShellState>, target: ComposerTarget) {
@@ -169,7 +173,7 @@ pub(crate) fn focus_field_when_mounted(id: &str) {
     ));
 }
 
-pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: &str) -> Element {
+pub(crate) fn composer(state: Signal<ShellState>, text: &str, channel_name: &str) -> Element {
     if let Some(reason) = state.read().composer_unavailable() {
         let channel = state.read().core.active_channel.clone().unwrap_or_default();
         return rsx! {footer{class:"composer-unavailable",p{role:"status","{reason}"}
@@ -186,8 +190,6 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
     } else {
         format!("Message #{channel_name}")
     };
-    let destination = state.read().composer_key(ComposerTarget::Channel);
-    let account = state.read().core.active_account.clone();
     let field_key = channel_field_scope(&state.read());
     let upload_epoch = state.read().upload_ui_epoch;
     let composer_attachments = state.read().core.composer_attachments.clone();
@@ -207,36 +209,9 @@ pub(crate) fn composer(mut state: Signal<ShellState>, text: &str, channel_name: 
                     onclick:move |_|{spawn(choose_attachments(state,ComposerTarget::Channel));},
                     {crate::icons::icon(crate::icons::Icon::Add, "icon sm")}
                 }
-                textarea {
-                    id: "channel-composer",
-                    "data-draft-scope": "{field_key}",
-                    initial_value: "{text}",
-                    placeholder: "{placeholder}",
-                    onmounted: move |_| mount_autosize("channel-composer"),
-                    oninput: move |event| {
-                        let value = event.value();
-                        let end = value.len();
-                        let mut state = state.write();
-                        if state.core.active_account != account || state.composer_key(ComposerTarget::Channel) != destination { return; }
-                        state.sync_composer_drafts();
-                        state.core.composer.text = value;
-                        state.core.composer.set_selection(end, end);
-                        state.checkpoint_composers();
-                        state.notify_typing();
-                        // Autosizing runs off the DOM's own `input` listener
-                        // registered at mount — one IPC round trip per keystroke
-                        // is exactly what makes typing feel gluey.
-                    },
-                    onkeydown: move |event| {
-                        if event.is_composing() { return; }
-                        if let Some(mark) = format_shortcut(&event) {
-                            event.prevent_default();
-                            spawn(format_composer_dom(state, ComposerTarget::Channel, mark));
-                        } else if event.key() == Key::Enter && !event.modifiers().shift() {
-                            event.prevent_default();
-                            spawn(crate::bootstrap::send_composer(state));
-                        }
-                    },
+                field::ComposerField {
+                    key: "{field_key}", state, target: ComposerTarget::Channel,
+                    scope: field_key.clone(), text: text.to_owned(), placeholder,
                 }
                 button {
                     class: "composer-icon-btn composer-send-btn",
@@ -259,8 +234,6 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
     if let Some(reason) = snapshot.composer_unavailable() {
         return rsx! {footer{class:"composer-unavailable",role:"status","{reason}"}};
     }
-    let destination = snapshot.composer_key(ComposerTarget::Thread);
-    let account = snapshot.core.active_account.clone();
     let field_key = field_scope(snapshot, ComposerTarget::Thread);
     let upload_epoch = snapshot.upload_ui_epoch;
     let broadcast_scope = field_key.clone();
@@ -283,32 +256,10 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
                     onclick:move |_|{spawn(choose_attachments(state,ComposerTarget::Thread));},
                     {crate::icons::icon(crate::icons::Icon::Add, "icon sm")}
                 }
-                textarea {
-                    id: "thread-composer",
-                    "data-draft-scope": "{field_key}",
-                    onmounted: move |_| mount_autosize("thread-composer"),
-                    initial_value: "{snapshot.core.thread_composer.text}",
-                    placeholder: "Reply…",
-                    oninput: move |event| {
-                        let value = event.value();
-                        let end = value.len();
-                        let mut shell = state.write();
-                        if shell.core.active_account != account || shell.composer_key(ComposerTarget::Thread) != destination { return; }
-                        shell.sync_composer_drafts();
-                        shell.core.thread_composer.text = value;
-                        shell.core.thread_composer.set_selection(end, end);
-                        shell.checkpoint_composers();
-                    },
-                    onkeydown: move |event| {
-                        if event.is_composing() { return; }
-                        if let Some(mark) = format_shortcut(&event) {
-                            event.prevent_default();
-                            spawn(format_composer_dom(state, ComposerTarget::Thread, mark));
-                        } else if event.key() == Key::Enter && !event.modifiers().shift() {
-                            event.prevent_default();
-                            spawn(crate::bootstrap::send_thread_composer(state));
-                        }
-                    }
+                field::ComposerField {
+                    key: "{field_key}", state, target: ComposerTarget::Thread,
+                    scope: field_key.clone(), text: snapshot.core.thread_composer.text.clone(),
+                    placeholder: "Reply…".to_owned(),
                 }
                 button {
                     class: "composer-icon-btn composer-send-btn",

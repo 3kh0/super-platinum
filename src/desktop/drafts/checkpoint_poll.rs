@@ -8,6 +8,8 @@ pub(crate) struct Signature {
     error: Option<Fault>,
     unsaved: bool,
     running: bool,
+    observing: bool,
+    projection: Option<String>,
     blocked: Option<String>,
 }
 impl From<&Snapshot> for Signature {
@@ -18,6 +20,11 @@ impl From<&Snapshot> for Signature {
             error: snapshot.error,
             unsaved: snapshot.unsaved,
             running: snapshot.running,
+            observing: snapshot.observing,
+            projection: snapshot
+                .projection
+                .as_ref()
+                .map(|barrier| barrier.id.clone()),
             blocked: snapshot
                 .view
                 .blocked
@@ -32,7 +39,10 @@ impl Signature {
             && self.revision == state.base.stored.as_ref().map(|stored| stored.revision)
             && self.error == state.error
             && self.unsaved == state.pending.is_some()
-            && self.running == (state.running || state.settling)
+            && self.running == (state.running || state.settling || state.observing)
+            && self.observing == state.observing
+            && self.projection.as_deref()
+                == state.projection.as_ref().map(|barrier| barrier.id.as_str())
             && self.blocked.as_deref()
                 == state
                     .base
@@ -50,6 +60,8 @@ impl Editor {
         let retire = state.base.stored.is_none()
             && !state.running
             && !state.settling
+            && !state.observing
+            && state.projection.is_none()
             && state.pending.is_none()
             && state.error.is_none();
         // Integration retires released, idle writers BEFORE signature equality.

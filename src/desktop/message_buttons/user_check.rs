@@ -6,8 +6,10 @@ use serde_json::{Value, json};
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     if !fixture::enabled()
-        || super::conversation_fixture::enabled()
-        || super::multi_user_fixture::enabled()
+        || !matches!(
+            std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
+            Ok("message-users-select" | "message-users-select-narrow")
+        )
     {
         return;
     }

@@ -20,6 +20,7 @@ are decoded JavaScript string character offsets, not compressed byte offsets.
 | `cxJV` 1750345 | Initial block state includes a supplied `initialConversations` array, including `[]`. |
 | `AM6q` 1754817 | Full-state projection uses `selected_conversations`; it adds no response URL flag for this control. |
 | `G9Gm` 1605531 | Props undergo generic camel-case conversion; this is not an origin-default resolver. |
+| `Te7m` 13137439 / stateful wrapper 13143176 | Legacy ordinary renderer passes props and saved state to the same `QjSI`; no viewed-origin resolver. |
 | `n9UX` 13254326 | Shared multi wrapper supplies required/maximum validation presentation. |
 | `fRHe` near 4200149 | Generic search defaults distinguish an explicit channel search object from the component's no-filter defaults. |
 
@@ -79,19 +80,64 @@ Malformed/unknown filter properties fail closed. This multi selector does not
 inherit the single `channels_select` Enterprise restriction. Unsupported
 team-restriction/Enterprise policy still needs an explicit desktop refusal.
 
-`default_to_current_conversation: true` remains explicitly unsupported in both
-ordinary and modal contexts. Absent or false flags are supported; malformed
-flags are rejected. The official multi-select rule gives the current
-conversation default precedence over the initial array, unlike the single
-selector's rule. The [Slack SDK type source](https://raw.githubusercontent.com/slackapi/node-slack-sdk/main/packages/types/src/block-kit/block-elements.ts)
+Ordinary messages accept an absent or boolean `default_to_current_conversation`.
+At the recovered renderer boundary, `true` does not synthesize an origin or
+replace supplied initials: `bgmB` only converts props and supplies saved state,
+`Te7m` also forwards props, and `QjSI` never reads the flag. Ordinary controls
+remain functional with saved-array, initial-array, then empty-array precedence.
+Malformed flags (including null) remain rejected. Missing, filtered or IM viewed
+context supplies no value and does not independently disable ordinary selection;
+current selection eligibility and message-owner guards still apply.
+
+Normal modal input blocks support a bounded documented default: a separately attested conversation actually viewed at action activation
+overrides `initial_conversations`. Absent/false flags keep the existing behavior;
+malformed flags are rejected. This precedence differs from the single selector.
+The [Slack SDK type source](https://raw.githubusercontent.com/slackapi/node-slack-sdk/main/packages/types/src/block-kit/block-elements.ts)
 also records this distinction.
 
-The recovered `QjSI` component receives an already resolved initial array.
-Neither spelling of the default flag was found in the four recovered public
+The core `ViewedConversation` type is separate from the legacy
+`ModalView.origin_conversation` source-message identity used by single selectors.
+Compatibility enqueue/parse APIs cannot authorize the new default. Production
+capture checks the actual Home/DM/Activity/Later conversation detail, its rendered
+channel projection and surface target before dispatch; list-only rails, empty
+details, overlays and resource tabs supply no attestation. Token correlation
+freezes the attestation through hydration, updates, submission pushes and Back.
+A later token cannot upgrade a legacy stack that lacked viewed-origin proof.
+Navigation after activation does not change this value.
+
+The desktop requires a known canonical public/private channel or group DM whose
+current metadata satisfies the field's filter. Missing, filtered-out, IM and
+otherwise unsupported origins explicitly disable selection and submission. No DM
+is opened or identity converted. This is a bounded refusal policy, not a claim
+about Slack's behavior in unresolved cases. App `private_metadata` is opaque
+application data, not origin evidence, per the
+[modal view reference](https://docs.slack.dev/reference/views/modal-views/).
+Accepted directory results retain canonical origin evidence separately from
+selection proofs, so removing the initial chip cannot discard a newer origin
+invalidation. Stale owner/query responses cannot refresh that evidence.
+
+Saved arrays, including `[]`, still override the resolved initial; saved null or
+absence falls back to it. Dirty edits survive reconciliation. Raw app elements
+remain unchanged. Full state keeps `selected_conversations` and emits no response
+URL flag. Current canonical selection validation still runs before submission.
+
+The recovered `QjSI` component consumes the supplied initial array. Neither
+spelling of the default flag was found in the four recovered public
 shared/async-shared/vendors/async-vendors bundles. This is bounded negative
-evidence, not proof about unrecovered Slack code. Origin availability, filtered
-origin handling and resulting initial action metadata must be established
-before enabling the default; mutable active-channel state is not an origin.
+evidence, not proof about unrecovered Slack code or upstream/server normalization.
+The modal default above is based on the primary documented rule, not a recovered
+resolver. Its missing/filtered-origin fallback and IM identity conversion remain
+unresolved separately. Ordinary action metadata retains the supplied raw
+`initial_conversations` array, including `[]`, exactly as `QjSI.submitAction`
+does; it emits neither the default flag nor a response URL flag. `MimC` at
+11054810 can display an IM using its member, but does not establish action-ID
+conversion. No DM is opened or identity rewritten.
+
+Ordinary dispatch still requires its source channel to be active. Navigating to
+a different or missing channel invalidates the captured action instead of
+changing its initial value. The modal fixture's independent source/viewed/later
+identities are not fabricated for an ordinary message whose ownership contract
+requires source and viewed channel to agree.
 
 Modal confirmation, dispatch-on-change, visibility restrictions, non-input
 controls, specialized containers and unproven service/enterprise overrides
@@ -104,5 +150,15 @@ IDs, malformed state, requiredness, reduced maximum correction, raw filters,
 deferred origin default, full sibling state, dirty/pristine reconciliation,
 cross-kind ownership, mounted initial-array removal, confirmation capture,
 stale owner/element rejection and exact non-replayable action preparation.
+Additional tests cover ordinary boolean-only flag acceptance, supplied initial
+preservation, raw action metadata, full sibling state, saved clears and stale
+navigation without synthesized defaults. Modal tests cover distinct viewed/source provenance, legacy refusal,
+token-lineage ownership, initial override, saved clear/null, dirty/pristine
+updates, required/maximum validation, visible-surface capture and missing/filtered/
+IM refusal. The modal multi-conversation native fixture attests visible
+`C00000006` while legacy source origin and explicit initials name `C00000001`,
+then switches active navigation to `C00000002` before checking the frozen default.
+The checker records `viewedOriginOverridesInitial` and
+`navigationRetainsOpeningDefault` only after those checks succeed.
 Tests prepare synthetic requests without a Slack session or live transport.
 Build and native acceptance results are recorded separately in the worklog.

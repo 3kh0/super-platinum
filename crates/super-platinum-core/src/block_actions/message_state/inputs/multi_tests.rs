@@ -110,7 +110,7 @@ fn removed_multi_identity_prunes_state_and_unsupported_siblings_still_block() {
     let mut model = MessageInputs::parse(&actions(control("checkboxes", None))).unwrap();
     model.commit_multi(&key("B"), &[option("a")], &[]).unwrap();
     let before = model.clone();
-    let bad = actions(json!({"type":"external_select","action_id":"choose"}));
+    let bad = actions(json!({"type":"file_input","action_id":"choose"}));
     assert!(model.reconcile(&bad).is_err());
     assert_eq!(model, before);
     model

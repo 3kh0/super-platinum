@@ -2,8 +2,10 @@
 use crate::{ComposerState, domain::ComposerAttachment};
 use std::collections::BTreeMap;
 pub mod codec;
+mod projection;
 pub mod store;
 pub mod sync;
+pub use projection::CleanProjectionError;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub struct DraftKey {

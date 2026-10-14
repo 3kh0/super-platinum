@@ -7,7 +7,7 @@ fn key() -> InputKey {
     }
 }
 fn message(initial: Option<Value>) -> Message {
-    let mut conversations = json!({"type":"multi_conversations_select","action_id":"conversations","max_selected_items":2});
+    let mut conversations = json!({"type":"multi_conversations_select","action_id":"conversations","max_selected_items":2,"default_to_current_conversation":true});
     if let Some(initial) = initial {
         conversations["initial_conversations"] = initial;
     }

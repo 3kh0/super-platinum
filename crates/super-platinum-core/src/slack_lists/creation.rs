@@ -2,14 +2,15 @@
 use super::{Document, ListError, PersonalTaskLists, Record, RecordsPage};
 use serde_json::{Value, json};
 
+mod board;
 mod clock;
 mod duplication;
 pub use clock::{ListClock, ListTimestamp};
 #[cfg(test)]
 mod tests;
 
-/// One explicit request to create or duplicate an item, with the captured completed
-/// checkbox seed only when selected from the Completed view. Never replay this
+/// One explicit request to create or duplicate an item, with captured Board lane
+/// defaults or the Completed view's checkbox seed. Never replay this
 /// intent after dispatch: a missing response cannot identify the created row.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CreationIntent {
@@ -215,29 +216,7 @@ impl CreationIntent {
     }
 
     fn validate_initial_fields(&self, record: &Record) -> Result<(), ListError> {
-        if let Some(initial_fields) = self.initial_fields.as_ref().and_then(Value::as_array) {
-            for initial in initial_fields {
-                let column = self
-                    .document
-                    .columns
-                    .iter()
-                    .find(|column| initial["column_id"] == column.id)
-                    .ok_or(ListError(
-                        "The new List item's initial field is unavailable.",
-                    ))?;
-                if record
-                    .fields
-                    .get(&column.key)
-                    .and_then(|field| field.get("checkbox"))
-                    != initial.get("checkbox")
-                {
-                    return Err(ListError(
-                        "Slack has not confirmed the new item's completed state.",
-                    ));
-                }
-            }
-        }
-        Ok(())
+        board::validate_initial_fields(&self.document, self.initial_fields.as_ref(), record)
     }
 
     /// Readback uses only the server receipt ID, never a matching title or new-row

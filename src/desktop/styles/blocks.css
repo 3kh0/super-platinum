@@ -456,7 +456,7 @@
 .modal.message-multi-dialog > form { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
 .message-multi-content { overflow: auto; min-height: 0; padding: 0 var(--space-4); }
 .message-multi-body { margin-bottom: var(--space-3); white-space: pre-wrap; overflow-wrap: anywhere; }
-#message-multi-search, #message-user-search { width: 100%; min-height: var(--control-height); height: var(--control-height); padding: 0 var(--space-2); border: 0; appearance: none; background: var(--surface); border-radius: var(--radius-md); }
+#message-multi-search, #message-user-search, .external-option-search { width: 100%; min-height: var(--control-height); height: var(--control-height); padding: 0 var(--space-2); border: 0; appearance: none; background: var(--surface); border-radius: var(--radius-md); }
 .message-multi-options { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-2) 0; }
 .message-multi-group { color: var(--muted); font-size: var(--text-sm); font-weight: 600; padding-top: var(--space-1); }
 .message-multi-status { color: var(--muted); font-size: var(--text-sm); padding: var(--space-2) var(--space-4); min-height: var(--control-height); }

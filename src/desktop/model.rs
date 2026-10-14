@@ -702,6 +702,7 @@ pub enum Overlay {
     ButtonConfirmation,
     MessageMultiSelect,
     MessageUserSelect,
+    MessageExternalSelect,
     AppModal,
     Accounts,
     SelfMenu,

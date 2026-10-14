@@ -1,5 +1,6 @@
 //! Bounded Board lanes. Canonical records may have several distinct card instances.
 use super::*;
+mod lane_add;
 const LANES: usize = 4;
 const CARDS: usize = 10;
 const HELP: &str = "Up and Down move between cards; Left and Right move between nonempty lanes. Home and End move to the first and last card. Tab and Shift+Tab move between fields within a card. Alt+Enter opens item details. F2 edits a field. Space changes a checkbox. Enter opens field controls; Escape returns to the field.";
@@ -62,7 +63,9 @@ fn Lane(state: Signal<ShellState>, lane_key: String) -> Element {
     };
     rsx! {
         section {class:"slack-list-lane","data-group-key":"{lane.key}","data-count":lane.count,"aria-label":"{title}",
-            header {class:"slack-list-lane-title",h3 {"{title}"}span {class:"slack-list-group-count","{lane.count}"}}
+            header {class:"slack-list-lane-title",h3 {"{title}"}span {class:"slack-list-group-count","{lane.count}"}
+                lane_add::LaneAdd {key:"add-{view.generation}-{view.layout_generation}-{lane.key}",state,visit:view.generation,layout:view.layout_generation,lane_key:lane.key.clone()}
+            }
             div {class:"slack-list-lane-cards",{cards.into_iter()}
                 if lane.rows.is_empty(){p{class:"slack-list-lane-empty","No items"}}
             }

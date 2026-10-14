@@ -16,7 +16,9 @@ use super::models::{
 };
 use super::transport::Transport;
 mod block_actions;
+mod block_suggestions;
 mod block_views;
+pub use block_suggestions::*;
 mod bookmarks;
 mod bots;
 mod canvas;
@@ -35,6 +37,7 @@ mod channel_membership;
 pub use channel_members_admin::*;
 pub use channel_membership::*;
 mod drafts;
+mod drafts_info;
 mod execute;
 mod experiments;
 mod files;
@@ -60,6 +63,7 @@ use request::decode;
 
 pub use channel_details::*;
 pub use drafts::*;
+pub use drafts_info::{DraftInfo, decode_drafts_info, drafts_info};
 pub use execute::*;
 pub use experiments::*;
 pub use files::*;

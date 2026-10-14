@@ -6,6 +6,7 @@ mod channels;
 mod conversation;
 mod conversations;
 mod date;
+mod external;
 mod multi;
 mod overflow;
 mod revision;
@@ -497,6 +498,23 @@ impl Captured {
             _ => None,
         }
     }
+    pub(crate) fn selected_external(&self) -> Option<Option<&Value>> {
+        match &self.action {
+            Action::External(value, _) => Some(value.selected_option()),
+            _ => None,
+        }
+    }
+    pub(crate) fn selected_external_options(&self) -> Option<&[Value]> {
+        match &self.action {
+            Action::ExternalOptions(value, _) => Some(value.selected_options()),
+            _ => None,
+        }
+    }
+    pub(crate) fn commit_display_external(&self, selected: Option<&Value>) -> bool {
+        self.display
+            .as_ref()
+            .is_none_or(|d| d.commit_external(selected))
+    }
     pub(crate) fn selected_users(&self) -> Option<Vec<String>> {
         self.action.selected_users()
     }
@@ -552,6 +570,26 @@ impl Captured {
         }
         super_platinum_core::block_actions::message_state::MessageInputs::parse(message)
             .map_err(|_| MessageActionError::UnsupportedButton)?;
+        if let Action::ExternalOptions(value, proof) = &self.action {
+            if !proof.current_options(
+                shell,
+                &self.source,
+                self.metadata(),
+                value.selected_options(),
+            ) {
+                return Err(MessageActionError::StaleMessage);
+            }
+        }
+        if let Action::External(value, proof) = &self.action {
+            if !proof.current(
+                shell,
+                &self.source,
+                self.metadata(),
+                value.selected_option(),
+            ) {
+                return Err(MessageActionError::StaleMessage);
+            }
+        }
         if let Action::Channel(_, choice) = &self.action {
             channel::validate_choice(shell, &self.source, choice)?;
         }

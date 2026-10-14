@@ -4,6 +4,14 @@
 //! Empty/null state and non-input state inclusion are documented at
 //! https://docs.slack.dev/changelog/2020/09/01/full-state-on-view-submisson-and-block-actions
 
+pub use super::external::ExternalOption;
+use super::modal::ViewedConversation;
+mod message_external;
+mod message_external_options;
+pub use message_external::{parse_message_external, validate_message_external};
+pub use message_external_options::{
+    parse_message_external_options, validate_message_external_options,
+};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
@@ -73,6 +81,13 @@ pub struct OptionSpec {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub enum InputKind {
+    MultiExternalSelect {
+        min_query_length: usize,
+        max_selected_items: Option<usize>,
+    },
+    ExternalSelect {
+        min_query_length: usize,
+    },
     Text {
         multiline: bool,
         min_length: Option<usize>,
@@ -112,6 +127,8 @@ pub enum InputKind {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub enum InputValue {
+    ExternalOptions(Vec<ExternalOption>),
+    External(Option<ExternalOption>),
     Text(String),
     Selected(Vec<String>),
     Date(Option<String>),
@@ -154,6 +171,7 @@ pub struct ModalForm {
     pub raw_view: Value,
     /// Frozen action origin; retained across server updates to this form.
     origin_conversation: Option<String>,
+    viewed_conversation: Option<ViewedConversation>,
 }
 
 #[derive(Clone, Debug, PartialEq, thiserror::Error)]
@@ -181,7 +199,16 @@ impl ModalForm {
         view: &Value,
         origin_conversation: Option<&str>,
     ) -> Result<Self, FormError> {
-        parse::form(view, origin_conversation)
+        Self::parse_with_context(view, origin_conversation, None)
+    }
+
+    /// Eligibility of the attested opening conversation remains a renderer check.
+    pub fn parse_with_context(
+        view: &Value,
+        origin_conversation: Option<&str>,
+        viewed_conversation: Option<&ViewedConversation>,
+    ) -> Result<Self, FormError> {
+        parse::form(view, origin_conversation, viewed_conversation)
     }
 
     pub fn set_value(&mut self, key: &InputKey, value: InputValue) -> Result<(), FormError> {
@@ -232,7 +259,11 @@ impl ModalForm {
     /// Transactional: identity/type removals cannot silently discard dirty
     /// text. The controller must block submission after a conflicting update.
     pub fn reconcile(&mut self, view: &Value) -> Result<(), FormError> {
-        let mut next = Self::parse_with_origin(view, self.origin_conversation.as_deref())?;
+        let mut next = Self::parse_with_context(
+            view,
+            self.origin_conversation.as_deref(),
+            self.viewed_conversation.as_ref(),
+        )?;
         if next.view_id != self.view_id {
             return Err(FormError::ConflictingUpdate);
         }
@@ -259,6 +290,28 @@ impl ModalForm {
                     .flatten();
                 new.error = external_error.or_else(|| values::error(new));
             } else {
+                // JQ84 inline inner state only resets when a supplied initial
+                // array changes. Saved-state-only updates and initial removal
+                // do not reset this mounted pristine selection. Fresh parse
+                // still applies saved -> initial -> [] precedence.
+                if matches!(
+                    (&old.kind, &new.kind),
+                    (
+                        InputKind::MultiExternalSelect { .. },
+                        InputKind::MultiExternalSelect { .. }
+                    )
+                ) {
+                    new.value = if old.raw.get("initial_options") == new.raw.get("initial_options")
+                        || new.raw.get("initial_options").is_none_or(Value::is_null)
+                    {
+                        old.value.clone()
+                    } else {
+                        InputValue::ExternalOptions(message_external_options::parse_options(
+                            &new.raw["initial_options"],
+                        )?)
+                    };
+                    new.error = values::error(new);
+                }
                 new.revision = old.revision.wrapping_add(u64::from(old.value != new.value));
             }
         }
@@ -281,7 +334,11 @@ impl ModalForm {
     /// Unlike an unsolicited update, removed or replaced dirty fields do not
     /// create a conflict after the app has accepted their submission.
     pub fn reconcile_submitted(&mut self, view: &Value) -> Result<(), FormError> {
-        let mut next = Self::parse_with_origin(view, self.origin_conversation.as_deref())?;
+        let mut next = Self::parse_with_context(
+            view,
+            self.origin_conversation.as_deref(),
+            self.viewed_conversation.as_ref(),
+        )?;
         if next.view_id != self.view_id {
             return Err(FormError::ConflictingUpdate);
         }
@@ -317,3 +374,9 @@ mod modal_user_tests;
 mod modal_users_tests;
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod external_tests;
+
+#[cfg(test)]
+mod external_options_tests;

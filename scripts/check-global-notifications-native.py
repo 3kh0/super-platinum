@@ -1,95 +1,134 @@
 #!/usr/bin/env python3
-"""Drive and capture isolated native global-notifications fixtures without OS input."""
+"""Verify synthetic global-notification workflows in isolated native fixtures; never builds."""
+import argparse
 import json
+import math
 import os
-import pathlib
-import subprocess
+from pathlib import Path
+import sys
 import time
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-BINARY = pathlib.Path(os.environ.get("SUPER_PLATINUM_BINARY", ROOT / "target/debug/super-platinum"))
-TMP = pathlib.Path(os.environ.get("TMPDIR", "/tmp"))
-MARKER = TMP / "super-platinum-agent.sock.path"
-CAPTURES = ROOT / "tmp/agent-ui"
-CAPTURES.mkdir(parents=True, exist_ok=True)
+from native_check import expected_viewport
+from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 
-for fixture in ("global-notifications", "global-notifications-narrow"):
-    capture_name = fixture
-    socket = TMP / f"global-notifications-{os.getpid()}.sock"
-    env = dict(os.environ, SUPER_PLATINUM_FIXTURE=fixture,
-               SUPER_PLATINUM_AGENT="1", SUPER_PLATINUM_AGENT_SOCK=str(socket),
-               SUPER_PLATINUM_GLOBAL_NOTIFICATIONS_CHECK="1")
-    previous = MARKER.read_text() if MARKER.exists() else None
-    log = CAPTURES / f"{capture_name}.log"
+FIXTURES = ("global-notifications", "global-notifications-narrow")
+PREFIX = "global-notifications-check: "
+FLAG = "SUPER_PLATINUM_GLOBAL_NOTIFICATIONS_CHECK"
+REQUIRED = (
+    "noTransport", "openNoWrite", "canonicalInit", "localOnlyOverrides",
+    "linkedIndependentMobile", "explicitKeywords", "dirtyNavigation",
+    "invalidNoWrite", "nativeCaret", "completionFocus", "duplicateBlocked",
+    "unknownReadOnly", "exactWire", "preservedOverrides",
+)
+REACHED = (
+    "global-desktop-mode", "global-desktop-push", "global-mobile-push",
+    "global-mobile-overrides", "global-thread-replies", "global-keywords-input",
+    "global-keywords-save",
+)
 
-    def control(*args, check=True, tool_env=env):
-        return subprocess.run([str(ROOT / "scripts/agentctl.sh"), *map(str, args)],
-                              cwd=ROOT, env=tool_env, capture_output=True,
-                              text=True, timeout=8, check=check)
 
-    with log.open("w") as output:
-        process = subprocess.Popen([str(BINARY)], cwd=ROOT, env=env,
-                                   stdout=output, stderr=output)
-        try:
-            deadline = time.monotonic() + 30
-            while not socket.exists():
-                if process.poll() is not None or time.monotonic() > deadline:
-                    raise RuntimeError(f"{capture_name}: failed to start")
-                time.sleep(.1)
-            control("ping")
-            control("focus-window")
-            deadline = time.monotonic() + 90
-            last_activation = 0.0
-            while True:
-                if time.monotonic() - last_activation > 1:
-                    control("focus-window")
-                    last_activation = time.monotonic()
-                receipts = [line.split("global-notifications-check: ", 1)[1]
-                            for line in log.read_text().splitlines(keepends=True)
-                            if line.endswith("\n") and "global-notifications-check: " in line]
-                if receipts:
-                    receipt = json.loads(receipts[-1])
-                    if receipt.get("ok") is not True:
-                        raise RuntimeError(f"{capture_name}: native assertion failed: {receipt}")
-                    required = ("noTransport", "openNoWrite", "canonicalInit", "localOnlyOverrides", "linkedIndependentMobile", "explicitKeywords", "dirtyNavigation", "invalidNoWrite", "nativeCaret", "completionFocus", "duplicateBlocked", "unknownReadOnly", "exactWire", "preservedOverrides")
-                    if len(receipt.get("reached", [])) != 7 or any(not item.get("ok") for item in receipt["reached"]):
-                        raise RuntimeError(f"{capture_name}: controls inaccessible: {receipt}")
-                    expected_viewport = [668, 400] if fixture.endswith("-narrow") else [1280, 800]
-                    if any(receipt.get(key) is not True for key in required):
-                        raise RuntimeError(f"{capture_name}: incomplete native receipt: {receipt}")
-                    if receipt.get("writes") != 9 or receipt.get("reads") != 12:
-                        raise RuntimeError(f"{capture_name}: unexpected request counts: {receipt}")
-                    for key in ("layout", "finalLayout"):
-                        layout = receipt.get(key, {})
-                        if layout.get("ok") is not True or layout.get("viewport") != expected_viewport:
-                            raise RuntimeError(f"{capture_name}: incorrect native geometry: {receipt}")
-                    break
-                if process.poll() is not None or time.monotonic() > deadline:
-                    raise RuntimeError(f"{capture_name}: native assertions timed out")
-                time.sleep(.1)
-            control("screenshot", CAPTURES / f"{capture_name}.png")
-            print(f"{capture_name}: native global notification interactions passed; screenshot captured", flush=True)
-        except BaseException:
+def rect(value):
+    return (isinstance(value, list) and len(value) == 4
+            and all(type(n) in (int, float) and math.isfinite(n) for n in value)
+            and value[0] < value[2] and value[1] < value[3])
+
+
+def validate_receipt(fixture, receipt, platform=sys.platform):
+    if fixture not in FIXTURES or not isinstance(receipt, dict):
+        raise RuntimeError("Unknown fixture or malformed receipt")
+    if receipt.get("ok") is not True:
+        raise RuntimeError(f"{fixture}: native assertion failed: {receipt}")
+    missing = [key for key in REQUIRED if receipt.get(key) is not True]
+    if missing:
+        raise RuntimeError(f"{fixture}: missing behavior assertions: {missing}")
+    for key, expected in (("writes", 9), ("reads", 12)):
+        if type(receipt.get(key)) is not int or receipt[key] != expected:
+            raise RuntimeError(f"{fixture}: incorrect synthetic {key} count")
+    reached = receipt.get("reached")
+    if (not isinstance(reached, list) or len(reached) != len(REACHED)
+            or any(not isinstance(item, dict) or item.get("ok") is not True for item in reached)
+            or [item.get("id") for item in reached] != list(REACHED)):
+        raise RuntimeError(f"{fixture}: expected seven distinct reached controls in order")
+    viewport = expected_viewport(fixture, platform)
+    for key in ("layout", "finalLayout"):
+        layout = receipt.get(key)
+        if (not isinstance(layout, dict) or layout.get("ok") is not True
+                or layout.get("viewport") != viewport):
+            raise RuntimeError(f"{fixture}: incorrect {key} viewport or assertion")
+        dialog, scroll = layout.get("dialog"), layout.get("scroll")
+        if (not rect(dialog) or not rect(scroll)
+                or not (0 <= dialog[0] < dialog[2] <= viewport[0]
+                        and 0 <= dialog[1] < dialog[3] <= viewport[1])
+                or not (dialog[0] <= scroll[0] < scroll[2] <= dialog[2]
+                        and dialog[1] <= scroll[1] < scroll[3] <= dialog[3])
+                or scroll[3] - scroll[1] < 64):
+            raise RuntimeError(f"{fixture}: invalid {key} dialog/scroll bounds")
+
+
+def validate_receipts(fixture, receipts, platform=sys.platform):
+    if not isinstance(receipts, list) or len(receipts) != 1:
+        raise RuntimeError(f"{fixture}: expected exactly one final receipt")
+    validate_receipt(fixture, receipts[0], platform)
+    return receipts[0]
+
+
+def run(fixture, binary, captures):
+    if fixture not in FIXTURES:
+        raise ValueError("Only named global-notification fixtures are allowed")
+    captures.mkdir(parents=True, exist_ok=True)
+    evidence = {"fixture": fixture, "platform": sys.platform,
+                "binary": str(binary.resolve()), "ok": False,
+                "operationKind": "synthetic preference requests; no server or OS settings writes"}
+    try:
+        with NativeFixture(fixture, captures / f"{fixture}.log", binary, {FLAG: "1"}) as native:
+            evidence["pid"] = native.process.pid
             try:
-                control("screenshot", CAPTURES / f"{capture_name}-failure.png", check=False)
-            except (OSError, subprocess.SubprocessError):
-                pass  # Preserve the original startup/assertion failure.
-            raise
-        finally:
-            if process.poll() is None:
-                process.terminate()
+                deadline, last_focus = time.monotonic() + 90, 0.0
+                while True:
+                    native.require_running()
+                    receipts = native.receipts(PREFIX)
+                    if receipts:
+                        evidence["nativeReceipts"] = receipts
+                        evidence["native"] = validate_receipts(fixture, receipts)
+                        break
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(f"{fixture}: native assertions timed out")
+                    if time.monotonic() - last_focus >= 1:
+                        native.focus()
+                        last_focus = time.monotonic()
+                    time.sleep(.1)
+                screenshot = captures / f"{fixture}.png"
+                native.capture(screenshot)
+                # Reject a second/failing receipt arriving during capture.
+                evidence["nativeReceipts"] = native.receipts(PREFIX)
+                evidence["native"] = validate_receipts(fixture, evidence["nativeReceipts"])
+                evidence["screenshot"] = str(screenshot)
+            except BaseException:
                 try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait()
-            if MARKER.exists() and pathlib.Path(MARKER.read_text().strip()) == socket:
-                MARKER.unlink()
-                if previous:
-                    prior = dict(os.environ, SUPER_PLATINUM_AGENT_SOCK=previous.strip())
-                    try:
-                        if control("ping", check=False, tool_env=prior).returncode == 0:
-                            MARKER.write_text(previous)
-                    except (OSError, subprocess.SubprocessError):
-                        pass  # A stale prior marker must not mask this run's result.
-            socket.unlink(missing_ok=True)
+                    path = captures / f"{fixture}-failure.png"
+                    native.capture(path)
+                    evidence["failure_screenshot"] = str(path)
+                except (OSError, RuntimeError, ValueError):
+                    pass
+                raise
+        evidence["processExited"] = native.process.poll() is not None
+        if not evidence["processExited"]:
+            raise RuntimeError("Owned notification fixture did not exit")
+        evidence["ok"] = True
+    except BaseException as error:
+        evidence.update(ok=False, error=str(error))
+        raise
+    finally:
+        path = captures / f"{fixture}.json"
+        path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps({"receipt": str(path), **evidence}), flush=True)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--binary", type=Path, default=Path(os.environ.get("SUPER_PLATINUM_BINARY", DEFAULT_BINARY)))
+    parser.add_argument("--captures", type=Path, default=Path(os.environ.get("SUPER_PLATINUM_UI_CAPTURE_DIR", ROOT / "tmp/agent-ui")))
+    parser.add_argument("--fixture", action="append", choices=FIXTURES)
+    args = parser.parse_args()
+    for fixture in args.fixture or FIXTURES:
+        run(fixture, args.binary, args.captures.resolve())

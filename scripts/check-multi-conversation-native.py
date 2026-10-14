@@ -15,7 +15,7 @@ MODAL_STAGES = ("maximum", "validation", "selected", "cleared", "uncertain")
 MESSAGE_SPEC = CheckSpec(
     fixture="message-multi-conversations-select", flag="SUPER_PLATINUM_MESSAGE_MULTI_CONVERSATION_CHECK",
     prefix="message-multi-conversation-check: ", prepared_requests=4,
-    required=("compactSingleRowControls", "allConversationKinds", "filterEligibility", "memberIdForwarded", "confirmationHitTested", "initialAndAbsentState", "stagedCancelNoDispatch", "requiredAndMaximum",
+    required=("ordinaryFlagUsesInitial", "navigationDoesNotSynthesizeDefault", "compactSingleRowControls", "allConversationKinds", "filterEligibility", "memberIdForwarded", "confirmationHitTested", "initialAndAbsentState", "stagedCancelNoDispatch", "requiredAndMaximum",
               "searchSelectionRetained", "confirmationCancelNoCommit", "optionalClearArray",
               "pendingDuplicateRejected", "nextButtonCarriedFullState", "uncertainNoReplay",
               "noTransport", "noOverflow", "eachVisible", "hitTestedControls", "keyboardFocused"),
@@ -23,7 +23,8 @@ MESSAGE_SPEC = CheckSpec(
 MODAL_SPEC = CheckSpec(
     fixture="app-modal-multi-conversation", flag="SUPER_PLATINUM_APP_MODAL_MULTI_CONVERSATION_CHECK",
     prefix="app-modal-multi-conversation-check: ", prepared_requests=2,
-    required=("initialAndEmptyState", "allConversationKinds", "memberIdForwarded", "requiredAndMaximum",
+    required=("viewedOriginOverridesInitial", "navigationRetainsOpeningDefault",
+              "initialAndEmptyState", "allConversationKinds", "memberIdForwarded", "requiredAndMaximum",
               "inlineEditsNoDispatch", "searchRetainsSelection", "remoteRetainsDirtyAndRefreshesPristine",
               "staleChoiceRejected", "escapeRetainsModal", "fullSiblingState", "pendingDuplicateRejected",
               "serverFieldErrorRetained", "uncertainNoReplay", "noTransport", "noOverflow",

@@ -566,6 +566,10 @@ impl ShellState {
             crate::composer_emoji::close_shell(self);
             return;
         }
+        if self.overlay == Some(Overlay::MessageExternalSelect) {
+            crate::message_buttons::inputs::external::cancel_local(self);
+            return;
+        }
         if self.overlay == Some(Overlay::MessageUserSelect) {
             crate::message_buttons::inputs::user::cancel_local(self);
         }

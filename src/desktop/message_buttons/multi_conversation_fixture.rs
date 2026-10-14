@@ -26,7 +26,7 @@ pub(crate) fn install(shell: &mut ShellState) {
         "Choose conversations. Apply submits one action; Cancel keeps the saved destinations."
     );
     let confirm = m.blocks[1]["accessory"]["confirm"].clone();
-    m.blocks[1]["accessory"] = json!({"type":"multi_conversations_select","action_id":"pick","initial_conversations":["C00000001"],"max_selected_items":2,"default_to_current_conversation":false,"filter":{"include":["public","private","mpim","im"]},"required":true,"placeholder":{"type":"plain_text","text":"Choose conversations"},"confirm":confirm,"response_url_enabled":true});
-    m.blocks[2]["elements"][0] = json!({"type":"multi_conversations_select","action_id":"other","filter":{"include":["public","private","mpim","im"],"exclude_bot_users":true,"exclude_external_shared_channels":true},"placeholder":{"type":"plain_text","text":"Choose follow-up conversations"},"response_url_enabled":true});
+    m.blocks[1]["accessory"] = json!({"type":"multi_conversations_select","action_id":"pick","initial_conversations":["C00000001"],"max_selected_items":2,"default_to_current_conversation":true,"filter":{"include":["public","private","mpim","im"]},"required":true,"placeholder":{"type":"plain_text","text":"Choose conversations"},"confirm":confirm,"response_url_enabled":true});
+    m.blocks[2]["elements"][0] = json!({"type":"multi_conversations_select","action_id":"other","default_to_current_conversation":true,"filter":{"include":["public","private","mpim","im"],"exclude_bot_users":true,"exclude_external_shared_channels":true},"placeholder":{"type":"plain_text","text":"Choose follow-up conversations"},"response_url_enabled":true});
     super::user_fixture::reproject(shell);
 }

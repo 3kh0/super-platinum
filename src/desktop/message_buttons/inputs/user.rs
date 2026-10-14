@@ -43,10 +43,6 @@ pub(crate) fn presentation(
         view.reason = Some(reason.into());
         return view;
     }
-    if let Some(reason) = super::conversations::unavailable(shell, source) {
-        view.reason = Some(reason.into());
-        return view;
-    }
     let Some(entry) = shell
         .message_buttons
         .inputs

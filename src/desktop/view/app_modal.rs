@@ -230,6 +230,9 @@ fn ModalField(
                 }
             }}
         }
+        InputKind::ExternalSelect { .. } | InputKind::MultiExternalSelect { .. } => {
+            rsx! {super::app_modal_external::ModalExternal {state,input_key:input_key.clone(),field:field.clone(),id:id.clone(),locked}}
+        }
         InputKind::User
         | InputKind::MultiUser { .. }
         | InputKind::MultiChannel { .. }
@@ -314,6 +317,8 @@ fn control_shape(kind: &InputKind) -> String {
         InputKind::Channel => "channel",
         InputKind::MultiChannel { .. } => "channels",
         InputKind::MultiConversation { .. } => "conversations",
+        InputKind::ExternalSelect { .. } => "external",
+        InputKind::MultiExternalSelect { .. } => "external-options",
         InputKind::User => "user",
         InputKind::MultiUser { .. } => "users",
         InputKind::Date => "date",

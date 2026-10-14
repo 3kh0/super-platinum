@@ -11,6 +11,7 @@ use std::{
 use super_platinum_core::drafts::{DraftKey, LocalDraft, store};
 
 pub(crate) struct Desktop {
+    pub(crate) projection_fixture: Option<Arc<super::projection_fixture::Binding>>,
     pub view_id: u64,
     pub writers: Queue,
     pub sending: BTreeSet<DraftKey>,
@@ -21,6 +22,7 @@ impl Default for Desktop {
     fn default() -> Self {
         static VISITS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Self {
+            projection_fixture: None,
             view_id: VISITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             writers: Default::default(),
             sending: Default::default(),
@@ -133,6 +135,10 @@ fn legacy_ownership(shell: &ShellState, key: &DraftKey) -> Result<(), &'static s
 }
 
 pub(crate) fn route(shell: &mut ShellState, changes: BTreeMap<DraftKey, LocalDraft>) {
+    if super::projection_fixture::enabled() {
+        super::projection_fixture::route(shell, changes);
+        return;
+    }
     if changes.is_empty() || crate::fixture::is_fixture() {
         return;
     }

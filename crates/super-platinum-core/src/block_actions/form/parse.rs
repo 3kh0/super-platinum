@@ -57,6 +57,7 @@ fn optional_string(value: &Value, key: &str) -> Result<Option<String>, FormError
 pub(super) fn form(
     view: &Value,
     origin_conversation: Option<&str>,
+    viewed_conversation: Option<&ViewedConversation>,
 ) -> Result<ModalForm, FormError> {
     if origin_conversation.is_some_and(|id| !valid_message_conversation(id)) {
         return Err(invalid("Invalid originating conversation"));
@@ -84,6 +85,7 @@ pub(super) fn form(
         unsupported: vec![],
         raw_view: view.clone(),
         origin_conversation: origin_conversation.map(str::to_owned),
+        viewed_conversation: viewed_conversation.cloned(),
     };
     let mut block_ids = HashSet::new();
     for block in blocks {
@@ -111,7 +113,12 @@ pub(super) fn form(
             block_id: id(block.get("block_id"))?,
             action_id: id(element.get("action_id"))?,
         };
-        let (kind, initial_value) = input(element, view["type"] == "modal", origin_conversation)?;
+        let (kind, initial_value) = input(
+            element,
+            view["type"] == "modal",
+            origin_conversation,
+            viewed_conversation,
+        )?;
         if let InputKind::Unsupported { kind } = &kind {
             form.unsupported.push(kind.clone());
         }
@@ -135,7 +142,9 @@ pub(super) fn form(
             placeholder: text(element.get("placeholder").filter(|value| {
                 !matches!(
                     kind,
-                    InputKind::User
+                    InputKind::ExternalSelect { .. }
+                        | InputKind::MultiExternalSelect { .. }
+                        | InputKind::User
                         | InputKind::MultiUser { .. }
                         | InputKind::MultiChannel { .. }
                         | InputKind::MultiConversation { .. }
@@ -174,6 +183,8 @@ pub(super) fn form(
                     // iGIl plus z+fW/QjSI coalesce missing/null saved arrays
                     // to the initial selection. Only an explicit [] is a clear.
                     let saved_key = match field.kind {
+                        InputKind::ExternalSelect { .. } => Some("selected_option"),
+                        InputKind::MultiExternalSelect { .. } => Some("selected_options"),
                         InputKind::MultiChannel { .. } => Some("selected_channels"),
                         InputKind::MultiConversation { .. } => Some("selected_conversations"),
                         _ => None,
@@ -228,12 +239,21 @@ fn input(
     element: &Value,
     ordinary_modal: bool,
     origin_conversation: Option<&str>,
+    viewed_conversation: Option<&ViewedConversation>,
 ) -> Result<(InputKind, InputValue), FormError> {
     let kind = element
         .get("type")
         .and_then(Value::as_str)
         .ok_or_else(|| invalid("Missing input type"))?;
     Ok(match kind {
+        "multi_external_select" if ordinary_modal => {
+            let field = parse_message_external_options(element)?;
+            (field.kind, field.initial_value)
+        }
+        "external_select" if ordinary_modal => {
+            let field = parse_message_external(element)?;
+            (field.kind, field.initial_value)
+        }
         "channels_select" if ordinary_modal => {
             (InputKind::Channel, modal_channel::initial(element)?)
         }
@@ -263,10 +283,21 @@ fn input(
         }
         "multi_conversations_select" if ordinary_modal => {
             if element.get("default_to_current_conversation") == Some(&Value::Bool(true)) {
-                (
-                    InputKind::Unsupported { kind: kind.into() },
-                    InputValue::Unsupported,
-                )
+                if let Some(origin) = viewed_conversation {
+                    // Official multi-select reference: the viewed conversation
+                    // overrides explicit initials. QjSI/iGIl saved arrays (even
+                    // []) still win afterwards. Do not modify the raw element.
+                    let mut resolved = element.clone();
+                    resolved["default_to_current_conversation"] = Value::Bool(false);
+                    resolved["initial_conversations"] = json!([origin.id()]);
+                    let field = parse_message_conversations(&resolved)?;
+                    (field.kind, field.initial_value)
+                } else {
+                    (
+                        InputKind::Unsupported { kind: kind.into() },
+                        InputValue::Unsupported,
+                    )
+                }
             } else {
                 // bgmB inline input forwards over-max arrays for submit validation.
                 // The input block, not element.required, owns requiredness.

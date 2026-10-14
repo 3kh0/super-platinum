@@ -1179,6 +1179,33 @@ unsupported. Drag-and-drop, lane reordering/creation, card creation, saved-view
 writes, server cursor continuation, and personal-task completion side effects
 are outside this slice. Incomplete loaded-page notices remain visible.
 
+### Lane Add continuation (Windows, 2026-10-14)
+
+Card creation now has a separate implementation awaiting native verification.
+`creation/board.rs` derives ordered typed defaults from the selected saved view
+and clicked lane, then uses the existing one-request create contract. The header
+Add action keeps its blank-item semantics. Source anchors are B BoardView
+17964742, effective filters `JETx` 18252085, create `t0Mq` 7276635, and typed
+conversion `uDYD` 7312962; the supported operator set is V 9849994.
+
+Flat supported filters contribute the first value for each first matching key;
+the authenticated viewer resolves `viewer`. Lane defaults follow filter defaults,
+then the existing Completed-view checkbox default. Identical duplicate seeds
+are retained in source order; conflicting duplicates are refused because server
+resolution is unproven. Empty select arrays and unchecked lanes remain explicit.
+No-group creation omits filter/lane defaults. Unsupported nested filter sets are
+not approximated. Whole-URL rich-text seeds follow B `+E6Z.u1` 2857014 and S
+`v+tG` 4587174 without trimming; bare domains, mail and phone input remain text.
+
+The desktop action reserves the existing mutation lock before asynchronous
+preparation, retains the exact mounted lane/view/layout/account, and revalidates
+canonical metadata before dispatch. It captures seed metadata without cloning
+all records and uses the existing stable uncertain-write receipt. Closing or
+changing the lane cannot authorize a stale request or replay an uncertain one.
+The dedicated fixtures include a real unassigned record, so their explicit
+empty-select test does not invent an empty Ungrouped lane. Core tests pass in the
+1,279-test gate; desktop compilation and native normal/narrow checks remain next.
+
 ## Local record details
 
 Captured B `t0NX` at 7300063 is the ordinary Open record action. It dispatches

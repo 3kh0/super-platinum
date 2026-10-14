@@ -12,6 +12,9 @@ pub fn overlay_view(
     if overlay == Overlay::ButtonConfirmation {
         return crate::view::button_confirmation::button_confirmation(state);
     }
+    if overlay == Overlay::MessageExternalSelect {
+        return crate::view::message_external::dialog(state);
+    }
     if overlay == Overlay::MessageUserSelect {
         return crate::view::message_user::dialog(state);
     }
@@ -61,6 +64,7 @@ pub fn overlay_view(
     }
     let (title, input_value, placeholder) = match overlay {
         Overlay::ButtonConfirmation => unreachable!("button confirmation owns its dialog"),
+        Overlay::MessageExternalSelect => unreachable!("external select owns its dialog"),
         Overlay::MessageUserSelect => unreachable!("message user select owns its dialog"),
         Overlay::MessageMultiSelect => unreachable!("message multi select owns its dialog"),
         Overlay::AppModal => unreachable!("app form owns its dialog"),

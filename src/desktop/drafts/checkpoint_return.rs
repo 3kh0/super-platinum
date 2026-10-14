@@ -17,6 +17,7 @@ impl Editor {
                 || state.serial != serial
                 || state.running
                 || state.settling
+                || state.projection.is_some()
                 || state.pending.is_some()
                 || state.error != Some(Fault::AlternateEdits)
             {
@@ -49,6 +50,7 @@ impl Editor {
             || state.serial != serial
             || state.running
             || state.settling
+            || state.projection.is_some()
             || state.pending.is_some()
             || state.error != Some(Fault::AlternateEdits)
         {
@@ -82,6 +84,7 @@ impl Editor {
             if state.serial != serial
                 || state.running
                 || state.settling
+                || state.projection.is_some()
                 || state.pending.is_some()
                 || !state.local_writes.is_empty()
             {

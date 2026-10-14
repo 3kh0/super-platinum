@@ -272,6 +272,10 @@ fn rich_node_with_source(
                     accessibility_label:metadata.accessibility_label.clone().unwrap_or_default(),
                 }}
             } else if let Some(source) = source.filter(|_| {
+                matches!(&metadata.source,super_platinum_core::block_actions::BlockElementSource::UnsupportedControl {kind} if matches!(kind.as_str(),"external_select"|"multi_external_select"))
+            }) {
+                rsx! {super::message_external::MessageExternalSelect {state,source:source.clone(),metadata:metadata.as_ref().clone()}}
+            } else if let Some(source) = source.filter(|_| {
                 matches!(&metadata.source,
                     super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind } if kind == "overflow")
             }) {

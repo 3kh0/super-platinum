@@ -11,6 +11,7 @@ use std::{
 #[cfg(test)]
 mod tests;
 mod urls;
+mod whole;
 
 struct Patterns {
     regex: HashMap<String, Regex>,
@@ -155,11 +156,7 @@ fn js_space(c: char) -> bool {
 }
 
 pub(super) fn normalize(input: &str) -> Result<String, ListError> {
-    static PATTERNS: OnceLock<Result<Patterns, ListError>> = OnceLock::new();
-    let p = PATTERNS
-        .get_or_init(Patterns::load)
-        .as_ref()
-        .map_err(Clone::clone)?;
+    let p = whole::patterns()?;
     let input_text = text(input.trim_matches(js_space));
     let mut hits = urls::detect(p, &input_text)?;
     merge(&mut hits, emails(p, &input_text));

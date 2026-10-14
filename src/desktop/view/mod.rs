@@ -2,6 +2,7 @@
 
 use crate::media::MediaUri;
 pub(crate) mod app_modal;
+mod app_modal_external;
 mod app_modal_users;
 pub(crate) mod button_confirmation;
 mod channel_details;
@@ -12,6 +13,7 @@ mod channel_window_check;
 mod chrome;
 mod completion;
 pub(crate) mod composer;
+mod external_choices;
 pub(crate) mod files;
 mod global_notifications;
 mod huddle;
@@ -24,6 +26,8 @@ mod message;
 mod message_button;
 mod message_checkboxes;
 mod message_date;
+pub(crate) mod message_external;
+mod message_external_multiple;
 pub(crate) mod message_multi;
 mod message_overflow;
 mod message_radio;

@@ -11,6 +11,7 @@ use serde_json::Value;
 mod consume;
 mod direct_local;
 mod observation;
+pub(crate) mod reconciliation;
 mod recovery;
 pub use consume::{ConsumeError, ConsumeIntent, ConsumeKind};
 pub use observation::{DraftObservation, ObservationError, ObservationKind};
@@ -270,7 +271,10 @@ impl DraftSync {
     /// A returned operation authorizes one dispatch only AFTER durable commit.
     /// Coalesced edits remain in `desired`; outstanding/uncertain work blocks it.
     pub fn begin_operation(&mut self, scope: &Scope) -> Option<Operation> {
-        if scope != &self.scope || self.workflow != Workflow::Idle || self.blocked_observation.is_some() {
+        if scope != &self.scope
+            || self.workflow != Workflow::Idle
+            || self.blocked_observation.is_some()
+        {
             return None;
         }
         if self.consumption.is_some() {

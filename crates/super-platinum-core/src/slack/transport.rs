@@ -419,13 +419,18 @@ impl Transport {
             });
         }
 
-        let value: Value = response.json().await.map_err(|e| {
-            if structured_block_response {
-                Error::Transport("invalid block interaction JSON response".into())
+        let value: Value =
+            if url::Url::parse(&req.url).is_ok_and(|url| url.path() == "/api/blocks.suggestions") {
+                read_suggestions_body(response).await?
             } else {
-                Error::Transport(format!("decode ({status}): {e}"))
-            }
-        })?;
+                response.json().await.map_err(|e| {
+                    if structured_block_response {
+                        Error::Transport("invalid block interaction JSON response".into())
+                    } else {
+                        Error::Transport(format!("decode ({status}): {e}"))
+                    }
+                })?
+            };
 
         if structured_block_response {
             return if value.is_object() {
@@ -551,7 +556,11 @@ fn is_block_interaction_request(req: &PreparedRequest) -> bool {
         && url::Url::parse(&req.url).is_ok_and(|url| {
             matches!(
                 url.path(),
-                "/api/blocks.actions" | "/api/views.get" | "/api/views.submit" | "/api/views.close"
+                "/api/blocks.actions"
+                    | "/api/blocks.suggestions"
+                    | "/api/views.get"
+                    | "/api/views.submit"
+                    | "/api/views.close"
             )
         })
 }
@@ -559,6 +568,27 @@ fn is_block_interaction_request(req: &PreparedRequest) -> bool {
 #[cfg(test)]
 #[path = "transport/block_interaction_tests.rs"]
 mod block_interaction_tests;
+
+async fn read_suggestions_body(response: wreq::Response) -> Result<Value, Error> {
+    let limit = crate::block_actions::external::MAX_SUGGESTIONS_BYTES;
+    let invalid = || Error::Transport("invalid or excessive suggestions response".into());
+    if response
+        .content_length()
+        .is_some_and(|length| length > limit as u64)
+    {
+        return Err(invalid());
+    }
+    let mut bytes = Vec::new();
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|_| invalid())?;
+        if chunk.len() > limit - bytes.len() {
+            return Err(invalid());
+        }
+        bytes.extend_from_slice(&chunk);
+    }
+    serde_json::from_slice(&bytes).map_err(|_| invalid())
+}
 
 async fn read_media_body(response: wreq::Response, limit: usize) -> Result<Vec<u8>, Error> {
     if response

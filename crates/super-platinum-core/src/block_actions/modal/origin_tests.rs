@@ -34,6 +34,74 @@ fn origin(state: &ModalState) -> Option<&str> {
 }
 
 #[test]
+fn viewed_attestation_is_token_owned_and_cannot_upgrade_legacy_lineage() {
+    let mut state = ModalState::new(scope());
+    assert!(state.enqueue_with_context(
+        &scope(),
+        "viewed".into(),
+        "A1".into(),
+        Some(C2.into()),
+        ViewedConversation::capture(C1),
+        100,
+        1000
+    ));
+    assert!(state.enqueue_with_context(
+        &scope(),
+        "other".into(),
+        "A1".into(),
+        Some(C2.into()),
+        ViewedConversation::capture(C2),
+        100,
+        1000
+    ));
+    let mut frame = open("viewed", "V1", None);
+    frame.rest.get_mut("view").unwrap()["viewed_conversation"] = json!(C2);
+    assert_eq!(state.apply(&scope(), &frame, 101), ModalChange::Opened);
+    assert_eq!(origin(&state), Some(C2));
+    assert_eq!(
+        state.stack()[0].viewed_conversation.as_ref().unwrap().id(),
+        C1
+    );
+    assert_eq!(
+        state.apply(&scope(), &open("other", "V2", Some("V1")), 102),
+        ModalChange::Ignored
+    );
+    let revision = state.revision();
+    assert!(state.apply_submission(
+        &scope(),
+        "V1",
+        revision,
+        &BlockViewResponseAction::Push(view("V2", Some("V1")))
+    ));
+    assert_eq!(
+        state.stack()[1].viewed_conversation.as_ref().unwrap().id(),
+        C1
+    );
+
+    let mut legacy = ModalState::new(scope());
+    assert!(enqueue(&mut legacy, "legacy", Some(C1)));
+    assert_eq!(
+        legacy.apply(&scope(), &open("legacy", "V1", None), 101),
+        ModalChange::Opened
+    );
+    assert!(legacy.stack()[0].viewed_conversation.is_none());
+    assert!(legacy.enqueue_with_context(
+        &scope(),
+        "new".into(),
+        "A1".into(),
+        Some(C1.into()),
+        ViewedConversation::capture(C1),
+        102,
+        1000
+    ));
+    assert_eq!(
+        legacy.apply(&scope(), &open("new", "V2", Some("V1")), 103),
+        ModalChange::Ignored
+    );
+    assert!(legacy.stack()[0].viewed_conversation.is_none());
+}
+
+#[test]
 fn opening_origin_belongs_to_the_exact_correlated_token_not_the_latest_action() {
     let mut state = ModalState::new(scope());
     assert!(enqueue(&mut state, "first", Some(C1)));

@@ -6,6 +6,7 @@ use serde_json::Value;
 use super_platinum_core::block_actions::form::{FormField, InputKey, InputKind};
 
 use super::{ContainerKey, next_id};
+mod external_options;
 
 #[derive(Clone)]
 pub(crate) struct Mounted(Arc<Mutex<State>>);
@@ -26,6 +27,7 @@ struct State {
 struct Binding {
     owner: ContainerKey,
     key: InputKey,
+    external: bool,
     radio: bool,
     date: bool,
     time: bool,
@@ -65,6 +67,7 @@ impl Mounted {
             return None;
         }
         let binding = Binding {
+            external: false,
             owner,
             key,
             radio: matches!(field.kind, InputKind::Radio { .. }),
@@ -163,6 +166,56 @@ impl Mounted {
         state.selected.clone()
     }
 
+    pub(super) fn sync_external(
+        &self,
+        owner: ContainerKey,
+        key: InputKey,
+        field: &FormField,
+        saved: Option<Option<super_platinum_core::block_actions::external::ExternalOption>>,
+    ) -> Option<super_platinum_core::block_actions::external::ExternalOption> {
+        use super_platinum_core::block_actions::external::ExternalOption;
+        let mut state = self.0.lock().unwrap();
+        if state.unmounted {
+            return None;
+        }
+        let binding = Binding {
+            owner,
+            key,
+            external: true,
+            radio: false,
+            date: false,
+            time: false,
+            user: false,
+            users: false,
+            channels: false,
+            conversations: false,
+            conversation: false,
+            channel: false,
+            multi: None,
+        };
+        let initial = field
+            .raw
+            .get("initial_option")
+            .and_then(|v| ExternalOption::parse(v).ok());
+        if state.binding.as_ref() != Some(&binding) {
+            state.selected_options = saved
+                .unwrap_or(initial)
+                .into_iter()
+                .map(|o| o.raw().clone())
+                .collect();
+            state.binding = Some(binding);
+            state.revision = next_id();
+        } else if state.raw.get("initial_option") != field.raw.get("initial_option") {
+            state.selected_options = initial.into_iter().map(|o| o.raw().clone()).collect();
+            state.revision = next_id();
+        }
+        state.raw = field.raw.clone();
+        state
+            .selected_options
+            .first()
+            .and_then(|v| ExternalOption::parse(v).ok())
+    }
+
     pub(super) fn sync_multi(
         &self,
         owner: ContainerKey,
@@ -176,6 +229,7 @@ impl Mounted {
         }
         let checkbox = matches!(field.kind, InputKind::Checkboxes { .. });
         let binding = Binding {
+            external: false,
             owner,
             key,
             radio: false,
@@ -242,6 +296,7 @@ impl Mounted {
             return vec![];
         }
         let binding = Binding {
+            external: false,
             owner,
             key,
             radio: false,
@@ -358,6 +413,19 @@ impl Action {
             return false;
         }
         state.selected_users = selected.to_vec();
+        state.revision = next_id();
+        true
+    }
+
+    pub(crate) fn commit_external(&self, selected: Option<&Value>) -> bool {
+        let Some(mounted) = self.mounted.upgrade() else {
+            return false;
+        };
+        let mut state = mounted.lock().unwrap();
+        if state.unmounted || state.revision != self.revision {
+            return false;
+        }
+        state.selected_options = selected.cloned().into_iter().collect();
         state.revision = next_id();
         true
     }

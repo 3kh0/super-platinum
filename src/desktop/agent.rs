@@ -45,6 +45,10 @@ pub async fn serve(
     crate::message_buttons::date_check::start(state, desktop.clone());
     crate::message_buttons::user_check::start(state, desktop.clone());
     crate::message_buttons::multi_conversation_check::start(state, desktop.clone());
+    crate::message_buttons::external_check::start(state, desktop.clone());
+    crate::message_buttons::inputs::external::native_check::start(state, desktop.clone());
+    crate::app_modal::multi_external_check::start(state, desktop.clone());
+    crate::drafts::projection_check::start(state, desktop.clone());
     crate::message_buttons::multi_channel_check::start(state, desktop.clone());
     crate::message_buttons::multi_user_check::start(state, desktop.clone());
     crate::message_buttons::channel_check::start(state, desktop.clone());

@@ -27,6 +27,7 @@ FIXTURES=(
   channel-files channel-files-narrow channel-links channel-links-narrow channel-links-empty channel-links-error
   pins pins-narrow pins-empty pins-error channel-pinned-message
   forward forward-narrow forward-error forward-partial forward-partial-narrow forward-people forward-people-narrow
+  forward-recovery forward-recovery-narrow
   scheduled scheduled-empty scheduled-error scheduled-edit scheduled-send-confirm
   schedule-clear schedule-clear-narrow schedule-clear-thread
   drafts drafts-empty drafts-edit drafts-conflict drafts-no-destination channel-details channel-create channel-leave channel-leave-last channel-join channel-join-composer
@@ -65,6 +66,7 @@ FIXTURES=(
   message-multi-conversations-select message-multi-conversations-select-narrow
   message-multi-channels-select message-multi-channels-select-narrow
   slack-list slack-list-narrow slack-list-readonly slack-list-incomplete slack-list-error slack-list-loading
+  slack-list-board-add slack-list-board-add-narrow
   self-status-editor self-status-editor-narrow
   profile-edit profile-edit-narrow
   profile-title profile-title-narrow
@@ -87,10 +89,16 @@ FIXTURES=(
   upload-restart upload-restart-narrow
   message-timepicker message-timepicker-narrow
   message-static-select message-static-select-narrow
+  message-external-select message-external-select-narrow
+  app-modal-external-select app-modal-external-select-narrow
+  message-multi-external-select message-multi-external-select-narrow
+  app-modal-multi-external-select app-modal-multi-external-select-narrow
   message-overflow message-overflow-narrow
   message-button-actions message-button-actions-narrow message-button-metadata message-button-metadata-narrow
   slack-links slack-links-narrow
   rejected-thread-return rejected-thread-return-narrow
+  draft-native-projection draft-native-projection-narrow
+  rejected-send rejected-send-narrow
   media-loading-state media-failed timeline-variable-height timeline-latest-opening
   usergroup-members usergroup-channels system-messages send-outcomes send-outcomes-narrow send-outcomes-thread managed-draft-recovery managed-draft-recovery-narrow message-marked-unread message-marked-unread-narrow member-live-refresh channel-members member-add member-add-error member-remove member-add-narrow member-remove-narrow
 )

@@ -133,10 +133,10 @@ fn required_lengths_utf16_and_invalid_dates_are_checked() {
     )]))
     .unwrap();
     assert!(form.submission().is_err());
-    form.set_value(&key("text"), InputValue::Text("🚀".into()))
+    form.set_value(&key("text"), InputValue::Text("\u{1f680}".into()))
         .unwrap();
     assert!(form.validate().is_empty());
-    form.set_value(&key("text"), InputValue::Text("🚀🚀".into()))
+    form.set_value(&key("text"), InputValue::Text("\u{1f680}\u{1f680}".into()))
         .unwrap();
     assert!(!form.validate().is_empty());
     assert_eq!(form.fields[&key("text")].revision, 0);
@@ -185,7 +185,7 @@ fn unsupported_remote_controls_and_display_state_never_disappear_from_submission
         supported.submission().unwrap()["values"]["channels"]["action"],
         json!({"type":"multi_channels_select","selected_channels":["C12345678"]})
     );
-    for kind in ["external_select", "multi_external_select", "file_input"] {
+    for kind in ["rich_text_input", "file_input"] {
         let form = ModalForm::parse(&view(vec![input("remote", json!({"type":kind}))])).unwrap();
         assert!(matches!(
             form.fields[&key("remote")].kind,

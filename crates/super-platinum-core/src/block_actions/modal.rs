@@ -16,6 +16,21 @@ const TOKEN_LIMIT: usize = 10;
 const STACK_LIMIT: usize = 10;
 const OPENS_PER_TOKEN: usize = 32;
 
+/// Renderer attestation of the conversation actually visible at activation.
+/// Never construct this from an app payload or a source message's channel alone.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ViewedConversation(String);
+impl ViewedConversation {
+    pub fn capture(id: &str) -> Option<Self> {
+        (super::form::valid_message_conversation(id)
+            && matches!(id.as_bytes().first(), Some(b'C' | b'G')))
+        .then(|| Self(id.to_owned()))
+    }
+    pub fn id(&self) -> &str {
+        &self.0
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModalScope {
     pub account_epoch: u64,
@@ -32,6 +47,7 @@ pub struct ModalView {
     /// Conversation captured from the initiating action, inherited by this
     /// view's stack. Navigation after dispatch must never change this origin.
     pub origin_conversation: Option<String>,
+    pub viewed_conversation: Option<ViewedConversation>,
     /// Exact server view, without lossy block parsing. An open/update frame can
     /// omit it; the caller must fetch content before presenting an input form.
     pub payload: Option<Value>,
@@ -50,6 +66,7 @@ struct Token {
     value: String,
     app_id: String,
     origin_conversation: Option<String>,
+    viewed_conversation: Option<ViewedConversation>,
     issued_ms: u64,
     expires_ms: u64,
     opened: Vec<String>,
@@ -168,6 +185,7 @@ impl ModalState {
                     kind: current.kind.clone(),
                     previous_view_id: Some(expected_view_id.to_owned()),
                     origin_conversation: current.origin_conversation.clone(),
+                    viewed_conversation: current.viewed_conversation.clone(),
                     payload: Some(payload.clone()),
                     needs_content: false,
                 });
@@ -241,6 +259,27 @@ impl ModalState {
         now_ms: u64,
         lifetime_ms: u64,
     ) -> bool {
+        self.enqueue_with_context(
+            scope,
+            token,
+            app_id,
+            origin_conversation,
+            None,
+            now_ms,
+            lifetime_ms,
+        )
+    }
+
+    pub fn enqueue_with_context(
+        &mut self,
+        scope: &ModalScope,
+        token: String,
+        app_id: String,
+        origin_conversation: Option<String>,
+        viewed_conversation: Option<ViewedConversation>,
+        now_ms: u64,
+        lifetime_ms: u64,
+    ) -> bool {
         if scope != &self.scope
             || token.trim().is_empty()
             || app_id.trim().is_empty()
@@ -260,6 +299,7 @@ impl ModalState {
             value: token,
             app_id,
             origin_conversation,
+            viewed_conversation,
             issued_ms: now_ms,
             expires_ms,
             opened: Vec::new(),
@@ -347,6 +387,16 @@ impl ModalState {
         } else {
             entry.origin_conversation.clone()
         };
+        let viewed_conversation = if let Some(parent) = self.stack.last() {
+            if entry.viewed_conversation.is_some()
+                && entry.viewed_conversation != parent.viewed_conversation
+            {
+                return ModalChange::Ignored;
+            }
+            parent.viewed_conversation.clone()
+        } else {
+            entry.viewed_conversation.clone()
+        };
         let payload = event.rest.get("view").filter(|value| !value.is_null());
         let root = self.stack.first().map_or(id, |view| view.id.as_str());
         if payload.is_some_and(|value| !valid_view(value, id, app_id, kind, previous, root)) {
@@ -358,6 +408,7 @@ impl ModalState {
             kind: kind.into(),
             previous_view_id: previous.map(str::to_owned),
             origin_conversation,
+            viewed_conversation,
             payload: payload.cloned(),
             needs_content: payload.is_none(),
         });

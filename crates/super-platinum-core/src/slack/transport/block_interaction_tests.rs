@@ -27,7 +27,13 @@ async fn respond(listener: TcpListener, status: &str, extra: &str, body: &str) {
 
 #[test]
 fn structured_response_allowlist_uses_exact_path_and_post() {
-    for endpoint in ["blocks.actions", "views.get", "views.submit", "views.close"] {
+    for endpoint in [
+        "blocks.actions",
+        "blocks.suggestions",
+        "views.get",
+        "views.submit",
+        "views.close",
+    ] {
         assert!(is_block_interaction_request(&request(format!(
             "https://fixture.slack.com/api/{endpoint}?reason=test"
         ))));
@@ -211,6 +217,77 @@ async fn action_and_submit_server_errors_are_single_attempts() {
             .execute_block_interaction(request(format!("http://{address}/api/{endpoint}")))
             .await;
         assert!(matches!(result, Err(Error::HttpStatus { status: 503, .. })));
+        server.await.unwrap();
+    }
+}
+
+#[tokio::test]
+async fn suggestions_rate_limit_is_single_attempt_and_retains_cooldown() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = tokio::spawn(async move {
+        respond(
+            listener,
+            "429 Too Many Requests",
+            "Retry-After: 9\r\n",
+            "private response",
+        )
+        .await
+    });
+    let error = Transport::new("fixture-cookie")
+        .unwrap()
+        .execute_block_interaction(request(format!("http://{address}/api/blocks.suggestions")))
+        .await
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        Error::RateLimited {
+            retry_after_secs: Some(9)
+        }
+    ));
+    server.await.unwrap();
+}
+
+#[tokio::test]
+async fn suggestions_reject_oversize_before_decode_with_or_without_declared_length() {
+    let limit = crate::block_actions::external::MAX_SUGGESTIONS_BYTES;
+    for declared in [true, false] {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut input = [0; 8192];
+            socket.read(&mut input).await.unwrap();
+            if declared {
+                socket.write_all(format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",limit+1).as_bytes()).await.unwrap();
+            } else {
+                socket.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n").await.unwrap();
+                let chunk = vec![b' '; 65536];
+                for _ in 0..=(limit / 65536) {
+                    if socket.write_all(b"10000\r\n").await.is_err()
+                        || socket.write_all(&chunk).await.is_err()
+                        || socket.write_all(b"\r\n").await.is_err()
+                    {
+                        break;
+                    }
+                }
+                let _ = socket.write_all(b"0\r\n\r\n").await;
+            }
+            drop(socket);
+            assert!(
+                tokio::time::timeout(Duration::from_millis(350), listener.accept())
+                    .await
+                    .is_err()
+            );
+        });
+        let error = Transport::new("fixture-cookie")
+            .unwrap()
+            .execute_block_interaction(request(format!("http://{address}/api/blocks.suggestions")))
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(error,Error::Transport(ref text) if text=="invalid or excessive suggestions response")
+        );
         server.await.unwrap();
     }
 }

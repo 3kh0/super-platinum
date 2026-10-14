@@ -477,3 +477,43 @@ fn multi_conversation_removed_or_null_initial_retains_mount_but_present_empty_re
         vec!["U00000002"]
     );
 }
+
+#[test]
+fn external_saved_clear_and_initial_removal_are_not_conversation_null_fallback() {
+    use super_platinum_core::block_actions::{
+        external::ExternalOption, form::parse_message_external,
+    };
+    let mut raw =
+        json!({"type":"external_select","action_id":"pick","initial_option":option("initial")});
+    let field = parse_message_external(&raw).unwrap();
+    let saved = ExternalOption::parse(&option("saved")).unwrap();
+    let mounted = Mounted::new();
+    assert_eq!(
+        mounted.sync_external(owner(), key(), &field, Some(Some(saved.clone()))),
+        Some(saved.clone())
+    );
+    let before = mounted.capture(&owner(), &key()).unwrap();
+    assert!(before.commit_external(None));
+    assert!(
+        mounted
+            .sync_external(owner(), key(), &field, None)
+            .is_none()
+    );
+    assert!(
+        Mounted::new()
+            .sync_external(owner(), key(), &field, Some(None))
+            .is_none()
+    );
+    raw.as_object_mut().unwrap().remove("initial_option");
+    assert!(
+        mounted
+            .sync_external(
+                owner(),
+                key(),
+                &parse_message_external(&raw).unwrap(),
+                Some(Some(saved))
+            )
+            .is_none()
+    );
+    assert!(!before.current());
+}

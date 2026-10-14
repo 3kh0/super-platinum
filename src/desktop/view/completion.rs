@@ -52,7 +52,10 @@ struct Results {
     status: &'static str,
 }
 
-fn labels(workspace: &Workspace, text: &str) -> std::collections::HashMap<String, String> {
+pub(super) fn labels(
+    workspace: &Workspace,
+    text: &str,
+) -> std::collections::HashMap<String, String> {
     let mut labels = std::collections::HashMap::new();
     // Only resolve references present in this draft, never serialize the directory.
     for part in text.split('<').skip(1) {

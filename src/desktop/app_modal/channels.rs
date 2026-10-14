@@ -10,6 +10,19 @@ pub(super) fn refresh(
     session: &mut Session,
     records: &[super_platinum_core::slack::models::Channel],
 ) {
+    // This runs only after the accepted owner/query guard. Origin eligibility
+    // must see newer metadata even after its initial chip has been removed.
+    let origins = session
+        .modal
+        .stack()
+        .iter()
+        .filter_map(|view| {
+            view.viewed_conversation
+                .as_ref()
+                .map(|origin| origin.id().to_owned())
+        })
+        .collect::<Vec<_>>();
+    channels::refresh(&mut session.viewed_proofs, &origins, records);
     for (view, form) in &session.forms {
         for (key, field) in &form.fields {
             if let InputValue::Channels(selected) | InputValue::Conversations(selected) =

@@ -4,12 +4,14 @@ use super_platinum_core::{
     block_actions::validation::{
         CapturedMessageButton, CapturedMessageChannel, CapturedMessageChannels,
         CapturedMessageConversation, CapturedMessageConversations, CapturedMessageDate,
-        CapturedMessageMulti, CapturedMessageOverflow, CapturedMessageRadio, CapturedMessageSelect,
-        CapturedMessageTime, CapturedMessageUser, CapturedMessageUsers, CurrentMessageButton,
-        CurrentMessageChannel, CurrentMessageChannels, CurrentMessageConversation,
-        CurrentMessageConversations, CurrentMessageDate, CurrentMessageMulti,
-        CurrentMessageOverflow, CurrentMessageRadio, CurrentMessageSelect, CurrentMessageTime,
-        CurrentMessageUser, CurrentMessageUsers, MessageActionError, MessageActionOwner,
+        CapturedMessageExternal, CapturedMessageExternalOptions, CapturedMessageMulti,
+        CapturedMessageOverflow, CapturedMessageRadio, CapturedMessageSelect, CapturedMessageTime,
+        CapturedMessageUser, CapturedMessageUsers, CurrentMessageButton, CurrentMessageChannel,
+        CurrentMessageChannels, CurrentMessageConversation, CurrentMessageConversations,
+        CurrentMessageDate, CurrentMessageExternal, CurrentMessageExternalOptions,
+        CurrentMessageMulti, CurrentMessageOverflow, CurrentMessageRadio, CurrentMessageSelect,
+        CurrentMessageTime, CurrentMessageUser, CurrentMessageUsers, MessageActionError,
+        MessageActionOwner,
     },
     config::WorkspaceSession,
     slack::{Error, SlackClient, api, client::PreparedRequest, models::Message},
@@ -17,6 +19,14 @@ use super_platinum_core::{
 
 #[derive(Clone)]
 pub(super) enum Action {
+    ExternalOptions(
+        CapturedMessageExternalOptions,
+        super::super::inputs::external::Proof,
+    ),
+    External(
+        CapturedMessageExternal,
+        super::super::inputs::external::Proof,
+    ),
     Conversations(
         CapturedMessageConversations,
         Vec<crate::message_buttons::inputs::user::directory::Choice>,
@@ -44,6 +54,8 @@ pub(super) enum Action {
 }
 
 pub(crate) enum Current<'a> {
+    ExternalOptions(CurrentMessageExternalOptions<'a>),
+    External(CurrentMessageExternal<'a>),
     Conversations(CurrentMessageConversations<'a>),
     Channels(CurrentMessageChannels<'a>),
     Channel(CurrentMessageChannel<'a>),
@@ -62,7 +74,9 @@ pub(crate) enum Current<'a> {
 impl Action {
     pub(super) fn selected_value(&self) -> Option<Option<&str>> {
         match self {
-            Self::Conversations(_, _, _)
+            Self::ExternalOptions(_, _)
+            | Self::External(_, _)
+            | Self::Conversations(_, _, _)
             | Self::Channels(_, _, _)
             | Self::Button(_)
             | Self::Multi(_)
@@ -107,6 +121,10 @@ impl Action {
         message: &Message,
     ) -> Result<Current<'a>, MessageActionError> {
         match self {
+            Self::ExternalOptions(value, _) => value
+                .revalidate(owner, message)
+                .map(Current::ExternalOptions),
+            Self::External(value, _) => value.revalidate(owner, message).map(Current::External),
             Self::Conversations(value, _, _) => {
                 value.revalidate(owner, message).map(Current::Conversations)
             }
@@ -131,6 +149,8 @@ impl Action {
 impl Current<'_> {
     pub(crate) fn action(&self) -> &Value {
         match self {
+            Self::ExternalOptions(value) => value.action(),
+            Self::External(value) => value.action(),
             Self::Conversations(value) => value.action(),
             Self::Channels(value) => value.action(),
             Self::Channel(value) => value.action(),
@@ -148,6 +168,8 @@ impl Current<'_> {
     }
     pub(crate) fn container(&self) -> Value {
         match self {
+            Self::ExternalOptions(value) => value.container(),
+            Self::External(value) => value.container(),
             Self::Conversations(value) => value.container(),
             Self::Channels(value) => value.container(),
             Self::Channel(value) => value.container(),
@@ -166,6 +188,8 @@ impl Current<'_> {
     #[cfg(test)]
     pub(crate) fn service_id(&self) -> &str {
         match self {
+            Self::ExternalOptions(value) => value.service_id(),
+            Self::External(value) => value.service_id(),
             Self::Conversations(value) => value.service_id(),
             Self::Channels(value) => value.service_id(),
             Self::Channel(value) => value.service_id(),
@@ -184,6 +208,8 @@ impl Current<'_> {
     #[cfg(test)]
     pub(crate) fn owner(&self) -> &MessageActionOwner {
         match self {
+            Self::ExternalOptions(value) => value.owner(),
+            Self::External(value) => value.owner(),
             Self::Conversations(value) => value.owner(),
             Self::Channels(value) => value.owner(),
             Self::Channel(value) => value.owner(),
@@ -202,6 +228,8 @@ impl Current<'_> {
     #[cfg(test)]
     pub(crate) fn function_execution_id(&self) -> Option<&str> {
         match self {
+            Self::ExternalOptions(value) => value.function_execution_id(),
+            Self::External(value) => value.function_execution_id(),
             Self::Conversations(value) => value.function_execution_id(),
             Self::Channels(value) => value.function_execution_id(),
             Self::Channel(value) => value.function_execution_id(),
@@ -228,6 +256,24 @@ impl Current<'_> {
         state: Option<&Value>,
     ) -> Result<PreparedRequest, Error> {
         match self {
+            Self::ExternalOptions(value) => api::block_action_external_options(
+                client,
+                workspace,
+                value,
+                app_id,
+                service_team_id,
+                client_token,
+                state,
+            ),
+            Self::External(value) => api::block_action_external(
+                client,
+                workspace,
+                value,
+                app_id,
+                service_team_id,
+                client_token,
+                state,
+            ),
             Self::Conversations(value) => api::block_action_conversations(
                 client,
                 workspace,

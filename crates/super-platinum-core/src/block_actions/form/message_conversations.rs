@@ -100,14 +100,14 @@ pub fn validate_message_conversations(
     Ok(json!({"type":"multi_conversations_select", "selected_conversations":selected}))
 }
 
-// The default resolver is not present in the recovered renderer. The official
-// multi-select rule differs from the single selector: default overrides initial.
-// Keep this opt-in unavailable in both contexts until its origin/filter behavior
-// is implemented. An absent flag or explicit false needs no origin resolution.
+// QjSI and both ordinary wrappers (bgmB B1727423, Te7m B13137439)
+// never read this flag: supplied/saved arrays remain authoritative. Do not
+// synthesize an ordinary origin. Modal parsing separately resolves its documented
+// viewed default before this parser. Upstream normalization is not established.
 fn unsupported_settings(element: &Value) -> bool {
     element
         .get("default_to_current_conversation")
-        .is_some_and(|value| value != &Value::Bool(false))
+        .is_some_and(|value| !value.is_boolean())
         || [
             "defaultToCurrentConversation",
             "requested_scope",
@@ -126,4 +126,59 @@ fn unsupported_settings(element: &Value) -> bool {
         ]
         .iter()
         .any(|key| element.get(key).is_some())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ordinary_default_flag_never_synthesizes_or_replaces_initials() {
+        for flag in [None, Some(json!(false)), Some(json!(true))] {
+            for initial in [
+                None,
+                Some(Value::Null),
+                Some(json!([])),
+                Some(json!(["C00000001", "U00000002"])),
+            ] {
+                let mut raw = json!({"type":"multi_conversations_select"});
+                if let Some(flag) = &flag {
+                    raw["default_to_current_conversation"] = flag.clone();
+                }
+                if let Some(initial) = &initial {
+                    raw["initial_conversations"] = initial.clone();
+                }
+                let field = parse_message_conversations(&raw).unwrap();
+                let expected =
+                    initial
+                        .as_ref()
+                        .and_then(Value::as_array)
+                        .map_or_else(Vec::new, |ids| {
+                            ids.iter()
+                                .map(|id| id.as_str().unwrap().to_owned())
+                                .collect()
+                        });
+                assert_eq!(
+                    field.initial_value,
+                    InputValue::Conversations(expected.clone())
+                );
+                assert_eq!(field.value, InputValue::Conversations(expected));
+                assert_eq!(field.raw, raw);
+            }
+        }
+    }
+
+    #[test]
+    fn ordinary_default_flag_accepts_only_booleans_when_present() {
+        for flag in [
+            Value::Null,
+            json!("true"),
+            json!(0),
+            json!(1),
+            json!([]),
+            json!({}),
+        ] {
+            assert!(parse_message_conversations(&json!({"type":"multi_conversations_select", "default_to_current_conversation":flag})).is_err());
+        }
+    }
 }

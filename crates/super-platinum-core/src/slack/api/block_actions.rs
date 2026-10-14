@@ -8,8 +8,9 @@ use serde_json::{Value, json};
 use crate::block_actions::validation::{
     CurrentMessageButton, CurrentMessageChannel, CurrentMessageChannels,
     CurrentMessageConversation, CurrentMessageConversations, CurrentMessageDate,
-    CurrentMessageMulti, CurrentMessageOverflow, CurrentMessageRadio, CurrentMessageSelect,
-    CurrentMessageTime, CurrentMessageUser, CurrentMessageUsers, MessageActionOwner,
+    CurrentMessageExternal, CurrentMessageExternalOptions, CurrentMessageMulti,
+    CurrentMessageOverflow, CurrentMessageRadio, CurrentMessageSelect, CurrentMessageTime,
+    CurrentMessageUser, CurrentMessageUsers, MessageActionOwner,
 };
 use crate::config::WorkspaceSession;
 
@@ -596,3 +597,75 @@ mod multi_tests;
 
 #[cfg(test)]
 mod extended_tests;
+
+pub fn block_action_external(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageExternal<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != Some("external_select")
+            || value.get("selected_option") != action.get("selected_option")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
+pub fn block_action_external_options(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageExternalOptions<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != Some("multi_external_select")
+            || value.get("selected_options") != action.get("selected_options")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}

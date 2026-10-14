@@ -161,10 +161,13 @@ fn all_selected_canonical_entities_and_filter_are_rechecked_before_confirmation_
     );
 }
 #[test]
-fn origin_default_true_is_explicitly_unavailable_without_using_active_channel() {
-    let (mut shell, _, metadata, _) = setup();
-    let w = shell.core.workspaces.get_mut("T1").unwrap();
-    let m = w
+fn ordinary_true_retains_supplied_initial_and_navigation_cannot_inject_a_default() {
+    let (mut shell, _, _, _) = setup();
+    let m = shell
+        .core
+        .workspaces
+        .get_mut("T1")
+        .unwrap()
         .messages
         .get_mut("C2")
         .unwrap()
@@ -181,26 +184,69 @@ fn origin_default_true_is_explicitly_unavailable_without_using_active_channel() 
         .unwrap();
     let row = crate::message_vm::message_vm(w, m, &shell.media);
     let source = Source::capture(&shell, &row, "C2", Bag::Timeline).unwrap();
+    let entry = inputs::candidate(&shell, &source).unwrap();
+    shell
+        .message_buttons
+        .inputs
+        .insert(ContainerKey::new(&source), entry);
+    let metadata = source
+        .conversations_metadata(&shell, "choice", "pick")
+        .unwrap();
+    assert!(presentation(&shell, &source, &metadata).enabled);
+    assert_eq!(source.owner().channel_id, "C2");
+    assert_eq!(shell.core.active_channel.as_deref(), Some("C2"));
+    let mounted = display::Mounted::new();
     assert_eq!(
-        inputs::candidate(&shell, &source).err(),
-        Some(inputs::conversations::ORIGIN_UNAVAILABLE)
+        display_selected_users(&shell, &source, &metadata, &mounted),
+        vec!["C00000001"]
     );
-    assert!(
-        presentation(&shell, &source, &metadata)
-            .reason
-            .unwrap()
-            .contains("default conversation")
+    let captured = source
+        .capture_conversations(
+            &shell,
+            "choice",
+            "pick",
+            &["C00000001".into()],
+            &Default::default(),
+        )
+        .unwrap();
+    // The source guard still owns dispatch. Navigation supplies neither a new
+    // default nor permission to submit an action from a previous conversation.
+    for later in [None, Some("C00000002"), Some("D00000006")] {
+        shell.core.active_channel = later.map(str::to_owned);
+        assert!(captured.revalidate(&shell).is_err());
+        assert_eq!(
+            shell.message_buttons.inputs[&ContainerKey::new(&source)]
+                .model
+                .fields[&field_key(&metadata).unwrap()]
+                .initial_value,
+            InputValue::Conversations(vec!["C00000001".into()])
+        );
+    }
+    shell.core.active_channel = Some("C2".into());
+    let request = inputs::prepare(
+        &mut shell,
+        &captured,
+        &super_platinum_core::slack::SlackClient::default(),
+        &super::tests::session(),
+        "ordinary-flag",
+    )
+    .unwrap();
+    let super_platinum_core::slack::client::RequestBody::Form(fields) = request.body else {
+        panic!("form");
+    };
+    let wire: serde_json::Value =
+        serde_json::from_str(&fields.iter().find(|(k, _)| k == "state").unwrap().1).unwrap();
+    assert_eq!(
+        wire["values"]["choice"]["pick"],
+        json!({"type":"multi_conversations_select", "selected_conversations":["C00000001"]})
     );
-    assert!(
-        source
-            .capture_conversations(
-                &shell,
-                "choice",
-                "pick",
-                &["C00000001".into()],
-                &Default::default()
-            )
-            .is_err()
+    assert_eq!(
+        wire["values"]["review"]["environment"]["selected_option"]["value"],
+        "prod"
+    );
+    assert_eq!(
+        display_selected_users(&shell, &source, &metadata, &display::Mounted::new()),
+        vec!["C00000001"]
     );
 }
 #[test]

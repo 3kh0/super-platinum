@@ -2,6 +2,7 @@
 use crate::state::ShellState;
 use dioxus::prelude::*;
 use serde_json::{Value, json};
+mod board_creation;
 mod board_views;
 mod channel_edit;
 mod creation;
@@ -19,6 +20,7 @@ mod saved_views;
 mod user_edit;
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    board_creation::start(state, desktop.clone());
     if std::env::var("SUPER_PLATINUM_SLACK_LIST_CHECK").as_deref() != Ok("1")
         || !matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),

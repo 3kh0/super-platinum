@@ -268,7 +268,10 @@ pub fn BookmarksPanel(mut state: Signal<ShellState>, channel: String) -> Element
                             }
                         } else
                         if d.remove {
-                            if d.folder {p {"Remove “{d.title}” and its {d.contents.len()} contained bookmarks from this channel? Linked documents and websites will remain available."}} else {p {"Remove “{d.title}” from this channel? The linked content will remain available."}}
+                            if d.folder {p {"Remove “{d.title}” and its {d.contents.len()} contained "
+                                if d.contents.len() == 1 {"bookmark"} else {"bookmarks"}
+                                " from this channel? Linked documents and websites will remain available."
+                            }} else {p {"Remove “{d.title}” from this channel? The linked content will remain available."}}
                         } else {
                             label {r#for:"bookmark-title","Name"}
                             input {id:"bookmark-title",initial_value:"{d.title}",disabled:busy||d.uncertain,oninput:move |e|change(state,|d|d.title=e.value())}

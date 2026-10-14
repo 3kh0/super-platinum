@@ -277,6 +277,8 @@ mod dispatch;
 pub(crate) mod integration;
 pub(crate) mod network;
 pub(crate) mod observation;
+pub(crate) mod projection_check;
+pub(crate) mod projection_fixture;
 pub(crate) mod recovery;
 pub(crate) mod rejected_fixture;
 pub(crate) mod rejected_thread_fixture;

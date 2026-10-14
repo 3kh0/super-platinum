@@ -5,6 +5,9 @@ pub(super) fn display_name(raw: Option<&str>) -> Option<String> {
     if leaf.len() > 1024 {
         return None;
     }
+    if leaf.trim().is_empty() {
+        return Some("pasted-file".into());
+    }
     let name: String = leaf
         .chars()
         .map(|c| if c.is_control() { '_' } else { c })
@@ -61,6 +64,7 @@ mod tests {
             None,
             Some(""),
             Some("  "),
+            Some("\n\t"),
             Some("."),
             Some(".."),
             Some("dir/"),

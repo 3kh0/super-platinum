@@ -282,7 +282,7 @@ fn channel_support_excludes_unproven_contexts_and_conversation_or_enterprise_fla
         view(vec![
             json!({"type":"actions","elements":[{"type":"channels_select","action_id":"destination"}]}),
         ]),
-        raw(true, json!({"type":"multi_external_select"})),
+        raw(true, json!({"type":"file_input"})),
     ] {
         assert!(matches!(
             ModalForm::parse(&payload).unwrap().submission(),

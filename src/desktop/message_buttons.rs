@@ -23,6 +23,9 @@ pub(crate) mod conversation_check;
 pub(crate) mod conversation_fixture;
 pub(crate) mod date_check;
 pub(crate) mod date_fixture;
+pub(crate) mod external;
+pub(crate) mod external_check;
+pub(crate) mod external_fixture;
 pub(crate) mod fixture;
 pub(crate) mod hydration;
 pub(crate) mod inputs;
@@ -31,6 +34,7 @@ pub(crate) mod multi_channel_fixture;
 pub(crate) mod multi_check;
 pub(crate) mod multi_conversation_check;
 pub(crate) mod multi_conversation_fixture;
+pub(crate) mod multi_external_fixture;
 pub(crate) mod multi_fixture;
 pub(crate) mod multi_user_check;
 pub(crate) mod multi_user_fixture;
@@ -62,6 +66,9 @@ pub(crate) struct State {
     pub(crate) multi_fixture: Option<multi_fixture::Fixture>,
     pub(crate) user_fixture: Option<user_fixture::Fixture>,
     pub(crate) overflow_fixture: Option<overflow_fixture::Fixture>,
+    pub(crate) external_fixture: Option<external_fixture::Fixture>,
+    external_picker: Option<inputs::external::Picker>,
+    external_retry: external::Cooldowns,
     user_picker: Option<inputs::user::Picker>,
     user_retry: BTreeMap<(u64, String), std::time::Instant>,
     user_labels: BTreeMap<(u64, String, String, String), String>,
@@ -159,7 +166,7 @@ pub(crate) fn presentation_for_button(
 ) -> ButtonState {
     if let Err(reason) = capture(shell, source, metadata) {
         return ButtonState::unavailable(if hydration::pending(shell, source) {
-            "Loading app informationâ€¦"
+            "Loading app information\u{2026}"
         } else {
             reason
         });
@@ -184,7 +191,7 @@ fn operation_status(
             enabled: false,
             busy: true,
             uncertain: false,
-            reason: Some("Submittingâ€¦".into()),
+            reason: Some("Submitting\u{2026}".into()),
         };
     }
 
@@ -198,7 +205,7 @@ fn operation_status(
             uncertain: operation.phase == Phase::Uncertain,
             reason: Some(
                 if operation.phase == Phase::Pending {
-                    "Submittingâ€¦"
+                    "Submitting\u{2026}"
                 } else {
                     "The app has not confirmed this action. It will not be sent again."
                 }
@@ -301,7 +308,8 @@ fn dispatch(mut state: Signal<ShellState>, captured: Captured) {
     if captured.revalidate(&state.read()).is_err() {
         return;
     }
-    if overflow_fixture::dispatch(state, captured.clone())
+    if external_fixture::dispatch(state, captured.clone())
+        || overflow_fixture::dispatch(state, captured.clone())
         || user_fixture::dispatch(state, captured.clone())
         || time_fixture::dispatch(state, captured.clone())
         || date_fixture::dispatch(state, captured.clone())
@@ -324,7 +332,7 @@ fn dispatch(mut state: Signal<ShellState>, captured: Captured) {
             shell.show_toast("Reconnect to use this app action.");
             return;
         };
-        let Some(correlation) = crate::app_modal::register_action_with_origin(
+        let Some(correlation) = crate::app_modal::register_viewed_action(
             &mut shell,
             captured.app_id(),
             Some(captured.source().owner().channel_id.clone()),
@@ -495,7 +503,8 @@ fn finish(
 /// validates its one source. No periodic full-message/operation scan.
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
     inputs::prune(shell);
-    let picker_changed = inputs::multi::poll(shell) | inputs::user::poll(shell);
+    let picker_changed =
+        inputs::multi::poll(shell) | inputs::user::poll(shell) | inputs::external::poll(shell);
     shell
         .message_buttons
         .operations

@@ -97,6 +97,27 @@ test('composer replacement rescans observations and repositions against the succ
   assert.equal(m.observed.has(m.composer),false);assert.equal(m.observed.has(successor),true);
   assert.equal(m.toast.style.getPropertyValue('--toast-bottom'),'288px');
 });
+
+test('an unfocused modal protects its footer and removal restores composer placement',()=>{
+  const m=mounted();
+  const dialog={nodeType:1,top:100,modal:true,
+    matches:selector=>dialog.modal&&selector.includes('[role="dialog"][aria-modal="true"]'),
+    getBoundingClientRect:()=>rect(dialog.top,180,114,440)};
+  m.context.document.querySelectorAll=selector=>[m.composer,...(dialog.matches(selector)?[dialog]:[])];
+  m.callbacks.mutation([{type:'childList',addedNodes:[dialog],removedNodes:[]}]);m.flush();
+  assert.equal(m.observed.has(dialog),true);
+  assert.equal(m.toast.style.getPropertyValue('--toast-bottom'),'288px');
+  assert.equal(m.toast.dataset.positioned,'true');
+  // A near-full-height modal leaves no safe notice space. Keep it hidden until
+  // the modal closes rather than covering its actions or clipping dismissal.
+  dialog.top=20;m.callbacks.resize();m.flush();
+  assert.equal(m.toast.dataset.positioned,undefined);
+  dialog.modal=false;
+  m.callbacks.mutation([{type:'attributes',target:dialog}]);m.flush();
+  assert.equal(m.observed.has(dialog),false);
+  assert.equal(m.toast.style.getPropertyValue('--toast-bottom'),'168px');
+  assert.equal(m.toast.dataset.positioned,'true');
+});
 test('replacing the notice cancels predecessor work without tearing down the successor',()=>{
   const m=mounted(), oldMutation=m.callbacks.mutation;
   m.callbacks.resize();m.toast.isConnected=false;oldMutation([]);

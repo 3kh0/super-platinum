@@ -38,6 +38,9 @@ impl Ticket {
             return None;
         }
         let field = form.fields.get(key)?;
+        if unavailable(shell, &field.raw).is_some() {
+            return None;
+        }
         if !matches!(
             field.kind,
             InputKind::User
@@ -85,6 +88,7 @@ impl Ticket {
     }
     pub(crate) fn current(&self, shell: &ShellState) -> bool {
         if shell.overlay != Some(Overlay::AppModal)
+            || unavailable(shell, &self.raw).is_some()
             || shell
                 .core
                 .workspaces
@@ -594,8 +598,13 @@ mod single_tests;
 mod tests;
 
 pub(crate) fn unavailable(shell: &ShellState, raw: &Value) -> Option<&'static str> {
-    if crate::message_buttons::inputs::conversations::origin_unsupported(raw) {
-        return Some(crate::message_buttons::inputs::conversations::ORIGIN_UNAVAILABLE);
+    // Modal defaults require a separately attested viewed conversation. The
+    // ordinary message renderer ignores this flag and supplies no such policy.
+    if raw["type"] == "multi_conversations_select" && raw["default_to_current_conversation"] == true
+    {
+        if let Some(reason) = super::origin::unavailable(shell, raw) {
+            return Some(reason);
+        }
     }
     if !matches!(
         raw.get("type").and_then(Value::as_str),

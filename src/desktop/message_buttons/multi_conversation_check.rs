@@ -30,6 +30,13 @@ async fn run(
         idle(desktop,"1 selected").await?;
         let initial_controls = wait_dom(desktop,CONTROL_LAYOUT).await?;
         let initial = capture(desktop,"initial").await?;
+        let generation={let shell=state.read();let message=&shell.core.workspaces["T1"].messages["C2"].messages[0];
+            if shell.core.active_channel.as_deref()!=Some("C2") || message.blocks[1]["accessory"]["default_to_current_conversation"]!=true || message.blocks[1]["accessory"]["initial_conversations"]!=json!(["C00000001"]) || message.blocks[2]["elements"][0]["default_to_current_conversation"]!=true {return Err("Ordinary true flag fixture lost its distinct initial/source context".into());}
+            shell.channel_generation};
+        recorder::navigate_away_back(state);
+        for _ in 0..80 {if state.read().channel_generation>=generation+2 && state.read().core.active_channel.as_deref()==Some("C2"){break;}tokio::time::sleep(std::time::Duration::from_millis(50)).await;}
+        if state.read().channel_generation<generation+2{return Err("Navigation did not complete".into());}
+        idle(desktop,"1 selected").await?;
         click(desktop,".block-button").await?; wait_attempts(state,1).await?;
         wire(state,0,"button",&["C00000001"])?;
         recorder::complete(state);idle(desktop,"1 selected").await?;
@@ -90,6 +97,8 @@ async fn run(
         receipt["captures"]=json!({"initial":initial,"maximum":maximum,"selected":selected,"confirmation":confirmation,"cleared":cleared,"uncertain":uncertain});
         receipt["preparedRequests"]=json!(4);
         receipt["compactSingleRowControls"]=json!(true);
+        receipt["ordinaryFlagUsesInitial"]=json!(true);
+        receipt["navigationDoesNotSynthesizeDefault"]=json!(true);
         receipt["initialControls"]=initial_controls;
         receipt["committedControls"]=committed_controls;
         for key in ["allConversationKinds","filterEligibility","memberIdForwarded","confirmationHitTested","initialAndAbsentState","stagedCancelNoDispatch","requiredAndMaximum","searchSelectionRetained","pendingDuplicateRejected","nextButtonCarriedFullState","confirmationCancelNoCommit","optionalClearArray","uncertainNoReplay","noTransport"] {receipt[key]=json!(true);}

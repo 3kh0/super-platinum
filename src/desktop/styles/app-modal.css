@@ -16,6 +16,9 @@
 .app-modal-users .message-user-option { width: 100%; min-height: var(--control-height); }
 .app-modal-users-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
 .app-modal-users-actions button { min-height: var(--control-height); padding: 0 var(--space-3); border-radius: var(--radius-md); background: var(--surface); color: var(--text); }
+.app-modal-users-actions.external-search-controls { margin-top: 0; align-items: center; }
+.external-search-controls > .external-option-search { flex: 1 1 0; min-width: 0; }
+.external-search-controls > button { flex: 0 0 auto; }
 .app-modal-label { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; color: var(--text); font-size: var(--text-sm); font-weight: 500; }
 .app-modal-required { color: var(--muted); font-size: var(--text-xs); font-weight: 400; }
 .app-modal-field input:not([type="checkbox"]):not([type="radio"]),

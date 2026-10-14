@@ -102,6 +102,7 @@ pub(in crate::slack_lists) fn dispatch_creation(shell: &mut ShellState, attempt:
         &attempt.intent,
         &attempt.timestamp,
     );
+    super::board_creation::record_request(shell, &request);
     let no_retry = !request.retry_safe();
     let valid = match request.body {
         RequestBody::Form(fields) => {

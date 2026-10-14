@@ -159,6 +159,7 @@ pub(super) fn prepare_submission(shell: &ShellState) -> Result<Value, FormError>
         .ok_or(FormError::ConflictingUpdate)?
         .submission()?;
     super::channels::validate_submission(shell)?;
+    super::external::validate(shell)?;
     Ok(payload)
 }
 
@@ -201,11 +202,13 @@ pub(super) async fn submit(mut state: Signal<ShellState>) {
         let current = session.modal.stack().last().unwrap();
         let app = current.app_id.clone();
         let origin = current.origin_conversation.clone();
-        session.modal.enqueue_with_origin(
+        let viewed = current.viewed_conversation.clone();
+        session.modal.enqueue_with_context(
             &scope,
             client_token.clone(),
             app,
             origin,
+            viewed,
             now_ms(),
             60_000,
         );
@@ -224,6 +227,13 @@ pub(super) async fn submit(mut state: Signal<ShellState>) {
             return;
         }
         let mut shell = state.write();
+        if crate::message_buttons::external_fixture::record_modal(
+            &mut shell,
+            &payload,
+            &client_token,
+        ) {
+            return;
+        }
         let session = shell.app_modal.as_mut().unwrap();
         let view = session.modal.stack().last().unwrap().id.clone();
         if users_fixture::record(session, &payload, &client_token) {

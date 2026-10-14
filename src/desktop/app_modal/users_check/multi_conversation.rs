@@ -2,7 +2,7 @@
 use super::*;
 use crate::app_modal::multi_conversation_fixture as channels_fixture;
 pub(super) async fn run(
-    state: Signal<ShellState>,
+    mut state: Signal<ShellState>,
     desktop: &dioxus::desktop::DesktopContext,
 ) -> Result<Value, String> {
     wait(
@@ -12,6 +12,21 @@ pub(super) async fn run(
     .await?;
     if state.peek().core.transport.is_some() {
         return Err("Expected disconnected fixture".into());
+    }
+    {
+        let mut shell = state.write();
+        let session = shell.app_modal.as_ref().unwrap();
+        let view = session.modal.stack().last().unwrap();
+        if view.viewed_conversation.as_ref().map(|v| v.id()) != Some("C00000006")
+            || view.origin_conversation.as_deref() != Some("C00000001")
+            || session.current_form().unwrap().raw_view["blocks"][1]["element"]["initial_conversations"]
+                != json!(["C00000001"])
+        {
+            return Err("Expected independently attested viewed origin".into());
+        }
+        // Navigation after activation cannot replace the frozen form default.
+        shell.core.active_channel = Some("C00000002".into());
+        shell.refresh_from_core();
     }
     let initial = state
         .peek()
@@ -111,6 +126,8 @@ pub(super) async fn run(
     receipt["preparedRequests"] = json!(2);
     for flag in [
         "initialAndEmptyState",
+        "viewedOriginOverridesInitial",
+        "navigationRetainsOpeningDefault",
         "allConversationKinds",
         "memberIdForwarded",
         "requiredAndMaximum",

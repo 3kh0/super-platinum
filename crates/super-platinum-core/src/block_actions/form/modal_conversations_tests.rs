@@ -229,7 +229,7 @@ fn multi_conversations_only_normal_submit_only_modal_inputs_are_supported() {
 }
 
 #[test]
-fn multi_conversation_filters_parse_and_origin_default_is_explicitly_unsupported() {
+fn multi_conversation_filters_parse_and_modal_default_requires_viewed_attestation() {
     for filter in [
         Value::Null,
         json!({}),
@@ -273,7 +273,7 @@ fn multi_conversation_filters_parse_and_origin_default_is_explicitly_unsupported
             true,
             json!({"default_to_current_conversation":true,"initial_conversations":initial}),
         );
-        assert!(parse_message_conversations(&raw["blocks"][0]["element"]).is_err());
+        assert!(parse_message_conversations(&raw["blocks"][0]["element"]).is_ok());
         for origin in [None, Some(C2)] {
             assert!(matches!(
                 ModalForm::parse_with_origin(&raw, origin)
@@ -288,4 +288,101 @@ fn multi_conversation_filters_parse_and_origin_default_is_explicitly_unsupported
             ModalForm::parse(&view(true, json!({"default_to_current_conversation":flag}))).is_err()
         );
     }
+}
+
+#[test]
+fn attested_modal_default_overrides_initials_but_saved_arrays_and_clear_win() {
+    let viewed = ViewedConversation::capture(C1).unwrap();
+    assert!(ViewedConversation::capture(C2).is_none()); // IM identity not proven.
+    assert!(ViewedConversation::capture(C3).is_none()); // Member is not a viewed conversation.
+    for initial in [Value::Null, json!([]), json!([C2, C3])] {
+        for (state, expected) in [
+            (Value::Null, json!([C1])),
+            (
+                json!({"type":"multi_conversations_select","selected_conversations":null}),
+                json!([C1]),
+            ),
+            (
+                json!({"type":"multi_conversations_select","selected_conversations":[]}),
+                json!([]),
+            ),
+            (
+                json!({"type":"multi_conversations_select","selected_conversations":[C3,C2]}),
+                json!([C3, C2]),
+            ),
+        ] {
+            let mut raw = view(
+                true,
+                json!({"default_to_current_conversation":true,"initial_conversations":initial,"response_url_enabled":true}),
+            );
+            if !state.is_null() {
+                saved(&mut raw, state);
+            }
+            let form = ModalForm::parse_with_context(&raw, Some(C2), Some(&viewed)).unwrap();
+            assert_eq!(form.raw_view, raw);
+            let wire = form.submission().unwrap();
+            assert_eq!(
+                wire["values"]["B"]["conversations"],
+                json!({"type":"multi_conversations_select","selected_conversations":expected})
+            );
+            assert_eq!(
+                wire["values"]["note"]["conversations"]["value"],
+                "Keep sibling"
+            );
+            let ordinary = parse_message_conversations(&raw["blocks"][0]["element"]).unwrap();
+            assert_eq!(
+                ordinary.initial_value,
+                InputValue::Conversations(initial.as_array().map_or_else(Vec::new, |ids| {
+                    ids.iter()
+                        .map(|id| id.as_str().unwrap().to_owned())
+                        .collect()
+                }))
+            );
+        }
+    }
+}
+
+#[test]
+fn viewed_modal_default_retains_dirty_clear_and_pristine_origin_across_updates() {
+    let viewed = ViewedConversation::capture(C1).unwrap();
+    let mut raw = view(
+        true,
+        json!({"default_to_current_conversation":true,"initial_conversations":[C2],"max_selected_items":1}),
+    );
+    let mut pristine = ModalForm::parse_with_context(&raw, None, Some(&viewed)).unwrap();
+    let mut dirty = pristine.clone();
+    dirty
+        .set_value(&key(), InputValue::Conversations(vec![]))
+        .unwrap();
+    raw["blocks"][0]["element"]["initial_conversations"] = json!([C3]);
+    pristine.reconcile(&raw).unwrap();
+    dirty.reconcile(&raw).unwrap();
+    assert_eq!(
+        pristine.fields[&key()].value,
+        InputValue::Conversations(vec![C1.into()])
+    );
+    assert_eq!(
+        dirty.fields[&key()].value,
+        InputValue::Conversations(vec![])
+    );
+    assert!(dirty.submission().is_ok());
+    raw["blocks"][0]["optional"] = json!(false);
+    dirty.reconcile(&raw).unwrap();
+    assert!(matches!(dirty.submission(), Err(FormError::Validation(_))));
+    dirty
+        .set_value(
+            &key(),
+            InputValue::Conversations(vec![C1.into(), C3.into()]),
+        )
+        .unwrap();
+    assert!(matches!(dirty.submission(), Err(FormError::Validation(_))));
+    // Neither compatibility source origins nor untrusted payload fields attest a view.
+    raw["viewed_conversation"] = json!(C1);
+    raw["private_metadata"] = json!(format!("{{\"channel\":\"{C1}\"}}"));
+    assert!(matches!(
+        ModalForm::parse_with_origin(&raw, Some(C1))
+            .unwrap()
+            .submission(),
+        Err(FormError::Unsupported(_))
+    ));
 }

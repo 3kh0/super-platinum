@@ -61,8 +61,7 @@ impl DraftObservation {
             }
             ObservationKind::Unsupported(raw) => {
                 if raw.get("id").and_then(Value::as_str) != Some(&self.draft_id)
-                    || raw.get("client_msg_id").and_then(Value::as_str)
-                        != Some(&self.client_msg_id)
+                    || raw.get("client_msg_id").and_then(Value::as_str) != Some(&self.client_msg_id)
                 {
                     return Err(ObservationError::Content);
                 }
@@ -75,40 +74,54 @@ impl DraftObservation {
 
 impl DraftSync {
     pub fn observed_event_ts(&self, draft_id: &str) -> Option<&str> {
-        self.observed_events.get(draft_id).map(|event| event.event_ts.as_str())
+        self.observed_events
+            .get(draft_id)
+            .map(|event| event.event_ts.as_str())
     }
 
     pub fn blocked_observation(&self) -> Option<&DraftObservation> {
         self.blocked_observation.as_ref()
     }
 
+    /// Recognize an inert replay of a recorded retirement without deriving a
+    /// fresh client UUID or adopting an identity after its acknowledgment ended.
+    pub fn has_observed_retirement_at_or_after(&self, draft_id: &str, event_ts: &str) -> bool {
+        event_timestamp(event_ts)
+            && self.retired_ids.iter().any(|id| id == draft_id)
+            && self.observed_events.get(draft_id).is_some_and(|event| {
+                matches!(event.kind, ObservationKind::Deleted)
+                    && ts_key(&event.event_ts) >= ts_key(event_ts)
+            })
+    }
+
     /// Used by durable loading as well as tests. Invalid ordering evidence must
     /// fail closed rather than authorize writes after a restart.
     pub fn observation_state_valid(&self) -> bool {
-        self.observed_events
-            .iter()
-            .all(|(id, event)| event.scope == self.scope && id == &event.draft_id && event.validate().is_ok())
-            && self.blocked_observation.as_ref().is_none_or(|event| {
-                event.scope == self.scope
-                    && event.validate().is_ok()
-                    && matches!(self.workflow, Workflow::Conflict { .. })
-                    && self
-                        .observed_event_ts(&event.draft_id)
-                        .is_some_and(|stamp| ts_key(stamp) >= ts_key(&event.event_ts))
-            })
+        self.observed_events.iter().all(|(id, event)| {
+            event.scope == self.scope && id == &event.draft_id && event.validate().is_ok()
+        }) && self.blocked_observation.as_ref().is_none_or(|event| {
+            event.scope == self.scope
+                && event.validate().is_ok()
+                && matches!(self.workflow, Workflow::Conflict { .. })
+                && self
+                    .observed_event_ts(&event.draft_id)
+                    .is_some_and(|stamp| ts_key(stamp) >= ts_key(&event.event_ts))
+        })
     }
 
     fn owns_observation(&self, event: &DraftObservation) -> bool {
         if let Some(base) = &self.acknowledged {
             return base.id == event.draft_id && base.client_msg_id == event.client_msg_id;
         }
-        !self.observed_events.values().any(|old| {
-            old.client_msg_id == event.client_msg_id && old.draft_id != event.draft_id
-        }) && self.pending().is_some_and(|operation| {
-            operation.kind == OperationKind::Create
-                && operation.base.is_none()
-                && operation.client_msg_id == event.client_msg_id
-        })
+        !self
+            .observed_events
+            .values()
+            .any(|old| old.client_msg_id == event.client_msg_id && old.draft_id != event.draft_id)
+            && self.pending().is_some_and(|operation| {
+                operation.kind == OperationKind::Create
+                    && operation.base.is_none()
+                    && operation.client_msg_id == event.client_msg_id
+            })
     }
 
     fn block_observation(&mut self, event: &DraftObservation) {
@@ -126,10 +139,7 @@ impl DraftSync {
     /// Caller authenticates the socket/account/user before supplying the event.
     /// Returns true when either ordering evidence or owned content changed.
     /// Persist the entire result and paired local value in one transaction.
-    pub fn observe_event(
-        &mut self,
-        event: &DraftObservation,
-    ) -> Result<bool, ObservationError> {
+    pub fn observe_event(&mut self, event: &DraftObservation) -> Result<bool, ObservationError> {
         if event.scope != self.scope {
             return Err(ObservationError::Scope);
         }

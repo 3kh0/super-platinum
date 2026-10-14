@@ -2,6 +2,8 @@
 //! work, acknowledges a remote draft, or retires an immutable consume intent.
 use super::*;
 use crate::drafts::codec;
+mod remote;
+pub use remote::{RemoteChoice, RemoteReview, RemoteSettlement};
 
 #[derive(Clone, Debug)]
 pub struct LocalReview {

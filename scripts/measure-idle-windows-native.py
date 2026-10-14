@@ -6,6 +6,10 @@ Example: python -B scripts/measure-idle-windows-native.py --label baseline --sec
 One disconnected visible fixture, one fixed quiet window after paint/settling.
 The runner sends no agent commands, focuses no window, and captures no screenshot
 during that window. All captures happen after the second counter snapshot.
+Optional pointer/work-area normalization happens before settling. During the
+quiet window its 250ms Win32 observations are read-only; they send no window
+messages. Use matching flags in paired runs. Observed input/geometry changes
+make a sample inconclusive; the runner never re-parks against user movement.
 
 Scope: observed owned process tree, not all Edge processes. Working-set sums
 include shared pages repeatedly; they are NOT unique RSS. PrivateUsage measures
@@ -16,7 +20,9 @@ parent, can be missed. This is fixture baseline evidence, not live Slack startup
 an improvement claim, hidden/minimized behavior, GPU memory, or whole-system cost.
 """
 import argparse
+from contextlib import ExitStack
 import hashlib
+import importlib
 import json
 import math
 import os
@@ -30,10 +36,80 @@ from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 from windows_process_metrics import OwnedProcessTree, filetime_now, summarize
 
 
-def quiet_wait(seconds):
+def quiet_wait(seconds, observe=None):
     deadline = time.monotonic() + seconds
+    if observe:
+        observe()
     while time.monotonic() < deadline:
-        time.sleep(min(1, max(0, deadline - time.monotonic())))
+        time.sleep(min(.25 if observe else 1, max(0, deadline - time.monotonic())))
+        if observe:
+            observe()
+
+
+class NormalizedObservation:
+    """Optional passive guards; quiet polling never sends window messages."""
+    def __init__(self, fixture, tree, evidence):
+        self.fixture, self.tree = fixture, tree
+        self.data = evidence
+        self.pointer = self.window = None
+        # Reuse the static runner's existing read-only physical geometry probe.
+        self.visual = importlib.import_module("check-visual-native")
+        self.observe = lambda: self.visual.window_observation(fixture.process.pid)
+        root = tree.owned[fixture.process.pid]
+        self.data["process_identity"] = {"pid": root["pid"],
+                                        "creation_filetime": root["creation_filetime"]}
+        self.data["observations"] = []
+        self.data["quiet_observer"] = "Passive Win32 cursor, process identity, foreground/window/taskbar geometry only"
+        self.data["quiet_poll_interval_seconds"] = .25
+        self.data["continuous_input_monitoring"] = False
+
+    def verify_identity(self):
+        self.fixture.require_running()
+        root = self.tree.owned[self.fixture.process.pid]
+        current = self.tree.api.times(root["handle"])
+        if current["creation_filetime"] != root["creation_filetime"] or current["exit_filetime"]:
+            raise RuntimeError("Retained owned process identity is no longer live")
+
+    def prepare(self, args, stack):
+        from visual_pointer import FixturePointer
+        self.window_identity = FixturePointer.identity
+        if args.fit_work_area:
+            from visual_placement import fit_work_area
+            fit_work_area(self.observe, self.verify_identity, self.data["placement"])
+        if args.normalize_pointer:
+            self.pointer = FixturePointer(self.observe, self.verify_identity)
+            self.data["pointer"] = self.pointer.data
+            stack.callback(self.pointer.close)
+            self.pointer.park()
+            self.pointer.settle(self.fixture, self.visual.fingerprint)
+        self.verify_identity()
+        self.window = self.observe()
+        self.data["window_before_settle"] = self.window
+        self.check("prepared")
+
+    def check(self, stage):
+        # Do NOT call FixturePointer.check here: its caption hit-test sends
+        # WM_NCHITTEST. These observers only read OS state during the quiet window.
+        record = {"stage": stage, "monotonic": time.monotonic()}
+        self.data["observations"].append(record)
+        try:
+            if self.pointer:
+                position = self.pointer.io.position()
+                record["position"] = position
+                self.pointer.data["movement_observed"] |= position != self.pointer.placed
+                if self.pointer.data["movement_observed"]:
+                    raise RuntimeError("Pointer movement observed; idle sample is inconclusive")
+            self.verify_identity()
+            window = self.observe()
+            record["window"] = window
+            if self.window_identity(window) != self.window_identity(self.window):
+                raise RuntimeError("Owned foreground/window geometry changed; idle sample is inconclusive")
+            if window.get("taskbar_client_overlap") is not False:
+                raise RuntimeError("Taskbar overlaps owned client; idle sample is inconclusive")
+        except BaseException as error:
+            record["error"] = str(error)
+            self.data["inconclusive"] = True
+            raise
 
 
 def startup_snapshot(fixture):
@@ -63,6 +139,8 @@ def measure(args):
         "platform": platform.platform(), "python_pointer_bits": 64 if sys.maxsize > 2**32 else 32,
         "logical_processors": os.cpu_count(),
         "settle_seconds": args.settle_seconds, "requested_quiet_seconds": args.seconds,
+        "normalization": {"pointer": {"enabled": args.normalize_pointer},
+                          "placement": {"enabled": args.fit_work_area}},
         "scope": "disconnected visible dev fixture; host plus observed owned descendants",
         "limitations": [
             "Working-set sum includes shared pages repeatedly; it is not unique RSS.",
@@ -71,6 +149,8 @@ def measure(args):
             "Processes born and exited between snapshots or behind unobserved exited parents can be missed.",
             "Observed exited processes retain final CPU counters; exited memory is omitted.",
             "Foreground is requested before sampling; user focus changes or occlusion are not prevented.",
+            "Optional normalization observes pointer/window state every 250ms; movement away and back between polls can escape detection.",
+            "Optional passive Win32 polling adds runner-side observer work; compare only matching normalization settings.",
             "No live Slack traffic, hardware power control, GPU memory, or performance improvement is established.",
         ],
     }
@@ -79,9 +159,14 @@ def measure(args):
                            {"SUPER_PLATINUM_STARTUP_TRACE": "1"}) as fixture:
             evidence["fixture_pid"] = fixture.process.pid
             evidence["paint_snapshot"] = startup_snapshot(fixture)
-            quiet_wait(args.settle_seconds)
-            fixture.require_running()
-            with OwnedProcessTree(fixture.process.pid) as tree:
+            with OwnedProcessTree(fixture.process.pid) as tree, ExitStack() as stack:
+                normalization = None
+                if args.normalize_pointer or args.fit_work_area:
+                    normalization = NormalizedObservation(fixture, tree, evidence["normalization"])
+                    normalization.prepare(args, stack)
+                quiet_wait(args.settle_seconds,
+                           (lambda: normalization.check("settle")) if normalization else None)
+                fixture.require_running()
                 before = tree.snapshot()
                 evidence["before"] = before
                 if not any(p["group"] == "webview2_descendants" and not p.get("exit_filetime")
@@ -91,23 +176,35 @@ def measure(args):
                 evidence["window_started_monotonic"] = time.monotonic()
                 print(json.dumps({"phase": "quiet_window", "label": args.label,
                                   "seconds": args.seconds, "owned_processes": len(before["processes"])}), flush=True)
-                quiet_wait(args.seconds)
+                quiet_wait(args.seconds,
+                           (lambda: normalization.check("quiet")) if normalization else None)
                 evidence["window_finished_monotonic"] = time.monotonic()
                 evidence["quiet_elapsed_seconds"] = (evidence["window_finished_monotonic"]
                                                        - evidence["window_started_monotonic"])
                 after = tree.snapshot()
                 evidence["after"] = after
                 evidence["measurement"] = summarize(before, after, evidence["window_start_filetime"])
-            fixture.require_running()
-            # All process-counter reads are complete before these commands can
-            # wake the UI or create its PowerShell screenshot child process.
-            evidence["after_paint_snapshot"] = startup_snapshot(fixture)
-            screenshot = directory / f"{name}.png"
-            fixture.capture(screenshot)
-            evidence["screenshot_after_sample"] = str(screenshot)
-            evidence["ok"] = evidence["measurement"]["observed_coverage_complete"]
-            if not evidence["ok"]:
-                raise RuntimeError("Observed process counters were incomplete; inspect errors/coverage in receipt")
+                fixture.require_running()
+                # All process-counter reads are complete before these commands can
+                # wake the UI or create its PowerShell screenshot child process.
+                evidence["after_paint_snapshot"] = startup_snapshot(fixture)
+                if normalization:
+                    normalization.check("before_capture")
+                screenshot = directory / f"{name}.png"
+                fixture.capture(screenshot)
+                evidence["screenshot_after_sample"] = str(screenshot)
+                if normalization:
+                    normalization.check("after_capture")
+                if not evidence["measurement"]["observed_coverage_complete"]:
+                    raise RuntimeError("Observed process counters were incomplete; inspect errors/coverage in receipt")
+                # ExitStack restores the pointer before closing retained process
+                # handles or terminating the fixture, including on failure.
+            if args.normalize_pointer:
+                pointer = evidence["normalization"]["pointer"]
+                if pointer["movement_observed"] or not pointer["restore_observed"]:
+                    evidence["normalization"]["inconclusive"] = True
+                    raise RuntimeError("Pointer movement or incomplete restoration; idle sample is inconclusive")
+            evidence["ok"] = True
     except BaseException as error:
         evidence.update(ok=False, error=str(error))
         raise
@@ -126,6 +223,10 @@ def main():
     parser.add_argument("--fixture", choices=("channel", "channel-window-10000"), default="channel")
     parser.add_argument("--seconds", type=float, default=15)
     parser.add_argument("--settle-seconds", type=float, default=5)
+    parser.add_argument("--normalize-pointer", action="store_true",
+                        help="Park on owned title bar before settling; passively observe and safely restore after capture")
+    parser.add_argument("--fit-work-area", action="store_true",
+                        help="Move owned fixture into taskbar-aware monitor area before settling; never resize")
     args = parser.parse_args()
     if sys.platform != "win32":
         parser.error("requires native Windows; no Unix/macOS counters are substituted")

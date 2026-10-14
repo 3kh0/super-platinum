@@ -68,7 +68,7 @@ pub async fn run(state: Signal<ShellState>) {
                 panel.querySelector('[aria-label="Move bookmark Launch references"]').click();await editor();
                 assert(panel.querySelector('#bookmark-destination').options.length===1,'folder moves only at top level');await cancel();
                 panel.querySelector('[aria-label="Remove bookmark Launch references"]').click();await editor();
-                assert(panel.querySelector('.bookmark-editor').textContent.includes('1 contained bookmarks'),'folder removal discloses cascade count');
+                assert(panel.querySelector('.bookmark-editor').textContent.includes('1 contained bookmark from'),'folder removal discloses singular cascade count');
                 assert(panel.querySelectorAll('.bookmark-row').length===4,'folder intact before confirmation');await cancel();
                 assert(panel.querySelectorAll('.bookmark-row').length===4,'folder cancellation preserves child');
                 assert(panel.scrollWidth<=panel.clientWidth+1,'final panel overflow');

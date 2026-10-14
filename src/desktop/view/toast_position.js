@@ -29,7 +29,7 @@ function toastFocusedPlacement(base, viewport, toastSize, focus, margin, gap, mi
   const toast = document.getElementById('status-toast');
   if (!toast) return;
   toast.__disposePosition?.();
-  const protectedSelector = '.composer-wrap, .thread-composer, .composer-completion';
+  const protectedSelector = '.composer-wrap, .thread-composer, .composer-completion, [role="dialog"][aria-modal="true"]';
   let targets = new Set(), focused = null, frame = null, disposed = false, rescan = true;
   const styles = getComputedStyle(toast);
   const margin = parseFloat(styles.right) || 18;
@@ -97,9 +97,9 @@ function toastFocusedPlacement(base, viewport, toastSize, focus, margin, gap, mi
   const mutation = new MutationObserver(records => {
     if (!toast.isConnected) { dispose(); return; }
     // Transcript row/text changes do not require a geometry read. Rescan only
-    // when a composer/completion mounts, unmounts or changes hidden/class state.
+    // when a protected surface mounts, unmounts or changes its visibility/role.
     if ((focused && !focused.isConnected) || records.some(record => record.type === 'attributes'
-      ? record.target.matches(protectedSelector)
+      ? targets.has(record.target) || record.target.matches(protectedSelector)
       : [...record.addedNodes, ...record.removedNodes].some(relevant))) {
       rescan = true;
       schedule();
@@ -119,7 +119,7 @@ function toastFocusedPlacement(base, viewport, toastSize, focus, margin, gap, mi
   }
   toast.__disposePosition = dispose;
   resize.observe(toast);
-  mutation.observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['hidden','class']});
+  mutation.observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['hidden','class','role','aria-modal']});
   window.addEventListener('resize', schedule);
   document.addEventListener('visibilitychange', schedule);
   document.addEventListener('focusin', schedule);

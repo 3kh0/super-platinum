@@ -5,6 +5,8 @@ use std::collections::HashSet;
 pub(super) fn wire_type(kind: &InputKind) -> &str {
     match kind {
         InputKind::Text { .. } => "plain_text_input",
+        InputKind::ExternalSelect { .. } => "external_select",
+        InputKind::MultiExternalSelect { .. } => "multi_external_select",
         InputKind::StaticSelect {
             multiple: false, ..
         } => "static_select",
@@ -26,7 +28,12 @@ pub(super) fn wire_type(kind: &InputKind) -> &str {
 pub(super) fn matches(kind: &InputKind, value: &InputValue) -> bool {
     matches!(
         (kind, value),
-        (InputKind::Text { .. }, InputValue::Text(_))
+        (InputKind::ExternalSelect { .. }, InputValue::External(_))
+            | (
+                InputKind::MultiExternalSelect { .. },
+                InputValue::ExternalOptions(_)
+            )
+            | (InputKind::Text { .. }, InputValue::Text(_))
             | (
                 InputKind::StaticSelect { .. }
                     | InputKind::Checkboxes { .. }
@@ -88,6 +95,8 @@ pub(super) fn error(field: &FormField) -> Option<String> {
         | InputValue::User(value)
         | InputValue::Date(value)
         | InputValue::Time(value) => value.as_ref().is_none_or(|v| v.is_empty()),
+        InputValue::External(value) => value.is_none(),
+        InputValue::ExternalOptions(values) => values.is_empty(),
         InputValue::DateTime(value) => value.is_none(),
         InputValue::Unsupported => true,
     };
@@ -153,6 +162,11 @@ pub(super) fn error(field: &FormField) -> Option<String> {
         (InputKind::MultiConversation { .. }, InputValue::Conversations(conversations)) => {
             if validate_message_conversations(field, conversations).is_err() {
                 return Some("Choose valid conversations within the selection limit.".into());
+            }
+        }
+        (InputKind::MultiExternalSelect { .. }, InputValue::ExternalOptions(options)) => {
+            if validate_message_external_options(field, options).is_err() {
+                return Some("Choose valid options within the selection limit.".into());
             }
         }
         (InputKind::MultiUser { .. }, InputValue::Users(users)) => {
@@ -236,6 +250,16 @@ pub(super) fn wire(field: &FormField) -> Value {
                 value["response_url_enabled"] = json!(true);
             }
         }
+        InputValue::ExternalOptions(options) => {
+            value["selected_options"] =
+                json!(options.iter().map(ExternalOption::raw).collect::<Vec<_>>());
+        }
+        InputValue::External(option) => {
+            value["selected_option"] = option
+                .as_ref()
+                .map(|o| o.raw().clone())
+                .unwrap_or(Value::Null)
+        }
         InputValue::User(user) => value["selected_user"] = json!(user),
         InputValue::Users(users) => value["selected_users"] = json!(users),
         InputValue::Channels(channels) => value["selected_channels"] = json!(channels),
@@ -272,6 +296,18 @@ pub(super) fn from_wire(kind: &InputKind, value: &Value) -> Result<InputValue, F
         }
     };
     Ok(match kind {
+        InputKind::MultiExternalSelect { .. } => {
+            InputValue::ExternalOptions(message_external_options::parse_options(
+                value.get("selected_options").ok_or_else(invalid)?,
+            )?)
+        }
+        InputKind::ExternalSelect { .. } => InputValue::External(
+            value
+                .get("selected_option")
+                .filter(|v| !v.is_null())
+                .map(ExternalOption::parse)
+                .transpose()?,
+        ),
         InputKind::Text { .. } => InputValue::Text(string("value")?.unwrap_or_default()),
         InputKind::Conversation => InputValue::Conversation(string("selected_conversation")?),
         InputKind::Channel => InputValue::Channel(string("selected_channel")?),

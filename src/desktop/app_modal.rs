@@ -11,7 +11,7 @@ use serde_json::Value;
 use super_platinum_core::{
     block_actions::{
         form::{FormError, InputKey, InputValue, ModalForm},
-        modal::{ModalChange, ModalScope, ModalState},
+        modal::{ModalChange, ModalScope, ModalState, ViewedConversation},
     },
     slack::{api, events::RtEvent},
 };
@@ -20,9 +20,13 @@ pub(crate) mod channel_fixture;
 mod channels;
 pub(crate) mod check;
 pub(crate) mod conversation_fixture;
+pub(crate) mod external;
 pub(crate) mod fixture;
 pub(crate) mod multi_channel_fixture;
 pub(crate) mod multi_conversation_fixture;
+pub(crate) mod multi_external_check;
+pub(crate) mod multi_external_fixture;
+mod origin;
 mod requests;
 #[cfg(test)]
 mod tests;
@@ -42,12 +46,16 @@ pub(crate) struct Session {
     view_error: Option<String>,
     fixture: bool,
     pub(crate) fixture_attempts: usize,
+    external_picker: Option<external::Picker>,
+    external_proofs: BTreeMap<(String, InputKey), external::Catalog>,
     users: Option<users::Picker>,
     user_labels: BTreeMap<String, String>,
     channel_proofs: BTreeMap<
         (String, super_platinum_core::block_actions::form::InputKey),
         crate::message_buttons::inputs::channels::Proofs,
     >,
+    // Origin evidence outlives selected chips; per-field proofs are pruned on edits.
+    viewed_proofs: crate::message_buttons::inputs::channels::Proofs,
     users_fixture: Option<users_fixture::Recorder>,
 }
 impl Session {
@@ -64,9 +72,12 @@ impl Session {
             view_error: None,
             fixture: false,
             fixture_attempts: 0,
+            external_picker: None,
+            external_proofs: BTreeMap::new(),
             users: None,
             user_labels: BTreeMap::new(),
             channel_proofs: BTreeMap::new(),
+            viewed_proofs: BTreeMap::new(),
             users_fixture: None,
         }
     }
@@ -74,6 +85,13 @@ impl Session {
         Self::fixture_with_origin(view, None)
     }
     pub(crate) fn fixture_with_origin(view: Value, origin: Option<String>) -> Self {
+        Self::fixture_with_context(view, origin, None)
+    }
+    fn fixture_with_context(
+        view: Value,
+        origin: Option<String>,
+        viewed: Option<ViewedConversation>,
+    ) -> Self {
         let scope = ModalScope {
             account_epoch: 0,
             team: "T1".into(),
@@ -81,11 +99,12 @@ impl Session {
         };
         let mut session = Self::new(scope.clone());
         session.fixture = true;
-        session.modal.enqueue_with_origin(
+        session.modal.enqueue_with_context(
             &scope,
             "fixture".into(),
             "A_FIXTURE".into(),
             origin,
+            viewed,
             0,
             60_000,
         );
@@ -107,6 +126,8 @@ impl Session {
     fn sync_forms(&mut self) {
         self.forms
             .retain(|id, _| self.modal.stack().iter().any(|v| &v.id == id));
+        self.external_proofs
+            .retain(|(view, _), _| self.forms.contains_key(view));
         self.channel_proofs
             .retain(|(view, _), _| self.forms.contains_key(view));
         self.loading = self.modal.stack().last().is_some_and(|v| v.needs_content);
@@ -128,7 +149,12 @@ impl Session {
             }
             form.reconcile(payload)
         } else {
-            ModalForm::parse_with_origin(payload, view.origin_conversation.as_deref()).map(|form| {
+            ModalForm::parse_with_context(
+                payload,
+                view.origin_conversation.as_deref(),
+                view.viewed_conversation.as_ref(),
+            )
+            .map(|form| {
                 self.forms.insert(view.id.clone(), form);
             })
         };
@@ -343,7 +369,7 @@ pub(crate) fn flush_closes(mut state: Signal<ShellState>) {
 }
 /// Reconnection/account replacement invalidates tokens and any in-flight UI work.
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
-    let users_changed = users::poll(shell);
+    let users_changed = users::poll(shell) | external::poll(shell);
     if shell
         .app_modal
         .as_ref()
@@ -465,6 +491,24 @@ pub(crate) fn register_action_with_origin(
     app_id: &str,
     origin_conversation: Option<String>,
 ) -> Option<ActionToken> {
+    register_action_with_context(shell, app_id, origin_conversation, None)
+}
+
+pub(crate) fn register_viewed_action(
+    shell: &mut ShellState,
+    app_id: &str,
+    source_conversation: Option<String>,
+) -> Option<ActionToken> {
+    let viewed = origin::capture(shell);
+    register_action_with_context(shell, app_id, source_conversation, viewed)
+}
+
+fn register_action_with_context(
+    shell: &mut ShellState,
+    app_id: &str,
+    origin_conversation: Option<String>,
+    viewed: Option<ViewedConversation>,
+) -> Option<ActionToken> {
     // Overlay replacement can precede the periodic lifecycle tick. Retire a
     // displaced stack now so it cannot silently swallow a new button click.
     poll(shell);
@@ -485,11 +529,12 @@ pub(crate) fn register_action_with_origin(
     let token = token();
     session
         .modal
-        .enqueue_with_origin(
+        .enqueue_with_context(
             &scope,
             token.clone(),
             app_id.into(),
             origin_conversation,
+            viewed,
             now_ms(),
             60_000,
         )

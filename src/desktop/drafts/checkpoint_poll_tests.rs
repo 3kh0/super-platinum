@@ -99,6 +99,8 @@ fn outcome(snapshot: &Snapshot) -> serde_json::Value {
         "uncommitted":snapshot.view.uncommitted, "pending":snapshot.pending,
         "error":format!("{:?}", snapshot.error),
         "unsaved":snapshot.unsaved, "running":snapshot.running,
+        "observing":snapshot.observing,
+        "projection":snapshot.projection.as_ref().map(|barrier| &barrier.id),
     })
 }
 
@@ -126,13 +128,14 @@ async fn unchanged_poll_emits_nothing_but_first_observation_keeps_complete_snaps
 
 #[tokio::test]
 async fn every_original_signature_transition_emits_the_same_owned_snapshot() {
-    let changes: [fn(&mut State); 8] = [
+    let changes: [fn(&mut State); 9] = [
         |s| s.serial += 1,
         |s| s.base.stored.as_mut().unwrap().revision += 1,
         |s| s.error = Some(Fault::Storage),
         |s| s.pending = Some((s.serial, s.base.local.clone())),
         |s| s.running = true,
         |s| s.settling = true,
+        |s| s.observing = true,
         |s| {
             s.base.blocked = Some(BlockedLocal {
                 token: "refused-input".into(),

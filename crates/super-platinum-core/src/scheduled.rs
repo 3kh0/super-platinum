@@ -3,6 +3,7 @@
 use crate::slack::models::Message;
 use serde::{Deserialize, Deserializer};
 use std::collections::{BTreeMap, HashSet};
+pub mod edit;
 mod realtime;
 use realtime::RealtimeDrafts;
 

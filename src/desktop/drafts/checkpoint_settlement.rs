@@ -29,6 +29,7 @@ impl Editor {
                 || state.serial != expected_serial
                 || state.running
                 || state.settling
+                || state.projection.is_some()
                 || !state.local_writes.is_empty()
                 || state
                     .pending

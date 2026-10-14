@@ -246,7 +246,7 @@ fn channels_capture_checks_required_max_ids_and_channel_specific_shape() {
 #[test]
 fn conversations_capture_preserves_order_clear_initial_confirmation_and_immutable_owner() {
     for initial in [None, Some(json!([])), Some(json!(["C00000002"]))] {
-        let mut element = json!({"type":"multi_conversations_select","action_id":"a","confirm":confirmation(),"response_url_enabled":true});
+        let mut element = json!({"type":"multi_conversations_select","action_id":"a","confirm":confirmation(),"response_url_enabled":true,"default_to_current_conversation":true});
         if let Some(value) = initial.clone() {
             element["initial_conversations"] = value;
         }
@@ -265,6 +265,18 @@ fn conversations_capture_preserves_order_clear_initial_confirmation_and_immutabl
                 initial.as_ref()
             );
             assert!(current.action().get("response_url_enabled").is_none());
+            assert!(
+                current
+                    .action()
+                    .get("default_to_current_conversation")
+                    .is_none()
+            );
+            let mut changed = message.clone();
+            changed.blocks[0]["elements"][0]["default_to_current_conversation"] = json!(false);
+            assert!(matches!(
+                captured.revalidate(&owner(), &changed),
+                Err(MessageActionError::StaleMessage)
+            ));
             let mut changed = message.clone();
             changed.blocks[0]["elements"][0]["max_selected_items"] = json!(1);
             assert!(matches!(

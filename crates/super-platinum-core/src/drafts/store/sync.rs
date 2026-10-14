@@ -15,7 +15,9 @@ mod alternates;
 mod resolution;
 pub use alternates::{LocalAlternate, LocalWriter};
 use alternates::{has_alternates, preserve_owned_alternate, read_alternates, reviewed_revision};
-pub use resolution::{LocalChoice, LocalReview, LocalSettlement};
+pub use resolution::{
+    LocalChoice, LocalReview, LocalSettlement, RemoteChoice, RemoteReview, RemoteSettlement,
+};
 
 // Version 4 adds persisted event ordering and unsupported observation evidence.
 // Read earlier rows; older binaries reject v4 rather than discard these guards.
@@ -556,5 +558,7 @@ mod consume_tests;
 #[cfg(test)]
 pub(super) mod tests;
 
+#[cfg(test)]
+mod observation_tests;
 #[cfg(test)]
 mod release_tests;

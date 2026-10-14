@@ -421,3 +421,9 @@ impl CurrentMessageOverflow<'_> {
 
 #[cfg(test)]
 mod tests;
+
+mod external;
+pub use external::{CapturedMessageExternal, CurrentMessageExternal};
+
+mod external_options;
+pub use external_options::{CapturedMessageExternalOptions, CurrentMessageExternalOptions};
