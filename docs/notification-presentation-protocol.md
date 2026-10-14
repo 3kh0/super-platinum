@@ -507,9 +507,12 @@ The raw `client.counts.saved` key is `uncompleted_overdue_count`; B4165296 uses
 
 Later visibility comes from `+3b5.b` (S5324982): parse user pref
 `tab_rail_customization`, merge defaults (`wfsK.c`, Later defaults true), then
-force applicable mandatory tabs visible. Missing/null final Later visibility
-defaults true at the Nq call site. A complete consumer must use this effective
-visibility policy, not merely inspect whether Later is the active native tab.
+force applicable mandatory tabs visible. `3RLp.yW` (S4578570) explicitly marks
+Later as **not mandatory**; its default is true (`wfsK`, S5323876). Therefore an
+explicit falsy Later override can hide it and no mandatory-tab rule restores it.
+Missing/null final Later visibility defaults true at the Nq call site. Invalid
+JSON or a parsed null uses defaults. The final condition uses JS truthiness,
+not strict boolean equality. This policy is independent of the active native tab.
 
 Without Inbox, cJ uses canonical `channel_badges` (`vuTZ.xY`, S3520610):
 `thread_mentions + app_dms + channels`, plus `thread_unreads` when
@@ -519,8 +522,9 @@ unless `dual_badging_in_home_sidebar == on` (S1202467). The Dock's legacy numeri
 branch instead uses `JOlo.P` (B8206180), its DM-suppression-aware channel totals
 and thread policy, with eligible Later count through `xbJ9.p` (B8205790).
 These distinct branches cannot be replaced with one sum of visible sidebar
-mention counts. Full mandatory-tab and legacy suppression projection remain
-separate dependencies before claiming all-account Dock parity.
+mention counts. The exact legacy and ordinary-unread dependencies are expanded
+below; Enterprise workspace-order context remains an explicit integration
+requirement before claiming all-account Dock parity.
 
 ### Smallest next complete consumer slice
 
@@ -701,10 +705,138 @@ aggregate or from the number of loaded DM rows.
 
 The native DM-rail correction is undergoing integration validation. Its
 message-bag read state must outrank older channel metadata; a cleared bag must
-not regain a badge from a stale `has_unreads` bit. Authoritative read count
-snapshots with omitted numeric counts must also clear previous mentions.
+not regain a badge from a stale `has_unreads` bit. Authoritative count snapshots
+replace omitted numeric mentions with zero for every supplied entry
+(B4471250–4473720), including an unread DM: its separate forced-unread indicator
+then contributes one, rather than the old numeric total.
 Source tracing establishes the calculation and normalization, not live count
 agreement: the observed stock rail total and an older native conversation count
 are different consumers, and no final paired live result is claimed here.
 Root-owned core/desktop suites, normal/narrow fixtures and a same-account live
 comparison remain the gates for this correction.
+
+Integration receipt: corrected locked core1,076/desktop950 passed; normal and
+narrow native fixtures passed with DM46 independently of Activitydm4 and
+excluded muted901/bot902. Bare dev agent state confirmed Inbox=true and current
+Activity35/DM46, matching stock's paired read-only rail snapshot. This does not
+prove every live badge event or the full Dock aggregate. A subsequent decoded-pixel audit showed the allegedly partial captures were
+intact; that visual hypothesis was closed without a rendering workaround. See
+the capture responsiveness entry in the worklog.
+
+
+### Complete Dock input contract: Later, legacy highlights and ordinary unreads
+
+Source-only checkpoint, 2026-10-13; this establishes formulas and ingestion,
+not native Dock verification. Offsets use the B/S captures named above. The
+installed desktop projection was re-read directly from `app.asar`: M1218022
+uses `String(unreadHighlights)` without a numeric cap, otherwise the literal
+U+2022 `•` when `unreads > 0 && showBullet`, otherwise `""`.
+
+`mac_ssb_bullet` is raw `4iNl.ty` user preference in B6467xx. The selector and
+reducer (S5314629) add no default: missing/null is falsy here, even though the
+settings checkbox has its own default projection. Do not carry a settings UI
+default into the Dock aggregate.
+
+**Canonical count inputs.** `client.counts.channel_badges` is transformed to
+outer property `channelBadges`, then B4474xxx dispatches `2Zmw.$m` when present.
+`2Zmw` merges that partial map into the previous map; an empty map does not clear
+previous keys. Its meaningful legacy keys are `channels`, `thread_mentions`,
+`thread_unreads`, `dms`, and `app_dms`. The non-Inbox
+`badge_counts_updated` branch (B5922593) sends `event.counts` through the same
+merge reducer. The Inbox branch returns before that legacy update. This differs
+from the replacement semantics of `activity_v2` described above.
+
+The raw Later count is `saved.uncompleted_overdue_count`, camel-cased by
+`ijf8.A` to `saved.counts.uncompletedOverdueCount`; it is not inferred from a
+paged list or wall-clock inspection of loaded reminders. `WKbT.yO`
+(S3040816) replaces saved counts on the client-counts path. The
+`saved_added`/`saved_updated`/`saved_deleted` handlers (B5848xxx) also pass
+`event.counts` through `g/N2.L` (S3031900), `LYxw.XK`, and the saved server-count
+reducer. That reducer replaces the count snapshot and adjusts for its own
+pending optimistic clear operations; native code without those operations must
+not invent the adjustment. A missing count snapshot is not proof of zero.
+
+**Inbox Later.** `Nq = overdue` only when Inbox is enabled,
+`global_reminders_in_activity ?? true` is falsy, and effective Later visibility
+is truthy. Otherwise it is zero. Later visibility is resolved as above; Later
+is never a mandatory tab. This branch has no additional Enterprise-MRU gate.
+
+**Legacy highlights.** `JOlo.P` (B8206180) computes a DM contribution by summing
+`countsPerChannel[channel].unreadHighlightCnt` for IMs and MPIMs, excluding
+`xQEw.G` app/Slackbot IMs. The latter (S3712907) checks Slackbot channel, `USLACK`,
+and canonical app/bot member classification. Unlike the DM rail, JOlo adds no
+separate `USEARCH` or `USLACKSECURITY` exclusion. Its source map already excludes
+muted/ineligible conversations. This contribution is added to canonical
+`channel_badges.channels + thread_mentions + app_dms`, plus `thread_unreads`
+when either `iHqW.Dn` or the raw `activity_include_threads_in_badge_count` is
+truthy. `iHqW.Dn` is the `thread_badging_home_sidebar == on` gate while
+`dual_badging_in_home_sidebar != on`. Do not also add canonical `dms`: JOlo
+replaces that portion with its filtered per-conversation sum.
+
+`xbJ9.p` (B8205790) adds positive overdue Later count to JOlo only when
+`!isEnterprise || isUnifiedUser || isMostRecentlyUsedEnterpriseWorkspace`.
+Unlike Inbox Nq, this legacy branch does not inspect Later tab visibility or
+`global_reminders_in_activity`. Legacy Activity cJ and legacy Dock xbJ9 are
+different consumers; Activity user-alert additions do not belong in JOlo.
+
+**Ordinary unread U.** `2Zmw.calculateTotalCounts` (S3511911 onward) computes
+`totalUnreads = sum(eligible, unsuppressed channel unreadCnt) + threadPart`;
+`threadPart = suppressThreads ? 0 : (threadsUnreadCount || Number(threadsHasUnreads))`.
+Dock U is `totalUnreads > 0`, not unread-conversation count, the Activity total,
+or the sum of bounded native transcript rows. `fgSa.F` (S3930986) excludes missing
+or muted channels. IMs are otherwise eligible; other channels require not
+archived, canonical membership, Inbox visibility, and not file-channel. IM/MPIM
+membership and cross-team flags require the mapper normalization described in
+the DM-rail section, not raw API defaults. Client-counts IM/MPIM `unreadCnt` is
+`mention_count || Number(has_unreads)`; ordinary channel `unreadCnt` is normally
+`Number(has_unreads)`. `EmXR.fz` (S2268141) instead uses positive mention
+count when experiment `badge_all_unreads == on`, channel notification preference
+`badge_all_unreads === true`, and the channel is not muted. This changes the
+numeric unread count, but not its positive/zero result after the earlier
+`has_unreads == false` mention clearing.
+
+Channel suppression is `fromAnotherTeam || qtAD.shouldSuppressOrgChannel`;
+thread-channel suppression uses only the latter. `BScm` (B82073xx) filters raw
+`threads.unread_count_by_channel` by Inbox visibility. If that map is absent,
+it uses `Number(threads.has_unreads)`. Its resulting `threadsHasUnreads` does
+not retain an unrelated-workspace unread flag when a nonempty raw map filters
+to zero. `threads.mention_count_by_channel` is separately filtered by Inbox
+visibility and thread-channel suppression. Global `suppressThreads` is
+`isEnterprise && !isMostRecentlyUsedEnterpriseWorkspace`.
+
+**Explicit Enterprise context.** `qtAD`/`y0HN` (S3975369 onward) suppress an
+org-shared channel only in non-unified desktop/Sonic Enterprise context when
+another relevant workspace is most recent. Relevant workspaces are the self
+member's Enterprise teams for IM/MPIM/global-shared channels, otherwise the
+channel's internal teams. Sonic selects the first intersection with recent
+workspace order, falling back to the first relevant workspace; desktop uses
+`YJ4z.wjr` order, then the first relevant workspace. Missing selected workspace
+means no org-channel suppression. Unified context is **not** inferred from an
+Enterprise ID: `u79s.ss` reads the `T68h` app-metadata extension (S894750).
+Gantry registers `config.isUnifiedUserEnabled`, default true, at S1062104;
+the unregistered extension default is false (S694456). This is app configuration,
+not an established authenticated `client.userBoot` field. Native projection
+must supply explicit compatible context or retain an unavailable result for
+ambiguous Grid contributions. The current native selected workspace is not a
+substitute for stock MRU ordering.
+
+The smallest complete implementation boundary is a per-workspace pure
+projection over revisioned Activity/legacy/saved counts, exact assignments and
+raw preferences, normalized unread state, and explicit Enterprise context,
+followed by an account-owned aggregate and platform label adapter. Positive
+ordinary-unread evidence may establish U without guessing unrelated unknown
+inputs; absence of evidence may not establish a clear badge. Tests should cover
+Later hidden/null/malformed preferences; Inbox reminder de-duplication; legacy
+thread preference and app-DM exclusions; partial legacy count merges versus
+Activity replacement; saved snapshot replacement; Enterprise/MRU unknowns;
+and numeric-over-dot precedence across workspaces. No real badge event,
+preference mutation, or native badge readback is claimed by this source checkpoint.
+
+Implementation receipt: the core Dock projection, mutation-boundary shell cache,
+and macOS label adapter are now wired. Numeric authority is separate from an
+unknown ordinary-unread flag, allowing known Inbox counts to update and clear
+without inventing Enterprise context. Unknown values retain prior same-owner
+authority; account/epoch/self-user changes retire it. Actual AppKit readback
+passed both the adapter transition check and production-hook Activity/Later
+fixture. See the worklog and `tmp/dock-badge-{native,projection}-check.log`.
+Full Enterprise context ingestion and live badge-event agreement remain open.

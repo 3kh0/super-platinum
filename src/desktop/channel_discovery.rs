@@ -97,8 +97,12 @@ impl Read {
                 .unwrap();
             let changed =
                 workspace.finish_channel_discovery(&self.channel, self.revision, result.ok());
-            if changed && shell.core.active_team.as_deref() == Some(&self.scope.session.team_id) {
-                shell.refresh_from_core();
+            if changed {
+                if shell.core.active_team.as_deref() == Some(&self.scope.session.team_id) {
+                    shell.refresh_from_core();
+                } else {
+                    shell.refresh_dock_badge_for(&self.scope.session.team_id);
+                }
             }
             changed
         };
@@ -144,6 +148,8 @@ pub(crate) async fn reconcile(mut state: Signal<ShellState>, team: String, gener
         let batches = shell.core.workspaces[&team].channels_to_refresh();
         if shell.core.active_team.as_deref() == Some(&team) {
             shell.refresh_from_core();
+        } else {
+            shell.refresh_dock_badge_for(&team);
         }
         batches
     };
@@ -170,6 +176,8 @@ pub(crate) async fn reconcile(mut state: Signal<ShellState>, team: String, gener
                     .apply_channel_refresh_since(page, revision);
                 if shell.core.active_team.as_deref() == Some(&team) {
                     shell.refresh_from_core();
+                } else {
+                    shell.refresh_dock_badge_for(&team);
                 }
             }
             Ok(_) => {}

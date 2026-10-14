@@ -61,12 +61,17 @@ pub async fn load(mut state: Signal<ShellState>, filter: LaterFilter, append: bo
     let Some(ctx) = Context::get(&state) else {
         return;
     };
-    let (generation, cursor) = {
+    let (generation, cursor, dock_revision) = {
         let mut shell = state.write();
         shell
             .core
             .later
             .ensure_scope(ctx.epoch, &ctx.session.team_id);
+        let dock_revision = shell
+            .core
+            .workspaces
+            .get(&ctx.session.team_id)
+            .map(|w| w.dock_counts.revision());
         let later = &mut shell.core.later;
         if append && (later.loading || later.next_cursor.is_none()) {
             return;
@@ -76,7 +81,7 @@ pub async fn load(mut state: Signal<ShellState>, filter: LaterFilter, append: bo
         } else {
             None
         };
-        (later.begin(filter, append), cursor)
+        (later.begin(filter, append), cursor, dock_revision)
     };
     let result = api::fetch_saved(
         &ctx.transport,
@@ -95,10 +100,27 @@ pub async fn load(mut state: Signal<ShellState>, filter: LaterFilter, append: bo
             return;
         }
         match result {
-            Ok(page) => shell
-                .core
-                .later
-                .apply_page(generation, page, append, cursor.as_deref()),
+            Ok(page) => {
+                let overdue = page.counts.uncompleted_overdue_count;
+                let applied =
+                    shell
+                        .core
+                        .later
+                        .apply_page(generation, page, append, cursor.as_deref());
+                if applied {
+                    if let (Some(count), Some(workspace)) =
+                        (overdue, shell.core.workspaces.get_mut(&ctx.session.team_id))
+                    {
+                        // A saved RT event or fresher client.counts snapshot wins
+                        // over this page, even when its list generation matches.
+                        if Some(workspace.dock_counts.revision()) == dock_revision {
+                            workspace.dock_counts.apply_overdue_count(count);
+                        }
+                    }
+                    shell.refresh_dock_badge_for(&ctx.session.team_id);
+                }
+                applied
+            }
             Err(error) => {
                 shell.core.later.loading = false;
                 shell.core.later.error = Some(format!("Could not load Later: {error}"));

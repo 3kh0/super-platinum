@@ -4,6 +4,7 @@ mod boot;
 mod huddle;
 pub use huddle::*;
 mod composer;
+mod dock_badge;
 mod drafts;
 mod shell;
 mod timeline;

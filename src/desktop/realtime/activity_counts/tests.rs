@@ -55,6 +55,31 @@ fn counts(value: serde_json::Value) -> CountsPage {
     serde_json::from_value(json!({"activity_v2":value})).unwrap()
 }
 
+#[test]
+fn saved_realtime_counts_win_over_in_flight_http_and_retired_socket_frames() {
+    let mut c = core();
+    c.workspaces.get_mut("T1").unwrap().rt_generation = 3;
+    let old_http = owner(&c).begin(&c).unwrap();
+    for (generation, count) in [(3, 7), (2, 99)] {
+        let event = parse_event(
+            &json!({"type":"saved_updated", "counts":{
+                "uncompleted_overdue_count":count
+            }})
+            .to_string(),
+        )
+        .unwrap();
+        crate::realtime::apply_in_view(&mut c, "T1", generation, event, false);
+    }
+    assert_eq!(c.workspaces["T1"].dock_counts.overdue_count(), Some(7));
+    let page = serde_json::from_value(json!({"saved":{"uncompleted_overdue_count":2}})).unwrap();
+    assert!(old_http.apply(&mut c, page));
+    assert_eq!(c.workspaces["T1"].dock_counts.overdue_count(), Some(7));
+    let read = owner(&c).begin(&c).unwrap();
+    let page = serde_json::from_value(json!({"saved":{"uncompleted_overdue_count":0}})).unwrap();
+    assert!(read.apply(&mut c, page));
+    assert_eq!(c.workspaces["T1"].dock_counts.overdue_count(), Some(0));
+}
+
 fn inbox(core: &mut CoreAppState) {
     let rules = super_platinum_core::slack::api::parse_badge_experiments(
         &json!({"ok":true,"assignments":{"activity_inbox":{"group":"on"}}}),

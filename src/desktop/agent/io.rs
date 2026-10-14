@@ -5,22 +5,24 @@ use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader
 
 const CLIENT_DEADLINE: Duration = Duration::from_secs(5);
 
-pub(super) async fn handle<S, F>(stream: S, dispatch: F) -> Result<(), String>
+pub(super) async fn handle<S, F, Fut>(stream: S, dispatch: F) -> Result<(), String>
 where
     S: AsyncRead + AsyncWrite + Unpin,
-    F: FnMut(AgentRequest) -> AgentResponse,
+    F: FnMut(AgentRequest) -> Fut,
+    Fut: std::future::Future<Output = AgentResponse>,
 {
     handle_with_deadline(stream, dispatch, CLIENT_DEADLINE).await
 }
 
-async fn handle_with_deadline<S, F>(
+async fn handle_with_deadline<S, F, Fut>(
     stream: S,
     mut dispatch: F,
     deadline: Duration,
 ) -> Result<(), String>
 where
     S: AsyncRead + AsyncWrite + Unpin,
-    F: FnMut(AgentRequest) -> AgentResponse,
+    F: FnMut(AgentRequest) -> Fut,
+    Fut: std::future::Future<Output = AgentResponse>,
 {
     let (reader, mut writer) = tokio::io::split(stream);
     let mut lines = BufReader::new(reader).lines();
@@ -34,7 +36,7 @@ where
             continue;
         }
         let response = match serde_json::from_str::<AgentRequest>(&line) {
-            Ok(request) => dispatch(request),
+            Ok(request) => dispatch(request).await,
             Err(error) => AgentResponse::err(0, format!("invalid request json: {error}")),
         };
         let mut payload = serde_json::to_vec(&response).map_err(|error| error.to_string())?;
@@ -62,7 +64,7 @@ mod tests {
             client.write_all(partial).await.unwrap();
             let result = handle_with_deadline(
                 server,
-                |_| panic!("no complete command"),
+                |_| async { panic!("no complete command") },
                 Duration::from_millis(20),
             )
             .await;
@@ -89,7 +91,10 @@ mod tests {
             server,
             move |request| {
                 count.fetch_add(1, Ordering::SeqCst);
-                AgentResponse::ok(request.id, json!({"large":"x".repeat(4096)}))
+                std::future::ready(AgentResponse::ok(
+                    request.id,
+                    json!({"large":"x".repeat(4096)}),
+                ))
             },
             Duration::from_millis(20),
         )
@@ -107,7 +112,7 @@ mod tests {
                 server,
                 move |request| {
                     let sequence = count.fetch_add(1, Ordering::SeqCst) + 1;
-                    AgentResponse::ok(request.id, json!({"sequence":sequence}))
+                    std::future::ready(AgentResponse::ok(request.id, json!({"sequence":sequence})))
                 },
                 Duration::from_secs(1),
             )
@@ -124,6 +129,45 @@ mod tests {
                 serde_json::from_str(&lines.next_line().await.unwrap().unwrap()).unwrap();
             assert_eq!(response["id"], id);
             assert_eq!(response["ok"], true);
+            assert_eq!(response["data"]["sequence"], id - 10);
+        }
+        writer.shutdown().await.unwrap();
+        assert!(task.await.unwrap().is_ok());
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+    }
+    #[tokio::test]
+    async fn awaited_dispatch_preserves_pipelined_response_order() {
+        let (client, server) = tokio::io::duplex(512);
+        let calls = Arc::new(AtomicUsize::new(0));
+        let count = calls.clone();
+        let task = tokio::spawn(async move {
+            handle_with_deadline(
+                server,
+                move |request| {
+                    let count = count.clone();
+                    async move {
+                        let sequence = count.fetch_add(1, Ordering::SeqCst) + 1;
+                        if sequence == 1 {
+                            tokio::time::sleep(Duration::from_millis(30)).await;
+                            assert_eq!(count.load(Ordering::SeqCst), 1);
+                        }
+                        AgentResponse::ok(request.id, json!({"sequence":sequence}))
+                    }
+                },
+                Duration::from_secs(1),
+            )
+            .await
+        });
+        let (reader, mut writer) = tokio::io::split(client);
+        let mut lines = BufReader::new(reader).lines();
+        writer
+            .write_all(b"{\"id\":11,\"cmd\":\"ping\"}\n{\"id\":12,\"cmd\":\"ping\"}\n")
+            .await
+            .unwrap();
+        for id in [11, 12] {
+            let response: serde_json::Value =
+                serde_json::from_str(&lines.next_line().await.unwrap().unwrap()).unwrap();
+            assert_eq!(response["id"], id);
             assert_eq!(response["data"]["sequence"], id - 10);
         }
         writer.shutdown().await.unwrap();

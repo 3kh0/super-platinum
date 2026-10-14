@@ -14,6 +14,9 @@ use crate::state::{Presence, Workspace};
 pub struct NotificationConfig {
     #[serde(default)]
     pub loaded: bool,
+    /// Complete user boot preference authority for Dock projection.
+    #[serde(default)]
+    pub dock_loaded: bool,
     /// Older cache snapshots lack the full DND schedule needed for tomorrow.
     #[serde(default)]
     pub temporary_schedule_loaded: bool,
@@ -41,6 +44,12 @@ pub struct NotificationOptions {
     pub sound: Option<String>,
 }
 
+pub(super) const DOCK_PREFS: &[&str] = &[
+    "mac_ssb_bullet",
+    "activity_include_threads_in_badge_count",
+    "tab_rail_customization",
+];
+
 const USER_PREFS: &[&str] = &[
     "priority_dnd_override",
     "mute_sounds",
@@ -67,6 +76,13 @@ impl NotificationConfig {
     }
 
     pub fn apply_prefs(&mut self, prefs: &BootPrefs) {
+        self.dock_loaded = true;
+        for name in DOCK_PREFS {
+            self.user.remove(*name);
+            if let Some(value) = prefs.extra.get(*name) {
+                self.user.insert((*name).into(), value.clone());
+            }
+        }
         self.temporary_schedule_loaded = true;
         self.schedule_loaded = true;
         self.user.retain(|name, _| !temporary_schedule_pref(name));
@@ -92,7 +108,7 @@ impl NotificationConfig {
     pub fn apply_change(&mut self, name: &str, value: Value) {
         // SWeb tests the raw preference's JavaScript truthiness. In particular
         // the strings "false" and "0" are not boolean/numeric preferences.
-        if name == "activity_dms_opt_out" {
+        if name == "activity_dms_opt_out" || DOCK_PREFS.contains(&name) {
             self.user.insert(name.into(), value);
             return;
         }

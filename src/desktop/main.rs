@@ -141,6 +141,8 @@ fn app() -> Element {
     read_visibility::use_focus_read_marks(state);
     #[cfg(target_os = "macos")]
     notification::attention::use_cleanup();
+    #[cfg(target_os = "macos")]
+    notification::badge::use_badge(state, desktop.clone());
     let timeline_identity = use_memo(move || {
         let state = state.read();
         (

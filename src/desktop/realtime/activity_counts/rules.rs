@@ -37,7 +37,11 @@ impl CountsOwner {
                 api::fetch_badge_experiments(&read.owner.transport, &client, &read.owner.session)
                     .await
             {
-                read.apply(&mut state.write().core, rules);
+                let team = read.owner.session.team_id.clone();
+                let mut shell = state.write();
+                if read.apply(&mut shell.core, rules) {
+                    shell.refresh_dock_badge_for(&team);
+                }
             }
         });
     }

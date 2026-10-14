@@ -62,6 +62,11 @@ pub enum RtEvent {
     },
     ActivityUpdated(ActivityItem),
     BadgeCountsUpdated(super::models::ActivityBadgeCounts),
+    LegacyBadgeCountsUpdated(BTreeMap<String, u32>),
+    CombinedBadgeCountsUpdated {
+        activity: super::models::ActivityBadgeCounts,
+        legacy: BTreeMap<String, u32>,
+    },
     RoomJoin {
         room: Room,
         user: UserId,

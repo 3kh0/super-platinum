@@ -15,6 +15,7 @@ pub struct ShellState {
     pub(crate) app_modal: Option<crate::app_modal::Session>,
     pub(crate) app_modal_closes: Vec<crate::app_modal::CloseTicket>,
     pub core: super_platinum_core::CoreAppState,
+    pub(crate) dock_badge_cache: super::dock_badge::Cache,
     pub(crate) managed_drafts: crate::drafts::session::Session,
     pub(crate) draft_writes: crate::drafts::integration::Desktop,
     pub huddle_ui: super::HuddleUi,
@@ -355,6 +356,7 @@ impl ShellState {
     }
 
     pub fn refresh_from_core(&mut self) {
+        self.refresh_dock_badge();
         self.prune_pending_delivery();
         let held_window = (self.core.pending_scroll_to.is_none()
             && self.channels.get(self.active_channel).map(|c| &c.id)

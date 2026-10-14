@@ -285,5 +285,6 @@ pub(super) fn finish_read(
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect();
     }
+    s.refresh_dock_badge_for(&r.token.owner.team);
     settled
 }

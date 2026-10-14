@@ -87,7 +87,10 @@ pub async fn refresh(mut state: Signal<ShellState>) {
         // the owner from before boot/history awaits. New socket/local read state wins.
         if let Some(read) = counts_owner.and_then(|owner| owner.begin(&state.peek().core)) {
             if let Ok(counts) = api::fetch_counts(&transport, &client, &workspace_session).await {
-                read.apply(&mut state.write().core, counts);
+                let mut shell = state.write();
+                if read.apply(&mut shell.core, counts) {
+                    shell.refresh_dock_badge_for(&team);
+                }
             }
         }
         refresh_channel_metadata(&mut state, &transport, &client, &workspace_session, &team).await;

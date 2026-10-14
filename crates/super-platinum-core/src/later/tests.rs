@@ -238,3 +238,16 @@ fn todo_state_only_completion_projects_in_completed_and_archive_still_takes_prec
     archived.is_archived = true;
     assert_eq!(archived.filter(), LaterFilter::Archived);
 }
+#[test]
+fn saved_overdue_authority_distinguishes_missing_null_and_zero() {
+    for raw in [
+        serde_json::json!({}),
+        serde_json::json!({"uncompleted_overdue_count":null}),
+    ] {
+        let counts: super::SavedCounts = serde_json::from_value(raw).unwrap();
+        assert_eq!(counts.uncompleted_overdue_count, None);
+    }
+    let counts: super::SavedCounts =
+        serde_json::from_value(serde_json::json!({"uncompleted_overdue_count":0})).unwrap();
+    assert_eq!(counts.uncompleted_overdue_count, Some(0));
+}

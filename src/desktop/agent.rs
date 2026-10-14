@@ -7,6 +7,7 @@ use super_platinum_core::agent_protocol::{
     AgentCommand, AgentRequest, AgentResponse, SettingsSection as AgentSettingsSection,
 };
 mod background;
+mod capture;
 #[cfg(any(unix, target_os = "windows"))]
 mod io;
 #[cfg(target_os = "windows")]
@@ -127,10 +128,14 @@ async fn serve_unix(
 #[cfg(unix)]
 async fn handle_client(
     stream: UnixStream,
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     desktop: &dioxus::desktop::DesktopContext,
 ) -> Result<(), String> {
-    io::handle(stream, |request| dispatch(&mut state, request, desktop)).await
+    io::handle(stream, |request| async move {
+        let mut state = state;
+        dispatch(&mut state, request, desktop).await
+    })
+    .await
 }
 
 #[cfg(target_os = "windows")]
@@ -166,13 +171,17 @@ async fn serve_windows(
 #[cfg(target_os = "windows")]
 async fn handle_tcp_client(
     stream: TcpStream,
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     desktop: &dioxus::desktop::DesktopContext,
 ) -> Result<(), String> {
-    io::handle(stream, |request| dispatch(&mut state, request, desktop)).await
+    io::handle(stream, |request| async move {
+        let mut state = state;
+        dispatch(&mut state, request, desktop).await
+    })
+    .await
 }
 
-fn dispatch(
+async fn dispatch(
     state: &mut Signal<ShellState>,
     request: AgentRequest,
     desktop: &dioxus::desktop::DesktopContext,
@@ -307,7 +316,7 @@ fn dispatch(
             dioxus::prelude::spawn(crate::usergroups::open(*state, group.clone()));
             AgentResponse::ok(id, json!({ "usergroup": group }))
         }
-        AgentCommand::Screenshot { path } => match capture_window(path, desktop) {
+        AgentCommand::Screenshot { path } => match capture::window(path, desktop).await {
             Ok((path, width, height)) => AgentResponse::ok(
                 id,
                 json!({ "path": path.display().to_string(), "width": width, "height": height }),
@@ -425,139 +434,6 @@ fn dispatch(
             AgentResponse::ok(id, json!({ "index": index, "channel": channel, "ts": ts }))
         }
     }
-}
-
-fn resolve_screenshot_path(path: Option<String>) -> PathBuf {
-    match path {
-        Some(path) if !path.trim().is_empty() => PathBuf::from(path),
-        _ => {
-            let stamp = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|duration| duration.as_secs())
-                .unwrap_or(0);
-            PathBuf::from("tmp/agent-ui").join(format!("dioxus-{stamp}.png"))
-        }
-    }
-}
-
-#[cfg(target_os = "macos")]
-fn capture_window(
-    path: Option<String>,
-    desktop: &dioxus::desktop::DesktopContext,
-) -> Result<(PathBuf, u32, u32), String> {
-    use dioxus::desktop::wry::WebViewExtMacOS;
-
-    let path = resolve_screenshot_path(path);
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    }
-    let window_number = desktop.webview.ns_window().windowNumber();
-    let status = std::process::Command::new("screencapture")
-        .arg("-x")
-        .arg("-o")
-        .arg("-l")
-        .arg(window_number.to_string())
-        .arg(&path)
-        .status()
-        .map_err(|error| format!("start screencapture: {error}"))?;
-    if !status.success() {
-        return Err(format!("screencapture exited with {status}"));
-    }
-    let (width, height) = png_dimensions(&path)?;
-    Ok((path, width, height))
-}
-
-#[cfg(target_os = "linux")]
-fn capture_window(
-    path: Option<String>,
-    _desktop: &dioxus::desktop::DesktopContext,
-) -> Result<(PathBuf, u32, u32), String> {
-    let path = resolve_screenshot_path(path);
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    }
-    let status = std::process::Command::new("gnome-screenshot")
-        .args(["-w", "-f"])
-        .arg(&path)
-        .status();
-    let captured = status.is_ok_and(|status| status.success()) || {
-        let window = std::process::Command::new("xdotool")
-            .arg("getactivewindow")
-            .output()
-            .ok()
-            .filter(|output| output.status.success())
-            .and_then(|output| String::from_utf8(output.stdout).ok())
-            .map(|window| window.trim().to_owned());
-        window.is_some_and(|window| {
-            std::process::Command::new("import")
-                .args(["-window", &window])
-                .arg(&path)
-                .status()
-                .is_ok_and(|status| status.success())
-        })
-    };
-    if !captured {
-        return Err(
-            "neither gnome-screenshot nor ImageMagick could capture the active Super Platinum window".into(),
-        );
-    }
-    let (width, height) = png_dimensions(&path)?;
-    Ok((path, width, height))
-}
-
-#[cfg(target_os = "windows")]
-fn capture_window(
-    path: Option<String>,
-    desktop: &dioxus::desktop::DesktopContext,
-) -> Result<(PathBuf, u32, u32), String> {
-    use dioxus::desktop::tao::platform::windows::WindowExtWindows;
-    let path = resolve_screenshot_path(path);
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    }
-    let script = r#"Add-Type @'
-using System; using System.Runtime.InteropServices;
-public class SuperPlatinumCapture { [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L,T,R,B; } [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r); }
-'@; $r=New-Object SuperPlatinumCapture+RECT; [SuperPlatinumCapture]::GetWindowRect([IntPtr]::new([int64]$args[0]),[ref]$r)|Out-Null; Add-Type -AssemblyName System.Drawing; $b=New-Object System.Drawing.Bitmap ($r.R-$r.L),($r.B-$r.T); $g=[System.Drawing.Graphics]::FromImage($b); $g.CopyFromScreen($r.L,$r.T,0,0,$b.Size); $b.Save($args[1],[System.Drawing.Imaging.ImageFormat]::Png); $g.Dispose(); $b.Dispose()"#;
-    let status = std::process::Command::new("powershell.exe")
-        .args([
-            "-NoProfile",
-            "-NonInteractive",
-            "-Command",
-            script,
-            &desktop.window.hwnd().to_string(),
-        ])
-        .arg(&path)
-        .status()
-        .map_err(|error| format!("start PowerShell capture: {error}"))?;
-    if !status.success() {
-        return Err(format!("PowerShell capture exited with {status}"));
-    }
-    let (width, height) = png_dimensions(&path)?;
-    Ok((path, width, height))
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-fn capture_window(
-    _path: Option<String>,
-    _desktop: &dioxus::desktop::DesktopContext,
-) -> Result<(PathBuf, u32, u32), String> {
-    Err("native capture is unsupported on this platform".into())
-}
-
-fn png_dimensions(path: &std::path::Path) -> Result<(u32, u32), String> {
-    use std::io::Read;
-    let mut header = [0_u8; 24];
-    std::fs::File::open(path)
-        .and_then(|mut file| file.read_exact(&mut header))
-        .map_err(|error| format!("read screenshot: {error}"))?;
-    if &header[..8] != b"\x89PNG\r\n\x1a\n" || &header[12..16] != b"IHDR" {
-        return Err("screenshot is not a PNG".into());
-    }
-    Ok((
-        u32::from_be_bytes(header[16..20].try_into().expect("four width bytes")),
-        u32::from_be_bytes(header[20..24].try_into().expect("four height bytes")),
-    ))
 }
 
 fn allow_destructive() -> bool {

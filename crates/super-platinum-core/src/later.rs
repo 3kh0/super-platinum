@@ -112,6 +112,9 @@ impl SavedItem {
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct SavedCounts {
+    /// Canonical overdue count; omission is not an authoritative zero.
+    #[serde(default)]
+    pub uncompleted_overdue_count: Option<u32>,
     #[serde(default)]
     pub uncompleted_count: usize,
     #[serde(default)]

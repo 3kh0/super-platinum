@@ -7133,3 +7133,158 @@ six DM conversations contributing 46 highlights from Activity `dm: 4`, and
 checks Activity27 → opt-out23 → gated37 → opt-in41. It also covers known-policy
 missing maps, excluded-only raw snapshots, and explicit zero without losing
 Activity navigation. Execution receipts follow.
+
+The corrected DM rail excludes muted and app/system IMs and uses Slack's
+normalized DM metadata (raw missing MPIM membership must not exclude it).
+Canonical count ingestion now resets omitted numeric mentions before deriving
+a forced-unread indicator, so an old 39 becomes either zero for read or one for
+forced unread. Partial metadata refreshes retain their merge behavior. The
+native fixture opposes eligible46 with muted901 and bot902. A safe agent-state
+projection exposes only the resolved Inbox flag and numeric badge results.
+The first corrected core suite passed 1,075 tests / 5 ignored, preceding the
+additional forced-unread normalization regression; final gates follow.
+
+Final corrected locked suites passed 1,076 core tests / 5 ignored and 950 desktop
+tests / 6 ignored (`tmp/activity-policy-core-final-corrected.log` and
+`tmp/activity-policy-desktop-corrected.log`). Both format checks and whitespace
+checks passed. These include the authoritative omitted-count/forced-unread
+regression and separate DM rail projection; native and live receipts follow.
+
+Bare dev build passed in 2m35s (`tmp/activity-policy-dev-corrected-build.log`).
+Both normal and narrow Activity fixtures passed, including excluded901/902 DM
+counts, all Activity policy transitions, zero reconciliation and exact-reply
+navigation (`tmp/activity-policy-native-corrected.log`). Root read both native
+PNGs. No signed app was built.
+
+After confirming the owned old dev PID78857 and inspecting its empty composer,
+root stopped that process and launched bare dev PID98097. Agent state confirms
+Inbox policy hydrated, Activity35 and DM46, signed-in/online in C0AQDL3V5GU,
+destructive actions disabled (`tmp/activity-policy-live-final.json`). A current
+read-only stock Slack check also showed Activity35 / DMs46. Root inspected the
+full rendered live window (`tmp/agent-ui/activity-policy-active-window.png`).
+This is paired snapshot proof, not a captured live badge-event delivery proof.
+No Slack messages or preference mutations occurred.
+
+Live visual follow-up remains: several captures intermittently lost text/layer
+content after activation/backgrounding, while state remained correct. A one-pixel
+resize and restored size produced a full frame; a later activation + display
+region/window capture pair also produced partial then full frames. Retained
+evidence: `activity-policy-live-final.png`, `activity-policy-live-verified.png`,
+`activity-policy-display-region.png`, `activity-policy-active-window.png` under
+`tmp/agent-ui`. Do not call the repaint issue fixed or assume it is capture-only.
+Next step: reproduce foreground/background native repaint independently of
+fixture assertions, inspect actual DOM/compositor state, and separate capture
+behavior from user-visible rendering before changing rendering code. The full
+parity/design/performance goal remains active and incomplete; Dock aggregation,
+legacy Activity projection and broader cursor-event reconciliation also remain.
+
+### 2026-10-13 — Capture responsiveness and pixel verification
+
+The previous turn made verified badge progress and left a suspected repaint
+issue. Fresh inspection disproved that inference: three independently captured
+window PNGs have identical decoded RGB bytes (zero differing pixels), despite
+the image-inspection tool presenting some as if text were absent. Numeric pixel
+checks also confirm text regions remain populated in the earlier captures.
+Evidence: `tmp/capture-pixel-audit.json` and `tmp/agent-ui/repaint/`. The alleged
+missing-text frames are not evidence of a product repaint defect. The proposed
+DOM diagnostic was removed without adding a protocol command or paint workaround.
+
+Source review did identify an independent real defect: agent screenshots invoked
+a blocking child process on the Dioxus UI thread. Capture now awaits a bounded
+async process, retaining serial responses and main-thread native handle access.
+Directory creation and PNG header inspection run off the UI thread; timeout and
+cancellation kill/reap the child. Five focused regressions cover yielding, child
+cleanup, PNG validation and response ordering. Root validation follows.
+
+Before rebuilding, root rechecked that no Cargo/rustc was running and removed
+only the two audited obsolete incremental directories
+`super_platinum-2imx1soblz5pn` and `super_platinum-3dorswwp19ksl`, preserving the
+current dev/test caches and binary. Free space rose from 1.1 GiB to 7.9 GiB.
+
+Locked desktop validation passed 955 tests / 6 ignored, both formatting and
+whitespace gates passed, and the bare dev build passed in 3m05s. No core behavior
+changed in this slice, and no signed bundle was built.
+
+Paired native checks ran sequentially after compilation, with the same isolated
+Activity fixture and a PATH-only screenshot wrapper delayed by two seconds.
+The old dev binary's AX resize failed after 1.695s while capture took 2.142s.
+The patched binary applied the requested resize in 0.201s while capture remained
+pending (2.174s total), and its PNG has the resized 2000×1400 dimensions. A
+separate 30s-delay case returned a timeout at 10.004s with the exact child PID
+reaped. Receipts: `tmp/agent-ui/capture-responsiveness-{baseline-idle,patched}.json`;
+root inspected both delayed PNGs. These are one-run fault-injection checks of
+the capture path, not general app-interaction latency benchmarks.
+
+The existing live dev PID98097 had moved into an Activity thread while root was
+working. Root inspected its empty composer and kept that active session open;
+the new binary is built for its next launch. No messages/preferences were
+changed, and no live restart was performed in this slice. Full Slack parity,
+visual coverage and end-to-end performance remain incomplete.
+
+### 2026-10-13 — Canonical Dock badge projection in the dev client
+
+User reiterated that development should use the bare dev executable, not routine
+signed bundles. This slice uses only locked tests, a bare build, and disconnected
+native fixtures; the active live dev PID98097 stays open.
+
+Added renderer-neutral per-workspace Dock projections from canonical Activity,
+legacy channel-badge, thread, and overdue Later counts. Inbox category gates and
+DM opt-out use the existing source-derived Activity policy. Numeric counts take
+priority even when the unread bullet preference is disabled. Saved count updates
+apply to background workspaces and supersede older HTTP responses. Valid saved
+objects that omit overdue retire that authority; malformed input preserves it.
+
+The shell caches contributions at mutation boundaries, including reads, count
+refreshes, rules, saved events, and confirmed notification preference refreshes.
+The native hook reads only the cached scalar and owner identity; media, typing,
+and periodic runtime work add no conversation scan or native badge write. Owner
+retirement clears immediately. Numeric authority is separate from unknown
+ordinary-unread context, so an unknown dot cannot keep a retired numeric count.
+
+The AppKit adapter applies changed decimal labels, U+2022 bullets, and clears;
+its owner/drop cleanup is covered independently. The native runner includes a
+production-hook mode that drives synthetic Activity and Later state through
+the cache and effect, then reads the actual AppKit badge label.
+
+This is not full Enterprise Dock parity: authentic app-level unified-user/MRU
+and org-channel suppression context is not yet ingested. Legacy numeric and
+ordinary-unread branches requiring that context remain explicitly unknown;
+known Inbox numbers remain usable. No visual Dock-pixel or live Slack-event
+agreement is claimed by the disconnected AppKit checks.
+
+Validation passed: independently locked core1,090 (5 ignored), desktop964
+(6 ignored), both format checks, `git diff --check`, and bare dev build in
+3m00s. Logs: `tmp/dock-badge-{core,desktop}-tests.log` and
+`tmp/dock-badge-dev-build.log`. The first desktop compile caught a name collision
+between the adapter's Owner and Dioxus's prelude; explicit imports fixed it
+before the passing suite/build.
+
+Both native modes passed actual AppKit label readback. The synthetic adapter
+made exactly ten writes across number/dot/zero/account/drop transitions, with
+zero writes for an unchanged value (`tmp/dock-badge-native-check.log`). The
+production hook showed Activity6 excluding900 reactions, clear, eligibleLater4,
+hiddenLater clear, Later4 again, then immediate account-retirement clear
+(`tmp/dock-badge-projection-check.log`). Fixtures used no transport and made no
+Slack preference writes. These checks validate label state, not rendered Dock
+pixels or live Slack-event delivery.
+
+The new feature set produced fresh incremental dev/test caches. Removed only
+the superseded `target/debug/incremental/super_platinum-{1kh90dlu1gwpt,3ic9tr5rq3a8r}`
+pair after verifying neither held a working compilation session; current
+dev/test caches and executables were preserved. Free space returned to about
+11GiB. Live PID98097 remains running and responded to agent ping after both
+fixtures; it was not navigated or restarted. The new binary is ready for its
+next launch. The wider parity/design/performance goal remains active.
+
+### Paused for Windows machine handoff (2026-10-13)
+
+The user paused the goal to move from the MacBook to a Windows laptop. The
+durable entry point is [RESUME.md](RESUME.md), including implementation history,
+validation boundaries, Windows bootstrap, transfer requirements, and the next
+Activity cursor reconciliation task. That task was researched and assigned but
+neither implementation agent made edits before stopping. No further feature
+work, build, commit, push, or live-client restart was performed for this handoff.
+Transfer the working tree including untracked source files; HEAD alone omits
+the latest capture and Dock badge changes. Resume only when the user asks on
+the new machine, and establish native Windows evidence before relying on the
+historical macOS checks.

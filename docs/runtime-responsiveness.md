@@ -557,3 +557,23 @@ eighteen samples, but polling and concurrent fixture launches make that a
 different experiment; it is not used as the quiet comparison's failing baseline.
 No explicit paired power/display assertion was recorded, another limitation.
 The temporary old executable hardlink was removed after its process exited.
+
+### Agent capture yields to the native event loop
+
+The serial agent dispatcher previously called `screencapture.status()` on the
+Dioxus UI thread. Screenshot child processes now run asynchronously with a
+shared ten-second deadline, timeout/cancellation cleanup, and off-thread PNG
+inspection. Native handles are still read on the UI thread and responses remain
+serial. This affects the explicitly enabled agent, not normal rendering.
+
+A paired offline native check with a two-second screenshot delay rejected the
+baseline AX resize (1.695s); the patched window resized in 0.201s before the
+capture completed. A hung child timed out at 10.004s and was reaped. The harness
+is `scripts/check-capture-responsiveness.py`; root read its PNGs. Desktop tests
+passed 955/6 ignored. This proves the injected capture wait no longer blocks
+that native resize; it is not a general latency or startup-speed claim.
+
+The preceding suspected missing-text frames were an inspection artifact: three
+external window captures had identical decoded RGB bytes despite different
+presentation by the image tool (`tmp/capture-pixel-audit.json`). No rendering
+workaround or generic eval command was introduced.

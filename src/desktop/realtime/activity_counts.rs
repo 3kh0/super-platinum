@@ -68,6 +68,7 @@ impl CountsOwner {
             membership: w.channel_lifecycle.revision(),
             threads: w.thread_counts.revision(),
             activity: w.activity_counts.revision(),
+            dock: w.dock_counts.revision(),
             owner: self,
         })
     }
@@ -78,6 +79,7 @@ pub(crate) struct CountsRead {
     membership: u64,
     threads: u64,
     activity: u64,
+    dock: u64,
 }
 impl CountsRead {
     pub(crate) fn apply(self, core: &mut CoreAppState, counts: CountsPage) -> bool {
@@ -88,11 +90,12 @@ impl CountsRead {
         let workspace = core.workspaces.get_mut(team).unwrap();
         let zero = workspace.activity_counts.revision() == self.activity
             && counts.activity_v2.as_ref().is_some_and(|c| c.total() == 0);
-        workspace.apply_counts_snapshot_with_activity(
+        workspace.apply_counts_snapshot_with_dock(
             counts,
             self.membership,
             self.threads,
             self.activity,
+            self.dock,
         );
         if zero {
             reconcile_zero(core, team);

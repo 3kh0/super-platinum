@@ -5,6 +5,8 @@ use super_platinum_core::state::{NotificationOptions, cmp_ts, now_secs};
 #[cfg(target_os = "macos")]
 pub(crate) mod attention;
 #[cfg(target_os = "macos")]
+pub(crate) mod badge;
+#[cfg(target_os = "macos")]
 mod macos;
 mod sounds;
 pub(crate) use sounds::{preview_sound, serve_sound_asset, stop_sound_preview};

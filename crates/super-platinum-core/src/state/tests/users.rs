@@ -194,6 +194,7 @@ fn boot_self_user_provides_self_avatar_url() {
         team_plan: None,
         activity_unread_count: None,
         activity_counts: Default::default(),
+        dock_counts: Default::default(),
         thread_counts: Default::default(),
         channels: BTreeMap::new(),
         starred_order: Vec::new(),

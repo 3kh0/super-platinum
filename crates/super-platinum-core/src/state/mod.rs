@@ -272,6 +272,7 @@ pub struct Workspace {
     pub team_plan: Option<String>,
     pub activity_unread_count: Option<u32>,
     pub activity_counts: ActivityCountsState,
+    pub dock_counts: DockCountsState,
     pub thread_counts: ThreadCountsState,
     pub channels: BTreeMap<ChannelId, Channel>,
     pub starred_order: Vec<ChannelId>,
@@ -312,6 +313,7 @@ impl Workspace {
             team_plan: None,
             activity_unread_count: None,
             activity_counts: Default::default(),
+            dock_counts: Default::default(),
             thread_counts: Default::default(),
             channels: BTreeMap::new(),
             starred_order: Vec::new(),
@@ -468,11 +470,33 @@ impl Workspace {
 
     pub fn apply_counts_snapshot_with_activity(
         &mut self,
-        mut counts: crate::slack::models::CountsPage,
+        counts: crate::slack::models::CountsPage,
         since: u64,
         thread_revision: u64,
         activity_revision: u64,
     ) {
+        self.apply_counts_snapshot_with_dock(
+            counts,
+            since,
+            thread_revision,
+            activity_revision,
+            self.dock_counts.revision(),
+        );
+    }
+
+    pub fn apply_counts_snapshot_with_dock(
+        &mut self,
+        mut counts: crate::slack::models::CountsPage,
+        since: u64,
+        thread_revision: u64,
+        activity_revision: u64,
+        dock_revision: u64,
+    ) {
+        // Saved/channel-badge freshness is independent of channel membership
+        // and read state, which continue through their existing guards below.
+        self.dock_counts
+            .apply_snapshot(&counts.extra, dock_revision);
+        self.dock_counts.counts_loaded = true;
         if let Some(threads) = counts.threads.take() {
             self.thread_counts.apply_snapshot(threads, thread_revision);
         }
@@ -882,6 +906,10 @@ mod channel_lifecycle;
 mod member_list_changes;
 pub use channel_lifecycle::ChannelLifecycle;
 mod activity_counts;
+mod dock_badge;
+pub use dock_badge::{
+    DockBadge, DockBadgeContribution, DockBadgeProjection, DockCountsState, DockWorkspaceContext,
+};
 mod channel_sync;
 mod thread_counts;
 mod unreads;

@@ -282,5 +282,6 @@ pub(super) fn finish_read(
             }
         }
     }
+    s.refresh_dock_badge_for(&r.token.owner.team);
     settled
 }

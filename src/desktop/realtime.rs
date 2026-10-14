@@ -203,8 +203,12 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 let later_generation = shell.core.later.generation;
                 let later_needs_reload = shell.core.later.loading || !shell.core.later.loaded;
                 let thread_totals_event = matches!(event.as_ref(), RtEvent::GlobalThreadState(_));
-                let activity_counts_event =
-                    matches!(event.as_ref(), RtEvent::BadgeCountsUpdated(_));
+                let activity_counts_event = matches!(
+                    event.as_ref(),
+                    RtEvent::BadgeCountsUpdated(_)
+                        | RtEvent::LegacyBadgeCountsUpdated(_)
+                        | RtEvent::CombinedBadgeCountsUpdated { .. }
+                );
                 let old_thread_totals = thread_totals_event
                     .then(|| {
                         shell
@@ -295,6 +299,8 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     reactions::refresh(&mut shell, &team, generation, &channel);
                 } else if !typing_only {
                     shell.refresh_from_core();
+                } else if activity_counts_event || thread_totals_event || saved_event {
+                    shell.refresh_dock_badge_for(&team);
                 }
                 drop(shell);
                 if list_refresh {
@@ -606,6 +612,24 @@ pub(crate) fn apply_in_view(
             reaction,
         } => apply_reaction(core, team, &channel, &ts, &user, &reaction, false),
         RtEvent::BadgeCountsUpdated(counts) => activity_counts::apply_live(core, team, counts),
+        RtEvent::LegacyBadgeCountsUpdated(counts) => {
+            if workspace.activity_inbox_enabled() == Some(false) {
+                workspace
+                    .dock_counts
+                    .merge_channel_badges(&serde_json::json!(counts));
+            }
+        }
+        RtEvent::CombinedBadgeCountsUpdated { activity, legacy } => {
+            match workspace.activity_inbox_enabled() {
+                Some(true) => activity_counts::apply_live(core, team, activity),
+                Some(false) => {
+                    workspace
+                        .dock_counts
+                        .merge_channel_badges(&serde_json::json!(legacy));
+                }
+                None => {}
+            }
+        }
         RtEvent::ActivityUpdated(item) => {
             if core.active_team.as_deref() == Some(team) {
                 core.activity.ensure_scope(core.account_epoch, team);
@@ -657,6 +681,15 @@ pub(crate) fn apply_in_view(
             }
         }
         RtEvent::Unknown(raw) => {
+            // Canonical saved counts belong to every workspace, independently
+            // of which account-scoped Later page is currently visible.
+            if matches!(
+                raw.kind.as_str(),
+                "saved_added" | "saved_updated" | "saved_deleted"
+            ) && let Some(counts) = raw.rest.get("counts")
+            {
+                workspace.dock_counts.apply_saved_counts(counts);
+            }
             if matches!(
                 raw.kind.as_str(),
                 "draft_create" | "draft_update" | "draft_delete"

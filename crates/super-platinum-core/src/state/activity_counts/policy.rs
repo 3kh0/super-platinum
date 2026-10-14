@@ -3,6 +3,8 @@ use std::collections::BTreeMap;
 
 pub const BADGE_EXPERIMENT_NAMES: &[&str] = &[
     "activity_inbox",
+    "thread_badging_home_sidebar",
+    "dual_badging_in_home_sidebar",
     "lists_monster_step",
     "approvals_in_todos",
     "unjoined_channel_mention_in_activity",

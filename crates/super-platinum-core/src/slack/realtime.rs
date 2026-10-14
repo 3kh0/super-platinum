@@ -416,9 +416,20 @@ pub fn parse_event(text: &str) -> Option<RtEvent> {
         "badge_counts_updated" => {
             // B5922632 replaces the complete activity_v2 map; absence/null is
             // not an authoritative empty snapshot.
-            serde_json::from_value(value.get("activity_v2")?.clone())
-                .ok()
-                .map(RtEvent::BadgeCountsUpdated)
+            let activity = value
+                .get("activity_v2")
+                .and_then(|v| serde_json::from_value(v.clone()).ok());
+            let legacy = value
+                .get("counts")
+                .and_then(|v| serde_json::from_value(v.clone()).ok());
+            match (activity, legacy) {
+                (Some(activity), Some(legacy)) => {
+                    Some(RtEvent::CombinedBadgeCountsUpdated { activity, legacy })
+                }
+                (Some(activity), None) => Some(RtEvent::BadgeCountsUpdated(activity)),
+                (None, Some(legacy)) => Some(RtEvent::LegacyBadgeCountsUpdated(legacy)),
+                (None, None) => None,
+            }
         }
         "activity" => {
             let entry = value.get("entry")?.clone();
@@ -470,6 +481,26 @@ mod activity_badge_tests {
             };
             assert_eq!(counts.total(), total);
         }
+    }
+
+    #[test]
+    fn legacy_and_combined_frames_preserve_both_policy_branches() {
+        let event =
+            parse_event(r#"{"type":"badge_counts_updated","counts":{"channels":3,"future":2}}"#)
+                .unwrap();
+        assert!(
+            matches!(event, RtEvent::LegacyBadgeCountsUpdated(ref map) if map["channels"]==3 && map["future"]==2)
+        );
+        let event = parse_event(
+            r#"{"type":"badge_counts_updated","activity_v2":{"dm":4},"counts":{"channels":3}}"#,
+        )
+        .unwrap();
+        assert!(
+            matches!(event, RtEvent::CombinedBadgeCountsUpdated{ref activity,ref legacy} if activity.total()==4 && legacy["channels"]==3)
+        );
+        assert!(
+            parse_event(r#"{"type":"badge_counts_updated","counts":{"channels":-1}}"#).is_none()
+        );
     }
 
     #[test]
