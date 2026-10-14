@@ -331,6 +331,11 @@ async fn idle_successful_released_writer_is_retired_without_removing_new_managed
             );
         }
         f.shell.draft_writes.begin_send(ACCOUNT, 7, f.key.clone());
+        // Even an identical cached signature must not hide released cleanup.
+        f.shell
+            .draft_writes
+            .signatures
+            .insert(f.key.clone(), Signature::from(&editor.snapshot()));
         poll(&mut f.shell);
         assert!(
             f.shell
@@ -395,6 +400,10 @@ async fn released_writer_success_preserves_independent_recovery_evidence() {
                 draft: local("Other writer version"),
             }],
         );
+        f.shell
+            .draft_writes
+            .signatures
+            .insert(f.key.clone(), Signature::from(&editor.snapshot()));
         assert_eq!(poll(&mut f.shell), matching);
         assert!(
             f.shell

@@ -27,16 +27,21 @@ pub(super) fn prepare(
     state.dependencies = selected
         .map(|view| saved_views::date_dependencies(document, view))
         .unwrap_or_default();
-    state.context = selected.map(|_| {
+    // Relative timestamp labels exist in ordinary, board and detail views too.
+    let timestamps = document
+        .columns
+        .iter()
+        .any(super_platinum_core::slack_lists::timestamps::supports);
+    state.dependencies.clock |= timestamps;
+    state.context = (selected.is_some() || timestamps).then(|| {
         state
             .sampled
             .take()
             .or_else(|| state.fixed.clone())
             .unwrap_or_else(|| DateContext::local_now(last_read))
     });
-    state.next_sample =
-        (selected.is_some() && state.fixed.is_none() && relevant(state.dependencies))
-            .then(|| Instant::now() + SAMPLE_INTERVAL);
+    state.next_sample = (state.fixed.is_none() && relevant(state.dependencies))
+        .then(|| Instant::now() + SAMPLE_INTERVAL);
 }
 fn relevant(dependencies: DateDependencies) -> bool {
     dependencies.calendar || dependencies.prior_read || dependencies.clock
@@ -81,6 +86,20 @@ pub(super) fn prior_read_changed(shell: &mut ShellState) {
 }
 pub(super) fn poll(shell: &mut ShellState) -> bool {
     poll_with(shell, Instant::now(), DateContext::local_now)
+}
+/// Advance the same deadline-driven path without waiting a wall-clock minute.
+/// Only disconnected native fixtures may inject a sampled clock.
+pub(crate) fn fixture_tick(shell: &mut ShellState, context: DateContext) -> bool {
+    if !fixture::enabled(shell) {
+        return false;
+    }
+    let Some(view) = shell.slack_lists.view.as_mut() else {
+        return false;
+    };
+    let deadline = Instant::now();
+    view.layout.dates.fixed = Some(context.clone());
+    view.layout.dates.next_sample = Some(deadline);
+    poll_with(shell, deadline, |_| context)
 }
 fn poll_with(
     shell: &mut ShellState,

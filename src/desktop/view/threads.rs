@@ -1,4 +1,5 @@
 use super::secondary::message_preview;
+use crate::media::MediaUri;
 use crate::state::ShellState;
 use dioxus::prelude::*;
 
@@ -49,7 +50,7 @@ pub(crate) fn thread_list(state: Signal<ShellState>, snapshot: &ShellState) -> E
                             snapshot
                                 .media
                                 .is_ready(&asset)
-                                .then(|| asset.uri_at(snapshot.media_epoch))
+                                .then(|| asset.webview_uri_at(snapshot.media_epoch))
                         });
                         rsx! {
                             button { class: if item.unread_replies.is_empty() {"secondary-row thread-row"} else {"secondary-row thread-row unread"}, key: "thread-feed-{item.channel().cloned().unwrap_or_default()}-{item.root_ts().cloned().unwrap_or_default()}",

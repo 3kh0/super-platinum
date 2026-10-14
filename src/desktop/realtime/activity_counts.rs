@@ -12,7 +12,10 @@ use super_platinum_core::{
 
 mod reads;
 mod rules;
-pub(crate) use reads::{mark_channel_read, mark_item_read};
+pub(crate) use reads::{
+    CursorOwner, confirm_channel_read, confirm_thread_read, mark_channel_read, mark_item_read,
+    mark_thread_read,
+};
 
 #[derive(Clone)]
 pub(crate) struct CountsOwner {

@@ -170,13 +170,22 @@ fn choice_validation_rejects_unknown_duplicate_and_excess_selections() {
 
 #[test]
 fn unsupported_remote_controls_and_display_state_never_disappear_from_submission() {
-    for kind in [
-        "users_select",
-        "channels_select",
-        "external_select",
-        "multi_external_select",
-        "file_input",
-    ] {
+    // Multi-channel inputs now own typed local state; unsupported remote types
+    // below must still block the whole form instead of silently disappearing.
+    let supported = ModalForm::parse(&view(vec![input(
+        "channels",
+        json!({"type":"multi_channels_select","initial_channels":["C12345678"]}),
+    )]))
+    .unwrap();
+    assert!(matches!(
+        supported.fields[&key("channels")].kind,
+        InputKind::MultiChannel { .. }
+    ));
+    assert_eq!(
+        supported.submission().unwrap()["values"]["channels"]["action"],
+        json!({"type":"multi_channels_select","selected_channels":["C12345678"]})
+    );
+    for kind in ["external_select", "multi_external_select", "file_input"] {
         let form = ModalForm::parse(&view(vec![input("remote", json!({"type":kind}))])).unwrap();
         assert!(matches!(
             form.fields[&key("remote")].kind,

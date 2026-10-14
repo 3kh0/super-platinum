@@ -13,7 +13,11 @@ pub(super) fn wire_type(kind: &InputKind) -> &str {
         InputKind::Radio { .. } => "radio_buttons",
         InputKind::Date => "datepicker",
         InputKind::Conversation => "conversations_select",
+        InputKind::Channel => "channels_select",
         InputKind::User => "users_select",
+        InputKind::MultiUser { .. } => "multi_users_select",
+        InputKind::MultiChannel { .. } => "multi_channels_select",
+        InputKind::MultiConversation { .. } => "multi_conversations_select",
         InputKind::Time { .. } => "timepicker",
         InputKind::DateTime => "datetimepicker",
         InputKind::Unsupported { kind } => kind,
@@ -31,7 +35,14 @@ pub(super) fn matches(kind: &InputKind, value: &InputValue) -> bool {
             )
             | (InputKind::Date, InputValue::Date(_))
             | (InputKind::User, InputValue::User(_))
+            | (InputKind::MultiUser { .. }, InputValue::Users(_))
+            | (InputKind::MultiChannel { .. }, InputValue::Channels(_))
+            | (
+                InputKind::MultiConversation { .. },
+                InputValue::Conversations(_)
+            )
             | (InputKind::Conversation, InputValue::Conversation(_))
+            | (InputKind::Channel, InputValue::Channel(_))
             | (InputKind::Time { .. }, InputValue::Time(_))
             | (InputKind::DateTime, InputValue::DateTime(_))
     )
@@ -55,10 +66,25 @@ pub(super) fn error(field: &FormField) -> Option<String> {
     if !matches(&field.kind, &field.value) {
         return Some("This value no longer matches the field.".into());
     }
+    // HvtU clears to null. An empty string is an invalid identity, including
+    // for optional inputs; it must not bypass identity checks as an empty field.
+    if matches!(&field.value, InputValue::User(Some(user)) if user.is_empty()) {
+        return Some("Choose a valid user.".into());
+    }
+    if matches!(&field.value, InputValue::Conversation(Some(id)) if id.is_empty()) {
+        return Some("Choose a valid conversation.".into());
+    }
+    if matches!(&field.value, InputValue::Channel(Some(id)) if !modal_channel::valid_id(id)) {
+        return Some("Choose a valid channel.".into());
+    }
     let empty = match &field.value {
         InputValue::Text(text) => text.is_empty(),
         InputValue::Selected(values) => values.is_empty(),
+        InputValue::Users(values)
+        | InputValue::Channels(values)
+        | InputValue::Conversations(values) => values.is_empty(),
         InputValue::Conversation(value)
+        | InputValue::Channel(value)
         | InputValue::User(value)
         | InputValue::Date(value)
         | InputValue::Time(value) => value.as_ref().is_none_or(|v| v.is_empty()),
@@ -118,6 +144,21 @@ pub(super) fn error(field: &FormField) -> Option<String> {
         }
         (InputKind::User, InputValue::User(Some(user))) if !valid_message_user(user) => {
             return Some("Choose a valid user.".into());
+        }
+        (InputKind::MultiChannel { .. }, InputValue::Channels(channels)) => {
+            if validate_message_channels(field, channels).is_err() {
+                return Some("Choose valid channels within the selection limit.".into());
+            }
+        }
+        (InputKind::MultiConversation { .. }, InputValue::Conversations(conversations)) => {
+            if validate_message_conversations(field, conversations).is_err() {
+                return Some("Choose valid conversations within the selection limit.".into());
+            }
+        }
+        (InputKind::MultiUser { .. }, InputValue::Users(users)) => {
+            if validate_message_users(field, users).is_err() {
+                return Some("Choose valid users within the selection limit.".into());
+            }
         }
         (InputKind::Date, InputValue::Date(Some(date))) => {
             if date.len() != 10
@@ -181,8 +222,26 @@ pub(super) fn wire(field: &FormField) -> Value {
                 value["selected_option"] = selected.into_iter().next().unwrap_or(Value::Null);
             }
         }
-        InputValue::Conversation(id) => value["selected_conversation"] = json!(id),
+        InputValue::Conversation(id) => {
+            value["selected_conversation"] = json!(id);
+            // Captured o5++ -> AM6q includes this flag even for a null clear.
+            if field.raw.get("response_url_enabled") == Some(&Value::Bool(true)) {
+                value["response_url_enabled"] = json!(true);
+            }
+        }
+        InputValue::Channel(id) => {
+            value["selected_channel"] = json!(id);
+            // cdYm -> AM6q keeps the response flag for both selection and clear.
+            if field.raw.get("response_url_enabled") == Some(&Value::Bool(true)) {
+                value["response_url_enabled"] = json!(true);
+            }
+        }
         InputValue::User(user) => value["selected_user"] = json!(user),
+        InputValue::Users(users) => value["selected_users"] = json!(users),
+        InputValue::Channels(channels) => value["selected_channels"] = json!(channels),
+        InputValue::Conversations(conversations) => {
+            value["selected_conversations"] = json!(conversations)
+        }
         InputValue::Date(date) => {
             value["selected_date"] = json!(date.as_ref().filter(|v| !v.is_empty()))
         }
@@ -215,7 +274,38 @@ pub(super) fn from_wire(kind: &InputKind, value: &Value) -> Result<InputValue, F
     Ok(match kind {
         InputKind::Text { .. } => InputValue::Text(string("value")?.unwrap_or_default()),
         InputKind::Conversation => InputValue::Conversation(string("selected_conversation")?),
+        InputKind::Channel => InputValue::Channel(string("selected_channel")?),
         InputKind::User => InputValue::User(string("selected_user")?),
+        InputKind::MultiChannel { .. } => InputValue::Channels(
+            value
+                .get("selected_channels")
+                .and_then(Value::as_array)
+                .filter(|values| values.len() <= 1000)
+                .ok_or_else(invalid)?
+                .iter()
+                .map(|v| v.as_str().map(str::to_owned).ok_or_else(invalid))
+                .collect::<Result<Vec<_>, _>>()?,
+        ),
+        InputKind::MultiConversation { .. } => InputValue::Conversations(
+            value
+                .get("selected_conversations")
+                .and_then(Value::as_array)
+                .filter(|values| values.len() <= 1000)
+                .ok_or_else(invalid)?
+                .iter()
+                .map(|v| v.as_str().map(str::to_owned).ok_or_else(invalid))
+                .collect::<Result<Vec<_>, _>>()?,
+        ),
+        InputKind::MultiUser { .. } => InputValue::Users(
+            value
+                .get("selected_users")
+                .and_then(Value::as_array)
+                .filter(|values| values.len() <= 1000)
+                .ok_or_else(invalid)?
+                .iter()
+                .map(|v| v.as_str().map(str::to_owned).ok_or_else(invalid))
+                .collect::<Result<Vec<_>, _>>()?,
+        ),
         InputKind::Date => InputValue::Date(string("selected_date")?),
         InputKind::Time { .. } => InputValue::Time(string("selected_time")?),
         InputKind::DateTime => InputValue::DateTime(match value.get("selected_date_time") {

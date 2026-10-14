@@ -1,3 +1,4 @@
+use crate::media::MediaUri;
 use dioxus::prelude::*;
 
 use crate::state::{ConnectionStatus, MainView, PresenceVm, SelfAccountVm, ShellState};
@@ -257,7 +258,7 @@ pub(crate) fn channel_sidebar(
                                 span { class: "channel-icon",
                                     if channel.is_im {
                                         if let Some(avatar) = channel.avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
-                                            img { class: "sidebar-avatar", src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{channel.name}" }
+                                            img { class: "sidebar-avatar", src: "{avatar.webview_uri_at(snapshot.media_epoch)}", alt: "{channel.name}" }
                                         } else {
                                             span { class: "sidebar-avatar placeholder", "{channel.avatar_initials}" }
                                         }
@@ -327,7 +328,7 @@ pub(crate) fn conversation_header(
                     }
                 },
                 if let Some(avatar) = dm_avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
-                    img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{title}" }
+                    img { src: "{avatar.webview_uri_at(snapshot.media_epoch)}", alt: "{title}" }
                 } else {
                     "{dm_initials}"
                 }

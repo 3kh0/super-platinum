@@ -11,6 +11,9 @@ pub(super) fn account(id: &str) -> Result<Arc<Account>, Fault> {
         "rejected-send" | "rejected-send-narrow" => {
             std::env::var("SUPER_PLATINUM_REJECTED_SEND_CHECK").as_deref() == Ok("1")
         }
+        "rejected-thread-return" | "rejected-thread-return-narrow" => {
+            std::env::var("SUPER_PLATINUM_REJECTED_THREAD_CHECK").as_deref() == Ok("1")
+        }
         _ => false,
     };
     if !allowed || id != "00000000-0000-4000-8000-000000000099" {

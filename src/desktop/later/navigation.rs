@@ -130,7 +130,7 @@ pub fn open(mut state: Signal<ShellState>, key: SavedKey) {
                     if let Some(workspace) =
                         state.write().core.workspaces.get_mut(&ctx.session.team_id)
                     {
-                        workspace.channels.insert(channel.id.clone(), channel);
+                        workspace.insert_channel_metadata(channel);
                     }
                 }
                 Err(error) => {

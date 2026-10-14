@@ -1,4 +1,5 @@
 use super::*;
+mod ownership;
 use serde_json::json;
 use super_platinum_core::slack_lists::ListRecordReadback;
 
@@ -242,8 +243,8 @@ fn malformed_success_locks_but_definitive_offline_can_be_explicitly_retried() {
     assert!(blocks_mutation(&shell));
     shell.core.account_epoch += 1;
     assert!(!retire(&mut shell, attempt.serial));
-    assert!(poll(&mut shell));
-    assert!(shell.slack_lists.create.receipts.is_empty());
+    assert!(!poll(&mut shell));
+    assert_eq!(shell.slack_lists.create.receipts.len(), 1);
     let mut shell = self::shell();
     let attempt = begin_current(&mut shell);
     let data = loaded(&shell);

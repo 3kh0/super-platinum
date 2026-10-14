@@ -273,6 +273,14 @@ fn rich_node_with_source(
                 }}
             } else if let Some(source) = source.filter(|_| {
                 matches!(&metadata.source,
+                    super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind } if kind == "overflow")
+            }) {
+                rsx! {super::message_overflow::MessageOverflow {
+                    state,source:source.clone(),metadata:metadata.as_ref().clone(),
+                    accessibility_label:metadata.accessibility_label.clone().unwrap_or_default(),
+                }}
+            } else if let Some(source) = source.filter(|_| {
+                matches!(&metadata.source,
                     super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
                         if kind == "datepicker")
             }) {
@@ -283,7 +291,7 @@ fn rich_node_with_source(
             } else if let Some(source) = source.filter(|_| {
                 matches!(&metadata.source,
                     super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
-                        if matches!(kind.as_str(), "users_select" | "conversations_select"))
+                        if matches!(kind.as_str(), "users_select" | "multi_users_select" | "multi_channels_select" | "multi_conversations_select" | "conversations_select" | "channels_select"))
             }) {
                 rsx! {super::message_user::MessageUserSelect {
                     state,source:source.clone(),metadata:metadata.as_ref().clone(),

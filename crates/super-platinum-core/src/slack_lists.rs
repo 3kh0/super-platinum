@@ -18,6 +18,7 @@ pub mod numbers;
 mod ordering;
 mod policy;
 pub mod saved_views;
+pub mod timestamps;
 pub use hierarchy::{HierarchyRow, ParentRelation};
 mod presentation;
 pub use cell_edit::{CellEdit, CellEditValue, LinkValue};

@@ -22,6 +22,7 @@ pub struct ActivitySync {
     changes: HashMap<String, ActivityItem>,
     cursors: HashSet<String>,
     pending_page_read: bool,
+    pending_cursor_reads: HashMap<(String, Option<String>), ReadTimestamp>,
 }
 
 #[derive(Debug, Clone)]
@@ -64,6 +65,7 @@ impl ActivityState {
         self.load_seq = self.load_seq.wrapping_add(1);
         self.sync.changes.clear();
         self.sync.pending_page_read = false;
+        self.sync.pending_cursor_reads.clear();
         if !append {
             self.sync.cursors.clear();
         }
@@ -93,6 +95,7 @@ impl ActivityState {
         self.failed = true;
         self.sync.changes.clear();
         self.sync.pending_page_read = false;
+        self.sync.pending_cursor_reads.clear();
         true
     }
 
@@ -109,8 +112,19 @@ impl ActivityState {
             self.items.clear();
         }
         let pending_page_read = std::mem::take(&mut self.sync.pending_page_read);
+        let pending_cursor_reads = std::mem::take(&mut self.sync.pending_cursor_reads);
         for mut item in page.items {
-            if pending_page_read {
+            let cursor_read = !pending_cursor_reads.is_empty()
+                && item
+                    .read_cursor_target()
+                    .is_some_and(|(channel, root, ts)| {
+                        pending_cursor_reads
+                            .get(&(channel.to_owned(), root.map(str::to_owned)))
+                            .is_some_and(|cursor| {
+                                read_timestamp(ts).is_some_and(|ts| ts <= *cursor)
+                            })
+                    });
+            if pending_page_read || cursor_read {
                 item.mark_read();
             }
             self.upsert_inner(item);
@@ -200,17 +214,63 @@ impl ActivityState {
 
     /// Clears every item that a channel read covers. Thread items keep their own
     /// unread state — Slack tracks those against the thread, not the channel.
-    pub fn mark_channel_read(&mut self, channel: &str) -> bool {
-        !self.mark_channel_read_categories(channel).is_empty()
+    pub fn mark_channel_read(&mut self, channel: &str, cursor: &str) -> bool {
+        !self
+            .mark_channel_read_categories(channel, cursor)
+            .is_empty()
     }
 
     /// MdxY counts each previously isUnread root entry once by category. The
     /// YfTA mapper takes that flag directly from is_unread; bundled unread_msg_count
     /// is separate and must not multiply (or create) a badge decrement.
-    pub fn mark_channel_read_categories(&mut self, channel: &str) -> BTreeMap<String, u32> {
+    pub fn mark_channel_read_categories(
+        &mut self,
+        channel: &str,
+        cursor: &str,
+    ) -> BTreeMap<String, u32> {
+        self.mark_cursor_read_categories(channel, None, cursor)
+    }
+
+    pub fn mark_thread_read_categories(
+        &mut self,
+        channel: &str,
+        root: &str,
+        cursor: &str,
+    ) -> BTreeMap<String, u32> {
+        self.mark_cursor_read_categories(channel, Some(root), cursor)
+    }
+
+    fn mark_cursor_read_categories(
+        &mut self,
+        channel: &str,
+        root: Option<&str>,
+        cursor: &str,
+    ) -> BTreeMap<String, u32> {
         let mut deltas: BTreeMap<String, u32> = BTreeMap::new();
+        let Some(cursor) = read_timestamp(cursor) else {
+            return deltas;
+        };
+        if channel.is_empty() || root.is_some_and(|root| read_timestamp(root).is_none()) {
+            return deltas;
+        }
+        if self.loading {
+            // Retain one greatest read bound per destination for this request.
+            // Even rows not loaded yet need protection from the older HTTP page.
+            self.sync
+                .pending_cursor_reads
+                .entry((channel.to_owned(), root.map(str::to_owned)))
+                .and_modify(|previous| *previous = (*previous).max(cursor))
+                .or_insert(cursor);
+        }
         for item in &mut self.items {
-            if item.is_thread() || item.channel() != Some(channel) {
+            let covered = item
+                .read_cursor_target()
+                .is_some_and(|(item_channel, item_root, ts)| {
+                    item_channel == channel
+                        && item_root == root
+                        && read_timestamp(ts).is_some_and(|ts| ts <= cursor)
+                });
+            if !covered {
                 continue;
             }
             let was_pending = item.is_pending();
@@ -255,11 +315,34 @@ impl ActivityState {
     }
 }
 
+type ReadTimestamp = (u64, u32);
+
+/// Reject unknown coordinates rather than treating them as timestamp zero.
+/// Integer microseconds preserve adjacent Slack timestamps at today's epoch.
+fn read_timestamp(ts: &str) -> Option<ReadTimestamp> {
+    let (seconds, fraction) = ts.split_once('.')?;
+    if seconds.is_empty()
+        || !seconds.bytes().all(|b| b.is_ascii_digit())
+        || fraction.is_empty()
+        || fraction.len() > 6
+        || !fraction.bytes().all(|b| b.is_ascii_digit())
+    {
+        return None;
+    }
+    Some((
+        seconds.parse().ok()?,
+        fraction.parse::<u32>().ok()? * 10u32.pow(6 - fraction.len() as u32),
+    ))
+}
+
+#[cfg(test)]
+mod cursor_tests;
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn item(ts: &str) -> ActivityItem {
+    pub(super) fn item(ts: &str) -> ActivityItem {
         serde_json::from_value(serde_json::json!({
             "key": format!("mention-{ts}"), "feed_ts": ts, "is_unread": true,
             "item": {"type":"at_user", "message":{"channel":"C1", "ts":ts}}
@@ -267,14 +350,14 @@ mod tests {
         .unwrap()
     }
 
-    fn page(items: Vec<ActivityItem>, cursor: Option<&str>) -> ActivityFeedPage {
+    pub(super) fn page(items: Vec<ActivityItem>, cursor: Option<&str>) -> ActivityFeedPage {
         serde_json::from_value(serde_json::json!({
             "items":items, "response_metadata":{"next_cursor":cursor}
         }))
         .unwrap()
     }
 
-    fn feed() -> ActivityState {
+    pub(super) fn feed() -> ActivityState {
         let mut state = ActivityState::default();
         state.ensure_scope(1, "T1");
         state
@@ -339,7 +422,7 @@ mod tests {
         state.upsert(bundled.clone());
         assert_eq!(state.unread_count(), 1);
         let request = state.begin(false).unwrap();
-        assert!(state.mark_channel_read_categories("C1").is_empty());
+        assert!(state.mark_channel_read_categories("C1", "5.0").is_empty());
         assert_eq!(state.unread_count(), 0);
         assert!(state.apply_page(&request, page(vec![bundled], None)));
         assert_eq!(state.unread_count(), 0);
@@ -412,7 +495,7 @@ mod tests {
         let old = item("1.0");
         state.upsert(old.clone());
         let request = state.begin(false).unwrap();
-        assert!(state.mark_channel_read("C1"));
+        assert!(state.mark_channel_read("C1", "5.0"));
         let mut other = item("2.0");
         other.item.message.as_mut().unwrap().channel = Some("C2".into());
         state.apply_page(&request, page(vec![old, other], None));
@@ -439,7 +522,7 @@ mod tests {
         state.upsert(item("4.0"));
         state.upsert(item("5.0"));
         assert_eq!(
-            state.mark_channel_read_categories("C1"),
+            state.mark_channel_read_categories("C1", "5.0"),
             [("at_user".into(), 2)].into()
         );
         assert!(
@@ -459,7 +542,7 @@ mod tests {
                 .unread_msg_count(),
             0
         );
-        assert!(state.mark_channel_read_categories("C1").is_empty());
+        assert!(state.mark_channel_read_categories("C1", "5.0").is_empty());
     }
 
     #[test]

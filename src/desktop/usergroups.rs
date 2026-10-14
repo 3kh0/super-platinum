@@ -1,3 +1,4 @@
+use crate::media::MediaUri;
 use crate::state::{ChannelOpen, ShellState};
 use dioxus::prelude::*;
 use super_platinum_core::slack::api;
@@ -205,7 +206,7 @@ pub(crate) fn pane(mut state: Signal<ShellState>, snapshot: &ShellState) -> Elem
                             let avatar = workspace.users.get(user).and_then(super_platinum_core::state::user_avatar_url).map(|url| snapshot.media.register_avatar(user, &url));
                             rsx! { button { class: "group-row", onclick: move |_| { spawn(crate::bootstrap::open_profile(state, id.clone())); },
                                 span { class: "group-avatar",
-                                    if let Some(avatar) = avatar.filter(|a| snapshot.media.is_ready(a)) { img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "" } }
+                                    if let Some(avatar) = avatar.filter(|a| snapshot.media.is_ready(a)) { img { src: "{avatar.webview_uri_at(snapshot.media_epoch)}", alt: "" } }
                                     else { "{name.chars().next().unwrap_or('?')}" }
                                 }
                                 span { class: "group-identity", strong { "{name}" } span { "{title}" } }

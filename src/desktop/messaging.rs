@@ -170,7 +170,7 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
         } else {
             std::mem::take(&mut shell.core.composer_attachments)
         };
-        let files: Vec<(std::path::PathBuf, Arc<AtomicU64>)> = taken
+        let files: Vec<api::UploadFile> = taken
             .iter_mut()
             .map(|attachment| {
                 attachment.uploading = true;
@@ -178,7 +178,11 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
                 attachment.upload_cancel = Some(upload_cancel.clone());
                 let progress = Arc::new(AtomicU64::new(0));
                 attachment.upload_progress = Some(progress.clone());
-                (attachment.path.clone(), progress)
+                api::UploadFile {
+                    path: attachment.path.clone(),
+                    filename: attachment.name.clone(),
+                    progress,
+                }
             })
             .collect();
 
@@ -481,7 +485,7 @@ struct PreparedUpload {
     message_ts: String,
     client_msg_id: String,
     text: String,
-    files: Vec<(std::path::PathBuf, Arc<AtomicU64>)>,
+    files: Vec<api::UploadFile>,
     upload_cancel: Arc<AtomicBool>,
 }
 

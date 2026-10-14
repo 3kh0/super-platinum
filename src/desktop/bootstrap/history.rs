@@ -2,6 +2,7 @@ use dioxus::prelude::{ReadableExt, Signal, WritableExt};
 use super_platinum_core::slack::api;
 
 use super::common::{credentials, persist_workspace, refresh_history_at};
+use crate::realtime::activity_counts::{CursorOwner, confirm_channel_read, confirm_thread_read};
 use crate::state::ShellState;
 
 pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
@@ -274,7 +275,7 @@ async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
     if crate::fixture::is_fixture() {
         return;
     }
-    let (team, channel, latest, previous) = {
+    let (team, channel, latest, previous, revision, scope) = {
         let shell = state.read();
         let focused = crate::read_visibility::focused();
         if crate::unread::blocks_auto_read(&shell) {
@@ -324,7 +325,19 @@ async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
             .get(&team)
             .and_then(|workspace| workspace.read_cursor(&channel))
             .map(str::to_owned);
-        (team, channel, latest, previous)
+        let revision = shell
+            .core
+            .workspaces
+            .get(&team)
+            .map_or(0, |w| w.read_revision(&channel));
+        (
+            team,
+            channel,
+            latest,
+            previous,
+            revision,
+            shell.timeline_scope(),
+        )
     };
     let target = super_platinum_core::domain::ReadTarget::Conversation {
         team: team.clone(),
@@ -337,6 +350,10 @@ async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
     let Some(workspace_session) = workspaces
         .into_iter()
         .find(|workspace| workspace.team_id == team)
+    else {
+        return;
+    };
+    let Some(owner) = CursorOwner::capture(&state.peek().core, &transport, &workspace_session)
     else {
         return;
     };
@@ -371,12 +388,16 @@ async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
         .core
         .pending_marks
         .remove(&(target, latest.clone()));
+    if !owner.current(&state.peek().core) {
+        return;
+    }
     if result.is_ok() {
         let mut shell = state.write();
         // Pin the divider before the mark moves `last_read` past it. A channel
         // opened cold had no messages when it was selected, so this is the first
         // moment its read position is known.
-        if shell.divider_at(&channel).is_none()
+        if shell.timeline_scope() == scope
+            && shell.divider_at(&channel).is_none()
             && let Some(previous) = shell
                 .core
                 .workspaces
@@ -386,18 +407,14 @@ async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
         {
             shell.unread_anchor = Some((channel.clone(), previous));
         }
-        let fully_read = shell
-            .core
-            .workspaces
-            .get_mut(&team)
-            .is_some_and(|workspace| {
-                workspace.confirm_read(&channel, &latest, previous.as_deref())
-            });
-        // Reading the channel covers its mentions, keywords and reactions in the
-        // Activity feed. Thread items keep their own unread state.
-        if fully_read {
-            crate::realtime::activity_counts::mark_channel_read(&mut shell.core, &team, &channel);
-        }
+        confirm_channel_read(
+            &mut shell.core,
+            &team,
+            &channel,
+            &latest,
+            previous.as_deref(),
+            revision,
+        );
         shell.refresh_from_core();
     }
 }
@@ -452,6 +469,10 @@ pub async fn mark_thread_read(mut state: Signal<ShellState>, channel: String, ro
     else {
         return;
     };
+    let Some(owner) = CursorOwner::capture(&state.peek().core, &transport, &workspace_session)
+    else {
+        return;
+    };
     if !state
         .write()
         .core
@@ -481,8 +502,11 @@ pub async fn mark_thread_read(mut state: Signal<ShellState>, channel: String, ro
     }
     let mut shell = state.write();
     shell.core.pending_marks.remove(&(target, latest.clone()));
+    if !owner.current(&shell.core) {
+        return;
+    }
     if result.is_ok() {
-        shell.core.confirm_thread_mark(&key, &latest, revision);
+        confirm_thread_read(&mut shell.core, &key, &latest, revision);
         shell.refresh_from_core();
     } else if let Err(error) = result {
         shell.report_failure(&error, "", || "Could not update thread read status.".into());
@@ -530,7 +554,7 @@ pub async fn mark_all_read(mut state: Signal<ShellState>) {
             }
             tokio::time::sleep(std::time::Duration::from_millis(50)).await;
         }
-        let (previous, scope) = {
+        let (previous, revision, scope) = {
             let shell = state.peek();
             if shell.core.account_epoch != epoch
                 || !shell
@@ -548,12 +572,21 @@ pub async fn mark_all_read(mut state: Signal<ShellState>) {
                     .get(&team)
                     .and_then(|w| w.read_cursor(&channel))
                     .map(str::to_owned),
+                shell
+                    .core
+                    .workspaces
+                    .get(&team)
+                    .map_or(0, |w| w.read_revision(&channel)),
                 shell.timeline_scope(),
             )
         };
         let target = super_platinum_core::domain::ReadTarget::Conversation {
             team: team.clone(),
             channel: channel.clone(),
+        };
+        let Some(owner) = CursorOwner::capture(&state.peek().core, &transport, &workspace_session)
+        else {
+            return;
         };
         if !state
             .write()
@@ -582,15 +615,23 @@ pub async fn mark_all_read(mut state: Signal<ShellState>) {
             return;
         }
         shell.core.pending_marks.remove(&(target, latest.clone()));
+        if !owner.current(&shell.core) {
+            return;
+        }
         if let Err(error) = result {
             shell.report_failure(&error, "", || {
                 "Could not mark conversations as read. Please try again.".into()
             });
             return;
         }
-        if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-            workspace.confirm_read(&channel, &latest, previous.as_deref());
-        }
+        confirm_channel_read(
+            &mut shell.core,
+            &team,
+            &channel,
+            &latest,
+            previous.as_deref(),
+            revision,
+        );
         if shell.timeline_scope() == scope && shell.core.active_channel.as_ref() == Some(&channel) {
             crate::unread::release(&mut shell);
         }

@@ -1,12 +1,17 @@
 //! Exact rendered-message ownership. Never search other bags or infer a channel
 //! from whichever conversation happens to be active at click/confirmation time.
 mod action;
+mod channel;
+mod channels;
 mod conversation;
+mod conversations;
 mod date;
 mod multi;
+mod overflow;
 mod revision;
 mod time;
 mod user;
+mod users;
 use action::Action;
 pub(crate) use action::Current;
 
@@ -474,6 +479,32 @@ impl Captured {
             .as_ref()
             .is_none_or(|display| display.commit(selected))
     }
+    pub(crate) fn selected_conversations(
+        &self,
+    ) -> Option<(Vec<String>, &[super::inputs::user::directory::Choice])> {
+        match &self.action {
+            Action::Conversations(value, choices, _) => {
+                Some((value.selected_conversations(), choices))
+            }
+            _ => None,
+        }
+    }
+    pub(crate) fn selected_channels(
+        &self,
+    ) -> Option<(Vec<String>, &[super::inputs::user::directory::Choice])> {
+        match &self.action {
+            Action::Channels(value, choices, _) => Some((value.selected_channels(), choices)),
+            _ => None,
+        }
+    }
+    pub(crate) fn selected_users(&self) -> Option<Vec<String>> {
+        self.action.selected_users()
+    }
+    pub(crate) fn commit_display_users(&self, selected: &[String]) -> bool {
+        self.display
+            .as_ref()
+            .is_none_or(|display| display.commit_users(selected))
+    }
     pub(crate) fn selected_options(&self) -> Option<(Option<&[Value]>, &[Value])> {
         self.action.selected_options()
     }
@@ -521,6 +552,28 @@ impl Captured {
         }
         super_platinum_core::block_actions::message_state::MessageInputs::parse(message)
             .map_err(|_| MessageActionError::UnsupportedButton)?;
+        if let Action::Channel(_, choice) = &self.action {
+            channel::validate_choice(shell, &self.source, choice)?;
+        }
+        if let Action::Channels(value, choices, policy) = &self.action {
+            channels::validate_choices(
+                shell,
+                &self.source,
+                &value.selected_channels(),
+                choices,
+                policy,
+            )?;
+        }
+        if let Action::Conversations(value, choices, policy) = &self.action {
+            conversations::validate_choices(
+                shell,
+                &self.source,
+                &value.selected_conversations(),
+                choices,
+                policy,
+                self.metadata(),
+            )?;
+        }
         self.action.revalidate(&self.source.owner, message)
     }
 }

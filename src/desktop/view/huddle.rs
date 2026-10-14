@@ -1,6 +1,7 @@
 //! Huddle chrome: the conversation header's huddle control, and the dock at
 //! the foot of the list column that carries the live call and any ring.
 
+use crate::media::MediaUri;
 use dioxus::prelude::*;
 use super_platinum_core::huddle::{HuddleCall, HuddlePhase, PendingInvite};
 use super_platinum_core::slack::models::Room;
@@ -245,7 +246,7 @@ fn face(
     rsx! {
         span { class: "{class}", title: "{label}",
             if let Some(avatar) = avatar {
-                img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{name}" }
+                img { src: "{avatar.webview_uri_at(snapshot.media_epoch)}", alt: "{name}" }
             } else {
                 "{initials}"
             }

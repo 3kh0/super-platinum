@@ -1,3 +1,4 @@
+use crate::media::MediaUri;
 use crate::{
     icons::{Icon, icon},
     state::{ChannelTab, ShellState},
@@ -82,7 +83,7 @@ fn LinksPanel(mut state: Signal<ShellState>, channel: String) -> Element {
                                 let timestamp=link.timestamp.clone();
                                 let date=super_platinum_core::state::date_key_for_ts(&timestamp).unwrap_or_default();
                                 let key=format!("{}-{}",url,timestamp);
-                                let thumbnail=link.thumb_url.as_ref().or(link.icon_url.as_ref()).map(|url|snapshot.media.register_image(super_platinum_core::MediaAssetKind::Attachment,url,"image/png")).filter(|id|snapshot.media.is_ready(id)).map(|id|id.uri_at(snapshot.media_epoch));
+                                let thumbnail=link.thumb_url.as_ref().or(link.icon_url.as_ref()).map(|url|snapshot.media.register_image(super_platinum_core::MediaAssetKind::Attachment,url,"image/png")).filter(|id|snapshot.media.is_ready(id)).map(|id|id.webview_uri_at(snapshot.media_epoch));
                                 rsx! {
                                     div {class:"channel-link-row",role:"listitem",key:"{key}",
                                         button {class:"files-row",title:"{url}",onclick:move |_|{if crate::media::open_external(&url).is_err(){state.write().show_toast("This link could not be opened.");}},

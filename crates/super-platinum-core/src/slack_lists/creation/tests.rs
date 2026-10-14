@@ -5,7 +5,7 @@ use crate::slack::{
     client::{RequestBody, SlackClient},
 };
 
-fn fixture() -> (Document, PersonalTaskLists) {
+pub(super) fn fixture() -> (Document, PersonalTaskLists) {
     let document = Document::parse(json!({"id":"F_LIST","mode":"list","access":"write",
         "is_locked":false,"list_limits":{"over_row_maximum":false,"row_count":3},
         "list_metadata":{"schema":[

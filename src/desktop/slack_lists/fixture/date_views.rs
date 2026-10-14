@@ -8,6 +8,12 @@ pub(crate) fn set_date_clock(shell: &mut ShellState, now: &str, prior_read: &str
     assert!(super::super::date_context::set_override(shell, context));
 }
 
+pub(crate) fn tick_date_clock(shell: &mut ShellState, now: &str, prior_read: &str) -> bool {
+    let context = DateContext::from_local_with_offset(now, Some(prior_read), -4 * 3600)
+        .expect("fixture local calendar");
+    super::super::date_context::fixture_tick(shell, context)
+}
+
 pub(crate) fn add_date_views(shell: &mut ShellState) {
     if !enabled(shell) {
         return;

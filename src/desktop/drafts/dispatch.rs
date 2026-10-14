@@ -35,8 +35,13 @@ impl Owner {
         let _guard = self.gate.lock().await;
         let view = self.current().await?;
         let mut stored = view.ready(expected)?;
-        if local_snapshot(&self.scope.key, &view.local)?.as_ref() != stored.state.desired() {
+        if retained_snapshot(&self.scope.key, &view.local, stored.state.desired())?.as_ref()
+            != stored.state.desired()
+        {
             return Err(Fault::Stale);
+        }
+        if view.local.composer.text.is_empty() {
+            return Err(Fault::Pending);
         }
         stored
             .state

@@ -1,3 +1,4 @@
+use crate::media::MediaUri;
 use crate::{
     icons::{Icon, icon},
     scheduled::Context,
@@ -307,7 +308,7 @@ fn DetailsDialog(
                 div{class:"channel-members",for (id,name) in names.iter().take(shown()){
                     {let user=id.clone();
                     let initials=name.chars().next().map(|c|c.to_uppercase().to_string()).unwrap_or_default();
-                    let avatar=workspace.and_then(|w|w.avatar_url(id)).and_then(|url|{let asset=shell.media.register_avatar(id,&url);shell.media.is_ready(&asset).then(||asset.uri_at(shell.media_epoch))});
+                    let avatar=workspace.and_then(|w|w.avatar_url(id)).and_then(|url|{let asset=shell.media.register_avatar(id,&url);shell.media.is_ready(&asset).then(||asset.webview_uri_at(shell.media_epoch))});
                     rsx!{div{class:"channel-member-row",key:"{id}",button{class:"channel-member",disabled:saving(),onclick:move |_|{onclose.call(());dioxus::core::spawn_forever(crate::bootstrap::open_profile(state,user.clone()));},
                         span{class:"channel-member-avatar","aria-hidden":"true",if let Some(uri)=avatar{img{src:"{uri}",alt:""}}else{"{initials}"}}
                         span{"{name}"}

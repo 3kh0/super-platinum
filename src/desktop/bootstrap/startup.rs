@@ -29,6 +29,8 @@ pub(crate) async fn initialize(mut state: Signal<ShellState>) {
         *state.write() = loaded;
         crate::performance::record(crate::performance::StartupStage::CacheLoaded);
     }
+    #[cfg(target_os = "windows")]
+    crate::notification::windows::session_ready();
     // Restore hidden transcripts before starting realtime. This prevents a
     // cached message from resurrecting a deletion delivered by the socket.
     // The selected conversation is already usable while this worker runs.

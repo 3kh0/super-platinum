@@ -61,7 +61,7 @@ pub(super) fn enabled_or_choice(
     } else if matches!(&metadata.source,super_platinum_core::block_actions::BlockElementSource::UnsupportedControl{kind} if kind=="timepicker")
     {
         super::time::presentation(shell, source, metadata).enabled
-    } else if matches!(&metadata.source,super_platinum_core::block_actions::BlockElementSource::UnsupportedControl{kind} if matches!(kind.as_str(),"users_select"|"conversations_select"))
+    } else if matches!(&metadata.source,super_platinum_core::block_actions::BlockElementSource::UnsupportedControl{kind} if matches!(kind.as_str(),"users_select"|"conversations_select"|"channels_select"))
     {
         super::user::presentation(shell, source, metadata).enabled
     } else {

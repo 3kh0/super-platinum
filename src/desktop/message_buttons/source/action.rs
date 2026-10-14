@@ -2,11 +2,14 @@
 use serde_json::Value;
 use super_platinum_core::{
     block_actions::validation::{
-        CapturedMessageButton, CapturedMessageConversation, CapturedMessageDate,
-        CapturedMessageMulti, CapturedMessageRadio, CapturedMessageSelect, CapturedMessageTime,
-        CapturedMessageUser, CurrentMessageButton, CurrentMessageConversation, CurrentMessageDate,
-        CurrentMessageMulti, CurrentMessageRadio, CurrentMessageSelect, CurrentMessageTime,
-        CurrentMessageUser, MessageActionError, MessageActionOwner,
+        CapturedMessageButton, CapturedMessageChannel, CapturedMessageChannels,
+        CapturedMessageConversation, CapturedMessageConversations, CapturedMessageDate,
+        CapturedMessageMulti, CapturedMessageOverflow, CapturedMessageRadio, CapturedMessageSelect,
+        CapturedMessageTime, CapturedMessageUser, CapturedMessageUsers, CurrentMessageButton,
+        CurrentMessageChannel, CurrentMessageChannels, CurrentMessageConversation,
+        CurrentMessageConversations, CurrentMessageDate, CurrentMessageMulti,
+        CurrentMessageOverflow, CurrentMessageRadio, CurrentMessageSelect, CurrentMessageTime,
+        CurrentMessageUser, CurrentMessageUsers, MessageActionError, MessageActionOwner,
     },
     config::WorkspaceSession,
     slack::{Error, SlackClient, api, client::PreparedRequest, models::Message},
@@ -14,8 +17,24 @@ use super_platinum_core::{
 
 #[derive(Clone)]
 pub(super) enum Action {
+    Conversations(
+        CapturedMessageConversations,
+        Vec<crate::message_buttons::inputs::user::directory::Choice>,
+        crate::message_buttons::inputs::user::conversations::Filter,
+    ),
+    Channels(
+        CapturedMessageChannels,
+        Vec<crate::message_buttons::inputs::user::directory::Choice>,
+        crate::message_buttons::inputs::user::conversations::Filter,
+    ),
+    Channel(
+        CapturedMessageChannel,
+        crate::message_buttons::inputs::user::directory::Choice,
+    ),
     Conversation(CapturedMessageConversation),
     User(CapturedMessageUser),
+    Users(CapturedMessageUsers),
+    Overflow(CapturedMessageOverflow),
     Time(CapturedMessageTime),
     Date(CapturedMessageDate),
     Button(CapturedMessageButton),
@@ -25,8 +44,13 @@ pub(super) enum Action {
 }
 
 pub(crate) enum Current<'a> {
+    Conversations(CurrentMessageConversations<'a>),
+    Channels(CurrentMessageChannels<'a>),
+    Channel(CurrentMessageChannel<'a>),
     Conversation(CurrentMessageConversation<'a>),
     User(CurrentMessageUser<'a>),
+    Users(CurrentMessageUsers<'a>),
+    Overflow(CurrentMessageOverflow<'a>),
     Time(CurrentMessageTime<'a>),
     Date(CurrentMessageDate<'a>),
     Button(CurrentMessageButton<'a>),
@@ -38,7 +62,13 @@ pub(crate) enum Current<'a> {
 impl Action {
     pub(super) fn selected_value(&self) -> Option<Option<&str>> {
         match self {
-            Self::Button(_) | Self::Multi(_) => None,
+            Self::Conversations(_, _, _)
+            | Self::Channels(_, _, _)
+            | Self::Button(_)
+            | Self::Multi(_)
+            | Self::Users(_)
+            | Self::Overflow(_) => None,
+            Self::Channel(value, _) => Some(value.selected_channel()),
             Self::Conversation(value) => Some(value.selected_conversation()),
             Self::User(user) => Some(user.selected_user()),
             Self::Time(time) => Some(time.selected_time()),
@@ -57,6 +87,12 @@ impl Action {
             ),
         }
     }
+    pub(super) fn selected_users(&self) -> Option<Vec<String>> {
+        match self {
+            Self::Users(users) => Some(users.selected_users()),
+            _ => None,
+        }
+    }
     pub(super) fn selected_options(&self) -> Option<(Option<&[Value]>, &[Value])> {
         match self {
             Self::Multi(multi) => {
@@ -71,10 +107,17 @@ impl Action {
         message: &Message,
     ) -> Result<Current<'a>, MessageActionError> {
         match self {
+            Self::Conversations(value, _, _) => {
+                value.revalidate(owner, message).map(Current::Conversations)
+            }
+            Self::Channels(value, _, _) => value.revalidate(owner, message).map(Current::Channels),
+            Self::Channel(value, _) => value.revalidate(owner, message).map(Current::Channel),
             Self::Conversation(value) => {
                 value.revalidate(owner, message).map(Current::Conversation)
             }
             Self::User(user) => user.revalidate(owner, message).map(Current::User),
+            Self::Users(users) => users.revalidate(owner, message).map(Current::Users),
+            Self::Overflow(value) => value.revalidate(owner, message).map(Current::Overflow),
             Self::Time(time) => time.revalidate(owner, message).map(Current::Time),
             Self::Date(date) => date.revalidate(owner, message).map(Current::Date),
             Self::Button(button) => button.revalidate(owner, message).map(Current::Button),
@@ -88,8 +131,13 @@ impl Action {
 impl Current<'_> {
     pub(crate) fn action(&self) -> &Value {
         match self {
+            Self::Conversations(value) => value.action(),
+            Self::Channels(value) => value.action(),
+            Self::Channel(value) => value.action(),
             Self::Conversation(value) => value.action(),
             Self::User(value) => value.action(),
+            Self::Users(value) => value.action(),
+            Self::Overflow(value) => value.action(),
             Self::Time(value) => value.action(),
             Self::Date(value) => value.action(),
             Self::Button(value) => value.action(),
@@ -100,8 +148,13 @@ impl Current<'_> {
     }
     pub(crate) fn container(&self) -> Value {
         match self {
+            Self::Conversations(value) => value.container(),
+            Self::Channels(value) => value.container(),
+            Self::Channel(value) => value.container(),
             Self::Conversation(value) => value.container(),
             Self::User(value) => value.container(),
+            Self::Users(value) => value.container(),
+            Self::Overflow(value) => value.container(),
             Self::Time(value) => value.container(),
             Self::Date(value) => value.container(),
             Self::Button(value) => value.container(),
@@ -113,8 +166,13 @@ impl Current<'_> {
     #[cfg(test)]
     pub(crate) fn service_id(&self) -> &str {
         match self {
+            Self::Conversations(value) => value.service_id(),
+            Self::Channels(value) => value.service_id(),
+            Self::Channel(value) => value.service_id(),
             Self::Conversation(value) => value.service_id(),
             Self::User(value) => value.service_id(),
+            Self::Users(value) => value.service_id(),
+            Self::Overflow(value) => value.service_id(),
             Self::Time(value) => value.service_id(),
             Self::Date(value) => value.service_id(),
             Self::Button(value) => value.service_id(),
@@ -126,8 +184,13 @@ impl Current<'_> {
     #[cfg(test)]
     pub(crate) fn owner(&self) -> &MessageActionOwner {
         match self {
+            Self::Conversations(value) => value.owner(),
+            Self::Channels(value) => value.owner(),
+            Self::Channel(value) => value.owner(),
             Self::Conversation(value) => value.owner(),
             Self::User(value) => value.owner(),
+            Self::Users(value) => value.owner(),
+            Self::Overflow(value) => value.owner(),
             Self::Time(value) => value.owner(),
             Self::Date(value) => value.owner(),
             Self::Button(value) => value.owner(),
@@ -139,8 +202,13 @@ impl Current<'_> {
     #[cfg(test)]
     pub(crate) fn function_execution_id(&self) -> Option<&str> {
         match self {
+            Self::Conversations(value) => value.function_execution_id(),
+            Self::Channels(value) => value.function_execution_id(),
+            Self::Channel(value) => value.function_execution_id(),
             Self::Conversation(value) => value.function_execution_id(),
             Self::User(value) => value.function_execution_id(),
+            Self::Users(value) => value.function_execution_id(),
+            Self::Overflow(value) => value.function_execution_id(),
             Self::Time(value) => value.function_execution_id(),
             Self::Date(value) => value.function_execution_id(),
             Self::Button(value) => value.function_execution_id(),
@@ -160,10 +228,55 @@ impl Current<'_> {
         state: Option<&Value>,
     ) -> Result<PreparedRequest, Error> {
         match self {
+            Self::Conversations(value) => api::block_action_conversations(
+                client,
+                workspace,
+                value,
+                app_id,
+                service_team_id,
+                client_token,
+                state,
+            ),
+            Self::Channels(value) => api::block_action_channels(
+                client,
+                workspace,
+                value,
+                app_id,
+                service_team_id,
+                client_token,
+                state,
+            ),
+            Self::Channel(user) => api::block_action_channel(
+                client,
+                workspace,
+                user,
+                app_id,
+                service_team_id,
+                client_token,
+                state,
+            ),
             Self::Conversation(user) => api::block_action_conversation(
                 client,
                 workspace,
                 user,
+                app_id,
+                service_team_id,
+                client_token,
+                state,
+            ),
+            Self::Overflow(value) => api::block_action_overflow(
+                client,
+                workspace,
+                value,
+                app_id,
+                service_team_id,
+                client_token,
+                state,
+            ),
+            Self::Users(users) => api::block_action_users(
+                client,
+                workspace,
+                users,
                 app_id,
                 service_team_id,
                 client_token,

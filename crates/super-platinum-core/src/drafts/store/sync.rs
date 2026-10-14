@@ -17,9 +17,9 @@ pub use alternates::{LocalAlternate, LocalWriter};
 use alternates::{has_alternates, preserve_owned_alternate, read_alternates, reviewed_revision};
 pub use resolution::{LocalChoice, LocalReview, LocalSettlement};
 
-// Version 3 adds delivery-check deadlines. Read legacy rows; new writes use
-// v3 so older binaries fail closed rather than bypass persisted cooldowns.
-const FORMAT: i64 = 3;
+// Version 4 adds persisted event ordering and unsupported observation evidence.
+// Read earlier rows; older binaries reject v4 rather than discard these guards.
+const FORMAT: i64 = 4;
 
 #[derive(Clone, Debug)]
 pub struct Stored {
@@ -99,6 +99,7 @@ pub(super) fn owner(conn: &Connection, account: &str) -> Result<(), AppError> {
 fn validate(scope: &Scope, state: &DraftSync) -> Result<(), AppError> {
     if state.scope() != scope
         || !state.consumption_valid()
+        || !state.observation_state_valid()
         || scope.key.team.is_empty()
         || scope.key.channel.is_empty()
         || scope.key.thread.as_ref().is_some_and(String::is_empty)
@@ -120,7 +121,7 @@ fn validate(scope: &Scope, state: &DraftSync) -> Result<(), AppError> {
     Ok(())
 }
 fn decode(scope: &Scope, revision: i64, format: i64, content: String) -> Result<Stored, AppError> {
-    if !matches!(format, 1 | 2 | FORMAT) || revision <= 0 {
+    if !matches!(format, 1 | 2 | 3 | FORMAT) || revision <= 0 {
         return Err(invalid("unsupported draft sync record"));
     }
     let state = serde_json::from_str(&content)?;
@@ -288,6 +289,7 @@ impl DraftStore {
         )?;
         if blocked
             || has_alternates(&tx, scope)?
+            || stored.state.blocked_observation().is_some()
             || stored.state.acknowledged().is_some()
             || stored.state.pending().is_some()
             || stored.state.consumption().is_some()

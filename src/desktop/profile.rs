@@ -1,3 +1,4 @@
+use crate::media::MediaUri;
 use dioxus::prelude::*;
 use serde_json::Value;
 
@@ -307,7 +308,7 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
                                     },
                                     span { class: "profile-recent-avatar",
                                         if let Some(avatar) = dm.avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
-                                            img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "" }
+                                            img { src: "{avatar.webview_uri_at(snapshot.media_epoch)}", alt: "" }
                                         } else { "{dm.initials}" }
                                     }
                                     span { "{dm.label}" }
@@ -522,7 +523,7 @@ fn profile_avatar(
 ) -> Element {
     rsx! {
         if let Some(avatar) = profile.avatar.as_ref().filter(|_| ready) {
-            img { class: "{class}", src: "{avatar.uri_at(media_epoch)}", alt: "Profile photo for {profile.name}" }
+            img { class: "{class}", src: "{avatar.webview_uri_at(media_epoch)}", alt: "Profile photo for {profile.name}" }
         } else {
             span { class: "profile-avatar-initials", "{profile.initials}" }
         }
@@ -532,7 +533,7 @@ fn profile_avatar(
 fn status_icon(profile: &ProfileDisplay, media_epoch: u64, ready: bool) -> Element {
     rsx! {
         if let Some(image) = profile.status_image.as_ref().filter(|_| ready) {
-            img { class: "profile-status-emoji", src: "{image.uri_at(media_epoch)}", alt: "" }
+            img { class: "profile-status-emoji", src: "{image.webview_uri_at(media_epoch)}", alt: "" }
         } else if !profile.status_glyph.is_empty() {
             span { class: "profile-status-glyph", "{profile.status_glyph}" }
         }

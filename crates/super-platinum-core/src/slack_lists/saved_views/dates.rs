@@ -61,6 +61,21 @@ impl DateContext {
             self.now.offset().local_minus_utc()
         )
     }
+    /// A sampled instant shared by display projection and saved-view evaluation.
+    pub fn now(&self) -> DateTime<FixedOffset> {
+        self.now
+    }
+    /// Resolve the timestamp's own historical local offset, not today's offset.
+    /// Fixed calendars are used only by deterministic callers such as fixtures.
+    pub fn timestamp_millis(&self, value: i64) -> Option<DateTime<FixedOffset>> {
+        match self.calendar {
+            Calendar::Local => Local
+                .timestamp_millis_opt(value)
+                .single()
+                .map(|v| v.fixed_offset()),
+            Calendar::Fixed(offset) => offset.timestamp_millis_opt(value).single(),
+        }
+    }
     fn timestamp(&self, value: i64) -> Result<DateTime<FixedOffset>> {
         match self.calendar {
             Calendar::Local => Local

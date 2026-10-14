@@ -1,4 +1,5 @@
 //! One stage and one set of controls for the app's single live huddle.
+use crate::media::MediaUri;
 use crate::{
     icons::{Icon, icon},
     state::{HuddleDevice, ShellState},
@@ -284,7 +285,7 @@ fn stage_tile(
                     "data-huddle-demo": if fixture { Some(if tile.content { "share" } else { "camera" }) } else { None },
                 }
             } else if let Some(avatar) = avatar {
-                img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{name}" }
+                img { src: "{avatar.webview_uri_at(snapshot.media_epoch)}", alt: "{name}" }
             } else {
                 div { class: "huddle-stage-initials", {name.chars().find(|c| c.is_alphanumeric()).map(|c| c.to_uppercase().to_string()).unwrap_or_else(|| "?".into())} }
             }

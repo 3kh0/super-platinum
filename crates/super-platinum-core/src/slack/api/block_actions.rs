@@ -6,9 +6,10 @@
 use serde_json::{Value, json};
 
 use crate::block_actions::validation::{
-    CurrentMessageButton, CurrentMessageConversation, CurrentMessageDate, CurrentMessageMulti,
-    CurrentMessageRadio, CurrentMessageSelect, CurrentMessageTime, CurrentMessageUser,
-    MessageActionOwner,
+    CurrentMessageButton, CurrentMessageChannel, CurrentMessageChannels,
+    CurrentMessageConversation, CurrentMessageConversations, CurrentMessageDate,
+    CurrentMessageMulti, CurrentMessageOverflow, CurrentMessageRadio, CurrentMessageSelect,
+    CurrentMessageTime, CurrentMessageUser, CurrentMessageUsers, MessageActionOwner,
 };
 use crate::config::WorkspaceSession;
 
@@ -194,6 +195,44 @@ pub fn block_action_conversation(
     )
 }
 
+/// Prepare the captured channels_select action after local state is committed.
+/// `state` is the complete current message values map, not `{ "values": ... }`.
+pub fn block_action_channel(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageChannel<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != Some("channels_select")
+            || value.get("selected_channel") != action.get("selected_channel")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
 /// Prepare the captured users_select action after local state is committed.
 /// `state` is the complete current message values map, not `{ "values": ... }`.
 pub fn block_action_user(
@@ -309,6 +348,144 @@ pub fn block_action_multi(
     )
 }
 
+/// Multi-user actions require the matching committed selected_users array.
+pub fn block_action_users(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageUsers<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != Some("multi_users_select")
+            || value.get("selected_users") != action.get("selected_users")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
+/// Multi-channel actions require the matching committed selected_channels array.
+pub fn block_action_channels(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageChannels<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != Some("multi_channels_select")
+            || value.get("selected_channels") != action.get("selected_channels")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
+/// Multi-conversation actions require the matching committed selected_conversations array.
+pub fn block_action_conversations(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    select: &CurrentMessageConversations<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    let action = select.action();
+    let selected = state
+        .and_then(|values| values.get(action["block_id"].as_str()?))
+        .and_then(|block| block.get(action["action_id"].as_str()?));
+    if selected.is_none_or(|value| {
+        value.get("type").and_then(Value::as_str) != Some("multi_conversations_select")
+            || value.get("selected_conversations") != action.get("selected_conversations")
+    }) {
+        return Err(Error::Api("block_action_state_invalid".into()));
+    }
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: select.owner(),
+            action,
+            service_id: select.service_id(),
+            function_execution_id: select.function_execution_id(),
+            container: select.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
+/// Overflow has no selected state; retain the full sibling state if present.
+pub fn block_action_overflow(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    button: &CurrentMessageOverflow<'_>,
+    app_id: &str,
+    service_team_id: &str,
+    client_token: &str,
+    state: Option<&Value>,
+) -> Result<PreparedRequest, Error> {
+    block_action(
+        client,
+        workspace,
+        WireAction {
+            owner: button.owner(),
+            action: button.action(),
+            service_id: button.service_id(),
+            function_execution_id: button.function_execution_id(),
+            container: button.container(),
+        },
+        app_id,
+        service_team_id,
+        client_token,
+        state,
+    )
+}
+
 struct WireAction<'a> {
     owner: &'a MessageActionOwner,
     action: &'a Value,
@@ -416,3 +593,6 @@ mod tests;
 
 #[cfg(test)]
 mod multi_tests;
+
+#[cfg(test)]
+mod extended_tests;

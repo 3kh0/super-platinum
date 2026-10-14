@@ -1,6 +1,8 @@
 //! Typed DOM view for the Dioxus desktop shell.
 
+use crate::media::MediaUri;
 pub(crate) mod app_modal;
+mod app_modal_users;
 pub(crate) mod button_confirmation;
 mod channel_details;
 mod channel_membership;
@@ -23,6 +25,7 @@ mod message_button;
 mod message_checkboxes;
 mod message_date;
 pub(crate) mod message_multi;
+mod message_overflow;
 mod message_radio;
 mod message_select;
 mod message_time;
@@ -50,6 +53,7 @@ mod thread_paging;
 mod thread_window;
 mod thread_window_check;
 mod threads;
+mod user_choices;
 
 use dioxus::prelude::*;
 
@@ -80,6 +84,7 @@ const CSS: &str = concat!(
     include_str!("../styles/global-notifications.css"),
     include_str!("../styles/conversation.css"),
     include_str!("../styles/blocks.css"),
+    include_str!("../styles/message-overflow.css"),
     include_str!("../styles/composer.css"),
     include_str!("../styles/overlays.css"),
     include_str!("../styles/app-modal.css"),
@@ -258,7 +263,7 @@ pub fn shell() -> Element {
         .avatar
         .as_ref()
         .filter(|avatar| snapshot.media.is_ready(avatar))
-        .map(|avatar| avatar.uri_at(snapshot.media_epoch));
+        .map(|avatar| avatar.webview_uri_at(snapshot.media_epoch));
 
     rsx! {
         style { {CSS} }
@@ -507,8 +512,10 @@ pub fn shell() -> Element {
             // never be the thing standing between them and the window.
             if let Some(toast) = snapshot.toast.as_ref() {
                 div {
+                    id: "status-toast",
                     class: "toast",
                     role: "status",
+                    onmounted: move |_| { dioxus::document::eval(include_str!("toast_position.js")); },
                     title: "{toast.text}",
                     onclick: move |_| state.write().toast = None,
                     span { class: "toast-text", "{toast.text}" }

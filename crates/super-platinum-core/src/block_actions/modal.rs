@@ -29,6 +29,9 @@ pub struct ModalView {
     pub app_id: String,
     pub kind: String,
     pub previous_view_id: Option<String>,
+    /// Conversation captured from the initiating action, inherited by this
+    /// view's stack. Navigation after dispatch must never change this origin.
+    pub origin_conversation: Option<String>,
     /// Exact server view, without lossy block parsing. An open/update frame can
     /// omit it; the caller must fetch content before presenting an input form.
     pub payload: Option<Value>,
@@ -46,6 +49,7 @@ pub enum ModalChange {
 struct Token {
     value: String,
     app_id: String,
+    origin_conversation: Option<String>,
     issued_ms: u64,
     expires_ms: u64,
     opened: Vec<String>,
@@ -163,6 +167,7 @@ impl ModalState {
                     app_id: current.app_id.clone(),
                     kind: current.kind.clone(),
                     previous_view_id: Some(expected_view_id.to_owned()),
+                    origin_conversation: current.origin_conversation.clone(),
                     payload: Some(payload.clone()),
                     needs_content: false,
                 });
@@ -222,10 +227,27 @@ impl ModalState {
         now_ms: u64,
         lifetime_ms: u64,
     ) -> bool {
+        self.enqueue_with_origin(scope, token, app_id, None, now_ms, lifetime_ms)
+    }
+
+    /// Capture the initiating action's conversation before dispatch. This is
+    /// view lineage, not account/realtime scope or the current UI selection.
+    pub fn enqueue_with_origin(
+        &mut self,
+        scope: &ModalScope,
+        token: String,
+        app_id: String,
+        origin_conversation: Option<String>,
+        now_ms: u64,
+        lifetime_ms: u64,
+    ) -> bool {
         if scope != &self.scope
             || token.trim().is_empty()
             || app_id.trim().is_empty()
             || lifetime_ms == 0
+            || origin_conversation
+                .as_deref()
+                .is_some_and(|id| !super::form::valid_message_conversation(id))
             || self.tokens.iter().any(|old| old.value == token)
         {
             return false;
@@ -237,6 +259,7 @@ impl ModalState {
         self.tokens.push_front(Token {
             value: token,
             app_id,
+            origin_conversation,
             issued_ms: now_ms,
             expires_ms,
             opened: Vec::new(),
@@ -312,6 +335,18 @@ impl ModalState {
         {
             return ModalChange::Ignored;
         }
+        let origin_conversation = if let Some(parent) = self.stack.last() {
+            // An origin-less compatibility token can inherit its exact parent.
+            // An explicitly different origin cannot join an existing lineage.
+            if entry.origin_conversation.is_some()
+                && entry.origin_conversation != parent.origin_conversation
+            {
+                return ModalChange::Ignored;
+            }
+            parent.origin_conversation.clone()
+        } else {
+            entry.origin_conversation.clone()
+        };
         let payload = event.rest.get("view").filter(|value| !value.is_null());
         let root = self.stack.first().map_or(id, |view| view.id.as_str());
         if payload.is_some_and(|value| !valid_view(value, id, app_id, kind, previous, root)) {
@@ -322,6 +357,7 @@ impl ModalState {
             app_id: app_id.into(),
             kind: kind.into(),
             previous_view_id: previous.map(str::to_owned),
+            origin_conversation,
             payload: payload.cloned(),
             needs_content: payload.is_none(),
         });
@@ -456,5 +492,7 @@ fn valid_view(
     true
 }
 
+#[cfg(test)]
+mod origin_tests;
 #[cfg(test)]
 mod tests;

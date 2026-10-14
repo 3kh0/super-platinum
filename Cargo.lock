@@ -5299,6 +5299,8 @@ dependencies = [
  "super-platinum-core",
  "tokio",
  "url",
+ "windows",
+ "windows-core 0.61.2",
  "winresource",
  "wry",
 ]

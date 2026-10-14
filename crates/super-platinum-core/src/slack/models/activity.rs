@@ -228,6 +228,35 @@ impl ActivityItem {
         self.thread_entry().and_then(|e| e.min_unread_ts.as_deref())
     }
 
+    /// YfTA's message index coordinate, distinct from the navigation target.
+    /// A thread bundle is indexed by its first unread reply (or latest reply),
+    /// never by the root used to open the thread.
+    pub fn read_cursor_target(&self) -> Option<(&str, Option<&str>, &str)> {
+        if self.item.kind == "thread_v2" || self.thread_entry().is_some() {
+            let entry = self.thread_entry()?;
+            let channel = entry.channel_id.as_deref().filter(|s| !s.is_empty())?;
+            let root = entry.thread_ts.as_deref().filter(|s| !s.is_empty())?;
+            let ts = entry
+                .min_unread_ts
+                .as_deref()
+                .filter(|s| !s.is_empty())
+                .or_else(|| entry.latest_ts.as_deref().filter(|s| !s.is_empty()))?;
+            return Some((channel, Some(root), ts));
+        }
+        let message = self
+            .dm_message()
+            .or_else(|| self.channel_message())
+            .or(self.item.message.as_ref())?;
+        let channel = message.channel.as_deref().filter(|s| !s.is_empty())?;
+        let ts = message.ts.as_deref().filter(|s| !s.is_empty())?;
+        let root = message.thread_ts.as_deref().filter(|s| !s.is_empty());
+        // A malformed thread item cannot become a channel-level notification.
+        if self.is_thread() && root.is_none() {
+            return None;
+        }
+        Some((channel, root, ts))
+    }
+
     pub fn preview_ts(&self) -> Option<&str> {
         self.latest_ts().or_else(|| self.ts())
     }

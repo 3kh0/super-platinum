@@ -251,7 +251,7 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
             }
             if let Some(workspace) = state.write().core.workspaces.get_mut(&ctx.session.team_id) {
                 for channel in channels {
-                    workspace.channels.insert(channel.id.clone(), channel);
+                    workspace.insert_channel_metadata(channel);
                 }
             }
         }

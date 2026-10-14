@@ -99,6 +99,11 @@ pub(crate) async fn load_started_thread(
         thread_key.clone(),
     ));
     let read_revision = state.peek().core.thread_read_revision(&thread_key);
+    let cursor_owner = crate::realtime::activity_counts::CursorOwner::capture(
+        &state.peek().core,
+        &visit.transport,
+        &session,
+    );
     let result = api::fetch_replies(
         &visit.transport,
         &client,
@@ -142,10 +147,17 @@ pub(crate) async fn load_started_thread(
                 }
                 messages.loaded = true;
                 messages.recount_thread_unreads(&root);
-                if let Some(cursor) = last_read {
-                    shell
-                        .core
-                        .confirm_thread_mark(&thread_key, &cursor, read_revision);
+                if let Some(cursor) = last_read
+                    && cursor_owner
+                        .as_ref()
+                        .is_some_and(|owner| owner.current(&shell.core))
+                {
+                    crate::realtime::activity_counts::confirm_thread_read(
+                        &mut shell.core,
+                        &thread_key,
+                        &cursor,
+                        read_revision,
+                    );
                 }
                 crate::thread_unread::remember_anchor(&mut shell);
                 shell.thread_loading = false;

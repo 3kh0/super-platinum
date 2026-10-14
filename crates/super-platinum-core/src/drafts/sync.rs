@@ -10,8 +10,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 mod consume;
 mod direct_local;
+mod observation;
 mod recovery;
 pub use consume::{ConsumeError, ConsumeIntent, ConsumeKind};
+pub use observation::{DraftObservation, ObservationError, ObservationKind};
 
 /// Account identity and the verified destination, never the currently visible
 /// composer. Adapters must derive a remote scope from its own destination.
@@ -122,6 +124,10 @@ pub struct DraftSync {
     consumption: Option<ConsumeIntent>,
     #[serde(default)]
     check_deadline: Option<recovery::CheckDeadline>,
+    #[serde(default)]
+    observed_events: std::collections::BTreeMap<String, DraftObservation>,
+    #[serde(default)]
+    blocked_observation: Option<DraftObservation>,
 }
 impl DraftSync {
     pub fn new(scope: Scope) -> Self {
@@ -137,6 +143,8 @@ impl DraftSync {
             retired_ids: vec![],
             consumption: None,
             check_deadline: None,
+            observed_events: Default::default(),
+            blocked_observation: None,
         }
     }
     /// Explicitly bind a positively identified foreign remote draft. The caller
@@ -207,6 +215,8 @@ impl DraftSync {
             retired_ids: vec![],
             consumption: None,
             check_deadline: None,
+            observed_events: Default::default(),
+            blocked_observation: None,
         })
     }
     pub fn scope(&self) -> &Scope {
@@ -260,7 +270,7 @@ impl DraftSync {
     /// A returned operation authorizes one dispatch only AFTER durable commit.
     /// Coalesced edits remain in `desired`; outstanding/uncertain work blocks it.
     pub fn begin_operation(&mut self, scope: &Scope) -> Option<Operation> {
-        if scope != &self.scope || self.workflow != Workflow::Idle {
+        if scope != &self.scope || self.workflow != Workflow::Idle || self.blocked_observation.is_some() {
             return None;
         }
         if self.consumption.is_some() {

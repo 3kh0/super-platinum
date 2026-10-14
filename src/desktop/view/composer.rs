@@ -60,6 +60,37 @@ pub(crate) fn clear_delivered_field(id: &str, scope: &str, expected: &str) {
     ));
 }
 
+#[derive(Debug, serde::Deserialize)]
+#[serde(tag = "status", rename_all = "lowercase", deny_unknown_fields)]
+pub(crate) enum ScheduledClearReceipt {
+    Cleared { scope: String },
+    Changed { scope: String, text: String },
+    Composing,
+    Unavailable,
+}
+
+pub(crate) async fn settle_scheduled_field(
+    id: &str,
+    scope: &str,
+    expected: &str,
+) -> ScheduledClearReceipt {
+    let args = serde_json::to_string(&(id, scope, expected)).unwrap();
+    let mut eval = dioxus::document::eval(&format!(
+        "{}; try{{dioxus.send(settleScheduledComposer(...{args}));}}catch(error){{dioxus.send({{status:'unavailable'}});}} await dioxus.recv();",
+        include_str!("../composer_delivery.js"),
+    ));
+    let result = tokio::time::timeout(
+        std::time::Duration::from_secs(3),
+        eval.recv::<ScheduledClearReceipt>(),
+    )
+    .await;
+    let _ = eval.send(());
+    match result {
+        Ok(Ok(receipt)) => receipt,
+        _ => ScheduledClearReceipt::Unavailable,
+    }
+}
+
 pub(crate) fn channel_field_scope(shell: &ShellState) -> String {
     field_scope(shell, ComposerTarget::Channel)
 }
@@ -81,7 +112,7 @@ pub(crate) fn field_scope(shell: &ShellState, target: ComposerTarget) -> String 
         shell.composer_key(target)
     );
     match target {
-        ComposerTarget::Channel => scope,
+        ComposerTarget::Channel => format!("{scope}:{}", shell.channel_generation),
         ComposerTarget::Thread => format!("{scope}:{}", shell.thread_generation),
     }
 }
@@ -89,6 +120,17 @@ pub(crate) fn field_scope(shell: &ShellState, target: ComposerTarget) -> String 
 #[cfg(test)]
 mod scope_tests {
     use super::*;
+
+    #[test]
+    fn reopening_same_channel_retires_dom_scope() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        let original = shell.active_channel;
+        let scope = channel_field_scope(&shell);
+        let other = if original == 0 { 1 } else { 0 };
+        shell.select_channel(other, crate::state::ChannelOpen::Global);
+        shell.select_channel(original, crate::state::ChannelOpen::Global);
+        assert_ne!(scope, channel_field_scope(&shell));
+    }
 
     #[test]
     fn reopening_same_thread_retires_dom_scope_without_changing_channel_scope() {

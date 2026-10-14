@@ -41,6 +41,11 @@ pub async fn load(mut state: Signal<ShellState>, append: bool) {
         let counts_revision = shell.core.workspaces[&team].thread_counts.revision();
         (epoch, request, cursors, counts_revision)
     };
+    let cursor_owner = crate::realtime::activity_counts::CursorOwner::capture(
+        &state.peek().core,
+        &transport,
+        &session,
+    );
     let result = api::fetch_threads_view(
         &transport,
         &client,
@@ -64,12 +69,33 @@ pub async fn load(mut state: Signal<ShellState>, append: bool) {
         {
             return;
         }
+        if !cursor_owner
+            .as_ref()
+            .is_some_and(|owner| owner.current(&shell.core))
+        {
+            shell.core.threads_view.fail(&request);
+            return;
+        }
         match result {
             Ok(mut page) => {
                 let counts = page.threads_state.take();
+                let keys: Vec<_> = page
+                    .threads
+                    .iter()
+                    .filter_map(|item| {
+                        Some((
+                            team.clone(),
+                            item.channel()?.clone(),
+                            item.root_ts()?.clone(),
+                        ))
+                    })
+                    .collect();
                 let applied = shell
                     .core
                     .apply_thread_feed_page(&team, &request, page, &cursors);
+                if applied {
+                    reconcile_cursors(&mut shell.core, &keys);
+                }
                 if applied && let Some(counts) = counts {
                     shell
                         .core
@@ -93,6 +119,21 @@ pub async fn load(mut state: Signal<ShellState>, append: bool) {
     if applied {
         crate::bootstrap::persist_workspace(&state, &team);
         crate::bootstrap::hydrate_current_surface(state).await;
+    }
+}
+
+// Use the cursor retained by the revision-aware merge, never the stale page's
+// last_read when a socket mark arrived while it was in flight.
+fn reconcile_cursors(
+    core: &mut super_platinum_core::CoreAppState,
+    keys: &[super_platinum_core::domain::ThreadKey],
+) {
+    for key in keys {
+        if let Some(cursor) = core.thread_cursor(key).map(str::to_owned) {
+            crate::realtime::activity_counts::mark_thread_read(
+                core, &key.0, &key.1, &key.2, &cursor,
+            );
+        }
     }
 }
 
@@ -125,6 +166,42 @@ pub(crate) fn fixture(shell: &mut ShellState, name: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn fetched_thread_cursor_cannot_override_an_intervening_mark_in_activity() {
+        let mut core = super_platinum_core::CoreAppState::new(Default::default());
+        core.active_team = Some("T".into());
+        core.activity.ensure_scope(core.account_epoch, "T");
+        core.threads_view.ensure_scope(core.account_epoch, "T");
+        let key = ("T".into(), "C".into(), "1.0".into());
+        for ts in ["2.0", "4.0"] {
+            core.activity.upsert(
+                serde_json::from_value(serde_json::json!({
+                    "key":ts,"feed_ts":ts,"is_unread":true,
+                    "item":{"type":"at_user","message":{"channel":"C","thread_ts":"1.0","ts":ts}}
+                }))
+                .unwrap(),
+            );
+        }
+        let request = core.threads_view.begin(false).unwrap();
+        core.apply_thread_mark(&key, "2.0");
+        let page = serde_json::from_value(serde_json::json!({"threads":[{
+            "root_msg":{"channel":"C","ts":"1.0","last_read":"4.0"},
+            "latest_replies":[{"ts":"2.0"},{"ts":"4.0"}]
+        }]}))
+        .unwrap();
+        assert!(core.apply_thread_feed_page("T", &request, page, &Default::default()));
+        reconcile_cursors(&mut core, &[key]);
+        assert_eq!(core.activity.unread_count(), 1);
+        assert!(
+            core.activity
+                .items
+                .iter()
+                .find(|item| item.key == "4.0")
+                .unwrap()
+                .is_unread
+        );
+    }
+
     #[test]
     fn switching_workspace_releases_a_pending_feed_request() {
         let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());

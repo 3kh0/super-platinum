@@ -30,18 +30,34 @@ pub(crate) fn MessageUserSelect(
         },
     ));
     let view = user::presentation(&state.read(), &source, &metadata);
-    let selected = inputs::display_selected(&state.read(), &source, &metadata, &mounted);
-    let label = selected
-        .as_deref()
-        .map(|id| user::label(&state.read(), &source, id))
-        .unwrap_or_else(|| view.placeholder.clone());
+    let label = if user::is_multiple(&metadata) {
+        let selected = user::display_selected_users(&state.read(), &source, &metadata, &mounted);
+        if selected.is_empty() {
+            view.placeholder.clone()
+        } else {
+            format!("{} selected", selected.len())
+        }
+    } else {
+        inputs::display_selected(&state.read(), &source, &metadata, &mounted)
+            .as_deref()
+            .map(|id| user::label(&state.read(), &source, id))
+            .unwrap_or_else(|| view.placeholder.clone())
+    };
     let aria = if accessibility_label.is_empty() {
         view.placeholder.clone()
     } else {
         accessibility_label
     };
-    let control_class = if user::is_conversation(&metadata) {
+    let control_class = if user::is_conversation(&metadata) && user::is_multiple(&metadata) {
+        "block-select block-multi-conversations-select"
+    } else if user::is_channel(&metadata) && user::is_multiple(&metadata) {
+        "block-select block-multi-channels-select"
+    } else if user::is_channel(&metadata) {
+        "block-select block-channels-select"
+    } else if user::is_conversation(&metadata) {
         "block-select block-conversations-select"
+    } else if user::is_multiple(&metadata) {
+        "block-select block-multi-users-select"
     } else {
         "block-select block-users-select"
     };
@@ -69,22 +85,16 @@ fn UserDialog(state: Signal<ShellState>) -> Element {
     };
     let revision = picker.revision;
     let query_revision = picker.query_revision;
-    let search_label = if picker.conversation {
+    let search_label = if picker.channel {
+        "Find a channel"
+    } else if picker.conversation {
         "Find a conversation"
     } else {
         "Find a user"
     };
-    let group_label = if picker.conversation {
-        "Conversations"
-    } else {
-        "Users"
-    };
-    let empty_label = if picker.conversation {
-        "No matching conversations"
-    } else {
-        "No matching users"
-    };
-    let close_label = if picker.conversation {
+    let close_label = if picker.channel {
+        "Close channel selection"
+    } else if picker.conversation {
         "Close conversation selection"
     } else {
         "Close user selection"
@@ -106,21 +116,23 @@ fn UserDialog(state: Signal<ShellState>) -> Element {
                 button {class:"icon-btn",r#type:"button","aria-label":close_label,onclick:move |_|user::cancel(state,revision),{icon(Icon::Close,"icon")}}
             }
             div {class:"message-multi-content",
+                if picker.multiple && !picker.selected.is_empty() {
+                    super::user_choices::SelectedUsers {selected:picker.selected.clone(),disabled:false,conversation:picker.conversation,channel:picker.channel,
+                        onremove:move |id|user::remove_user(state,revision,id)}
+                }
                 input {id:"message-user-search",r#type:"search",initial_value:"",autocomplete:"off",placeholder:search_label,"aria-label":search_label,
                     oninput:move |event|user::search(state,revision,event.value())}
-                div {class:"message-user-options",role:"group","aria-label":group_label,
-                    for choice in &picker.candidates {
-                        {let id=choice.id.clone();rsx!{button {key:"{id}",r#type:"button",class:"message-user-option","data-entity-id":"{id}","data-user-id":(!picker.conversation).then(||id.clone()),"data-conversation-id":picker.conversation.then(||id.clone()),
-                            onclick:move |_|user::choose(state,revision,query_revision,id.clone()),"{choice.label}"}}}
-                    }
-                    if picker.candidates.is_empty() {p {class:"muted","{empty_label}"}}
-                }
+                super::user_choices::UserChoices {choices:picker.candidates.clone(),selected:picker.selected.clone(),
+                    multiple:picker.multiple,conversation:picker.conversation,channel:picker.channel,disabled:false,
+                    onchoose:move |id|user::choose(state,revision,query_revision,id)}
             }
-            div {class:"message-multi-status",role:"status",if picker.loading {"Searching…"}else if let Some(error)=&picker.error {"{error}"}}
+            div {class:"message-multi-status",role:"status",if let Some(error)=&picker.selection_error {"{error}"}else if picker.loading {"Searching…"}else if let Some(error)=&picker.error {"{error}"}}
             if picker.agent_unavailable {p {id:"message-user-availability",class:"message-multi-status","Some app users are unavailable in this picker."}}
             footer {
                 if picker.error.is_some() {button {id:"message-user-retry",r#type:"button",disabled:picker.loading,onclick:move |_|user::search(state,revision,picker.query.clone()),"Retry search"}}
-                button {id:"message-user-cancel",r#type:"button",onclick:move |_|user::cancel(state,revision),"Cancel"}}
+                button {id:"message-user-cancel",r#type:"button",onclick:move |_|user::cancel(state,revision),"Cancel"}
+                if picker.multiple {button {id:"message-users-submit",r#type:"button",class:"button-confirmation-submit",disabled:picker.selection_error.is_some(),onclick:move |_|user::submit_users(state,revision),"Apply"}}
+            }
         }
     }
 }

@@ -2,6 +2,10 @@
 use super::*;
 use super_platinum_core::drafts::sync::ConsumeKind;
 
+#[path = "checkpoint_poll.rs"]
+mod poll;
+pub(crate) use poll::Signature;
+
 #[derive(Clone, Debug)]
 pub(crate) struct Snapshot {
     pub serial: u64,
@@ -12,6 +16,19 @@ pub(crate) struct Snapshot {
     /// alternate may nevertheless hold it durably for explicit recovery.
     pub unsaved: bool,
     pub running: bool,
+}
+
+impl Snapshot {
+    fn from_state(state: &State) -> Self {
+        Self {
+            serial: state.serial,
+            view: state.base.clone(),
+            pending: state.pending.as_ref().map(|(_, local)| local.clone()),
+            error: state.error,
+            unsaved: state.pending.is_some(),
+            running: state.running || state.settling,
+        }
+    }
 }
 
 struct State {
@@ -73,14 +90,7 @@ impl Editor {
 
     pub fn snapshot(&self) -> Snapshot {
         let state = self.state.lock().unwrap();
-        Snapshot {
-            serial: state.serial,
-            view: state.base.clone(),
-            pending: state.pending.as_ref().map(|(_, local)| local.clone()),
-            error: state.error,
-            unsaved: state.pending.is_some(),
-            running: state.running || state.settling,
-        }
+        Snapshot::from_state(&state)
     }
 
     /// Enqueue and start immediately. The task owns this editor through account

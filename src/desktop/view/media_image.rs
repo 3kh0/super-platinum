@@ -1,4 +1,5 @@
 //! Native image decoding can fail even after a successful HTTP download.
+use crate::media::MediaUri;
 use dioxus::prelude::*;
 use super_platinum_core::MediaAssetId;
 
@@ -40,7 +41,7 @@ pub(crate) fn MediaImage(
             }
         };
     }
-    let uri = id.uri_at(media_epoch);
+    let uri = id.webview_uri_at(media_epoch);
     rsx! {
         img {
             src:uri, alt, class, style, title, loading,

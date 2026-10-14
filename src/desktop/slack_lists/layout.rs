@@ -178,6 +178,12 @@ fn rebuild_inner(view: &mut View, workspace: Option<&Workspace>) {
         selected,
         view.layout.last_read_timestamp,
     );
+    presentation::project_timestamps(
+        loaded,
+        &mut view.all_rows,
+        workspace,
+        view.layout.dates.context.as_ref(),
+    );
     if view.layout.selected.is_none() {
         view.layout.columns = columns(
             &loaded.document,

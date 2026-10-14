@@ -13,6 +13,7 @@ use super_platinum_core::{
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum CellContent {
     Plain,
+    Timestamp { tooltip: String },
     Rich(Vec<RichNode>),
     Labels(Vec<String>),
 }

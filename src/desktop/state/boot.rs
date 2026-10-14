@@ -1,3 +1,4 @@
+use crate::media::MediaUri;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -115,6 +116,9 @@ impl ShellState {
                 state
             }
             "threads"
+            | "threads-keyboard-narrow"
+            | "threads-file-paste"
+            | "threads-file-paste-narrow"
             | "thread-unread-divider"
             | "thread-target"
             | "thread-error"
@@ -1015,12 +1019,45 @@ impl ShellState {
             }
             "system-messages" => crate::fixture::system_messages(&mut state),
             "slack-links" | "slack-links-narrow" => crate::slack_links_check::install(&mut state),
+            "app-modal-users" | "app-modal-users-narrow" => {
+                crate::app_modal::users_fixture::install(&mut state)
+            }
+            "app-modal-multi-conversation" | "app-modal-multi-conversation-narrow" => {
+                crate::app_modal::multi_conversation_fixture::install(&mut state);
+            }
+            "message-multi-conversations-select" | "message-multi-conversations-select-narrow" => {
+                crate::message_buttons::multi_conversation_fixture::install(&mut state);
+            }
+            "app-modal-multi-channel" | "app-modal-multi-channel-narrow" => {
+                crate::app_modal::multi_channel_fixture::install(&mut state);
+            }
+            "message-multi-channels-select" | "message-multi-channels-select-narrow" => {
+                crate::message_buttons::multi_channel_fixture::install(&mut state);
+            }
+            "app-modal-channel" | "app-modal-channel-narrow" => {
+                crate::app_modal::channel_fixture::install(&mut state);
+            }
+            "app-modal-conversation" | "app-modal-conversation-narrow" => {
+                crate::app_modal::conversation_fixture::install(&mut state);
+            }
+            "app-modal-user" | "app-modal-user-narrow" => {
+                crate::app_modal::users_fixture::install_single(&mut state)
+            }
             "app-modal-form"
             | "app-modal-form-narrow"
             | "app-modal-lifecycle"
             | "app-modal-lifecycle-narrow" => crate::app_modal::fixture::install(&mut state),
+            "message-multi-users-select" | "message-multi-users-select-narrow" => {
+                crate::message_buttons::multi_user_fixture::install(&mut state)
+            }
             "message-users-select" | "message-users-select-narrow" => {
                 crate::message_buttons::user_fixture::install(&mut state)
+            }
+            "message-overflow" | "message-overflow-narrow" => {
+                crate::message_buttons::overflow_fixture::install(&mut state)
+            }
+            "message-channels-select" | "message-channels-select-narrow" => {
+                crate::message_buttons::channel_fixture::install(&mut state);
             }
             "message-conversations-select" | "message-conversations-select-narrow" => {
                 crate::message_buttons::conversation_fixture::install(&mut state)
@@ -1058,8 +1095,14 @@ impl ShellState {
             "rejected-send" | "rejected-send-narrow" => {
                 crate::drafts::rejected_fixture::apply(&mut state)
             }
+            "rejected-thread-return" | "rejected-thread-return-narrow" => {
+                crate::drafts::rejected_thread_fixture::apply(&mut state)
+            }
             "send-outcomes" | "send-outcomes-narrow" | "send-outcomes-thread" => {
                 crate::messaging::send_outcomes_fixture(&mut state, name)
+            }
+            "schedule-clear" | "schedule-clear-narrow" | "schedule-clear-thread" => {
+                crate::view::scheduled::clear_check::install(&mut state, name)
             }
             "message-marked-unread" | "message-marked-unread-narrow" => {
                 crate::unread::fixture(&mut state)
@@ -1859,7 +1902,7 @@ impl ShellState {
                     "image/png",
                     include_bytes!("../../../assets/icons/icon-512.png").as_slice(),
                 );
-                state.background_uri = Some(id.uri());
+                state.background_uri = Some(id.webview_uri());
                 state.core.settings.background =
                     Some(super_platinum_core::config::BackgroundSettings {
                         file_name: "fixture.png".into(),

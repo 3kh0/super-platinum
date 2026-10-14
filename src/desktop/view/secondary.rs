@@ -1,3 +1,4 @@
+use crate::media::MediaUri;
 use dioxus::prelude::*;
 
 use crate::state::{ActivityTab, MainView, ShellState};
@@ -260,7 +261,7 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                                 div { class: "dm-avatar-wrap",
                                     div { class: "dm-avatar",
                                         if let Some(avatar) = avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
-                                            img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "{label}" }
+                                            img { src: "{avatar.webview_uri_at(snapshot.media_epoch)}", alt: "{label}" }
                                         } else {
                                             "{initials}"
                                         }
@@ -750,7 +751,7 @@ fn activity_avatar(
     // behind it would paint a broken-image icon.
     snapshot.media.is_ready(&asset).then(|| {
         (
-            asset.uri_at(snapshot.media_epoch),
+            asset.webview_uri_at(snapshot.media_epoch),
             workspace.display_name(user),
         )
     })

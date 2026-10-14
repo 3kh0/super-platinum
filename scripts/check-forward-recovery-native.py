@@ -1,154 +1,142 @@
 #!/usr/bin/env python3
-"""Signed, disconnected seed/restart/retire checks using one isolated journal."""
+"""Disconnected seed/restart/retire checks using an isolated journal at each size."""
+import argparse
+from contextlib import closing
 import json
 import os
-import pathlib
+from pathlib import Path
 import sqlite3
-import subprocess
+import sys
 import tempfile
 import time
-import uuid
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-BINARY = pathlib.Path(os.environ.get(
-    "SUPER_PLATINUM_BINARY",
-    str(ROOT / "target/debug/super-platinum"),
-))
-CAPTURES = ROOT / "tmp/agent-ui"
-TEMP = pathlib.Path(os.environ.get("TMPDIR", tempfile.gettempdir()))
-MARKER = TEMP / "super-platinum-agent.sock.path"
-STORAGE = ROOT / "tmp" / f"forward-recovery-{uuid.uuid4()}.sqlite"
+from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
+
+FIXTURES = ("forward-recovery", "forward-recovery-narrow")
 ACCOUNT = "00000000-0000-4000-8000-000000000071"
+PREFIX = "forward recovery check passed: "
 
 
-def activate(pid):
-    subprocess.run(
-        ["osascript", "-l", "JavaScript", "-e",
-         'ObjC.import("AppKit"); '
-         f"$.NSRunningApplication.runningApplicationWithProcessIdentifier({pid})"
-         ".activateWithOptions(2)"],
-        stdout=subprocess.DEVNULL, check=True,
-    )
+def read_receipt(database):
+    with closing(sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True)) as connection:
+        owner = connection.execute("SELECT account FROM identity WHERE singleton=1").fetchone()
+        if owner != (ACCOUNT,):
+            raise RuntimeError("Forward fixture account identity changed")
+        rows = [json.loads(row[0]) for row in connection.execute("SELECT body FROM receipts")]
+    if len(rows) != 1:
+        raise RuntimeError("Recovery must retain exactly one original request")
+    return rows[0]
 
 
-def receipts():
-    with sqlite3.connect(STORAGE) as connection:
-        owner = connection.execute("SELECT account FROM identity WHERE singleton=1").fetchone()[0]
-        assert owner == ACCOUNT, "fixture account identity changed"
-        return [json.loads(row[0]) for row in connection.execute("SELECT body FROM receipts")]
+def validate_saved(row, mode, initial=None):
+    if "Uncertain" not in row["delivery"]["status"]:
+        raise RuntimeError("Offline recovery/retirement cannot claim delivery")
+    if row["retired"] != (mode == "retire"):
+        raise RuntimeError("Unexpected retirement")
+    if row["scope"]["destination"] != "C_FORWARD_RECOVERY_MISSING":
+        raise RuntimeError("Original forwarding destination changed")
+    if "Recovered note · 日本語 🚀" not in json.dumps(row["delivery"]["request"]["blocks"], ensure_ascii=False):
+        raise RuntimeError("Original Unicode note missing")
+    if initial is not None:
+        if row["attempt_id"] != initial["attempt_id"]:
+            raise RuntimeError("Offline actions started another attempt")
+        if row["delivery"] != initial["delivery"] or row["scope"] != initial["scope"]:
+            raise RuntimeError("Restart changed the exact request, note, source or destination")
 
 
-def run_case(fixture, label, mode):
-    socket = TEMP / f"forward-recovery-{os.getpid()}.sock"
-    env = dict(os.environ)
-    # A caller may have used the ordinary forward fixture runner earlier.
-    env.pop("SUPER_PLATINUM_FORWARD_CHECK", None)
-    env.update(
-        SUPER_PLATINUM_FIXTURE=fixture,
-        SUPER_PLATINUM_FORWARD_RECOVERY_CHECK=mode,
-        SUPER_PLATINUM_FORWARD_RECOVERY_DB=str(STORAGE),
-        SUPER_PLATINUM_AGENT="1",
-        SUPER_PLATINUM_AGENT_SOCK=str(socket),
-    )
-    log = CAPTURES / f"{label}.log"
-    previous = MARKER.read_text() if MARKER.exists() else None
-    with log.open("w") as output:
-        process = subprocess.Popen([str(BINARY)], env=env, stdout=output, stderr=output)
-        try:
-            ready = time.monotonic() + 8
-            while not socket.exists() and process.poll() is None and time.monotonic() < ready:
-                time.sleep(.05)
-            deadline = time.monotonic() + 45
-            last_activation = 0
-            while True:
-                if time.monotonic() - last_activation > 1:
-                    activate(process.pid)
-                    last_activation = time.monotonic()
-                result = log.read_text()
-                if "forward recovery check failed" in result:
-                    raise RuntimeError(result)
-                if "forward recovery check passed" in result:
-                    break
-                if process.poll() is not None or time.monotonic() > deadline:
-                    raise RuntimeError(f"{fixture}: exited or timed out: {result}")
-                time.sleep(.1)
-            time.sleep(.25)
-            subprocess.run(
-                ["scripts/agentctl.sh", "screenshot", str(CAPTURES / f"{label}.png")],
-                env=env, check=True, stdout=subprocess.DEVNULL,
-            )
-            print(f"{label}: checked and captured", flush=True)
-        except Exception:
-            # Preserve fixture-only evidence before cleanup, without replacing
-            # the original failure or waiting indefinitely on a dead process.
-            if process.poll() is None and socket.exists():
+def run_phase(fixture, mode, database, binary, captures):
+    label = f"{fixture}-{mode}"
+    evidence = {"phase": mode, "ok": False}
+    # NativeFixture strips inherited SUPER_PLATINUM_* flags, including the
+    # ordinary forward check. Only this disconnected recovery check is enabled.
+    checks = {"SUPER_PLATINUM_FORWARD_RECOVERY_CHECK": mode,
+              "SUPER_PLATINUM_FORWARD_RECOVERY_DB": str(database)}
+    try:
+        with NativeFixture(fixture, captures / f"{label}.log", binary, checks) as native:
+            evidence["pid"] = native.process.pid
+            try:
+                deadline = time.monotonic() + 90
+                last_focus = 0
+                while True:
+                    native.require_running()
+                    result = native.log.read_text(encoding="utf-8", errors="replace")
+                    if "forward recovery check failed" in result:
+                        raise RuntimeError(f"{label}: native assertion failed; see {native.log}")
+                    receipts = native.receipts(PREFIX)
+                    if receipts:
+                        if len(receipts) != 1 or receipts[0].get("ok") is not True or receipts[0].get("mode") != mode:
+                            raise RuntimeError(f"{label}: invalid native receipt: {receipts}")
+                        evidence["native"] = receipts[0]
+                        break
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(f"{label}: no native receipt; see {native.log}")
+                    if time.monotonic() - last_focus >= 1:
+                        native.focus()
+                        last_focus = time.monotonic()
+                    time.sleep(.1)
+                time.sleep(.25)
+                screenshot = captures / f"{label}.png"
+                native.capture(screenshot)
+                evidence["screenshot"] = str(screenshot)
+            except BaseException:
                 try:
-                    with (CAPTURES / f"{label}-failed-state.json").open("w") as state:
-                        subprocess.run(
-                            ["scripts/agentctl.sh", "state"], env=env,
-                            stdout=state, stderr=subprocess.DEVNULL, timeout=3,
-                        )
-                except Exception:
+                    state = native.control("state", timeout=3)
+                    (captures / f"{label}-failed-state.json").write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+                except (OSError, RuntimeError, ValueError):
                     pass
                 try:
-                    subprocess.run(
-                        ["scripts/agentctl.sh", "screenshot",
-                         str(CAPTURES / f"{label}-failed.png")],
-                        env=env, stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL, timeout=5,
-                    )
-                except Exception:
+                    native.capture(captures / f"{label}-failure.png")
+                except (OSError, RuntimeError, ValueError):
                     pass
-            raise
-        finally:
-            # Stop only the disconnected fixture process created above.
-            if process.poll() is None:
-                process.terminate()
-                try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait()
-            if MARKER.exists() and pathlib.Path(MARKER.read_text().strip()) == socket:
-                MARKER.unlink()
-                if previous:
-                    restore_env = dict(os.environ, SUPER_PLATINUM_AGENT_SOCK=previous.strip())
-                    live = subprocess.run(
-                        ["scripts/agentctl.sh", "ping"], env=restore_env,
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3,
-                    )
-                    if live.returncode == 0:
-                        MARKER.write_text(previous)
-            socket.unlink(missing_ok=True)
+                raise
+        evidence["processExited"] = native.process.poll() is not None
+        if not evidence["processExited"]:
+            raise RuntimeError("Owned forward fixture did not exit before the next phase")
+        evidence["ok"] = True
+        return evidence
+    except BaseException as error:
+        evidence["error"] = str(error)
+        raise
+    finally:
+        (captures / f"{label}.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
 
 
-def main():
-    os.chdir(ROOT)
-    CAPTURES.mkdir(parents=True, exist_ok=True)
-    initial = None
-    cases = [
-        ("forward-recovery", "forward-recovery-seed", "seed"),
-        ("forward-recovery-narrow", "forward-recovery-restart", "restart"),
-        ("forward-recovery", "forward-recovery-retire", "retire"),
-    ]
-    for fixture, label, mode in cases:
-        run_case(fixture, label, mode)
-        rows = receipts()
-        assert len(rows) == 1, "recovery must not create a second request"
-        row = rows[0]
-        assert "Uncertain" in row["delivery"]["status"], "retirement cannot claim delivery"
-        assert row["retired"] == (mode == "retire"), "unexpected retirement"
-        assert row["scope"]["destination"] == "C_FORWARD_RECOVERY_MISSING"
-        assert "Recovered note · 日本語 🚀" in json.dumps(row["delivery"]["request"]["blocks"], ensure_ascii=False)
-        if initial is None:
-            initial = row
-        else:
-            assert row["attempt_id"] == initial["attempt_id"], "offline actions must not start a resend"
-            assert row["delivery"] == initial["delivery"], "restart must preserve the exact request and note"
-            assert row["scope"] == initial["scope"], "restart must preserve source and destination"
-    print("restart database verified: original request retained, tracking explicitly retired", flush=True)
-    print(f"isolated database: {STORAGE}", flush=True)
+def run(fixture, binary, captures):
+    captures.mkdir(parents=True, exist_ok=True)
+    storage = Path(tempfile.mkdtemp(prefix=f"{fixture}-", dir=captures)).resolve()
+    database = storage / "forward-recovery.sqlite"
+    evidence = {"fixture": fixture, "platform": sys.platform, "binary": str(binary),
+                "isolatedDatabase": str(database), "ok": False, "phases": []}
+    try:
+        if database.exists():
+            raise RuntimeError("Seed database must be absent")
+        initial = None
+        for mode in ("seed", "restart", "retire"):
+            if mode != "seed":
+                validate_saved(read_receipt(database), "restart", initial)
+            evidence["phases"].append(run_phase(fixture, mode, database, binary, captures))
+            row = read_receipt(database)
+            validate_saved(row, mode, initial)
+            if initial is None:
+                initial = row
+        evidence.update(ok=True, threeProcessRecovery=True, originalRequestUnchanged=True,
+                        noAutomaticReplay=True, trackingExplicitlyRetired=True)
+    except BaseException as error:
+        evidence["error"] = str(error)
+        raise
+    finally:
+        path = captures / f"{fixture}.json"
+        path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps({"receipt": str(path), **evidence}), flush=True)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--binary", type=Path,
+                        default=Path(os.environ.get("SUPER_PLATINUM_BINARY", DEFAULT_BINARY)))
+    parser.add_argument("--captures", type=Path,
+                        default=Path(os.environ.get("SUPER_PLATINUM_UI_CAPTURE_DIR", ROOT / "tmp/agent-ui")))
+    parser.add_argument("--fixture", action="append", choices=FIXTURES)
+    args = parser.parse_args()
+    for fixture in args.fixture or FIXTURES:
+        run(fixture, args.binary.resolve(), args.captures.resolve())

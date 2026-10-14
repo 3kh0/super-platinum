@@ -23,7 +23,7 @@ fn receipt(s: &ShellState, thread: bool, broadcast: bool) -> Stored {
         optimistic_ts: "1900000000.000001".into(),
         caption: "Synthetic caption 🦀".into(),
         attachments: vec![uploads::Attachment {
-            name: "example.txt".into(),
+            name: "日本語 🦊.txt".into(),
             bytes: 17,
         }],
     };
@@ -49,6 +49,8 @@ fn restores_channel_thread_and_broadcast_as_inert_unconfirmed_rows() {
         assert_eq!(p.thread_ts, row.draft.thread_ts);
         assert_eq!(p.reply_broadcast, broadcast);
         assert_eq!(p.text, row.draft.caption);
+        assert_eq!(p.attachments[0].name, row.draft.attachments[0].name);
+        assert_eq!(p.attachments[0].name, "日本語 🦊.txt");
         assert!(p.attachments.iter().all(|a| a.path.as_os_str().is_empty()
             && !a.uploading
             && a.upload_cancel.is_none()

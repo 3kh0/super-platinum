@@ -53,3 +53,67 @@ fn account_epoch_retirement_and_drop_clear_exactly_once() {
     assert_eq!(writes.borrow().last(), Some(&None));
     assert_eq!(writes.borrow().len(), 9);
 }
+
+#[test]
+fn a_failed_write_is_not_cached_and_equal_input_can_retry() {
+    let attempts = Rc::new(RefCell::new(Vec::new()));
+    let output = attempts.clone();
+    let mut failed = false;
+    let mut controller = Controller::with_fallible_writer(move |label| {
+        output.borrow_mut().push(label.clone());
+        if label.as_deref() == Some("42") && !failed {
+            failed = true;
+            Err("synthetic native failure".into())
+        } else {
+            Ok(())
+        }
+    });
+    controller.update(owner("a", 1), DockBadge::Count(42));
+    controller.update(owner("a", 1), DockBadge::Count(42));
+    controller.update(owner("a", 1), DockBadge::Count(42));
+    assert_eq!(
+        *attempts.borrow(),
+        vec![None, Some("42".into()), Some("42".into())]
+    );
+}
+
+#[test]
+fn failed_owner_clear_still_attempts_equal_new_owner_value() {
+    let attempts = Rc::new(RefCell::new(Vec::new()));
+    let output = attempts.clone();
+    let mut controller = Controller::with_fallible_writer(move |label| {
+        output.borrow_mut().push(label.clone());
+        if output.borrow().len() == 3 {
+            Err("synthetic clear failure".into())
+        } else {
+            Ok(())
+        }
+    });
+    controller.update(owner("a", 1), DockBadge::Count(7));
+    controller.update(owner("b", 2), DockBadge::Count(7));
+    assert_eq!(
+        *attempts.borrow(),
+        vec![None, Some("7".into()), None, Some("7".into())]
+    );
+    assert_eq!(controller.owner, owner("b", 2));
+}
+
+#[test]
+fn external_recovery_after_failure_cannot_suppress_prior_successful_value() {
+    let native = Rc::new(RefCell::new(None));
+    let output = native.clone();
+    let mut controller = Controller::with_fallible_writer(move |label| {
+        if label.as_deref() == Some("7") {
+            Err("synthetic native failure".into())
+        } else {
+            *output.borrow_mut() = label;
+            Ok(())
+        }
+    });
+    controller.update(owner("a", 1), DockBadge::Count(42));
+    controller.update(owner("a", 1), DockBadge::Count(7));
+    // Explorer's callback independently succeeds with the retained desired 7.
+    *native.borrow_mut() = Some("7".into());
+    controller.update(owner("a", 1), DockBadge::Count(42));
+    assert_eq!(native.borrow().as_deref(), Some("42"));
+}

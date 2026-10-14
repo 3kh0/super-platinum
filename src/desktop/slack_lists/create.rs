@@ -2,14 +2,17 @@
 //! A lost response cannot identify an indistinguishable blank row: never replay.
 use super::*;
 use super_platinum_core::slack_lists::{CreationIntent, ListClock, ListTimestamp, Record};
+pub(crate) mod duplicate;
 mod network;
 #[cfg(test)]
 mod tests;
 
+type Key = ((Option<String>, String, String), String);
+
 #[derive(Clone, Default)]
 pub(crate) struct State {
     clock: ListClock,
-    receipts: BTreeMap<(String, String), Receipt>,
+    receipts: BTreeMap<Key, Receipt>,
     notice: Option<Notice>,
 }
 #[derive(Clone)]
@@ -20,6 +23,7 @@ pub(super) struct Attempt {
     revision: u64,
     selection: u64,
     selected: Option<String>,
+    origin: Option<duplicate::Origin>,
     pub intent: CreationIntent,
     pub timestamp: ListTimestamp,
 }
@@ -34,6 +38,7 @@ enum Stage {
 struct Receipt {
     attempt: Attempt,
     stage: Stage,
+    response_seen: bool,
     record: Option<Record>,
 }
 #[derive(Clone)]
@@ -60,14 +65,14 @@ pub(crate) struct CreateOperationView {
     pub can_dismiss: bool,
     pub message: &'static str,
 }
-fn key(shell: &ShellState) -> Option<(String, String)> {
+fn key(shell: &ShellState) -> Option<Key> {
     let scope = shell
         .slack_lists
         .scope
         .as_ref()
         .filter(|s| s.current(shell))?;
     Some((
-        scope.team.clone(),
+        scope.stable_owner(),
         shell.slack_lists.view.as_ref()?.id.clone(),
     ))
 }
@@ -78,12 +83,15 @@ fn receipt(shell: &ShellState) -> Option<&Receipt> {
         .create
         .receipts
         .get(&key)
-        .filter(|r| r.attempt.scope.account_current(shell))
+        .filter(|r| r.attempt.scope.stable_current(shell))
 }
 pub(crate) fn blocks_mutation(shell: &ShellState) -> bool {
     receipt(shell).is_some()
 }
 fn unavailable(shell: &ShellState) -> Option<&'static str> {
+    unavailable_for(shell, false)
+}
+fn unavailable_for(shell: &ShellState, duplicate: bool) -> Option<&'static str> {
     let Some(view) = shell.slack_lists.view.as_ref() else {
         return Some("Open a list to add an item.");
     };
@@ -96,7 +104,7 @@ fn unavailable(shell: &ShellState) -> Option<&'static str> {
     if view.retry_at > now() {
         return Some("Wait before adding another item.");
     }
-    if view.editor.is_some() || view.detail.is_some() {
+    if view.editor.is_some() || (!duplicate && view.detail.is_some()) {
         return Some("Return to the list before adding an item.");
     }
     if shell.slack_lists.operations.contains_key(&view.id)
@@ -125,15 +133,20 @@ pub(crate) fn presentation(shell: &ShellState) -> CreatePresentation {
         can_cancel:receipt.stage==Stage::Preparing,
         can_retire:receipt.stage==Stage::Uncertain,
         can_dismiss:receipt.stage==Stage::AwaitingRead,
-        message:match receipt.stage {
+        message:if receipt.attempt.origin.is_some() { match receipt.stage {
+            Stage::Preparing=>"Checking this item before duplicating it...",
+            Stage::Sending=>"Duplicating item...",
+            Stage::AwaitingRead=>"Item duplicated. Refresh to load its fields.",
+            Stage::Uncertain=>"Could not confirm whether the item was duplicated. Check this list in Slack before adding or duplicating another item.",
+        }} else { match receipt.stage {
             Stage::Preparing=>"Checking access before adding an item…",
             Stage::Sending=>"Adding item…",
             Stage::AwaitingRead=>"Item added. Refresh to load its fields.",
             Stage::Uncertain=>"Could not confirm whether the item was added. Check this list in Slack before adding another item.",
-        },
+        }},
     });
     let notice = shell.slack_lists.create.notice.as_ref().filter(|notice| {
-        notice.scope.current(shell)
+        notice_current(&notice.scope, shell)
             && shell
                 .slack_lists
                 .view
@@ -193,6 +206,15 @@ pub(super) fn begin(
         view.layout.selected.as_deref(),
     )
     .map_err(|e| e.0)?;
+    reserve(shell, intent, None)
+}
+fn reserve(
+    shell: &mut ShellState,
+    intent: CreationIntent,
+    origin: Option<duplicate::Origin>,
+) -> Result<Attempt, &'static str> {
+    let view = shell.slack_lists.view.as_ref().unwrap();
+    let visit = view.generation;
     let scope = shell
         .slack_lists
         .scope
@@ -215,6 +237,7 @@ pub(super) fn begin(
         revision: view.revision,
         selection: view.layout.selection_generation,
         selected: view.layout.selected.clone(),
+        origin,
         intent,
         timestamp,
     };
@@ -224,6 +247,7 @@ pub(super) fn begin(
         Receipt {
             attempt: attempt.clone(),
             stage: Stage::Preparing,
+            response_seen: false,
             record: None,
         },
     );
@@ -231,17 +255,16 @@ pub(super) fn begin(
     Ok(attempt)
 }
 impl Attempt {
-    fn key(&self) -> (String, String) {
-        (self.scope.team.clone(), self.intent.list_id().into())
+    fn key(&self) -> Key {
+        (self.scope.stable_owner(), self.intent.list_id().into())
     }
     fn owns(&self, shell: &ShellState) -> bool {
-        self.scope.account_current(shell)
-            && shell
-                .slack_lists
-                .create
-                .receipts
-                .get(&self.key())
-                .is_some_and(|receipt| receipt.attempt.serial == self.serial)
+        shell
+            .slack_lists
+            .create
+            .receipts
+            .get(&self.key())
+            .is_some_and(|receipt| receipt.attempt.serial == self.serial)
     }
     pub(super) fn current(&self, shell: &ShellState) -> bool {
         self.owns(shell)
@@ -257,7 +280,10 @@ impl Attempt {
                     && !view.loading
                     && view.retry_at <= now()
                     && view.editor.is_none()
-                    && view.detail.is_none()
+                    && self
+                        .origin
+                        .as_ref()
+                        .map_or_else(|| view.detail.is_none(), |origin| origin.current(view))
             })
             && !self.scope.deleted(shell, self.intent.list_id())
     }
@@ -284,8 +310,9 @@ pub(super) fn validate(
     }
     attempt
         .intent
-        .revalidate(
+        .revalidate_with_records(
             &loaded.document,
+            &loaded.records,
             loaded.allow_lists.as_deref(),
             loaded.personal_task_lists.as_ref(),
             attempt.selected.as_deref(),
@@ -310,11 +337,11 @@ pub(super) fn rejected(
         return;
     }
     shell.slack_lists.create.receipts.remove(&attempt.key());
-    if let Some(view) = shell
-        .slack_lists
-        .view
-        .as_mut()
-        .filter(|view| view.id == attempt.intent.list_id() && view.generation == attempt.visit)
+    if attempt.scope.current(shell)
+        && let Some(view) =
+            shell.slack_lists.view.as_mut().filter(|view| {
+                view.id == attempt.intent.list_id() && view.generation == attempt.visit
+            })
     {
         view.error = Some(message.into());
         view.retry_at = error.map(retry_at).unwrap_or(0);
@@ -331,10 +358,20 @@ pub(super) fn finish(
             .create
             .receipts
             .get(&attempt.key())
-            .is_none_or(|r| r.stage != Stage::Sending)
+            .is_none_or(|r| {
+                r.response_seen || !matches!(r.stage, Stage::Sending | Stage::Uncertain)
+            })
     {
         return false;
     }
+    let receipt = shell
+        .slack_lists
+        .create
+        .receipts
+        .get_mut(&attempt.key())
+        .unwrap();
+    receipt.response_seen = true;
+    receipt.attempt.scope = receipt.attempt.scope.receipt_only();
     let record = result
         .as_ref()
         .ok()
@@ -426,7 +463,7 @@ fn open_result_shell(shell: &mut ShellState, visit: u64) -> bool {
         .create
         .notice
         .as_ref()
-        .filter(|notice| notice.visit == visit && notice.scope.current(shell))
+        .filter(|notice| notice.visit == visit && notice_current(&notice.scope, shell))
         .cloned()
     else {
         return false;
@@ -477,23 +514,36 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
         .create
         .receipts
         .iter()
-        .filter(|(_, receipt)| !receipt.attempt.scope.account_current(shell))
+        .filter(|(_, receipt)| receipt.stage == Stage::Preparing && !receipt.attempt.current(shell))
         .map(|(key, _)| key.clone())
         .collect::<Vec<_>>();
-    let changed = !stale.is_empty();
+    let mut changed = !stale.is_empty();
     for key in stale {
         shell.slack_lists.create.receipts.remove(&key);
     }
-    if shell
+    let disconnected = shell
         .slack_lists
         .create
-        .notice
-        .as_ref()
-        .is_some_and(|notice| !notice.scope.account_current(shell))
-    {
-        shell.slack_lists.create.notice = None;
+        .receipts
+        .iter()
+        .filter(|(_, receipt)| {
+            receipt.stage == Stage::Sending && !receipt.attempt.scope.account_current(shell)
+        })
+        .map(|(key, _)| key.clone())
+        .collect::<Vec<_>>();
+    for key in disconnected {
+        let receipt = shell.slack_lists.create.receipts.get_mut(&key).unwrap();
+        receipt.stage = Stage::Uncertain;
+        receipt.attempt.scope = receipt.attempt.scope.receipt_only();
+        changed = true;
     }
     changed
+}
+fn notice_current(scope: &Scope, shell: &ShellState) -> bool {
+    scope.stable_current(shell)
+        && shell.slack_lists.scope.as_ref().is_some_and(|current| {
+            current.current(shell) && current.stable_owner() == scope.stable_owner()
+        })
 }
 pub(crate) fn reconcile(shell: &mut ShellState) {
     let Some(receipt) = receipt(shell)
@@ -527,7 +577,11 @@ pub(crate) fn reconcile(shell: &mut ShellState) {
     let hidden = !view.rows.iter().any(|row| row.id == record.id);
     let open = view.generation == receipt.attempt.visit
         && view.layout.selection_generation == receipt.attempt.selection
-        && view.detail.is_none()
+        && receipt
+            .attempt
+            .origin
+            .as_ref()
+            .map_or_else(|| view.detail.is_none(), |origin| origin.still_open(view))
         && view.editor.is_none();
     let visit = view.generation;
     shell
@@ -539,16 +593,20 @@ pub(crate) fn reconcile(shell: &mut ShellState) {
         scope: receipt.attempt.scope.clone(),
         list: receipt.attempt.intent.list_id().into(),
         visit,
-        message: if hidden {
-            "Item added. It is not shown in the current view."
-        } else {
-            "Item added."
+        message: match (receipt.attempt.origin.is_some(), hidden) {
+            (true, true) => "Item duplicated. It is not shown in the current view.",
+            (true, false) => "Item duplicated.",
+            (false, true) => "Item added. It is not shown in the current view.",
+            (false, false) => "Item added.",
         }
         .into(),
         intent: receipt.attempt.intent.clone(),
         record: expected.clone(),
     });
     if open {
+        if receipt.attempt.origin.is_some() {
+            record_detail::dismiss_shell(shell);
+        }
         record_detail::open_created(shell, &record.id);
     }
 }

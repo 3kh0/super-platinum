@@ -230,7 +230,17 @@ fn ModalField(
                 }
             }}
         }
-        InputKind::Conversation | InputKind::User | InputKind::Unsupported { .. } => {
+        InputKind::User
+        | InputKind::MultiUser { .. }
+        | InputKind::MultiChannel { .. }
+        | InputKind::MultiConversation { .. }
+        | InputKind::Conversation
+        | InputKind::Channel => {
+            rsx! {super::app_modal_users::ModalUsers {
+                state,input_key:input_key.clone(),field:field.clone(),id:id.clone(),locked,
+            }}
+        }
+        InputKind::Unsupported { .. } => {
             rsx! {p {class:"app-modal-hint","This field is not supported yet."}}
         }
     };
@@ -301,7 +311,11 @@ fn control_shape(kind: &InputKind) -> String {
         InputKind::Checkboxes { .. } => "checkboxes",
         InputKind::Radio { .. } => "radio",
         InputKind::Conversation => "conversation",
+        InputKind::Channel => "channel",
+        InputKind::MultiChannel { .. } => "channels",
+        InputKind::MultiConversation { .. } => "conversations",
         InputKind::User => "user",
+        InputKind::MultiUser { .. } => "users",
         InputKind::Date => "date",
         InputKind::Time { .. } => "time",
         InputKind::DateTime => "datetime",

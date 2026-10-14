@@ -11,6 +11,13 @@ pub(super) async fn run(
     wait_dom(desktop, r#"({ok:!!document.querySelector('#slack-list-view-select option[value="V_DATE_TODAY"]')})"#).await?;
     choose(desktop, "V_DATE_TODAY").await?;
     rows(desktop, &["R_LIST_000"]).await?;
+    timestamp(
+        desktop,
+        "R_LIST_000",
+        "1 day ago",
+        "Yesterday at 12:00:00 PM",
+    )
+    .await?;
     let today = capture_stage(desktop, "saved-date-today").await?;
 
     choose(desktop, "V_DATE_WEEK").await?;
@@ -36,6 +43,34 @@ pub(super) async fn run(
 
     choose(desktop, "V_DATE_SINCE").await?;
     rows(desktop, &["R_LIST_001", "R_LIST_002"]).await?;
+    // Advance the production deadline path using a fixed fixture sample, with
+    // no wall-clock wait or canonical read/write. DOM text and tooltip update.
+    fixture::set_date_clock(
+        &mut state.write(),
+        "2026-10-12T12:02:00",
+        "2026-10-12T12:00:00",
+    );
+    timestamp(
+        desktop,
+        "R_LIST_001",
+        "2 minutes ago",
+        "Today at 12:00:01 PM",
+    )
+    .await?;
+    if !fixture::tick_date_clock(
+        &mut state.write(),
+        "2026-10-12T12:03:00",
+        "2026-10-12T12:00:00",
+    ) {
+        return Err("Timestamp deadline did not refresh the visible List".into());
+    }
+    timestamp(
+        desktop,
+        "R_LIST_001",
+        "3 minutes ago",
+        "Today at 12:00:01 PM",
+    )
+    .await?;
     fixture::set_date_clock(
         &mut state.write(),
         "2026-10-13T12:00:00",
@@ -61,8 +96,19 @@ pub(super) async fn run(
     Ok(
         json!({"today":true,"isoWeekSort":true,"laterNotEmpty":true,"negatedChoicesOr":true,
         "strictPriorRead":true,"priorReadReprojection":true,"localDayReprojection":true,
+        "timestampRelativeLabel":true,"timestampTooltip":true,"timestampMinuteReprojection":true,"timestampReadOnly":true,
         "noWrites":true,"captures":{"today":today,"week":week}}),
     )
+}
+
+async fn timestamp(
+    desktop: &dioxus::desktop::DesktopContext,
+    row: &str,
+    label: &str,
+    title: &str,
+) -> Result<(), String> {
+    wait_dom(desktop, &format!(r#"(()=>{{const cell=document.querySelector('[data-row-id="{}"] [data-column-id="C_STAMP"]'),text=cell?.querySelector('.slack-list-timestamp');return {{ok:text?.textContent==={}&&text?.title==={}&&!cell.querySelector('button,input'),label:text?.textContent,title:text?.title}};}})()"#,row,json!(label),json!(title))).await?;
+    Ok(())
 }
 
 async fn rows(desktop: &dioxus::desktop::DesktopContext, expected: &[&str]) -> Result<(), String> {

@@ -12,7 +12,7 @@
 .button-confirmation footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border); }
 .button-confirmation footer button { min-height: 32px; padding: 0 12px; border-radius: 8px; background: var(--surface); color: var(--text); font-size: var(--text-sm); overflow-wrap: anywhere; }
 .button-confirmation footer .button-confirmation-submit { background: var(--text); color: var(--bg); }
-.button-confirmation footer .button-confirmation-submit.danger { background: var(--danger); color: var(--bg); }
+.button-confirmation footer .button-confirmation-submit.danger { background: var(--danger); color: var(--on-danger); }
 .button-confirmation button:disabled { opacity: .55; cursor: default; }
 @media (max-height: 500px) {
   .modal.button-confirmation { max-height: calc(100vh - 16px); }

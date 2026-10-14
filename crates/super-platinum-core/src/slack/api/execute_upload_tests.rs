@@ -84,7 +84,11 @@ async fn missing_local_file_and_cancellation_fail_before_message_delivery() {
                 channel: "C1".into(),
                 thread_ts: None,
                 initial_comment: "Keep caption 🚀".into(),
-                files: vec![(path, Arc::new(AtomicU64::new(0)))],
+                files: vec![UploadFile {
+                    filename: path.file_name().unwrap().to_str().unwrap().into(),
+                    path,
+                    progress: Arc::new(AtomicU64::new(0)),
+                }],
                 canceled: Arc::new(AtomicBool::new(canceled)),
             },
         )
@@ -145,6 +149,7 @@ async fn read_local_request(stream: &mut tokio::net::TcpStream) -> String {
 #[tokio::test]
 async fn staged_receipt_barrier_is_awaited_and_rejection_or_owner_cancel_prevents_delivery() {
     use tokio::io::AsyncWriteExt;
+    const NAME: &str = "日本語 🦊.txt";
     for broadcast in [false, true] {
         for outcome in ["reject", "cancel", "success"] {
             let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -160,6 +165,12 @@ async fn staged_receipt_barrier_is_awaited_and_rejection_or_owner_cancel_prevent
                     let request = read_local_request(&mut stream).await;
                     let response = if index == 0 {
                         assert!(request.starts_with("POST /api/files.getUploadURLExternal?"));
+                        let body = request.split_once("\r\n\r\n").unwrap().1;
+                        let fields: std::collections::BTreeMap<String, String> =
+                            url::form_urlencoded::parse(body.as_bytes())
+                                .into_owned()
+                                .collect();
+                        assert_eq!(fields["filename"], NAME);
                         serde_json::json!({"ok":true,"file_id":"F1","upload_url":format!("http://{address}/bytes")}).to_string()
                     } else {
                         assert!(request.starts_with("POST /bytes "));
@@ -186,6 +197,10 @@ async fn staged_receipt_barrier_is_awaited_and_rejection_or_owner_cancel_prevent
                             "POST /api/files.share?"
                         }));
                         let response = if index == 0 {
+                            let body = request.split_once("\r\n\r\n").unwrap().1;
+                            let fields: std::collections::BTreeMap<String,String> = url::form_urlencoded::parse(body.as_bytes()).into_owned().collect();
+                            let files: serde_json::Value = serde_json::from_str(&fields["files"]).unwrap();
+                            assert_eq!(files[0]["title"], NAME);
                             serde_json::json!({"ok":true,"files":[{"id":"F1"}]})
                         } else {
                             serde_json::json!({"ok":true,"files":[{"id":"F1"}],"file_msg_ts":"101.000001","channel":"C1","thread_ts":"100.000001","client_msg_id":"fixture-message"})
@@ -223,7 +238,11 @@ async fn staged_receipt_barrier_is_awaited_and_rejection_or_owner_cancel_prevent
                     channel: "C1".into(),
                     thread_ts: Some("100.000001".into()),
                     initial_comment: "Fixture".into(),
-                    files: vec![(path.clone(), Arc::new(AtomicU64::new(0)))],
+                    files: vec![UploadFile {
+                        filename: NAME.into(),
+                        path: path.clone(),
+                        progress: Arc::new(AtomicU64::new(0)),
+                    }],
                     canceled,
                 },
                 move |staged| async move {
@@ -256,4 +275,143 @@ async fn staged_receipt_barrier_is_awaited_and_rejection_or_owner_cancel_prevent
             server.await.unwrap();
         }
     }
+}
+
+#[tokio::test]
+async fn named_files_keep_metadata_for_normal_and_unshared_uploads() {
+    use tokio::io::AsyncWriteExt;
+    const NAME: &str = "résumé 日本語 🦊 & 100%.txt";
+    for unshared in [false, true] {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            for index in 0..3 {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let request = read_local_request(&mut stream).await;
+                let body = request.split_once("\r\n\r\n").unwrap().1;
+                let fields: std::collections::BTreeMap<String, String> =
+                    url::form_urlencoded::parse(body.as_bytes())
+                        .into_owned()
+                        .collect();
+                let response = match index {
+                    0 => {
+                        assert!(request.starts_with("POST /api/files.getUploadURLExternal?"));
+                        assert_eq!(fields["filename"], NAME);
+                        assert_eq!(fields["length"], "10");
+                        serde_json::json!({"ok":true,"file_id":"FNAME","upload_url":format!("http://{address}/bytes")}).to_string()
+                    }
+                    1 => {
+                        assert!(request.starts_with("POST /bytes "));
+                        assert_eq!(body, "named file");
+                        "OK".into()
+                    }
+                    _ => {
+                        assert!(request.starts_with("POST /api/files.completeUploadExternal?"));
+                        let files: serde_json::Value =
+                            serde_json::from_str(&fields["files"]).unwrap();
+                        assert_eq!(files, serde_json::json!([{"id":"FNAME","title":NAME}]));
+                        assert_eq!(
+                            fields.get("channel_id").map(String::as_str),
+                            if unshared { None } else { Some("C1") }
+                        );
+                        serde_json::json!({"ok":true,"files":[{"id":"FNAME"}]}).to_string()
+                    }
+                };
+                stream.write_all(format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{response}",response.len()).as_bytes()).await.unwrap();
+            }
+        });
+        let path = std::env::temp_dir().join(format!("opaque-upload-{}.txt", uuid::Uuid::new_v4()));
+        tokio::fs::write(&path, b"named file").await.unwrap();
+        let workspace = WorkspaceSession {
+            team_id: "T1".into(),
+            enterprise_id: None,
+            user_id: "U1".into(),
+            name: "Fixture".into(),
+            url: format!("http://{address}"),
+            token: "synthetic-token".into(),
+        };
+        let transport = Transport::new("synthetic-cookie").unwrap();
+        let client = SlackClient::default();
+        let files = vec![UploadFile {
+            path: path.clone(),
+            filename: NAME.into(),
+            progress: Arc::new(AtomicU64::new(0)),
+        }];
+        let canceled = Arc::new(AtomicBool::new(false));
+        if unshared {
+            assert_eq!(
+                upload_unshared_files(&transport, &client, &workspace, files, canceled)
+                    .await
+                    .unwrap(),
+                vec!["FNAME"]
+            );
+        } else {
+            let result = upload_files(
+                &transport,
+                &client,
+                &workspace,
+                UploadRequest {
+                    reply_broadcast: false,
+                    client_msg_id: "named-fixture".into(),
+                    channel: "C1".into(),
+                    thread_ts: None,
+                    initial_comment: String::new(),
+                    files,
+                    canceled,
+                },
+            )
+            .await
+            .unwrap();
+            assert_eq!(result.file_ids, vec!["FNAME"]);
+        }
+        server.await.unwrap();
+        tokio::fs::remove_file(path).await.unwrap();
+    }
+}
+
+#[tokio::test]
+async fn invalid_later_upload_name_is_rejected_before_any_remote_staging() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let path = std::env::temp_dir().join(format!("name-validation-{}.txt", uuid::Uuid::new_v4()));
+    tokio::fs::write(&path, b"first file").await.unwrap();
+    let workspace = WorkspaceSession {
+        team_id: "T1".into(),
+        enterprise_id: None,
+        user_id: "U1".into(),
+        name: "Fixture".into(),
+        url: format!("http://{address}"),
+        token: "synthetic-token".into(),
+    };
+    let transport = Transport::new("synthetic-cookie").unwrap();
+    let client = SlackClient::default();
+    let files = ["first.txt", "bad/name.txt"]
+        .into_iter()
+        .map(|filename| UploadFile {
+            path: path.clone(),
+            filename: filename.into(),
+            progress: Arc::new(AtomicU64::new(0)),
+        })
+        .collect();
+    let result = tokio::time::timeout(
+        std::time::Duration::from_secs(2),
+        upload_unshared_files(
+            &transport,
+            &client,
+            &workspace,
+            files,
+            Arc::new(AtomicBool::new(false)),
+        ),
+    )
+    .await
+    .expect("metadata rejection must not wait for a remote response");
+    assert!(
+        matches!(result, Err(Error::Transport(ref message)) if message == "attachment has no valid filename")
+    );
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(50), listener.accept())
+            .await
+            .is_err()
+    );
+    tokio::fs::remove_file(path).await.unwrap();
 }

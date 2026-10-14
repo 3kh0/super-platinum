@@ -9,6 +9,8 @@ use super_platinum_core::drafts::{DraftKey, sync::Operation};
 mod check;
 #[path = "rejected_send_check.rs"]
 mod rejected_send_check;
+#[path = "rejected_thread_check.rs"]
+mod rejected_thread_check;
 #[path = "return_draft.rs"]
 mod return_draft;
 #[path = "versions.rs"]
@@ -40,7 +42,7 @@ pub(super) fn RecoveryRows(state: Signal<ShellState>) -> Element {
         return rsx! {};
     }
     rsx! {
-        section { id:"managed-draft-recovery","data-draft-visit":shell.draft_writes.view_id,"aria-label":"Saved draft delivery and versions", onmounted:move |_|{spawn(check::run(state));dioxus::core::spawn_forever(rejected_send_check::run(state));},
+        section { id:"managed-draft-recovery","data-draft-visit":shell.draft_writes.view_id,"aria-label":"Saved draft delivery and versions", onmounted:move |_|{spawn(check::run(state));dioxus::core::spawn_forever(rejected_send_check::run(state));dioxus::core::spawn_forever(rejected_thread_check::run(state));},
             div {class:"scheduled-meta",strong {"Saved draft status"}span {class:"spacer"}
                 button {id:"managed-draft-recovery-refresh",disabled:loading,onclick:move |_|{spawn(session::load(state));},"Refresh"}
             }

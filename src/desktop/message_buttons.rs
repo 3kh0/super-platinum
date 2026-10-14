@@ -16,6 +16,8 @@ use super_platinum_core::{
     slack::{Error, api},
 };
 
+pub(crate) mod channel_check;
+pub(crate) mod channel_fixture;
 pub(crate) mod check;
 pub(crate) mod conversation_check;
 pub(crate) mod conversation_fixture;
@@ -24,8 +26,17 @@ pub(crate) mod date_fixture;
 pub(crate) mod fixture;
 pub(crate) mod hydration;
 pub(crate) mod inputs;
+pub(crate) mod multi_channel_check;
+pub(crate) mod multi_channel_fixture;
 pub(crate) mod multi_check;
+pub(crate) mod multi_conversation_check;
+pub(crate) mod multi_conversation_fixture;
 pub(crate) mod multi_fixture;
+pub(crate) mod multi_user_check;
+pub(crate) mod multi_user_fixture;
+pub(crate) mod overflow;
+pub(crate) mod overflow_check;
+pub(crate) mod overflow_fixture;
 pub(crate) mod radio_check;
 pub(crate) mod radio_fixture;
 pub(crate) mod select_check;
@@ -50,6 +61,7 @@ pub(crate) struct State {
     pub(crate) radio_fixture: Option<radio_fixture::Fixture>,
     pub(crate) multi_fixture: Option<multi_fixture::Fixture>,
     pub(crate) user_fixture: Option<user_fixture::Fixture>,
+    pub(crate) overflow_fixture: Option<overflow_fixture::Fixture>,
     user_picker: Option<inputs::user::Picker>,
     user_retry: BTreeMap<(u64, String), std::time::Instant>,
     user_labels: BTreeMap<(u64, String, String, String), String>,
@@ -147,7 +159,7 @@ pub(crate) fn presentation_for_button(
 ) -> ButtonState {
     if let Err(reason) = capture(shell, source, metadata) {
         return ButtonState::unavailable(if hydration::pending(shell, source) {
-            "Loading app information…"
+            "Loading app informationâ€¦"
         } else {
             reason
         });
@@ -160,6 +172,9 @@ fn operation_status(
     source: &Source,
     metadata: &BlockElementMetadata,
 ) -> ButtonState {
+    if let Some(reason) = inputs::channel::unavailable(shell, source) {
+        return ButtonState::unavailable(reason);
+    }
     if inputs::revision(shell, source).is_some()
         && shell.message_buttons.operations.values().any(|op| {
             op.phase == Phase::Pending && op.captured.source().same_action_revision(source)
@@ -169,7 +184,7 @@ fn operation_status(
             enabled: false,
             busy: true,
             uncertain: false,
-            reason: Some("Submitting…".into()),
+            reason: Some("Submittingâ€¦".into()),
         };
     }
 
@@ -183,7 +198,7 @@ fn operation_status(
             uncertain: operation.phase == Phase::Uncertain,
             reason: Some(
                 if operation.phase == Phase::Pending {
-                    "Submitting…"
+                    "Submittingâ€¦"
                 } else {
                     "The app has not confirmed this action. It will not be sent again."
                 }
@@ -286,7 +301,8 @@ fn dispatch(mut state: Signal<ShellState>, captured: Captured) {
     if captured.revalidate(&state.read()).is_err() {
         return;
     }
-    if user_fixture::dispatch(state, captured.clone())
+    if overflow_fixture::dispatch(state, captured.clone())
+        || user_fixture::dispatch(state, captured.clone())
         || time_fixture::dispatch(state, captured.clone())
         || date_fixture::dispatch(state, captured.clone())
         || multi_fixture::dispatch(state, captured.clone())
@@ -308,8 +324,11 @@ fn dispatch(mut state: Signal<ShellState>, captured: Captured) {
             shell.show_toast("Reconnect to use this app action.");
             return;
         };
-        let Some(correlation) = crate::app_modal::register_action(&mut shell, captured.app_id())
-        else {
+        let Some(correlation) = crate::app_modal::register_action_with_origin(
+            &mut shell,
+            captured.app_id(),
+            Some(captured.source().owner().channel_id.clone()),
+        ) else {
             return;
         };
         let request = match prepare_request(

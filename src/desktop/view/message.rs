@@ -7,6 +7,7 @@
 //! own stripped-down row, so a reply opened from Activity had no way to be
 //! edited, deleted, or replied to.
 
+use crate::media::MediaUri;
 use dioxus::prelude::*;
 
 mod delivery;
@@ -229,7 +230,7 @@ fn message_avatar(
                     title: "{team.name}",
                     "aria-label": "{team.name}",
                     if let Some(icon) = team.icon.as_ref().filter(|icon| snapshot.media.is_ready(icon)) {
-                        img { src: "{icon.uri_at(snapshot.media_epoch)}", alt: "" }
+                        img { src: "{icon.webview_uri_at(snapshot.media_epoch)}", alt: "" }
                     } else {
                         "{team.initials}"
                     }

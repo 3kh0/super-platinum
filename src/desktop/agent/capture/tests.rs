@@ -1,5 +1,23 @@
 use super::*;
 
+#[cfg(target_os = "windows")]
+#[tokio::test]
+async fn windows_capture_arguments_are_data_not_powershell_source() {
+    let path = std::env::temp_dir().join("capture space ' $([int]42) ` &.png");
+    let mut command = windows_command(
+        "[Console]::Write($env:SUPER_PLATINUM_CAPTURE_HWND + '|' + $env:SUPER_PLATINUM_CAPTURE_PATH)",
+        "123456",
+        &path,
+    );
+    let output = run(&mut command, Instant::now() + Duration::from_secs(10))
+        .await
+        .unwrap();
+    assert_eq!(
+        String::from_utf8(output).unwrap(),
+        format!("123456|{}", path.display())
+    );
+}
+
 fn unique_id() -> String {
     static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
     format!(

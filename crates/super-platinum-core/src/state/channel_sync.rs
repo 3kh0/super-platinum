@@ -103,11 +103,11 @@ impl Workspace {
         for mut fresh in page.channels {
             self.channel_lifecycle.overlay(&mut fresh, since);
             self.channel_lifecycle.touch(&fresh.id);
-            let merged = match self.channels.remove(&fresh.id) {
+            let merged = match self.channels.get(&fresh.id).cloned() {
                 Some(old) => keep_local_state(fresh, old),
                 None => fresh,
             };
-            self.channels.insert(merged.id.clone(), merged);
+            self.insert_channel_metadata(merged);
         }
     }
 }

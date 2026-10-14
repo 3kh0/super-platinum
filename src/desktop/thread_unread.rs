@@ -218,7 +218,15 @@ async fn run(
         ts.clone()
     };
     if crate::fixture::is_fixture() {
-        state.write().core.apply_thread_mark(key, &cursor);
+        let mut shell = state.write();
+        shell.core.apply_thread_mark(key, &cursor);
+        crate::realtime::activity_counts::mark_thread_read(
+            &mut shell.core,
+            &key.0,
+            &key.1,
+            &key.2,
+            &cursor,
+        );
         return Ok(Some(cursor));
     }
     let (transport, client, sessions) = crate::bootstrap::credentials(&state).ok_or(None)?;
@@ -261,6 +269,12 @@ async fn run(
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
     let revision = state.peek().core.thread_read_revision(key);
+    let owner = crate::realtime::activity_counts::CursorOwner::capture(
+        &state.peek().core,
+        &transport,
+        &session,
+    )
+    .ok_or(None)?;
     api::set_thread_read(
         &transport,
         &client,
@@ -273,13 +287,16 @@ async fn run(
     .await
     .map_err(Some)?;
     let mut shell = state.write();
-    if !current(&shell) {
+    if !current(&shell) || !owner.current(&shell.core) {
         return Err(None);
     }
-    Ok(shell
-        .core
-        .confirm_thread_mark(key, &cursor, revision)
-        .then_some(cursor))
+    Ok(crate::realtime::activity_counts::confirm_thread_read(
+        &mut shell.core,
+        key,
+        &cursor,
+        revision,
+    )
+    .then_some(cursor))
 }
 
 pub(crate) fn fixture(shell: &mut ShellState) {

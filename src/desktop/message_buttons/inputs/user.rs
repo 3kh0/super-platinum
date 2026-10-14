@@ -17,14 +17,36 @@ pub(crate) fn presentation(
         enabled: false,
         busy: false,
         reason: Some(UNAVAILABLE.into()),
-        placeholder: if is_conversation(metadata) {
-            "Select a conversation"
+        placeholder: if is_channel(metadata) {
+            if is_multiple(metadata) {
+                "Select channels"
+            } else {
+                "Select a channel"
+            }
+        } else if is_conversation(metadata) {
+            if is_multiple(metadata) {
+                "Select conversations"
+            } else {
+                "Select a conversation"
+            }
         } else {
-            "Select a user"
+            if is_multiple(metadata) {
+                "Select users"
+            } else {
+                "Select a user"
+            }
         }
         .into(),
         revision: 0,
     };
+    if let Some(reason) = super::channel::unavailable(shell, source) {
+        view.reason = Some(reason.into());
+        return view;
+    }
+    if let Some(reason) = super::conversations::unavailable(shell, source) {
+        view.reason = Some(reason.into());
+        return view;
+    }
     let Some(entry) = shell
         .message_buttons
         .inputs
@@ -36,18 +58,25 @@ pub(crate) fn presentation(
     let Some(key) = field_key(metadata) else {
         return view;
     };
-    let Some(field) = entry
-        .model
-        .fields
-        .get(&key)
-        .filter(|field| matches!(field.kind, InputKind::User | InputKind::Conversation))
-    else {
+    let Some(field) = entry.model.fields.get(&key).filter(|field| {
+        matches!(
+            field.kind,
+            InputKind::User
+                | InputKind::MultiUser { .. }
+                | InputKind::MultiChannel { .. }
+                | InputKind::MultiConversation { .. }
+                | InputKind::Conversation
+                | InputKind::Channel
+        )
+    }) else {
         return view;
     };
     view.placeholder = field.placeholder.clone().unwrap_or(view.placeholder);
-    if matches!(field.kind, InputKind::Conversation)
-        && filter(shell, source, metadata)
-            .is_some_and(|f| f.only_from_team_id.is_some() && f.enterprise_id.is_some())
+    if matches!(
+        field.kind,
+        InputKind::Conversation | InputKind::MultiConversation { .. }
+    ) && filter(shell, source, metadata)
+        .is_some_and(|f| f.only_from_team_id.is_some() && f.enterprise_id.is_some())
     {
         view.reason=Some("Workspace-restricted conversation selection is unavailable for this Enterprise Grid account.".into());
         return view;
@@ -64,17 +93,30 @@ pub(crate) fn presentation(
     view
 }
 
-mod conversations;
-mod directory;
+pub(crate) mod conversations;
+mod multiple;
+pub(crate) use multiple::{display_selected_users, remove_user, submit_users};
 
+pub(crate) fn is_multiple(metadata: &BlockElementMetadata) -> bool {
+    matches!(&metadata.source,super_platinum_core::block_actions::BlockElementSource::UnsupportedControl {kind} if matches!(kind.as_str(), "multi_users_select" | "multi_channels_select" | "multi_conversations_select"))
+}
+
+pub(crate) mod directory;
+
+pub(crate) fn is_channel(metadata: &BlockElementMetadata) -> bool {
+    matches!(&metadata.source,super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind } if matches!(kind.as_str(), "channels_select" | "multi_channels_select"))
+}
 pub(crate) fn is_conversation(metadata: &BlockElementMetadata) -> bool {
-    matches!(&metadata.source,super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind } if kind == "conversations_select")
+    matches!(&metadata.source,super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind } if matches!(kind.as_str(), "conversations_select" | "multi_conversations_select"))
 }
 fn filter(
     shell: &ShellState,
     source: &Source,
     metadata: &BlockElementMetadata,
 ) -> Option<conversations::Filter> {
+    if is_channel(metadata) {
+        return Some(super::channel::filter(shell, &source.owner().team_id));
+    }
     if !is_conversation(metadata) {
         return None;
     }
@@ -83,30 +125,13 @@ fn filter(
         .inputs
         .get(&ContainerKey::new(source))?;
     let field = entry.model.fields.get(&field_key(metadata)?)?;
-    let spec =
-        super_platinum_core::block_actions::form::ConversationFilter::parse(&field.raw).ok()?;
-    let enterprise_id = shell
-        .core
-        .session
-        .as_ref()
-        .and_then(|s| s.workspaces.get(&source.owner().team_id))
-        .and_then(|w| w.enterprise_id.clone());
-    let default_channels = spec.include.is_none()
-        && field
-            .raw
-            .get("filter")
-            .and_then(serde_json::Value::as_object)
-            .is_some_and(|v| !v.is_empty());
-    Some(conversations::Filter {
-        default_channels,
-        spec,
-        enterprise_id,
-    })
+    conversations::workspace_filter(shell, &source.owner().team_id, &field.raw)
 }
 pub(crate) use directory::search;
 
 pub(crate) struct Picker {
     source: Source,
+    multiple: Option<multiple::Selection>,
     context: Option<crate::scheduled::Context>,
     filter: Option<conversations::Filter>,
     metadata: BlockElementMetadata,
@@ -123,6 +148,10 @@ pub(crate) struct Picker {
 }
 pub(crate) struct PickerPresentation {
     pub conversation: bool,
+    pub channel: bool,
+    pub multiple: bool,
+    pub selected: Vec<(String, String)>,
+    pub selection_error: Option<String>,
     pub revision: u64,
     pub query_revision: u64,
     pub query: String,
@@ -146,6 +175,7 @@ pub(crate) fn open(
     let Some(key) = field_key(&metadata) else {
         return;
     };
+    let multiple = multiple::selection(&shell, &source, &metadata, &mounted);
     let Some(display) = mounted.capture(&ContainerKey::new(&source), &key) else {
         return;
     };
@@ -171,6 +201,7 @@ pub(crate) fn open(
             });
     shell.message_buttons.user_picker = Some(Picker {
         source,
+        multiple,
         context,
         filter,
         metadata,
@@ -197,6 +228,7 @@ fn current(shell: &ShellState, picker: &Picker) -> bool {
             })
         && picker.display.current()
         && picker.source.current(shell)
+        && picker.filter == filter(shell, &picker.source, &picker.metadata)
         && revision(shell, &picker.source) == Some(picker.input_revision)
         && presentation(shell, &picker.source, &picker.metadata).enabled
 }
@@ -207,6 +239,23 @@ pub(crate) fn picker(shell: &ShellState) -> Option<PickerPresentation> {
     }
     Some(PickerPresentation {
         conversation: picker.filter.is_some(),
+        channel: is_channel(&picker.metadata),
+        multiple: picker.multiple.is_some(),
+        selected: picker
+            .multiple
+            .as_ref()
+            .map(|m| {
+                m.selected
+                    .iter()
+                    .map(|id| (id.clone(), label(shell, &picker.source, id)))
+                    .collect()
+            })
+            .unwrap_or_default(),
+        selection_error: picker
+            .multiple
+            .as_ref()
+            .and_then(multiple::error)
+            .or_else(|| multiple::channel_error(shell, picker)),
         revision: picker.revision,
         query_revision: picker.query_revision,
         query: picker.query.clone(),
@@ -262,6 +311,15 @@ pub(crate) fn choose(
             .unwrap()
             .label
             .clone();
+        let channel_choice = (is_channel(&picker.metadata) || is_conversation(&picker.metadata))
+            .then(|| {
+                picker
+                    .candidates
+                    .iter()
+                    .find(|c| c.id == id)
+                    .unwrap()
+                    .clone()
+            });
         let owner = picker.source.owner();
         let label_key = (
             owner.account_epoch,
@@ -279,11 +337,28 @@ pub(crate) fn choose(
             shell.message_buttons.user_labels.pop_first();
         }
         shell.message_buttons.user_labels.insert(label_key, label);
+        if let Some(selection) = shell
+            .message_buttons
+            .user_picker
+            .as_mut()
+            .and_then(|p| p.multiple.as_mut())
+        {
+            if let Some(choice) = channel_choice {
+                selection.proofs.insert(id.clone(), choice);
+            }
+            multiple::toggle(selection, id);
+            return;
+        }
         let picker = shell.message_buttons.user_picker.take().unwrap();
         shell.overlay = None;
-        (picker.source, picker.metadata, picker.mounted)
+        (
+            picker.source,
+            picker.metadata,
+            picker.mounted,
+            channel_choice,
+        )
     };
-    super::change(state, choice.0, choice.1, Some(id), choice.2);
+    super::change_with_choice(state, choice.0, choice.1, Some(id), choice.2, choice.3);
 }
 pub(crate) fn cancel(mut state: Signal<ShellState>, expected: u64) {
     let mut shell = state.write();
@@ -345,3 +420,6 @@ mod tests;
 
 #[cfg(test)]
 mod conversation_tests;
+
+#[cfg(test)]
+mod channel_tests;

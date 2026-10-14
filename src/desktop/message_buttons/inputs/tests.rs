@@ -138,6 +138,96 @@ fn stateless_button_can_submit_at_stateful_container_capacity() {
     );
 }
 
+fn overflow_only() -> Vec<Value> {
+    vec![json!({"type":"actions","block_id":"review","elements":[{
+        "type":"overflow","action_id":"more","options":[{
+            "text":{"type":"plain_text","text":"Save review"},"value":"save"
+        }]
+    }]})]
+}
+
+#[test]
+fn stateless_overflow_can_submit_at_full_draft_capacity_without_retention() {
+    let mut shell = shell();
+    let stateful = source(&shell);
+    let entry = candidate(&shell, &stateful).unwrap();
+    for index in 0..MAX_CONTAINERS {
+        let mut key = ContainerKey::new(&stateful);
+        key.ts = format!("capacity-{index}");
+        shell.message_buttons.inputs.insert(key, entry.clone());
+    }
+    canonical(&mut shell).blocks = overflow_only();
+    let stateless = source(&shell);
+    // Exercise the same publication path as ensure(). An empty model must
+    // neither consume a slot nor evict any existing draft.
+    let candidate = candidate(&shell, &stateless).unwrap();
+    retain_entry(&mut shell, &stateless, candidate);
+    assert!(crate::message_buttons::overflow::stateless(
+        &shell, &stateless
+    ));
+    let metadata = stateless
+        .overflow_metadata(&shell, "review", "more")
+        .unwrap();
+    assert!(
+        crate::message_buttons::overflow::presentation(&shell, &stateless, &metadata, true).enabled
+    );
+    let action = stateless
+        .capture_overflow(&shell, "review", "more", "save")
+        .unwrap();
+    let request = prepare(
+        &mut shell,
+        &action,
+        &SlackClient::default(),
+        &workspace(&stateless),
+        "synthetic-overflow",
+    )
+    .unwrap();
+    assert_eq!(values(request), json!({}));
+    assert_eq!(shell.message_buttons.inputs.len(), MAX_CONTAINERS);
+    assert!(
+        shell
+            .message_buttons
+            .inputs
+            .values()
+            .all(|retained| retained.model == entry.model)
+    );
+    assert!(revision(&shell, &stateless).is_none());
+}
+
+#[test]
+fn repeated_stateless_ensure_does_not_grow_or_evict_drafts() {
+    let mut shell = shell();
+    let stateful = source(&shell);
+    let entry = candidate(&shell, &stateful).unwrap();
+    retain_entry(&mut shell, &stateful, entry.clone());
+    let mut template = canonical(&mut shell).clone();
+    template.blocks = overflow_only();
+    for index in 0..MAX_CONTAINERS * 3 {
+        let mut message = template.clone();
+        message.ts = Some(format!("1819930000.{index:06}"));
+        shell
+            .core
+            .workspaces
+            .get_mut("T1")
+            .unwrap()
+            .messages
+            .get_mut("C2")
+            .unwrap()
+            .upsert(message.clone());
+        let row =
+            crate::message_vm::message_vm(&shell.core.workspaces["T1"], &message, &shell.media);
+        let source = Source::capture(&shell, &row, "C2", Bag::Timeline).unwrap();
+        let candidate = candidate(&shell, &source).unwrap();
+        retain_entry(&mut shell, &source, candidate);
+        assert_eq!(shell.message_buttons.inputs.len(), 1);
+        assert!(revision(&shell, &source).is_none());
+    }
+    assert_eq!(
+        shell.message_buttons.inputs[&ContainerKey::new(&stateful)].model,
+        entry.model
+    );
+}
+
 #[test]
 fn same_canonical_message_in_another_bag_preserves_input_revision_and_confirmation() {
     let mut shell = shell();

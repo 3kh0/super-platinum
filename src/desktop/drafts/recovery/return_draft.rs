@@ -22,8 +22,7 @@ pub(crate) fn rejected(view: &View) -> Option<ConsumeIntent> {
         && op.snapshot.as_ref() == Some(&intent.snapshot)
         && op.base.is_none()
         && intent.base.is_none()
-        && stored.state.acknowledged().is_none()
-        && intent.scope.key.thread.is_none())
+        && stored.state.acknowledged().is_none())
     .then(|| intent.clone())
 }
 impl Owner {
@@ -72,14 +71,30 @@ impl Owner {
     }
 }
 pub(super) fn empty_live(shell: &ShellState, key: &DraftKey) -> bool {
+    let target = target_for(key);
+    let (composer, attachments) = match target {
+        ComposerTarget::Channel => (&shell.core.composer, &shell.core.composer_attachments),
+        ComposerTarget::Thread => (
+            &shell.core.thread_composer,
+            &shell.core.thread_composer_attachments,
+        ),
+    };
     shell
         .core
         .drafts
         .items
         .get(key)
         .is_none_or(LocalDraft::empty)
-        && (shell.composer_key(ComposerTarget::Channel).as_ref() != Some(key)
-            || (shell.core.composer.text.is_empty() && shell.core.composer_attachments.is_empty()))
+        && (shell.composer_key(target).as_ref() != Some(key)
+            || (composer.text.is_empty() && attachments.is_empty() && !composer.reply_broadcast))
+}
+
+fn target_for(key: &DraftKey) -> ComposerTarget {
+    if key.thread.is_some() {
+        ComposerTarget::Thread
+    } else {
+        ComposerTarget::Channel
+    }
 }
 
 /// Scheduled renders no composer DOM. A synchronous Rust handoff here cannot
@@ -92,9 +107,14 @@ pub(super) fn project_return(shell: &mut ShellState, key: &DraftKey, local: &Loc
         return false;
     }
     shell.core.drafts.items.insert(key.clone(), local.clone());
-    if shell.composer_key(ComposerTarget::Channel).as_ref() == Some(key) {
-        shell.core.composer = local.composer.clone();
-        shell.core.composer_attachments = local.attachments.clone();
+    if shell.composer_key(target_for(key)).as_ref() == Some(key) {
+        if key.thread.is_some() {
+            shell.core.thread_composer = local.composer.clone();
+            shell.core.thread_composer_attachments = local.attachments.clone();
+        } else {
+            shell.core.composer = local.composer.clone();
+            shell.core.composer_attachments = local.attachments.clone();
+        }
     }
     true
 }
@@ -165,6 +185,7 @@ pub(crate) async fn return_to_draft(
         }
         if remove_failed_row(&mut shell, &intent, &restored.local) {
             shell.refresh_from_core();
+            shell.refresh_thread_from_core();
         }
         shell.show_toast(if projected {
             "The unsent message is back in your drafts. Nothing was sent."
@@ -202,7 +223,18 @@ fn remove_failed_row(
     let Some(workspace) = shell.core.workspaces.get_mut(&key.team) else {
         return false;
     };
-    let Some(messages) = workspace.messages.get_mut(&key.channel) else {
+    let user = workspace.self_user_id.clone();
+    // Durable sends place an optimistic broadcast only in its thread. The
+    // channel copy is created after acceptance and must never be removed here.
+    let messages = if let Some(root) = &key.thread {
+        shell
+            .core
+            .threads
+            .get_mut(&(key.team.clone(), key.channel.clone(), root.clone()))
+    } else {
+        workspace.messages.get_mut(&key.channel)
+    };
+    let Some(messages) = messages else {
         return false;
     };
     let matches = messages
@@ -210,7 +242,14 @@ fn remove_failed_row(
         .iter()
         .filter(|message| {
             message.client_msg_id.as_deref() == Some(&intent.client_msg_id)
-                && message.user.as_deref() == Some(&workspace.self_user_id)
+                && message.user.as_deref() == Some(&user)
+                && message.channel.as_deref() == Some(key.channel.as_str())
+                && message.thread_ts == key.thread
+                && message.subtype.as_deref()
+                    == restored
+                        .composer
+                        .reply_broadcast
+                        .then_some("thread_broadcast")
                 && message.edited.is_none()
                 && message.blocks == intent.snapshot.blocks
                 && message.text.as_deref() == Some(restored.composer.text.as_str())

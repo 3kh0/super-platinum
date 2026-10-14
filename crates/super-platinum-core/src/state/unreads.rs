@@ -17,6 +17,38 @@ const COUNTED_SUBTYPES: &[&str] = &[
 ];
 
 impl Workspace {
+    /// Metadata may provide the fallback cursor before a message bag has one.
+    /// Preserve replacement semantics while retaining read acknowledgement order.
+    pub fn insert_channel_metadata(&mut self, channel: crate::slack::models::Channel) {
+        let id = channel.id.clone();
+        let previous = self.read_cursor(&id).map(str::to_owned);
+        self.channels.insert(id.clone(), channel);
+        if self.read_cursor(&id) != previous.as_deref() {
+            let list = self.messages.entry(id).or_default();
+            list.read_revision = list.read_revision.wrapping_add(1);
+        }
+    }
+
+    pub fn read_revision(&self, channel: &str) -> u64 {
+        self.messages
+            .get(channel)
+            .map_or(0, |list| list.read_revision)
+    }
+
+    /// Exact socket acknowledgements are already authoritative. Otherwise both
+    /// the prior cursor and its revision must still match: a cursor can move
+    /// forward and back while an HTTP mark is in flight.
+    pub fn accepts_read_ack(
+        &self,
+        channel: &str,
+        cursor: &str,
+        previous: Option<&str>,
+        revision: u64,
+    ) -> bool {
+        self.read_cursor(channel) == Some(cursor)
+            || (self.read_cursor(channel) == previous && self.read_revision(channel) == revision)
+    }
+
     pub fn read_cursor(&self, channel: &str) -> Option<&str> {
         self.messages
             .get(channel)
@@ -46,8 +78,10 @@ impl Workspace {
                 )
                 .any(|latest| cmp_ts(Some(latest), Some(ts)).is_gt())
         });
-        if let Some(list) = self.messages.get_mut(channel) {
+        {
+            let list = self.messages.entry(channel.to_owned()).or_default();
             list.last_read = Some(ts.to_owned());
+            list.read_revision = list.read_revision.wrapping_add(1);
             if !newer {
                 list.unread_count = 0;
                 list.mention_count = 0;
@@ -88,6 +122,7 @@ impl Workspace {
             .max(1)
             .max(if backward { list.unread_count } else { 0 });
         list.last_read = Some(cursor.into());
+        list.read_revision = list.read_revision.wrapping_add(1);
         if let Some(row) = self.channels.get_mut(channel) {
             row.last_read = Some(cursor.into());
             row.has_unreads = true;
@@ -296,6 +331,44 @@ mod tests {
             assert_eq!(ws.read_cursor("C1"), Some(current));
         }
     }
+    #[test]
+    fn read_ack_revision_rejects_cursor_aba_but_accepts_exact_socket_ack() {
+        let mut ws = workspace();
+        ws.mark_unread_locally("C1", "100.0");
+        let revision = ws.read_revision("C1");
+        assert!(ws.accepts_read_ack("C1", "200.0", Some("100.0"), revision));
+        ws.mark_unread_locally("C1", "300.0");
+        ws.mark_unread_locally("C1", "100.0");
+        assert!(!ws.accepts_read_ack("C1", "200.0", Some("100.0"), revision));
+        assert!(ws.accepts_read_ack("C1", "100.0", Some("300.0"), revision));
+        let current = ws.read_revision("C1");
+        ws.confirm_read("C1", "200.0", Some("100.0"));
+        assert_ne!(ws.read_revision("C1"), current);
+    }
+
+    #[test]
+    fn metadata_cursor_replacement_records_aba_without_changing_bag_precedence() {
+        let mut ws = workspace();
+        let revision = ws.read_revision("C1");
+        let mut metadata_only = ws.channels["C1"].clone();
+        metadata_only.name = Some("renamed".into());
+        ws.insert_channel_metadata(metadata_only);
+        assert_eq!(ws.read_revision("C1"), revision);
+        for cursor in ["300.0", "100.000000"] {
+            let mut channel = ws.channels["C1"].clone();
+            channel.last_read = Some(cursor.into());
+            ws.insert_channel_metadata(channel);
+        }
+        assert!(!ws.accepts_read_ack("C1", "200.0", Some("100.000000"), revision));
+        ws.mark_unread_locally("C1", "50.0");
+        let revision = ws.read_revision("C1");
+        let mut channel = ws.channels["C1"].clone();
+        channel.last_read = Some("500.0".into());
+        ws.insert_channel_metadata(channel);
+        assert_eq!(ws.read_cursor("C1"), Some("50.0"));
+        assert_eq!(ws.read_revision("C1"), revision);
+    }
+
     #[test]
     fn explicit_unread_includes_own_messages_and_preserves_known_badges() {
         let mut ws = workspace();

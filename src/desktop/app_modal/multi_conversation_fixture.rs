@@ -1,0 +1,27 @@
+//! Inline multi-conversation selection retains dirty arrays and records no network writes.
+use super::*;
+use serde_json::json;
+pub(crate) fn enabled() -> bool {
+    std::env::var("SUPER_PLATINUM_APP_MODAL_MULTI_CONVERSATION_CHECK").as_deref() == Ok("1")
+        && matches!(
+            std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
+            Ok("app-modal-multi-conversation" | "app-modal-multi-conversation-narrow")
+        )
+}
+pub(crate) fn install(shell: &mut ShellState) {
+    conversation_fixture::install(shell);
+    let recorder = shell.app_modal.as_mut().unwrap().users_fixture.take();
+    let mut session =
+        Session::fixture_with_origin(view(), Some(conversation_fixture::ORIGIN.into()));
+    session.users_fixture = recorder;
+    shell.app_modal = Some(session);
+}
+pub(crate) fn view() -> Value {
+    let mut v = conversation_fixture::view();
+    v["title"]["text"] = json!("Choose conversations");
+    v["blocks"][1]["label"]["text"] = json!("Conversations");
+    v["blocks"][1]["element"] = json!({"type":"multi_conversations_select","action_id":"value","initial_conversations":["C00000006"],"max_selected_items":2,"default_to_current_conversation":false,"response_url_enabled":true,"placeholder":{"type":"plain_text","text":"Find conversations"}});
+    v["blocks"][2]["element"] = json!({"type":"multi_conversations_select","action_id":"value","filter":{"include":["public","private","mpim","im"],"exclude_bot_users":true,"exclude_external_shared_channels":true},"response_url_enabled":true,"placeholder":{"type":"plain_text","text":"Find optional conversations"}});
+    v.as_object_mut().unwrap().remove("state");
+    v
+}

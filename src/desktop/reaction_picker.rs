@@ -1,5 +1,6 @@
 //! Searchable, bounded emoji picker shared by channel messages and replies.
 
+use crate::media::MediaUri;
 use dioxus::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -363,7 +364,7 @@ pub(crate) fn EmojiPicker(
                                 title: ":{choice.name}:",
                                 onclick: move |_| onchoose.call(name.clone()),
                                 if let Some(image) = image {
-                                    img { src: "{image.uri_at(snapshot.media_epoch)}", alt: "" }
+                                    img { src: "{image.webview_uri_at(snapshot.media_epoch)}", alt: "" }
                                 } else { "{choice.glyph}" }
                             }
                         }

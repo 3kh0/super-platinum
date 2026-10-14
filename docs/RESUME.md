@@ -1,5 +1,176 @@
 # Super Platinum: resume on the Windows laptop
 
+## Windows continuation, 2026-10-14
+
+Latest logic gate: **1,185 core tests / 5 ignored**, **1,110 desktop tests /
+7 ignored** and both format checks pass. Twelve keyboard and six paste-runner
+tests pass. The last completed dev build took **2m54s** (SHA
+`4ed2dbf34851f27c7acea71ce2da80037a5096339824327eb6dfe9772e657b33`).
+Trusted Windows keyboard editing and synthetic file-paste reruns pass at both
+sizes with all 22 PNGs inspected in `windows-{keyboard,file-paste}-window-final/`.
+Foreground restoration was requested but not observed; OS IME and the system
+clipboard are not covered. Pasted filenames currently expose staging prefixes;
+separate display/upload filename preservation is the next implementation slice.
+Multi-conversation native wire checks pass all four fixtures with 26 inspected
+PNGs. Corrected compact triggers now pass all eight normal/narrow fixtures,
+with all 50 PNGs inspected in `windows-multi-{channels,conversation}-compact-final/`.
+Keyboard and file-paste first native runs failed fixture invariants; corrected
+full-row ownership checks now pass native reruns. Current-conversation
+multi-selector defaults, ordinary autosave and actual OS IME/clipboard remain open.
+
+The previous `9089c0f...` build passed normal/narrow multi-channel checks with
+all 24 PNGs inspected in `windows-multi-channels-final/`, all four scoped contrast
+fixtures with 12 inspected PNGs in `windows-contrast-final/`, and all 16 shared
+picker regressions with 46 inspected PNGs in `windows-picker-regression-final/`.
+Contrast evidence covers named actual/probe controls, not whole-theme certification.
+Rejected-thread restore/restart now passes normal and narrow with all ten PNGs
+inspected in `windows-rejected-thread-focused-final/`; earlier notice failures
+are resolved for these flows. Original SQLite snapshot/broadcast and unrelated
+drafts survive separate processes; no send occurs. Actual later-edit autosave,
+OS IME and live/crash fault proof remain open. Canvas text/checklist native
+checks now pass at both sizes with all 20 staged/final PNGs inspected in
+`windows-canvas-final/`. File-operation recovery also
+passes normal/narrow three-process checks with all six PNGs inspected in
+`windows-file-recovery-final/`; exact rename data remains unchanged and only
+explicit deletion retirement changes its receipt.
+
+The user resumed on native Windows at `37d71bb` (`resync`). The checkout was
+clean and all six named capture/Dock transfer artifacts below are tracked and
+present. The native Rust host is `x86_64-pc-windows-msvc` (Rust 1.98.1).
+Native dev compilation, isolated TCP ping/state, and full DPI-correct screenshot
+capture now pass. PowerShell argument parsing and DPI coordinate bugs were fixed.
+The first inspected captures also exposed broken Windows media URLs; the desktop
+now adapts canonical IDs to Wry's exact synthetic HTTP origins and CSP sources.
+Native checks prove ready/pending decode and same-element generation refresh.
+
+Activity cursor reconciliation below is implemented, including revision guards
+for channel cursor ABA (forward then backward while an HTTP mark is pending).
+Activity Windows gates: **1,101 core tests / 5 ignored**, **959 desktop tests /
+6 ignored**, both format checks, whitespace/Python syntax checks, and locked dev
+build (**3m14s**). Normal/narrow Activity navigation, cursor/page reconciliation,
+and media checks passed; root inspected their PNGs. Receipts are under
+`tmp/windows-bootstrap/` and `tmp/agent-ui/windows-{activity,media}-final/`.
+The earlier 947-desktop/1,098-core runs preceded final edits and are not final gates.
+
+Ordinary-message `multi_users_select` and overflow are now implemented. Final
+logic gates passed **1,112 core / 5 ignored** and **971 desktop / 6 ignored**;
+the dev build passed in **3m01s**, followed by a **1m56s** compact-control layout
+build. All five control families passed normal/narrow native checks; root inspected
+all ten PNGs, then rechecked both corrected multi-user captures. Receipts are in
+`tmp/agent-ui/windows-controls-final/`. Three before/after synthetic channel-scroll
+runs show a 6.1ms median in both builds; no whole-app improvement is established.
+
+List **Duplicate item** is now implemented through the source-verified create
+endpoint, canonical adjacency and readback, with retained delivery locks across
+same-user credential/transport rotation. Final gates: **1,118 core / 5 ignored**,
+**981 desktop / 6 ignored**, both format checks and dev build **3m03s**. Normal
+and narrow List interaction/duplicate and delete/undo checks passed; the team
+inspected all **60 PNGs** in `tmp/agent-ui/windows-lists-final/`. Root additionally
+inspected all four new duplicate screens and five narrow deletion captures.
+Live server copy/subtask semantics and unsupported/incomplete List orderings
+remain explicit boundaries.
+
+Readable List timestamps are now implemented from captured client code, including
+relative labels, tooltips, locale/time24 and visible minute refresh. The final
+independently locked core suite passed **1,124 / 5 ignored**. Normal/narrow List
+checks passed and the team inspected all **50 PNGs** in
+`tmp/agent-ui/windows-timestamps-final/`. Windows taskbar badges now use a direct
+HRESULT-reporting sink with retained recreation handling. Eleven native stages
+passed; visible taskbar captures verify numeric/unread/clear states. The first
+capture attempt exposed auto-hide, so the runner now offers temporary edge hover
+with cursor restoration, without changing taskbar settings.
+
+Windows toast identity and direct WinRT submission are implemented. The first
+native attempt found `Setting` unavailable before the first `Show`; the targeted
+fix passed **996 desktop tests / 6 ignored** and a **2m33s** dev build. Native
+submission/history/removal and registration restoration passed; root inspected
+the actual banner at 0.5 and 5 seconds in `windows-notifications-timed/`.
+The immediate capture preceded the animation. Production taskbar projection now
+passes six native stages with all six taskbar PNGs inspected (6/clear/4/clear/4/clear).
+Account-owned synthetic COM routing passes queued latest destination, exact thread
+reply visibility and foreign-account rejection; root inspected its PNG. Actual
+warm OS toast activation now passes: one exact fixture Invoke produces one COM
+callback and restores the same minimized PID/HWND to the foreground. Root
+inspected the nonce-bearing banner and activated-window PNG. Exact registration
+and preview cleanup pass. Receipts: `windows-notification-activation-final/`.
+Cold activation now passes **1,029 desktop tests / 6 ignored**, format and a
+**3m30s** dev build, followed by actual Windows OS activation. One exact fixture
+toast click launches a new PID after its publisher exits, delivers one callback,
+and brings the child HWND forward. Root inspected the nonce-bearing banner and
+fully rendered channel at one and three seconds. Child cleanup restores all four
+registration artifacts, removes the preview and releases the lease. Warm activation
+and synthetic routing regressions also pass with inspected PNGs. A first-attempt
+runner bug querying a terminated image was fixed; exact recovery and idempotent
+recovery both passed before the successful fresh-nonce runs. Evidence:
+`tmp/agent-ui/windows-notifications-cold-painted/`. Selected custom sounds, real
+Explorer restart, live account-owned routing and live delivery remain open.
+
+Modal multi-user inputs are implemented. The independently locked core suite is
+now **1,131 passed / 5 ignored**; the desktop suite is **1,013 / 6 ignored**.
+Native testing found and fixed two concrete issues: by-value bootstrap future
+copies overflowed Windows' 1 MiB main stack, and Escape from inline member choices
+also closed the modal. Startup now boxes its future at the Dioxus hook boundary;
+the largest startup spawn frame falls from 623,000 to 440 bytes, and plain-channel
+TCP startup passes. The modal Escape fix uses the existing local Escape marker;
+its full desktop tests, **2m28s** dev build and normal/narrow native checks pass.
+All **ten** final modal PNGs were inspected, including a separate validation
+capture with verified visible error text and hit testing at both sizes. The
+final validation dev build passed in **2m07s**, with 1,013 desktop tests unchanged. All six
+shared user/multi-user/conversation normal/narrow checks pass with inspected PNGs.
+An additional 15s idle sample records host/WebView2 CPU **0.03125/0.0625s**,
+total owned working-set/private-commit **530.71/311.04 MiB**, and first paint
+**560.86ms**. It does not demonstrate improvement over the earlier single sample;
+WebView2 memory is higher. Receipts: `tmp/agent-ui/windows-idle-modal-os/`.
+Single-user modal support now passes **1,137 core / 5 ignored**, **1,017 desktop /
+6 ignored**, both format checks and a **2m58s** dev build. Single/multi-user modal
+checks pass at both sizes with all **18 PNGs** inspected; shared message pickers
+add six passing checks and inspected PNGs. Receipts: `windows-modal-user-final/`
+and `windows-single-shared-final/`.
+Fixtures now use a unique Windows WebView2 directory and in-memory picture cache;
+the pinned runtime otherwise shares the production profile despite TMP isolation.
+Conversation and public-channel modal selectors are implemented with retained
+opening-channel defaults, distinct state keys, full-state response URL flags and
+Enterprise-context submission guards. **1,153 core / 5 ignored**, **1,059 desktop / 7 ignored**, both format checks
+and 11 JavaScript tests pass; the dev build passes in **3m28s**. Scheduling now uses
+a typed DOM receipt before local settlement, merges attachment-only edits, and
+rejects stale same-channel returns. These guards passed independent review. Draft polling compares
+metadata before cloning retained content; its paired component benchmark improves
+unchanged/sparse-change cases and reports slower all-emitted cases in the worklog.
+Both selector families now pass normal/narrow Windows checks with **20 inspected
+PNGs**; modal user regressions and shared message pickers add **24 inspected PNGs**.
+Scheduling passes all three fixtures with root-inspected captures. GUI-subsystem
+PE=2, cold/warm activation, synthetic exact-reply routing and completed recovery
+all pass with inspected captures and unchanged registration. Final binary SHA:
+`02f559d717f400e36c83676bd0fb25dbc620cafe21a533fdfa121fbd680ddc32`.
+Three interleaved idle pairs now confirm the GUI build has no owned console host;
+CPU, private memory and first-paint differences vary across pairs. Scroll p50 is
+6.1ms in both builds, but a blank transcript in A3 and a hover card in B1 prevent
+clean visual comparison. A separate cursor-normalized repeat now passes all six
+runs and 18 inspected immediate/delayed PNGs: both builds have 6.1ms p50 and
+6.2ms median p95. No improvement is demonstrated; the original blank pane did
+not reproduce and its cause remains unknown. Preserve both sets of artifacts.
+The next source slice adds rejected thread draft restoration with isolated
+restart proof and ordinary-message public-channel selection.
+This next slice now passes **1,157 core / 5 ignored**, **1,074 desktop / 7 ignored**,
+both format checks and a **3m14s** dev build, SHA
+`4574d647738d5d329262ac14e06bca77eec9fa4511d1901ba967d4a73a190c59`.
+Message channel selectors pass normal/narrow Windows checks with both PNGs read;
+large channel/five thread fixtures and upload/forward recovery also pass with
+inspected captures. Thread-return native verification exposed a success toast
+covering its composer. The first placement repair passes normal restore/restart
+on build SHA `a0425878533e4366b311d333a34e379ca7bc5a1aeb90146bdce904f26e30755e`
+(1,074 desktop tests, ten JS tests, 2m54s dev build), but narrow restoration
+exposes a notice covering focused Continue writing before the composer opens.
+Focused-control clearance is now being fixed. Canvas text/checklist Windows
+runners and capture handshakes are prepared; their new fixture source is not yet
+compiled. Current source edits exceed the latest tested binary.
+Continue the full acceptance backlog. Windows session files exist (names
+only inspected), but no live sign-in/reference or cross-client proof is established.
+Private cursor/app-control/duplicate proof and the broad acceptance matrix remain open.
+No real Slack/session/draft writes, commit, push or packaging
+occurred. Keep the dirty tree and new source/script files; HEAD alone omits this
+continuation. Historical Mac details below remain useful context.
+
 Handoff prepared on **2026-10-13** from `/Users/sh/Documents/GitHub/snack` on the
 user's MacBook. The user explicitly **paused** the long-running goal to move
 machines. Resume implementation when the user asks to resume on the new machine.
@@ -14,8 +185,11 @@ has been established.
 3. Build and run an isolated **dev copy on native Windows**. Establish Windows
    compilation, agent TCP access, WebView2 rendering, and screenshot capture
    before interpreting old macOS evidence as applicable to this machine.
-4. Resume the **Activity cursor reconciliation** task described below. It has a
-   concrete source-backed bug and was selected immediately before the pause.
+4. Windows Activity cursors, ordinary-message multi-user/overflow, List Duplicate
+   and timestamps are implemented and fixture-verified. Finish **modal multi-user
+   and Windows toast activation** proof (production taskbar projection passes),
+   retaining private cross-client
+   verification as an open acceptance requirement.
 5. Keep the full parity/design/performance objective intact. Use the acceptance
    table and chronological receipts in `docs/parity-worklog.md`; later entries
    supersede earlier hypotheses and open items.
@@ -120,8 +294,8 @@ $env:SUPER_PLATINUM_FIXTURE = "channel"
 ```
 
 The core crate is independently locked (`[workspace]` in its own manifest).
-Run its suite separately for domain changes. These commands describe the new
-machine's gates; **the latest dirty tree has not been verified on Windows**.
+Run its suite separately for domain changes. These commands describe the native
+machine's gates; the continuation receipts above name the verified checkpoints.
 
 On Windows the agent server uses loopback TCP, default `127.0.0.1:0`, not a Unix
 socket. Optional `SUPER_PLATINUM_AGENT_ADDR` controls the listen address; keep it
@@ -221,8 +395,8 @@ rows lag the latest dated entries.
 | Recovery | Account/destination-owned drafts; persistent uncertain upload delivery journal; explicit readback/recovery rather than automatic duplicate sends. Preserve newer local edits and retained operation ownership. |
 | Forwarding | Rich notes and destination selection, plus a durable account/source/destination journal for uncertain delivery. Restart recovery offers receipt checks, explicit resend and stop tracking; opening recovery never sends automatically. Native recovery checks passed historically; broader live and scheduling parity remains unfinished. |
 | Canvases | Reader/create/rename plus bounded checkbox and existing-paragraph/rich-text edits using the actual collaboration protocol; private save/restore proof. Full authoring, comments and collaboration remain incomplete. |
-| Lists | Saved tables/boards, record detail, ordinary text/number/select/boolean/date/User/Channel/Link editing, create/delete and same-ID deletion Undo/Redo. Many source contracts and private receipts; continuation, duplicate item, view writes and richer field/actions remain. |
-| App interactions | Typed app modals and ordinary message buttons, static select/multi-select, radio/checkbox, date/time pickers, user and conversation selectors with retained ownership. Multi-user selector and overflow UI are concrete missing controls. Live app receipt/response coverage remains incomplete. |
+| Lists | Saved tables/boards, record detail, ordinary cell editing, create/delete and same-ID Undo/Redo. Source-backed Duplicate and stable delivery locks now pass Windows normal/narrow checks. Readable timestamp display, server continuation, live duplicate semantics, view writes and richer fields/actions remain. |
+| App interactions | Typed app modals and ordinary message buttons, static select/multi-select, radio/checkbox, date/time pickers, user and conversation selectors with retained ownership. Ordinary-message multi-user and overflow now pass Windows normal/narrow native checks. Modal multi-user and live app receipt/response coverage remain incomplete. |
 | Notifications | Channel mute/temporary mute/settings, recurring schedules, global defaults/keywords, sound/preview/mute, macOS attention and canonical Activity/DM badges. Real OS delivery and several global live writes remain unverified. |
 | Huddles | Slack room + Chime state/media bridge, camera/sharing/device UI. Real call/media proof still requires a controlled human-approved call. |
 | Performance | Measured palette, message snapshot, DM lookup, geometry/thread-index and reaction projection improvements; bounded rendering, media loading and timer fixes. Component CPU wins are not whole-app FPS or Windows latency proof. |
@@ -303,13 +477,15 @@ writes. They establish actual AppKit label state, **not rendered Dock pixels,
 live event agreement, Windows behavior, or complete Slack parity**. The build
 reported the existing future-incompatibility notice for `block v0.1.6`.
 
-## Immediate next task: Activity cursor reconciliation (NOT implemented)
+## Activity cursor reconciliation: implemented Windows checkpoint
 
-The user paused just after task assignment. Both implementation agents confirmed
-**no files were edited and no build/process was started for this task**. There is
-no half-finished cursor patch to finish or revert.
+At the original Mac handoff this task had no edits. The Windows continuation now
+implements the following recorded source contract and passes pure regressions
+plus normal/narrow native fixtures. It does **not** establish live cross-client
+cursor delivery. The original defect list and ownership plan below are retained
+as context for reviewing the fix, not as unimplemented work.
 
-Source-backed defects:
+Original source-backed defects (now addressed):
 
 1. `src/desktop/realtime.rs` channel/thread marked events update conversation or
    thread cursors without reconciling matching Activity rows/category counts.
@@ -336,7 +512,7 @@ and `YfTA` (S4902019):
 - Preserve the current direct-item-read rule: `QDAL.m` changes the row, not the
   canonical Inbox category map. Do not indiscriminately decrement on all reads.
 
-Suggested ownership split after re-reading current code:
+Ownership used for the implementation:
 
 - Core worker: pure bounded channel/thread reducers, timestamp mapping, category
   deltas, and `ActivitySync` overlays so an older in-flight page cannot resurrect
@@ -365,11 +541,14 @@ Refresh repeats page one. However, captured stock callers also fetch once withou
 cursor/limit and no available live evidence proves a cursor-bearing List. Do not
 invent a continuation parameter/contract just to hide the warning. First obtain
 a real read-only large-List response and verified next-page request. Missing
-**Duplicate item** is a more immediately source-backed List feature: stock uses
-`duplicatedRecordId` plus adjacent position in the existing creation endpoint.
+**Duplicate item** was the immediately source-backed next feature at the handoff:
+stock uses `duplicatedRecordId` plus adjacent position in the existing creation
+endpoint. It is now implemented and Windows fixture-verified. The exact original
+B/S/V bundles were recovered from public Slack asset URLs; the dated source
+section in `slack-lists-protocol.md` records hashes, offsets and support boundaries.
 
-**Ordinary message `multi_users_select`:** currently inert in `view/rich.rs` and
-can disable sibling app buttons through unsupported full-state serialization.
+**Ordinary message `multi_users_select`:** implemented and Windows fixture-verified
+after the handoff; it was inert and could disable sibling actions at the Mac pause.
 Captured B module `hGZA`, offset13286237, uses
 `savedUsers || initialUsers || []`, includeSelf/allowEmptyQuery, staged selection,
 maxSelectedItems, Cancel restore, and submit (13288513) with
@@ -377,11 +556,13 @@ type/actionId/blockId/selectedUsers plus initialUsers when supplied. Reuse the
 single-user directory and staged multi-static UI rather than inventing behavior.
 Cover required/max/owner/stale/429/full-sibling state and narrow interaction.
 
-**Ordinary message overflow:** currently an inert More affordance. Captured B
+**Ordinary message overflow:** implemented and Windows fixture-verified after the
+handoff; it was an inert More affordance at the Mac pause. Captured B
 `UVRG`13292917 / action13293902 sends `selectedOption:{text,value}`; option URL
 handling follows confirmation separately. Add typed bounded options, exact
 payload/confirmation/URL behavior and no-replay tests. Both app-control features
-were audited only, not implemented at the pause.
+now have those tests and normal/narrow native prepared-request checks. Owned
+private live app receipt/response proof remains open.
 
 Other broad open areas include richer canvas authoring/comments, List view
 writes/field types/actions, custom channel tabs, workflow discovery/execution,

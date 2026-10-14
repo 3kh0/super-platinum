@@ -4,6 +4,8 @@ use crate::state::{MainView, ShellState};
 use dioxus::prelude::*;
 use serde_json::{Value, json};
 
+mod cursors;
+
 const ROOT: &str = "1719800000.000100";
 const REPLY: &str = "1719800001.000001";
 
@@ -138,6 +140,7 @@ async fn run(
         return Err("Activity check requires no transport".into());
     }
     badge_updates(state, desktop).await?;
+    cursors::run(state, desktop).await?;
     click(desktop, "activity-thread-bundle").await?;
     wait_state(state, |s| {
         s.main_view == MainView::Activity
@@ -173,6 +176,8 @@ async fn run(
     receipt["noTransport"] = json!(true);
     receipt["canonicalBadgeUpdates"] = json!(true);
     receipt["zeroClearsUnreadRows"] = json!(true);
+    receipt["cursorBoundedReads"] = json!(true);
+    receipt["cursorPageReconciliation"] = json!(true);
     for flag in [
         "filteredCategories",
         "dmHighlightCount",

@@ -5,7 +5,10 @@ use dioxus::prelude::*;
 use serde_json::{Value, json};
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
-    if !fixture::enabled() || super::conversation_fixture::enabled() {
+    if !fixture::enabled()
+        || super::conversation_fixture::enabled()
+        || super::multi_user_fixture::enabled()
+    {
         return;
     }
     dioxus::core::spawn_forever(async move {
@@ -157,7 +160,10 @@ fn wire(
     }
     Ok(())
 }
-async fn click(desktop: &dioxus::desktop::DesktopContext, selector: &str) -> Result<(), String> {
+pub(super) async fn click(
+    desktop: &dioxus::desktop::DesktopContext,
+    selector: &str,
+) -> Result<(), String> {
     wait_dom(desktop,&format!(r#"(()=>{{const e=document.querySelector({});if(!e||e.disabled)return {{ok:false,present:!!e,disabled:e?.disabled}};e.click();return {{ok:true}};}})()"#,serde_json::to_string(selector).unwrap())).await?;
     Ok(())
 }
@@ -190,7 +196,7 @@ async fn idle(
     wait_dom(desktop,&format!(r#"(()=>{{const a=document.querySelector('.block-users-select[data-action-id="pick"]'),b=document.querySelector('.block-users-select[data-action-id="other"]');return {{ok:!!a&&!!b&&!document.getElementById('button-confirmation-form')&&!document.getElementById('message-user-search')&&a.textContent.trim()==={}&&b.textContent.trim()==={}&&[...document.querySelectorAll('.block-select,.block-button')].every(e=>!e.disabled),primary:a?.textContent,other:b?.textContent}};}})()"#,serde_json::to_string(primary).unwrap(),serde_json::to_string(other).unwrap())).await?;
     Ok(())
 }
-async fn wait_dom(
+pub(super) async fn wait_dom(
     desktop: &dioxus::desktop::DesktopContext,
     script: &str,
 ) -> Result<Value, String> {
@@ -206,7 +212,10 @@ async fn wait_dom(
         "Native users select did not reach expected state: {last}"
     ))
 }
-async fn checked(desktop: &dioxus::desktop::DesktopContext, script: &str) -> Result<Value, String> {
+pub(super) async fn checked(
+    desktop: &dioxus::desktop::DesktopContext,
+    script: &str,
+) -> Result<Value, String> {
     let receipt = eval(desktop, script).await?;
     if receipt["ok"] == true {
         Ok(receipt)
@@ -214,7 +223,10 @@ async fn checked(desktop: &dioxus::desktop::DesktopContext, script: &str) -> Res
         Err(format!("Native users select assertion failed: {receipt}"))
     }
 }
-async fn eval(desktop: &dioxus::desktop::DesktopContext, script: &str) -> Result<Value, String> {
+pub(super) async fn eval(
+    desktop: &dioxus::desktop::DesktopContext,
+    script: &str,
+) -> Result<Value, String> {
     let (send, mut receive) = tokio::sync::mpsc::unbounded_channel();
     desktop
         .webview
@@ -236,4 +248,4 @@ async fn eval(desktop: &dioxus::desktop::DesktopContext, script: &str) -> Result
 }
 const LAYOUT: &str = r#"(()=>{const d=document.getElementById('shell-overlay-dialog'),s=document.getElementById('message-user-search'),c=document.getElementById('message-user-cancel');const rect=d.getBoundingClientRect();const eachVisible=[s,c].every(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;});const noOverflow=rect.left>=0&&rect.right<=innerWidth&&rect.top>=0&&rect.bottom<=innerHeight&&d.scrollWidth<=d.clientWidth+1;const searchStyle=getComputedStyle(s),compactSearch=Math.abs(s.getBoundingClientRect().height-32)<=1&&searchStyle.getPropertyValue("-webkit-appearance")==="none";return {ok:eachVisible&&noOverflow&&compactSearch&&document.activeElement===s,compactSearch,eachVisible,noOverflow,keyboardFocused:document.activeElement===s,viewport:[innerWidth,innerHeight]};})()"#;
 
-const CONTROL_LAYOUT: &str = r#"(()=>{const controls=[...document.querySelectorAll('.block-users-select')].map(e=>{const r=e.getBoundingClientRect(),label=e.querySelector('span')?.getBoundingClientRect(),icon=e.querySelector('svg')?.getBoundingClientRect();return {height:r.height,labelHeight:label?.height,iconHeight:icon?.height,sameRow:!!label&&!!icon&&Math.abs((label.top+label.bottom)-(icon.top+icon.bottom))<=2,labelBeforeIcon:!!label&&!!icon&&label.right<=icon.left+1};});return {ok:controls.length===2&&controls.every(e=>Math.abs(e.height-32)<=1&&e.labelHeight<=32&&e.iconHeight<=32&&e.sameRow&&e.labelBeforeIcon),controls};})()"#;
+pub(super) const CONTROL_LAYOUT: &str = r#"(()=>{const controls=[...document.querySelectorAll('.block-users-select,.block-multi-users-select')].map(e=>{const r=e.getBoundingClientRect(),label=e.querySelector('span')?.getBoundingClientRect(),icon=e.querySelector('svg')?.getBoundingClientRect();return {height:r.height,labelHeight:label?.height,iconHeight:icon?.height,sameRow:!!label&&!!icon&&Math.abs((label.top+label.bottom)-(icon.top+icon.bottom))<=2,labelBeforeIcon:!!label&&!!icon&&label.right<=icon.left+1};});return {ok:controls.length===2&&controls.every(e=>Math.abs(e.height-32)<=1&&e.labelHeight<=32&&e.iconHeight<=32&&e.sameRow&&e.labelBeforeIcon),controls};})()"#;

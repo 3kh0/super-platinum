@@ -1,4 +1,5 @@
 //! Shared attachment viewer for conversation attachments and Files.
+use crate::media::MediaUri;
 use crate::state::{ShellState, ViewerVm};
 use dioxus::prelude::*;
 use super_platinum_core::{MediaAssetId, file_preview};
@@ -14,7 +15,7 @@ pub fn FileViewer(state: Signal<ShellState>, viewer: ViewerVm, media_epoch: u64)
     };
     // Playback mounts only after bytes are ready. Unrelated media arrivals must
     // not replace the source and restart playback.
-    let uri = viewer.id.uri();
+    let uri = viewer.id.webview_uri();
     let actions = crate::file_actions::Target::for_viewer(&state.read(), &viewer);
     let has_actions = actions.is_some();
     rsx! {

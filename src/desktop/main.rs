@@ -1,3 +1,5 @@
+#![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
+
 use dioxus::prelude::*;
 
 mod activity_feed;
@@ -72,6 +74,7 @@ mod thread_unread;
 mod thread_vm;
 mod thread_window;
 mod timeline_geometry;
+mod trusted_keyboard_check;
 mod unfurl;
 mod unread;
 mod usergroups;
@@ -82,6 +85,12 @@ use state::ShellState;
 pub(crate) use super_platinum_core::{config, slack};
 
 fn main() {
+    #[cfg(target_os = "windows")]
+    notification::windows::prepare_startup();
+    #[cfg(target_os = "windows")]
+    if let Some(code) = notification::windows::cold_recovery_mode() {
+        std::process::exit(code);
+    }
     performance::start();
     if let Some(code) = run_auth_mode() {
         std::process::exit(code);
@@ -89,7 +98,11 @@ fn main() {
     if let Err(error) = notification::ensure_identity() {
         eprintln!("super-platinum: could not register notification identity: {error}");
     }
-    let media = media::MediaRegistry::with_persistence();
+    let media = if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+        media::MediaRegistry::default()
+    } else {
+        media::MediaRegistry::with_persistence()
+    };
     let config = media::desktop_config(media.clone());
     dioxus::LaunchBuilder::desktop()
         .with_cfg(config)
@@ -141,8 +154,10 @@ fn app() -> Element {
     read_visibility::use_focus_read_marks(state);
     #[cfg(target_os = "macos")]
     notification::attention::use_cleanup();
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     notification::badge::use_badge(state, desktop.clone());
+    #[cfg(target_os = "windows")]
+    notification::windows::use_activation(state, desktop.clone());
     let timeline_identity = use_memo(move || {
         let state = state.read();
         (
@@ -262,13 +277,20 @@ fn app() -> Element {
         pdf_preview::serve_asset(state, request, responder)
     });
     use_future(move || huddle::bridge(state));
-    use_future(move || bootstrap::initialize(state));
+    // Startup carries a loaded ShellState across awaits. Keep the large future
+    // out of Dioxus's by-value hook/spawn frames on Windows's 1 MiB main stack.
+    use_future(move || Box::pin(bootstrap::initialize(state)));
     use_future(move || clipboard::watch(state));
+    use_future(move || clipboard::file_check::run(state));
     use_future(move || runtime::ticks(state));
     #[cfg(target_os = "macos")]
     use_future(move || notification::attention::check::run(state));
+    #[cfg(target_os = "windows")]
+    use_future(move || notification::windows::check::run(state));
     use_future(move || performance::watch_scroll(state));
     use_future(move || keyboard_check::run(state));
+    use_future(move || trusted_keyboard_check::run(state));
+    use_future(move || view::scheduled::clear_check::run(state));
     use_future(move || completion_check::run(state));
     use_future(move || clipboard_check::run(state));
     use_future(move || canvas_check::run(state));

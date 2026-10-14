@@ -96,6 +96,17 @@ minimum text-legibility layer.
 Every text/background pairing should meet WCAG AA. Never put `--muted-2` on an
 accent-colored surface or use color alone for status.
 
+Filled accent, mention and danger controls use their corresponding `--on-*`
+foreground tokens. The theme chooses black or white for the configured fill;
+filled hover states use the matching hover token. Do not interpolate foreground
+and background when that choice can switch between black and white. Use `--link`
+for readable accent text on dark surfaces rather than the accent fill color.
+
+Wallpaper beneath the timeline, conversation header and composer has a minimum
+96% text-surface opacity, including when the requested dimming is zero. This
+protects small preset text over bright pictures; uncovered background retains
+the user's dimming choice. Custom color combinations still need contrast checks.
+
 ### Motion
 
 | Interaction | Duration | Easing | Properties |

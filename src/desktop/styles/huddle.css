@@ -126,7 +126,7 @@
   border: 2px solid var(--surface-raised);
   border-radius: 999px;
   background: var(--danger);
-  color: var(--on-accent);
+  color: var(--on-danger);
 }
 .huddle-face-badge svg { width: 8px; height: 8px; }
 
@@ -144,8 +144,8 @@
 .huddle-control .icon { opacity: 1; }
 .huddle-control.muted { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
 .huddle-control.muted:hover { background: color-mix(in srgb, var(--danger) 24%, transparent); }
-.huddle-control.leave { background: var(--danger); color: var(--on-accent); }
-.huddle-control.leave:hover { background: color-mix(in srgb, var(--danger) 85%, white); }
+.huddle-control.leave { background: var(--danger); color: var(--on-danger); }
+.huddle-control.leave:hover { background: color-mix(in srgb, var(--danger) 85%, white); color: var(--on-danger-hover); }
 
 @media (prefers-reduced-motion: reduce) {
   .huddle-face { transition: none; }
@@ -155,7 +155,7 @@
 .huddle-call-body { flex-direction: column; align-items: stretch; }
 .huddle-call-body .huddle-controls { justify-content: space-between; }
 .huddle-control { flex: 0 0 var(--control-height); width: var(--control-height); height: var(--control-height); }
-.huddle-control.on { color: var(--accent); background: var(--accent-soft); }
+.huddle-control.on { color: var(--link); background: var(--accent-soft); }
 .huddle-control:disabled { opacity: .5; cursor: default; }
 .huddle-control:focus-visible, .huddle-reaction-picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .huddle-stage-window {

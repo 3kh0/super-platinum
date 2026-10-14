@@ -1,4 +1,5 @@
 use super::ShellState;
+use crate::media::MediaUri;
 use crate::model::*;
 mod broadcast;
 
@@ -272,6 +273,25 @@ impl ShellState {
         paths: impl IntoIterator<Item = std::path::PathBuf>,
         target: ComposerTarget,
     ) {
+        self.add_named_attachments(
+            paths.into_iter().map(|path| {
+                let name = path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or("attachment")
+                    .to_owned();
+                (path, name)
+            }),
+            target,
+        );
+    }
+
+    /// Metadata supplied by an owned staging operation; the name is never a path.
+    pub(crate) fn add_named_attachments(
+        &mut self,
+        files: impl IntoIterator<Item = (std::path::PathBuf, String)>,
+        target: ComposerTarget,
+    ) {
         // With no thread open there is no thread composer to hold the files.
         let target = if self.thread_root.is_none() {
             ComposerTarget::Channel
@@ -279,7 +299,7 @@ impl ShellState {
             target
         };
         self.sync_composer_drafts();
-        for path in paths {
+        for (path, name) in files {
             let attachments = match target {
                 ComposerTarget::Channel => &self.core.composer_attachments,
                 ComposerTarget::Thread => &self.core.thread_composer_attachments,
@@ -297,11 +317,7 @@ impl ShellState {
             };
             attachments.push(super_platinum_core::domain::ComposerAttachment {
                 id: self.core.attachment_seq,
-                name: path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .unwrap_or("attachment")
-                    .to_owned(),
+                name,
                 path,
                 bytes: metadata.len(),
                 uploading: false,
@@ -382,7 +398,7 @@ impl ShellState {
         let id =
             super_platinum_core::MediaAssetId::new(super_platinum_core::MediaAssetKind::Background);
         self.media.insert(id.clone(), mime, bytes);
-        self.background_uri = Some(id.uri());
+        self.background_uri = Some(id.webview_uri());
     }
 }
 

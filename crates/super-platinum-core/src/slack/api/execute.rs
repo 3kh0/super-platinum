@@ -523,11 +523,10 @@ fn decode_sent_message(value: serde_json::Value) -> Result<SentMessage, Error> {
 #[path = "execute_send_tests.rs"]
 mod send_tests;
 
-#[derive(serde::Deserialize)]
-struct UploadUrl {
-    upload_url: String,
-    file_id: String,
-}
+#[path = "execute_upload_file.rs"]
+mod upload_file;
+pub use upload_file::UploadFile;
+use upload_file::stage_files;
 
 /// What to upload and where, separate from the connection context that every
 /// call in this module already threads through.
@@ -537,8 +536,8 @@ pub struct UploadRequest {
     pub channel: ChannelId,
     pub thread_ts: Option<MessageTs>,
     pub initial_comment: String,
-    /// Each file paired with the counter its transfer progress is reported to.
-    pub files: Vec<(PathBuf, Arc<AtomicU64>)>,
+    /// Local bytes, user-visible filename, and transfer progress stay distinct.
+    pub files: Vec<UploadFile>,
     pub canceled: Arc<AtomicBool>,
 }
 
@@ -754,7 +753,7 @@ pub async fn upload_unshared_files(
     transport: &Transport,
     client: &SlackClient,
     workspace: &WorkspaceSession,
-    files_to_upload: Vec<(PathBuf, Arc<AtomicU64>)>,
+    files_to_upload: Vec<UploadFile>,
     canceled: Arc<AtomicBool>,
 ) -> Result<Vec<String>, Error> {
     let files = stage_files(transport, client, workspace, files_to_upload, &canceled).await?;
@@ -772,48 +771,6 @@ pub async fn upload_unshared_files(
         .iter()
         .filter_map(|f| f.get("id").and_then(|s| s.as_str()).map(str::to_owned))
         .collect())
-}
-async fn stage_files(
-    transport: &Transport,
-    client: &SlackClient,
-    workspace: &WorkspaceSession,
-    files_to_upload: Vec<(PathBuf, Arc<AtomicU64>)>,
-    canceled: &AtomicBool,
-) -> Result<Vec<serde_json::Value>, Error> {
-    let mut files = Vec::with_capacity(files_to_upload.len());
-    for (path, progress) in files_to_upload {
-        if canceled.load(Ordering::Relaxed) {
-            return Err(Error::UploadCanceled);
-        }
-        let filename = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .ok_or_else(|| Error::Transport("attachment has no valid filename".to_owned()))?
-            .to_owned();
-        let bytes = tokio::fs::read(&path)
-            .await
-            .map_err(|error| Error::Transport(format!("read {}: {error}", path.display())))?;
-        let value = transport
-            .execute(client.rest_form(
-                workspace,
-                "files.getUploadURLExternal",
-                vec![
-                    ("filename", filename.clone()),
-                    ("length", bytes.len().to_string()),
-                ],
-            ))
-            .await?;
-        let ticket: UploadUrl = decode(value, "files.getUploadURLExternal")?;
-        transport
-            .upload_bytes(&ticket.upload_url, bytes, progress)
-            .await?;
-        if canceled.load(Ordering::Relaxed) {
-            return Err(Error::UploadCanceled);
-        }
-        files.push(serde_json::json!({ "id": ticket.file_id, "title": filename }));
-    }
-
-    Ok(files)
 }
 
 pub async fn fetch_users_search(

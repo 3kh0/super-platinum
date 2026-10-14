@@ -214,6 +214,12 @@ async fn run(
     if !current(&state.peek()) {
         return Err(None);
     }
+    let owner = crate::realtime::activity_counts::CursorOwner::capture(
+        &state.peek().core,
+        &transport,
+        &session,
+    )
+    .ok_or(None)?;
     let previous = state
         .peek()
         .core
@@ -221,11 +227,17 @@ async fn run(
         .get(&key.1)
         .and_then(|w| w.read_cursor(&key.2))
         .map(str::to_owned);
+    let revision = state
+        .peek()
+        .core
+        .workspaces
+        .get(&key.1)
+        .map_or(0, |w| w.read_revision(&key.2));
     api::mark_channel(&transport, &client, &session, key.2.clone(), cursor.clone())
         .await
         .map_err(Some)?;
     let mut shell = state.write();
-    if !current(&shell) {
+    if !current(&shell) || !owner.current(&shell.core) {
         return Err(None);
     }
     Ok(confirm(
@@ -233,6 +245,7 @@ async fn run(
         key,
         &cursor,
         previous.as_deref(),
+        revision,
         target.is_some(),
     )
     .then_some(cursor))
@@ -243,16 +256,25 @@ fn confirm(
     key: &Key,
     cursor: &str,
     previous: Option<&str>,
+    revision: u64,
     unread: bool,
 ) -> bool {
-    let current = shell
-        .core
-        .workspaces
-        .get(&key.1)
-        .and_then(|w| w.read_cursor(&key.2));
+    let Some(workspace) = shell.core.workspaces.get(&key.1) else {
+        return false;
+    };
+    if !workspace.accepts_read_ack(&key.2, cursor, previous, revision) {
+        return false;
+    }
+    let current = workspace.read_cursor(&key.2);
     // Socket acknowledgements carry exact counts; never replace them with an
     // estimate. A different intervening cursor outranks a delayed HTTP response.
     if current == Some(cursor) {
+        crate::realtime::activity_counts::mark_channel_read(
+            &mut shell.core,
+            &key.1,
+            &key.2,
+            cursor,
+        );
         return true;
     }
     if current != previous {
@@ -298,6 +320,7 @@ fn apply(shell: &mut ShellState, key: &Key, cursor: &str, unread: bool) {
             workspace.confirm_read(&key.2, cursor, previous.as_deref());
         }
     }
+    crate::realtime::activity_counts::mark_channel_read(&mut shell.core, &key.1, &key.2, cursor);
 }
 
 pub(crate) fn fixture(shell: &mut ShellState) {
@@ -423,16 +446,90 @@ mod tests {
             .unwrap();
         list.last_read = Some("50.0".into());
         list.unread_count = 7;
-        assert!(confirm(&mut shell, &key, "50.0", Some("100.0"), true));
+        assert!(confirm(&mut shell, &key, "50.0", Some("100.0"), 0, true));
         assert_eq!(
             shell.core.workspaces[&key.1].messages[&channel].unread_count,
             7
         );
-        assert!(!confirm(&mut shell, &key, "25.0", Some("100.0"), true));
+        assert!(!confirm(&mut shell, &key, "25.0", Some("100.0"), 0, true));
         assert_eq!(
             shell.core.workspaces[&key.1].read_cursor(&channel),
             Some("50.0")
         );
+    }
+
+    #[test]
+    fn explicit_backward_ack_only_reads_activity_at_or_before_its_cursor() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        let channel = shell.core.active_channel.clone().unwrap();
+        let key = key(&shell, &channel).unwrap();
+        shell.core.activity.ensure_scope(key.0, &key.1);
+        shell.core.activity.items.clear();
+        for ts in ["25.0", "75.0"] {
+            shell.core.activity.upsert(
+                serde_json::from_value(serde_json::json!({
+                    "key":ts,"feed_ts":ts,"is_unread":true,
+                    "item":{"type":"at_user","message":{"channel":channel,"ts":ts}}
+                }))
+                .unwrap(),
+            );
+        }
+        shell
+            .core
+            .workspaces
+            .get_mut(&key.1)
+            .unwrap()
+            .messages
+            .get_mut(&channel)
+            .unwrap()
+            .last_read = Some("100.0".into());
+        let revision = shell.core.workspaces[&key.1].read_revision(&channel);
+        assert!(confirm(
+            &mut shell,
+            &key,
+            "50.0",
+            Some("100.0"),
+            revision,
+            true
+        ));
+        assert_eq!(shell.core.activity.unread_count(), 1);
+        assert!(!confirm(&mut shell, &key, "90.0", Some("100.0"), 0, false));
+        assert!(
+            shell
+                .core
+                .activity
+                .items
+                .iter()
+                .find(|item| item.key == "75.0")
+                .unwrap()
+                .is_unread
+        );
+    }
+
+    #[test]
+    fn explicit_ack_rejects_an_intervening_cursor_aba() {
+        let mut shell = ShellState::fixture(MediaRegistry::default());
+        let channel = shell.core.active_channel.clone().unwrap();
+        let key = key(&shell, &channel).unwrap();
+        let workspace = shell.core.workspaces.get_mut(&key.1).unwrap();
+        workspace.mark_unread_locally(&channel, "100.0");
+        let revision = workspace.read_revision(&channel);
+        workspace.mark_unread_locally(&channel, "300.0");
+        workspace.mark_unread_locally(&channel, "100.0");
+        for unread in [false, true] {
+            assert!(!confirm(
+                &mut shell,
+                &key,
+                "200.0",
+                Some("100.0"),
+                revision,
+                unread
+            ));
+            assert_eq!(
+                shell.core.workspaces[&key.1].read_cursor(&channel),
+                Some("100.0")
+            );
+        }
     }
 
     #[test]

@@ -1,5 +1,8 @@
 //! Container state survives rendered bags and navigation, but never account ownership.
 use super::{Captured, Pending, Source, next_id};
+pub(crate) mod channel;
+pub(crate) mod channels;
+pub(crate) mod conversations;
 pub(crate) mod date;
 #[cfg(test)]
 mod date_tests;
@@ -48,12 +51,19 @@ pub(super) struct Entry {
     model: MessageInputs,
     revision: u64,
     controls: BTreeMap<InputKey, BlockElementMetadata>,
+    channel_choices: channels::Proofs,
 }
 pub(super) type Cache = BTreeMap<ContainerKey, Entry>;
 const MAX_CONTAINERS: usize = 256;
 const UNAVAILABLE: &str = "This app control is unavailable or has changed";
 
 fn candidate(shell: &ShellState, source: &Source) -> Result<Entry, &'static str> {
+    if let Some(reason) = channel::unavailable(shell, source) {
+        return Err(reason);
+    }
+    if let Some(reason) = conversations::unavailable(shell, source) {
+        return Err(reason);
+    }
     let message = source.message(shell).map_err(|_| UNAVAILABLE)?;
     let mut entry =
         if let Some(entry) = shell.message_buttons.inputs.get(&ContainerKey::new(source)) {
@@ -78,6 +88,7 @@ fn candidate(shell: &ShellState, source: &Source) -> Result<Entry, &'static str>
                 model,
                 revision: next_id(),
                 controls: BTreeMap::new(),
+                channel_choices: BTreeMap::new(),
             }
         };
     // Cache canonical eligibility without constructing action snapshots. Current
@@ -88,8 +99,18 @@ fn candidate(shell: &ShellState, source: &Source) -> Result<Entry, &'static str>
         .iter()
         .filter_map(|(key, field)| {
             let metadata = match &field.kind {
+                InputKind::MultiConversation { .. } => {
+                    source.conversations_metadata(shell, &key.block_id, &key.action_id)
+                }
+                InputKind::MultiChannel { .. } => {
+                    source.channels_metadata(shell, &key.block_id, &key.action_id)
+                }
+                InputKind::Channel => source.channel_metadata(shell, &key.block_id, &key.action_id),
                 InputKind::Conversation => {
                     source.conversation_metadata(shell, &key.block_id, &key.action_id)
+                }
+                InputKind::MultiUser { .. } => {
+                    source.users_metadata(shell, &key.block_id, &key.action_id)
                 }
                 InputKind::User => source.user_metadata(shell, &key.block_id, &key.action_id),
                 InputKind::Time { .. } => {
@@ -109,6 +130,14 @@ fn candidate(shell: &ShellState, source: &Source) -> Result<Entry, &'static str>
         .collect();
     Ok(entry)
 }
+pub(super) fn supported(shell: &ShellState, source: &Source) -> bool {
+    shell
+        .message_buttons
+        .inputs
+        .get(&ContainerKey::new(source))
+        .is_some_and(|entry| entry.source.same_action_revision(source) && source.current(shell))
+}
+
 pub(crate) fn ensure(mut state: Signal<ShellState>, source: Source) {
     let entry = {
         let shell = state.peek();
@@ -123,11 +152,25 @@ pub(crate) fn ensure(mut state: Signal<ShellState>, source: Source) {
         candidate(&shell, &source)
     };
     if let Ok(entry) = entry {
-        state
-            .write()
-            .message_buttons
-            .inputs
-            .insert(ContainerKey::new(&source), entry);
+        // Stateless eligibility belongs to the mounted control. Keeping it
+        // here would grow the draft cache as unrelated messages are viewed.
+        if !entry.model.fields.is_empty()
+            || state
+                .peek()
+                .message_buttons
+                .inputs
+                .contains_key(&ContainerKey::new(&source))
+        {
+            retain_entry(&mut state.write(), &source, entry);
+        }
+    }
+}
+fn retain_entry(shell: &mut ShellState, source: &Source, entry: Entry) {
+    let key = ContainerKey::new(source);
+    if entry.model.fields.is_empty() {
+        shell.message_buttons.inputs.remove(&key);
+    } else {
+        shell.message_buttons.inputs.insert(key, entry);
     }
 }
 pub(super) fn revision(shell: &ShellState, source: &Source) -> Option<u64> {
@@ -246,13 +289,23 @@ pub(crate) fn presentation(
     view
 }
 pub(crate) fn change(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     source: Source,
     metadata: BlockElementMetadata,
     selected: Option<String>,
     mounted: display::Mounted,
 ) {
     ensure(state, source.clone());
+    change_with_choice(state, source, metadata, selected, mounted, None);
+}
+pub(super) fn change_with_choice(
+    mut state: Signal<ShellState>,
+    source: Source,
+    metadata: BlockElementMetadata,
+    selected: Option<String>,
+    mounted: display::Mounted,
+    channel_choice: Option<user::directory::Choice>,
+) {
     let captured = {
         let mut shell = state.write();
         if shell.overlay.is_some() || !date::enabled_or_choice(&shell, &source, &metadata) {
@@ -263,6 +316,17 @@ pub(crate) fn change(
             return;
         };
         let captured = match &metadata.source {
+            super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
+                if kind == "channels_select" =>
+            {
+                source.capture_channel(
+                    &shell,
+                    &key.block_id,
+                    &key.action_id,
+                    selected.as_deref(),
+                    channel_choice.as_ref(),
+                )
+            }
             super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind }
                 if kind == "conversations_select" =>
             {
@@ -335,7 +399,42 @@ pub(super) fn prepare(
     }
     let current = captured.revalidate(shell).map_err(|_| UNAVAILABLE)?;
     let mut entry = candidate(shell, captured.source())?;
-    if let Some((selected, retained)) = captured.selected_options() {
+    if let Some((selected, proofs)) = captured.selected_conversations() {
+        let key = field_key(captured.metadata()).ok_or(UNAVAILABLE)?;
+        entry
+            .model
+            .commit_conversations(&key, &selected)
+            .map_err(|_| UNAVAILABLE)?;
+        for choice in proofs {
+            entry
+                .channel_choices
+                .insert(choice.id.clone(), choice.clone());
+        }
+        let retained = channels::retained_ids(&entry.model);
+        entry.channel_choices.retain(|id, _| retained.contains(id));
+        entry.revision = next_id();
+    } else if let Some((selected, proofs)) = captured.selected_channels() {
+        let key = field_key(captured.metadata()).ok_or(UNAVAILABLE)?;
+        entry
+            .model
+            .commit_channels(&key, &selected)
+            .map_err(|_| UNAVAILABLE)?;
+        for choice in proofs {
+            entry
+                .channel_choices
+                .insert(choice.id.clone(), choice.clone());
+        }
+        let retained = channels::retained_ids(&entry.model);
+        entry.channel_choices.retain(|id, _| retained.contains(id));
+        entry.revision = next_id();
+    } else if let Some(selected) = captured.selected_users() {
+        let key = field_key(captured.metadata()).ok_or(UNAVAILABLE)?;
+        entry
+            .model
+            .commit_users(&key, &selected)
+            .map_err(|_| UNAVAILABLE)?;
+        entry.revision = next_id();
+    } else if let Some((selected, retained)) = captured.selected_options() {
         let key = field_key(captured.metadata()).ok_or(UNAVAILABLE)?;
         entry
             .model
@@ -373,6 +472,21 @@ pub(super) fn prepare(
             return Err(UNAVAILABLE);
         }
     }
+    if let Some(selected) = captured.selected_users() {
+        if !captured.commit_display_users(&selected) {
+            return Err(UNAVAILABLE);
+        }
+    }
+    if let Some((selected, _)) = captured.selected_channels() {
+        if !captured.commit_display_users(&selected) {
+            return Err(UNAVAILABLE);
+        }
+    }
+    if let Some((selected, _)) = captured.selected_conversations() {
+        if !captured.commit_display_users(&selected) {
+            return Err(UNAVAILABLE);
+        }
+    }
     // Stateless buttons need no retained cache entry, but still send initialized {}.
     if !entry.model.fields.is_empty() {
         shell
@@ -407,6 +521,8 @@ pub(crate) fn display_selected(
         field,
         if matches!(field.kind, InputKind::Date) {
             entry.model.saved_date(&key)
+        } else if matches!(field.kind, InputKind::Channel) {
+            entry.model.saved_channel(&key)
         } else if matches!(field.kind, InputKind::Conversation) {
             entry.model.saved_conversation(&key)
         } else if matches!(field.kind, InputKind::User) {

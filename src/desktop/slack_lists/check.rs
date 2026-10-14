@@ -8,6 +8,7 @@ mod creation;
 mod date_edit;
 mod date_views;
 pub(crate) mod delete;
+mod duplicate;
 mod editor;
 mod entity_edit;
 mod horizontal;
@@ -233,8 +234,9 @@ async fn run(
     let channel_edit_checks = channel_edit::run(state, desktop).await?;
     let link_edit_checks = link_edit::run(state, desktop).await?;
     let creation_checks = creation::run(state, desktop).await?;
+    let duplicate_checks = duplicate::run(state, desktop).await?;
     Ok(
-        json!({"ok":true,"boundedRows":true,"semanticGrid":true,"keyboardHelp":keyboard_help,"horizontal":horizontal,"keyboardMovement":true,"richCellPresentation":rich,"emptyPrimaryFallback":true,"cellControlsReturnFocus":true,"hierarchyExpansion":true,"hierarchyKeyboard":true,"collapseRecoversParentFocus":true,"expansionSurvivesRefresh":true,"localPaging":true,"pagingFocusRecovered":true,"reorderPreservedFocus":true,"deletedRowRecoveredFocus":true,"refreshPreservedRows":true,"falseZeroAndFallback":true,"keyboardCheckboxEdit":true,"duplicateLocked":true,"pendingRestoresCanonicalCheckbox":true,"uncertainReadbackWithoutReplay":true,"readOnlyIncompleteAndErrorRecovery":true,"cellEditors":editor_checks,"savedViews":saved_view_checks,"dateViews":date_view_checks,"boardViews":board_view_checks,"recordDetails":record_detail_checks,"dateEdits":date_edit_checks,"userEdits":user_edit_checks,"channelEdits":channel_edit_checks,"linkEdits":link_edit_checks,"creation":creation_checks,"preparedWrites":super::fixture::attempt_count(&state.peek()),"captures":{"rich":rich_capture,"references":references_capture,"hierarchy":hierarchy_capture},"initial":initial,"layout":layout}),
+        json!({"ok":true,"boundedRows":true,"semanticGrid":true,"keyboardHelp":keyboard_help,"horizontal":horizontal,"keyboardMovement":true,"richCellPresentation":rich,"emptyPrimaryFallback":true,"cellControlsReturnFocus":true,"hierarchyExpansion":true,"hierarchyKeyboard":true,"collapseRecoversParentFocus":true,"expansionSurvivesRefresh":true,"localPaging":true,"pagingFocusRecovered":true,"reorderPreservedFocus":true,"deletedRowRecoveredFocus":true,"refreshPreservedRows":true,"falseZeroAndFallback":true,"keyboardCheckboxEdit":true,"duplicateLocked":true,"pendingRestoresCanonicalCheckbox":true,"uncertainReadbackWithoutReplay":true,"readOnlyIncompleteAndErrorRecovery":true,"cellEditors":editor_checks,"savedViews":saved_view_checks,"dateViews":date_view_checks,"boardViews":board_view_checks,"recordDetails":record_detail_checks,"dateEdits":date_edit_checks,"userEdits":user_edit_checks,"channelEdits":channel_edit_checks,"linkEdits":link_edit_checks,"creation":creation_checks,"duplication":duplicate_checks,"preparedWrites":super::fixture::attempt_count(&state.peek()),"captures":{"rich":rich_capture,"references":references_capture,"hierarchy":hierarchy_capture},"initial":initial,"layout":layout}),
     )
 }
 
@@ -283,12 +285,10 @@ async fn capture_hierarchy(
     capture_stage(desktop, "hierarchy").await
 }
 
-#[cfg(target_os = "macos")]
 async fn capture_stage(
     desktop: &dioxus::desktop::DesktopContext,
     stage: &str,
 ) -> Result<Option<String>, String> {
-    use dioxus::desktop::wry::WebViewExtMacOS;
     let Some(directory) = std::env::var_os("SUPER_PLATINUM_SLACK_LIST_CAPTURE_DIR") else {
         return Ok(None);
     };
@@ -298,40 +298,12 @@ async fn capture_stage(
     }
     checked(desktop,r#"(()=>{window.__listCapturePaint=false;requestAnimationFrame(()=>requestAnimationFrame(()=>{window.__listCapturePaint=true;}));return {ok:true};})()"#).await?;
     wait_dom(desktop, "({ok:window.__listCapturePaint===true})").await?;
-    let window_number = desktop.webview.ns_window().windowNumber().to_string();
     let path = std::path::PathBuf::from(directory).join(format!("{fixture}-{stage}.png"));
-    tokio::task::spawn_blocking(move || {
-        use std::io::Read;
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-        }
-        let status = std::process::Command::new("screencapture")
-            .args(["-x", "-o", "-l", &window_number])
-            .arg(&path)
-            .status()
-            .map_err(|error| error.to_string())?;
-        if !status.success() {
-            return Err(format!("List capture failed: {status}"));
-        }
-        let mut signature = [0u8; 8];
-        std::fs::File::open(&path)
-            .and_then(|mut file| file.read_exact(&mut signature))
-            .map_err(|error| error.to_string())?;
-        if signature != *b"\x89PNG\r\n\x1a\n" {
-            return Err("List capture is not a PNG".into());
-        }
-        Ok(Some(path.to_string_lossy().into_owned()))
-    })
-    .await
-    .map_err(|error| error.to_string())?
-}
-
-#[cfg(not(target_os = "macos"))]
-async fn capture_stage(
-    _: &dioxus::desktop::DesktopContext,
-    _: &str,
-) -> Result<Option<String>, String> {
-    Ok(None)
+    // Reuse the bounded, DPI-aware native capture rather than a platform-only
+    // subprocess. Stage captures must be real PNGs on every supported host.
+    let (path, _, _) =
+        crate::agent::capture::window(Some(path.to_string_lossy().into_owned()), desktop).await?;
+    Ok(Some(path.to_string_lossy().into_owned()))
 }
 
 fn assert_attempts(state: Signal<ShellState>, expected: usize) -> Result<(), String> {

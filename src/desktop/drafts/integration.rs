@@ -1,7 +1,7 @@
 //! Route managed local edits immediately; poll only cheap persistence metadata.
 use super::{
     Account, Fault, View,
-    checkpoint::{Editor, Queue, Snapshot},
+    checkpoint::{Editor, Queue, Signature},
 };
 use crate::state::ShellState;
 use std::{
@@ -26,32 +26,6 @@ impl Default for Desktop {
             sending: Default::default(),
             scope: None,
             signatures: Default::default(),
-        }
-    }
-}
-
-#[derive(PartialEq, Eq)]
-struct Signature {
-    serial: u64,
-    revision: Option<u64>,
-    error: Option<Fault>,
-    unsaved: bool,
-    running: bool,
-    blocked: Option<String>,
-}
-impl From<&Snapshot> for Signature {
-    fn from(snapshot: &Snapshot) -> Self {
-        Self {
-            serial: snapshot.serial,
-            revision: snapshot.view.stored.as_ref().map(|stored| stored.revision),
-            error: snapshot.error,
-            unsaved: snapshot.unsaved,
-            running: snapshot.running,
-            blocked: snapshot
-                .view
-                .blocked
-                .as_ref()
-                .map(|blocked| blocked.token.clone()),
         }
     }
 }
@@ -252,7 +226,11 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
     {
         return false;
     }
-    let snapshots = shell.draft_writes.writers.snapshots(&account, epoch);
+    let snapshots = shell.draft_writes.writers.changed_snapshots(
+        &account,
+        epoch,
+        &shell.draft_writes.signatures,
+    );
     let mut changed = false;
     for (key, snapshot) in snapshots {
         if snapshot.view.stored.is_none()

@@ -1534,3 +1534,180 @@ and uncertain-write recovery without Transport. Both pass in
 `tmp/undo-cache-native-checks-final.log`; restored and uncertain PNGs were read.
 Integrated gates: desktop 737 passed/4 ignored, independent core 895 passed/3
 ignored, formatting/diff checks, signed build, and deep/strict signature check.
+
+## 2026-10-13 Windows source recovery: Duplicate item and continuation audit
+
+The exact previously documented public assets were recovered without a Slack
+session or authenticated requests. The unauthenticated `app.slack.com` page
+identified the `https://a.slack-edge.com/bv1-13/` asset base. Downloads were
+decompressed into the existing `tmp/sb/js/` evidence paths; the earlier Unicode
+character offsets match. These are source receipts, not native or live mutation
+receipts. SHA-256 values below describe the decompressed files.
+
+| Alias | Public asset | SHA-256 |
+| --- | --- | --- |
+| B | [shared boot async](https://a.slack-edge.com/bv1-13/gantry-v2-async-gantry-v2-shared-boot-async.56e901654548b2fe.min.js) | `1681ecc18bbfead52efb391b1ccfb3e15f1b4a1093a8475d847b221ce196c537` |
+| S | [shared](https://a.slack-edge.com/bv1-13/gantry-v2-shared.0b81595876785d7a.min.js) | `f085df09fb4f938caf425ea66fb0244c8f92a8012eea8eb298e4f629b377dbf7` |
+| V | [vendors async](https://a.slack-edge.com/bv1-13/gantry-v2-async-gantry-v2-vendors-async.daa946d0953564d3.min.js) | `8904e661fc5858d74b7e2f11400b2f1f0f0f746cf188a74fa3bc8db4de7a1362` |
+
+### Duplicate ordering and request
+
+B `DuplicateItemMenuItem` at 17931231 invokes the supplied duplicate callback
+with the record ID and closes the menu. Both the board callback (the
+`duplicatedRecordId` argument at 17963493) and grid callback (17998557) obtain
+`iLfW.x0(records, viewId)`, find the selected record and the next record in
+that order, and call the ordinary create thunk with `listId`, `viewId`,
+`position: +E6Z.AO(current, next, records, viewId, listId) ?? undefined`, and
+`duplicatedRecordId`. Neither caller sends copied fields, initial fields, a
+new client record ID, or `parentRecordId`.
+
+S `iLfW.sortRecordsByDefault` at 4614478 orders all supplied decoded records by
+effective position, then `dateCreated`; it is not the current filtered, grouped,
+explicitly sorted, or locally paged presentation. View-position keys are matched
+case-insensitively and override the base position only when truthy. Comparison
+uses JavaScript relational operators. Mixed numeric/string or malformed values
+therefore require an explicit native support boundary rather than silently
+substituting the native display's total ordering.
+
+B `+E6Z.calculateFractionalRecordPosition` at 2855116 uses the same view-position
+map. For each neighbor it chooses its truthy view position, otherwise its truthy
+base position converted to a string, otherwise null. Both null returns null.
+Otherwise S `Ommm.generateKeyBetween`, exported as `TU` at 4545426, generates a
+key using a ten-character decimal integer and optional base-62 fraction with
+alphabet `0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz`.
+Separated integer bounds use their floored midpoint; adjacent or equal integer
+bounds use fractional midpoint logic. A missing upper bound increments the lower
+integer; a missing lower bound uses the upper integer or its predecessor,
+depending on whether it has a fractional suffix. The helper checks ordering,
+integer range/shape and fractional trailing zero rules. Its null/null default
+is not used by `AO`, which returns null first. A differential oracle can execute
+the recovered helper; arbitrary fractional-key algorithms are not equivalent.
+
+B `t0Mq` at 7276635 forwards the duplicate ID as `duplicated_record_id` through
+the existing `lists.records.create` wrapper, along with the computed position,
+`updated_timestamp`, and `_x_reason=create-record`. The selected view still
+participates in the existing Completed-items initial checkbox seed, but `view_id`
+is not forwarded. The HLC timestamp is not a proven deduplication key.
+
+These callers do not establish whether the server copies a source item's parent,
+subtasks, comments, attachments, reminders, or other server metadata. Do not
+invent those semantics or claim them verified. Returned record identity and
+metadata remain authoritative, followed by canonical readback; a duplicate must
+not be mistaken for its source or an already loaded record. Source and neighbor
+changes during preflight must invalidate stale position intent. A returned row
+may be hidden or repositioned by the selected view's filter/sort. Unknown
+outcomes must retain the existing create lock and must not automatically replay
+or identify a duplicate by its title, copied fields, or a row-count difference.
+
+### Continuation: no additional request contract recovered
+
+Across the recovered B/S/V assets, B `l2X+` at 7286616 is the only importer of
+V `84hR`. Its request supplies `listId`, `reason`, `includeSubtasks: true`,
+`archived`, and `includeSuggested`; it supplies neither cursor nor limit.
+V `84hR` at 9785800 is a plain generated `lists.records.list` fetcher. S `uGgu`
+at 1594178 forwards one API call and returns one response, without pagination.
+
+The records thunk's `next_cursor` use at B 7287855 only sets
+`recordsLoaded: !response_metadata?.next_cursor`. The records replacement reducer
+at B 7236045 stores that boolean, not the cursor. The nearby cursor storage at
+B 7237541 and selector at 7261328 belong to List history versions, not records.
+No next-page records call was found in these assets. This is a bounded negative
+source audit, not proof that all Slack versions or uncaptured chunks lack one.
+Keep the explicit incomplete-result state and require an actual verified
+next-page request before adding server continuation. Local 50-row paging is
+independent of this unresolved server contract.
+
+## Metadata timestamp display (2026-10-14 recovered-source verification)
+
+This display contract applies to `created_time` and `last_edited_time`. It is
+separate from calendar-date editing and from the Unix-seconds policy used by
+saved-view filters. Formatting must never rewrite the raw cells or change
+their filtering, sorting, edit eligibility, or mutation requests.
+
+### Source chain and units
+
+- B `FieldRenderer` at 18176701 passes CreatedTime/LastEditedTime values to
+  `eoW4.Y`. `eoW4` at 18144165 renders `TimestampToken` with `relative: true`
+  and `alwaysAgo: true` (the default), plus a calendar icon. This is a relative
+  label, not a raw epoch or an always-absolute date.
+- B `JO00` at 19675972 parses the value with `nL6P`, reads the `time24` preference,
+  and refreshes relative labels every 60 seconds. Its tooltip calls `9Y08`
+  at 3001785 with seconds included, unless a different caller requests a full
+  timestamp. Ordinary List TimestampToken does not request that alternate mode.
+- S `nL6P` at 810358 uses its Date fast path: numeric values **greater than or
+  equal to 10,000,000,000 are milliseconds**; lower values are multiplied by
+  1,000 as seconds. Numeric strings use `parseFloat`. Date truncates fractional
+  milliseconds toward zero and rejects nonfinite/out-of-TimeClip values. Do
+  not replace this display threshold with the seconds-only filter rule.
+- S `iLfW` at 4610722 decodes `timestamp[0]`; its raw record creation metadata
+  stays in `dateCreated`. The existing VBDB projection supplies canonical
+  `created_time` from `record.date_created` after spreading decoded fields.
+  A List HLC `updated_timestamp` is not a substitute for either timestamp cell.
+- FieldRenderer's empty predicate hides numeric zero and other falsy decoded
+  values. The string `"0"` is truthy and therefore reaches timestamp formatting;
+  it must not be conflated with numeric zero.
+
+### Relative labels and tooltip calendar
+
+S `CFnj` at 813840 uses `x28g` / `xAlA` at 783287 / 780110 to obtain an integer
+seconds difference (Dayjs truncation toward zero). It takes the absolute
+difference for the List caller's `alwaysAgo: true`, so even future metadata
+uses the past/“ago” wording. Its boundaries are 45/90 seconds, 45/90 minutes,
+24 hours, 2/30/365 days, and 1.5 years. Counts use JavaScript `Math.round`;
+months use 365/12 days and years use 365 days. In particular, the label just
+below 45 minutes can read “45 minutes ago”, and just below 24 hours can read
+“24 hours ago”. S `BIeE` at 762478 provides the exact past templates for the
+same twelve workspace locales as native List number formatting.
+
+The tooltip chain is S `fUG7` 809226, `GuNR` 803534, `Nmg4` 808314, `GS5V`
+809671, and `NIxh` 816051. It resolves the timestamp in the local calendar,
+uses Yesterday/Today/Tomorrow when applicable, otherwise the locale's abbreviated
+month and ordinal/date pattern. It omits the year for the current local year
+and for a previous-year date no more than 31 elapsed days old; a future year
+remains explicit. Clock formatting honors `time24` only for locales whose
+captured clock configuration offers a 12-hour alternative; other locales keep
+their configured clock. French and Brazilian Portuguese omit zero-valued
+seconds/minutes according to their captured options. Historical timestamps
+must use their own local UTC offset, not today's offset, across DST changes.
+
+Native tooltip surrounding copy uses the app's English source join
+`{date} at {time}`. Locale date/time tokens and relative labels are source-backed;
+this is not a claim that the native app implements Slack's complete translated
+message catalog.
+
+### Native bounds and oracle provenance
+
+`slack_lists::timestamps::project` is a read-only display projection with an
+explicit `TimestampContext` (sampled `DateContext`, locale, and time24).
+Unsupported kinds return no timestamp projection. Missing values render empty;
+malformed identities, conflicting typed members, multiple timestamps, nonfinite
+values, and unsupported calendar ranges render an explicit unsupported value
+instead of a misleading epoch fallback. Numeric-string support is bounded to
+128 characters and a whole numeric spelling, rather than adopting JavaScript's
+trailing-garbage `parseFloat` coercion. Unknown locales use the existing native
+English fallback. Existing calendar-only date editing and timestamp read-only
+eligibility are preserved.
+
+The 72 cases in
+`crates/super-platinum-core/src/slack_lists/timestamps/source-oracle.json` were
+generated by executing the recovered B `9Y08`, S date/relative helpers, and P
+Dayjs plus locale modules in Node, with UTC and Date.now frozen at
+2026-10-13T12:00:00Z. The only relevant presentation stub preserves the source's
+English `{date} at {time}` join; the locale data, Dayjs formatting, relative
+buckets, and tooltip helper implementations are the captured functions. Cases
+cover all twelve locales, both time24 settings, a same-day timestamp, an
+ordinal/month date, and a previous-year date. The ignored reproducibility
+script is `tmp/sb/timestamp-source-oracle.js`. Additional focused Rust tests
+cover unit thresholds, TimeClip, relative boundaries and future dates, calendar
+offset/day/year changes, malformed values, canonical creation metadata, and
+read-only/raw-state preservation.
+
+These public static assets were recovered without Slack session credentials.
+Hashes below are SHA-256 of the decompressed UTF-8 asset bytes; offsets above
+remain Python `Path.read_text()` character offsets.
+
+| Asset | Exact public URL | Decompressed SHA-256 |
+| --- | --- | --- |
+| S | [gantry-v2-shared.0b81595876785d7a.min.js](https://a.slack-edge.com/bv1-13/gantry-v2-shared.0b81595876785d7a.min.js) | `f085df09fb4f938caf425ea66fb0244c8f92a8012eea8eb298e4f629b377dbf7` |
+| B | [gantry-v2-async-gantry-v2-shared-boot-async.56e901654548b2fe.min.js](https://a.slack-edge.com/bv1-13/gantry-v2-async-gantry-v2-shared-boot-async.56e901654548b2fe.min.js) | `1681ecc18bbfead52efb391b1ccfb3e15f1b4a1093a8475d847b221ce196c537` |
+| P | [gantry-v2-vendors.522a064003a98b05.min.js](https://a.slack-edge.com/bv1-13/gantry-v2-vendors.522a064003a98b05.min.js) | `819ac26a4c6cd6d2122cb6edb1731a0f99d7070c16971579f52529d1030ae7b3` |

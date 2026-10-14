@@ -8,8 +8,8 @@ use super_platinum_core::{
     slack::models::{Channel, User},
     state::Workspace,
 };
-#[derive(Clone, Default)]
-pub(super) struct Filter {
+#[derive(Clone, Default, PartialEq, Eq)]
+pub(crate) struct Filter {
     pub spec: ConversationFilter,
     pub enterprise_id: Option<String>,
     pub default_channels: bool,
@@ -19,6 +19,31 @@ impl Filter {
         !(kind == "mpim" && self.default_channels) && self.spec.allows(kind)
     }
 }
+/// Shared workspace policy; callers keep their own surface ownership tickets.
+pub(crate) fn workspace_filter(shell: &ShellState, team: &str, raw: &Value) -> Option<Filter> {
+    let spec = ConversationFilter::parse(raw).ok()?;
+    let enterprise_id = shell
+        .core
+        .session
+        .as_ref()
+        .and_then(|s| s.workspaces.get(team))
+        .and_then(|w| w.enterprise_id.clone());
+    let default_channels = spec.include.is_none()
+        && raw
+            .get("filter")
+            .and_then(Value::as_object)
+            .is_some_and(|v| !v.is_empty());
+    Some(Filter {
+        spec,
+        enterprise_id,
+        default_channels,
+    })
+}
+pub(crate) fn unavailable(filter: &Filter) -> Option<&'static str> {
+    (filter.only_from_team_id.is_some() && filter.enterprise_id.is_some()).then_some(
+        "Workspace-restricted conversation selection is unavailable for this Enterprise Grid account.")
+}
+
 impl std::ops::Deref for Filter {
     type Target = ConversationFilter;
     fn deref(&self) -> &Self::Target {
@@ -26,7 +51,7 @@ impl std::ops::Deref for Filter {
     }
 }
 
-pub(super) fn channel_label(workspace: &Workspace, channel: &Channel) -> String {
+pub(crate) fn channel_label(workspace: &Workspace, channel: &Channel) -> String {
     if channel.is_im {
         return channel
             .user
@@ -116,7 +141,7 @@ fn effective_channel<'a>(w: &'a Workspace, c: &'a Channel) -> &'a Channel {
         .filter(|old| !newer(c.updated, old.updated))
         .unwrap_or(c)
 }
-pub(super) fn choice_current(w: &Workspace, f: &Filter, choice: &Choice) -> bool {
+pub(crate) fn choice_current(w: &Workspace, f: &Filter, choice: &Choice) -> bool {
     let Some(raw) = &choice.canonical else {
         return false;
     };
@@ -130,7 +155,7 @@ pub(super) fn choice_current(w: &Workspace, f: &Filter, choice: &Choice) -> bool
             .is_some_and(|c| channel_eligible(f, effective_channel(w, &c)))
     }
 }
-pub(super) fn candidates<'a>(
+pub(crate) fn candidates<'a>(
     w: &Workspace,
     f: &Filter,
     users: impl Iterator<Item = (&'a User, bool)>,
@@ -201,7 +226,7 @@ pub(super) fn candidates<'a>(
     }
     choices.into_iter().map(|(_, _, c)| c).collect()
 }
-pub(super) fn cached(shell: &ShellState, source: &Source, f: &Filter, query: &str) -> Vec<Choice> {
+pub(crate) fn cached(shell: &ShellState, source: &Source, f: &Filter, query: &str) -> Vec<Choice> {
     shell
         .core
         .workspaces

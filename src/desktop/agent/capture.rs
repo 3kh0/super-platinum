@@ -8,7 +8,7 @@ use tokio::{
 
 const CAPTURE_TIMEOUT: Duration = Duration::from_secs(10);
 
-pub(super) async fn window(
+pub(crate) async fn window(
     path: Option<String>,
     desktop: &dioxus::desktop::DesktopContext,
 ) -> Result<(PathBuf, u32, u32), String> {
@@ -44,16 +44,7 @@ pub(super) async fn window(
     }
     #[cfg(target_os = "windows")]
     {
-        let mut command = Command::new("powershell.exe");
-        command
-            .args([
-                "-NoProfile",
-                "-NonInteractive",
-                "-Command",
-                WINDOWS_SCRIPT,
-                &native_id,
-            ])
-            .arg(&path);
+        let mut command = windows_command(WINDOWS_SCRIPT, &native_id, &path);
         run(&mut command, deadline).await?;
     }
     #[cfg(target_os = "linux")]
@@ -173,10 +164,23 @@ fn dimensions(path: &std::path::Path) -> Result<(u32, u32), String> {
 }
 
 #[cfg(target_os = "windows")]
-const WINDOWS_SCRIPT: &str = r#"Add-Type @'
+fn windows_command(script: &str, native_id: &str, path: &std::path::Path) -> Command {
+    let mut command = Command::new("powershell.exe");
+    // PowerShell -Command treats trailing arguments as source code. Keep the
+    // handle and arbitrary output path as child-only data, never shell syntax.
+    command
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW
+        .args(["-NoProfile", "-NonInteractive", "-Command", script])
+        .env("SUPER_PLATINUM_CAPTURE_HWND", native_id)
+        .env("SUPER_PLATINUM_CAPTURE_PATH", path);
+    command
+}
+
+#[cfg(target_os = "windows")]
+const WINDOWS_SCRIPT: &str = r#"$ErrorActionPreference='Stop'; Add-Type @'
 using System; using System.Runtime.InteropServices;
-public class SuperPlatinumCapture { [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L,T,R,B; } [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r); }
-'@; $r=New-Object SuperPlatinumCapture+RECT; [SuperPlatinumCapture]::GetWindowRect([IntPtr]::new([int64]$args[0]),[ref]$r)|Out-Null; Add-Type -AssemblyName System.Drawing; $b=New-Object System.Drawing.Bitmap ($r.R-$r.L),($r.B-$r.T); $g=[System.Drawing.Graphics]::FromImage($b); $g.CopyFromScreen($r.L,$r.T,0,0,$b.Size); $b.Save($args[1],[System.Drawing.Imaging.ImageFormat]::Png); $g.Dispose(); $b.Dispose()"#;
+public class SuperPlatinumCapture { [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L,T,R,B; } [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r); [DllImport("user32.dll")] public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context); }
+'@; $priorDpi=[SuperPlatinumCapture]::SetThreadDpiAwarenessContext([IntPtr]::new(-4)); $r=New-Object SuperPlatinumCapture+RECT; if (-not [SuperPlatinumCapture]::GetWindowRect([IntPtr]::new([int64]$env:SUPER_PLATINUM_CAPTURE_HWND),[ref]$r)) { throw 'Cannot locate capture window' }; Add-Type -AssemblyName System.Drawing; $b=New-Object System.Drawing.Bitmap ($r.R-$r.L),($r.B-$r.T); try { $g=[System.Drawing.Graphics]::FromImage($b); try { $g.CopyFromScreen($r.L,$r.T,0,0,$b.Size); $b.Save($env:SUPER_PLATINUM_CAPTURE_PATH,[System.Drawing.Imaging.ImageFormat]::Png) } finally { $g.Dispose() } } finally { $b.Dispose(); [SuperPlatinumCapture]::SetThreadDpiAwarenessContext($priorDpi)|Out-Null }"#;
 
 #[cfg(test)]
 mod tests;

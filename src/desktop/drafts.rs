@@ -164,6 +164,30 @@ fn local_snapshot(key: &DraftKey, local: &LocalDraft) -> Result<Option<Snapshot>
         .map(Some)
         .map_err(|_| Fault::Unsupported)
 }
+/// Reuse the exact supported representation already owned by this draft. A
+/// caret-only edit must not erase explicit destination metadata or turn an
+/// unchanged empty remote snapshot into a deletion. Unknown raw shapes stay
+/// opaque; they never authorize a fallback through the local text encoder.
+fn retained_snapshot(
+    key: &DraftKey,
+    local: &LocalDraft,
+    retained: Option<&Snapshot>,
+) -> Result<Option<Snapshot>, Fault> {
+    let Some(raw) = retained else {
+        return local_snapshot(key, local);
+    };
+    if !local.attachments.is_empty() {
+        return Err(Fault::Unsupported);
+    }
+    let projection = codec::decode(key, raw).map_err(|_| Fault::Unsupported)?;
+    if !projection.composer().text.is_empty() && local.composer.text.is_empty() {
+        return Ok(None);
+    }
+    projection
+        .snapshot_for(&local.composer)
+        .map(Some)
+        .map_err(|_| Fault::Unsupported)
+}
 fn same_local(a: &LocalDraft, b: &LocalDraft) -> bool {
     matches!((serde_json::to_value(a), serde_json::to_value(b)), (Ok(a), Ok(b)) if a == b)
 }
@@ -213,13 +237,14 @@ impl Owner {
         if !same_local(&view.local, &local) {
             return Err(Fault::Stale);
         }
-        let snapshot = local_snapshot(&self.scope.key, &local)?;
         let state = if let Some(remote) = remote {
+            let snapshot = retained_snapshot(&self.scope.key, &local, Some(&remote.snapshot))?;
             if snapshot.as_ref() != Some(&remote.snapshot) {
                 return Err(Fault::Unsupported);
             }
             DraftSync::adopt_remote(&self.scope, remote).map_err(|_| Fault::Unsupported)?
         } else {
+            let snapshot = local_snapshot(&self.scope.key, &local)?;
             let mut state = DraftSync::new(self.scope.clone());
             state.edit(&self.scope, snapshot);
             state
@@ -231,12 +256,18 @@ impl Owner {
     pub async fn checkpoint(&self, expected: u64, local: LocalDraft) -> Result<Stored, Fault> {
         let _guard = self.gate.lock().await;
         let mut stored = self.current().await?.ready(expected)?;
-        let snapshot = local_snapshot(&self.scope.key, &local)?;
+        let snapshot = retained_snapshot(&self.scope.key, &local, stored.state.desired())?;
         stored.state.edit(&self.scope, snapshot);
         self.save(Some(expected), local, stored.state).await
     }
     pub async fn clear(&self, expected: u64) -> Result<Stored, Fault> {
-        self.checkpoint(expected, LocalDraft::default()).await
+        let _guard = self.gate.lock().await;
+        let mut stored = self.current().await?.ready(expected)?;
+        // Explicit clear is intent, including when an adopted raw snapshot was
+        // already empty. Ordinary unchanged checkpoints preserve that snapshot.
+        stored.state.edit(&self.scope, None);
+        self.save(Some(expected), LocalDraft::default(), stored.state)
+            .await
     }
 }
 
@@ -245,8 +276,10 @@ mod control;
 mod dispatch;
 pub(crate) mod integration;
 pub(crate) mod network;
+pub(crate) mod observation;
 pub(crate) mod recovery;
 pub(crate) mod rejected_fixture;
+pub(crate) mod rejected_thread_fixture;
 mod release;
 pub(crate) mod send;
 pub(crate) mod session;
@@ -258,5 +291,7 @@ use dispatch::Outcome;
 mod control_tests;
 #[cfg(test)]
 mod lifecycle_tests;
+#[cfg(test)]
+mod projection_tests;
 #[cfg(test)]
 mod tests;

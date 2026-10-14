@@ -21,7 +21,11 @@ pub(crate) struct Fixture {
 }
 
 pub(crate) fn enabled() -> bool {
-    super::conversation_fixture::enabled()
+    super::multi_conversation_fixture::enabled()
+        || super::multi_channel_fixture::enabled()
+        || super::channel_fixture::enabled()
+        || super::conversation_fixture::enabled()
+        || super::multi_user_fixture::enabled()
         || std::env::var("SUPER_PLATINUM_MESSAGE_USER_CHECK").as_deref() == Ok("1")
             && matches!(
                 std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
@@ -185,7 +189,15 @@ pub(crate) fn dispatch(mut state: Signal<ShellState>, captured: Captured) -> boo
         && actions.as_array().is_some_and(|actions| actions.len() == 1)
         && matches!(
             actions[0]["type"].as_str(),
-            Some("button" | "users_select" | "conversations_select")
+            Some(
+                "button"
+                    | "users_select"
+                    | "multi_users_select"
+                    | "multi_channels_select"
+                    | "multi_conversations_select"
+                    | "conversations_select"
+                    | "channels_select"
+            )
         )
         && actions[0]["block_id"].as_str() == captured.metadata().block_id.as_deref()
         && actions[0]["action_id"].as_str() == captured.metadata().action_id.as_deref()
@@ -298,4 +310,32 @@ pub(crate) fn change_initial(mut state: Signal<ShellState>) {
     message.blocks[1]["accessory"]["initial_user"] = json!("U00000004");
     reproject(&mut shell);
     super::poll(&mut shell);
+}
+
+/// Exact-gated synthetic ambiguous ACK exercises the production no-replay state.
+pub(crate) fn complete_unknown(mut state: Signal<ShellState>) {
+    if !super::multi_channel_fixture::enabled() && !super::multi_conversation_fixture::enabled() {
+        return;
+    }
+    let mut shell = state.write();
+    if shell.core.transport.is_some() {
+        return;
+    }
+    let Some((key, generation, correlation)) = shell
+        .message_buttons
+        .user_fixture
+        .as_mut()
+        .and_then(|f| f.pending.take())
+    else {
+        return;
+    };
+    super::finish(
+        &mut shell,
+        &key,
+        generation,
+        &correlation,
+        Err(super_platinum_core::slack::Error::Api(
+            "fixture_unknown_outcome".into(),
+        )),
+    );
 }

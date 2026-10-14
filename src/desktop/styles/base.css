@@ -33,7 +33,7 @@
   --border-strong: #454545;
   --text: #ededed;
   --muted: #a1a1a1;
-  --muted-2: #8a8a8a;
+  --muted-2: #929292;
   --accent: #0070f3;
   --accent-soft: #173457;
   --accent-faint: #101d2b;
@@ -45,7 +45,11 @@
   --avatar-bg: #262626;
   --hover-overlay: rgb(255 255 255 / 6%);
   --selection-bg: color-mix(in srgb, var(--text) 9%, var(--sidebar));
-  --on-accent: #fff;
+  --on-accent: #000;
+  --on-accent-hover: #000;
+  --on-mention: #000;
+  --on-danger: #000;
+  --on-danger-hover: #000;
   --on-warning: #07111d;
 
   /* Type: one family, four roles, tabular metadata. */

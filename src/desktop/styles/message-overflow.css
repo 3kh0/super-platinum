@@ -1,0 +1,5 @@
+.block-overflow { width: var(--control-height); height: var(--control-height); flex: 0 0 var(--control-height); padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.message-overflow-backdrop { position: fixed; inset: 0; z-index: 190; background: transparent; }
+.message-overflow-menu { position: fixed; z-index: 191; width: max-content; max-width: min(320px, calc(100vw - 16px)); max-height: calc(100vh - 16px); overflow: auto; padding: var(--space-1); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); box-shadow: var(--shadow-popover); color: var(--text); }
+.message-overflow-option { display: block; width: 100%; min-height: var(--control-height); padding: 6px var(--space-3); border: 0; border-radius: var(--radius-sm); text-align: left; background: transparent; color: inherit; font: inherit; overflow-wrap: anywhere; }
+.message-overflow-option:hover, .message-overflow-option:focus-visible { background: var(--hover-overlay); outline: none; }

@@ -179,6 +179,7 @@ fn huddle_invites_respect_desktop_permissions_dnd_and_deduplication() {
 fn platform_payloads_preserve_silent_banners_and_escape_content() {
     let mut notice = DesktopNotification {
         title: "<sender>&\"'".into(),
+        destination: None,
         body: "<message>".into(),
         sound: None,
     };
@@ -200,4 +201,76 @@ fn platform_payloads_preserve_silent_banners_and_escape_content() {
         linux_sound_hint(&notice),
         "--hint=boolean:suppress-sound:false"
     );
+}
+
+#[test]
+fn toast_xml_replaces_forbidden_xml_characters_and_preserves_unicode_text() {
+    let notice = DesktopNotification {
+        title: "A\0B\u{b}C\u{fffe}".into(),
+        destination: None,
+        body: "Emoji \u{1f389}\nTab\tReturn\rQuote \" ' & < >".into(),
+        sound: None,
+    };
+    let xml = windows_toast_xml(&notice);
+    assert!(xml.contains("A\u{fffd}B\u{fffd}C\u{fffd}"));
+    assert!(xml.contains("\u{1f389}\nTab\tReturn\r"));
+    assert!(xml.contains("&quot; &apos; &amp; &lt; &gt;"));
+    assert!(xml.starts_with("<toast launch='open'>"));
+}
+
+#[test]
+fn source_thread_notifications_keep_canonical_destination_through_xml_launch() {
+    let mut core = core();
+    core.active_account = Some("notification-test-account".into());
+    let ws = core.workspaces.get_mut("T1").unwrap();
+    ws.self_user_id = "USELF".into();
+    ws.notifications
+        .global
+        .insert("threads_everything".into(), json!(true));
+    core.session = Some(super_platinum_core::config::Session {
+        d_cookie: "synthetic".into(),
+        workspaces: [(
+            "T1".into(),
+            super_platinum_core::config::WorkspaceSession {
+                team_id: "T1".into(),
+                enterprise_id: None,
+                user_id: "USELF".into(),
+                name: "Fixture".into(),
+                url: "https://fixture.slack.com".into(),
+                token: "synthetic".into(),
+            },
+        )]
+        .into(),
+    });
+    for payload in [
+        r#"{"type":"message","channel":"C1","thread_ts":"100.000001","user":"U1","text":"<@USELF> reply","ts":"200.000002"}"#,
+        r#"{"type":"desktop_notification","channel":"C1","thread_ts":"100.000001","sender_id":"U1","content":"reply","ts":"200.000002"}"#,
+    ] {
+        let notice = for_event(&core, "T1", 1, &parse_event(payload).unwrap()).unwrap();
+        let destination = notice.destination.as_ref().unwrap();
+        let fields: serde_json::Value = serde_json::from_str(&destination.launch()).unwrap();
+        assert_eq!(fields["message"], "200.000002");
+        assert_eq!(fields["thread"], "100.000001");
+        assert_eq!(fields["channel"], "C1");
+        assert_eq!(fields["user"], "USELF");
+        let xml = windows_toast_xml(&notice);
+        let launch = xml
+            .strip_prefix("<toast launch='")
+            .unwrap()
+            .split_once("'>")
+            .unwrap()
+            .0;
+        assert!(!launch.contains('"'));
+        let decoded = launch
+            .replace("&quot;", "\"")
+            .replace("&apos;", "'")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&amp;", "&");
+        assert_eq!(
+            route::Activation::parse(&decoded),
+            Some(route::Activation::Destination(destination.clone()))
+        );
+        assert!(!decoded.contains("synthetic"));
+    }
 }

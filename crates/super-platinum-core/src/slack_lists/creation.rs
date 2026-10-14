@@ -1,13 +1,14 @@
-//! Ordinary header-level List item creation. The server owns the new identity.
+//! Ordinary List item creation and duplication. The server owns the new identity.
 use super::{Document, ListError, PersonalTaskLists, Record, RecordsPage};
 use serde_json::{Value, json};
 
 mod clock;
+mod duplication;
 pub use clock::{ListClock, ListTimestamp};
 #[cfg(test)]
 mod tests;
 
-/// One explicit request to create a top-level item, with the captured completed
+/// One explicit request to create or duplicate an item, with the captured completed
 /// checkbox seed only when selected from the Completed view. Never replay this
 /// intent after dispatch: a missing response cannot identify the created row.
 #[derive(Clone, Debug, PartialEq)]
@@ -15,6 +16,7 @@ pub struct CreationIntent {
     document: Document,
     selected_view: Option<String>,
     initial_fields: Option<Value>,
+    duplicate: Option<duplication::DuplicateSource>,
 }
 
 impl CreationIntent {
@@ -39,6 +41,7 @@ impl CreationIntent {
             document: document.clone(),
             selected_view: selected_view.map(str::to_owned),
             initial_fields,
+            duplicate: None,
         })
     }
 
@@ -92,7 +95,34 @@ impl CreationIntent {
         &self.document.id
     }
 
+    pub fn position(&self) -> &str {
+        self.duplicate
+            .as_ref()
+            .map_or("", |source| source.position.as_str())
+    }
+
+    pub fn source_record_id(&self) -> Option<&str> {
+        self.duplicate
+            .as_ref()
+            .map(|source| source.record.id.as_str())
+    }
+
     pub fn revalidate(
+        &self,
+        document: &Document,
+        allow_lists: Option<&str>,
+        personal_tasks: Option<&PersonalTaskLists>,
+        selected_view: Option<&str>,
+    ) -> Result<(), ListError> {
+        if self.duplicate.is_some() {
+            return Err(ListError(
+                "Refresh the List items before duplicating this item.",
+            ));
+        }
+        self.revalidate_document(document, allow_lists, personal_tasks, selected_view)
+    }
+
+    fn revalidate_document(
         &self,
         document: &Document,
         allow_lists: Option<&str>,
@@ -134,7 +164,11 @@ impl CreationIntent {
     }
 
     fn validate_record(&self, document: &Document, record: &Record) -> Result<(), ListError> {
-        if record.id.trim() != record.id
+        if self
+            .duplicate
+            .as_ref()
+            .is_some_and(|source| source.existing_ids.contains(&record.id))
+            || record.id.trim() != record.id
             || record
                 .raw
                 .get("list_id")
@@ -145,10 +179,14 @@ impl CreationIntent {
                     .get(key)
                     .is_some_and(|value| !value.is_null() && value != &Value::Bool(false))
             })
-            || record
-                .raw
-                .get("parent_record_id")
-                .is_some_and(|parent| !parent.is_null() && parent.as_str() != Some(""))
+            || record.raw.get("parent_record_id").is_some_and(|parent| {
+                !parent.is_null()
+                    && match parent.as_str() {
+                        Some("") => false,
+                        Some(id) => self.duplicate.is_none() || id.trim() != id || id == record.id,
+                        None => true,
+                    }
+            })
         {
             return Err(ListError("The new List item's identity was not confirmed."));
         }

@@ -54,7 +54,13 @@ fn optional_string(value: &Value, key: &str) -> Result<Option<String>, FormError
         .transpose()
 }
 
-pub(super) fn form(view: &Value) -> Result<ModalForm, FormError> {
+pub(super) fn form(
+    view: &Value,
+    origin_conversation: Option<&str>,
+) -> Result<ModalForm, FormError> {
+    if origin_conversation.is_some_and(|id| !valid_message_conversation(id)) {
+        return Err(invalid("Invalid originating conversation"));
+    }
     if !matches!(
         view.get("type").and_then(Value::as_str),
         Some("modal" | "app_notification_subscription_configuration")
@@ -77,6 +83,7 @@ pub(super) fn form(view: &Value) -> Result<ModalForm, FormError> {
         fields: BTreeMap::new(),
         unsupported: vec![],
         raw_view: view.clone(),
+        origin_conversation: origin_conversation.map(str::to_owned),
     };
     let mut block_ids = HashSet::new();
     for block in blocks {
@@ -104,9 +111,13 @@ pub(super) fn form(view: &Value) -> Result<ModalForm, FormError> {
             block_id: id(block.get("block_id"))?,
             action_id: id(element.get("action_id"))?,
         };
-        let (kind, initial_value) = input(element)?;
+        let (kind, initial_value) = input(element, view["type"] == "modal", origin_conversation)?;
         if let InputKind::Unsupported { kind } = &kind {
             form.unsupported.push(kind.clone());
+        }
+        if matches!(kind, InputKind::Channel) && modal_channel::unsupported_settings(element) {
+            form.unsupported
+                .push("This channel input requires unsupported selection rules".into());
         }
         // Dispatch-on-change and confirmation require additional interaction
         // flows. Never present those as ordinary submit-only local controls.
@@ -121,7 +132,17 @@ pub(super) fn form(view: &Value) -> Result<ModalForm, FormError> {
         let mut field = FormField {
             label: text(block.get("label"))?.ok_or_else(|| invalid("Missing input label"))?,
             hint: text(block.get("hint"))?,
-            placeholder: text(element.get("placeholder"))?,
+            placeholder: text(element.get("placeholder").filter(|value| {
+                !matches!(
+                    kind,
+                    InputKind::User
+                        | InputKind::MultiUser { .. }
+                        | InputKind::MultiChannel { .. }
+                        | InputKind::MultiConversation { .. }
+                        | InputKind::Conversation
+                        | InputKind::Channel
+                ) || !value.is_null()
+            }))?,
             optional: boolean(block, "optional", false)?,
             kind,
             value: initial_value.clone(),
@@ -150,6 +171,19 @@ pub(super) fn form(view: &Value) -> Result<ModalForm, FormError> {
                     action_id: action_id.clone(),
                 };
                 if let Some(field) = form.fields.get_mut(&key) {
+                    // iGIl plus z+fW/QjSI coalesce missing/null saved arrays
+                    // to the initial selection. Only an explicit [] is a clear.
+                    let saved_key = match field.kind {
+                        InputKind::MultiChannel { .. } => Some("selected_channels"),
+                        InputKind::MultiConversation { .. } => Some("selected_conversations"),
+                        _ => None,
+                    };
+                    if saved_key.is_some_and(|key| value.get(key).is_none_or(Value::is_null))
+                        && value.get("type").and_then(Value::as_str)
+                            == Some(values::wire_type(&field.kind))
+                    {
+                        continue;
+                    }
                     let current = values::from_wire(&field.kind, value)?;
                     field.initial_value = current.clone();
                     field.value = current;
@@ -190,12 +224,70 @@ fn find_stateful(value: &Value, unsupported: &mut Vec<String>) {
     }
 }
 
-fn input(element: &Value) -> Result<(InputKind, InputValue), FormError> {
+fn input(
+    element: &Value,
+    ordinary_modal: bool,
+    origin_conversation: Option<&str>,
+) -> Result<(InputKind, InputValue), FormError> {
     let kind = element
         .get("type")
         .and_then(Value::as_str)
         .ok_or_else(|| invalid("Missing input type"))?;
     Ok(match kind {
+        "channels_select" if ordinary_modal => {
+            (InputKind::Channel, modal_channel::initial(element)?)
+        }
+        "conversations_select" if ordinary_modal => {
+            // o5++ (B13224329) and AM6q (B1754021) preserve conversation/null
+            // and response_url_enabled. The documented default resolves from
+            // the conversation at opening, only when no initial is supplied:
+            // https://docs.slack.dev/reference/block-kit/block-elements/select-menu-element/
+            let field = parse_message_conversation(element)?;
+            let initial = match field.initial_value {
+                InputValue::Conversation(None)
+                    if element.get("default_to_current_conversation")
+                        == Some(&Value::Bool(true)) =>
+                {
+                    InputValue::Conversation(origin_conversation.map(str::to_owned))
+                }
+                value => value,
+            };
+            (field.kind, initial)
+        }
+        "users_select" if ordinary_modal => {
+            // HvtU (B13315319) takes input requiredness from 1hVl (B1739929)
+            // and emits selectedUser or null. Reuse the message value shape;
+            // input.optional remains the modal's requiredness authority.
+            let field = parse_message_user(element)?;
+            (field.kind, field.initial_value)
+        }
+        "multi_conversations_select" if ordinary_modal => {
+            if element.get("default_to_current_conversation") == Some(&Value::Bool(true)) {
+                (
+                    InputKind::Unsupported { kind: kind.into() },
+                    InputValue::Unsupported,
+                )
+            } else {
+                // bgmB inline input forwards over-max arrays for submit validation.
+                // The input block, not element.required, owns requiredness.
+                let field = parse_message_conversations(element)?;
+                (field.kind, field.initial_value)
+            }
+        }
+        "multi_channels_select" if ordinary_modal => {
+            // xjrl forces inline input selection; z+fW forwards over-max local
+            // arrays for submit validation. Requiredness is input.optional.
+            let field = parse_message_channels(element)?;
+            (field.kind, field.initial_value)
+        }
+        "multi_users_select" if ordinary_modal => {
+            // RBm/ renders normal input-block multi-users inline. hGZA forwards
+            // every selection, including an over-limit one, into form state.
+            // Keep shared shape/identity validation, but requiredness belongs
+            // to input.optional, not the message element's required setting.
+            let field = parse_message_users(element)?;
+            (field.kind, field.initial_value)
+        }
         "plain_text_input" => {
             let min = number(element, "min_length")?;
             let max = number(element, "max_length")?;

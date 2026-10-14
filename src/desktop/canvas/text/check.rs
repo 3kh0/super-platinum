@@ -37,6 +37,7 @@ async fn run(
     wait(desktop,r#"(()=>{const e=document.getElementById('canvas-text-draft');return {ok:!!document.querySelector('#canvas-text-editor [role=alert]')&&e?.isContentEditable&&e.textContent==='Keep thisSecond paragraph'&&window.superPlatinumRichEditor.read(e.id)[0].elements.length===2};})()"#).await?;
     editor_layout(desktop).await?;
     no_writes(&state)?;
+    capture_stage(state, "unsupported-draft", 0).await?;
     click(desktop, "#canvas-text-cancel").await?;
     wait(
         desktop,
@@ -63,6 +64,7 @@ async fn run(
     .await?;
     editor_layout(desktop).await?;
     no_writes(&state)?;
+    capture_stage(state, "stale-draft", 1).await?;
     click(desktop, "#canvas-text-cancel").await?;
     super::fixture::refresh(&mut state.write());
     open(desktop).await?;
@@ -76,6 +78,7 @@ async fn run(
     if super::fixture::attempts(&state.peek()) != 1 {
         return Err("Duplicate Save dispatched more than once".into());
     }
+    capture_stage(state, "saving", 2).await?;
     if !super::fixture::complete(&mut state.write()) {
         return Err("Text receipt failed to complete".into());
     }
@@ -104,6 +107,7 @@ async fn run(
     {
         return Err("Canonical formatting or untouched checkbox changed".into());
     }
+    capture_stage(state, "confirmed", 3).await?;
     open(desktop).await?;
     set_draft(
         desktop,
@@ -127,11 +131,12 @@ async fn run(
         return Err("Uncertain request was replayed".into());
     }
     let layout = editor_layout(desktop).await?;
+    capture_stage(state, "uncertain", 4).await?;
     if state.peek().core.transport.is_some() || state.peek().core.session.is_some() {
         return Err("Fixture acquired real transport".into());
     }
     Ok(
-        json!({"ok":true,"attempts":2,"initialLoadRecovery":true,"boundedPairedReads":3,"latestPairWins":true,"cancelNoWrite":true,"unsupportedPreserved":true,"staleDraftPreserved":true,"duplicateBlocked":true,"canonicalFormatting":true,"uncertainNoReplay":true,"disconnected":true,"layout":layout}),
+        json!({"ok":true,"attempts":2,"initialLoadRecovery":true,"boundedPairedReads":3,"latestPairWins":true,"cancelNoWrite":true,"unsupportedPreserved":true,"staleDraftPreserved":true,"duplicateBlocked":true,"canonicalFormatting":true,"uncertainNoReplay":true,"disconnected":true,"noSession":true,"noTransport":true,"layout":layout}),
     )
 }
 async fn initial_load_recovery(
@@ -253,5 +258,52 @@ async fn eval(desktop: &dioxus::desktop::DesktopContext, script: &str) -> Result
             serde_json::from_str(&value).map_err(|_| "Invalid encoded native callback".into())
         }
         value => Ok(value),
+    }
+}
+
+async fn capture_stage(
+    state: Signal<ShellState>,
+    stage: &str,
+    ordinal: usize,
+) -> Result<(), String> {
+    if !super::fixture::enabled(&state.peek())
+        || state.peek().core.session.is_some()
+        || state.peek().core.transport.is_some()
+    {
+        return Err("Canvas capture requires a disconnected fixture".into());
+    }
+    // Older direct check invocations remain valid; the portable runner always
+    // supplies a fresh private directory and requires every captured stage.
+    let Some(directory) = std::env::var_os("SUPER_PLATINUM_CANVAS_CAPTURE_ACK_DIR") else {
+        return Ok(());
+    };
+    let directory = std::path::PathBuf::from(directory);
+    if !directory.is_absolute() {
+        return Err("Canvas capture acknowledgement directory must be absolute".into());
+    }
+    let ack = directory.join(format!("{ordinal}.ack"));
+    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+    eprintln!(
+        "canvas-text-stage: {}",
+        json!({"ok":true,"stage":stage,"ordinal":ordinal,"noSession":true,"noTransport":true})
+    );
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(30);
+    loop {
+        let path = ack.clone();
+        match tokio::task::spawn_blocking(move || std::fs::read(path))
+            .await
+            .map_err(|_| "Canvas capture acknowledgement task failed")?
+        {
+            Ok(bytes) if bytes == b"captured\n" => return Ok(()),
+            Ok(_) => return Err("Canvas capture acknowledgement was malformed".into()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => (),
+            Err(_) => return Err("Canvas capture acknowledgement could not be read".into()),
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Err(format!(
+                "Canvas capture acknowledgement timed out at {stage}"
+            ));
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
     }
 }

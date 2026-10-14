@@ -22,14 +22,62 @@ impl Ticket {
         })
     }
     fn current(&self, shell: &ShellState) -> bool {
-        self.context.current(shell)
-            && scope(shell).as_ref() == Some(&self.scope)
+        crate::message_buttons::inputs::user::directory::context_current(shell, &self.context)
+            && shell
+                .core
+                .workspaces
+                .get(&self.context.session.team_id)
+                .is_some_and(|w| w.self_user_id == self.context.session.user_id)
+            && self.same_view(shell)
+    }
+    fn same_view(&self, shell: &ShellState) -> bool {
+        scope(shell).as_ref() == Some(&self.scope)
             && shell.overlay == Some(Overlay::AppModal)
             && shell.app_modal.as_ref().is_some_and(|s| {
-                s.generation == self.generation
+                s.modal.scope() == &self.scope
+                    && s.generation == self.generation
                     && s.modal.revision() == self.revision
                     && s.modal.stack().last().is_some_and(|v| v.id == self.view_id)
             })
+    }
+    /// A same-person credential/transport replacement loses response authority,
+    /// not the fact that this exact view still has an outstanding request.
+    /// Never apply the old response body or unlock a potentially sent mutation.
+    fn settle_lost_authority(&self, shell: &mut ShellState, submission: bool) -> bool {
+        if self.current(shell)
+            || !self.same_view(shell)
+            || shell.core.account_epoch != self.context.epoch
+            || shell
+                .core
+                .session
+                .as_ref()
+                .and_then(|s| s.workspaces.get(&self.context.session.team_id))
+                .is_none_or(|w| w.user_id != self.context.session.user_id)
+            || shell
+                .core
+                .workspaces
+                .get(&self.context.session.team_id)
+                .is_none_or(|w| w.self_user_id != self.context.session.user_id)
+        {
+            return false;
+        }
+        let session = shell.app_modal.as_mut().unwrap();
+        if submission {
+            if !session.busy {
+                return false;
+            }
+            session.busy = false;
+            session.uncertain = true;
+            session.view_error=Some("The connection changed before the app's response could be confirmed. Your entries are retained and the submission will not be repeated.".into());
+        } else {
+            if !session.loading {
+                return false;
+            }
+            session.loading = false;
+            session.conflict = true;
+            session.view_error=Some("The connection changed while loading this app form. Close it and try opening it again.".into());
+        }
+        true
     }
 }
 
@@ -55,6 +103,7 @@ pub(super) async fn load(mut state: Signal<ShellState>) {
     };
     let mut shell = state.write();
     if !ticket.current(&shell) {
+        ticket.settle_lost_authority(&mut shell, false);
         return;
     }
     let session = shell.app_modal.as_mut().unwrap();
@@ -89,6 +138,30 @@ pub(super) async fn load(mut state: Signal<ShellState>) {
     }
 }
 
+/// Recheck current modal scope and context before building any views.submit body.
+/// A preselected or locally edited value cannot bypass an unavailable directory policy.
+pub(super) fn prepare_submission(shell: &ShellState) -> Result<Value, FormError> {
+    let session = shell
+        .app_modal
+        .as_ref()
+        .ok_or(FormError::ConflictingUpdate)?;
+    if !current_scope(shell, session)
+        || shell.overlay != Some(Overlay::AppModal)
+        || session.locked()
+    {
+        return Err(FormError::ConflictingUpdate);
+    }
+    if let Some(reason) = users::unavailable_context(shell) {
+        return Err(FormError::Unsupported(vec![reason.into()]));
+    }
+    let payload = session
+        .current_form()
+        .ok_or(FormError::ConflictingUpdate)?
+        .submission()?;
+    super::channels::validate_submission(shell)?;
+    Ok(payload)
+}
+
 pub(super) async fn submit(mut state: Signal<ShellState>) {
     let (ticket, payload, client_token, fixture_revision) = {
         let mut shell = state.write();
@@ -100,6 +173,7 @@ pub(super) async fn submit(mut state: Signal<ShellState>) {
         if !valid {
             return;
         }
+        let prepared = prepare_submission(&shell);
         let session = shell.app_modal.as_mut().unwrap();
         let Some(form) = session.current_form_mut() else {
             return;
@@ -107,7 +181,7 @@ pub(super) async fn submit(mut state: Signal<ShellState>) {
         if form.submit_label.is_none() {
             return;
         }
-        let payload = match form.submission() {
+        let payload = match prepared {
             Ok(payload) => payload,
             Err(FormError::Validation(errors)) => {
                 for (key, error) in errors {
@@ -124,10 +198,17 @@ pub(super) async fn submit(mut state: Signal<ShellState>) {
         };
         let client_token = token();
         let scope = session.modal.scope().clone();
-        let app = session.modal.stack().last().unwrap().app_id.clone();
-        session
-            .modal
-            .enqueue(&scope, client_token.clone(), app, now_ms(), 60_000);
+        let current = session.modal.stack().last().unwrap();
+        let app = current.app_id.clone();
+        let origin = current.origin_conversation.clone();
+        session.modal.enqueue_with_origin(
+            &scope,
+            client_token.clone(),
+            app,
+            origin,
+            now_ms(),
+            60_000,
+        );
         session.busy = true;
         session.view_error = None;
         let fixture_revision = session.fixture.then_some(session.modal.revision());
@@ -145,6 +226,9 @@ pub(super) async fn submit(mut state: Signal<ShellState>) {
         let mut shell = state.write();
         let session = shell.app_modal.as_mut().unwrap();
         let view = session.modal.stack().last().unwrap().id.clone();
+        if users_fixture::record(session, &payload, &client_token) {
+            return;
+        }
         let response = fixture::submission(session, &payload);
         complete(&mut shell, &view, revision, &client_token, Ok(response));
         return;
@@ -173,6 +257,7 @@ pub(super) async fn submit(mut state: Signal<ShellState>) {
     };
     let mut shell = state.write();
     if !ticket.current(&shell) {
+        ticket.settle_lost_authority(&mut shell, true);
         return;
     }
     complete(
@@ -290,3 +375,6 @@ pub(super) async fn close(state: Signal<ShellState>, ticket: CloseTicket) {
         .execute_block_interaction(request)
         .await;
 }
+
+#[cfg(test)]
+mod ownership_tests;

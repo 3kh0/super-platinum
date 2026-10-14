@@ -425,9 +425,12 @@ image sites must use one of them:
   with a placeholder (`200`, `no-store`) rather than `404` — a skeleton box, or a
   transparent gap for emoji, which sit inline in a sentence.
 
-- Render media with `MediaAssetId::uri_at(media_epoch)`, never bare `uri()`. An
-  element `key` is **not** a diffed attribute; `src` is, so only a changing URL
-  makes the WebView retry. `FromStr` ignores the `?v=` stamp.
+- Render images with the desktop `MediaUri::webview_uri_at(media_epoch)` wrapper
+  around core `MediaAssetId::uri_at`, never bare `uri()`. It preserves the core
+  generation stamp and adapts the canonical scheme to Wry's synthetic HTTP media
+  origins on Windows; core IDs and protocol callbacks stay canonical. An element
+  `key` is **not** a diffed attribute; `src` is, so only a changing URL makes the
+  WebView retry. `FromStr` ignores the `?v=` stamp.
 - `runtime::ticks` owns `media_epoch`: it bumps once per tick when
   `take_dirty()` reports bytes, so a slow host cannot hold back avatars that
   already arrived. Do not bump it from a load path.

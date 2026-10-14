@@ -17,6 +17,7 @@ struct State {
     raw: Value,
     selected: Option<String>,
     selected_options: Vec<Value>,
+    selected_users: Vec<String>,
     options_present: bool,
     revision: u64,
 }
@@ -29,7 +30,11 @@ struct Binding {
     date: bool,
     time: bool,
     user: bool,
+    users: bool,
+    channels: bool,
+    conversations: bool,
     conversation: bool,
+    channel: bool,
     multi: Option<bool>,
 }
 
@@ -66,11 +71,17 @@ impl Mounted {
             date: matches!(field.kind, InputKind::Date),
             time: matches!(field.kind, InputKind::Time { .. }),
             conversation: matches!(field.kind, InputKind::Conversation),
+            channel: matches!(field.kind, InputKind::Channel),
             user: matches!(field.kind, InputKind::User),
+            users: false,
+            channels: false,
+            conversations: false,
             multi: None,
         };
-        if binding.conversation || binding.user || binding.date || binding.time {
-            let initial_key = if binding.conversation {
+        if binding.channel || binding.conversation || binding.user || binding.date || binding.time {
+            let initial_key = if binding.channel {
+                "initial_channel"
+            } else if binding.conversation {
                 "initial_conversation"
             } else if binding.user {
                 "initial_user"
@@ -171,7 +182,11 @@ impl Mounted {
             date: false,
             time: false,
             user: false,
+            users: false,
+            channels: false,
+            conversations: false,
             conversation: false,
+            channel: false,
             multi: Some(checkbox),
         };
         if state.binding.as_ref() != Some(&binding) {
@@ -204,6 +219,67 @@ impl Mounted {
         }
         state.raw = field.raw.clone();
         state.selected_options.clone()
+    }
+
+    pub(super) fn sync_users(
+        &self,
+        owner: ContainerKey,
+        key: InputKey,
+        field: &FormField,
+        saved: Option<Vec<String>>,
+    ) -> Vec<String> {
+        let channels = matches!(field.kind, InputKind::MultiChannel { .. });
+        let conversations = matches!(field.kind, InputKind::MultiConversation { .. });
+        let initial_key = if conversations {
+            "initial_conversations"
+        } else if channels {
+            "initial_channels"
+        } else {
+            "initial_users"
+        };
+        let mut state = self.0.lock().unwrap();
+        if state.unmounted {
+            return vec![];
+        }
+        let binding = Binding {
+            owner,
+            key,
+            radio: false,
+            date: false,
+            time: false,
+            user: false,
+            users: !channels && !conversations,
+            channels,
+            conversations,
+            conversation: false,
+            channel: false,
+            multi: None,
+        };
+        let initial = || {
+            field
+                .raw
+                .get(initial_key)
+                .and_then(Value::as_array)
+                .map(|v| {
+                    v.iter()
+                        .filter_map(Value::as_str)
+                        .map(str::to_owned)
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default()
+        };
+        if state.binding.as_ref() != Some(&binding) {
+            state.selected_users = saved.unwrap_or_else(initial);
+            state.binding = Some(binding);
+            state.revision = next_id();
+        } else if state.raw.get(initial_key) != field.raw.get(initial_key)
+            && (!conversations || field.raw.get(initial_key).is_some_and(Value::is_array))
+        {
+            state.selected_users = initial();
+            state.revision = next_id();
+        }
+        state.raw = field.raw.clone();
+        state.selected_users.clone()
     }
 
     pub(super) fn retained_multi(
@@ -269,6 +345,19 @@ impl Action {
         }
         state.selected_options = selected.unwrap_or_default().to_vec();
         state.options_present = selected.is_some();
+        state.revision = next_id();
+        true
+    }
+
+    pub(crate) fn commit_users(&self, selected: &[String]) -> bool {
+        let Some(mounted) = self.mounted.upgrade() else {
+            return false;
+        };
+        let mut state = mounted.lock().unwrap();
+        if state.unmounted || state.revision != self.revision {
+            return false;
+        }
+        state.selected_users = selected.to_vec();
         state.revision = next_id();
         true
     }

@@ -7,7 +7,15 @@ use std::sync::Arc;
 
 use crate::slack::models::Message;
 
+mod channel;
+pub use channel::{CapturedMessageChannel, CurrentMessageChannel};
 mod conversation;
+mod extended;
+pub use extended::{
+    CapturedMessageChannels, CapturedMessageConversations, CapturedMessageOverflow,
+    CapturedMessageUsers, CurrentMessageChannels, CurrentMessageConversations,
+    CurrentMessageOverflow, CurrentMessageUsers,
+};
 mod time;
 mod user;
 pub use conversation::{CapturedMessageConversation, CurrentMessageConversation};

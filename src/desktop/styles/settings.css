@@ -162,7 +162,7 @@
 .storage-inline-clear {
   padding: 3px 8px;
   border-radius: 6px;
-  color: var(--accent);
+  color: var(--link);
   font-weight: 650;
   font-size: 12px;
 }

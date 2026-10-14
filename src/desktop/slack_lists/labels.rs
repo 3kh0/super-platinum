@@ -301,7 +301,13 @@ impl Change {
             updated.insert(row.id.clone(), row.clone());
             all_rows[*position] = row;
         }
-        if view.layout.selected.is_some() {
+        if view.layout.selected.is_some()
+            || loaded
+                .document
+                .columns
+                .iter()
+                .any(super_platinum_core::slack_lists::timestamps::supports)
+        {
             layout::rebuild(view, Some(workspace));
             return true;
         }

@@ -5,10 +5,12 @@ use serde_json::{Value, json};
 
 use super::{Message, MessageStateError, element, kind, stateful};
 use crate::block_actions::form::{
-    FormField, InputKey, InputKind, InputValue, parse_message_conversation, parse_message_date,
+    FormField, InputKey, InputKind, InputValue, parse_message_channel, parse_message_channels,
+    parse_message_conversation, parse_message_conversations, parse_message_date,
     parse_message_multi, parse_message_radio, parse_message_static_select, parse_message_time,
-    parse_message_user, validate_message_conversation, validate_message_date,
-    validate_message_time, validate_message_user,
+    parse_message_user, parse_message_users, validate_message_channel,
+    validate_message_conversation, validate_message_date, validate_message_time,
+    validate_message_user,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -80,7 +82,11 @@ impl MessageInputs {
                         | "datepicker"
                         | "timepicker"
                         | "users_select"
+                        | "multi_users_select"
+                        | "multi_channels_select"
+                        | "multi_conversations_select"
                         | "conversations_select"
+                        | "channels_select"
                 ) {
                     element(control)?;
                     continue;
@@ -94,7 +100,11 @@ impl MessageInputs {
                 let field = match control_kind {
                     "datepicker" => parse_message_date(control),
                     "conversations_select" => parse_message_conversation(control),
+                    "channels_select" => parse_message_channel(control),
                     "users_select" => parse_message_user(control),
+                    "multi_users_select" => parse_message_users(control),
+                    "multi_channels_select" => parse_message_channels(control),
+                    "multi_conversations_select" => parse_message_conversations(control),
                     "timepicker" => parse_message_time(control),
                     "radio_buttons" => parse_message_radio(control),
                     "checkboxes" | "multi_static_select" => parse_message_multi(control),
@@ -122,8 +132,16 @@ impl MessageInputs {
                 }
                 let multiple = matches!(control_kind, "checkboxes" | "multi_static_select");
                 if let Some(option) = control
-                    .get(if control_kind == "conversations_select" {
+                    .get(if control_kind == "channels_select" {
+                        "initial_channel"
+                    } else if control_kind == "conversations_select" {
                         "initial_conversation"
+                    } else if control_kind == "multi_conversations_select" {
+                        "initial_conversations"
+                    } else if control_kind == "multi_channels_select" {
+                        "initial_channels"
+                    } else if control_kind == "multi_users_select" {
+                        "initial_users"
                     } else if control_kind == "users_select" {
                         "initial_user"
                     } else if control_kind == "datepicker" {
@@ -137,12 +155,23 @@ impl MessageInputs {
                         !value.is_null()
                             && (!matches!(
                                 control_kind,
-                                "datepicker" | "users_select" | "conversations_select"
+                                "datepicker"
+                                    | "users_select"
+                                    | "conversations_select"
+                                    | "channels_select"
                             ) || value.as_str().is_some_and(|value| !value.is_empty()))
                     })
                 {
-                    initial[if control_kind == "conversations_select" {
+                    initial[if control_kind == "channels_select" {
+                        "selected_channel"
+                    } else if control_kind == "conversations_select" {
                         "selected_conversation"
+                    } else if control_kind == "multi_conversations_select" {
+                        "selected_conversations"
+                    } else if control_kind == "multi_channels_select" {
+                        "selected_channels"
+                    } else if control_kind == "multi_users_select" {
+                        "selected_users"
                     } else if control_kind == "users_select" {
                         "selected_user"
                     } else if control_kind == "datepicker" {
@@ -183,6 +212,20 @@ impl MessageInputs {
             .fields
             .get(key)
             .ok_or(MessageStateError::UnknownField)?;
+        if matches!(field.kind, InputKind::Channel) {
+            let wire = validate_message_channel(field, selected)
+                .map_err(|_| MessageStateError::InvalidSelection)?;
+            self.initialize();
+            let field = self.fields.get_mut(key).expect("checked field");
+            field.value = InputValue::Channel(selected.map(str::to_owned));
+            field.dirty = true;
+            field.error = None;
+            self.committed
+                .as_mut()
+                .expect("initialized")
+                .insert(key.clone(), wire.clone());
+            return Ok(wire);
+        }
         if matches!(field.kind, InputKind::Conversation) {
             let wire = validate_message_conversation(field, selected)
                 .map_err(|_| MessageStateError::InvalidSelection)?;
@@ -353,6 +396,14 @@ impl MessageInputs {
             .filter(|value| value.is_object())
     }
 
+    pub fn saved_channel(&self, key: &InputKey) -> Option<&Value> {
+        self.committed
+            .as_ref()?
+            .get(key)?
+            .get("selected_channel")
+            .filter(|value| value.is_string())
+    }
+
     pub fn saved_conversation(&self, key: &InputKey) -> Option<&Value> {
         self.committed
             .as_ref()?
@@ -397,19 +448,35 @@ impl MessageInputs {
             field.revision = old.revision;
             if matches!(
                 field.kind,
-                InputKind::Conversation
+                InputKind::Channel
+                    | InputKind::Conversation
                     | InputKind::User
+                    | InputKind::MultiUser { .. }
+                    | InputKind::MultiChannel { .. }
+                    | InputKind::MultiConversation { .. }
                     | InputKind::Date
                     | InputKind::Time { .. }
             ) || matches!(
                 old.kind,
-                InputKind::Conversation
+                InputKind::Channel
+                    | InputKind::Conversation
                     | InputKind::User
+                    | InputKind::MultiUser { .. }
+                    | InputKind::MultiChannel { .. }
+                    | InputKind::MultiConversation { .. }
                     | InputKind::Date
                     | InputKind::Time { .. }
             ) {
-                let initial_key = if matches!(field.kind, InputKind::Conversation) {
+                let initial_key = if matches!(field.kind, InputKind::Channel) {
+                    "initial_channel"
+                } else if matches!(field.kind, InputKind::Conversation) {
                     "initial_conversation"
+                } else if matches!(field.kind, InputKind::MultiConversation { .. }) {
+                    "initial_conversations"
+                } else if matches!(field.kind, InputKind::MultiChannel { .. }) {
+                    "initial_channels"
+                } else if matches!(field.kind, InputKind::MultiUser { .. }) {
+                    "initial_users"
                 } else if matches!(field.kind, InputKind::User) {
                     "initial_user"
                 } else if matches!(field.kind, InputKind::Time { .. }) {
@@ -419,12 +486,27 @@ impl MessageInputs {
                 };
                 if matches!(
                     (&old.kind, &field.kind),
-                    (InputKind::Conversation, InputKind::Conversation)
+                    (InputKind::Channel, InputKind::Channel)
+                        | (InputKind::Conversation, InputKind::Conversation)
                         | (InputKind::User, InputKind::User)
+                        | (InputKind::MultiUser { .. }, InputKind::MultiUser { .. })
+                        | (
+                            InputKind::MultiChannel { .. },
+                            InputKind::MultiChannel { .. }
+                        )
+                        | (
+                            InputKind::MultiConversation { .. },
+                            InputKind::MultiConversation { .. }
+                        )
                         | (InputKind::Date, InputKind::Date)
                         | (InputKind::Time { .. }, InputKind::Time { .. })
                 ) {
-                    if old.raw.get(initial_key) == field.raw.get(initial_key) {
+                    // QjSI only resets mounted display for a changed, present
+                    // array (including []). Removing/nulling initial is not reset.
+                    if old.raw.get(initial_key) == field.raw.get(initial_key)
+                        || (matches!(field.kind, InputKind::MultiConversation { .. })
+                            && field.raw.get(initial_key).is_none_or(Value::is_null))
+                    {
                         field.value = old.value.clone();
                     } else {
                         field.revision = old.revision.wrapping_add(1);
@@ -432,9 +514,25 @@ impl MessageInputs {
                 } else {
                     // A different component is mounted; it consumes only its
                     // own saved wire property, never another control's value.
-                    if matches!(field.kind, InputKind::Conversation) {
+                    if matches!(field.kind, InputKind::Channel) {
+                        if let Some(saved) = self.saved_channel(key).and_then(Value::as_str) {
+                            field.value = InputValue::Channel(Some(saved.into()));
+                        }
+                    } else if matches!(field.kind, InputKind::Conversation) {
                         if let Some(saved) = self.saved_conversation(key).and_then(Value::as_str) {
                             field.value = InputValue::Conversation(Some(saved.into()));
+                        }
+                    } else if matches!(field.kind, InputKind::MultiConversation { .. }) {
+                        if let Some(saved) = self.saved_conversations(key) {
+                            field.value = InputValue::Conversations(saved);
+                        }
+                    } else if matches!(field.kind, InputKind::MultiChannel { .. }) {
+                        if let Some(saved) = self.saved_channels(key) {
+                            field.value = InputValue::Channels(saved);
+                        }
+                    } else if matches!(field.kind, InputKind::MultiUser { .. }) {
+                        if let Some(saved) = self.saved_users(key) {
+                            field.value = InputValue::Users(saved);
                         }
                     } else if matches!(field.kind, InputKind::User) {
                         if let Some(saved) = self.saved_user(key).and_then(Value::as_str) {
@@ -647,7 +745,11 @@ fn scan_owned(
                             | "datepicker"
                             | "timepicker"
                             | "users_select"
+                            | "multi_users_select"
+                            | "multi_channels_select"
+                            | "multi_conversations_select"
                             | "conversations_select"
+                            | "channels_select"
                     ))
             {
                 return Err(MessageStateError::StatefulControl);
@@ -686,3 +788,9 @@ mod user_tests;
 
 #[cfg(test)]
 mod conversation_tests;
+
+mod users;
+
+mod channels;
+
+mod conversations;

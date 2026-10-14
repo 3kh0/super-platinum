@@ -419,3 +419,61 @@ fn user_mount_uses_saved_identity_and_resets_only_when_initial_prop_changes() {
     mounted.unmount();
     assert!(!pending.current());
 }
+
+#[test]
+fn multi_conversation_removed_or_null_initial_retains_mount_but_present_empty_resets() {
+    use super_platinum_core::block_actions::form::parse_message_conversations;
+    let mut raw = json!({"type":"multi_conversations_select","action_id":"pick","initial_conversations":["C00000001"]});
+    let mounted = Mounted::new();
+    let field = parse_message_conversations(&raw).unwrap();
+    assert_eq!(
+        mounted.sync_users(owner(), key(), &field, None),
+        vec!["C00000001"]
+    );
+    assert!(
+        mounted
+            .capture(&owner(), &key())
+            .unwrap()
+            .commit_users(&["U00000002".into()])
+    );
+    raw.as_object_mut().unwrap().remove("initial_conversations");
+    assert_eq!(
+        mounted.sync_users(
+            owner(),
+            key(),
+            &parse_message_conversations(&raw).unwrap(),
+            None
+        ),
+        vec!["U00000002"]
+    );
+    raw["initial_conversations"] = Value::Null;
+    assert_eq!(
+        mounted.sync_users(
+            owner(),
+            key(),
+            &parse_message_conversations(&raw).unwrap(),
+            None
+        ),
+        vec!["U00000002"]
+    );
+    raw["initial_conversations"] = json!([]);
+    assert!(
+        mounted
+            .sync_users(
+                owner(),
+                key(),
+                &parse_message_conversations(&raw).unwrap(),
+                None
+            )
+            .is_empty()
+    );
+    assert_eq!(
+        Mounted::new().sync_users(
+            owner(),
+            key(),
+            &parse_message_conversations(&raw).unwrap(),
+            Some(vec!["U00000002".into()])
+        ),
+        vec!["U00000002"]
+    );
+}

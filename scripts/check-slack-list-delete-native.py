@@ -1,101 +1,101 @@
 #!/usr/bin/env python3
-"""Drive and capture isolated native List deletion fixtures without OS input."""
+"""Check isolated native List deletion on Windows/macOS; never builds."""
+import argparse
 import json
 import os
-import pathlib
-import subprocess
+from pathlib import Path
+import sys
 import time
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-BINARY = pathlib.Path(os.environ.get("SUPER_PLATINUM_BINARY", ROOT / "target/debug/super-platinum"))
-TMP = pathlib.Path(os.environ.get("TMPDIR", "/tmp"))
-MARKER = TMP / "super-platinum-agent.sock.path"
-CAPTURES = ROOT / "tmp/agent-ui"
-CAPTURES.mkdir(parents=True, exist_ok=True)
+from native_check import CheckSpec, validate_receipt as validate_native_receipt
+from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 
-for fixture in ("slack-list", "slack-list-narrow"):
-    capture_name = fixture + "-delete"
-    socket = TMP / f"slack-list-delete-{os.getpid()}.sock"
-    env = dict(os.environ, SUPER_PLATINUM_FIXTURE=fixture,
-               SUPER_PLATINUM_AGENT="1", SUPER_PLATINUM_AGENT_SOCK=str(socket),
-               SUPER_PLATINUM_SLACK_LIST_DELETE_CHECK="1",
-               SUPER_PLATINUM_SLACK_LIST_CAPTURE_DIR=str(CAPTURES))
-    env.pop("SUPER_PLATINUM_SLACK_LIST_CHECK", None)
-    previous = MARKER.read_text() if MARKER.exists() else None
-    log = CAPTURES / f"{capture_name}.log"
+SPEC = CheckSpec(
+    fixture="slack-list",
+    flag="SUPER_PLATINUM_SLACK_LIST_DELETE_CHECK",
+    prefix="slack-list-delete-check: ",
+    required=(
+        "cancelNoSend", "duplicateBlocked", "exactReadbackOnly", "uncertainNoReplay",
+        "reopenLocked", "differentDetailPreserved", "noOverflow", "noTransport",
+        "undoRedoSameIds", "childlessImmediate", "transitionDuplicatesBlocked",
+        "restoredBaselineExact", "restoredChildrenRendered",
+    ),
+    prepared_requests=2,
+)
+STAGES = ("confirm", "pending", "uncertain", "restored")
 
-    def control(*args, check=True, tool_env=env):
-        return subprocess.run([str(ROOT / "scripts/agentctl.sh"), *map(str, args)],
-                              cwd=ROOT, env=tool_env, capture_output=True,
-                              text=True, timeout=8, check=check)
 
-    with log.open("w") as output:
-        process = subprocess.Popen([str(BINARY)], cwd=ROOT, env=env,
-                                   stdout=output, stderr=output)
-        try:
-            deadline = time.monotonic() + 30
-            while not socket.exists():
-                if process.poll() is not None or time.monotonic() > deadline:
-                    raise RuntimeError(f"{capture_name}: failed to start")
-                time.sleep(.1)
-            control("ping")
-            subprocess.run(["osascript", "-l", "JavaScript", "-e",
-                            'ObjC.import("AppKit"); '
-                            f'var app=$.NSRunningApplication.runningApplicationWithProcessIdentifier({process.pid}); '
-                            'if(app.finishedLaunching) app.activateWithOptions(2);'],
-                           capture_output=True, check=True, timeout=5)
-            deadline = time.monotonic() + 90
-            last_activation = 0.0
-            while True:
-                if time.monotonic() - last_activation > 1:
-                    subprocess.run(["osascript", "-l", "JavaScript", "-e",
-                                    'ObjC.import("AppKit"); '
-                                    f'var app=$.NSRunningApplication.runningApplicationWithProcessIdentifier({process.pid}); '
-                                    'if(app.finishedLaunching) app.activateWithOptions(2);'],
-                                   capture_output=True, check=True, timeout=5)
-                    last_activation = time.monotonic()
-                receipts = [line.split("slack-list-delete-check: ", 1)[1]
-                            for line in log.read_text().splitlines(keepends=True)
-                            if line.endswith("\n") and "slack-list-delete-check: " in line]
-                if receipts:
-                    receipt = json.loads(receipts[-1])
-                    if receipt.get("ok") is not True:
-                        raise RuntimeError(f"{capture_name}: native assertion failed: {receipt}")
-                    required = ("cancelNoSend", "duplicateBlocked", "exactReadbackOnly", "uncertainNoReplay",
-                                "reopenLocked", "differentDetailPreserved", "noOverflow", "noTransport", "undoRedoSameIds", "childlessImmediate", "transitionDuplicatesBlocked", "restoredBaselineExact", "restoredChildrenRendered")
-                    viewport = receipt.get("viewport", [])
-                    expected_viewport = [668, 400] if fixture.endswith("-narrow") else [1280, 800]
-                    if viewport != expected_viewport:
-                        raise RuntimeError(f"{capture_name}: incorrect native viewport: {viewport}")
-                    if receipt.get("preparedRequests") != 2 or receipt.get("deletionStateRequests") != 2 or any(receipt.get(key) is not True for key in required):
-                        raise RuntimeError(f"{capture_name}: incomplete native receipt: {receipt}")
-                    break
-                if process.poll() is not None or time.monotonic() > deadline:
-                    raise RuntimeError(f"{capture_name}: native assertions timed out")
-                time.sleep(.1)
-            control("screenshot", CAPTURES / f"{capture_name}.png")
-            print(f"{capture_name}: native List delete interactions passed; screenshot captured", flush=True)
-        except BaseException:
+def validate_receipt(receipt, fixture, captures):
+    validate_native_receipt(SPEC, fixture, receipt)
+    if receipt.get("deletionStateRequests") != 2:
+        raise RuntimeError(f"{fixture}-delete: incorrect deletion-state request count: {receipt}")
+    expected = [captures / f"{fixture}-delete-{stage}.png" for stage in STAGES]
+    if receipt.get("captures") != [str(path) for path in expected] or not all(path.is_file() for path in expected):
+        raise RuntimeError(f"{fixture}-delete: missing native deletion stage captures")
+
+
+def run_fixture(fixture, binary, captures):
+    captures.mkdir(parents=True, exist_ok=True)
+    capture_name = f"{fixture}-delete"
+    evidence = {"fixture": fixture, "check": "delete", "platform": sys.platform,
+                "binary": str(binary.resolve()), "ok": False}
+    for stage in STAGES:
+        (captures / f"{capture_name}-{stage}.png").unlink(missing_ok=True)
+    try:
+        with NativeFixture(fixture, captures / f"{capture_name}.log", binary, {
+            SPEC.flag: "1",
+            "SUPER_PLATINUM_SLACK_LIST_CAPTURE_DIR": str(captures),
+        }) as native:
+            evidence["pid"] = native.process.pid
             try:
-                control("screenshot", CAPTURES / f"{capture_name}-failure.png", check=False)
-            except (OSError, subprocess.SubprocessError):
-                pass  # Preserve the original startup/assertion failure.
-            raise
-        finally:
-            if process.poll() is None:
-                process.terminate()
+                deadline = time.monotonic() + 90
+                last_focus = 0.0
+                while True:
+                    native.require_running()
+                    receipts = native.receipts(SPEC.prefix)
+                    if receipts:
+                        for receipt in receipts:
+                            evidence["native"] = receipt
+                            validate_receipt(receipt, fixture, captures)
+                        break
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError(f"{capture_name}: native assertions timed out")
+                    if time.monotonic() - last_focus >= 1:
+                        native.focus()
+                        last_focus = time.monotonic()
+                    time.sleep(.1)
+                screenshot = captures / f"{capture_name}.png"
+                native.capture(screenshot)
+                evidence.update(ok=True, screenshot=str(screenshot))
+            except BaseException:
                 try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait()
-            if MARKER.exists() and pathlib.Path(MARKER.read_text().strip()) == socket:
-                MARKER.unlink()
-                if previous:
-                    prior = dict(os.environ, SUPER_PLATINUM_AGENT_SOCK=previous.strip())
-                    try:
-                        if control("ping", check=False, tool_env=prior).returncode == 0:
-                            MARKER.write_text(previous)
-                    except (OSError, subprocess.SubprocessError):
-                        pass  # A stale prior marker must not mask this run's result.
-            socket.unlink(missing_ok=True)
+                    screenshot = captures / f"{capture_name}-failure.png"
+                    native.capture(screenshot)
+                    evidence["failure_screenshot"] = str(screenshot)
+                except (OSError, RuntimeError, ValueError):
+                    pass
+                raise
+    except BaseException as error:
+        evidence.update(ok=False, error=str(error))
+        raise
+    finally:
+        path = captures / f"{capture_name}.json"
+        path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps({"receipt": str(path), **evidence}), flush=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--binary", type=Path,
+                        default=Path(os.environ.get("SUPER_PLATINUM_BINARY", DEFAULT_BINARY)))
+    parser.add_argument("--captures", type=Path,
+                        default=Path(os.environ.get("SUPER_PLATINUM_UI_CAPTURE_DIR", ROOT / "tmp/agent-ui")))
+    parser.add_argument("--fixture", action="append", choices=("slack-list", "slack-list-narrow"),
+                        help="run only this fixture (repeatable); default runs both")
+    args = parser.parse_args()
+    for fixture in args.fixture or ("slack-list", "slack-list-narrow"):
+        run_fixture(fixture, args.binary, args.captures.resolve())
+
+
+if __name__ == "__main__":
+    main()

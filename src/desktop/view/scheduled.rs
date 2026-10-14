@@ -5,10 +5,16 @@ use crate::{
 };
 use dioxus::prelude::*;
 use super_platinum_core::{scheduled::DraftFilter, slack::api};
+pub(crate) mod clear_check;
+mod composer_clear;
+use composer_clear::complete_source;
 const DRAFT_CONFLICT: &str = "This draft changed in Slack. Your edits are still here. You can save them as a separate draft.";
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct ComposeSource {
+    account: Option<String>,
+    field_scope: String,
+    thread_generation: Option<u64>,
     pub epoch: u64,
     pub team: String,
     pub channel: String,
@@ -42,6 +48,10 @@ impl ComposeSource {
             return None;
         }
         Some(Self {
+            account: shell.core.active_account.clone(),
+            field_scope: super::composer::field_scope(shell, target),
+            thread_generation: (target == ComposerTarget::Thread)
+                .then_some(shell.thread_generation),
             epoch: shell.core.account_epoch,
             team: shell.core.active_team.clone()?,
             channel: shell.core.active_channel.clone()?,
@@ -54,6 +64,16 @@ impl ComposeSource {
                 .map(|a| (a.id, a.path.clone(), a.name.clone()))
                 .collect(),
         })
+    }
+    fn upload_files(&self) -> Vec<api::UploadFile> {
+        self.attachments
+            .iter()
+            .map(|(_, path, name)| api::UploadFile {
+                path: path.clone(),
+                filename: name.clone(),
+                progress: std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0)),
+            })
+            .collect()
     }
     pub(crate) fn request(&self, shell: &ShellState, post_at: i64) -> api::ScheduleMessage {
         let mut request = api::ScheduleMessage::new(
@@ -68,7 +88,7 @@ impl ComposeSource {
         request
     }
     fn clear_if_unchanged(&self, shell: &mut ShellState) -> Option<&'static str> {
-        if shell.core.account_epoch != self.epoch {
+        if shell.core.account_epoch != self.epoch || shell.core.active_account != self.account {
             return None;
         }
         let key = super_platinum_core::drafts::DraftKey {
@@ -100,6 +120,10 @@ impl ComposeSource {
         }
         if shell.core.active_team.as_ref() != Some(&self.team)
             || shell.core.active_channel.as_ref() != Some(&self.channel)
+            || super::composer::field_scope(shell, target) != self.field_scope
+            || self
+                .thread_generation
+                .is_some_and(|generation| generation != shell.thread_generation)
         {
             return None;
         }
@@ -375,7 +399,7 @@ fn ScheduleDialog(
           let mut args=request.peek().clone();args.blocks=blocks;args.post_at=time;
           if as_copy{args.client_msg_id=copy_id;}
           if let Some(source)=&source{if !source.attachments.is_empty()&&args.file_ids.is_empty(){
-           let files=source.attachments.iter().map(|(_,path,_)|(path.clone(),std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0)))).collect();
+           let files=source.upload_files();
            args.file_ids=api::upload_unshared_files(&ctx.transport,&ctx.client,&ctx.session,files,std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false))).await.map_err(|e|scheduled::failure(&e))?;
           }}
           if !ctx.current(&state.peek()){return Err("The active account changed.".into());}
@@ -386,7 +410,7 @@ fn ScheduleDialog(
           let saved=api::schedule_message(&ctx.transport,&ctx.client,&ctx.session,&args,id.as_deref()).await.map_err(|e|scheduled::failure(&e))?;
           if !ctx.current(&state.peek()){return Ok(());}
           scheduled::saved(state,&ctx,saved);
-          if let Some(source)=&source{let clear={let mut shell=state.write();let clear=source.clear_if_unchanged(&mut shell);shell.checkpoint_composers();clear};if let Some(field)=clear{super::composer::set_field_text(field,"");}}
+          if let Some(source)=&source{complete_source(state,source).await;}
           if saving.try_read().is_ok(){close_dialog(onclose);}Ok::<(),String>(())
          }.await;
          if let Ok(mut value)=saving.try_write(){*value=false;}
@@ -514,6 +538,39 @@ fn to_slack(node: &crate::state::RichNode) -> serde_json::Value {
 mod tests {
     use super::*;
     #[test]
+    fn scheduling_keeps_original_attachment_names_for_channel_and_broadcast_thread() {
+        for target in [ComposerTarget::Channel, ComposerTarget::Thread] {
+            let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+            shell.thread_root = Some("100.000001".into());
+            shell.core.thread_composer.reply_broadcast = true;
+            let attachment = super_platinum_core::domain::ComposerAttachment {
+                id: 1,
+                path: "opaque-stage-pasted.txt".into(),
+                name: "日本語 🦊.txt".into(),
+                bytes: 5,
+                uploading: false,
+                upload_started: None,
+                upload_cancel: None,
+                upload_progress: None,
+                preview_path: None,
+            };
+            match target {
+                ComposerTarget::Channel => shell.core.composer_attachments.push(attachment),
+                ComposerTarget::Thread => shell.core.thread_composer_attachments.push(attachment),
+            }
+            let source = ComposeSource::capture(&shell, target).unwrap();
+            let files = source.upload_files();
+            assert_eq!(files.len(), 1);
+            assert_eq!(files[0].filename, "日本語 🦊.txt");
+            assert_eq!(
+                files[0].path,
+                std::path::PathBuf::from("opaque-stage-pasted.txt")
+            );
+            assert_eq!(source.reply_broadcast, target == ComposerTarget::Thread);
+            assert_eq!(source.thread.is_some(), target == ComposerTarget::Thread);
+        }
+    }
+    #[test]
     fn scheduling_clears_only_the_original_composer_and_original_attachments() {
         let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
         shell.core.composer.text = "Original 🚀".into();
@@ -620,5 +677,30 @@ mod tests {
             Some("thread-composer")
         );
         assert!(!shell.core.thread_composer.reply_broadcast);
+    }
+    #[test]
+    fn schedule_ack_preserves_same_text_in_a_reopened_thread_and_new_shell_visit() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        shell.thread_root = Some("100.000001".into());
+        shell.core.thread_composer.text = "Identical new reply".into();
+        let source = ComposeSource::capture(&shell, ComposerTarget::Thread).unwrap();
+        shell.thread_generation = shell.thread_generation.wrapping_add(1);
+        assert_eq!(source.clear_if_unchanged(&mut shell), None);
+        assert_eq!(shell.core.thread_composer.text, "Identical new reply");
+
+        shell.core.composer.text = "Identical new channel draft".into();
+        let channel = ComposeSource::capture(&shell, ComposerTarget::Channel).unwrap();
+        shell.draft_writes.view_id += 1;
+        assert_eq!(channel.clear_if_unchanged(&mut shell), None);
+        assert_eq!(shell.core.composer.text, "Identical new channel draft");
+    }
+    #[test]
+    fn schedule_ack_cannot_settle_another_account_with_the_same_epoch_and_key() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        shell.core.composer.text = "Keep this account's draft".into();
+        let source = ComposeSource::capture(&shell, ComposerTarget::Channel).unwrap();
+        shell.core.active_account = Some("replacement-account".into());
+        assert_eq!(source.clear_if_unchanged(&mut shell), None);
+        assert_eq!(shell.core.composer.text, source.text);
     }
 }

@@ -115,12 +115,14 @@
   background: var(--accent);
   color: var(--on-accent);
 }
-.block-button.primary:hover { background: color-mix(in srgb, var(--accent) 82%, #fff); }
+.block-button.primary:hover { background: color-mix(in srgb, var(--accent) 82%, #fff); color: var(--on-accent-hover); }
 .block-button.danger {
   border-color: transparent;
   background: var(--danger);
-  color: var(--on-warning);
+  color: var(--on-danger);
 }
+/* Keep this fill paired with its foreground through the shared hover cascade. */
+.block-button.danger:hover { background: var(--danger); color: var(--on-danger); }
 /* Menus and submit buttons have no local action; keep the shape, drop the hover. */
 .block-button.inert {
   color: var(--muted);
@@ -447,8 +449,8 @@
 .block-checkbox-group[aria-disabled="true"] .block-radio-option { cursor: default; }
 .block-checkbox-group[aria-disabled="true"] .block-radio-label { color: var(--muted); }
 .block-accessory:has(> .block-checkbox-group) { flex: 0 1 280px; min-width: 0; max-width: 100%; }
-.block-multi-select, .block-users-select, .block-conversations-select { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); text-align: left; }
-.block-multi-select > span, .block-users-select > span, .block-conversations-select > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.block-multi-select, .block-users-select, .block-multi-users-select, .block-conversations-select, .block-channels-select, .block-multi-channels-select, .block-multi-conversations-select { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); text-align: left; }
+.block-multi-select > span, .block-users-select > span, .block-multi-users-select > span, .block-conversations-select > span, .block-channels-select > span, .block-multi-channels-select > span, .block-multi-conversations-select > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .block-multi-chevron { flex: 0 0 auto; transform: rotate(90deg); }
 .modal.message-multi-dialog { width: min(440px, calc(100vw - 32px)); }
 .modal.message-multi-dialog > form { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
@@ -472,3 +474,6 @@
 .message-user-option { min-height: 32px; flex-shrink: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; }
 .message-user-dialog > .message-multi-content { min-height: 0; overflow-y: auto; }
 .message-user-dialog #message-user-search:focus-visible { outline-offset: -2px; }
+
+.message-user-option[role="checkbox"] { display: flex; align-items: center; gap: var(--space-2); }
+.message-user-option[role="checkbox"] > span { flex: 0 0 auto; display: flex; }

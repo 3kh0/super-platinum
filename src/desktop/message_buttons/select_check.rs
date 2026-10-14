@@ -85,6 +85,14 @@ async fn run(
     settled(desktop, "Release B", "Test").await?;
     checked(desktop,r#"({ok:![...document.querySelector('.block-select[aria-label="Choose release"]').options].some(o=>o.textContent==='Release A')})"#).await?;
     assert_attempts(state, 3)?;
+    // The stale-action feedback is covered above. Dismiss it before checking
+    // control reachability so a narrow-window toast cannot hide a passing rect.
+    checked(
+        desktop,
+        r#"(()=>{document.querySelector('.toast button')?.click();return {ok:true};})()"#,
+    )
+    .await?;
+    wait_dom(desktop, r#"({ok:!document.querySelector('.toast')})"#).await?;
     let mut receipt = checked(desktop, LAYOUT).await?;
     receipt["preparedRequests"] = json!(3);
     receipt["cancelPreservedSelectionAndNode"] = json!(true);
@@ -239,7 +247,7 @@ async fn eval(desktop: &dioxus::desktop::DesktopContext, script: &str) -> Result
 }
 const LAYOUT: &str = r#"(()=>{const timeline=document.getElementById('message-timeline');timeline.scrollTop=timeline.scrollHeight;
     const controls=[...timeline.querySelectorAll('.block-select,.block-button')],bounds=timeline.getBoundingClientRect();
-    const eachVisible=controls.every(c=>{const r=c.getBoundingClientRect();return r.width>0&&r.height>0&&r.left>=bounds.left-1&&r.right<=bounds.right+1&&r.top>=bounds.top-1&&r.bottom<=bounds.bottom+1;});
+    const eachVisible=controls.every(c=>{const r=c.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return r.width>0&&r.height>0&&r.left>=bounds.left-1&&r.right<=bounds.right+1&&r.top>=bounds.top-1&&r.bottom<=bounds.bottom+1&&(hit===c||c.contains(hit));});
     const noOverflow=timeline.scrollWidth<=timeline.clientWidth+1&&[...timeline.querySelectorAll('.block-actions,.block-section')].every(e=>e.scrollWidth<=e.clientWidth+1);
     controls[0]?.focus({preventScroll:true});return {ok:controls.length===3&&eachVisible&&noOverflow,eachVisible,noOverflow,
     viewport:[innerWidth,innerHeight],timeline:{width:timeline.clientWidth,scrollWidth:timeline.scrollWidth,height:timeline.clientHeight}};

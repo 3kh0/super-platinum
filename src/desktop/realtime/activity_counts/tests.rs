@@ -9,7 +9,7 @@ use super_platinum_core::{
     state::Workspace,
 };
 
-fn core() -> CoreAppState {
+pub(super) fn core() -> CoreAppState {
     let mut core = CoreAppState::new(Settings::default());
     let session = WorkspaceSession {
         team_id: "T1".into(),
@@ -80,7 +80,7 @@ fn saved_realtime_counts_win_over_in_flight_http_and_retired_socket_frames() {
     assert_eq!(c.workspaces["T1"].dock_counts.overdue_count(), Some(0));
 }
 
-fn inbox(core: &mut CoreAppState) {
+pub(super) fn inbox(core: &mut CoreAppState) {
     let rules = super_platinum_core::slack::api::parse_badge_experiments(
         &json!({"ok":true,"assignments":{"activity_inbox":{"group":"on"}}}),
     )
@@ -121,7 +121,7 @@ fn channel_cursor_read_preserves_filtered_badge_and_remaining_categories() {
         json!({"at_user":5,"message_reaction":40,"dm":7}),
     );
     let old_http = owner(&c).begin(&c).unwrap();
-    mark_channel_read(&mut c, "T1", "C1");
+    mark_channel_read(&mut c, "T1", "C1", "1.0");
     let w = &c.workspaces["T1"];
     assert_eq!(w.activity_badge_count(), Some(11));
     assert_eq!(w.dm_activity_badge_count(), Some(7));
@@ -142,7 +142,7 @@ fn local_activity_read_cannot_apply_to_another_workspace_feed() {
     let mut c = core();
     c.active_team = Some("T2".into());
     assert!(mark_item_read(&mut c, "item-1.0").is_none());
-    mark_channel_read(&mut c, "T1", "C1");
+    mark_channel_read(&mut c, "T1", "C1", "1.0");
     assert_eq!(c.activity.unread_count(), 1);
 }
 

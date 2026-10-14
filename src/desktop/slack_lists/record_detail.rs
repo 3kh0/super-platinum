@@ -30,6 +30,7 @@ pub(super) struct Detail {
     columns: Arc<Vec<ColumnView>>,
     row: Arc<RowView>,
     unavailable: bool,
+    duplicate_reason: Option<&'static str>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum EditAuthority {
@@ -101,6 +102,24 @@ pub(super) fn matches_delete_origin(view: &View, open: u64, record: &str) -> boo
         .as_ref()
         .is_some_and(|detail| detail.open_generation == open && detail.record_id == record)
 }
+pub(super) fn duplicate_reason(view: &View) -> Option<&'static str> {
+    view.detail
+        .as_ref()
+        .and_then(|detail| detail.duplicate_reason)
+}
+fn compute_duplicate_reason(view: &View, record: &str) -> Option<&'static str> {
+    let loaded = view.loaded.as_ref()?;
+    super_platinum_core::slack_lists::CreationIntent::duplicate_eligible(
+        &loaded.document,
+        &loaded.records,
+        record,
+        loaded.allow_lists.as_deref(),
+        loaded.personal_task_lists.as_ref(),
+        view.layout.selected.as_deref(),
+    )
+    .err()
+    .map(|error| error.0)
+}
 fn columns(loaded: &Loaded) -> Arc<Vec<ColumnView>> {
     Arc::new(
         loaded
@@ -152,7 +171,9 @@ pub(super) fn reconcile(view: &mut View) {
     let columns = (detail.revision != view.revision)
         .then(|| view.loaded.as_ref().map(columns))
         .flatten();
+    let duplicate_reason = compute_duplicate_reason(view, &detail.record_id);
     let detail = view.detail.as_mut().unwrap();
+    detail.duplicate_reason = duplicate_reason;
     if !identity_current || row.is_none() {
         detail.unavailable = true;
         detail.generation = next_id();
@@ -251,6 +272,7 @@ fn install_detail(shell: &mut ShellState, record_id: &str) -> bool {
         columns: columns(loaded),
         row,
         unavailable: false,
+        duplicate_reason: compute_duplicate_reason(view, &record.id),
     };
     let view = shell.slack_lists.view.as_mut().unwrap();
     layout::protect_selection(view);
@@ -279,6 +301,7 @@ pub(super) fn close_shell(shell: &mut ShellState, generation: u64) -> bool {
 /// Sent/uncertain receipts are retained independently until guarded readback.
 pub(super) fn dismiss_shell(shell: &mut ShellState) {
     delete::close_visit(shell);
+    create::duplicate::close_detail(shell);
     let Some(view) = shell.slack_lists.view.as_mut() else {
         return;
     };

@@ -7,7 +7,7 @@ use super_platinum_core::agent_protocol::{
     AgentCommand, AgentRequest, AgentResponse, SettingsSection as AgentSettingsSection,
 };
 mod background;
-mod capture;
+pub(crate) mod capture;
 #[cfg(any(unix, target_os = "windows"))]
 mod io;
 #[cfg(target_os = "windows")]
@@ -40,8 +40,14 @@ pub async fn serve(
     crate::slack_lists::check::delete::start(state, desktop.clone());
     crate::message_buttons::check::start(state, desktop.clone());
     crate::message_buttons::select_check::start(state, desktop.clone());
+    crate::message_buttons::overflow_check::start(state, desktop.clone());
+    crate::app_modal::users_check::start(state, desktop.clone());
     crate::message_buttons::date_check::start(state, desktop.clone());
     crate::message_buttons::user_check::start(state, desktop.clone());
+    crate::message_buttons::multi_conversation_check::start(state, desktop.clone());
+    crate::message_buttons::multi_channel_check::start(state, desktop.clone());
+    crate::message_buttons::multi_user_check::start(state, desktop.clone());
+    crate::message_buttons::channel_check::start(state, desktop.clone());
     crate::message_buttons::conversation_check::start(state, desktop.clone());
     crate::message_buttons::time_check::start(state, desktop.clone());
     crate::message_buttons::multi_check::start(state, desktop.clone());
@@ -50,6 +56,8 @@ pub async fn serve(
     crate::message_buttons::radio_check::start(state, desktop.clone());
     crate::slack_links_check::start(state, desktop.clone());
     crate::activity_feed::check::start(state, desktop.clone());
+    crate::media::check::start(state, desktop.clone());
+    crate::view::theme::check::start(state, desktop.clone());
     crate::composer_emoji::check::start(state, desktop.clone());
     crate::channel_mute::check::start(state, desktop.clone());
     crate::channel_mute::settings::check::start(state, desktop.clone());
@@ -373,8 +381,18 @@ async fn dispatch(
             AgentResponse::ok(id, json!({ "toast": text }))
         }
         AgentCommand::NotificationPreview => {
-            dioxus::prelude::spawn(crate::notification::show_preview());
-            AgentResponse::ok(id, json!({ "notification_preview": true }))
+            #[cfg(target_os = "windows")]
+            {
+                match crate::notification::show_preview_receipt().await {
+                    Ok(receipt) => AgentResponse::ok(id, receipt),
+                    Err(error) => AgentResponse::err(id, error),
+                }
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                dioxus::prelude::spawn(crate::notification::show_preview());
+                AgentResponse::ok(id, json!({ "notification_preview": true }))
+            }
         }
         AgentCommand::MainView { view } => {
             let target = match view.as_str() {

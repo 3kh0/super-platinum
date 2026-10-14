@@ -4,11 +4,15 @@ use super_platinum_core::state::{NotificationOptions, cmp_ts, now_secs};
 
 #[cfg(target_os = "macos")]
 pub(crate) mod attention;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub(crate) mod badge;
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg(any(target_os = "windows", test))]
+mod route;
 mod sounds;
+#[cfg(target_os = "windows")]
+pub(crate) mod windows;
 pub(crate) use sounds::{preview_sound, serve_sound_asset, stop_sound_preview};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -16,6 +20,8 @@ pub struct DesktopNotification {
     title: String,
     body: String,
     sound: Option<String>,
+    #[cfg(any(target_os = "windows", test))]
+    destination: Option<route::Destination>,
 }
 
 /// Survives socket reconnects, and bounds memory even in busy workspaces.
@@ -194,6 +200,8 @@ fn for_event_in_view(
     };
     Some(DesktopNotification {
         title,
+        #[cfg(any(target_os = "windows", test))]
+        destination: route::Destination::capture(core, team, channel_id, Some(ts), thread),
         sound: options.sound,
         body: if body.trim().is_empty() {
             "[message]".into()
@@ -264,22 +272,50 @@ fn huddle_invite(
         .unwrap_or_default();
     Some(DesktopNotification {
         title: format!("{caller} is inviting you to a huddle"),
+        #[cfg(any(target_os = "windows", test))]
+        destination: route::Destination::capture(core, team, &invite.channel_id, None, None),
         body: format!("Join the huddle{place} from Super Platinum"),
         sound,
     })
 }
 
 pub async fn show(notification: DesktopNotification) {
+    #[cfg(target_os = "windows")]
+    {
+        if let Err(error) = windows::submit(notification, false).await {
+            eprintln!("super-platinum: notification submission failed: {error}");
+        }
+        return;
+    }
+    #[cfg(not(target_os = "windows"))]
     if let Err(error) = tokio::task::spawn_blocking(move || show_blocking(&notification)).await {
         eprintln!("super-platinum: notification worker stopped: {error}");
     }
 }
 
+/// Windows preview reports OS submission and history, not merely a scheduled task.
+#[cfg(target_os = "windows")]
+pub(crate) async fn show_preview_receipt() -> Result<serde_json::Value, String> {
+    windows::submit(
+        DesktopNotification {
+            title: "Super Platinum".into(),
+            body: "Notification preview: text stays data, including < & > and quotes.".into(),
+            sound: None,
+            destination: None,
+        },
+        true,
+    )
+    .await
+}
+
+#[cfg(not(target_os = "windows"))]
 pub async fn show_preview() {
     show(DesktopNotification {
         title: "Super Platinum".into(),
         body: "Notifications now come from Super Platinum.".into(),
         sound: None,
+        #[cfg(test)]
+        destination: None,
     })
     .await;
 }
@@ -305,17 +341,6 @@ fn show_blocking(notification: &DesktopNotification) {
     );
 }
 
-#[cfg(target_os = "windows")]
-fn show_blocking(notification: &DesktopNotification) {
-    let xml = windows_toast_xml(notification);
-    let script = "$xml=New-Object Windows.Data.Xml.Dom.XmlDocument;$xml.LoadXml($args[0]);$toast=[Windows.UI.Notifications.ToastNotification]::new($xml);[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('com.echonet.superplatinum').Show($toast)";
-    report_status(
-        std::process::Command::new("powershell.exe")
-            .args(["-NoProfile", "-NonInteractive", "-Command", script, &xml])
-            .status(),
-    );
-}
-
 #[cfg(any(target_os = "linux", test))]
 fn linux_sound_hint(notification: &DesktopNotification) -> &'static str {
     if notification
@@ -333,6 +358,13 @@ fn linux_sound_hint(notification: &DesktopNotification) -> &'static str {
 fn windows_toast_xml(notification: &DesktopNotification) -> String {
     let title = xml_escape(&notification.title);
     let body = xml_escape(&notification.body);
+    let launch = xml_escape(
+        &notification
+            .destination
+            .as_ref()
+            .map(route::Destination::launch)
+            .unwrap_or_else(|| "open".into()),
+    );
     // Selected custom sounds need Windows resource packaging. Until that path
     // exists, retain IM audio for known sounds and honor every silent outcome.
     let audio = if notification
@@ -345,14 +377,14 @@ fn windows_toast_xml(notification: &DesktopNotification) -> String {
         "<audio silent='true'/>"
     };
     format!(
-        "<toast><visual><binding template='ToastGeneric'><text>{title}</text><text>{body}</text></binding></visual>{audio}</toast>"
+        "<toast launch='{launch}'><visual><binding template='ToastGeneric'><text>{title}</text><text>{body}</text></binding></visual>{audio}</toast>"
     )
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 fn show_blocking(_notification: &DesktopNotification) {}
 
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(target_os = "linux")]
 fn report_status(status: std::io::Result<std::process::ExitStatus>) {
     match status {
         Ok(status) if status.success() => {}
@@ -364,6 +396,17 @@ fn report_status(status: std::io::Result<std::process::ExitStatus>) {
 #[cfg(any(target_os = "windows", test))]
 fn xml_escape(value: &str) -> String {
     value
+        .chars()
+        .map(|ch| {
+            if matches!(ch, '\t' | '\n' | '\r')
+                || (ch >= '\u{20}' && ch != '\u{fffe}' && ch != '\u{ffff}')
+            {
+                ch
+            } else {
+                '\u{fffd}'
+            }
+        })
+        .collect::<String>()
         .replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
@@ -375,42 +418,7 @@ pub fn ensure_identity() -> Result<(), String> {
     #[cfg(target_os = "macos")]
     macos::initialize()?;
     #[cfg(target_os = "windows")]
-    {
-        let key = r"HKCU\SOFTWARE\Classes\AppUserModelId\com.echonet.superplatinum";
-        let commands = [
-            [
-                "add",
-                key,
-                "/v",
-                "DisplayName",
-                "/t",
-                "REG_SZ",
-                "/d",
-                "Super Platinum",
-                "/f",
-            ],
-            [
-                "add",
-                key,
-                "/v",
-                "IconBackgroundColor",
-                "/t",
-                "REG_SZ",
-                "/d",
-                "0",
-                "/f",
-            ],
-        ];
-        for args in commands {
-            let status = std::process::Command::new("reg.exe")
-                .args(args)
-                .status()
-                .map_err(|error| error.to_string())?;
-            if !status.success() {
-                return Err(format!("reg.exe exited with {status}"));
-            }
-        }
-    }
+    windows::initialize()?;
     Ok(())
 }
 

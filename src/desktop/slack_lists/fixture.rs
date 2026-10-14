@@ -10,6 +10,7 @@ mod channel_edit;
 mod creation;
 mod date_edit;
 mod date_views;
+mod duplicate;
 mod link_edit;
 mod record_detail;
 mod record_open;
@@ -24,7 +25,8 @@ pub(crate) use creation::{
 pub(crate) use date_edit::{
     add_date_edits, change_date_edit_due, date_edit_value, restore_date_edits,
 };
-pub(crate) use date_views::{add_date_views, remove_date_views, set_date_clock};
+pub(crate) use date_views::{add_date_views, remove_date_views, set_date_clock, tick_date_clock};
+pub(crate) use duplicate::add_duplicate_views;
 pub(crate) use link_edit::{add_link_edits, link_edit_value, restore_link_edits};
 pub(crate) use record_detail::{add_record_details, change_detail_number};
 pub(super) use record_open::record_open;

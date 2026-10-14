@@ -36,6 +36,15 @@
 .huddle-text-btn:active,
 .primary:active { transform: scale(.96); }
 
+/* Adaptive black/white foregrounds must switch with their fill. Interpolating
+   either color across the crossover briefly makes foreground equal background. */
+.primary,
+.huddle-control.leave {
+  transition: border-color var(--duration-fast) ease,
+    opacity var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-ui);
+}
+
 /* ── Chrome: quiet planes, strong orientation ───────── */
 .rail { background: var(--rail); }
 .sidebar,
@@ -135,8 +144,11 @@
 }
 .unread-divider { border-top-color: var(--accent); }
 .unread-divider span {
-  color: var(--accent);
+  color: var(--link);
 }
+/* Accent fill and small text have different contrast requirements. */
+.palette-mpdm,
+.media-preview > button { color: var(--link); }
 
 /* ── Composer: a single focused work surface ────────── */
 .composer-wrap,
@@ -238,7 +250,7 @@
   min-height: 40px;
   justify-self: end;
   margin: 0;
-  color: var(--accent);
+  color: var(--link);
   font-size: var(--text-sm);
 }
 
@@ -381,11 +393,8 @@
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
   box-shadow: var(--shadow-popover);
-  bottom: 76px;
 }
 .toast:hover { border-color: transparent; background: color-mix(in srgb, var(--surface-raised) 92%, var(--accent)); }
-/* Keep status notices readable without covering an active mention choice. */
-body:has(.composer-completion:not([hidden])) .toast { top: 64px; bottom: auto; }
 .toast-dismiss {
   display: grid;
   width: 24px;

@@ -139,13 +139,14 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                             .is_some_and(|workspace| user.id == workspace.self_user_id)
                 );
                 let prefs_changed = matches!(event.as_ref(), RtEvent::PreferencesChanged { .. });
-                let locale_changed = matches!(event.as_ref(), RtEvent::PreferencesChanged { name, .. } if name == "locale");
+                let locale_changed = matches!(event.as_ref(), RtEvent::PreferencesChanged { name, .. } if matches!(name.as_str(), "locale" | "time24"));
                 let old_locale = locale_changed.then(|| {
-                    shell
-                        .core
-                        .workspaces
-                        .get(&team)
-                        .and_then(|workspace| workspace.locale.clone())
+                    shell.core.workspaces.get(&team).map(|workspace| {
+                        (
+                            workspace.locale.clone(),
+                            workspace.notifications.user.get("time24").cloned(),
+                        )
+                    })
                 });
                 let notification = notifications.for_event_in_view(
                     &shell.core,
@@ -256,11 +257,12 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     change.apply(&mut shell);
                 }
                 if old_locale.is_some_and(|old| {
-                    old != shell
-                        .core
-                        .workspaces
-                        .get(&team)
-                        .and_then(|workspace| workspace.locale.clone())
+                    old != shell.core.workspaces.get(&team).map(|workspace| {
+                        (
+                            workspace.locale.clone(),
+                            workspace.notifications.user.get("time24").cloned(),
+                        )
+                    })
                 }) {
                     crate::slack_lists::locale_changed(&mut shell, &team);
                 }
@@ -655,7 +657,8 @@ pub(crate) fn apply_in_view(
             root_ts,
             last_read,
         } => {
-            core.apply_thread_mark(&(team.into(), channel, root_ts), &last_read);
+            core.apply_thread_mark(&(team.into(), channel.clone(), root_ts.clone()), &last_read);
+            activity_counts::mark_thread_read(core, team, &channel, &root_ts, &last_read);
         }
         RtEvent::ChannelMarked {
             channel,
@@ -667,18 +670,20 @@ pub(crate) fn apply_in_view(
             let mention_count = mention_count.unwrap_or(0);
             let messages = workspace.messages.entry(channel.clone()).or_default();
             messages.last_read = Some(ts.clone());
+            messages.read_revision = messages.read_revision.wrapping_add(1);
             messages.unread_count = unread_count;
             messages.mention_count = mention_count;
             if mention_count == 0 {
                 messages.vip_count = 0;
             }
             if let Some(channel) = workspace.channels.get_mut(&channel) {
-                channel.last_read = Some(ts);
+                channel.last_read = Some(ts.clone());
                 channel.unread_count = Some(unread_count);
                 channel.unread_count_display = Some(unread_count);
                 channel.mention_count = Some(mention_count);
                 channel.has_unreads = unread_count > 0 || mention_count > 0;
             }
+            activity_counts::mark_channel_read(core, team, &channel, &ts);
         }
         RtEvent::Unknown(raw) => {
             // Canonical saved counts belong to every workspace, independently

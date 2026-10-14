@@ -11,6 +11,8 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
     let Some(detail) = view.detail.as_ref() else {
         return rsx! {};
     };
+    let duplicate_reason = crate::slack_lists::create::duplicate::reason(&state.read());
+    let create_blocked = crate::slack_lists::create::blocks_mutation(&state.read());
     let deletion = crate::slack_lists::delete::presentation(&state.read());
     let delete_blocked = crate::slack_lists::delete::blocks_mutation(&state.read());
     let title = if detail.title.trim().is_empty() {
@@ -33,13 +35,14 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
             let column_id=cell.column_id.clone();let edit_column=column_id.clone();
             let mutation=view.mutation.as_ref().filter(|m|m.record_id==detail.record_id&&m.column_id==cell.column_id);
             let pending=mutation.is_some_and(|m|!m.uncertain);let uncertain=mutation.is_some_and(|m|m.uncertain);
-            let blocked=detail.unavailable||view.loading||view.stale||view.mutation.is_some()||delete_blocked;
+            let blocked=detail.unavailable||view.loading||view.stale||view.mutation.is_some()||delete_blocked||create_blocked;
             let checked=vec![Attribute::new("checked",cell.checkbox.unwrap_or(false),None,true)];
             let value=if cell.checkbox.is_some(){rsx!{input{r#type:"checkbox",tabindex:"-1",disabled:blocked||!cell.editable,"aria-label":"{column.label}, {title}",
                 onchange:move |_|crate::slack_lists::toggle_detail_checkbox(state,generation,column_id.clone()),..checked}}}
             else if cell.text.is_empty(){rsx!{span{class:"slack-list-detail-empty","Empty"}}}
             else{match &cell.content{
                 crate::slack_lists::CellContent::Plain=>rsx!{span{class:"slack-list-cell-text","{cell.text}"}},
+                crate::slack_lists::CellContent::Timestamp{tooltip}=>rsx!{span{class:"slack-list-cell-text slack-list-timestamp",title:"{tooltip}","{cell.text}"}},
                 crate::slack_lists::CellContent::Rich(nodes)=>rsx!{div{class:"slack-list-cell-rich",for node in nodes{{super::super::rich::rich_node(node,media_epoch,state)}}}},
                 crate::slack_lists::CellContent::Labels(labels)=>rsx!{div{class:"slack-list-cell-labels",for label in labels{span{class:"slack-list-option","{label}"}}}},
             }};
@@ -56,7 +59,10 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
         onmounted:move |_|{dioxus::document::eval(&format!("{MOUNT}\nmountListRecordDetail({open_generation},{visit},{record_id});"));crate::slack_lists::track_open(state,open_generation);},
         header{class:"slack-list-record-header",button{id:"slack-list-record-back",r#type:"button",class:"slack-list-action",onclick:move |_|crate::slack_lists::close_record_detail(state,generation),{icon(Icon::ChevronRight,"icon")}"Back to list"}
             h3{id:"slack-list-record-title","{title}"}
+            div{class:"slack-list-record-actions",
+            button{id:"slack-list-record-duplicate",r#type:"button",class:"slack-list-action",disabled:duplicate_reason.is_some(),title:duplicate_reason.unwrap_or("Duplicate item"),onclick:move |_|crate::slack_lists::create::duplicate::duplicate_item(state,generation),"Duplicate item"}
             button{id:"slack-list-record-delete",r#type:"button",class:"slack-list-action slack-list-delete-action",disabled:!deletion.enabled,title:deletion.reason.clone().unwrap_or_else(||"Delete item".into()),onclick:move |_|crate::slack_lists::delete::begin_delete(state,generation),{icon(Icon::Delete,"icon")}"Delete item"}
+            }
         }
         p{id:"slack-list-record-help",class:"slack-list-help","{HELP}"}
         KeyboardHelp{id:"slack-list-record-shortcuts",label:"Item keyboard shortcuts",help:HELP}

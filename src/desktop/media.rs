@@ -12,11 +12,9 @@ use super_platinum_core::{
     MediaAssetId, MediaAssetKind, MediaCacheKind, MediaStore, detect_image_mime,
 };
 
-/// Huddles add three things: the Chime SDK is a same-origin script (`'self'`
-/// covers Windows' `http://dioxus.index.html`), it spins workers up from
-/// `blob:` URLs, and its optional telemetry posts to `*.chime.aws`. Signalling
-/// and TURN ride the existing `wss:` allowance.
-const CSP: &str = "default-src 'none'; img-src 'self' super-platinum-media: data: blob:; media-src 'self' super-platinum-media: blob: mediastream:; style-src 'unsafe-inline'; script-src 'self' dioxus: 'unsafe-inline' 'unsafe-eval'; worker-src 'self' dioxus: blob:; child-src blob:; connect-src 'self' dioxus: ipc: ws: wss: https://*.chime.aws; font-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+pub(crate) mod check;
+mod uri;
+pub(crate) use uri::MediaUri;
 
 /// WebView2 serves the app from `http://dioxus.index.html`, which is not a
 /// secure context, so the microphone and WebRTC are unavailable there. This
@@ -790,9 +788,27 @@ const WINDOW_DEFAULT_INNER_SIZE: dioxus::desktop::tao::dpi::LogicalSize<f64> =
 
 pub fn desktop_config(media: MediaRegistry) -> Config {
     let config = Config::new();
+    // The pinned desktop runtime otherwise shares %LOCALAPPDATA%/<exe_name>
+    // across every Windows window. Fixtures must never borrow the live profile,
+    // including a COM-launched fixture that does not inherit the runner's TMP.
+    #[cfg(target_os = "windows")]
+    let config = if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        config.with_data_directory(std::env::temp_dir().join(format!(
+            "super-platinum-fixture-webview-{}-{stamp}",
+            std::process::id()
+        )))
+    } else {
+        config
+    };
     let initial_size = if matches!(
         std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
         Ok("pdf-preview-narrow"
+            | "threads-keyboard-narrow"
+            | "threads-file-paste-narrow"
             | "file-preview-narrow"
             | "file-actions-narrow"
             | "file-rename-narrow"
@@ -820,7 +836,9 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
             | "local-drafts-error-narrow"
             | "later-files-narrow"
             | "send-outcomes-narrow"
+            | "schedule-clear-narrow"
             | "managed-draft-recovery-narrow"
+            | "rejected-thread-return-narrow"
             | "block-control-values-narrow"
             | "button-metadata-narrow"
             | "slack-list-narrow"
@@ -829,9 +847,12 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
             | "profile-title-narrow"
             | "message-radio-buttons-narrow"
             | "message-multi-controls-narrow"
+            | "message-overflow-narrow"
             | "message-static-select-narrow"
             | "message-datepicker-narrow"
             | "message-users-select-narrow"
+            | "message-multi-users-select-narrow"
+            | "message-channels-select-narrow"
             | "message-conversations-select-narrow"
             | "composer-emoji-narrow"
             | "channel-mute-narrow"
@@ -848,6 +869,14 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
             | "message-button-metadata-narrow"
             | "slack-links-narrow"
             | "app-modal-form-narrow"
+            | "app-modal-users-narrow"
+            | "app-modal-user-narrow"
+            | "app-modal-conversation-narrow"
+            | "app-modal-channel-narrow"
+            | "app-modal-multi-channel-narrow"
+            | "app-modal-multi-conversation-narrow"
+            | "message-multi-conversations-select-narrow"
+            | "message-multi-channels-select-narrow"
             | "app-modal-lifecycle-narrow"
             | "rejected-send-narrow"
             | "member-add-narrow"
@@ -875,7 +904,9 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 .with_inner_size(initial_size)
                 .with_min_inner_size(WINDOW_MIN_INNER_SIZE),
         )
-        .with_custom_head(crate::performance::runtime_probe::head(CSP))
+        .with_custom_head(crate::performance::runtime_probe::head(
+            &uri::content_security_policy(),
+        ))
         .with_custom_protocol("super-platinum-media", move |_webview, request| {
             media.respond(request)
         })

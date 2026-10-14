@@ -383,12 +383,12 @@ mod tests {
             ..Default::default()
         };
 
-        assert!(state.mark_channel_read("C1"));
+        assert!(state.mark_channel_read("C1", "300.000300"));
         assert!(!state.items[0].is_unread);
         assert!(state.items[1].is_unread, "the thread keeps its own unread");
         assert!(state.items[2].is_unread, "other channels are untouched");
         assert_eq!(state.unread_count(), 2);
-        assert!(!state.mark_channel_read("C1"));
+        assert!(!state.mark_channel_read("C1", "300.000300"));
     }
 
     #[test]

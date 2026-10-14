@@ -68,6 +68,7 @@ fn install_picker(
         .unwrap();
     let revision = next_id();
     shell.message_buttons.user_picker = Some(Picker {
+        multiple: None,
         input_revision: super::super::revision(shell, &source).unwrap(),
         context: crate::scheduled::Context::capture(shell),
         filter: filter(shell, &source, &metadata),

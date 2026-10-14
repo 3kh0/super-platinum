@@ -9,7 +9,7 @@ use super_platinum_core::{
 mod discovery;
 mod policy;
 use discovery::fetch;
-pub(super) use policy::eligible;
+pub(crate) use policy::eligible;
 const LIMIT: usize = 24;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Choice {
@@ -17,7 +17,7 @@ pub(crate) struct Choice {
     pub label: String,
     pub canonical: Option<Value>,
 }
-pub(super) fn candidates<'a>(
+pub(crate) fn candidates<'a>(
     workspace: &Workspace,
     users: impl Iterator<Item = (&'a User, bool)>,
     query: &str,
@@ -74,7 +74,7 @@ pub(super) fn cached(shell: &ShellState, source: &Source, query: &str) -> Vec<Ch
             candidates(w, w.users.values().map(|u| (u, false)), query)
         })
 }
-pub(super) fn owner_current(shell: &ShellState, ctx: &Context) -> bool {
+pub(crate) fn owner_current(shell: &ShellState, ctx: &Context) -> bool {
     shell.core.account_epoch == ctx.epoch
         && shell
             .core
@@ -88,8 +88,16 @@ pub(super) fn owner_current(shell: &ShellState, ctx: &Context) -> bool {
             .and_then(|s| s.workspaces.get(&ctx.session.team_id))
             .is_some_and(|s| s.user_id == ctx.session.user_id && s.token == ctx.session.token)
 }
-pub(super) fn context_current(shell: &ShellState, ctx: &Context) -> bool {
+pub(crate) fn context_current(shell: &ShellState, ctx: &Context) -> bool {
     owner_current(shell, ctx) && shell.core.active_team.as_ref() == Some(&ctx.session.team_id)
+}
+/// A shared account/team deadline; callers cannot mutate the directory cache.
+pub(crate) fn cooling(shell: &ShellState, epoch: u64, team: &str) -> bool {
+    shell
+        .message_buttons
+        .user_retry
+        .get(&(epoch, team.into()))
+        .is_some_and(|deadline| std::time::Instant::now() < *deadline)
 }
 pub(super) fn admit_query(
     shell: &mut ShellState,
@@ -222,7 +230,22 @@ pub(crate) fn search(mut state: Signal<ShellState>, revision: u64, query: String
                         &query,
                     )
                 };
+                let owner = p.source.owner().clone();
+                super::super::channels::refresh_retained(&mut shell, &owner, &channels);
+                super::super::channels::refresh_retained_users(&mut shell, &owner, &users);
                 let p = shell.message_buttons.user_picker.as_mut().unwrap();
+                if let Some(selection) = p.multiple.as_mut() {
+                    super::super::channels::refresh_users(
+                        &mut selection.proofs,
+                        &selection.selected,
+                        &users,
+                    );
+                    super::super::channels::refresh(
+                        &mut selection.proofs,
+                        &selection.selected,
+                        &channels,
+                    );
+                }
                 p.candidates = choices;
                 p.agent_unavailable |=
                     p.filter.as_ref().is_none_or(|f| f.allows("im")) && agent_unavailable;
@@ -251,7 +274,7 @@ pub(crate) fn search(mut state: Signal<ShellState>, revision: u64, query: String
     });
 }
 
-pub(super) fn remember_cooldown(
+pub(crate) fn remember_cooldown(
     shell: &mut ShellState,
     epoch: u64,
     team: &str,
@@ -263,4 +286,18 @@ pub(super) fn remember_cooldown(
         .entry((epoch, team.into()))
         .and_modify(|current| *current = (*current).max(deadline))
         .or_insert(deadline);
+}
+
+/// Shared read-only member discovery. Callers retain their own surface tickets.
+pub(crate) async fn fetch_users(ctx: &Context, query: &str) -> Result<Vec<User>, Error> {
+    fetch(ctx, query, None).await.map(|(users, _)| users)
+}
+
+/// Shared conversation discovery; no message-owned picker or write is involved.
+pub(crate) async fn fetch_conversations(
+    ctx: &Context,
+    query: &str,
+    filter: &super::conversations::Filter,
+) -> Result<(Vec<User>, Vec<super_platinum_core::slack::models::Channel>), Error> {
+    fetch(ctx, query, Some(filter)).await
 }

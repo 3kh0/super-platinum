@@ -1,4 +1,4 @@
-//! Captured I8j+ users_select actions in ordinary message containers.
+//! Captured HvtU users_select actions (B13315319) in ordinary message containers.
 //! Capturing is pure: confirmation cancellation simply discards this value.
 use super::*;
 use crate::block_actions::form;
@@ -106,7 +106,7 @@ impl CapturedMessageUser {
             "type":"users_select", "block_id":block_id, "action_id":action_id,
             "selected_user":selected_user,
         });
-        // I8j+ emits truthy initialUser. BlockElementShell adds confirm.
+        // HvtU (B13316360) emits truthy initialUser. BlockElementShell adds confirm.
         if let Some(value) = element
             .get("initial_user")
             .and_then(Value::as_str)

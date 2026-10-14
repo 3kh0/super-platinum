@@ -40,7 +40,7 @@
   padding: 0 3px;
   border-radius: 999px;
   background: var(--mention);
-  color: var(--on-accent);
+  color: var(--on-mention);
   font-size: 9px;
   font-weight: 700;
   line-height: 14px;
@@ -161,7 +161,7 @@
   width: calc(100% - 16px);
 }
 .jump-to:hover { background: var(--hover-overlay); color: var(--text); }
-.jump-to .hint { margin-left: auto; font-size: 11px; color: var(--muted-2); opacity: .85; }
+.jump-to .hint { margin-left: auto; font-size: 11px; color: var(--muted-2); }
 .sidebar-pages {
   display: flex;
   flex-direction: column;
@@ -275,7 +275,7 @@
   height: 18px;
   border-radius: 4px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--link);
   font-size: 10px;
   font-weight: 700;
 }
@@ -286,7 +286,7 @@
   padding: 0 5px;
   border-radius: 999px;
   background: var(--mention);
-  color: var(--on-accent);
+  color: var(--on-mention);
   font-size: 10px;
   font-weight: 700;
   line-height: 16px;

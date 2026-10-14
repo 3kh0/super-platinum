@@ -14,6 +14,8 @@ MANIFEST="Cargo.toml"
 BINARY="${SUPER_PLATINUM_BINARY:-target/debug/super-platinum}"
 FIXTURES=(
   login opening loading channel main-general-new-message-motion unreads threads
+  threads-keyboard-narrow
+  threads-file-paste threads-file-paste-narrow
   rail-account-snoozed
   animated-reaction reaction-picker later later-files later-files-narrow later-empty later-error later-reminder later-new-reminder
   bookmarks bookmarks-narrow bookmarks-edit bookmarks-remove bookmarks-error bookmarks-folder bookmarks-folder-remove bookmarks-move
@@ -26,6 +28,7 @@ FIXTURES=(
   pins pins-narrow pins-empty pins-error channel-pinned-message
   forward forward-narrow forward-error forward-partial forward-partial-narrow forward-people forward-people-narrow
   scheduled scheduled-empty scheduled-error scheduled-edit scheduled-send-confirm
+  schedule-clear schedule-clear-narrow schedule-clear-thread
   drafts drafts-empty drafts-edit drafts-conflict drafts-no-destination channel-details channel-create channel-leave channel-leave-last channel-join channel-join-composer
   new-dm-directory new-dm-directory-loading new-dm-directory-error new-dm-directory-empty new-dm-directory-error-narrow
   local-drafts local-drafts-loading local-drafts-error local-drafts-error-narrow
@@ -53,6 +56,14 @@ FIXTURES=(
   edit-message-composer accounts self-menu self-menu-notifications
   multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout button-metadata button-metadata-narrow block-control-values block-control-values-narrow
   app-modal-form app-modal-form-narrow app-modal-lifecycle app-modal-lifecycle-narrow
+  app-modal-users app-modal-users-narrow
+  app-modal-user app-modal-user-narrow
+  app-modal-conversation app-modal-conversation-narrow
+  app-modal-channel app-modal-channel-narrow
+  app-modal-multi-channel app-modal-multi-channel-narrow
+  app-modal-multi-conversation app-modal-multi-conversation-narrow
+  message-multi-conversations-select message-multi-conversations-select-narrow
+  message-multi-channels-select message-multi-channels-select-narrow
   slack-list slack-list-narrow slack-list-readonly slack-list-incomplete slack-list-error slack-list-loading
   self-status-editor self-status-editor-narrow
   profile-edit profile-edit-narrow
@@ -61,6 +72,8 @@ FIXTURES=(
   message-multi-controls message-multi-controls-narrow
   message-datepicker message-datepicker-narrow
   message-users-select message-users-select-narrow
+  message-multi-users-select message-multi-users-select-narrow
+  message-channels-select message-channels-select-narrow
   message-conversations-select message-conversations-select-narrow
   composer-emoji composer-emoji-narrow
   channel-mute channel-mute-narrow
@@ -74,8 +87,10 @@ FIXTURES=(
   upload-restart upload-restart-narrow
   message-timepicker message-timepicker-narrow
   message-static-select message-static-select-narrow
+  message-overflow message-overflow-narrow
   message-button-actions message-button-actions-narrow message-button-metadata message-button-metadata-narrow
   slack-links slack-links-narrow
+  rejected-thread-return rejected-thread-return-narrow
   media-loading-state media-failed timeline-variable-height timeline-latest-opening
   usergroup-members usergroup-channels system-messages send-outcomes send-outcomes-narrow send-outcomes-thread managed-draft-recovery managed-draft-recovery-narrow message-marked-unread message-marked-unread-narrow member-live-refresh channel-members member-add member-add-error member-remove member-add-narrow member-remove-narrow
 )

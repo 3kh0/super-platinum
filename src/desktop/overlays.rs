@@ -1,3 +1,4 @@
+use crate::media::MediaUri;
 use dioxus::prelude::*;
 use super_platinum_core::MediaAssetId;
 
@@ -303,7 +304,7 @@ fn self_menu_view(mut state: Signal<ShellState>, snapshot: &ShellState) -> Eleme
             div { class: "self-menu-identity",
                 span { class: "self-menu-avatar",
                     if let Some(avatar) = account.avatar.as_ref().filter(|_| avatar_ready) {
-                        img { src: "{avatar.uri_at(snapshot.media_epoch)}", alt: "" }
+                        img { src: "{avatar.webview_uri_at(snapshot.media_epoch)}", alt: "" }
                     } else {
                         "{account.initials}"
                     }
@@ -322,7 +323,7 @@ fn self_menu_view(mut state: Signal<ShellState>, snapshot: &ShellState) -> Eleme
             if let Some(status) = status {
                 div { class: "self-menu-status",
                     if let Some(image) = status.image.as_ref().filter(|image| snapshot.media.is_ready(image)) {
-                        img { class: "profile-status-emoji", src: "{image.uri_at(snapshot.media_epoch)}", alt: "" }
+                        img { class: "profile-status-emoji", src: "{image.webview_uri_at(snapshot.media_epoch)}", alt: "" }
                     } else if !status.glyph.is_empty() {
                         span { class: "profile-status-glyph", "{status.glyph}" }
                     }
@@ -527,7 +528,7 @@ fn palette_results(state: Signal<ShellState>, snapshot: &ShellState) -> Element 
                                         if let Some(avatar) = avatar.as_ref().filter(|avatar| snapshot.media.is_ready(avatar)) {
                                             img {
                                                 class: "palette-avatar",
-                                                src: "{avatar.uri_at(snapshot.media_epoch)}",
+                                                src: "{avatar.webview_uri_at(snapshot.media_epoch)}",
                                                 alt: "{name}"
                                             }
                                         } else {

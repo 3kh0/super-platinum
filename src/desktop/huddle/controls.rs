@@ -171,7 +171,7 @@ pub async fn open_huddle_thread(mut state: Signal<ShellState>) {
             Ok(channels) => {
                 if let Some(workspace) = shell.core.workspaces.get_mut(&call.team) {
                     for channel in channels {
-                        workspace.channels.insert(channel.id.clone(), channel);
+                        workspace.insert_channel_metadata(channel);
                     }
                 }
             }

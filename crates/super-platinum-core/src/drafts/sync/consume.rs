@@ -72,6 +72,7 @@ impl DraftSync {
             return Err(ConsumeError::Stale);
         }
         if self.consumption.is_some()
+            || self.blocked_observation.is_some()
             || matches!(
                 self.workflow,
                 Workflow::Conflict { .. } | Workflow::Rejected(_)

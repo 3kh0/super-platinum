@@ -16,11 +16,19 @@ use super_platinum_core::{
     slack::{api, events::RtEvent},
 };
 
+pub(crate) mod channel_fixture;
+mod channels;
 pub(crate) mod check;
+pub(crate) mod conversation_fixture;
 pub(crate) mod fixture;
+pub(crate) mod multi_channel_fixture;
+pub(crate) mod multi_conversation_fixture;
 mod requests;
 #[cfg(test)]
 mod tests;
+pub(crate) mod users;
+pub(crate) mod users_check;
+pub(crate) mod users_fixture;
 
 pub(crate) struct Session {
     pub(crate) modal: ModalState,
@@ -34,6 +42,13 @@ pub(crate) struct Session {
     view_error: Option<String>,
     fixture: bool,
     pub(crate) fixture_attempts: usize,
+    users: Option<users::Picker>,
+    user_labels: BTreeMap<String, String>,
+    channel_proofs: BTreeMap<
+        (String, super_platinum_core::block_actions::form::InputKey),
+        crate::message_buttons::inputs::channels::Proofs,
+    >,
+    users_fixture: Option<users_fixture::Recorder>,
 }
 impl Session {
     fn new(scope: ModalScope) -> Self {
@@ -49,9 +64,16 @@ impl Session {
             view_error: None,
             fixture: false,
             fixture_attempts: 0,
+            users: None,
+            user_labels: BTreeMap::new(),
+            channel_proofs: BTreeMap::new(),
+            users_fixture: None,
         }
     }
     pub(crate) fn fixture(view: Value) -> Self {
+        Self::fixture_with_origin(view, None)
+    }
+    pub(crate) fn fixture_with_origin(view: Value, origin: Option<String>) -> Self {
         let scope = ModalScope {
             account_epoch: 0,
             team: "T1".into(),
@@ -59,9 +81,14 @@ impl Session {
         };
         let mut session = Self::new(scope.clone());
         session.fixture = true;
-        session
-            .modal
-            .enqueue(&scope, "fixture".into(), "A_FIXTURE".into(), 0, 60_000);
+        session.modal.enqueue_with_origin(
+            &scope,
+            "fixture".into(),
+            "A_FIXTURE".into(),
+            origin,
+            0,
+            60_000,
+        );
         let event=serde_json::from_value(serde_json::json!({"type":"view_opened","view_id":view["id"],"app_id":"A_FIXTURE","view_type":"modal","client_token":"fixture","view":view})).expect("fixture event");
         session.modal.apply(&scope, &event, 1);
         session.sync_forms();
@@ -80,6 +107,8 @@ impl Session {
     fn sync_forms(&mut self) {
         self.forms
             .retain(|id, _| self.modal.stack().iter().any(|v| &v.id == id));
+        self.channel_proofs
+            .retain(|(view, _), _| self.forms.contains_key(view));
         self.loading = self.modal.stack().last().is_some_and(|v| v.needs_content);
         // A hidden parent's remote changes must not block or invalidate the
         // active child. Retain its draft and reconcile the latest raw payload
@@ -99,7 +128,7 @@ impl Session {
             }
             form.reconcile(payload)
         } else {
-            ModalForm::parse(payload).map(|form| {
+            ModalForm::parse_with_origin(payload, view.origin_conversation.as_deref()).map(|form| {
                 self.forms.insert(view.id.clone(), form);
             })
         };
@@ -129,6 +158,7 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
         return None;
     }
     let form = session.current_form().cloned();
+    let unavailable = users::unavailable_context(shell);
     Some(Presentation {
         title: form
             .as_ref()
@@ -147,8 +177,10 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
         busy: session.busy,
         uncertain: session.uncertain,
         loading: session.loading,
-        locked: session.locked(),
-        view_error: session.view_error.clone(),
+        locked: session.locked() || unavailable.is_some(),
+        view_error: unavailable
+            .map(str::to_owned)
+            .or_else(|| session.view_error.clone()),
         reset_revision: session.reset_revision,
     })
 }
@@ -311,6 +343,7 @@ pub(crate) fn flush_closes(mut state: Signal<ShellState>) {
 }
 /// Reconnection/account replacement invalidates tokens and any in-flight UI work.
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
+    let users_changed = users::poll(shell);
     if shell
         .app_modal
         .as_ref()
@@ -333,7 +366,7 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
         shell.overlay = replacement;
         return true;
     }
-    false
+    users_changed
 }
 pub(crate) fn realtime(
     shell: &mut ShellState,
@@ -425,6 +458,13 @@ pub(crate) struct ActionToken {
     scope: ModalScope,
 }
 pub(crate) fn register_action(shell: &mut ShellState, app_id: &str) -> Option<ActionToken> {
+    register_action_with_origin(shell, app_id, None)
+}
+pub(crate) fn register_action_with_origin(
+    shell: &mut ShellState,
+    app_id: &str,
+    origin_conversation: Option<String>,
+) -> Option<ActionToken> {
     // Overlay replacement can precede the periodic lifecycle tick. Retire a
     // displaced stack now so it cannot silently swallow a new button click.
     poll(shell);
@@ -445,7 +485,14 @@ pub(crate) fn register_action(shell: &mut ShellState, app_id: &str) -> Option<Ac
     let token = token();
     session
         .modal
-        .enqueue(&scope, token.clone(), app_id.into(), now_ms(), 60_000)
+        .enqueue_with_origin(
+            &scope,
+            token.clone(),
+            app_id.into(),
+            origin_conversation,
+            now_ms(),
+            60_000,
+        )
         .then_some(ActionToken { token, scope })
 }
 pub(crate) fn action_scope_current(shell: &ShellState, action: &ActionToken) -> bool {

@@ -295,9 +295,14 @@
    long, and an unbounded toast painted it straight off the left edge of the
    window. Three lines, ellipsised, with the full text on hover. */
 .toast {
-  position: absolute;
+  position: fixed;
   right: 18px;
-  bottom: 18px;
+  bottom: var(--toast-bottom, 18px);
+  max-height: var(--toast-max-height, calc(100vh - 36px));
+  box-sizing: border-box;
+  overflow: auto;
+  /* Initial measurement runs on mount; never flash over a native text field. */
+  visibility: hidden;
   z-index: 20;
   max-width: min(420px, calc(100% - 36px));
   padding: 9px 12px;
@@ -308,6 +313,7 @@
   cursor: pointer;
   line-height: 1.4;
 }
+.toast[data-positioned="true"] { visibility: visible; }
 /* The clamp lives on an inner box with no padding of its own: `overflow` clips
    at the padding edge, so clamping the padded element left a fourth line
    half-painted in the padding below the ellipsis. */

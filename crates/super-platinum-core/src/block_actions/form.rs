@@ -7,16 +7,27 @@
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
+mod message_conversations;
+pub use message_conversations::{parse_message_conversations, validate_message_conversations};
+mod message_channels;
+pub use message_channels::{parse_message_channels, validate_message_channels};
+mod message_channel;
+pub use message_channel::{parse_message_channel, validate_message_channel};
 mod message_conversation;
 mod message_date;
 mod message_multi;
+mod message_overflow;
 mod message_time;
 mod message_user;
+mod message_users;
+mod modal_channel;
 pub use message_conversation::{
     ConversationFilter, parse_message_conversation, valid_message_conversation,
     validate_message_conversation,
 };
+pub use message_overflow::parse_message_overflow;
 pub use message_user::{parse_message_user, valid_message_user, validate_message_user};
+pub use message_users::{parse_message_users, validate_message_users};
 mod parse;
 mod values;
 pub use message_date::{parse_message_date, validate_message_date};
@@ -80,7 +91,17 @@ pub enum InputKind {
     },
     Date,
     User,
+    MultiConversation {
+        max_selected_items: Option<usize>,
+    },
+    MultiChannel {
+        max_selected_items: Option<usize>,
+    },
+    MultiUser {
+        max_selected_items: Option<usize>,
+    },
     Conversation,
+    Channel,
     Time {
         timezone: Option<String>,
     },
@@ -95,7 +116,11 @@ pub enum InputValue {
     Selected(Vec<String>),
     Date(Option<String>),
     User(Option<String>),
+    Users(Vec<String>),
+    Channels(Vec<String>),
+    Conversations(Vec<String>),
     Conversation(Option<String>),
+    Channel(Option<String>),
     Time(Option<String>),
     DateTime(Option<i64>),
     Unsupported,
@@ -127,6 +152,8 @@ pub struct ModalForm {
     /// Stateful controls outside supported input blocks cannot silently vanish.
     pub unsupported: Vec<String>,
     pub raw_view: Value,
+    /// Frozen action origin; retained across server updates to this form.
+    origin_conversation: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, thiserror::Error)]
@@ -147,7 +174,14 @@ pub enum FormError {
 
 impl ModalForm {
     pub fn parse(view: &Value) -> Result<Self, FormError> {
-        parse::form(view)
+        Self::parse_with_origin(view, None)
+    }
+
+    pub fn parse_with_origin(
+        view: &Value,
+        origin_conversation: Option<&str>,
+    ) -> Result<Self, FormError> {
+        parse::form(view, origin_conversation)
     }
 
     pub fn set_value(&mut self, key: &InputKey, value: InputValue) -> Result<(), FormError> {
@@ -198,7 +232,7 @@ impl ModalForm {
     /// Transactional: identity/type removals cannot silently discard dirty
     /// text. The controller must block submission after a conflicting update.
     pub fn reconcile(&mut self, view: &Value) -> Result<(), FormError> {
-        let mut next = Self::parse(view)?;
+        let mut next = Self::parse_with_origin(view, self.origin_conversation.as_deref())?;
         if next.view_id != self.view_id {
             return Err(FormError::ConflictingUpdate);
         }
@@ -247,7 +281,7 @@ impl ModalForm {
     /// Unlike an unsolicited update, removed or replaced dirty fields do not
     /// create a conflict after the app has accepted their submission.
     pub fn reconcile_submitted(&mut self, view: &Value) -> Result<(), FormError> {
-        let mut next = Self::parse(view)?;
+        let mut next = Self::parse_with_origin(view, self.origin_conversation.as_deref())?;
         if next.view_id != self.view_id {
             return Err(FormError::ConflictingUpdate);
         }
@@ -269,5 +303,17 @@ impl ModalForm {
     }
 }
 
+#[cfg(test)]
+mod modal_channel_tests;
+#[cfg(test)]
+mod modal_channels_tests;
+#[cfg(test)]
+mod modal_conversation_tests;
+#[cfg(test)]
+mod modal_conversations_tests;
+#[cfg(test)]
+mod modal_user_tests;
+#[cfg(test)]
+mod modal_users_tests;
 #[cfg(test)]
 mod tests;

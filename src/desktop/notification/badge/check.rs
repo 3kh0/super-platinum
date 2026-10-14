@@ -119,15 +119,7 @@ fn check(state: Signal<ShellState>, desktop: DesktopContext) -> Result<Value, &'
 }
 
 fn require_isolated(state: Signal<ShellState>) -> Result<(), String> {
-    let shell = state.peek();
-    if !crate::fixture::is_fixture()
-        || shell.core.session.is_some()
-        || shell.core.transport.is_some()
-    {
-        Err("Dock projection check requires a disconnected fixture".into())
-    } else {
-        Ok(())
-    }
+    super::projection_check::require_isolated(state)
 }
 
 async fn wait_projection(
@@ -152,88 +144,13 @@ async fn wait_projection(
     }
 }
 
-async fn projection_check(mut state: Signal<ShellState>) -> Result<Value, String> {
+async fn projection_check(state: Signal<ShellState>) -> Result<Value, String> {
     require_isolated(state)?;
-    {
-        let mut shell = state.write();
-        shell.signed_in = true;
-        shell.core.active_account = Some("dock-projection-fixture".into());
-        shell.core.account_epoch = shell.core.account_epoch.wrapping_add(1);
-        shell.core.workspaces.retain(|team, _| team == "T1");
-        let w = shell
-            .core
-            .workspaces
-            .get_mut("T1")
-            .ok_or("Missing synthetic workspace")?;
-        w.notifications = Default::default();
-        w.notifications.dock_loaded = true;
-        let rules = super_platinum_core::slack::api::parse_badge_experiments(
-            &json!({"ok":true,"assignments":{"activity_inbox":{"group":"on"}}}),
-        )
-        .map_err(|_| "Synthetic badge policy rejected")?;
-        let ticket = w.activity_counts.begin_experiments();
-        w.activity_counts.apply_experiments(ticket, rules);
-        w.apply_activity_counts(
-            serde_json::from_value(json!({"at_user":6,"message_reaction":900})).unwrap(),
-        );
-        shell.refresh_dock_badge();
+    let mut stages = Vec::new();
+    for step in super::projection_check::STEPS {
+        step.apply(state)?;
+        stages.push(wait_projection(state, step.name(), step.expected()).await?);
     }
-    let mut stages = vec![wait_projection(state, "activityExcludesReaction", Some("6")).await?];
-    {
-        let mut shell = state.write();
-        shell
-            .core
-            .workspaces
-            .get_mut("T1")
-            .unwrap()
-            .apply_activity_counts(serde_json::from_value(json!({})).unwrap());
-        shell.refresh_dock_badge_for("T1");
-    }
-    stages.push(wait_projection(state, "activityZero", None).await?);
-    {
-        let mut shell = state.write();
-        let w = shell.core.workspaces.get_mut("T1").unwrap();
-        w.notifications
-            .global
-            .insert("global_reminders_in_activity".into(), json!(false));
-        w.dock_counts.apply_overdue_count(4);
-        shell.refresh_dock_badge_for("T1");
-    }
-    stages.push(wait_projection(state, "eligibleLater", Some("4")).await?);
-    {
-        let mut shell = state.write();
-        shell
-            .core
-            .workspaces
-            .get_mut("T1")
-            .unwrap()
-            .notifications
-            .user
-            .insert("tab_rail_customization".into(), json!(r#"{"later":false}"#));
-        shell.refresh_dock_badge_for("T1");
-    }
-    stages.push(wait_projection(state, "hiddenLater", None).await?);
-    {
-        let mut shell = state.write();
-        shell
-            .core
-            .workspaces
-            .get_mut("T1")
-            .unwrap()
-            .notifications
-            .user
-            .insert("tab_rail_customization".into(), json!(r#"{"later":true}"#));
-        shell.refresh_dock_badge_for("T1");
-    }
-    stages.push(wait_projection(state, "positiveBeforeRetirement", Some("4")).await?);
-    {
-        let mut shell = state.write();
-        shell.core.active_account = None;
-        shell.core.account_epoch = shell.core.account_epoch.wrapping_add(1);
-        // No refresh here: the cached getter and native owner retirement must
-        // clear immediately, before a replacement account loader completes.
-    }
-    stages.push(wait_projection(state, "accountRetirement", None).await?);
     Ok(
         json!({"ok":true,"mode":"projection","noTransport":true,"noPreferenceWrites":true,
         "productionHook":true,"actualAppKitReadback":true,"filteredActivity":true,

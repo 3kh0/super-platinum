@@ -112,13 +112,13 @@ pub(in crate::slack_lists) fn dispatch_creation(shell: &mut ShellState, attempt:
                     .map(|(_, value)| value.as_str())
             };
             field("list_id") == Some(attempt.intent.list_id())
-                && field("position") == Some("")
+                && field("position") == Some(attempt.intent.position())
                 && field("updated_timestamp") == Some(attempt.timestamp.as_str())
                 && field("_x_reason") == Some("create-record")
                 && field("view_id").is_none()
                 && field("fields").is_none()
                 && field("parent_record_id").is_none()
-                && field("duplicated_record_id").is_none()
+                && field("duplicated_record_id") == attempt.intent.source_record_id()
                 && field("initial_fields")
                     .and_then(|value| serde_json::from_str::<Value>(value).ok())
                     .as_ref()
@@ -139,7 +139,18 @@ pub(crate) fn complete_creation(shell: &mut ShellState) -> Option<String> {
     let fixture = shell.slack_lists.fixture.as_mut()?;
     let attempt = fixture.creation.pending.take()?;
     let id = format!("R_CREATED_{:03}", fixture.creation.attempts);
-    let mut fields = Vec::new();
+    let mut fields = attempt
+        .intent
+        .source_record_id()
+        .and_then(|source| {
+            fixture.records["records"]
+                .as_array()?
+                .iter()
+                .find(|record| record["id"] == source)?["fields"]
+                .as_array()
+                .cloned()
+        })
+        .unwrap_or_default();
     for cell in attempt
         .intent
         .initial_fields()
@@ -153,9 +164,10 @@ pub(crate) fn complete_creation(shell: &mut ShellState) -> Option<String> {
             .find(|column| column["id"] == cell["column_id"])?;
         let mut field = cell.clone();
         field["key"] = column["key"].clone();
+        fields.retain(|existing| existing["key"] != field["key"]);
         fields.push(field);
     }
-    let record = json!({"id":id,"list_id":attempt.intent.list_id(),"fields":fields,"date_created":1800000000+fixture.creation.attempts,"created_by":"U_LIST_FIXTURE","position":"","updated_timestamp":attempt.timestamp.as_str()});
+    let record = json!({"id":id,"list_id":attempt.intent.list_id(),"fields":fields,"date_created":1800000000+fixture.creation.attempts,"created_by":"U_LIST_FIXTURE","position":attempt.intent.position(),"updated_timestamp":attempt.timestamp.as_str()});
     fixture.records["records"]
         .as_array_mut()?
         .push(record.clone());

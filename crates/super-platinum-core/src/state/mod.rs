@@ -97,7 +97,7 @@ pub struct ChannelMessages {
     pub history_failed: bool,
     pub pending: Vec<MessageTs>,
     pub last_read: Option<MessageTs>,
-    /// Local ordering for thread read acknowledgements, including cursor ABA.
+    /// Local ordering for conversation/thread acknowledgements, including cursor ABA.
     pub read_revision: u64,
     pub unread_count: u32,
     pub mention_count: u32,
@@ -793,6 +793,9 @@ impl Workspace {
     fn apply_channel_read_state(&mut self, channel: &Channel) {
         let cm = self.messages.entry(channel.id.clone()).or_default();
         if let Some(last_read) = &channel.last_read {
+            if cm.last_read.as_ref() != Some(last_read) {
+                cm.read_revision = cm.read_revision.wrapping_add(1);
+            }
             cm.last_read = Some(last_read.clone());
         }
         if let Some(unread) = channel.unread_count.or(channel.unread_count_display) {
