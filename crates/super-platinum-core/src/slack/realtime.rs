@@ -413,6 +413,13 @@ pub fn parse_event(text: &str) -> Option<RtEvent> {
                     .map(|v| v as u32),
             })
         }
+        "badge_counts_updated" => {
+            // B5922632 replaces the complete activity_v2 map; absence/null is
+            // not an authoritative empty snapshot.
+            serde_json::from_value(value.get("activity_v2")?.clone())
+                .ok()
+                .map(RtEvent::BadgeCountsUpdated)
+        }
         "activity" => {
             let entry = value.get("entry")?.clone();
             let item: super::models::ActivityItem = serde_json::from_value(entry).ok()?;
@@ -441,6 +448,39 @@ pub fn parse_event(text: &str) -> Option<RtEvent> {
         _ => {
             let raw: RawEvent = serde_json::from_value(value).ok()?;
             Some(RtEvent::Unknown(raw))
+        }
+    }
+}
+
+#[cfg(test)]
+mod activity_badge_tests {
+    use super::*;
+
+    #[test]
+    fn badge_event_preserves_categories_and_explicit_zero() {
+        for (raw, total) in [
+            (
+                r#"{"type":"badge_counts_updated","activity_v2":{"dm":2,"future_type":3}}"#,
+                5,
+            ),
+            (r#"{"type":"badge_counts_updated","activity_v2":{}}"#, 0),
+        ] {
+            let Some(RtEvent::BadgeCountsUpdated(counts)) = parse_event(raw) else {
+                panic!("expected typed Activity badge snapshot");
+            };
+            assert_eq!(counts.total(), total);
+        }
+    }
+
+    #[test]
+    fn absent_null_and_malformed_badge_maps_do_not_clear_counts() {
+        for raw in [
+            r#"{"type":"badge_counts_updated"}"#,
+            r#"{"type":"badge_counts_updated","activity_v2":null}"#,
+            r#"{"type":"badge_counts_updated","activity_v2":[]}"#,
+            r#"{"type":"badge_counts_updated","activity_v2":{"dm":-1}}"#,
+        ] {
+            assert!(parse_event(raw).is_none());
         }
     }
 }

@@ -8,7 +8,7 @@ import subprocess
 import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-BINARY = ROOT / "target/debug/Super Platinum.app/Contents/MacOS/super-platinum"
+BINARY = ROOT / "target/debug/super-platinum"
 TMP = pathlib.Path(os.environ.get("TMPDIR", "/tmp"))
 MARKER = TMP / "super-platinum-agent.sock.path"
 CAPTURES = ROOT / "tmp/agent-ui"
@@ -48,11 +48,7 @@ for run in range(args.run_start, args.run_start + args.runs):
                     raise RuntimeError(f"{capture_name}: failed to start")
                 time.sleep(.1)
             control("ping")
-            subprocess.run(["osascript", "-l", "JavaScript", "-e",
-                            'ObjC.import("AppKit"); '
-                            f'var app=$.NSRunningApplication.runningApplicationWithProcessIdentifier({process.pid}); '
-                            'if(app.finishedLaunching) app.activateWithOptions(2);'],
-                           capture_output=True, check=True, timeout=5)
+            control("focus-window")
             # Auto-scroll performs one top/bottom sweep. Wait for the final
             # observer batch; this is sampling time, not an interaction latency.
             time.sleep(4)

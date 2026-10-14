@@ -42,6 +42,7 @@ Commands:
   ping
   help
   state                         Full JSON UI snapshot
+  focus-window                  Activate the connected dev window
   open-palette | palette
   close-palette
   set-query <text> | type <text>
@@ -52,7 +53,7 @@ Commands:
   select-workspace <team_id>
   search <query>
   clear-search
-  open-settings
+  open-settings [appearance|notifications|storage]
   main-view <home|unreads|threads|dms|activity|later|files|scheduled>   Switch main surface
   activity-select <index>         Open activity item in right panel
   close-settings
@@ -106,6 +107,9 @@ case "$cmd" in
   ping)
     JSON=$(printf '{"id":%s,"cmd":"ping"}' "$REQ_ID")
     ;;
+  focus-window)
+    JSON=$(printf '{"id":%s,"cmd":"focus-window"}' "$REQ_ID")
+    ;;
   state)
     JSON=$(printf '{"id":%s,"cmd":"state"}' "$REQ_ID")
     ;;
@@ -154,7 +158,16 @@ case "$cmd" in
     JSON=$(printf '{"id":%s,"cmd":"clear-search"}' "$REQ_ID")
     ;;
   open-settings)
-    JSON=$(printf '{"id":%s,"cmd":"open-settings"}' "$REQ_ID")
+    [[ $# -le 1 ]] || { echo "usage: agentctl.sh open-settings [appearance|notifications|storage]" >&2; exit 2; }
+    if [[ $# -eq 0 ]]; then
+      JSON=$(printf '{"id":%s,"cmd":"open-settings"}' "$REQ_ID")
+    else
+      case "$1" in
+        appearance|notifications|storage) ;;
+        *) echo "invalid settings section: $1" >&2; exit 2 ;;
+      esac
+      JSON=$(printf '{"id":%s,"cmd":"open-settings","section":"%s"}' "$REQ_ID" "$1")
+    fi
     ;;
   close-settings)
     JSON=$(printf '{"id":%s,"cmd":"close-settings"}' "$REQ_ID")

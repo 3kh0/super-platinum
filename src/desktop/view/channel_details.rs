@@ -37,6 +37,8 @@ pub(super) fn ChannelDetailsButton(
             Ok("channel-details"
                 | "channel-mute"
                 | "channel-mute-narrow"
+                | "channel-notifications"
+                | "channel-notifications-narrow"
                 | "channel-leave"
                 | "channel-leave-last"
                 | "channel-join"
@@ -221,6 +223,7 @@ fn DetailsDialog(
                 button{role:"tab",class:if !members(){"active"}else{""},"aria-selected":!members(),disabled:saving(),onclick:move |_|{members.set(false);},"About"}
                 button{role:"tab",class:if members(){"active"}else{""},"aria-selected":members(),disabled:saving(),onclick:move |_|{members.set(true);if !details.peek().members_loaded{spawn(load_members(state,details,members_channel.clone(),false));}},"Members"}
             }
+            div {class:"channel-details-body",
             if data.error.is_empty() && editing.read().as_ref().is_some_and(|(field,expected)|data.info.as_ref().is_some_and(|info|field.value(info)!=*expected)) {
                 p{role:"status",class:"scheduled-hint","This field changed in Slack. Your unsaved edit is preserved; cancel to review the new value."}
             }
@@ -231,6 +234,7 @@ fn DetailsDialog(
                 if let Some(info)=&data.info{
                     p{class:"scheduled-hint",if info.is_archived{"Archived · "}if info.is_mpim{"Group direct message"}else if info.is_private||info.is_group{"Private channel"}else{"Public channel"}}
                     MuteControl {state,channel:channel.clone(),disabled:!data.loaded||saving()||editing.read().is_some()||archive_confirmation.read().is_some()}
+                    super::channel_notifications::ChannelNotifications {state,channel:channel.clone(),disabled:!data.loaded||saving()||editing.read().is_some()||archive_confirmation.read().is_some()}
                     for field in [ChannelTextField::Name,ChannelTextField::Topic,ChannelTextField::Description].into_iter().filter(|field|*field!=ChannelTextField::Name||(!info.is_im&&!info.is_mpim)){
                         {let original=field.value(info);let value=original.clone();let save_channel=channel.clone();let nodes=workspace.map(|w|crate::blocks::mrkdwn_blocks(crate::blocks::BlockCtx::new(w,&shell.media),&value)).unwrap_or_default();
                         rsx!{section{class:"channel-detail-field",
@@ -323,6 +327,7 @@ fn DetailsDialog(
                 if data.members_loaded&&!data.members_loading {button{disabled:saving(),onclick:{let channel=channel.clone();move |_|{spawn(load_members(state,details,channel.clone(),true));}},"Reload members"}}
                 if data.members_loaded&&names.is_empty(){p{class:"scheduled-hint","No matching loaded members."}}
                 }
+            }
             }
         }
     }

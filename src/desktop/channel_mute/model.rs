@@ -43,8 +43,21 @@ impl Token {
             .as_ref()
             .and_then(|s| s.workspaces.get(team));
         let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        shell
+            .core
+            .session
+            .as_ref()
+            .map(|s| s.d_cookie.as_str())
+            .hash(&mut hasher);
         session
-            .map(|s| (s.token.as_str(), s.user_id.as_str(), s.team_id.as_str()))
+            .map(|s| {
+                (
+                    s.token.as_str(),
+                    s.user_id.as_str(),
+                    s.team_id.as_str(),
+                    s.url.as_str(),
+                )
+            })
             .hash(&mut hasher);
         let owner = Owner {
             account: shell.core.active_account.clone()?,
@@ -91,6 +104,7 @@ pub(super) enum Phase {
 pub(super) struct Operation {
     pub id: u64,
     pub change: api::ChannelMuteChange,
+    pub settings: Option<Arc<api::ChannelNotificationIntent>>,
     pub phase: Phase,
     pub read_id: Option<u64>,
 }
@@ -107,6 +121,7 @@ pub(super) struct Attempt {
     pub token: Token,
     pub desired: bool,
     pub change: api::ChannelMuteChange,
+    pub settings: Option<Arc<api::ChannelNotificationIntent>>,
     pub context: Option<Arc<Context>>,
     pub baseline: Option<std::collections::BTreeMap<String, Value>>,
     pub schedule: Option<std::collections::BTreeMap<String, Value>>,

@@ -71,6 +71,9 @@ pub struct ShellState {
     /// Successful catalog loads are scoped to the authenticated transport.
     pub emoji_catalog_loaded: HashMap<String, crate::reaction_picker::CatalogCache>,
     pub settings_section: SettingsSection,
+    pub notification_schedule: crate::notification_schedule::State,
+    pub presentation_notifications: crate::presentation_notifications::State,
+    pub global_notifications: crate::global_notifications::State,
     pub storage: StoragePanel,
     pub palette_query: String,
     pub palette_selected: usize,
@@ -117,8 +120,11 @@ pub struct ShellState {
     pub self_menu_notifications_open: bool,
     pub(crate) slack_lists: crate::slack_lists::State,
     pub(crate) self_status: crate::self_status::State,
+    pub(crate) profile_edit: crate::profile_edit::State,
+    pub(crate) profile_title: crate::profile_title::State,
     pub(crate) channel_mute: crate::channel_mute::State,
     pub(crate) upload_checks: crate::messaging::delivery_check::State,
+    pub(crate) upload_journal: crate::messaging::upload_journal::State,
     pub self_menu_mutations: crate::bootstrap::SelfMenuMutations,
     pub profile_vip_pending: crate::profile_vip::Pending,
     pub viewer: Option<ViewerVm>,
@@ -575,6 +581,14 @@ impl ShellState {
         }
         if self.overlay == Some(Overlay::SlackList) {
             crate::slack_lists::close_shell(self);
+            return;
+        }
+        if self.overlay == Some(Overlay::ProfileTitle) {
+            crate::profile_title::close_shell(self);
+            return;
+        }
+        if self.overlay == Some(Overlay::ProfileEdit) {
+            crate::profile_edit::close_shell(self);
             return;
         }
         if self.overlay == Some(Overlay::SelfStatus) {

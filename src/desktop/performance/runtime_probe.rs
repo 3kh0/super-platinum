@@ -1,4 +1,4 @@
-//! Opt-in, twenty-second startup observation outside the VDOM task queue.
+//! Opt-in, optionally delayed twenty-second observation outside the VDOM task queue.
 //!
 //! A stalled edit acknowledgement prevents the pinned desktop renderer from
 //! polling application tasks. Native events and this custom protocol therefore
@@ -20,9 +20,51 @@ const LIMIT: Duration = Duration::from_secs(20);
 const MAX_SAMPLES: u64 = 16;
 static ENABLED: OnceLock<bool> = OnceLock::new();
 static PROBE: OnceLock<Probe> = OnceLock::new();
+static DELAY: OnceLock<Duration> = OnceLock::new();
+
+fn parse_delay(value: Option<&str>) -> Duration {
+    Duration::from_secs(
+        value
+            .and_then(|v| v.parse::<u64>().ok())
+            .filter(|v| *v <= 3600)
+            .unwrap_or(0),
+    )
+}
+
+fn delay() -> Duration {
+    *DELAY.get_or_init(|| {
+        parse_delay(
+            std::env::var("SUPER_PLATINUM_RUNTIME_PROBE_DELAY_SECS")
+                .ok()
+                .as_deref(),
+        )
+    })
+}
+
+#[derive(Clone, Copy)]
+struct Window {
+    delay: Duration,
+}
+impl Window {
+    fn active(self, elapsed: Duration) -> bool {
+        elapsed >= self.delay && self.pending(elapsed)
+    }
+    fn pending(self, elapsed: Duration) -> bool {
+        elapsed < self.delay + LIMIT
+    }
+}
+
+fn document_script(delay: Duration) -> String {
+    include_str!("runtime_probe.js").replacen(
+        "const delayMs = 0;",
+        &format!("const delayMs = {};", delay.as_millis()),
+        1,
+    )
+}
 
 struct Probe {
     started: Instant,
+    window: Window,
     native_events: AtomicU64,
     user_events: AtomicU64,
     window_events: AtomicU64,
@@ -34,7 +76,20 @@ struct Probe {
 
 impl Probe {
     fn active(&self) -> bool {
-        self.started.elapsed() < LIMIT
+        self.window.active(self.started.elapsed())
+    }
+
+    fn beat(&self) -> bool {
+        let elapsed = self.started.elapsed();
+        if !self.window.pending(elapsed) {
+            return false;
+        }
+        if self.window.active(elapsed) {
+            self.heartbeats.fetch_add(1, Ordering::Relaxed);
+            self.last_heartbeat
+                .store(elapsed.as_millis() as u64 + 1, Ordering::Relaxed);
+        }
+        true
     }
 
     fn elapsed_ms(&self) -> u64 {
@@ -54,6 +109,8 @@ impl Probe {
         let record = serde_json::json!({
             "phase": phase,
             "elapsed_ms": now,
+            "delay_ms": self.window.delay.as_millis() as u64,
+            "window_elapsed_ms": now.checked_sub(self.window.delay.as_millis() as u64),
             "native_events": self.native_events.load(Ordering::Relaxed),
             "user_events": self.user_events.load(Ordering::Relaxed),
             "window_events": self.window_events.load(Ordering::Relaxed),
@@ -80,7 +137,7 @@ pub(crate) fn head(csp: &str) -> String {
         "connect-src ",
         "connect-src super-platinum-probe: http://super-platinum-probe.runtime ",
     );
-    let script = include_str!("runtime_probe.js");
+    let script = document_script(delay());
     format!(
         r#"<meta http-equiv="Content-Security-Policy" content="{csp}"><script>{script}</script>"#
     )
@@ -94,6 +151,7 @@ pub(crate) fn configure(config: Config) -> Config {
     }
     let probe = PROBE.get_or_init(|| Probe {
         started: Instant::now(),
+        window: Window { delay: delay() },
         native_events: AtomicU64::new(0),
         user_events: AtomicU64::new(0),
         window_events: AtomicU64::new(0),
@@ -111,7 +169,8 @@ pub(crate) fn configure(config: Config) -> Config {
             .name("runtime-probe".into())
             .spawn(move || {
                 for seconds in [1, 2, 5, 10, 20] {
-                    let deadline = probe.started + Duration::from_secs(seconds);
+                    let deadline =
+                        probe.started + probe.window.delay + Duration::from_secs(seconds);
                     std::thread::sleep(deadline.saturating_duration_since(Instant::now()));
                     probe.snapshot(
                         if seconds == 20 {
@@ -126,7 +185,7 @@ pub(crate) fn configure(config: Config) -> Config {
     });
     config
         .with_on_window(move |window, _| {
-            if probe.active() {
+            if probe.window.pending(probe.started.elapsed()) {
                 probe
                     .focus
                     .store(if window.is_focused() { 2 } else { 1 }, Ordering::Relaxed);
@@ -141,6 +200,18 @@ pub(crate) fn configure(config: Config) -> Config {
             }
         })
         .with_custom_event_handler(move |event, _| {
+            if !probe.window.pending(probe.started.elapsed()) {
+                return;
+            }
+            if let Event::WindowEvent {
+                event: WindowEvent::Focused(focused),
+                ..
+            } = event
+            {
+                probe
+                    .focus
+                    .store(if *focused { 2 } else { 1 }, Ordering::Relaxed);
+            }
             if !probe.active() {
                 return;
             }
@@ -169,21 +240,17 @@ pub(crate) fn configure(config: Config) -> Config {
 pub(crate) struct Heartbeat(&'static Probe);
 
 pub(crate) fn heartbeat() -> Option<Heartbeat> {
-    PROBE.get().filter(|probe| probe.active()).map(Heartbeat)
+    PROBE
+        .get()
+        .filter(|probe| probe.window.pending(probe.started.elapsed()))
+        .map(Heartbeat)
 }
 
 impl Heartbeat {
     /// The caller drops the handle after expiry, avoiding even atomic work on
     /// subsequent ordinary runtime ticks.
     pub(crate) fn beat(self) -> bool {
-        if !self.0.active() {
-            return false;
-        }
-        self.0.heartbeats.fetch_add(1, Ordering::Relaxed);
-        self.0
-            .last_heartbeat
-            .store(self.0.elapsed_ms() + 1, Ordering::Relaxed);
-        true
+        self.0.beat()
     }
 }
 

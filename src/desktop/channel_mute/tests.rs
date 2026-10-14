@@ -356,7 +356,7 @@ fn temporary_intent_retains_exact_deadline_and_mismatched_readback_cannot_settle
 }
 
 #[test]
-fn tomorrow_requires_known_schedule_and_temporary_actions_reject_stale_or_permanent_state() {
+fn tomorrow_requires_known_schedule_and_temporary_actions_reject_stale_state() {
     let mut shell = shell();
     let captured = token(&shell);
     assert!(
@@ -386,7 +386,15 @@ fn tomorrow_requires_known_schedule_and_temporary_actions_reject_stale_or_perman
     assert!(attempt.schedule.is_some());
     shell.channel_generation += 1;
     assert!(!mark_sending(&mut shell, &attempt));
-    let current = token(&shell);
+}
+
+#[test]
+fn temporary_mute_replaces_permanent_mute_with_only_expiry_write_and_exact_readback() {
+    use super_platinum_core::{
+        config::WorkspaceSession,
+        slack::{SlackClient, client::RequestBody},
+    };
+    let mut shell = shell();
     shell
         .core
         .workspaces
@@ -397,14 +405,67 @@ fn tomorrow_requires_known_schedule_and_temporary_actions_reject_stale_or_perman
         .get_mut("C2")
         .unwrap()
         .insert("muted".into(), json!(true));
+    assert!(presentation(&shell, "C2").unwrap().can_temporary);
+    let captured = token(&shell);
+    let attempt = begin_temporary(
+        &mut shell,
+        captured,
+        api::TemporaryMuteDuration::OneHour,
+        100,
+    )
+    .unwrap();
+    let session = WorkspaceSession {
+        team_id: "T1".into(),
+        user_id: attempt.token.owner.user.clone(),
+        enterprise_id: None,
+        name: "Fixture".into(),
+        url: "https://fixture.slack.com".into(),
+        token: "fixture-only".into(),
+    };
+    let request =
+        api::channel_mute_change_request(&SlackClient::default(), &session, "C2", attempt.change)
+            .unwrap();
+    let RequestBody::Form(fields) = request.body else {
+        panic!("expected form")
+    };
+    let field = |key: &str| {
+        fields
+            .iter()
+            .find(|(name, _)| name == key)
+            .map(|(_, value)| value.as_str())
+    };
+    assert_eq!(field("channel_ids"), Some("C2"));
+    let wire: Value = serde_json::from_str(field("prefs").unwrap()).unwrap();
+    assert_eq!(
+        wire,
+        json!([{"name":"temp_mute_expiration_ts","value":"3700"}])
+    );
+    assert!(mark_sending(&mut shell, &attempt));
+    assert!(finish_write(&mut shell, &attempt, Ok(()), 101));
+    let current = token(&shell);
+    let read = begin_check(&mut shell, current, 101).unwrap();
+    assert!(!finish_read(
+        &mut shell,
+        &read,
+        Ok(prefs(true, Some(3700))),
+        101
+    ));
+    let current = token(&shell);
+    let read = begin_check(&mut shell, current, 102).unwrap();
+    assert!(finish_read(
+        &mut shell,
+        &read,
+        Ok(prefs(false, Some(3700))),
+        102
+    ));
+    let config = &shell.core.workspaces["T1"].notifications;
+    assert_eq!(config.channels["C2"]["muted"], json!(false));
+    assert_eq!(config.temporary_mute_expiration("C2"), Some(3700));
+    assert_eq!(config.channels["C2"]["unknown"], json!({"keep":true}));
     assert!(
-        begin_temporary(
-            &mut shell,
-            current,
-            api::TemporaryMuteDuration::OneHour,
-            101
-        )
-        .is_none()
+        shell.channel_mute.entries[&attempt.token.owner]
+            .operation
+            .is_none()
     );
 }
 

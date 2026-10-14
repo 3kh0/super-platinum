@@ -234,7 +234,16 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
                         }
                     }
                     if let Some(error) = error { p { class: "profile-load-error", "Some profile details could not be refreshed: {error}" } }
+                    if profile.is_self {button {id:"own-profile-title-edit",class:"own-profile-title-edit",onclick:move |_|crate::profile_title::open(state),"Edit title"}}
                     div { class: "profile-actions profile-pane-actions",
+                        if profile.is_self {
+                            button {id:"own-profile-edit",class:"profile-action",
+                                onclick:move |event|{event.stop_propagation();crate::profile_edit::open(state);},
+                                {crate::icons::icon(crate::icons::Icon::Compose,"profile-action-icon")}
+                                span {"Edit profile"}
+                            }
+                        }
+
                         button {
                             class: "profile-action profile-action-message",
                             disabled: snapshot.profile_dm_opening.as_deref() == Some(profile.user_id.as_str()),

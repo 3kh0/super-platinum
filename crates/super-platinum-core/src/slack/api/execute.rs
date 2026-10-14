@@ -601,27 +601,28 @@ pub struct CompletedUpload {
     pub file_ids: Vec<String>,
 }
 
+fn upload_file_ids(values: &[serde_json::Value]) -> Option<std::collections::BTreeSet<String>> {
+    let ids = values
+        .iter()
+        .map(|file| {
+            file.get("id")?
+                .as_str()
+                .filter(|id| !id.is_empty())
+                .map(str::to_owned)
+        })
+        .collect::<Option<std::collections::BTreeSet<_>>>()?;
+    (ids.len() == values.len() && !ids.is_empty()).then_some(ids)
+}
+
 fn completed_upload(
     value: &serde_json::Value,
     staged: &[serde_json::Value],
 ) -> Result<CompletedUpload, UploadMessageError> {
-    let ids = |values: &[serde_json::Value]| -> Option<std::collections::BTreeSet<String>> {
-        let ids = values
-            .iter()
-            .map(|file| {
-                file.get("id")?
-                    .as_str()
-                    .filter(|id| !id.is_empty())
-                    .map(str::to_owned)
-            })
-            .collect::<Option<std::collections::BTreeSet<_>>>()?;
-        (ids.len() == values.len() && !ids.is_empty()).then_some(ids)
-    };
-    let expected = ids(staged);
+    let expected = upload_file_ids(staged);
     let confirmed = value
         .get("files")
         .and_then(serde_json::Value::as_array)
-        .and_then(|files| ids(files));
+        .and_then(|files| upload_file_ids(files));
     if value.get("ok").and_then(serde_json::Value::as_bool) != Some(true)
         || expected.is_none()
         || confirmed != expected
@@ -641,6 +642,24 @@ pub async fn upload_files(
     workspace: &WorkspaceSession,
     request: UploadRequest,
 ) -> Result<CompletedUpload, UploadMessageError> {
+    upload_files_with_receipt(transport, client, workspace, request, |_| async { Ok(()) }).await
+}
+
+/// Await durable receipt storage before any operation capable of delivery.
+/// The callback receives staged identities only, not proof of finalization or
+/// delivery. Returning an error prevents both completion and sharing. Owners
+/// can invalidate the request through its cancel flag while the callback awaits.
+pub async fn upload_files_with_receipt<F, Fut>(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    request: UploadRequest,
+    receipt: F,
+) -> Result<CompletedUpload, UploadMessageError>
+where
+    F: FnOnce(CompletedUpload) -> Fut,
+    Fut: std::future::Future<Output = Result<(), Error>>,
+{
     let UploadRequest {
         reply_broadcast,
         client_msg_id,
@@ -661,6 +680,25 @@ pub async fn upload_files(
     let files = stage_files(transport, client, workspace, files_to_upload, &canceled)
         .await
         .map_err(UploadMessageError::BeforeDelivery)?;
+    let staged = CompletedUpload {
+        file_ids: upload_file_ids(&files)
+            .ok_or_else(|| {
+                UploadMessageError::BeforeDelivery(Error::Transport(
+                    "Slack did not provide unique nonempty staged file identities".into(),
+                ))
+            })?
+            .into_iter()
+            .collect(),
+    };
+    if canceled.load(Ordering::Relaxed) {
+        return Err(UploadMessageError::BeforeDelivery(Error::UploadCanceled));
+    }
+    receipt(staged)
+        .await
+        .map_err(UploadMessageError::BeforeDelivery)?;
+    if canceled.load(Ordering::Relaxed) {
+        return Err(UploadMessageError::BeforeDelivery(Error::UploadCanceled));
+    }
     if reply_broadcast {
         return upload_broadcast::complete_and_share(
             transport,

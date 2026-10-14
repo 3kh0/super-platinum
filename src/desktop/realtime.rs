@@ -4,7 +4,9 @@ use super_platinum_core::slack::realtime::{self, ConnectParams, RtUpdate};
 
 use crate::state::ShellState;
 
+pub(crate) mod activity_counts;
 mod presence;
+mod reactions;
 
 pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
     // The supervisor watches the same link verdict the shell paints on the
@@ -16,6 +18,8 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
     let health = Some(transport.health_watch());
     let mut updates = realtime::connect(params, health);
     let mut notifications = crate::notification::NotificationTracker::default();
+    #[cfg(target_os = "macos")]
+    let attention_state = state;
     while let Some((team, update)) = updates.recv().await {
         let mut shell = state.write();
         // A replaced account may reuse the same team and socket generation.
@@ -97,6 +101,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
             }
             RtUpdate::Event { generation, event } => {
                 let presence_only = matches!(event.as_ref(), RtEvent::PresenceChange { .. });
+                let reaction_channel = reactions::channel(&event).map(str::to_owned);
                 let list_refresh =
                     crate::slack_lists::events::prepare(&mut shell, &team, generation, &event);
                 let file_read = crate::file_events::prepare(&mut shell, &team, generation, &event);
@@ -154,6 +159,16 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                         thread_root: shell.thread_root.as_deref(),
                     },
                 );
+                #[cfg(target_os = "macos")]
+                if notification.is_some() {
+                    crate::notification::attention::request(
+                        attention_state,
+                        &shell.core,
+                        &team,
+                        generation,
+                        &event,
+                    );
+                }
                 // A room that ended takes this user's call with it.
                 let huddle_teardown = match event.as_ref() {
                     RtEvent::RoomJoin { room, .. }
@@ -188,6 +203,8 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 let later_generation = shell.core.later.generation;
                 let later_needs_reload = shell.core.later.loading || !shell.core.later.loaded;
                 let thread_totals_event = matches!(event.as_ref(), RtEvent::GlobalThreadState(_));
+                let activity_counts_event =
+                    matches!(event.as_ref(), RtEvent::BadgeCountsUpdated(_));
                 let old_thread_totals = thread_totals_event
                     .then(|| {
                         shell
@@ -199,6 +216,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     .flatten();
                 let typing_only = bookmarks_channel.is_some()
                     || thread_totals_event
+                    || activity_counts_event
                     || matches!(event.as_ref(), RtEvent::UserTyping { .. })
                     || saved_event
                     || draft_event
@@ -273,6 +291,8 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
                 if presence_only {
                     presence::refresh(&mut shell, &team);
+                } else if let Some(channel) = reaction_channel {
+                    reactions::refresh(&mut shell, &team, generation, &channel);
                 } else if !typing_only {
                     shell.refresh_from_core();
                 }
@@ -304,7 +324,11 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                         dioxus::prelude::spawn(crate::later::hydrate_visible(state));
                     }
                 }
-                if prefs_changed || metadata_changed || thread_totals_changed {
+                if prefs_changed
+                    || metadata_changed
+                    || thread_totals_changed
+                    || activity_counts_event
+                {
                     crate::bootstrap::persist_workspace(&state, &team);
                 }
                 if needs_user_hydration || self_profile_changed {
@@ -404,7 +428,7 @@ fn apply(
     apply_in_view(core, team, generation, event, true);
 }
 
-fn apply_in_view(
+pub(crate) fn apply_in_view(
     core: &mut super_platinum_core::CoreAppState,
     team: &str,
     generation: u64,
@@ -581,6 +605,7 @@ fn apply_in_view(
             user,
             reaction,
         } => apply_reaction(core, team, &channel, &ts, &user, &reaction, false),
+        RtEvent::BadgeCountsUpdated(counts) => activity_counts::apply_live(core, team, counts),
         RtEvent::ActivityUpdated(item) => {
             if core.active_team.as_deref() == Some(team) {
                 core.activity.ensure_scope(core.account_epoch, team);

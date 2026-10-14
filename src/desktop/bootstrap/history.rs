@@ -395,20 +395,8 @@ async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
             });
         // Reading the channel covers its mentions, keywords and reactions in the
         // Activity feed. Thread items keep their own unread state.
-        let previous_unread = shell.core.activity.unread_count();
-        if fully_read
-            && shell.core.active_team.as_ref() == Some(&team)
-            && shell.core.activity.mark_channel_read(&channel)
-        {
-            let total = shell
-                .core
-                .workspaces
-                .get(&team)
-                .and_then(|w| w.activity_unread_count);
-            let unread = shell.core.activity.total_after_read(total, previous_unread);
-            if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-                workspace.activity_unread_count = Some(unread);
-            }
+        if fully_read {
+            crate::realtime::activity_counts::mark_channel_read(&mut shell.core, &team, &channel);
         }
         shell.refresh_from_core();
     }

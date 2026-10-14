@@ -33,6 +33,7 @@ pub(crate) async fn initialize(mut state: Signal<ShellState>) {
     // cached message from resurrecting a deletion delivered by the socket.
     // The selected conversation is already usable while this worker runs.
     restore_transcripts(state).await;
+    crate::messaging::upload_journal::load(state);
     super::refresh(state).await;
 }
 

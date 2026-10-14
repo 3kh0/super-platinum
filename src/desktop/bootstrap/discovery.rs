@@ -281,29 +281,18 @@ fn visit_profile_field_strings(value: &serde_json::Value, visit: &mut impl FnMut
 
 /// Clears one Activity item. Slack's client sends `activity.markRead` with the
 /// entry type, the item's `feed_ts`, and its key the moment a row is clicked
-/// (CDP-verified), so the row and the bell badge stop counting it.
+/// (CDP-verified). Inbox rows clear immediately; their canonical category badge
+/// waits for Slack's count update, matching QDAL.m in the official client.
 ///
 /// The local clear is optimistic: a failed call leaves the item read only until
 /// the next feed fetch, which is the same self-healing Slack relies on.
 pub async fn mark_activity_read(mut state: Signal<ShellState>, key: String) {
     let target = {
         let mut shell = state.write();
-        let previous_unread = shell.core.activity.unread_count();
-        let Some(target) = shell.core.activity.mark_item_read(&key) else {
+        let Some(target) = crate::realtime::activity_counts::mark_item_read(&mut shell.core, &key)
+        else {
             return;
         };
-        let total = shell
-            .core
-            .active_team
-            .as_ref()
-            .and_then(|team| shell.core.workspaces.get(team))
-            .and_then(|w| w.activity_unread_count);
-        let unread = shell.core.activity.total_after_read(total, previous_unread);
-        if let Some(team) = shell.core.active_team.clone()
-            && let Some(workspace) = shell.core.workspaces.get_mut(&team)
-        {
-            workspace.activity_unread_count = Some(unread);
-        }
         target
     };
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {

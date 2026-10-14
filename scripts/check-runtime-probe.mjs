@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const source = readFileSync(new URL('../src/desktop/performance/runtime_probe.js', import.meta.url), 'utf8');
-function harness() {
+function harness(delayMs = 0) {
   let now = 0;
   let next = 0;
   const timers = new Map(), frames = new Map(), samples = [];
@@ -34,7 +34,7 @@ function harness() {
     readyState: 'loading', visibilityState: 'visible', hasFocus: () => false,
     getElementById: id => id === 'main' ? { childElementCount: 3 } : null,
   });
-  vm.runInNewContext(source, {
+  vm.runInNewContext(source.replace("const delayMs = 0;", `const delayMs = ${delayMs};`), {
     window, document, ErrorEvent, location: { protocol: 'super-platinum:' },
     performance: { now: () => now },
     setTimeout: (callback, delay) => { const id = ++next; timers.set(id, { callback, at: now + delay }); return id; },
@@ -153,3 +153,38 @@ for (const type of ['error', 'unhandledrejection', 'visibilitychange']) {
   assert.equal(h.samples.length, 16); assert.equal(socket.count(), 0); h.stopped();
 }
 console.log('runtime probe: payload isolation, passive socket coverage/rebind/caps, structural samples and deadline cleanup passed');
+
+// A delayed observation is quiet beforehand and keeps its original deadline.
+{
+  const h = harness(600000);
+  assert.equal(h.samples.length, 0);
+  assert.equal(h.window.count(), 0); assert.equal(h.document.count(), 0);
+  assert.equal(h.frames.size, 0); assert.equal(h.timers.size, 1);
+  h.window.emit('error', secretEvent(new h.ErrorEvent()));
+  h.document.readyState = 'complete';
+  h.runTimer(600000);
+  assert.equal(h.samples.length, 1);
+  assert.equal(h.samples[0].sample.elapsed_ms, 0);
+  assert.equal(h.samples[0].sample.script_errors, 0);
+  assert.equal(h.frames.size, 2, 'already-loaded document still gets two bounded frame probes');
+  h.runFrames(); h.runTimer(601000);
+  assert.equal(h.samples.at(-1).sample.raf_callbacks, 2);
+  h.runTimer(620000); h.stopped();
+}
+// An overdue start must not create a new 20s window after suspension.
+{
+  const h = harness(600000);
+  const [id, timer] = [...h.timers][0];
+  h.timers.delete(id); h.setTime(620001); timer.callback();
+  assert.equal(h.samples.length, 0); h.stopped();
+}
+// Starting partway through the window schedules cleanup at its original end.
+{
+  const h = harness(600000);
+  const [id, timer] = [...h.timers][0];
+  h.timers.delete(id); h.setTime(605000); timer.callback();
+  assert.equal(h.samples[0].sample.elapsed_ms, 5000);
+  assert.ok([...h.timers.values()].every(t => t.at <= 620000));
+  h.runTimer(620000); h.stopped();
+}
+console.log('runtime probe: delayed quiet period, late start and fixed deadline passed');

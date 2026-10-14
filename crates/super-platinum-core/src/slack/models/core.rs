@@ -40,6 +40,30 @@ pub struct HistoryPage {
     pub extra: BTreeMap<String, Value>,
 }
 
+/// Complete category snapshot from client.counts and badge_counts_updated.
+/// Keep unknown categories so later source-backed projections do not lose data.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct ActivityBadgeCounts(BTreeMap<String, u32>);
+
+impl ActivityBadgeCounts {
+    pub fn categories(&self) -> &BTreeMap<String, u32> {
+        &self.0
+    }
+
+    /// Compatibility total for the existing Activity surface, not a dock formula.
+    pub fn total(&self) -> u32 {
+        self.0.values().copied().fold(0, u32::saturating_add)
+    }
+
+    pub(crate) fn mark_read(&mut self, deltas: &BTreeMap<String, u32>) {
+        for (category, delta) in deltas {
+            let count = self.0.entry(category.clone()).or_default();
+            *count = count.saturating_sub(*delta);
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CountsPage {
     #[serde(default)]
@@ -53,7 +77,7 @@ pub struct CountsPage {
     #[serde(default)]
     pub mpims: Vec<Channel>,
     #[serde(default)]
-    pub activity_v2: Option<BTreeMap<String, u32>>,
+    pub activity_v2: Option<ActivityBadgeCounts>,
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
 }
@@ -106,9 +130,7 @@ pub struct DmEntry {
 
 impl CountsPage {
     pub fn activity_unread_count(&self) -> Option<u32> {
-        self.activity_v2
-            .as_ref()
-            .map(|counts| counts.values().copied().fold(0, u32::saturating_add))
+        self.activity_v2.as_ref().map(ActivityBadgeCounts::total)
     }
 
     pub fn all_channels(&self) -> Vec<Channel> {

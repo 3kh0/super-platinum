@@ -17,6 +17,9 @@ pub struct NotificationConfig {
     /// Older cache snapshots lack the full DND schedule needed for tomorrow.
     #[serde(default)]
     pub temporary_schedule_loaded: bool,
+    /// Full recurring schedule is unavailable in older cache snapshots.
+    #[serde(default)]
+    pub schedule_loaded: bool,
     #[serde(default)]
     pub global: BTreeMap<String, Value>,
     #[serde(default)]
@@ -25,6 +28,12 @@ pub struct NotificationConfig {
     pub user: BTreeMap<String, Value>,
 }
 
+/// Request attention only after notification eligibility and deduplication.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DockAttention {
+    Once,
+    UntilActive,
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NotificationOptions {
     pub preview: bool,
@@ -35,30 +44,36 @@ pub struct NotificationOptions {
 const USER_PREFS: &[&str] = &[
     "priority_dnd_override",
     "mute_sounds",
+    "mac_ssb_bounce",
+    "activity_dms_opt_out",
     "mute_huddle_sounds",
     "huddle_invite_sound_v2",
     "huddles_allow_smart_notif",
 ];
 
 fn temporary_schedule_pref(name: &str) -> bool {
-    matches!(name, "dnd_days" | "dnd_end_hour")
-        || [
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
-            "sunday",
-        ]
-        .iter()
-        .any(|day| name == format!("dnd_before_{day}") || name == format!("dnd_enabled_{day}"))
+    crate::slack::api::is_notification_schedule_pref(name)
 }
 
 impl NotificationConfig {
+    /// Stock maybeBounceDockIcon: exact long is persistent; other truthy values
+    /// request one informational bounce. This does not bypass delivery policy.
+    pub fn dock_attention(&self) -> Option<DockAttention> {
+        match self.user.get("mac_ssb_bounce") {
+            Some(Value::String(value)) if value == "long" => Some(DockAttention::UntilActive),
+            Some(value) if pref_truthy(value) => Some(DockAttention::Once),
+            _ => None,
+        }
+    }
+
     pub fn apply_prefs(&mut self, prefs: &BootPrefs) {
         self.temporary_schedule_loaded = true;
+        self.schedule_loaded = true;
         self.user.retain(|name, _| !temporary_schedule_pref(name));
+        // Boot preferences are a complete snapshot. An omitted bounce mode
+        // must retire a cached mode; partial realtime updates use apply_change.
+        self.user.remove("mac_ssb_bounce");
+        self.user.remove("activity_dms_opt_out");
         for (name, value) in &prefs.extra {
             if temporary_schedule_pref(name) {
                 self.user.insert(name.clone(), value.clone());
@@ -75,6 +90,12 @@ impl NotificationConfig {
     }
 
     pub fn apply_change(&mut self, name: &str, value: Value) {
+        // SWeb tests the raw preference's JavaScript truthiness. In particular
+        // the strings "false" and "0" are not boolean/numeric preferences.
+        if name == "activity_dms_opt_out" {
+            self.user.insert(name.into(), value);
+            return;
+        }
         let value = match &value {
             Value::String(text) => serde_json::from_str(text).unwrap_or(value),
             _ => value,
@@ -103,10 +124,19 @@ impl NotificationConfig {
     pub fn desktop_enabled(&self, channel: &str) -> bool {
         self.loaded
             && self
-                .channel_flag(channel, "desktop_push_enabled")
+                .channels
+                .get(channel)
+                .and_then(|prefs| prefs.get("desktop_push_enabled"))
+                // Fpyc: an explicitly present channel value is !!value, even
+                // null. Only absence inherits the global delivery preference.
+                .map(pref_truthy)
                 .unwrap_or_else(|| {
-                    self.global_flag("global_desktop_push_enabled")
-                        .unwrap_or(true)
+                    // Delivery deliberately differs from the editor's nullish
+                    // enabled preview: only true or an absent global enables it.
+                    matches!(
+                        self.global.get("global_desktop_push_enabled"),
+                        None | Some(Value::Bool(true))
+                    )
                 })
     }
 
@@ -251,14 +281,15 @@ impl NotificationConfig {
     }
 
     fn options(&self, vip: bool, huddle: bool) -> NotificationOptions {
-        let normal = self.global_text("desktop_sound").unwrap_or("b2.mp3");
+        // Fpyc.getNewMsgSoundPath returns no path for absent/falsy normal sound.
+        let normal = self.global_text("desktop_sound").unwrap_or("");
         let priority = self.global_text("priority_desktop_sound").unwrap_or(normal);
         let sound = if huddle {
             self.user
                 .get("huddle_invite_sound_v2")
                 .and_then(Value::as_str)
                 .unwrap_or("boop_remix.mp3")
-        } else if vip && priority != "none" {
+        } else if vip && !normal.is_empty() && !priority.is_empty() && priority != "none" {
             priority
         } else {
             normal
@@ -266,12 +297,13 @@ impl NotificationConfig {
         let muted = if huddle {
             self.user_flag("mute_huddle_sounds")
         } else {
-            self.user_flag("mute_sounds")
+            self.user.get("mute_sounds").is_some_and(pref_truthy)
         };
         NotificationOptions {
             preview: !self
-                .global_flag("no_text_in_notifications")
-                .unwrap_or(false),
+                .global
+                .get("no_text_in_notifications")
+                .is_some_and(pref_truthy),
             sound: (!muted && sound != "none" && !sound.is_empty()).then(|| sound.into()),
         }
     }
@@ -287,6 +319,16 @@ impl NotificationConfig {
     }
     fn user_flag(&self, key: &str) -> bool {
         self.user.get(key).and_then(Value::as_bool).unwrap_or(false)
+    }
+}
+
+pub(super) fn pref_truthy(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::Bool(value) => *value,
+        Value::Number(value) => value.as_f64().is_some_and(|value| value != 0.0),
+        Value::String(value) => !value.is_empty(),
+        Value::Array(_) | Value::Object(_) => true,
     }
 }
 

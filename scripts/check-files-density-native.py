@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Drive and capture isolated signed files-density fixtures without OS input."""
+"""Drive and capture isolated native files-density fixtures without OS input."""
 import json
 import os
 import pathlib
@@ -7,7 +7,7 @@ import subprocess
 import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-BINARY = pathlib.Path(os.environ.get("SUPER_PLATINUM_BINARY", ROOT / "target/debug/Super Platinum.app/Contents/MacOS/super-platinum"))
+BINARY = pathlib.Path(os.environ.get("SUPER_PLATINUM_BINARY", ROOT / "target/debug/super-platinum"))
 TMP = pathlib.Path(os.environ.get("TMPDIR", "/tmp"))
 MARKER = TMP / "super-platinum-agent.sock.path"
 CAPTURES = ROOT / "tmp/agent-ui"

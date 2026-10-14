@@ -78,7 +78,7 @@ pub enum Prepare {
 pub(super) fn invalid(message: &str) -> AppError {
     std::io::Error::other(message).into()
 }
-fn owner(conn: &Connection, account: &str) -> Result<(), AppError> {
+pub(super) fn owner(conn: &Connection, account: &str) -> Result<(), AppError> {
     if uuid::Uuid::parse_str(account).is_err() {
         return Err(invalid("invalid draft account"));
     }

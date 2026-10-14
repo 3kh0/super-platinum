@@ -21,6 +21,7 @@ pub mod net;
 pub mod operation_receipts;
 pub mod palette;
 pub mod pins;
+pub mod profile_text;
 pub mod saved_file_receipts;
 pub mod scheduled;
 pub mod search;

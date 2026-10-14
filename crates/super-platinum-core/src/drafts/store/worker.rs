@@ -16,9 +16,12 @@ use std::{
     sync::{Condvar, Mutex, OnceLock, mpsc},
 };
 
+pub(super) mod uploads;
+
 type Updates = BTreeMap<(String, DraftKey), LocalDraft>;
 type Reply<T> = mpsc::SyncSender<Result<T, AppError>>;
 enum Request {
+    Upload(uploads::Command),
     ReadLocalReview(Scope, Reply<LocalReview>),
     SettleLocalVersions(LocalReview, LocalChoice, Reply<LocalSettlement>),
     Load(String, Reply<Entries>),
@@ -106,6 +109,7 @@ impl Worker {
         }
         for request in requests {
             match request {
+                Request::Upload(command) => uploads::execute(command, &open),
                 Request::ReadLocalReview(scope, reply) => {
                     let result = open(&scope.account_id).and_then(|mut store| {
                         if self

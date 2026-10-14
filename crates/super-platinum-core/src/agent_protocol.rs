@@ -17,6 +17,8 @@ pub enum AgentCommand {
     Ping,
     Help,
     State,
+    /// Explicit local activation for dev windows; no Slack state is changed.
+    FocusWindow,
     OpenPalette,
     ClosePalette,
     SetQuery {
@@ -43,7 +45,10 @@ pub enum AgentCommand {
         query: String,
     },
     ClearSearch,
-    OpenSettings,
+    OpenSettings {
+        #[serde(default)]
+        section: Option<SettingsSection>,
+    },
     CloseSettings,
     OpenProfile {
         user: String,
@@ -77,6 +82,15 @@ pub enum AgentCommand {
     },
     HuddleLeave,
     HuddleMute,
+}
+
+/// Local settings navigation; choosing a section never changes preferences.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SettingsSection {
+    Appearance,
+    Notifications,
+    Storage,
 }
 
 fn default_move_delta() -> isize {
@@ -122,6 +136,37 @@ impl AgentResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn settings_navigation_accepts_optional_typed_section() {
+        let old: AgentRequest = serde_json::from_str(r#"{"cmd":"open-settings"}"#).unwrap();
+        assert!(matches!(
+            old.cmd,
+            AgentCommand::OpenSettings { section: None }
+        ));
+        for (name, expected) in [
+            ("appearance", SettingsSection::Appearance),
+            ("notifications", SettingsSection::Notifications),
+            ("storage", SettingsSection::Storage),
+        ] {
+            let request: AgentRequest = serde_json::from_value(serde_json::json!({
+                "cmd":"open-settings", "section":name
+            }))
+            .unwrap();
+            assert!(!request.cmd.is_destructive());
+            assert!(
+                matches!(request.cmd, AgentCommand::OpenSettings { section: Some(section) } if section == expected)
+            );
+        }
+        for invalid in [serde_json::json!("unknown"), serde_json::json!(3)] {
+            assert!(
+                serde_json::from_value::<AgentRequest>(serde_json::json!({
+                    "cmd":"open-settings", "section":invalid
+                }))
+                .is_err()
+            );
+        }
+    }
 
     #[test]
     fn existing_commands_keep_their_wire_shape() {

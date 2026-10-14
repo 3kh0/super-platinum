@@ -5,6 +5,7 @@ use rusqlite::{Connection, TransactionBehavior, params};
 use std::{collections::BTreeSet, path::Path};
 
 pub mod sync;
+pub mod uploads;
 mod worker;
 pub use worker::{
     LocalWrite, commit_synced, enqueue, load, load_synced, prepare_synced,
@@ -36,6 +37,7 @@ impl DraftStore {
                 destination TEXT NOT NULL, writer_id TEXT NOT NULL,
                 revision INTEGER NOT NULL CHECK(revision>0),
                 PRIMARY KEY(destination,writer_id));")?;
+        uploads::migrate(&conn)?;
         Ok(Self(conn))
     }
     fn open_default(account: &str) -> Result<Self, AppError> {

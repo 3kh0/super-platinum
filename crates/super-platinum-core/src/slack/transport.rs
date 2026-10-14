@@ -16,12 +16,17 @@ mod canvas_collab;
 mod canvas_edit;
 mod draft_mutation;
 pub use canvas_edit::CanvasEditFailure;
+mod global_notifications;
 mod list_record_delete;
 mod mention_search;
-mod upload_readback;
 mod notification_preferences;
-pub(super) use notification_preferences::notification_preferences_success;
+mod notification_schedule;
+mod own_profile;
+mod presentation_notifications;
+mod profile_sections;
+mod upload_readback;
 pub use list_record_delete::ListDeleteFailure;
+pub(super) use notification_preferences::notification_preferences_success;
 
 #[cfg(test)]
 mod file_viewing_tests;

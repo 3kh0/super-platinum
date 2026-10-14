@@ -27,6 +27,7 @@ impl WorkspaceSnapshot {
             token: String::new(),
         });
         workspace.locale = source.locale.clone();
+        workspace.team_plan = source.team_plan.clone();
         workspace.deleted_files = source.deleted_files.clone();
         workspace.thread_counts = source.thread_counts.clone();
         workspace.notifications = source.notifications.clone();

@@ -31,6 +31,7 @@ mod files;
 mod fixture;
 mod fonts;
 mod forward;
+mod global_notifications;
 mod huddle;
 mod icons;
 mod interactions;
@@ -43,13 +44,17 @@ mod messaging;
 mod model;
 mod new_dm;
 mod notification;
+mod notification_schedule;
 mod overlays;
 mod palette;
 mod pdf_assets;
 mod pdf_preview;
 mod performance;
 mod pins;
+mod presentation_notifications;
 mod profile;
+mod profile_edit;
+mod profile_title;
 mod profile_vip;
 mod reaction_picker;
 mod read_visibility;
@@ -134,6 +139,8 @@ fn app() -> Element {
     let desktop = dioxus::desktop::window();
     use_context_provider(|| state);
     read_visibility::use_focus_read_marks(state);
+    #[cfg(target_os = "macos")]
+    notification::attention::use_cleanup();
     let timeline_identity = use_memo(move || {
         let state = state.read();
         (
@@ -248,6 +255,7 @@ fn app() -> Element {
     });
     dioxus::desktop::use_asset_handler(huddle::ASSET_ROUTE, huddle::serve_asset);
     dioxus::desktop::use_asset_handler("fonts", fonts::serve_asset);
+    dioxus::desktop::use_asset_handler("notification-sounds", notification::serve_sound_asset);
     dioxus::desktop::use_asset_handler("pdf", move |request, responder| {
         pdf_preview::serve_asset(state, request, responder)
     });
@@ -255,6 +263,8 @@ fn app() -> Element {
     use_future(move || bootstrap::initialize(state));
     use_future(move || clipboard::watch(state));
     use_future(move || runtime::ticks(state));
+    #[cfg(target_os = "macos")]
+    use_future(move || notification::attention::check::run(state));
     use_future(move || performance::watch_scroll(state));
     use_future(move || keyboard_check::run(state));
     use_future(move || completion_check::run(state));

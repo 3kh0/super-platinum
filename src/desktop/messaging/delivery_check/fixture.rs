@@ -113,7 +113,10 @@ pub(super) fn dispatch(shell: &mut ShellState, attempt: Attempt) {
     assert!(f.pending.is_none());
     f.pending = Some(attempt);
 }
-pub(super) fn complete(mut state: Signal<ShellState>, result: Result<HistoryPage, Error>) {
+pub(in crate::messaging) fn complete(
+    mut state: Signal<ShellState>,
+    result: Result<HistoryPage, Error>,
+) {
     let attempt = state
         .write()
         .upload_checks
@@ -125,7 +128,7 @@ pub(super) fn complete(mut state: Signal<ShellState>, result: Result<HistoryPage
         .unwrap();
     complete_attempt(state, attempt, result);
 }
-pub(super) fn canonical(shell: &ShellState, client: &str) -> HistoryPage {
+pub(in crate::messaging) fn canonical(shell: &ShellState, client: &str) -> HistoryPage {
     let action = action(shell, client).unwrap();
     HistoryPage {
         messages: vec![Message {
@@ -143,6 +146,6 @@ pub(super) fn canonical(shell: &ShellState, client: &str) -> HistoryPage {
         ..Default::default()
     }
 }
-pub(super) fn calls(shell: &ShellState) -> usize {
+pub(in crate::messaging) fn calls(shell: &ShellState) -> usize {
     shell.upload_checks.fixture.as_ref().unwrap().calls
 }

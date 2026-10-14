@@ -1,0 +1,17 @@
+.modal:has(> .presentation-notifications){top:20px;display:flex;flex-direction:column;max-height:calc(100vh - 40px);}
+.modal:has(> .presentation-notifications)>header,.modal:has(> .presentation-notifications)>.settings-tabs{flex-shrink:0;}
+.presentation-notifications{display:flex;flex-direction:column;min-height:0;padding:0 18px 16px;gap:var(--space-2);}
+.presentation-notifications-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);flex-shrink:0;}
+.presentation-notifications-heading h3{margin:0;font-size:var(--text-md);font-weight:600;}
+.presentation-notifications button,.presentation-notifications select{height:32px;min-height:32px;margin:0;padding:0 var(--space-2);border-radius:var(--radius-md);font-size:var(--text-sm);}
+.presentation-notifications button{background:var(--surface-raised);color:var(--text);}
+.presentation-notifications-scroll{min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:var(--space-3);padding:2px 4px 4px 2px;}
+.presentation-sound{display:flex;flex-direction:column;gap:var(--space-1);flex-shrink:0;font-size:var(--text-sm);}
+.presentation-sound-controls{display:flex;align-items:center;gap:var(--space-2);}
+.presentation-sound-controls select{flex:1;min-width:0;background:var(--bg);color:var(--text);border:1px solid var(--border);}
+.presentation-toggle{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);min-height:32px;flex-shrink:0;font-size:var(--text-sm);}
+.presentation-toggle input{width:16px;height:16px;accent-color:var(--accent);flex-shrink:0;}
+.presentation-notifications p{margin:0;}
+.presentation-notifications :focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.presentation-notifications :disabled{opacity:.5;}
+@media(max-height:500px){.modal:has(> .presentation-notifications){top:8px;max-height:calc(100vh - 16px);}.presentation-notifications{gap:var(--space-1);padding-bottom:var(--space-2);}.presentation-notifications-scroll{gap:var(--space-2);}}

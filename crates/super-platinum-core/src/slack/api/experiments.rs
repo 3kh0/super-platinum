@@ -1,6 +1,8 @@
 //! Authenticated experiment assignments, captured fetchExperimentsData S:1028162.
-//! Keep only List policy flags; no exposure IDs or unrelated assignments.
+//! Keep only caller policy flags; no exposure IDs or unrelated assignments.
+mod badges;
 use super::*;
+pub use badges::*;
 use serde_json::Value;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

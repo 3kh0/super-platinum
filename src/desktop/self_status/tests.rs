@@ -262,3 +262,23 @@ fn cooldown_expiry_requests_one_repaint_without_unrelated_input() {
     assert_eq!(presentation(&shell).unwrap().text, "Retained draft");
     assert!(!poll(&mut shell));
 }
+
+#[test]
+fn clear_status_uses_the_same_pending_receipt_and_never_replays_uncertain_writes() {
+    let mut shell = shell();
+    assert!(prepare_clear(&mut shell, NOW));
+    let attempt = begin(&mut shell, NOW).unwrap();
+    assert_eq!(attempt.desired, Status::default());
+    assert!(blocks_profile_edit(&shell));
+    assert!(!prepare_clear(&mut shell, NOW));
+    finish(
+        &mut shell,
+        &attempt,
+        Err(Error::Transport("lost response".into())),
+    );
+    assert!(blocks_profile_edit(&shell));
+    assert!(!prepare_clear(&mut shell, NOW));
+    assert!(begin(&mut shell, NOW).is_err());
+    finish_check(&mut shell, &attempt, Ok(response(&Status::default())));
+    assert!(!blocks_profile_edit(&shell));
+}

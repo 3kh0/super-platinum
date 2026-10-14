@@ -8,7 +8,7 @@ import time
 
 root = pathlib.Path(__file__).resolve().parents[1]
 os.chdir(root)
-binary = root / 'target/debug/Super Platinum.app/Contents/MacOS/super-platinum'
+binary = root / 'target/debug/super-platinum'
 tmp = pathlib.Path(os.environ.get('TMPDIR', '/tmp'))
 marker = tmp / 'super-platinum-agent.sock.path'
 for fixture in ('button-metadata', 'button-metadata-narrow'):

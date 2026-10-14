@@ -13,10 +13,20 @@ pub async fn refresh(mut state: Signal<ShellState>) {
         return;
     };
 
+    let refresh_epoch = state.peek().core.account_epoch;
     let active_team = state.read().core.active_team.clone();
     workspaces.sort_by_key(|session| Some(&session.team_id) != active_team.as_ref());
     for workspace_session in workspaces {
         let team = workspace_session.team_id.clone();
+        let counts_owner = (state.peek().core.account_epoch == refresh_epoch)
+            .then(|| {
+                crate::realtime::activity_counts::CountsOwner::capture(
+                    &state.peek().core,
+                    &transport,
+                    &workspace_session,
+                )
+            })
+            .flatten();
         match api::fetch_user_boot(&transport, &client, &workspace_session).await {
             Ok(boot) => {
                 let mut shell = state.write();
@@ -35,6 +45,9 @@ pub async fn refresh(mut state: Signal<ShellState>) {
             }
         }
 
+        if let Some(owner) = &counts_owner {
+            owner.refresh_badge_rules(state);
+        }
         let params = ConnectParams {
             team: team.clone(),
             ws_url: realtime::flannel_url(&workspace_session.token, &team),
@@ -70,24 +83,12 @@ pub async fn refresh(mut state: Signal<ShellState>) {
         }
 
         crate::usergroups::hydrate(state, &team).await;
-        let membership_revision = state
-            .peek()
-            .core
-            .workspaces
-            .get(&team)
-            .map(|w| w.channel_lifecycle.revision())
-            .unwrap_or_default();
-        let thread_revision = state
-            .peek()
-            .core
-            .workspaces
-            .get(&team)
-            .map(|w| w.thread_counts.revision())
-            .unwrap_or_default();
-        if let Ok(counts) = api::fetch_counts(&transport, &client, &workspace_session).await
-            && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
-        {
-            workspace.apply_counts_snapshot(counts, membership_revision, thread_revision);
+        // Capture revisions immediately before the HTTP request, while retaining
+        // the owner from before boot/history awaits. New socket/local read state wins.
+        if let Some(read) = counts_owner.and_then(|owner| owner.begin(&state.peek().core)) {
+            if let Ok(counts) = api::fetch_counts(&transport, &client, &workspace_session).await {
+                read.apply(&mut state.write().core, counts);
+            }
         }
         refresh_channel_metadata(&mut state, &transport, &client, &workspace_session, &team).await;
         if let Ok(dnd) = api::fetch_dnd_info(&transport, &client, &workspace_session).await
@@ -654,6 +655,7 @@ pub async fn sign_in(mut state: Signal<ShellState>) {
             let loaded = super::startup::load_environment(media).await;
             *state.write() = loaded;
             super::startup::restore_transcripts(state).await;
+            crate::messaging::upload_journal::load(state);
             refresh(state).await;
         }
         Ok(_) => {
@@ -706,6 +708,7 @@ async fn reload_account(mut state: Signal<ShellState>) {
     let loaded = super::startup::load_environment(media).await;
     *state.write() = loaded;
     super::startup::restore_transcripts(state).await;
+    crate::messaging::upload_journal::load(state);
     refresh(state).await;
 }
 

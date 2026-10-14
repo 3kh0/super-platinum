@@ -268,7 +268,10 @@ pub struct Workspace {
     pub self_user_id: UserId,
     /// Slack's locale preference, independent of the host operating system.
     pub locale: Option<String>,
+    /// Exact boot team plan; None means unknown, not a guessed paid entitlement.
+    pub team_plan: Option<String>,
     pub activity_unread_count: Option<u32>,
+    pub activity_counts: ActivityCountsState,
     pub thread_counts: ThreadCountsState,
     pub channels: BTreeMap<ChannelId, Channel>,
     pub starred_order: Vec<ChannelId>,
@@ -306,7 +309,9 @@ impl Workspace {
             url: s.url.clone(),
             self_user_id: s.user_id.clone(),
             locale: None,
+            team_plan: None,
             activity_unread_count: None,
+            activity_counts: Default::default(),
             thread_counts: Default::default(),
             channels: BTreeMap::new(),
             starred_order: Vec::new(),
@@ -336,6 +341,12 @@ impl Workspace {
     }
 
     pub fn apply_boot(&mut self, boot: crate::slack::models::BootData) {
+        self.team_plan = boot
+            .team
+            .as_ref()
+            .and_then(|t| t.extra.get("plan"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned);
         if let Some(groups) = boot
             .extra
             .get("subteams")
@@ -443,18 +454,43 @@ impl Workspace {
 
     pub fn apply_counts_snapshot(
         &mut self,
+        counts: crate::slack::models::CountsPage,
+        since: u64,
+        thread_revision: u64,
+    ) {
+        self.apply_counts_snapshot_with_activity(
+            counts,
+            since,
+            thread_revision,
+            self.activity_counts.revision(),
+        );
+    }
+
+    pub fn apply_counts_snapshot_with_activity(
+        &mut self,
         mut counts: crate::slack::models::CountsPage,
         since: u64,
         thread_revision: u64,
+        activity_revision: u64,
     ) {
         if let Some(threads) = counts.threads.take() {
             self.thread_counts.apply_snapshot(threads, thread_revision);
         }
-        if let Some(unread_count) = counts.activity_unread_count() {
-            self.activity_unread_count = Some(unread_count);
+        if let Some(activity) = counts.activity_v2.take() {
+            let total = activity.total();
+            if self
+                .activity_counts
+                .apply_snapshot(activity, activity_revision)
+            {
+                self.activity_unread_count = Some(total);
+            }
         }
         self.apply_counts_membership(&counts, since);
         for mut channel in counts.all_channels() {
+            // Canonical counts replace numeric mentions even when omitted.
+            // An unread DM without a numeric count contributes the separate
+            // forced-unread indicator, not its previous mention total.
+            channel.mention_count.get_or_insert(0);
             self.apply_channel_read_state(&channel);
             // Counts are the read state, not a hint: a read channel arrives as
             // `has_unreads: false` with no count at all, and only carries
@@ -477,7 +513,7 @@ impl Workspace {
                     .unread_count_display
                     .or(cleared)
                     .or(existing.unread_count_display);
-                existing.mention_count = channel.mention_count.or(existing.mention_count);
+                existing.mention_count = Some(channel.mention_count.unwrap_or(0));
                 existing.has_unreads = channel.has_unreads;
                 existing.last_read = channel.last_read.or_else(|| existing.last_read.take());
                 // Counts carry the server version, not the metadata itself.
@@ -836,7 +872,7 @@ pub(crate) use helpers::{apply_message_reaction, merge_message};
 mod sidebar;
 pub use sidebar::*;
 mod notifications;
-pub use notifications::{NotificationConfig, NotificationOptions};
+pub use notifications::{DockAttention, NotificationConfig, NotificationOptions};
 mod sidebar_layout;
 pub use sidebar_layout::*;
 mod sidebar_prefs;
@@ -845,10 +881,12 @@ pub mod bots;
 mod channel_lifecycle;
 mod member_list_changes;
 pub use channel_lifecycle::ChannelLifecycle;
+mod activity_counts;
 mod channel_sync;
 mod thread_counts;
 mod unreads;
 mod vip;
+pub use activity_counts::{ActivityCountsState, BADGE_EXPERIMENT_NAMES, BadgeExperiments};
 pub use channel_sync::*;
 pub use thread_counts::ThreadCountsState;
 

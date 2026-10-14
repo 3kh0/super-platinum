@@ -2499,6 +2499,7 @@ dependencies = [
  "emojis",
  "futures",
  "icu_collator",
+ "icu_normalizer",
  "image",
  "keyring",
  "libc",

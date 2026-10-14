@@ -112,7 +112,9 @@ mod tests {
             url: "https://test.slack.com".into(),
             self_user_id: "U_SELF".into(),
             locale: None,
+            team_plan: None,
             activity_unread_count: None,
+            activity_counts: Default::default(),
             thread_counts: Default::default(),
             channels: channels
                 .into_iter()

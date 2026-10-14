@@ -61,6 +61,7 @@ pub enum RtEvent {
         reaction: String,
     },
     ActivityUpdated(ActivityItem),
+    BadgeCountsUpdated(super::models::ActivityBadgeCounts),
     RoomJoin {
         room: Room,
         user: UserId,

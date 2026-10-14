@@ -706,6 +706,8 @@ pub enum Overlay {
     Accounts,
     SelfMenu,
     SelfStatus,
+    ProfileEdit,
+    ProfileTitle,
     SlackList,
     Palette,
     Search,
@@ -730,6 +732,7 @@ pub struct ReactionTarget {
 pub enum SettingsSection {
     #[default]
     Appearance,
+    Notifications,
     Storage,
 }
 

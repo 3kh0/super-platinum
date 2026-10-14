@@ -9,7 +9,7 @@ import time
 root=pathlib.Path(__file__).resolve().parents[1]
 os.chdir(root)
 (root/'tmp/agent-ui').mkdir(parents=True,exist_ok=True)
-binary=pathlib.Path(os.environ.get('SUPER_PLATINUM_BINARY',str(root/'target/debug/Super Platinum.app/Contents/MacOS/super-platinum')))
+binary=pathlib.Path(os.environ.get('SUPER_PLATINUM_BINARY',str(root/'target/debug/super-platinum')))
 marker=pathlib.Path(os.environ['TMPDIR'])/'super-platinum-agent.sock.path'
 storage=root/'tmp'/f'file-recovery-{os.getpid()}.sqlite'
 for fixture, label, mode in [('file-recovery','file-recovery-seed','seed'),('file-recovery-narrow','file-recovery-restart','restart'),('file-recovery','file-recovery-retire','retire')]:

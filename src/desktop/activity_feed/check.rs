@@ -12,6 +12,10 @@ pub(super) fn install(shell: &mut ShellState) {
     // latest. All session values are empty fixture values; no transport exists.
     crate::slack_links_check::install(shell);
     shell.main_view = MainView::Activity;
+    shell
+        .core
+        .activity
+        .ensure_scope(shell.core.account_epoch, "T1");
     shell.core.activity.items.clear();
     shell.core.activity.unread_only = false;
     shell.core.activity.next_cursor = None;
@@ -28,6 +32,74 @@ pub(super) fn install(shell: &mut ShellState) {
             .activity
             .upsert(serde_json::from_value(value).unwrap());
     }
+    let workspace = shell.core.workspaces.get_mut("T1").unwrap();
+    // Six DM conversations contribute 46 highlights, independently of the
+    // Activity category dm:4 used below (and not simply six conversations).
+    for channel in workspace
+        .channels
+        .values_mut()
+        .filter(|c| c.is_im || c.is_mpim)
+    {
+        channel.has_unreads = false;
+        channel.unread_count = Some(0);
+        channel.mention_count = Some(0);
+        if let Some(messages) = workspace.messages.get_mut(&channel.id) {
+            messages.unread_count = 0;
+            messages.mention_count = 0;
+        }
+    }
+    for (index, highlights) in [39, 3, 1, 1, 1, 1].into_iter().enumerate() {
+        let id = format!("DFIXTURE{index}");
+        workspace.channels.insert(
+            id.clone(),
+            super_platinum_core::slack::models::Channel {
+                id,
+                is_im: true,
+                has_unreads: true,
+                unread_count: Some(highlights),
+                mention_count: Some(highlights),
+                ..Default::default()
+            },
+        );
+        let bag = workspace
+            .messages
+            .entry(format!("DFIXTURE{index}"))
+            .or_default();
+        bag.unread_count = highlights;
+        bag.mention_count = highlights;
+    }
+    // Opposing high counts make muted/app exclusions observable in the DOM:
+    // neither can be accidentally included while still rendering 46.
+    for (id, user, highlights) in [
+        ("DFIXTURE_MUTED", "UFIXTURE_MUTED", 901),
+        ("DFIXTURE_BOT", "UFIXTURE_BOT", 902),
+    ] {
+        workspace.channels.insert(
+            id.into(),
+            super_platinum_core::slack::models::Channel {
+                id: id.into(),
+                user: Some(user.into()),
+                is_im: true,
+                has_unreads: true,
+                unread_count: Some(highlights),
+                mention_count: Some(highlights),
+                ..Default::default()
+            },
+        );
+        let bag = workspace.messages.entry(id.into()).or_default();
+        bag.unread_count = highlights;
+        bag.mention_count = highlights;
+    }
+    workspace.sidebar.muted.insert("DFIXTURE_MUTED".into());
+    workspace.users.insert(
+        "UFIXTURE_BOT".into(),
+        super_platinum_core::slack::models::User {
+            id: "UFIXTURE_BOT".into(),
+            is_bot: true,
+            ..Default::default()
+        },
+    );
+    set_policy(workspace, false);
     shell.refresh_from_core();
 }
 
@@ -65,6 +137,7 @@ async fn run(
     if state.peek().core.transport.is_some() {
         return Err("Activity check requires no transport".into());
     }
+    badge_updates(state, desktop).await?;
     click(desktop, "activity-thread-bundle").await?;
     wait_state(state, |s| {
         s.main_view == MainView::Activity
@@ -98,7 +171,128 @@ async fn run(
     receipt["exactReplyVisible"] = json!(true);
     receipt["activitySurfacePreserved"] = json!(true);
     receipt["noTransport"] = json!(true);
+    receipt["canonicalBadgeUpdates"] = json!(true);
+    receipt["zeroClearsUnreadRows"] = json!(true);
+    for flag in [
+        "filteredCategories",
+        "dmHighlightCount",
+        "dmExcludedChannels",
+        "optOutConservation",
+        "guardedCategoryFlags",
+        "unknownMapNoFallback",
+    ] {
+        receipt[flag] = json!(true);
+    }
     Ok(receipt)
+}
+
+/// Exercise decoded socket frames through the production reducer and real DOM.
+/// Fixture rows are deliberately fewer than the authoritative category total.
+async fn badge_updates(
+    mut state: Signal<ShellState>,
+    desktop: &dioxus::desktop::DesktopContext,
+) -> Result<(), String> {
+    let categories = json!({"at_user":5,"dm":4,"thread_v2":18,"message_reaction":9,"future_unknown":11,"list_todo_notification":2,"list_approval_request":3,"unjoined_channel_mention":4,"team_joiner_invite":5});
+    apply_frame(
+        &mut state,
+        json!({"type":"badge_counts_updated","activity_v2":categories}),
+    )?;
+    badge_dom(desktop, "27", "46").await?;
+    {
+        let shell = state.peek();
+        let w = &shell.core.workspaces["T1"];
+        let conversations = w
+            .channels
+            .values()
+            .filter(|c| (c.is_im || c.is_mpim) && !c.is_archived && w.unread_total(c) > 0)
+            .count();
+        if conversations != 8
+            || w.messages["DFIXTURE_MUTED"].mention_count != 901
+            || w.messages["DFIXTURE_BOT"].mention_count != 902
+            || !w.sidebar.is_muted("DFIXTURE_MUTED")
+            || !w.users["UFIXTURE_BOT"].is_bot
+        {
+            return Err(format!(
+                "Fixture requires six eligible and two high-count excluded DMs, got {conversations} unread conversations"
+            ));
+        }
+    }
+    apply_frame(
+        &mut state,
+        json!({"type":"pref_change","name":"activity_dms_opt_out","value":true}),
+    )?;
+    badge_dom(desktop, "23", "46").await?;
+    {
+        let mut shell = state.write();
+        set_policy(shell.core.workspaces.get_mut("T1").unwrap(), true);
+    }
+    badge_dom(desktop, "37", "46").await?;
+    apply_frame(
+        &mut state,
+        json!({"type":"pref_change","name":"activity_dms_opt_out","value":false}),
+    )?;
+    badge_dom(desktop, "41", "46").await?;
+    // Known Inbox plus temporarily absent categories must never fall back to
+    // the raw sum. The independent DM highlight total remains 46.
+    state
+        .write()
+        .core
+        .workspaces
+        .get_mut("T1")
+        .unwrap()
+        .set_activity_unread_count(61);
+    badge_dom(desktop, "", "46").await?;
+    apply_frame(
+        &mut state,
+        json!({"type":"badge_counts_updated","activity_v2":{"dm":17}}),
+    )?;
+    badge_dom(desktop, "17", "46").await?;
+    apply_frame(
+        &mut state,
+        json!({"type":"badge_counts_updated","activity_v2":{"message_reaction":9,"future_unknown":11}}),
+    )?;
+    badge_dom(desktop, "", "46").await?;
+    if state.peek().core.activity.unread_count() != 3 {
+        return Err("Filtered zero incorrectly marked unread feed read".into());
+    }
+    apply_frame(
+        &mut state,
+        json!({"type":"badge_counts_updated","activity_v2":{}}),
+    )?;
+    badge_dom(desktop, "", "46").await?;
+    let shell = state.peek();
+    if shell.core.activity.items.len() != 3
+        || shell.core.activity.unread_count() != 0
+        || shell.core.workspaces["T1"].activity_unread_count != Some(0)
+    {
+        return Err("Zero badge did not reconcile loaded rows while preserving history".into());
+    }
+    Ok(())
+}
+
+fn set_policy(workspace: &mut super_platinum_core::state::Workspace, enabled: bool) {
+    let group = if enabled { "on" } else { "control" };
+    let policy=super_platinum_core::slack::api::parse_badge_experiments(&json!({"ok":true,"assignments":{
+        "activity_inbox":{"group":"on"},"lists_monster_step":{"group":group},"approvals_in_todos":{"group":group},
+        "unjoined_channel_mention_in_activity":{"group":group},"inviter_joiner_first_dm_v2":{"group":if enabled{"treatment"}else{"on"}}
+    }})).unwrap();
+    let ticket = workspace.activity_counts.begin_experiments();
+    assert!(workspace.activity_counts.apply_experiments(ticket, policy));
+}
+fn apply_frame(state: &mut Signal<ShellState>, frame: Value) -> Result<(), String> {
+    let event = super_platinum_core::slack::realtime::parse_event(&frame.to_string())
+        .ok_or("Badge fixture frame did not decode")?;
+    let mut shell = state.write();
+    let generation = shell.core.workspaces["T1"].rt_generation;
+    crate::realtime::apply_in_view(&mut shell.core, "T1", generation, event, false);
+    Ok(())
+}
+async fn badge_dom(
+    desktop: &dioxus::desktop::DesktopContext,
+    activity: &str,
+    dm: &str,
+) -> Result<(), String> {
+    wait_dom(desktop,&format!(r#"(()=>{{const text=title=>document.querySelector('.rail button[title="'+title+'"] .rail-badge')?.textContent?.trim()||'';const a=text('Activity'),d=text('Direct messages'),h=document.querySelector('.list-panel-header .ping-badge')?.textContent?.trim()||'';return{{ok:a==={activity:?}&&h==={activity:?}&&d==={dm:?},activity:a,header:h,dm:d}};}})()"#)).await.map(|_|())
 }
 
 async fn reply_geometry(desktop: &dioxus::desktop::DesktopContext) -> Result<Value, String> {

@@ -17,6 +17,7 @@ use model::*;
 pub(crate) mod check;
 pub(crate) mod fixture;
 mod network;
+pub(crate) mod settings;
 #[cfg(test)]
 mod tests;
 
@@ -25,6 +26,7 @@ pub(crate) struct State {
     entries: BTreeMap<Owner, Entry>,
     cooldowns: BTreeMap<RateOwner, i64>,
     fixture: Option<fixture::Fixture>,
+    settings_fixture: Option<settings::fixture::Fixture>,
 }
 pub(crate) struct Presentation {
     pub label: String,
@@ -80,9 +82,8 @@ pub(crate) fn presentation(shell: &ShellState, channel: &str) -> Option<Presenta
         uncertain,
         can_change: config.loaded && operation.is_none() && ready,
         can_check: uncertain && ready,
-        can_temporary: config.loaded && !permanent && operation.is_none() && ready,
+        can_temporary: config.loaded && operation.is_none() && ready,
         can_mute_until_tomorrow: config.loaded
-            && !permanent
             && operation.is_none()
             && ready
             && config.temporary_schedule_loaded
@@ -95,9 +96,7 @@ pub(crate) fn presentation(shell: &ShellState, channel: &str) -> Option<Presenta
         temporary_until: config
             .temporary_mute_expiration(channel)
             .filter(|expiry| *expiry > now()),
-        temporary_reason: if permanent {
-            Some("Unmute this channel before choosing a temporary mute.".into())
-        } else if !config.temporary_schedule_loaded {
+        temporary_reason: if !config.temporary_schedule_loaded {
             Some("Refresh the workspace to load the schedule for Until tomorrow.".into())
         } else {
             None
@@ -125,7 +124,9 @@ pub(crate) fn change(mut state: Signal<ShellState>, token: Token) {
     let Some(attempt) = begin(&mut state.write(), token, now()) else {
         return;
     };
-    if fixture::dispatch(state, attempt.clone()) {
+    if settings::fixture::dispatch(state, attempt.clone())
+        || fixture::dispatch(state, attempt.clone())
+    {
         return;
     }
     dioxus::core::spawn_forever(network::run(state, attempt));
@@ -150,7 +151,9 @@ pub(crate) fn temporarily_mute(
     let Some(attempt) = attempt else {
         return;
     };
-    if fixture::dispatch(state, attempt.clone()) {
+    if settings::fixture::dispatch(state, attempt.clone())
+        || fixture::dispatch(state, attempt.clone())
+    {
         return;
     }
     dioxus::core::spawn_forever(network::run(state, attempt));
@@ -165,15 +168,7 @@ fn begin_temporary(
         return None;
     }
     let config = &shell.core.workspaces[&token.owner.team].notifications;
-    if config
-        .channels
-        .get(&token.owner.channel)
-        .and_then(|p| p.get("muted"))
-        .and_then(Value::as_bool)
-        == Some(true)
-        || (duration == api::TemporaryMuteDuration::UntilTomorrow
-            && !config.temporary_schedule_loaded)
-    {
+    if duration == api::TemporaryMuteDuration::UntilTomorrow && !config.temporary_schedule_loaded {
         return None;
     }
     let expiry = temporary_expiration(duration, &config.user, now).ok()?;
@@ -191,7 +186,7 @@ pub(crate) fn check(mut state: Signal<ShellState>, token: Token) {
     let Some(read) = begin_check(&mut state.write(), token, now()) else {
         return;
     };
-    if fixture::read(state, read.clone()) {
+    if settings::fixture::read(state, read.clone()) || fixture::read(state, read.clone()) {
         return;
     }
     dioxus::core::spawn_forever(network::read(state, read));
@@ -230,7 +225,7 @@ fn begin_change(
         return None;
     }
     let context = context(shell, &token);
-    if context.is_none() && !fixture::enabled() && !cfg!(test) {
+    if context.is_none() && !fixture::enabled() && !settings::fixture::enabled() && !cfg!(test) {
         return None;
     }
     if shell.channel_mute.entries.len() >= 32
@@ -256,6 +251,7 @@ fn begin_change(
             operation: Some(Operation {
                 id,
                 change,
+                settings: None,
                 phase: Phase::Preparing,
                 read_id: None,
             }),
@@ -269,6 +265,7 @@ fn begin_change(
         token,
         desired,
         change,
+        settings: None,
         context,
         baseline,
         schedule,
@@ -307,7 +304,9 @@ fn mark_sending(shell: &mut ShellState, attempt: &Attempt) -> bool {
     }
     operation.phase = Phase::Saving;
     entry.message = Some(
-        if attempt.desired {
+        if attempt.settings.is_some() {
+            "Updating notification settings…"
+        } else if attempt.desired {
             "Muting channel…"
         } else {
             "Unmuting channel…"
@@ -385,7 +384,7 @@ fn begin_check(shell: &mut ShellState, token: Token, now: i64) -> Option<Read> {
         return None;
     }
     let context = context(shell, &token);
-    if context.is_none() && !fixture::enabled() && !cfg!(test) {
+    if context.is_none() && !fixture::enabled() && !settings::fixture::enabled() && !cfg!(test) {
         return None;
     }
     let baseline = target(shell, &token.owner);
@@ -415,6 +414,15 @@ fn finish_read(
     result: Result<api::NotificationPreferences, Error>,
     now: i64,
 ) -> bool {
+    if shell
+        .channel_mute
+        .entries
+        .get(&read.token.owner)
+        .and_then(|e| e.operation.as_ref())
+        .is_some_and(|o| o.id == read.operation && o.settings.is_some())
+    {
+        return settings::finish_read(shell, read, result, now);
+    }
     if let Err(error) = &result {
         remember_cooldown(shell, &read.token, error, now);
     }
@@ -555,4 +563,41 @@ fn poll_at(shell: &mut ShellState, now: i64) -> bool {
         }
     }
     changed
+}
+
+/// Shared users.prefs endpoint rate budget, independent of the viewed channel.
+pub(crate) fn prefs_retry_at(shell: &ShellState) -> i64 {
+    Token::capture(shell, shell.core.active_channel.as_deref().unwrap_or(""))
+        .map_or(0, |token| shared_retry_at(shell, &token))
+}
+#[cfg(test)]
+pub(crate) fn remember_prefs_cooldown(shell: &mut ShellState, error: &Error) {
+    let Some(token) = Token::capture(shell, shell.core.active_channel.as_deref().unwrap_or(""))
+    else {
+        return;
+    };
+    remember_cooldown(shell, &token, error, now());
+}
+
+/// Opaque authenticated rate owner retained by reads across account navigation.
+#[derive(Clone, PartialEq, Eq)]
+pub(crate) struct PrefsCooldownToken(RateOwner);
+pub(crate) fn capture_prefs_cooldown(shell: &ShellState) -> Option<PrefsCooldownToken> {
+    Token::capture(shell, shell.core.active_channel.as_deref().unwrap_or(""))
+        .map(|t| PrefsCooldownToken(t.rate_owner()))
+}
+pub(crate) fn remember_owned_prefs_cooldown(
+    shell: &mut ShellState,
+    token: &PrefsCooldownToken,
+    error: &Error,
+) {
+    let until = cooldown(error, now());
+    if until > now() {
+        let old = shell
+            .channel_mute
+            .cooldowns
+            .entry(token.0.clone())
+            .or_default();
+        *old = (*old).max(until);
+    }
 }

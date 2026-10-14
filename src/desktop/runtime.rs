@@ -3,25 +3,18 @@ use super_platinum_core::slack::transport::Health;
 
 use crate::state::ShellState;
 
-/// How often the tick checks for media that nothing else is going to fetch.
-///
-/// Sources registered during render (hover cards, activity rows, thread lists)
-/// have no Slack call behind them, so without this sweep their images would stay
-/// placeholders until the next unrelated refresh. The first tick sweeps too, so
-/// cached avatars paint from disk without waiting on any Slack call.
-const MEDIA_SWEEP_TICKS: u32 = 5;
+mod timing;
 
 pub async fn ticks(mut state: Signal<ShellState>) {
     let mut runtime_probe = crate::performance::runtime_probe::heartbeat();
-    let mut interval = tokio::time::interval(std::time::Duration::from_millis(200));
-    let mut tick: u32 = 0;
+    let mut interval = timing::interval();
+    let mut media_sweep = timing::MediaSweep::default();
     let mut draft_save_error = None;
     loop {
         interval.tick().await;
         if runtime_probe.is_some_and(|probe| !probe.beat()) {
             runtime_probe = None;
         }
-        tick = tick.wrapping_add(1);
         let now = std::time::Instant::now();
         // Bookkeeping (probe deadlines, route checks, etc.) must not repaint the
         // entire shell five times a second. Notify only for visible changes.
@@ -29,10 +22,17 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         // below explicitly notifies when any visible field actually changes.
         #[allow(deprecated)]
         let mut shell = state.write_silent();
+        #[cfg(target_os = "macos")]
+        crate::notification::attention::maintain(&shell.core);
         let mut connection = crate::connection::Next::Nothing;
         let mut changed = crate::app_modal::poll(&mut shell);
         changed |= crate::self_status::poll(&mut shell);
+        changed |= crate::profile_edit::poll(&mut shell);
+        changed |= crate::profile_title::poll(&mut shell);
         changed |= crate::channel_mute::poll(&mut shell);
+        changed |= crate::notification_schedule::poll(&mut shell);
+        changed |= crate::presentation_notifications::poll(&mut shell);
+        changed |= crate::global_notifications::poll(&mut shell);
         changed |= crate::slack_lists::poll(&mut shell);
         changed |= crate::message_buttons::poll(&mut shell);
         changed |= crate::drafts::integration::poll(&mut shell);
@@ -76,11 +76,7 @@ pub async fn ticks(mut state: Signal<ShellState>) {
                 .huddle
                 .expire_invites(now, crate::huddle::INVITE_RING);
         }
-        let typing_changed = shell
-            .core
-            .workspaces
-            .values_mut()
-            .any(|workspace| workspace.prune_typing(now, std::time::Duration::from_secs(4)));
+        let typing_changed = timing::prune_typing(shell.core.workspaces.values_mut(), now);
         let before = shell.message_arrivals.len();
         shell
             .message_arrivals
@@ -119,7 +115,7 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         // Nothing is swept into a link that is known to be down: every fetch
         // would fail, and the loader would spend the outage burning through
         // each picture's retry backoff.
-        let sweep = tick % MEDIA_SWEEP_TICKS == 1
+        let sweep = media_sweep.due(now)
             && shell.media.has_pending()
             && !shell.media.is_loading()
             && shell

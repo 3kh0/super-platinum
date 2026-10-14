@@ -1,0 +1,3 @@
+.modal.profile-title { width: min(440px, calc(100vw - 32px)); }
+.modal.profile-title .profile-edit-body { gap: var(--space-3); }
+.own-profile-title-edit { align-self: flex-start; min-height: 32px; padding: 0 var(--space-2); }

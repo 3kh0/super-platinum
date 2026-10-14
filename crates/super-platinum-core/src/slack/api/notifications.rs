@@ -1,7 +1,15 @@
 //! Narrow channel preference patches from Nu4c/uhjK/BtIR in the captured client.
 use super::*;
 use serde_json::{Value, json};
+mod global;
+mod presentation;
+pub use presentation::*;
+mod intent;
+mod settings;
 mod temporary;
+pub use global::*;
+pub use intent::*;
+pub use settings::*;
 pub use temporary::*;
 
 /// Preserve the complete canonical object for normal preference adoption. Never
@@ -128,3 +136,6 @@ pub fn parse_notification_preferences(response: &Value) -> Result<NotificationPr
 }
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod settings_tests;

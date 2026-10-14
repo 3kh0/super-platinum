@@ -4,12 +4,14 @@ pub(crate) mod app_modal;
 pub(crate) mod button_confirmation;
 mod channel_details;
 mod channel_membership;
+mod channel_notifications;
 mod channel_resources;
 mod channel_window_check;
 mod chrome;
 mod completion;
 pub(crate) mod composer;
 pub(crate) mod files;
+mod global_notifications;
 mod huddle;
 mod huddle_stage;
 mod later;
@@ -27,7 +29,11 @@ mod message_time;
 pub(crate) mod message_user;
 mod new_channel;
 mod new_reminder;
+mod notification_schedule;
 mod pins;
+mod presentation_notifications;
+pub(crate) mod profile_edit;
+pub(crate) mod profile_title;
 pub(crate) mod rich;
 pub(crate) mod rich_editor;
 pub(crate) mod scheduled;
@@ -68,6 +74,10 @@ const CSS: &str = concat!(
     include_str!("../styles/forward.css"),
     include_str!("../styles/scheduled.css"),
     include_str!("../styles/channel-details.css"),
+    include_str!("../styles/channel-notifications.css"),
+    include_str!("../styles/notification-schedule.css"),
+    include_str!("../styles/presentation-notifications.css"),
+    include_str!("../styles/global-notifications.css"),
     include_str!("../styles/conversation.css"),
     include_str!("../styles/blocks.css"),
     include_str!("../styles/composer.css"),
@@ -75,6 +85,8 @@ const CSS: &str = concat!(
     include_str!("../styles/app-modal.css"),
     include_str!("../styles/button-confirmation.css"),
     include_str!("../styles/self-status.css"),
+    include_str!("../styles/profile-edit.css"),
+    include_str!("../styles/profile-title.css"),
     include_str!("../styles/slack-lists.css"),
     include_str!("../styles/settings.css"),
     include_str!("../styles/profile.css"),
@@ -199,19 +211,13 @@ pub fn shell() -> Element {
     } else {
         "Ctrl K"
     };
+    // DM rail is a channel highlight-count projection, independent of the
+    // Activity category map and whether Inbox includes DMs.
     let dm_unread_total = active_workspace
-        .map(|workspace| {
-            workspace
-                .channels
-                .values()
-                .filter(|channel| (channel.is_im || channel.is_mpim) && !channel.is_archived)
-                .filter(|channel| workspace.unread_total(channel) > 0)
-                .count()
-        })
+        .map(|workspace| workspace.dm_rail_badge_count() as usize)
         .unwrap_or(0);
-    let activity_unread_total = active_workspace
-        .and_then(|workspace| workspace.activity_unread_count)
-        .unwrap_or(0) as usize;
+    let activity_unread_total =
+        active_workspace.and_then(activity_badge_total).unwrap_or(0) as usize;
     let show_channel_sidebar = matches!(
         snapshot.main_view,
         MainView::Home | MainView::Unreads | MainView::Threads | MainView::Scheduled
@@ -516,5 +522,17 @@ pub fn shell() -> Element {
                 }
             }
         }
+    }
+}
+
+/// Preserve the existing unknown/legacy UI without pretending it is the Inbox
+/// formula. Known Inbox with no complete count map must not show the raw sum.
+pub(super) fn activity_badge_total(
+    workspace: &super_platinum_core::state::Workspace,
+) -> Option<u32> {
+    if workspace.activity_inbox_enabled() == Some(true) {
+        workspace.activity_badge_count()
+    } else {
+        workspace.activity_unread_count
     }
 }

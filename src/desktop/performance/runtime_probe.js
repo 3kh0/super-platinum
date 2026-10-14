@@ -1,5 +1,12 @@
 (() => {
-  const started = performance.now();
+  // Rust substitutes only this bounded numeric literal; no environment text
+  // enters JavaScript. Before the window there is one timer and no listeners.
+  const delayMs = 0;
+  const started = performance.now() + delayMs;
+  if (delayMs > 0) setTimeout(observe, delayMs);
+  else observe();
+  function observe() {
+  if (performance.now() - started >= 20000) return;
   const endpoint = location.protocol === 'http:' || location.protocol === 'https:'
     ? 'http://super-platinum-probe.runtime/sample'
     : 'super-platinum-probe://runtime/sample';
@@ -133,8 +140,10 @@
   window.addEventListener('unhandledrejection', rejection);
   report('initial');
   frame();
+  if (document.readyState === 'complete') frame();
   for (const delay of [1000, 2000, 5000, 10000]) {
-    timers.push(setTimeout(() => report('timer'), delay));
+    timers.push(setTimeout(() => report('timer'), Math.max(0, started + delay - performance.now())));
   }
-  timers.push(setTimeout(() => { report('finished'); stop(); }, 20000));
+  timers.push(setTimeout(() => { report('finished'); stop(); }, Math.max(0, started + 20000 - performance.now())));
+  }
 })();

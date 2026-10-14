@@ -18,6 +18,13 @@ pub(crate) fn settings_view(mut state: Signal<ShellState>, snapshot: &ShellState
                 "Appearance"
             }
             button {
+                id: "settings-notifications-tab",
+                class: if snapshot.settings_section == SettingsSection::Notifications { "settings-tab active" } else { "settings-tab" },
+                role: "tab", "aria-selected": (snapshot.settings_section == SettingsSection::Notifications).to_string(),
+                onclick: move |_| state.write().set_settings_section(SettingsSection::Notifications),
+                "Notifications"
+            }
+            button {
                 class: if snapshot.settings_section == SettingsSection::Storage { "settings-tab active" } else { "settings-tab" },
                 role: "tab",
                 "aria-selected": (snapshot.settings_section == SettingsSection::Storage).to_string(),
@@ -30,6 +37,8 @@ pub(crate) fn settings_view(mut state: Signal<ShellState>, snapshot: &ShellState
         }
         if snapshot.settings_section == SettingsSection::Storage {
             {storage_panel(state, snapshot)}
+        } else if snapshot.settings_section == SettingsSection::Notifications {
+            NotificationPreferences { key: "notifications-{crate::notification_schedule::mount_key(snapshot)}", state }
         } else {
             {appearance_panel(state, snapshot)}
         }
@@ -321,5 +330,28 @@ mod tests {
         assert!(donut_style(StorageUsageVm::default()).is_empty());
         assert_eq!(percent(0, 0), "0%");
         assert_eq!(percent(25, 100), "25.0%");
+    }
+}
+
+#[component]
+fn NotificationPreferences(state: Signal<ShellState>) -> Element {
+    let mut page = use_signal(|| {
+        if crate::presentation_notifications::fixture::requested() {
+            2
+        } else if crate::notification_schedule::fixture::requested() {
+            1
+        } else {
+            0
+        }
+    });
+    rsx! {
+        nav {class:"notification-pages","aria-label":"Notification preferences",
+            button {id:"notification-page-defaults",r#type:"button","aria-pressed":(page()==0).to_string(),onclick:move |_|page.set(0),"Messaging defaults"}
+            button {id:"notification-page-hours",r#type:"button","aria-pressed":(page()==1).to_string(),onclick:move |_|page.set(1),"Working hours"}
+            button {id:"notification-page-sounds",r#type:"button","aria-pressed":(page()==2).to_string(),onclick:move |_|page.set(2),"Sound & appearance"}
+        }
+        if page()==1 {super::notification_schedule::NotificationSchedule {state}}
+        else if page()==2 {super::presentation_notifications::PresentationNotifications {state}}
+        else {super::global_notifications::GlobalNotifications {state}}
     }
 }

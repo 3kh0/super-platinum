@@ -19,6 +19,8 @@ struct CachedSidebar {
     #[serde(default)]
     locale: Option<String>,
     #[serde(default)]
+    team_plan: Option<String>,
+    #[serde(default)]
     deleted_files: std::collections::HashSet<String>,
     #[serde(default)]
     thread_counts: Option<crate::slack::models::ThreadCounts>,
@@ -37,6 +39,7 @@ struct CachedSidebar {
 #[derive(serde::Serialize)]
 struct CachedSidebarRef<'a> {
     locale: Option<&'a str>,
+    team_plan: Option<&'a str>,
     deleted_files: &'a std::collections::HashSet<String>,
     thread_counts: Option<&'a crate::slack::models::ThreadCounts>,
     notifications: &'a crate::state::NotificationConfig,
@@ -172,7 +175,9 @@ impl Cache {
             url,
             self_user_id,
             locale: None,
+            team_plan: None,
             activity_unread_count: None,
+            activity_counts: Default::default(),
             thread_counts: Default::default(),
             channels: Default::default(),
             starred_order: Vec::new(),
@@ -209,6 +214,7 @@ impl Cache {
             ws.sidebar = sidebar.config;
             ws.notifications = sidebar.notifications;
             ws.locale = sidebar.locale;
+            ws.team_plan = sidebar.team_plan;
             ws.vip_users = sidebar.vip_users;
             ws.priority_sidebar_section = sidebar.priority_section;
             ws.starred_order = sidebar.starred_order;
@@ -321,6 +327,7 @@ impl Cache {
                 serde_json::to_string(&ws.frecency)?,
                 serde_json::to_string(&CachedSidebarRef {
                     locale: ws.locale.as_deref(),
+                    team_plan: ws.team_plan.as_deref(),
                     deleted_files: &ws.deleted_files,
                     thread_counts: ws.thread_counts.snapshot.as_ref(),
                     notifications: &ws.notifications,
@@ -736,6 +743,7 @@ mod tests {
         let session = session();
         let mut ws = Workspace::from_session(&session);
         ws.locale = Some("de-DE".into());
+        ws.team_plan = Some("plus".into());
         ws.priority_sidebar_section = true;
         ws.vip_users.insert("U_VIP".into());
         ws.sidebar.behavior = "hide_read_channels_unless_starred".into();
@@ -767,6 +775,7 @@ mod tests {
 
         assert!(loaded.priority_sidebar_section);
         assert_eq!(loaded.locale.as_deref(), Some("de-DE"));
+        assert_eq!(loaded.team_plan.as_deref(), Some("plus"));
         assert!(loaded.vip_users.contains("U_VIP"));
         assert_eq!(loaded.sidebar.behavior, "hide_read_channels_unless_starred");
         assert!(loaded.sidebar.boost_mentions);
@@ -807,6 +816,7 @@ mod tests {
         assert_eq!(loaded.messages["C1"].vip_count, 0);
         assert!(loaded.sidebar.sections.is_empty());
         assert!(!loaded.notifications.loaded);
+        assert_eq!(loaded.team_plan, None);
         drop(cache);
         let _ = std::fs::remove_file(path);
     }

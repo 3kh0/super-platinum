@@ -62,6 +62,9 @@ fn rejects_unlisted_fields_strings_and_out_of_bound_payloads() {
 fn probe() -> Probe {
     Probe {
         started: Instant::now(),
+        window: Window {
+            delay: Duration::ZERO,
+        },
         native_events: AtomicU64::new(0),
         user_events: AtomicU64::new(0),
         window_events: AtomicU64::new(0),
@@ -129,4 +132,50 @@ fn passive_socket_numbers_are_optional_and_bounded() {
         object.remove(key);
     }
     assert!(decode(&serde_json::to_vec(&value).unwrap()).is_some());
+}
+
+#[test]
+fn delayed_window_admission_is_bounded_including_invalid_configuration() {
+    for invalid in [
+        None,
+        Some(""),
+        Some("-1"),
+        Some("3601"),
+        Some("abc"),
+        Some("18446744073709551615"),
+    ] {
+        assert_eq!(parse_delay(invalid), Duration::ZERO);
+    }
+    let window = Window {
+        delay: parse_delay(Some("600")),
+    };
+    assert!(!window.active(Duration::from_secs(599)));
+    assert!(window.pending(Duration::from_secs(599)));
+    assert!(window.active(Duration::from_secs(600)));
+    assert!(window.active(Duration::from_millis(619999)));
+    assert!(!window.active(Duration::from_secs(620)));
+    assert!(!window.pending(Duration::from_secs(620)));
+    assert!(document_script(window.delay).contains("const delayMs = 600000;"));
+}
+
+#[test]
+fn delayed_probe_rejects_early_and_late_reports_without_consuming_window_budget() {
+    let mut probe = probe();
+    probe.window.delay = Duration::from_secs(600);
+    assert!(
+        probe.beat(),
+        "heartbeat handle must survive until delayed window"
+    );
+    assert_eq!(probe.heartbeats.load(Ordering::Relaxed), 0);
+    receive(&probe, request(Method::POST, "/sample"));
+    assert_eq!(probe.js_samples.load(Ordering::Relaxed), 0);
+    probe.started = Instant::now() - Duration::from_secs(601);
+    assert!(probe.beat());
+    assert_eq!(probe.heartbeats.load(Ordering::Relaxed), 1);
+    receive(&probe, request(Method::POST, "/sample"));
+    assert_eq!(probe.js_samples.load(Ordering::Relaxed), 1);
+    probe.started = Instant::now() - Duration::from_secs(620);
+    assert!(!probe.beat());
+    receive(&probe, request(Method::POST, "/sample"));
+    assert_eq!(probe.js_samples.load(Ordering::Relaxed), 1);
 }

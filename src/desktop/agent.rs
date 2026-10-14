@@ -3,9 +3,12 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use dioxus::prelude::{ReadableExt, Signal, WritableExt};
 use serde_json::{Value, json};
-use super_platinum_core::agent_protocol::{AgentCommand, AgentRequest, AgentResponse};
+use super_platinum_core::agent_protocol::{
+    AgentCommand, AgentRequest, AgentResponse, SettingsSection as AgentSettingsSection,
+};
+mod background;
 #[cfg(any(unix, target_os = "windows"))]
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+mod io;
 #[cfg(target_os = "windows")]
 use tokio::net::{TcpListener, TcpStream};
 #[cfg(unix)]
@@ -20,12 +23,18 @@ pub async fn serve(
     state: Signal<ShellState>,
     desktop: dioxus::desktop::DesktopContext,
 ) -> Result<(), String> {
-    if std::env::var_os("SUPER_PLATINUM_AGENT").is_none() {
+    let enabled = std::env::var_os("SUPER_PLATINUM_AGENT").is_some();
+    if !enabled {
         return Ok(());
     }
+    // Hold only while this explicitly enabled server future is alive. Cancellation,
+    // bind/accept errors, and normal return all release the native activity.
+    let _background_activity = background::begin_if(enabled);
     crate::blocks::check_button_metadata_native(desktop.clone());
     crate::app_modal::check::start(state, desktop.clone());
     crate::self_status::check::start(state, desktop.clone());
+    crate::profile_edit::check::start(state, desktop.clone());
+    crate::profile_title::check::start(state, desktop.clone());
     crate::slack_lists::check::start(state, desktop.clone());
     crate::slack_lists::check::delete::start(state, desktop.clone());
     crate::message_buttons::check::start(state, desktop.clone());
@@ -42,7 +51,12 @@ pub async fn serve(
     crate::activity_feed::check::start(state, desktop.clone());
     crate::composer_emoji::check::start(state, desktop.clone());
     crate::channel_mute::check::start(state, desktop.clone());
+    crate::channel_mute::settings::check::start(state, desktop.clone());
+    crate::notification_schedule::check::start(state, desktop.clone());
+    crate::presentation_notifications::check::start(state, desktop.clone());
+    crate::global_notifications::check::start(state, desktop.clone());
     crate::messaging::delivery_check::check::start(state, desktop.clone());
+    crate::messaging::upload_journal::check::start(state, desktop.clone());
     crate::messaging::thread_broadcast_check::start(state, desktop.clone());
     crate::message_vm::broadcast_check::start(state, desktop.clone());
     crate::view::files::check::start(state, desktop.clone());
@@ -116,31 +130,7 @@ async fn handle_client(
     mut state: Signal<ShellState>,
     desktop: &dioxus::desktop::DesktopContext,
 ) -> Result<(), String> {
-    let (reader, mut writer) = stream.into_split();
-    let mut lines = BufReader::new(reader).lines();
-    while let Some(line) = lines
-        .next_line()
-        .await
-        .map_err(|error| format!("read: {error}"))?
-    {
-        if line.trim().is_empty() {
-            continue;
-        }
-        let response = match serde_json::from_str::<AgentRequest>(&line) {
-            Ok(request) => dispatch(&mut state, request, desktop),
-            Err(error) => AgentResponse::err(0, format!("invalid request json: {error}")),
-        };
-        let payload = serde_json::to_vec(&response).map_err(|error| error.to_string())?;
-        writer
-            .write_all(&payload)
-            .await
-            .map_err(|error| format!("write: {error}"))?;
-        writer
-            .write_all(b"\n")
-            .await
-            .map_err(|error| format!("write: {error}"))?;
-    }
-    Ok(())
+    io::handle(stream, |request| dispatch(&mut state, request, desktop)).await
 }
 
 #[cfg(target_os = "windows")]
@@ -179,28 +169,7 @@ async fn handle_tcp_client(
     mut state: Signal<ShellState>,
     desktop: &dioxus::desktop::DesktopContext,
 ) -> Result<(), String> {
-    let (reader, mut writer) = stream.into_split();
-    let mut lines = BufReader::new(reader).lines();
-    while let Some(line) = lines
-        .next_line()
-        .await
-        .map_err(|error| format!("read: {error}"))?
-    {
-        if line.trim().is_empty() {
-            continue;
-        }
-        let response = match serde_json::from_str::<AgentRequest>(&line) {
-            Ok(request) => dispatch(&mut state, request, desktop),
-            Err(error) => AgentResponse::err(0, format!("invalid request json: {error}")),
-        };
-        let mut payload = serde_json::to_vec(&response).map_err(|error| error.to_string())?;
-        payload.push(b'\n');
-        writer
-            .write_all(&payload)
-            .await
-            .map_err(|error| format!("write: {error}"))?;
-    }
-    Ok(())
+    io::handle(stream, |request| dispatch(&mut state, request, desktop)).await
 }
 
 fn dispatch(
@@ -223,6 +192,14 @@ fn dispatch(
         AgentCommand::Ping => AgentResponse::ok(id, json!({ "pong": true })),
         AgentCommand::Help => AgentResponse::ok(id, help_data()),
         AgentCommand::State => AgentResponse::ok(id, state_snapshot(&state.read())),
+        AgentCommand::FocusWindow => {
+            desktop.window.set_visible(true);
+            desktop.window.set_focus();
+            AgentResponse::ok(
+                id,
+                json!({"visible":desktop.window.is_visible(),"focused":desktop.window.is_focused()}),
+            )
+        }
         AgentCommand::OpenPalette => {
             let mut shell = state.write();
             shell.open_palette();
@@ -304,11 +281,13 @@ fn dispatch(
             state.write().dismiss_overlay();
             AgentResponse::ok(id, json!({ "search_active": false }))
         }
-        AgentCommand::OpenSettings => {
+        AgentCommand::OpenSettings { section } => {
             let mut shell = state.write();
-            if shell.overlay != Some(Overlay::Settings) {
-                shell.settings_section = crate::state::SettingsSection::Appearance;
-            }
+            shell.settings_section = match section.unwrap_or(AgentSettingsSection::Appearance) {
+                AgentSettingsSection::Appearance => crate::state::SettingsSection::Appearance,
+                AgentSettingsSection::Notifications => crate::state::SettingsSection::Notifications,
+                AgentSettingsSection::Storage => crate::state::SettingsSection::Storage,
+            };
             shell.overlay = Some(Overlay::Settings);
             AgentResponse::ok(id, json!({ "settings_open": true }))
         }
@@ -622,6 +601,7 @@ fn state_snapshot(state: &ShellState) -> Value {
     });
     let settings_section = match state.settings_section {
         crate::state::SettingsSection::Appearance => "appearance",
+        crate::state::SettingsSection::Notifications => "notifications",
         crate::state::SettingsSection::Storage => "storage",
     };
     let storage = {
@@ -843,6 +823,19 @@ fn state_snapshot(state: &ShellState) -> Value {
         "sequence": state.core.activity.load_seq,
         "hydrated": state.core.activity.hydrated.len()
     });
+    snapshot["badge_counts"] = state
+        .core
+        .active_team
+        .as_ref()
+        .and_then(|team| state.core.workspaces.get(team))
+        .map(|workspace| {
+            json!({
+                "inbox_enabled": workspace.activity_inbox_enabled(),
+                "activity": workspace.activity_badge_count(),
+                "dm_rail": workspace.dm_rail_badge_count(),
+            })
+        })
+        .unwrap_or(Value::Null);
     snapshot["thread_subscription"] = json!({"active":crate::thread_subscription::active(state),"pending":crate::thread_subscription::busy(state)});
     snapshot["thread_feed"] = json!({"items":state.core.threads_view.items.len(),"loading":state.core.threads_view.loading,"loaded":state.core.threads_view.loaded,"has_more":state.core.threads_view.has_more,"failed":state.core.threads_view.failed,"dirty":state.core.threads_view.dirty,"next_cursor":state.core.threads_view.next_cursor,"active_channel_items":state.core.threads_view.items.iter().filter(|i| i.channel()==state.core.active_channel.as_ref()).map(|i|json!({"root":i.root_ts(),"replies":i.root_msg.reply_count,"unread":i.unread_replies.len()})).collect::<Vec<_>>()});
     snapshot["thread_totals"] = state.core.active_team.as_ref().and_then(|team|state.core.workspaces.get(team)).map(|w|json!({
@@ -926,9 +919,9 @@ fn message_preview_text(message: &crate::state::MessageVm) -> String {
 fn help_data() -> Value {
     json!({
         "commands": [
-            {"cmd": "ping"}, {"cmd": "state"}, {"cmd": "open-palette"},
+            {"cmd": "ping"}, {"cmd": "state"}, {"cmd": "focus-window"}, {"cmd": "open-palette"},
             {"cmd": "set-query"}, {"cmd": "submit"}, {"cmd": "select-channel"},
-            {"cmd": "search"}, {"cmd": "open-settings"}, {"cmd": "screenshot"},
+            {"cmd": "search"}, {"cmd": "open-settings", "section": "appearance|notifications|storage (optional)"}, {"cmd": "screenshot"},
             {"cmd": "notification-preview"},
             {"cmd": "open-profile"}, {"cmd": "close-profile"}, {"cmd": "open-usergroup"},
             {"cmd": "allow-destructive"}, {"cmd": "send"},

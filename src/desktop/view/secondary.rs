@@ -425,7 +425,7 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
         aside { class: "list-panel",
             div { class: "list-panel-header",
                 h2 { "Activity" }
-                if let Some(count) = workspace.and_then(|ws| ws.activity_unread_count) {
+                if let Some(count) = workspace.and_then(super::activity_badge_total) {
                     if count > 0 {
                         span { class: "ping-badge", "{count}" }
                     }

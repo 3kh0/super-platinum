@@ -89,6 +89,7 @@ impl SelfMenuContext {
                 })
     }
 
+    #[cfg(test)]
     fn apply_profile(
         &self,
         shell: &mut ShellState,
@@ -224,42 +225,8 @@ pub async fn resume_notifications(mut state: Signal<ShellState>) {
     }
 }
 
-pub async fn clear_self_status(mut state: Signal<ShellState>) {
-    let context = SelfMenuContext::begin(&mut state.write(), MutationKind::Status);
-    state.write().clear_self_status();
-    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
-        return;
-    }
-    let Some(context) = context else {
-        return;
-    };
-    let profile = serde_json::json!({
-        "status_text": "",
-        "status_emoji": "",
-        "status_expiration": 0
-    })
-    .to_string();
-    let request = &context.0;
-    let result = api::set_user_profile(
-        &request.transport,
-        &request.client,
-        &request.session,
-        profile,
-    )
-    .await;
-    if !context.current(&state.read()) {
-        return;
-    }
-    match result {
-        Ok(profile) => context.apply_profile(&mut state.write(), profile),
-        Err(error) => {
-            state
-                .write()
-                .report_failure(&error, "Status change needs a connection", || {
-                    format!("Could not clear status: {error}")
-                })
-        }
-    }
+pub async fn clear_self_status(state: Signal<ShellState>) {
+    crate::self_status::clear(state);
 }
 
 pub async fn sign_out_workspace(mut state: Signal<ShellState>) {

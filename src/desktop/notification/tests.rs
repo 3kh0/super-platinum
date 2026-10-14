@@ -174,3 +174,30 @@ fn huddle_invites_respect_desktop_permissions_dnd_and_deduplication() {
         .insert("global_desktop_push_enabled".into(), json!(false));
     assert!(for_event(&core, "T1", 1, &event).is_none());
 }
+
+#[test]
+fn platform_payloads_preserve_silent_banners_and_escape_content() {
+    let mut notice = DesktopNotification {
+        title: "<sender>&\"'".into(),
+        body: "<message>".into(),
+        sound: None,
+    };
+    for silent in [None, Some("none"), Some("../../unknown.mp3")] {
+        notice.sound = silent.map(str::to_owned);
+        let xml = windows_toast_xml(&notice);
+        assert!(xml.contains("<audio silent='true'/>"));
+        assert!(!xml.contains("ms-winsoundevent"));
+        assert!(xml.contains("&lt;sender&gt;&amp;&quot;&apos;"));
+        assert!(xml.contains("&lt;message&gt;"));
+        assert_eq!(
+            linux_sound_hint(&notice),
+            "--hint=boolean:suppress-sound:true"
+        );
+    }
+    notice.sound = Some("b2.mp3".into());
+    assert!(windows_toast_xml(&notice).contains("ms-winsoundevent:Notification.IM"));
+    assert_eq!(
+        linux_sound_hint(&notice),
+        "--hint=boolean:suppress-sound:false"
+    );
+}

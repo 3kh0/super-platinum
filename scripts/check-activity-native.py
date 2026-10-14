@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Drive and capture isolated signed activity-navigation fixtures without OS input."""
+"""Drive and capture isolated native activity-navigation fixtures without OS input."""
 import json
 import os
 import pathlib
@@ -7,7 +7,7 @@ import subprocess
 import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-BINARY = pathlib.Path(os.environ.get("SUPER_PLATINUM_BINARY", ROOT / "target/debug/Super Platinum.app/Contents/MacOS/super-platinum"))
+BINARY = pathlib.Path(os.environ.get("SUPER_PLATINUM_BINARY", ROOT / "target/debug/super-platinum"))
 TMP = pathlib.Path(os.environ.get("TMPDIR", "/tmp"))
 MARKER = TMP / "super-platinum-agent.sock.path"
 CAPTURES = ROOT / "tmp/agent-ui"
@@ -37,19 +37,15 @@ for fixture in ("activity-navigation", "activity-navigation-narrow"):
                     raise RuntimeError(f"{capture_name}: failed to start")
                 time.sleep(.1)
             control("ping")
-            subprocess.run(["osascript", "-l", "JavaScript", "-e",
-                            'ObjC.import("AppKit"); '
-                            f'var app=$.NSRunningApplication.runningApplicationWithProcessIdentifier({process.pid}); '
-                            'if(app.finishedLaunching) app.activateWithOptions(2);'],
+            subprocess.run(["osascript", "-e",
+                            f'tell application "System Events" to set frontmost of (first application process whose unix id is {process.pid}) to true'],
                            capture_output=True, check=True, timeout=5)
             deadline = time.monotonic() + 90
             last_activation = 0.0
             while True:
                 if time.monotonic() - last_activation > 1:
-                    subprocess.run(["osascript", "-l", "JavaScript", "-e",
-                                    'ObjC.import("AppKit"); '
-                                    f'var app=$.NSRunningApplication.runningApplicationWithProcessIdentifier({process.pid}); '
-                                    'if(app.finishedLaunching) app.activateWithOptions(2);'],
+                    subprocess.run(["osascript", "-e",
+                                    f'tell application "System Events" to set frontmost of (first application process whose unix id is {process.pid}) to true'],
                                    capture_output=True, check=True, timeout=5)
                     last_activation = time.monotonic()
                 receipts = [line.split("activity-navigation-check: ", 1)[1]
@@ -60,7 +56,10 @@ for fixture in ("activity-navigation", "activity-navigation-narrow"):
                     if receipt.get("ok") is not True:
                         raise RuntimeError(f"{capture_name}: native assertion failed: {receipt}")
                     required = ("bundleOpensLatest", "channelClosesThread", "exactReplyVisible",
-                                "activitySurfacePreserved", "noTransport")
+                                "activitySurfacePreserved", "noTransport",
+                                "canonicalBadgeUpdates", "zeroClearsUnreadRows",
+                                "filteredCategories", "dmHighlightCount", "dmExcludedChannels", "optOutConservation",
+                                "guardedCategoryFlags", "unknownMapNoFallback")
                     viewport = receipt.get("viewport", [])
                     expected_viewport = [668, 400] if fixture.endswith("-narrow") else [1280, 800]
                     if viewport != expected_viewport:

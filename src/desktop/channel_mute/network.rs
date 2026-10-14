@@ -1,6 +1,10 @@
 use super::*;
 
 pub(super) async fn run(mut state: Signal<ShellState>, attempt: Attempt) {
+    if attempt.settings.is_some() {
+        settings::network::run(state, attempt).await;
+        return;
+    }
     if !attempt.token.current(&state.peek())
         || shared_retry_at(&state.peek(), &attempt.token) > now()
     {
@@ -42,11 +46,6 @@ pub(super) async fn run(mut state: Signal<ShellState>, attempt: Attempt) {
             preflight_failed(&mut shell, &attempt, None, now());
             return;
         };
-        if matches!(attempt.change, api::ChannelMuteChange::TemporaryUntil(_)) && canonical.muted {
-            adopt(&mut shell, &attempt.token.owner, &prefs, now());
-            preflight_failed(&mut shell, &attempt, None, now());
-            return;
-        }
         if attempt.change.confirms(canonical, now()) {
             let Some(entry) = operation_mut(&mut shell, &attempt) else {
                 return;

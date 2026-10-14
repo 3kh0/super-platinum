@@ -43,7 +43,7 @@ data. A passing unit suite is not evidence of live Slack behavior.
 | Threads, Activity, read state, subscriptions | Shared conversation/thread surfaces; Activity preserves exact reply targets with parsed-shape/request regressions and normal/narrow native click verification; agent navigation now uses the same reply destination | Both-client realtime and live read-state reconciliation |
 | Huddles, camera, sharing, device selection | Existing; live media unproven | Controlled private call and media checks |
 | Canvases, lists, app interactions, workflows | Native canvas reader/create/rename and bounded checkbox/paragraph editing with private cross-client save/restore proof and paired first-load recovery; Lists support saved tables/boards, record details, guarded rich-text/number/select/boolean/calendar-date and ordinary User and Channel edits, item creation, conditional deletion confirmation, and same-ID deletion Undo/Redo; private live writes/readback verified; typed app modals and ordinary message buttons/static-select/radio/checkbox/static-multi-select/datepicker/timepicker/users-select/conversations-select controls have signed offline checks, including normal/narrow multi-picker interactions and full-state wire regressions | Live app receipt/responses remain unverified; broader app controls; List continuation, saved-view writes, remaining field types and item actions; richer canvas authoring/collaboration, comments, custom tabs and workflow discovery/execution |
-| Notifications, DND, settings, accounts | Existing; audit pending | Native bundle tests, persistence, isolation |
+| Notifications, DND, settings, accounts | Channel mute and detailed channel preferences passed private API/native checks; recurring working-hours, global defaults/keywords, and sound/preview/mute and macOS bounce editors passed normal/narrow native interactions and canonical live reads; isolated AppKit attention request/cancel calls verified | Recurring schedule/global/presentation live-write confirmation; badge controls; real-message/visible Dock bounce, live device delivery and broader account isolation |
 | Keyboard, focus, accessibility, narrow windows | Shortcut handoff and IME event guards tested through the native WebView; partial overall | Real OS input-method composition, remaining native interaction, labels, reduced motion, layout sweeps |
 | Geist visual system | In progress | Native screenshots of all surfaces and states |
 | Speed, memory, idle work, large workspaces | Paired quick-switcher, channel-geometry and thread-index CPU benchmarks show lower calculation cost; visible projections remain bounded; signed native channel/thread scrolling and selection checks pass | End-to-end live startup, scrolling, interaction, memory/idle measurements and broader workloads; thread CPU probes do not establish native latency gains |
@@ -6384,3 +6384,752 @@ tmp/agent-ui/message-broadcast{,-narrow}.png and channel-mute{,-narrow}.png.
 No new Slack writes were required for these final offline checks. Full Slack
 parity remains an active goal; temporary-mute server duration behavior, durable
 upload recovery, and additional feature/live coverage remain open.
+
+### 2026-10-13 — Temporary mute and explicit upload delivery checks
+
+Added a read-only Check delivery action to retained unconfirmed file uploads.
+It scans bounded canonical history/replies and reconciles only the captured
+account, sender, destination and finalized file IDs. Missing results remain
+uncertain; no path resends a file. Endpoint Retry-After is shared across receipts
+and survives channel navigation, including API-style rate-limit responses.
+
+Temporary channel mute now offers one hour and until tomorrow. Stock reference
+captures in private #echotestchamber verified the sole expiration-field write,
+raw channel_ids wire value, and successful server response for each duration.
+Until tomorrow followed the configured 08:00 local DND end time, preserving
+seconds through Slack's rounded-minute calculation. Native Unmute ended both
+temporary mutes; stock independently returned to Just mentions each time.
+Both clients were left unmuted. Those live checks used the previous native build;
+new native duration interactions remain an integration gate below.
+
+Fresh schedule hydration gates the tomorrow option. Pending/uncertain actions
+retain their original owner; a shared authenticated preferences cooldown stops
+navigation from bypassing rate limits. Success copy disappears when remote
+canonical mute state changes or its effective expiry changes. Choosing a
+temporary duration from a permanent mute remains disabled pending live proof of
+that server transition; this is an outstanding parity gap.
+
+Integration caught and repaired a malformed native-check format string and an
+upload-check runner environment/log prefix mismatch. Current desktop suite:
+856 passed, 0 failed, 5 ignored. Independent core suite: 973 passed, 0 failed,
+5 ignored. Signed build and four native fixture captures are still pending.
+Logs: tmp/temporary-mute-delivery-{desktop,core,build}.log.
+
+Remaining work includes durable upload uncertainty across restart, own-profile
+editing, broader channel notification modes, slash commands/app shortcuts, and
+startup/rendering performance. Read-only stock profile research confirms NFC
+normalization, trimmed UTF-16 validation and permission/SSO/SCIM locks. Modern
+Title uses profile sections; it cannot be substituted with a plain title write.
+
+Native integration completed on the first signed build: both upload-delivery-check
+fixtures and both channel-mute fixtures passed; root read all four PNGs. Live
+native One hour produced muted=false and future expiry, independently reflected
+as muted in stock Slack. Native Until tomorrow produced 2026-10-14 08:00:49 local,
+matching the stock reference schedule behavior. Native Unmute restored each one.
+
+A further private-channel transition test set permanent muted=true, then selected
+One hour in stock Slack. The only submitted preference was the expiry; HTTP 200
+ok and realtime canonical muted=false proved that the server clears permanent
+mute automatically. Removed the temporary-action restriction, added an exact
+transition regression, and extended the native fixture/backend to match the
+observed reset behavior. Final rebuild/native rerun for this last change pending.
+After the live cycles, native confirmed muted=false/expiry=0 and stock confirmed
+Just mentions=true/Mute and hide=false. Both private composers were empty; stock
+was restored to its original C096P2QHTM5 route. No messages or files were sent.
+
+Parallel groundwork now includes profile text NFC/validation and an account-owned
+upload receipt journal. These are not finished profile editing or restart recovery.
+The profile oracle caught mixed-case reserved values; both configured values and
+input must be lowercased. The journal issues non-reused tickets, acknowledges disk
+commits, bounds active receipts, and rejects late updates after exact retirement.
+Desktop restore/retirement and pre-publication integration remain necessary.
+
+Next recovery integration is concrete: reserve through
+drafts::store::uploads::reserve on a blocking worker before network work; only a
+new explicit send with created=true may proceed. Capture its issued Ticket and
+use api::upload_files_with_receipt to await uploads::finalize before either
+completion/sharing branch. The callback receives staged IDs, not proof of delivery.
+Recheck captured session/cancel authority after the awaited disk acknowledgement.
+Only exact canonical proof or definite pre-delivery failure may retire the latest
+Stored snapshot. Loaded rows and lost acknowledgements must never cause upload or
+publication replay. Restore by exact account/team/self-user; preserve channel,
+thread and broadcast destination, caption, display metadata and uncertainty.
+Rows without IDs remain unconfirmed without a Check delivery action. Reuse the
+existing exact canonical reconciliation for rows with IDs. Add restart fixtures
+and account-switch/retirement regressions before calling recovery implemented.
+
+Journal review found no storage-layer blocker: identity includes a durable random
+incarnation and non-reused SQLite sequence, only reservation inserts, and exact
+retirement cannot erase a newer finalized receipt. Ten storage/worker regressions
+cover reopening, dropped acknowledgement, owner identity, reconstruction and
+stale completion; actual process-crash or mid-commit disk-failure injection is not
+covered yet. New local HTTP upload tests cover plain and broadcast delivery paths
+with the receipt callback suspended, rejected, canceled and successfully committed.
+
+Final gates: desktop 857 passed / 0 failed / 5 ignored; independently locked core
+990 passed / 0 failed / 5 ignored. Root and core formatting plus git diff --check
+passed (core module ordering was normalized). Final signed build/signature passed;
+both mute fixtures, including permanentToTemporary, and both upload-delivery
+fixtures passed. Root inspected all four final PNGs. Logs:
+tmp/temporary-mute-final-{desktop,core,build}.log,
+tmp/channel-mute-duration-final-native.log, tmp/upload-delivery-final-native.log.
+
+User preference after these gates: use the dev executable by default. Avoid the
+signed macOS bundle build for ordinary iteration/native verification; reserve it
+for behavior that specifically requires the bundle, such as native notifications.
+Switched the running instance to target/debug/super-platinum without another build.
+
+### 2026-10-13 — Durable upload recovery and own-profile text editing
+
+Connected the account-owned SQLite upload receipt journal to the desktop send
+path. Reservation commits before staging bytes; staged file IDs commit before
+completion/share. A restart restores channel/thread/broadcast receipts as
+Unconfirmed with inert attachment paths, never as upload jobs. Exact canonical
+proof retires the matching durable receipt. Credential changes invalidate old
+send/readback continuations even when the transport object is reused.
+
+Added own-profile full name, display name, and pronouns editing with fresh
+capability checks, NFC validation, explicit changed-field patches, one-shot
+transport, and canonical readback. Lost responses retain an owner-bound pending
+operation and expose Check profile without resending. Status saves and Clear
+status share admission with the profile editor. Clear status now uses the same
+status receipt/controller instead of an independent optimistic write. Title,
+custom profile sections, and profile photo editing remain outside this slice.
+
+Read-only live capability verification succeeded on the current Grid account:
+client.init supplies self/team/internal workspace inventory; client.extras with
+team_prefs supplies messaging-client policy; permissions/info requires string
+permission names UPDATE_NAME/UPDATE_DISPLAY_NAME, not protobuf numeric enums.
+The complete loader, including enterprise pronoun policy, allowed all three
+fields. No live profile write was performed. Temporary probe removed.
+
+Validation: final independent core suite passed 1000/0/5 ignored; desktop passed
+873/0/5 ignored. Both dev-binary profile native fixtures passed all nine behavior
+flags; normal/narrow screenshots were inspected. Final upload restart checks also passed. New native
+restart runner uses two separate processes and explicit isolated SQLite paths;
+profile runner exercises synthetic writes/readback without a Slack session.
+All new runners default to target/debug/super-platinum. No signed app build.
+
+Independent review caught a second-revision startup race: the previous one-retry
+load could drop unrelated older receipts after two concurrent journal mutations.
+The load now keeps one paced task/read in flight until its snapshot is stable,
+with immediate retirement on owner/new-load replacement and no storage-error
+retry. A focused regression covers two revision races and eventual restoration.
+The tombstone regression initially used local remove; it now records a real
+remote deletion before injecting the stale canonical row.
+
+Final verification: locked dev build succeeded, root/core fmt checks and
+`git diff --check` passed. Upload restart seed/restore processes passed at both
+1280x800 and 668x400; root inspected all four PNGs. Both processes used isolated
+SQLite and no Slack session/transport; restore issued one synthetic read-only
+check, preserved the other receipt, and exact durable retirement was checked by
+SQLite query. Logs: tmp/profile-recovery-{desktop,core}.log,
+tmp/profile-recovery-build-final.log, tmp/profile-edit-native.log,
+tmp/upload-restart-native.log. Running client is the dev executable (PID18557,
+/tmp/sp-dev-live.sock), signed in online at #echotestchamber with destructive
+mode disabled. No signed build or live profile write in this slice.
+
+Remaining limits: profile photo/title/custom-section editing and broader Slack
+feature parity remain open. The SQLite restart proof is a clean two-process exit;
+mid-commit disk failure and process-crash injection are not covered. Profile write
+semantics have local HTTP/fixture coverage; only capability loading was exercised
+against the live account.
+
+### 2026-10-13 — Reaction projection: isolated baseline and scoped fast path
+
+The realtime reaction reducer still updates canonical channel, thread, and pin
+copies. Its final projection now refreshes the matching visible conversation
+window and synchronizes the open thread, rather than rebuilding every sidebar
+row. Existing event preparation, Activity events, unread state, and notification
+handling stay on their original paths. Thread synchronization still advances the
+canonical measurement generation, and unread annotation runs after both message
+projections. Pending navigation, fixture overrides, and invalid source indices
+fall back to the ordinary full refresh.
+
+A credential-free run of the existing `examples/sidebar_benchmark.rs`, linked
+against the current compiled production core with standalone `rustc -C opt-level=1`,
+measured the work being avoided. For 1,000 synthetic channels / 200,000 messages,
+25-run recent-sort median/p95 was 17.827/18.905 ms; a second run measured
+16.791/17.619 ms. Default and priority sorting were about 0.24–0.25 ms median.
+The 100-channel / 20,000-message recent-sort case measured 0.380/0.384 ms.
+Logs: `tmp/sidebar-projection-{current,repeat,small}.log`. This measures the
+production-core sidebar function on synthetic data, not native frame latency,
+startup, or whole-app speed. No profile settings changed.
+
+New `realtime/reactions/tests.rs` regressions compare the optimized result with
+full projection on the same media registry across Home, DMs, and Activity; they
+cover root/reply add/remove, unread dividers, pin copies, stale/foreign events,
+source-index fallback, and selection-pinned windows. Its ignored
+`reaction_projection_cost` benchmark alternates full/partial projection order
+and verifies equivalent rendered message/thread data. At this checkpoint only
+scoped formatting and diff checks have run; root-owned Cargo, paired desktop
+benchmark, and native validation remain pending. The native 10k scroll baseline
+encountered a blank window before collecting frames, so it supplies no speedup
+measurement.
+
+### 2026-10-13 — Title editing, reaction cost, and dev-only validation
+
+Own-profile Title now has a dedicated editor and canonical Header-section save.
+The request preserves representable Header siblings and fails closed on unknown
+writable shapes. Fresh permissions and exact Header identity are checked before
+one-shot dispatch; ambiguous responses use a read-only check rather than replay.
+Profile text, status, and title share write admission. The API uses NFC and Slack's
+249 UTF-16-unit trimmed validation. No live profile mutation was performed.
+The earlier read-only account probe confirmed the getSections response envelope
+and title capability, not successful production writes.
+
+Channel details now holds its header and tabs above a separately scrolling body.
+Normal/narrow native checks explicitly test header/tab stability while scrolling.
+All 31 Python native runner defaults now use `target/debug/super-platinum`.
+The focused title/profile/status/mute and scroll runners use the agent's explicit
+`focus-window` action, which shows and focuses the connected native window. This
+is a testing control, not an automatic production activation change. No signed
+application was built in this batch.
+
+The agent socket now bounds complete-line reads and response writes to five
+seconds, retaining serial dispatch. Duplex regressions cover idle/partial input,
+a nonreading client, and a valid multi-request exchange. This fixes a general
+server stall risk; it is not established as the cause of the current live timeout.
+The old live process remained alive with an idle AppKit main thread; pings queued
+without an accepted agent stream. AppKit activation and a display-wake attempt did
+not restore its replies. A direct window capture was blank. Preserve that as an
+unresolved runtime observation rather than calling a timeout a process exit.
+
+Verified gates: independently locked core 1,010 passed / 5 ignored; desktop 887
+passed / 6 ignored. The final desktop log is
+`tmp/title-performance-desktop-verified.log`; core is
+`tmp/title-performance-core-final.log`. Formatting and whitespace checks passed
+(after ordering the two profile re-exports in the independently formatted core).
+
+The paired desktop reaction benchmark alternated old/full and incremental paths,
+reset reactions outside the clock, and asserted equal channel/thread views. With
+100 synthetic extra channels / 20k messages, median full/incremental was
+0.7590/0.0720 ms, p95 0.9143/0.0760 ms. At 1,000 / 200k it was
+21.7824/0.0678 ms, p95 23.6827/0.0748 ms (30 samples per path).
+`tmp/reaction-projection-paired.log` is component evidence, not native frame/FPS
+or live-workspace latency proof. Dev build and new native results follow below.
+
+Native follow-up: the dev build passed without project warnings. Three isolated
+10,001-row scroll runs with explicit focus painted successfully: channel frame
+p50/p95 17/18 ms in all runs, maxima 34/29/26 ms, 58/58/57 samples, no frame above
+50 ms. Start-delay samples were zero. Evidence is
+`tmp/agent-ui/channel-scroll-dev-focused-{1,2,3}.{json,png}` and
+`tmp/dev-focused-scroll.log`; run 3 PNG was inspected. This is a current native
+fixture baseline, not proof that the reaction optimization improved FPS or that
+intermittent production blanking is fixed.
+
+Channel mute/details, ordinary profile editing, and status editing passed both
+1280x800 and 668x400 native fixtures; all six PNGs were read. The narrow details
+receipt explicitly recorded overflowing body, successful body scroll, and stable
+header/tabs; the normal fixture fit without scrolling. Logs:
+`tmp/channel-details-native.log`, `tmp/profile-edit-title-regression.log`,
+`tmp/self-status-title-regression.log`.
+
+Title passed normal size, then narrow failed the pending-save/caret DOM wait.
+Its failure screenshot showed unexpected synthetic input text. An unchanged-build
+repeat passed both sizes with all nine behavioral flags; both successful PNGs and
+the failure PNG were inspected. Preserve
+`tmp/agent-ui/profile-title-narrow-first-failure.log`, the `-failure.png`, and
+`tmp/profile-title-native-repeat.log`. A fixture-only follow-up waits for dialog
+keyboard initialization and reports exact DOM/controller diagnostics on failures;
+no production cause/fix is claimed from this one unexplained failure.
+
+The previous owned dev process was replaced for integration after a graceful
+termination was confirmed, without removing session/cache/draft data. The new
+bare executable signed in, opened private #echotestchamber, reported online with
+write mode disabled, and produced an inspected painted screenshot:
+`tmp/agent-ui/dev-title-integration-live.png`. The visible system notices use gray
+text. Startup happened during compilation and is not a comparable speed sample.
+The existing live timeout/blank observation remains unresolved.
+
+Next concrete parity slice is documented in
+`docs/channel-notifications-protocol.md`: current primary notification modes,
+separate desktop push/mobile enablement, explicit mobile overrides, and exact
+preference patches. It is source evidence and a testable handoff, not implemented
+mode controls or proof of real OS/mobile notification delivery.
+
+Final title rerun after diagnostic/readiness-only changes passed both sizes with
+all nine behavior flags; both regenerated PNGs were inspected. Evidence:
+`tmp/profile-title-native-final.log`, `tmp/title-native-diagnostic-build.log`, and
+`tmp/agent-ui/profile-title{,-narrow}.{log,png}`. The dev client still answered ping,
+focus, and filtered state afterwards: signed in, online, private test channel,
+write mode disabled. No live title/name/status writes or reaction mutations were
+performed in this batch. The 887/1,010 unit gates precede only the final fixture
+readiness/diagnostic change; that change was compiled and exercised natively.
+
+
+### 2026-10-13 — Channel notification settings and delayed runtime observation
+
+Added Channel Details controls for All new posts / Just mentions, desktop push,
+mobile enablement and independent mode overrides, following every thread,
+broadcast mentions, and badges for every message. Each activation is a separate
+source-derived Slack preference patch, sharing mute's pending-operation lock,
+credential owner, endpoint cooldown and explicit read-only recovery. Successful
+canonical readback adopts only the intent's affected keys. Unknown globals,
+unrelated channels, and unrelated target-channel keys survive. Pending or
+ambiguous writes are never replayed automatically.
+
+Independent review caught two subtleties before validation: JavaScript's explicit
+null versus missing mobile defaults affect synchronization, and a session cookie
+or workspace URL rotation must invalidate captured operations. Both are now
+covered by focused regressions, including retaining an uncertain receipt across
+credential rotation and settling it only with a fresh explicit read.
+
+The actual stock Slack Advanced modal was read and captured in the private test
+channel without changing preferences. Its desktop switch combines the canonical
+preference with OS/browser permissions. Our UI describes saved Slack preferences
+and the separate system permission requirement; preference tests do not prove
+banner delivery. The read-only live baseline confirmed canonical parsing for the
+real account. No full preference snapshots or secrets belong in committed docs.
+
+The opt-in runtime probe can now delay its bounded 20-second observation window
+(up to one hour), enabling an observation after startup. Pre-window ticks are
+not counted; JavaScript does not install active listeners until the window, and
+late callbacks cannot extend its deadline. There is no added ordinary production
+polling or automatic reload. This is diagnosis, not a fix for intermittent blank
+windows or agent stalls.
+
+Verification so far: desktop 894 passed / 6 ignored; independently locked core
+1,017 passed / 5 ignored. Runtime JavaScript tests cover delayed quiet time, late
+start and deadline cleanup. Logs: `tmp/channel-notifications-desktop-final.log`,
+`tmp/channel-notifications-core-final.log`. One additional RSX ownership error
+was fixed by borrowing the optional message before the passing desktop gate.
+Dev build and native/live evidence follow below. No signed bundle was built.
+
+
+Final native gate: bare dev build passed. Notification settings and existing mute
+fixtures passed at 1280x800 and 668x400; all four PNGs were inspected. The new
+fixture exercised 11 exact prepared writes/readbacks, duplicate activation,
+shared mute exclusion, mobile overrides, uncertain response recovery, and
+unrelated-key preservation. The mute regression retained its narrow scroll/header
+checks. These use native DOM focus/click, not trusted OS Enter/Space input, and do
+not prove every control's keyboard focus after a pending disable. Evidence:
+`tmp/channel-notifications-native.log`,
+`tmp/channel-mute-notifications-regression.log`, and
+`tmp/agent-ui/channel-{notifications,mute}{,-narrow}.{log,png}`.
+
+Live API gate: created one new private channel solely for this test (no invites or
+messages). All 16 production notification actions/readbacks passed, including
+both primary modes, push off/on, mobile overrides, different-mobile preservation,
+thread following, broadcast suppression, and badge toggles. Each read compared
+all globals and unrelated channels against the baseline. A captured-source whole-
+channel reset then produced a canonically absent override; archive/readback
+confirmed cleanup. This proves the production API contract separately from the
+native fixture; it is not live native-click or OS/mobile delivery proof. The
+temporary gated example was deleted after execution. Evidence:
+`tmp/channel-notifications-live-actions.log`; protocol and exact reset semantics
+are in `docs/channel-notifications-protocol.md`.
+
+The delayed probe passed a native offline run with a three-second quiet period:
+five JS samples, 100 application heartbeats within the following 20-second window,
+terminal native report at 23,001 ms, and no further samples during an extra second.
+The last JS sample had an open edit socket, headless interpreter, nonempty root,
+two frame callbacks and zero error counters. Agent responded after collection;
+its focused screenshot was inspected. Evidence:
+`tmp/runtime-probe-delayed-dev.{log,json}` and
+`tmp/agent-ui/runtime-probe-delayed-dev.png`. This is a healthy counterexample,
+not reproduction or resolution of the intermittent blank-window failure.
+
+Formatting for both manifests, diff whitespace, and the JS runtime-probe harness
+passed. The dev build reports an existing future Rust incompatibility warning
+for dependency block 0.1.6; no project warning or compile error remains.
+
+
+The previous owned dev copy was still responsive and visibly painted with an
+empty composer before replacement. Its termination was confirmed before launching
+the new bare executable. The refreshed app is signed in, online, in private
+#echotestchamber, and agent writes remain disabled. Its screenshot was inspected:
+`tmp/agent-ui/dev-notifications-live.png`. The opt-in late runtime observation is
+scheduled at 600 seconds in `tmp/live-dev-notifications.stderr.log`; it is not yet
+completed evidence. Read `tmp/live-dev.pid` and check the actual process before
+continuing that investigation. No cache/session/draft data was removed.
+
+
+Next source-backed parity slice: recurring notification schedules (Every day,
+Weekdays, Custom allowed hours). The handoff is
+`docs/notification-schedule-protocol.md`; full schedule hydration, named-pref
+canonical reads, timezone/Availability routing and one-shot user-pref admission
+must be resolved before implementing writes. Existing private-channel testing
+permission does not extend to unrequested workspace-wide preference mutations.
+
+
+### 2026-10-13 — Recurring notification schedule integration
+
+The preceding goal turn made verified progress: detailed channel settings passed
+native and private API checks, and the delayed diagnostic passed an offline run.
+The full parity/design/performance objective remains active and unproven.
+
+The next slice adds recurring allowed notification hours: Every day, Weekdays,
+and Custom with per-day None and time bounds. Read-only inspection of the current
+stock client confirmed this under Preferences > Availability > Working hours;
+its newer flag relocates the same DND schedule component. The reference PNG was
+read and the preferences dialog closed without any mutation or route change:
+`tmp/agent-ui/slack-working-hours-reference.png`.
+
+A named canonical preference read confirmed flat boolean/string fields, including
+un-padded hours such as `8:00`. `tz` was absent from preferences, while the self
+user record supplied the actual IANA timezone. The implemented reader now fetches
+that separate context, preserves raw preference representation, displays normalized
+hours, and guards dispatch against timezone changes. The typed production reader
+was independently run against the real account and matched the stock display;
+`tmp/schedule-typed-read.log` records the structural result. These probes were
+read-only and their temporary source examples were removed.
+
+Core schedule validation passed 1,027 tests / 5 ignored, including source-derived
+option ordering, null bound adjustment, changed-key request admission, timezone
+preflight, canonical receipt requirements, no replay, and cache hydration. Log:
+`tmp/notification-schedule-core.log`. Desktop integration and native gates follow
+below; no live workspace-wide schedule mutation is authorized or performed.
+
+
+The first native schedule run caught two real renderer defects: select elements
+initially displayed their first option rather than the canonical times, and a
+later stylesheet forced the third Settings tab onto another row. Per-option
+selection and the owning Settings grid now resolve those causes; the checker
+requires both initial times and matching tab tops. First-failure evidence is
+preserved in `tmp/notification-schedule-native-first-failure.log` and
+`tmp/agent-ui/notification-schedule-first-failure.png`. Native rerun is pending.
+
+The latest user preference is now the default: build and run the bare dev
+executable; only a specifically bundle-dependent test should require signing.
+The immediately preceding acknowledgment turn made no code progress. This
+continuation rechecked the current process and source, resumed the concrete
+schedule gate, and incorporated the separate runtime findings below.
+
+
+The final recurring-schedule native run passed at 1280×800 and 668×400. Root
+read both PNGs. Each fixture checked the initial unpadded canonical times,
+Every day/Weekdays/Custom, all seven days, None, bounds, pending focus, duplicate
+admission, unconfirmed mode recovery, explicit read-only status checks, exact
+changed-key requests, unknown-pref preservation, and fixed header/tab geometry.
+Each made eight isolated fake writes and ten reads with no Slack transport.
+The second run had exposed a max-height/inherited-top mismatch; matching 20px
+normal and 8px short-window insets fixed the offscreen dialog. Evidence:
+`tmp/notification-schedule-native.log`, `tmp/agent-ui/notification-schedule.png`,
+`tmp/agent-ui/notification-schedule-narrow.png`; both failure captures retained.
+
+Final desktop tests passed 904 / 6 ignored, including three maintenance-cadence
+regressions. Core schedule validation previously passed 1,027 / 5 ignored; the
+subsequent additive typed Settings navigation passed both focused protocol tests.
+Root/core formatting and diff whitespace passed. Bare dev build passed; only the
+existing dependency `block 0.1.6` future-compatibility warning remains. Logs:
+`tmp/schedule-runtime-desktop-tests.log`, `tmp/schedule-agent-protocol-tests.log`,
+`tmp/schedule-runtime-dev-build-final.log`.
+
+The late runtime trace completed with separate OS App Nap evidence. Runtime now
+skips expired maintenance ticks, uses elapsed time for media sweeps, and expires
+typing across all workspaces in one pass. See `docs/runtime-responsiveness.md`.
+This is a tested catch-up-work reduction, not proof that the intermittent blank
+window is fixed or an end-to-end performance benchmark.
+
+Next notification surface is global message defaults and keywords, documented
+in `docs/global-notifications-protocol.md`. Read-only stock Preferences inspection
+confirmed desktop/mobile toggles, messaging modes, thread replies, mobile override
+visibility and channel keywords; `tmp/agent-ui/slack-global-notifications-reference.png`
+was inspected. The dialog was closed and original channel route preserved.
+No global schedule/profile/default preference was changed.
+
+
+Channel notification native regression checks also passed at both sizes; root
+read both resulting PNGs (`tmp/schedule-channel-notifications-regression.log`).
+The previous owned dev process was still responsive with an empty composer; its
+termination was confirmed before the updated bare executable launched as PID
+51244 (current PID also in `tmp/live-dev.pid`). Live Settings > Notifications
+loaded Every day, 08:00–20:00, America/New_York, matching stock and the canonical
+API read. Root inspected `tmp/agent-ui/live-working-hours.png`, then closed the
+settings dialog. The dev client remains signed in, online, in #echotestchamber,
+with agent destructive actions disabled. No messages or global preferences were
+written in this continuation. The full parity/design/performance goal remains
+active; next work is global notification defaults/keywords and the remaining
+acceptance gaps above.
+
+
+### 2026-10-13 — Global notification defaults and keywords
+
+The preceding goal turn made verified progress: recurring working hours passed
+normal/narrow native interactions and live read-only rendering, and the runtime
+catch-up fix passed its regression suite. The current dev PID was revalidated
+as alive before this continuation. The full parity/design/performance objective
+remains active; this slice implements global messaging defaults and keywords
+from `docs/global-notifications-protocol.md`. Live global writes remain outside
+the private-conversation testing boundary.
+
+Source review also exposed a desktop delivery mismatch. Captured Fpyc at
+S 3857400–3859200 enables the global delivery switch only for true or absence;
+a present channel override uses JavaScript truthiness, including false for null.
+The existing implementation lost explicit null through `as_bool()` fallback.
+The scoped correction and an actual message-options regression are implemented;
+compiled verification follows with the combined core suite.
+
+
+Core validation passed 1,038 tests / 5 ignored in
+`tmp/global-notifications-core.log`, including strict global request admission,
+scalar versus multi-pref shapes, keyword 100/101-entry bounds and literal
+whitespace, ownership/readback, no replay, Retry-After, and the delivery-null
+regression. Independent review confirmed zN7l's channel/global getters preserve
+null rather than substituting defaults. Native integration and layout gates
+remain pending at this checkpoint.
+
+
+Desktop validation passed 911 tests / 6 ignored in
+`tmp/global-notifications-desktop.log`. The new controller covers mounted mobile
+link state, no-op local completion, retained keyword drafts through owner/visit
+changes, immutable pending keywords, exact uncertain readback, credential
+rotation, channel-preserving adoption and shared authenticated cooldown. Keywords
+use explicit Save/Discard as a native interaction choice rather than Slack's
+one-second debounce/unmount flush. A final presentation-only focus update sends
+Save/Discard completion to the enabled keyword field without stealing focus
+from an explicit user move; native assertions verify that behavior. The bare
+dev build is in progress; no signed app is needed.
+
+
+The first global native run passed mode/device/mobile/thread interactions, then
+caught Discard leaving the uncontrolled textarea's old text visible even though
+the draft had become clean. Its focused failure PNG was inspected and preserved
+as `tmp/agent-ui/global-notifications-first-failure.png`, with log
+`tmp/global-notifications-native-first-failure.log`. The correction must sync
+explicit seed changes without clobbering newer native input or composition.
+
+Working-hours regression passed both sizes after adding Notifications subnav
+(`tmp/global-schedule-regression.log`; both PNGs inspected). The narrow capture
+showed avoidable fixed-header space, so Reload was moved beside the title and
+helper/timezone copy shortened. This visual polish will be rechecked on the next
+combined dev build rather than claimed from source alone.
+
+The seed synchronization fix passed all six JavaScript regressions, including
+composition, newer native input, stale seeds and replacement nodes. The final
+bare dev build passed (`tmp/global-notifications-dev-build-final.log`). Both
+global native runs then passed nine simulated writes/twelve reads each, covering
+Save/Discard completion and focus, caret preservation, mobile overrides,
+validation, and uncertain-result recovery without replay. Root inspected both
+final PNGs (`tmp/global-notifications-native.log`,
+`tmp/agent-ui/global-notifications.png`, and its narrow counterpart).
+
+The compact working-hours header also passed the final normal/narrow native
+regression; both final PNGs were inspected
+(`tmp/global-schedule-regression-final.log`). Root refreshed the owned bare dev
+process after confirming its identity and termination. Current PID 61524 is
+recorded in `tmp/live-dev.pid`; no signed bundle was built. Live Messaging
+defaults showed Mentions and direct messages, desktop/mobile enabled, linked
+mobile settings, thread replies disabled, and the existing keywords. Root read
+`tmp/agent-ui/live-global-notifications.png`, then closed Settings. The client
+remains signed in and online in C0AQDL3V5GU with destructive agent actions off.
+No live global preferences or messages were written.
+
+The next presentation-settings research is in
+`docs/notification-presentation-protocol.md`. Bare dev remains the default for
+UI/control verification; signed debug packaging is reserved for specifically
+bundle-dependent macOS notification authorization/delivery checks. The full
+parity/design/performance objective remains active and incomplete.
+
+
+### 2026-10-13 — Notification sounds, previews, and messaging mute
+
+The preceding continuation made verified progress: native global/schedule gates
+completed and the owned bare dev client was refreshed and checked live without
+preference writes. This continuation implements the source-backed presentation
+controls in parallel, with separate scalar global versus ordinary user intents,
+strict one-attempt transport, and the existing ownership/readback lifecycle.
+
+The live stock Notifications page was read through Playwright/CDP. It showed
+message previews enabled, messaging mute disabled, Ding for ordinary messages,
+and Knock Brush for VIP messages. Root inspected
+`tmp/agent-ui/slack-notification-presentation-reference.png`; Slack's own UI also
+reported its macOS notification permission disabled. No preferences were changed,
+and the dialog was closed with the original channel route preserved.
+
+Local previews use allowlisted bundled MP3 bytes served from the app origin,
+independent of signed packaging and OS notification authorization. Five Node
+regressions passed generation-safe replacement, stop, failed/stalled playback,
+and idempotent installation (`tmp/notification-sound-preview-tests.log`). Native
+WebView playback subsequently passed at both sizes, as recorded below. Windows silent toast XML and Linux suppress-sound hints
+now respect silent/unknown sounds; selected custom platform sounds and audible
+cross-platform proof remain open.
+
+Core source review found missing desktop sound had incorrectly defaulted to
+Ding and raw truthy privacy/mute values were ignored by delivery. The fixes have
+focused regressions. Initial core compilation found three test Workspace
+literals missing the new optional team-plan field; those were repaired and the
+locked suite subsequently passed. Final desktop/native results follow below.
+
+Locked core validation passed 1,049 tests / 5 ignored; desktop validation passed
+920 tests / 6 ignored (`tmp/presentation-core-tests.log`,
+`tmp/presentation-desktop-tests.log`). Both root/core format checks passed, and
+the preview plus keyword JavaScript regressions passed together. The bare dev
+executable built successfully for the native playback/interaction checks.
+
+Both presentation native runs passed, with six simulated writes/eleven reads
+each. The real WebView completed bundled Drop playback (0.5355 seconds), verified
+selection-trigger preview, canonical focus/readback, mute/VIP/legacy conditions,
+uncertain reconciliation without replay, and all five controls at both sizes.
+Root read both final PNGs (`tmp/presentation-native.log`,
+`tmp/agent-ui/notification-presentation{,-narrow}.png`). No OS audible-delivery
+claim follows from WebView playback.
+
+The updated bare dev PID 67858 loaded the Sound & appearance page with Ding,
+Knock Brush for VIP messages, preview enabled and mute disabled, matching stock.
+Root inspected `tmp/agent-ui/live-notification-presentation.png` and closed
+Settings. No real preference writes or message sends occurred.
+
+Background verification exposed a distinct agent-mode responsiveness issue:
+PID 61524 stayed live but timed out on control requests until external activation.
+Its sample is `tmp/presentation-old-dev-sample.txt`; runningboardd timestamps
+place that sample inside active App Nap Tier 5. A narrowly agent-enabled activity
+assertion is implemented; its separate desktop suite passed 923 tests / 6 ignored.
+Native background-idle evidence is recorded in `docs/runtime-responsiveness.md`. The full goal
+remains active.
+
+The agent-only guard passed the full desktop suite (923 tests / 6 ignored) and
+a bare dev build. Both six-minute hidden fixture runs returned their first ping
+without activation: baseline 1.29 ms, guarded 32.91 ms. OS logs recorded active
+Tier 5 for the baseline and only inactive Tier 0 transitions for the guarded
+process. Since the baseline also responded, this is not proof that the earlier
+timeout is fixed; detailed evidence and limitations are in the runtime document.
+
+After confirming the previous owned dev process and its empty composer, root
+refreshed it to bare dev PID 70980. Agent state confirmed signed-in/online,
+C0AQDL3V5GU, Settings closed and destructive actions disabled. Root read
+`tmp/agent-ui/live-dev-background-final.png`; the conversation painted normally
+without external activation of the replacement. No signed app was built, no
+real preferences were changed, and no messages were sent in this continuation.
+The full parity/design/performance goal remains active and incomplete.
+
+
+### 2026-10-13 — Dock bounce preferences and native attention
+
+The preceding turn made verified progress: the presentation controls passed
+native/live-read gates, the bare dev client was refreshed, and the quiet App Nap
+comparison completed without reproducing its baseline failure. This continuation
+adds the next source-backed notification behavior, rather than treating the
+remaining badge or OS delivery gaps as complete.
+
+macOS Sound & appearance now exposes bounce enablement and Once / Until I return.
+The mounted duration survives switching off, while full boot omission clears a
+cached bounce preference. The scalar intent writes only `mac_ssb_bounce` through
+the ordinary user-pref family with fresh preflight/readback and unknown-outcome
+reconciliation. Stock Slack was read through Playwright/CDP: bounce off, Once
+retained but disabled; its dialog was closed with route preserved and no writes.
+
+Native attention is admitted only after message notification eligibility and
+deduplication. It checks whole-app activation, uses a background Focus read,
+and rechecks owner credentials, account epoch, generation, preferences and read
+state before requesting AppKit attention. Huddle invites and local notification
+previews do not use this path. Exact native request IDs are retained for focus,
+owner/preference retirement and shutdown cleanup. Message bursts share one read
+and retain their latest candidate; a retired candidate cannot cancel an earlier
+valid request. OS Focus parsing follows the source shipped by Slack, with bounded
+read-only files and explicit unknown-state suppression; private schema and source
+algorithm limitations are recorded in the presentation protocol.
+
+Final locked suites passed 938 desktop tests / 6 ignored and 1,054 core tests /
+5 ignored (`tmp/dock-attention-{desktop,core}-tests.log`). Both format checks
+passed. Compilation first caught an event-ownership integration error, then hit
+a full disk; those were resolved before the successful run. Root removed exactly
+two stale repository incremental-cache directories, restoring 8.6 GiB free at
+that checkpoint. No sources, session data, dependencies or signed bundles were
+removed. Native settings and AppKit checks follow after the bare build.
+
+Bare build passed (`tmp/dock-attention-dev-build.log`). The extended presentation
+fixtures passed at both sizes: ten simulated writes, sixteen reads, seven
+reachable controls, canonical readback/focus, and retained duration after
+uncertain reconciliation. Root inspected both final PNGs. The isolated hidden
+AppKit check read actual Focus as Available and accepted/cancelled both request
+types immediately (`tmp/dock-attention-appkit-native.log`); visible Dock motion
+and actual-message delivery were deliberately not claimed by that receipt.
+
+Root refreshed the owned bare dev process to PID 75860 after inspecting its
+empty composer and confirming the previous PID exited. Live Sound & appearance
+loaded the existing bounce-off preference, matching the stock read-only check.
+Root read `tmp/agent-ui/live-dock-notifications.png`, closed Settings, and verified
+signed-in/online state in C0AQDL3V5GU with destructive actions disabled
+(`tmp/dock-live-final.json`). No messages or real preferences were written and no
+signed app was built. Full Slack parity, design coverage and end-to-end measured
+performance remain incomplete; the full objective stays active.
+
+
+### 2026-10-13 — Authoritative Activity count reconciliation
+
+The preceding preference-only reply made no implementation progress. This
+continuation revalidated the bare dev process and worktree, reconnected to stock
+Slack through Playwright/CDP, and traced the missing `badge_counts_updated` path.
+The stock socket delivered normal traffic during a 30-second passive observation,
+but no badge-count frame; live event delivery is therefore still unproven.
+
+The client now retains complete Activity category snapshots and consumes explicit
+count maps from that event. Snapshot revisions prevent older HTTP results from
+restoring counts after a live update or local read. Missing/null maps preserve
+known state; explicit empty maps clear it. Count responses retain account,
+credential and transport ownership. The existing compatibility sum remains the
+rail total: the exact Inbox feature-gated category projection and complete Dock
+aggregate are separately documented next steps, not implied by this fix.
+
+A zero snapshot reconciles loaded Activity items locally without Slack writes.
+The native Activity fixture exercises parsed count frames through the actual
+reducer and checks rail transitions 45 → 17 → cleared before its existing
+conversation/thread navigation checks. Only dev executables are used.
+Locked validation passed 945 desktop tests / 6 ignored and 1,062 core tests /
+5 ignored (`tmp/activity-badge-{desktop,core}-tests.log`), plus both format
+checks and whitespace checks. The zero-count merge keeps an initial history
+request alive, forces its older baseline read, and then replays newer socket
+changes; no extra fetch or always-on work is introduced. Bare-build/native
+results follow after execution.
+
+Bare dev build passed in 1m05s (`tmp/activity-badge-dev-build.log`). Both
+normal and narrow native checks passed (`tmp/activity-badge-native.log`):
+45 → 17 → cleared, read-row reconciliation, history retention, bundle-latest
+and exact older-reply navigation via both DOM and agent commands. Root read
+`tmp/agent-ui/activity-navigation{,-narrow}.png`.
+
+After inspecting the empty composer and confirming exact owned PID 75860 exited,
+root refreshed the bare dev executable to PID 78857. State confirmed signed-in,
+online, Home in C0AQDL3V5GU, destructive actions disabled
+(`tmp/activity-badge-live-final.json`). Root inspected
+`tmp/agent-ui/activity-badge-live-final.png`; its Activity compatibility count
+loaded as 47. This boot/read evidence does not prove live socket count delivery
+or exact stock category filtering. No messages or preference changes were
+performed, and no signed app was built. The full parity/design/performance
+objective remains active and incomplete.
+
+A final read-only stock comparison also displayed Activity47 (DMs46), matching
+the native Activity47 at that checkpoint. This is a spot comparison, not proof
+of feature-gated category coverage or socket event delivery.
+
+
+### 2026-10-13 — Inbox category and DM badge projection
+
+The previous goal turn made verified progress: typed Activity count events,
+revision protection and normal/narrow native reconciliation passed, and the
+bare dev client was refreshed. This continuation replaces the known-Inbox
+compatibility display with the stock category selector. Reactions and unknown
+categories are excluded; optional categories follow exact authenticated
+experiment groups. Source and live comparison exposed that the DM rail and Dock DM contribution
+use different counts. The DM rail sums eligible conversation highlights; the
+Dock DM contribution uses the Activity `dm` category. `activity_dms_opt_out`
+changes the Activity contribution independently of the DM rail. Legacy/unknown policy retains the existing explicit
+compatibility path; a known Inbox with missing categories never falls back to a
+raw sum. Feed pagination continues to use its raw total, not the display count.
+
+Assignments load in a separate async task at boot/reconnect through the existing
+`experiments.getByUser` request family. Account/credential/transport ownership and
+request serials guard adoption. Previous assignments survive an unsuccessful
+refresh; no new render-path fetch or periodic work is added. Assignment policy
+is ephemeral because category counts are also uncached.
+
+Source review established that direct Activity-item reads update rows without
+optimistically changing canonical category counts. Channel cursor reads decrement
+once per matching root item with raw `is_unread`, by category, while preserving
+other keys. The touched channel-read helper also now preserves a raw-false bundle
+clear against an older in-flight page without inventing a category decrement.
+Native checks have been expanded for these projected badge consumers; final
+verification receipts follow below. Full Dock aggregation and exact legacy
+projection remain outstanding, as does broader cursor-event reconciliation.
+
+Final locked suites passed 950 desktop tests / 6 ignored and 1,071 core tests /
+5 ignored (`tmp/activity-policy-{desktop,core}-final.log`). The earlier pass
+preceded the bundle-overlay review fix and is not the final gate. Both format
+checks and `git diff --check` passed. These suites preceded the DM rail source
+correction and are not the final gate for it. The corrected fixture separates
+six DM conversations contributing 46 highlights from Activity `dm: 4`, and
+checks Activity27 → opt-out23 → gated37 → opt-in41. It also covers known-policy
+missing maps, excluded-only raw snapshots, and explicit zero without losing
+Activity navigation. Execution receipts follow.

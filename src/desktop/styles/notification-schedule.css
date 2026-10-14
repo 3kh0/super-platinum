@@ -1,0 +1,20 @@
+.modal:has(> .notification-schedule) {top:20px;display:flex;flex-direction:column;max-height:calc(100vh - 40px);}
+.modal:has(> .notification-schedule) > header,.modal:has(> .notification-schedule) > .settings-tabs {flex-shrink:0;}
+.notification-schedule {display:flex;flex-direction:column;min-height:0;gap:var(--space-2);padding:0 18px 16px;}
+.notification-schedule-title {display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);}
+.notification-schedule-heading h3 {font-size:var(--text-md);font-weight:600;margin:0;}
+.notification-schedule-heading p {margin:0 0 var(--space-1);font-size:var(--text-sm);line-height:1.4;}
+.notification-schedule-heading,#notification-schedule-status {flex-shrink:0;}
+#notification-schedule-status {margin:0;}
+.notification-schedule button,.notification-schedule select {height:32px;min-height:32px;margin:0;border-radius:var(--radius-md);font-size:var(--text-sm);padding:0 var(--space-2);}
+.notification-schedule button {background:var(--surface-raised);color:var(--text);}
+.notification-schedule-scroll {min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:var(--space-3);padding:2px 4px 4px 2px;}
+.notification-schedule-mode {display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);}
+.notification-schedule-mode select {flex:1;min-width:0;}
+.notification-schedule-times {display:flex;align-items:center;gap:var(--space-2);}
+.notification-schedule-times select {width:130px;max-width:calc((100% - 32px)/2);background:var(--bg);color:var(--text);border:1px solid var(--border);}
+.notification-schedule-day {flex-shrink:0;}
+.notification-schedule-day h4 {margin:0 0 var(--space-1);font-size:var(--text-sm);font-weight:500;}
+.notification-schedule select:focus-visible,.notification-schedule button:focus-visible {outline:2px solid var(--accent);outline-offset:1px;}
+.notification-schedule :disabled {opacity:.5;}
+@media(max-height:500px){.modal:has(> .notification-schedule){top:8px;max-height:calc(100vh - 16px);}.notification-schedule{gap:var(--space-1);padding-bottom:var(--space-2);}.notification-schedule-heading p{font-size:var(--text-xs);}.notification-schedule-scroll{gap:var(--space-2);}}

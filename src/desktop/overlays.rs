@@ -37,6 +37,12 @@ pub fn overlay_view(
     if overlay == Overlay::SlackList {
         return crate::view::slack_lists::dialog(state);
     }
+    if overlay == Overlay::ProfileTitle {
+        return crate::view::profile_title::profile_title(state);
+    }
+    if overlay == Overlay::ProfileEdit {
+        return crate::view::profile_edit::profile_edit(state);
+    }
     if overlay == Overlay::SelfStatus {
         return crate::view::self_status::self_status(state);
     }
@@ -60,6 +66,8 @@ pub fn overlay_view(
         Overlay::SelfMenu => unreachable!("self menu renders as a rail popover"),
         Overlay::SlackList => unreachable!("list owns its dialog"),
         Overlay::SelfStatus => unreachable!("status editor owns its dialog"),
+        Overlay::ProfileTitle => unreachable!("title editor owns its dialog"),
+        Overlay::ProfileEdit => unreachable!("profile editor owns its dialog"),
         Overlay::NewDm => unreachable!("recipient picker owns its dialog"),
         Overlay::Accounts => ("Accounts", "", ""),
         Overlay::Palette => (

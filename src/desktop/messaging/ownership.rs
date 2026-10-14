@@ -11,6 +11,7 @@ pub(super) mod upload_pages;
 pub(super) struct SendVisit {
     account: Option<String>,
     epoch: u64,
+    credentials: u64,
     transport: Arc<Transport>,
 }
 
@@ -24,6 +25,7 @@ impl SendVisit {
         Self {
             account: shell.core.active_account.clone(),
             epoch: shell.core.account_epoch,
+            credentials: super::upload_journal::network::credentials(shell),
             transport: transport.clone(),
         }
     }
@@ -31,6 +33,7 @@ impl SendVisit {
     pub(super) fn current(&self, shell: &ShellState) -> bool {
         shell.core.active_account == self.account
             && shell.core.account_epoch == self.epoch
+            && super::upload_journal::network::credentials(shell) == self.credentials
             && shell
                 .core
                 .transport

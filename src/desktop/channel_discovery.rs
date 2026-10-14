@@ -114,10 +114,17 @@ pub(crate) async fn reconcile(mut state: Signal<ShellState>, team: String, gener
     let Some(scope) = Scope::capture(&state.peek().core, &team, generation) else {
         return;
     };
-    let revision = state.peek().core.workspaces[&team]
-        .channel_lifecycle
-        .revision();
-    let thread_revision = state.peek().core.workspaces[&team].thread_counts.revision();
+    let Some(owner) = crate::realtime::activity_counts::CountsOwner::capture(
+        &state.peek().core,
+        &scope.transport,
+        &scope.session,
+    ) else {
+        return;
+    };
+    owner.refresh_badge_rules(state);
+    let Some(read) = owner.begin(&state.peek().core) else {
+        return;
+    };
     let counts = api::fetch_counts(&scope.transport, &scope.client, &scope.session).await;
     if !scope.current(&state.peek().core) {
         return;
@@ -131,9 +138,10 @@ pub(crate) async fn reconcile(mut state: Signal<ShellState>, team: String, gener
     };
     let batches = {
         let mut shell = state.write();
-        let workspace = shell.core.workspaces.get_mut(&team).unwrap();
-        workspace.apply_counts_snapshot(counts, revision, thread_revision);
-        let batches = workspace.channels_to_refresh();
+        if !read.apply(&mut shell.core, counts) {
+            return;
+        }
+        let batches = shell.core.workspaces[&team].channels_to_refresh();
         if shell.core.active_team.as_deref() == Some(&team) {
             shell.refresh_from_core();
         }

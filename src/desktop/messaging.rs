@@ -13,6 +13,7 @@ pub(crate) mod delivery_check;
 mod outcomes;
 mod ownership;
 pub(crate) mod thread_broadcast_check;
+pub(crate) mod upload_journal;
 pub(crate) mod upload_recovery;
 pub(crate) use outcomes::fixture as send_outcomes_fixture;
 use ownership::SendVisit;
@@ -278,143 +279,189 @@ async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
         return;
     };
 
-    let result = api::upload_files(
-        &transport,
-        &client,
-        &workspace_session,
-        api::UploadRequest {
-            reply_broadcast: prepared.reply_broadcast,
-            client_msg_id: prepared.client_msg_id.clone(),
-            channel: prepared.channel.clone(),
-            thread_ts: prepared.thread_ts.clone(),
-            initial_comment: prepared.text.clone(),
-            files: prepared.files,
-            canceled: prepared.upload_cancel.clone(),
-        },
-    )
-    .await;
-
-    if !visit.current(&state.peek()) {
-        return;
-    }
-    // A lost sharing receipt is not permission to resend. Private finalization
-    // still identifies the exact files; only canonical history can retire the row.
-    let readback_files = upload_readback_files(&result);
-    if let Some(file_ids) = readback_files {
-        let already_confirmed = upload_recovery::attach(
-            &mut state.write(),
-            &prepared.client_msg_id,
-            &workspace_session.user_id,
-            file_ids.clone(),
-        );
-        if already_confirmed {
-            state.write().refresh_from_core();
-            persist_workspace(&state, &prepared.team);
-            return;
-        }
-        {
-            let mut shell = state.write();
-            if let Some(pending) = shell
-                .core
-                .pending_file_messages
-                .iter_mut()
-                .find(|pending| pending.client_msg_id == prepared.client_msg_id)
-            {
-                for attachment in &mut pending.attachments {
-                    attachment.uploading = false;
-                    attachment.upload_started = None;
-                    if let Some(progress) = &attachment.upload_progress {
-                        progress.store(attachment.bytes, Ordering::Relaxed);
-                    }
-                }
-            }
-        }
-        let refreshed = ownership::refresh_upload_history(
-            &mut state,
-            &visit,
-            &client,
-            &workspace_session,
-            &ownership::UploadReadback {
-                team: prepared.team.clone(),
-                channel: prepared.channel.clone(),
-                thread_ts: prepared.thread_ts.clone(),
-                reply_broadcast: prepared.reply_broadcast,
-                sender: workspace_session.user_id.clone(),
-                file_ids,
-            },
-        )
-        .await;
-        if !visit.current(&state.peek()) {
-            return;
-        }
-        if !refreshed {
-            outcomes::mark_upload_status(
-                &mut state.write(),
-                &visit,
-                &prepared.client_msg_id,
-                crate::state::PendingDeliveryStatus::Unconfirmed,
-            );
-            return;
-        }
-        {
-            let mut shell = state.write();
-            shell
-                .core
-                .pending_file_messages
-                .retain(|pending| pending.client_msg_id != prepared.client_msg_id);
-            shell.pending_delivery.remove(&prepared.message_ts);
-            // Readback found the exact files under the original sender and destination.
-            if let Some(root) = prepared.thread_ts.as_ref() {
-                if let Some(messages) = shell.core.threads.get_mut(&(
-                    prepared.team.clone(),
-                    prepared.channel.clone(),
-                    root.clone(),
-                )) {
-                    messages.remove(&prepared.message_ts);
-                }
-                shell.refresh_thread_from_core();
-            } else if let Some(messages) = shell
-                .core
-                .workspaces
-                .get_mut(&prepared.team)
-                .and_then(|workspace| workspace.messages.get_mut(&prepared.channel))
-            {
-                messages.remove(&prepared.message_ts);
-            }
-            shell.refresh_from_core();
-        }
-        persist_workspace(&state, &prepared.team);
-    } else if let Err(error) = result {
-        if error.delivery_uncertain() {
-            outcomes::mark_upload_status(
-                &mut state.write(),
-                &visit,
-                &prepared.client_msg_id,
-                crate::state::PendingDeliveryStatus::Unconfirmed,
-            );
-            state.write().show_toast(
-                "Upload delivery is unconfirmed; check the conversation before uploading again",
-            );
-            return;
-        }
-        let canceled = matches!(
-            error.error(),
-            super_platinum_core::slack::Error::UploadCanceled
-        );
-        let retained = restore_failed_upload(
+    // The send outlives the originating composer component. Navigation cannot
+    // cancel durable receipt settlement after a delivery-capable request.
+    let Some(owner) = upload_journal::Owner::capture(&state.peek(), Some(&prepared.team)) else {
+        restore_failed_upload(
             &mut state,
             &visit,
             &prepared.client_msg_id,
             prepared.thread_ts.as_ref(),
         );
-        if !canceled {
-            state
+        return;
+    };
+    dioxus::core::spawn_forever(async move {
+        let journal = match upload_journal::reserve(state, &owner, &prepared.client_msg_id).await {
+            Ok(journal) => journal,
+            Err(failure) => {
+                if owner.current(&state.peek()) {
+                    if failure.may_restore {
+                        restore_failed_upload(
+                            &mut state,
+                            &visit,
+                            &prepared.client_msg_id,
+                            prepared.thread_ts.as_ref(),
+                        );
+                    } else {
+                        outcomes::mark_upload_status(
+                            &mut state.write(),
+                            &visit,
+                            &prepared.client_msg_id,
+                            crate::state::PendingDeliveryStatus::Unconfirmed,
+                        );
+                    }
+                    state.write().show_toast(failure.message);
+                }
+                return;
+            }
+        };
+        let result = api::upload_files_with_receipt(
+            &transport,
+            &client,
+            &workspace_session,
+            api::UploadRequest {
+                reply_broadcast: prepared.reply_broadcast,
+                client_msg_id: prepared.client_msg_id.clone(),
+                channel: prepared.channel.clone(),
+                thread_ts: prepared.thread_ts.clone(),
+                initial_comment: prepared.text.clone(),
+                files: prepared.files,
+                canceled: prepared.upload_cancel.clone(),
+            },
+            |receipt| journal.finalize(state, &owner, receipt.file_ids),
+        )
+        .await;
+        // A definite pre-delivery failure retires its own exact ticket even if the
+        // user has switched accounts; it never edits that replacement account UI.
+        if result
+            .as_ref()
+            .is_err_and(|error| !error.delivery_uncertain())
+        {
+            journal.retire(state, &owner).await;
+        }
+        if !owner.current(&state.peek()) || !visit.current(&state.peek()) {
+            return;
+        }
+        // A lost sharing receipt is not permission to resend. Private finalization
+        // still identifies the exact files; only canonical history can retire the row.
+        let readback_files = upload_readback_files(&result);
+        if let Some(file_ids) = readback_files {
+            let already_confirmed = upload_recovery::attach(
+                &mut state.write(),
+                &prepared.client_msg_id,
+                &workspace_session.user_id,
+                file_ids.clone(),
+            );
+            if already_confirmed {
+                state.write().refresh_from_core();
+                persist_workspace(&state, &prepared.team);
+                return;
+            }
+            {
+                let mut shell = state.write();
+                if let Some(pending) = shell
+                    .core
+                    .pending_file_messages
+                    .iter_mut()
+                    .find(|pending| pending.client_msg_id == prepared.client_msg_id)
+                {
+                    for attachment in &mut pending.attachments {
+                        attachment.uploading = false;
+                        attachment.upload_started = None;
+                        if let Some(progress) = &attachment.upload_progress {
+                            progress.store(attachment.bytes, Ordering::Relaxed);
+                        }
+                    }
+                }
+            }
+            let refreshed = ownership::refresh_upload_history(
+                &mut state,
+                &visit,
+                &client,
+                &workspace_session,
+                &ownership::UploadReadback {
+                    team: prepared.team.clone(),
+                    channel: prepared.channel.clone(),
+                    thread_ts: prepared.thread_ts.clone(),
+                    reply_broadcast: prepared.reply_broadcast,
+                    sender: workspace_session.user_id.clone(),
+                    file_ids,
+                },
+            )
+            .await;
+            if !visit.current(&state.peek()) {
+                return;
+            }
+            if !refreshed {
+                outcomes::mark_upload_status(
+                    &mut state.write(),
+                    &visit,
+                    &prepared.client_msg_id,
+                    crate::state::PendingDeliveryStatus::Unconfirmed,
+                );
+                return;
+            }
+            {
+                let mut shell = state.write();
+                shell
+                    .core
+                    .pending_file_messages
+                    .retain(|pending| pending.client_msg_id != prepared.client_msg_id);
+                shell.pending_delivery.remove(&prepared.message_ts);
+                // Readback found the exact files under the original sender and destination.
+                upload_journal::confirmed(&mut shell, &prepared.client_msg_id);
+                if let Some(root) = prepared.thread_ts.as_ref() {
+                    if let Some(messages) = shell.core.threads.get_mut(&(
+                        prepared.team.clone(),
+                        prepared.channel.clone(),
+                        root.clone(),
+                    )) {
+                        messages.remove(&prepared.message_ts);
+                    }
+                    shell.refresh_thread_from_core();
+                } else if let Some(messages) = shell
+                    .core
+                    .workspaces
+                    .get_mut(&prepared.team)
+                    .and_then(|workspace| workspace.messages.get_mut(&prepared.channel))
+                {
+                    messages.remove(&prepared.message_ts);
+                }
+                shell.refresh_from_core();
+            }
+            persist_workspace(&state, &prepared.team);
+        } else if let Err(error) = result {
+            if error.delivery_uncertain() {
+                outcomes::mark_upload_status(
+                    &mut state.write(),
+                    &visit,
+                    &prepared.client_msg_id,
+                    crate::state::PendingDeliveryStatus::Unconfirmed,
+                );
+                state.write().show_toast(
+                    "Upload delivery is unconfirmed; check the conversation before uploading again",
+                );
+                return;
+            }
+            let canceled = matches!(
+                error.error(),
+                super_platinum_core::slack::Error::UploadCanceled
+            );
+            let retained = restore_failed_upload(
+                &mut state,
+                &visit,
+                &prepared.client_msg_id,
+                prepared.thread_ts.as_ref(),
+            );
+            if !canceled {
+                state
                     .write()
                     .report_failure(error.error(), if retained { "Upload not sent; its caption and files remain in the conversation. Your newer draft is unchanged." } else { "Upload not sent; its caption and files were restored" }, || {
                         if retained { "Upload not sent; its caption and files remain in the conversation. Your newer draft is unchanged.".into() } else { format!("Upload failed: {error}") }
                     });
+            }
         }
-    }
+    });
 }
 
 fn upload_readback_files(

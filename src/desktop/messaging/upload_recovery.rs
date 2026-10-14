@@ -135,6 +135,7 @@ pub(crate) fn reconcile(shell: &mut ShellState, team: &str, channel: &str, ids: 
         }
     }
     for (client_id, optimistic, root, broadcast, message) in confirmed {
+        super::upload_journal::confirmed(shell, &client_id);
         if broadcast || root.is_none() {
             let bag = shell
                 .core

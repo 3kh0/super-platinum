@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Drive and capture isolated signed self-status-editor fixtures without OS input."""
+"""Drive and capture isolated native self-status-editor fixtures without OS input."""
 import json
 import os
 import pathlib
@@ -7,7 +7,7 @@ import subprocess
 import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-BINARY = ROOT / "target/debug/Super Platinum.app/Contents/MacOS/super-platinum"
+BINARY = ROOT / "target/debug/super-platinum"
 TMP = pathlib.Path(os.environ.get("TMPDIR", "/tmp"))
 MARKER = TMP / "super-platinum-agent.sock.path"
 CAPTURES = ROOT / "tmp/agent-ui"
@@ -37,11 +37,7 @@ for fixture in ("self-status-editor", "self-status-editor-narrow"):
                     raise RuntimeError(f"{capture_name}: failed to start")
                 time.sleep(.1)
             control("ping")
-            subprocess.run(["osascript", "-l", "JavaScript", "-e",
-                            'ObjC.import("AppKit"); '
-                            f'var app=$.NSRunningApplication.runningApplicationWithProcessIdentifier({process.pid}); '
-                            'if(app.finishedLaunching) app.activateWithOptions(2);'],
-                           capture_output=True, check=True, timeout=5)
+            control("focus-window")
             deadline = time.monotonic() + 60
             while True:
                 receipts = [line.split("self-status-check: ", 1)[1]

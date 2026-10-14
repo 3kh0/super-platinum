@@ -25,6 +25,19 @@ async fn run(
     }
     action(desktop, "Mute channel", false).await?;
     let initial_layout = layout(desktop).await?;
+    let fixed_chrome = wait(desktop, r#"(()=>{
+        const dialog=document.getElementById('channel-details-dialog');
+        const body=dialog.querySelector('.channel-details-body');
+        const header=dialog.querySelector('header'),tabs=dialog.querySelector('[role=tablist]');
+        if(!body||!header||!tabs)return {ok:false};
+        const h=header.getBoundingClientRect().top,t=tabs.getBoundingClientRect().top;
+        const overflow=body.scrollHeight>body.clientHeight+2;
+        body.scrollTop=body.scrollHeight;
+        const scrolled=body.scrollTop>0;
+        const stable=Math.abs(header.getBoundingClientRect().top-h)<1&&Math.abs(tabs.getBoundingClientRect().top-t)<1;
+        body.scrollTop=0;
+        return {ok:stable&&(!overflow||scrolled),stable,overflow,scrolled};
+    })()"#).await?;
     act(
         desktop,
         "const b=document.getElementById('channel-mute-action');b.focus();b.click();b.click()",
@@ -101,6 +114,9 @@ async fn run(
     {
         return Err("Duration selection/Cancel dispatched or changed canonical mute".into());
     }
+    // Stock's sole-expiry write replaces a permanent mute server-side.
+    super::fixture::realtime(&mut state.write(), true);
+    action(desktop, "Unmute channel", false).await?;
     choose_duration(desktop, "hour").await?;
     act(
         desktop,
@@ -149,11 +165,11 @@ async fn run(
         return Err("Mute request or sibling preference preservation failed".into());
     }
     Ok(
-        json!({"ok":true,"mute":true,"unmute":true,"duplicateBlocked":true,
+        json!({"ok":true,"fixedChrome":fixed_chrome,"mute":true,"unmute":true,"duplicateBlocked":true,
         "pendingAcrossReopen":true,"uncertainNoReplay":true,"readOnlyCheck":true,
         "preferenceProjection":true,"siblingPreferencesPreserved":true,"preparedRequestExact":true,
         "focusReturned":true,"noTransport":true,"temporaryHour":true,"temporaryTomorrow":true,
-        "durationCancelNoWrite":true,"temporaryUncertainNoReplay":true,"temporaryExactExpiry":true,"durationLayout":duration_layout,"attempts":super::fixture::attempts(&shell),
+        "durationCancelNoWrite":true,"temporaryUncertainNoReplay":true,"temporaryExactExpiry":true,"permanentToTemporary":true,"durationLayout":duration_layout,"attempts":super::fixture::attempts(&shell),
         "reads":super::fixture::reads(&shell),"layout":initial_layout,"finalLayout":final_layout}),
     )
 }

@@ -195,6 +195,11 @@ pub(crate) fn change_custom_datetime(state: Signal<ShellState>, value: String) {
 
 pub(super) fn begin(shell: &mut ShellState, now: i64) -> Result<Attempt, &'static str> {
     poll(shell);
+    if crate::profile_edit::blocks_status(shell)
+        || crate::profile_title::blocks_profile_writes(shell)
+    {
+        return Err("Check the pending profile edit before changing your status.");
+    }
     let draft = shell
         .self_status
         .draft
@@ -325,6 +330,51 @@ fn outcome_uncertain(error: &Error) -> bool {
 fn set_error(shell: &mut ShellState, error: &str) {
     if let Some(draft) = shell.self_status.draft.as_mut() {
         draft.error = Some(error.into());
+    }
+}
+
+/// Status and profile edits share Slack's profile endpoint; retain uncertain ownership.
+pub(crate) fn blocks_profile_edit(shell: &ShellState) -> bool {
+    shell.self_status.pending.is_some()
+        || shell.self_status.draft.as_ref().is_some_and(|draft| {
+            matches!(
+                draft.phase,
+                Phase::Saving | Phase::Checking | Phase::Uncertain
+            )
+        })
+}
+
+pub(super) fn prepare_clear(shell: &mut ShellState, at: i64) -> bool {
+    poll(shell);
+    if crate::profile_edit::blocks_status(shell)
+        || crate::profile_title::blocks_profile_writes(shell)
+    {
+        shell.show_toast("Check the pending profile edit before clearing your status.");
+        return false;
+    }
+    if blocks_profile_edit(shell) {
+        open_shell(shell, at);
+        set_error(
+            shell,
+            "Check the previous status change before clearing it.",
+        );
+        return false;
+    }
+    let Some(mut draft) = Draft::open(shell, at) else {
+        return false;
+    };
+    draft.text.clear();
+    draft.emoji.clear();
+    draft.expiration = Expiration::Never;
+    draft.original_expiration = None;
+    shell.self_status.draft = Some(draft);
+    shell.overlay = Some(Overlay::SelfStatus);
+    true
+}
+
+pub(crate) fn clear(mut state: Signal<ShellState>) {
+    if prepare_clear(&mut state.write(), now()) {
+        save(state);
     }
 }
 

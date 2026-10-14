@@ -3,8 +3,11 @@ use super_platinum_core::slack::events::RtEvent;
 use super_platinum_core::state::{NotificationOptions, cmp_ts, now_secs};
 
 #[cfg(target_os = "macos")]
+pub(crate) mod attention;
+#[cfg(target_os = "macos")]
 mod macos;
 mod sounds;
+pub(crate) use sounds::{preview_sound, serve_sound_asset, stop_sound_preview};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DesktopNotification {
@@ -293,6 +296,7 @@ fn show_blocking(notification: &DesktopNotification) {
                 "--icon=super-platinum",
                 "--category=im.received",
             ])
+            .arg(linux_sound_hint(notification))
             .arg(&notification.title)
             .arg(&notification.body)
             .status(),
@@ -301,17 +305,46 @@ fn show_blocking(notification: &DesktopNotification) {
 
 #[cfg(target_os = "windows")]
 fn show_blocking(notification: &DesktopNotification) {
-    let title = xml_escape(&notification.title);
-    let body = xml_escape(&notification.body);
-    let xml = format!(
-        "<toast><visual><binding template='ToastGeneric'><text>{title}</text><text>{body}</text></binding></visual><audio src='ms-winsoundevent:Notification.IM'/></toast>"
-    );
+    let xml = windows_toast_xml(notification);
     let script = "$xml=New-Object Windows.Data.Xml.Dom.XmlDocument;$xml.LoadXml($args[0]);$toast=[Windows.UI.Notifications.ToastNotification]::new($xml);[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('com.echonet.superplatinum').Show($toast)";
     report_status(
         std::process::Command::new("powershell.exe")
             .args(["-NoProfile", "-NonInteractive", "-Command", script, &xml])
             .status(),
     );
+}
+
+#[cfg(any(target_os = "linux", test))]
+fn linux_sound_hint(notification: &DesktopNotification) -> &'static str {
+    if notification
+        .sound
+        .as_deref()
+        .is_some_and(sounds::is_bundled)
+    {
+        "--hint=boolean:suppress-sound:false"
+    } else {
+        "--hint=boolean:suppress-sound:true"
+    }
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn windows_toast_xml(notification: &DesktopNotification) -> String {
+    let title = xml_escape(&notification.title);
+    let body = xml_escape(&notification.body);
+    // Selected custom sounds need Windows resource packaging. Until that path
+    // exists, retain IM audio for known sounds and honor every silent outcome.
+    let audio = if notification
+        .sound
+        .as_deref()
+        .is_some_and(sounds::is_bundled)
+    {
+        "<audio src='ms-winsoundevent:Notification.IM'/>"
+    } else {
+        "<audio silent='true'/>"
+    };
+    format!(
+        "<toast><visual><binding template='ToastGeneric'><text>{title}</text><text>{body}</text></binding></visual>{audio}</toast>"
+    )
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
@@ -326,7 +359,7 @@ fn report_status(status: std::io::Result<std::process::ExitStatus>) {
     }
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", test))]
 fn xml_escape(value: &str) -> String {
     value
         .replace('&', "&amp;")

@@ -371,6 +371,9 @@ impl ShellState {
             forward_target: None,
             emoji_catalog_loaded: HashMap::new(),
             settings_section: SettingsSection::Appearance,
+            notification_schedule: Default::default(),
+            presentation_notifications: Default::default(),
+            global_notifications: Default::default(),
             storage: StoragePanel::default(),
             palette_query: String::new(),
             palette_selected: 0,
@@ -409,8 +412,11 @@ impl ShellState {
             self_menu_notifications_open: false,
             slack_lists: crate::slack_lists::State::default(),
             self_status: crate::self_status::State::default(),
+            profile_edit: crate::profile_edit::State::default(),
+            profile_title: crate::profile_title::State::default(),
             channel_mute: crate::channel_mute::State::default(),
             upload_checks: crate::messaging::delivery_check::State::default(),
+            upload_journal: crate::messaging::upload_journal::State::default(),
             self_menu_mutations: Default::default(),
             profile_vip_pending: Default::default(),
             viewer: None,
@@ -506,6 +512,9 @@ impl ShellState {
             forward_target: None,
             emoji_catalog_loaded: HashMap::new(),
             settings_section: SettingsSection::Appearance,
+            notification_schedule: Default::default(),
+            presentation_notifications: Default::default(),
+            global_notifications: Default::default(),
             storage: StoragePanel::default(),
             palette_query: String::new(),
             palette_selected: 0,
@@ -544,8 +553,11 @@ impl ShellState {
             self_menu_notifications_open: false,
             slack_lists: crate::slack_lists::State::default(),
             self_status: crate::self_status::State::default(),
+            profile_edit: crate::profile_edit::State::default(),
+            profile_title: crate::profile_title::State::default(),
             channel_mute: crate::channel_mute::State::default(),
             upload_checks: crate::messaging::delivery_check::State::default(),
+            upload_journal: crate::messaging::upload_journal::State::default(),
             self_menu_mutations: Default::default(),
             profile_vip_pending: Default::default(),
             viewer: None,
@@ -828,6 +840,9 @@ impl ShellState {
             forward_target: None,
             emoji_catalog_loaded: HashMap::new(),
             settings_section: SettingsSection::Appearance,
+            notification_schedule: Default::default(),
+            presentation_notifications: Default::default(),
+            global_notifications: Default::default(),
             storage: StoragePanel::default(),
             palette_query: String::new(),
             palette_selected: 0,
@@ -866,8 +881,11 @@ impl ShellState {
             self_menu_notifications_open: false,
             slack_lists: crate::slack_lists::State::default(),
             self_status: crate::self_status::State::default(),
+            profile_edit: crate::profile_edit::State::default(),
+            profile_title: crate::profile_title::State::default(),
             channel_mute: crate::channel_mute::State::default(),
             upload_checks: crate::messaging::delivery_check::State::default(),
+            upload_journal: crate::messaging::upload_journal::State::default(),
             self_menu_mutations: Default::default(),
             profile_vip_pending: Default::default(),
             viewer: None,
@@ -953,6 +971,12 @@ impl ShellState {
             | "slack-list-incomplete"
             | "slack-list-error"
             | "slack-list-loading" => crate::slack_lists::fixture::install(&mut state, name),
+            "profile-title" | "profile-title-narrow" => {
+                crate::profile_title::fixture::install(&mut state)
+            }
+            "profile-edit" | "profile-edit-narrow" => {
+                crate::profile_edit::fixture::install(&mut state)
+            }
             "self-status-editor" | "self-status-editor-narrow" => {
                 crate::self_status::fixture::install(&mut state)
             }
@@ -962,11 +986,26 @@ impl ShellState {
             "message-broadcast" | "message-broadcast-narrow" => {
                 crate::message_vm::broadcast_check::install(&mut state)
             }
+            "upload-restart" | "upload-restart-narrow" => {
+                crate::messaging::upload_journal::fixture::install(&mut state)
+            }
             "upload-delivery-check" | "upload-delivery-check-narrow" => {
                 crate::messaging::delivery_check::fixture::install(&mut state)
             }
             "composer-emoji" | "composer-emoji-narrow" => {
                 crate::composer_emoji::check::install(&mut state)
+            }
+            "global-notifications" | "global-notifications-narrow" => {
+                crate::global_notifications::fixture::install(&mut state)
+            }
+            "notification-presentation" | "notification-presentation-narrow" => {
+                crate::presentation_notifications::fixture::install(&mut state)
+            }
+            "notification-schedule" | "notification-schedule-narrow" => {
+                crate::notification_schedule::fixture::install(&mut state)
+            }
+            "channel-notifications" | "channel-notifications-narrow" => {
+                crate::channel_mute::settings::fixture::install(&mut state)
             }
             "channel-mute" | "channel-mute-narrow" => {
                 crate::channel_mute::fixture::install(&mut state)

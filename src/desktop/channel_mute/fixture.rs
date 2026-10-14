@@ -164,9 +164,13 @@ pub(crate) fn complete(shell: &mut ShellState, uncertain: bool) {
     };
     let backend = &mut shell.channel_mute.fixture.as_mut().unwrap().backend["channels"]["C2"];
     match attempt.change {
-        api::ChannelMuteChange::Permanent(muted) => backend["muted"] = json!(muted),
+        api::ChannelMuteChange::Permanent(muted) => {
+            backend["muted"] = json!(muted);
+            backend["temp_mute_expiration_ts"] = json!(0);
+        }
         api::ChannelMuteChange::TemporaryUntil(expiration) => {
-            backend["temp_mute_expiration_ts"] = json!(expiration)
+            backend["temp_mute_expiration_ts"] = json!(expiration);
+            backend["muted"] = json!(false);
         }
     }
     let result = if uncertain {

@@ -1,6 +1,6 @@
 //! Scoped Activity pagination and reconciliation of changes received during a fetch.
 use crate::slack::models::{ActivityFeedPage, ActivityItem, ChannelId, Message, MessageTs};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 #[derive(Debug, Clone, Default)]
 pub struct ActivityState {
@@ -21,6 +21,7 @@ pub struct ActivitySync {
     scope: Option<(u64, String)>,
     changes: HashMap<String, ActivityItem>,
     cursors: HashSet<String>,
+    pending_page_read: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -62,6 +63,7 @@ impl ActivityState {
         self.failed = false;
         self.load_seq = self.load_seq.wrapping_add(1);
         self.sync.changes.clear();
+        self.sync.pending_page_read = false;
         if !append {
             self.sync.cursors.clear();
         }
@@ -90,6 +92,7 @@ impl ActivityState {
         self.loading = false;
         self.failed = true;
         self.sync.changes.clear();
+        self.sync.pending_page_read = false;
         true
     }
 
@@ -105,7 +108,11 @@ impl ActivityState {
         if request.cursor.is_none() {
             self.items.clear();
         }
-        for item in page.items {
+        let pending_page_read = std::mem::take(&mut self.sync.pending_page_read);
+        for mut item in page.items {
+            if pending_page_read {
+                item.mark_read();
+            }
             self.upsert_inner(item);
         }
         // Socket events and local reads observed after the request began win
@@ -153,6 +160,21 @@ impl ActivityState {
         self.items.iter().filter(|item| item.is_pending()).count() as u32
     }
 
+    /// A canonical zero clears loaded entries and the baseline of an in-flight
+    /// page. Later socket changes still win through the normal ordered overlay,
+    /// so initial history can finish without resurrecting old unread entries.
+    pub fn confirm_zero_unreads(&mut self) {
+        for item in &mut self.items {
+            item.mark_read();
+        }
+        for item in self.sync.changes.values_mut() {
+            item.mark_read();
+        }
+        if self.loading {
+            self.sync.pending_page_read = true;
+        }
+    }
+
     /// A loaded page is only part of the feed. Subtract the rows actually read
     /// from the server total instead of replacing it with this page's count.
     pub fn total_after_read(&self, total: Option<u32>, previous_unread: u32) -> u32 {
@@ -179,19 +201,28 @@ impl ActivityState {
     /// Clears every item that a channel read covers. Thread items keep their own
     /// unread state — Slack tracks those against the thread, not the channel.
     pub fn mark_channel_read(&mut self, channel: &str) -> bool {
-        let mut changed = false;
+        !self.mark_channel_read_categories(channel).is_empty()
+    }
+
+    /// MdxY counts each previously isUnread root entry once by category. The
+    /// YfTA mapper takes that flag directly from is_unread; bundled unread_msg_count
+    /// is separate and must not multiply (or create) a badge decrement.
+    pub fn mark_channel_read_categories(&mut self, channel: &str) -> BTreeMap<String, u32> {
+        let mut deltas: BTreeMap<String, u32> = BTreeMap::new();
         for item in &mut self.items {
             if item.is_thread() || item.channel() != Some(channel) {
                 continue;
             }
+            let was_pending = item.is_pending();
             if item.mark_read() {
-                changed = true;
-                if self.loading {
-                    self.sync.changes.insert(item.identity(), item.clone());
-                }
+                let count = deltas.entry(item.item.kind.clone()).or_default();
+                *count = count.saturating_add(1);
+            }
+            if was_pending && self.loading {
+                self.sync.changes.insert(item.identity(), item.clone());
             }
         }
-        changed
+        deltas
     }
 
     pub fn upsert(&mut self, item: ActivityItem) {
@@ -296,6 +327,86 @@ mod tests {
     }
 
     #[test]
+    fn channel_bundle_clear_survives_old_page_without_category_decrement() {
+        let mut state = feed();
+        let bundled: ActivityItem = serde_json::from_value(serde_json::json!({
+            "key":"channel-bundle", "feed_ts":"1.0", "is_unread":false,
+            "item":{"type":"channel","bundle_info":{"payload":{"channel_entry":{
+                "latest_message":{"channel":"C1","ts":"1.0"},"unread_msg_count":7
+            }}}}
+        }))
+        .unwrap();
+        state.upsert(bundled.clone());
+        assert_eq!(state.unread_count(), 1);
+        let request = state.begin(false).unwrap();
+        assert!(state.mark_channel_read_categories("C1").is_empty());
+        assert_eq!(state.unread_count(), 0);
+        assert!(state.apply_page(&request, page(vec![bundled], None)));
+        assert_eq!(state.unread_count(), 0);
+        assert_eq!(state.items.len(), 1);
+    }
+
+    #[test]
+    fn canonical_zero_finishes_initial_history_with_ordered_read_overlay() {
+        let mut state = feed();
+        let request = state.begin(false).unwrap();
+        let before = item("2.0");
+        state.upsert(before.clone());
+        state.selected = Some(before.key.clone());
+        state.confirm_zero_unreads();
+        assert_eq!(state.unread_count(), 0);
+        assert!(state.accepts(&request));
+        // Both an update to an existing item and an entirely new item after
+        // zero remain unread; only the older HTTP baseline is forced read.
+        let mut after = before.clone();
+        after.feed_ts = "3.0".into();
+        state.upsert(after.clone());
+        state.upsert(item("4.0"));
+        assert!(state.apply_page(&request, page(vec![item("1.0"), before], Some("next"))));
+        assert!(state.loaded);
+        assert!(!state.loading);
+        assert_eq!(state.items.len(), 3);
+        assert_eq!(state.unread_count(), 2);
+        assert!(
+            !state
+                .items
+                .iter()
+                .find(|i| i.feed_ts == "1.0")
+                .unwrap()
+                .is_pending()
+        );
+        assert_eq!(state.selected.as_deref(), Some(after.key.as_str()));
+        assert_eq!(state.next_cursor.as_deref(), Some("next"));
+        assert!(!state.sync.pending_page_read);
+        assert!(state.begin(true).is_some());
+    }
+
+    #[test]
+    fn canonical_zero_marks_preexisting_changes_read_and_failure_resets_overlay() {
+        let mut state = feed();
+        let old = item("1.0");
+        state.upsert(old.clone());
+        state.selected = Some(old.key.clone());
+        let key = ("C1".into(), "1.0".into());
+        state.hydrated.insert(key.clone(), Message::default());
+        let request = state.begin(false).unwrap();
+        state.upsert(item("2.0"));
+        state.confirm_zero_unreads();
+        assert_eq!(state.selected.as_deref(), Some(old.key.as_str()));
+        assert!(state.hydrated.contains_key(&key));
+        assert!(state.apply_page(&request, page(vec![old], None)));
+        assert_eq!(state.items.len(), 2);
+        assert_eq!(state.unread_count(), 0);
+        let request = state.begin(false).unwrap();
+        state.confirm_zero_unreads();
+        assert!(state.fail(&request));
+        assert!(!state.sync.pending_page_read);
+        let fresh = state.begin(false).unwrap();
+        assert!(state.apply_page(&fresh, page(vec![item("5.0")], None)));
+        assert_eq!(state.unread_count(), 1);
+    }
+
+    #[test]
     fn channel_reads_survive_paging_and_do_not_erase_other_channels() {
         let mut state = feed();
         let old = item("1.0");
@@ -308,6 +419,47 @@ mod tests {
         assert_eq!(state.unread_count(), 1);
         assert!(state.items[0].is_pending());
         assert!(!state.items[1].is_pending());
+    }
+
+    #[test]
+    fn channel_badge_delta_counts_raw_unread_root_entries_not_bundle_messages() {
+        let mut state = feed();
+        for raw in [
+            serde_json::json!({"key":"channel","is_unread":false,"feed_ts":"2.0",
+            "item":{"type":"channel","bundle_info":{"payload":{"channel_entry":{
+                "unread_msg_count":20,"latest_message":{"channel":"C1","ts":"2.0"}
+            }}}}}),
+            serde_json::json!({"key":"thread","is_unread":true,"feed_ts":"3.0",
+            "item":{"type":"thread_v2","bundle_info":{"payload":{"thread_entry":{
+                "channel_id":"C1","thread_ts":"1.0","unread_msg_count":30
+            }}}}}),
+        ] {
+            state.upsert(serde_json::from_value(raw).unwrap());
+        }
+        state.upsert(item("4.0"));
+        state.upsert(item("5.0"));
+        assert_eq!(
+            state.mark_channel_read_categories("C1"),
+            [("at_user".into(), 2)].into()
+        );
+        assert!(
+            state
+                .items
+                .iter()
+                .find(|i| i.is_thread())
+                .unwrap()
+                .is_unread
+        );
+        assert_eq!(
+            state
+                .items
+                .iter()
+                .find(|i| i.item.kind == "channel")
+                .unwrap()
+                .unread_msg_count(),
+            0
+        );
+        assert!(state.mark_channel_read_categories("C1").is_empty());
     }
 
     #[test]

@@ -150,6 +150,7 @@ impl ShellState {
         }
     }
 
+    #[cfg(test)]
     pub fn clear_self_status(&mut self) {
         let user = self.self_account.user_id.clone();
         if let Some(team) = self.core.active_team.clone()

@@ -2,6 +2,11 @@ use super::ShellState;
 use crate::model::*;
 
 impl ShellState {
+    /// Whether indexed rows refer to canonical history rather than fixture VMs.
+    pub(crate) fn channel_window_is_canonical(&self) -> bool {
+        self.fixture_channel_messages.is_none()
+    }
+
     /// Rebuild rich content only for the current absolute metadata window.
     pub(crate) fn reproject_channel_window(&mut self) {
         let start = self.timeline_start.min(self.channel_rows.len());

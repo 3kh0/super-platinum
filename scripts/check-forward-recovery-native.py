@@ -12,7 +12,7 @@ import uuid
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 BINARY = pathlib.Path(os.environ.get(
     "SUPER_PLATINUM_BINARY",
-    str(ROOT / "target/debug/Super Platinum.app/Contents/MacOS/super-platinum"),
+    str(ROOT / "target/debug/super-platinum"),
 ))
 CAPTURES = ROOT / "tmp/agent-ui"
 TEMP = pathlib.Path(os.environ.get("TMPDIR", tempfile.gettempdir()))

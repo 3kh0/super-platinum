@@ -101,6 +101,46 @@ fn push_overrides_are_independent_of_message_filter_and_mobile() {
 }
 
 #[test]
+fn desktop_delivery_distinguishes_absent_null_and_explicit_channel_values() {
+    let mut ws = workspace();
+    let mention = message("C1", "<@U_SELF> hello");
+    ws.notifications
+        .global
+        .remove("global_desktop_push_enabled");
+    assert!(delivers(&ws, &mention));
+    for value in [json!(null), json!(false), json!("true"), json!(1)] {
+        ws.notifications
+            .global
+            .insert("global_desktop_push_enabled".into(), value);
+        assert!(!delivers(&ws, &mention));
+    }
+    ws.notifications
+        .global
+        .insert("global_desktop_push_enabled".into(), json!(true));
+    for (value, expected) in [
+        (json!(null), false),
+        (json!(false), false),
+        (json!(0), false),
+        (json!(""), false),
+        (json!(true), true),
+        (json!("false"), true),
+        (json!(1), true),
+        (json!([]), true),
+    ] {
+        ws.notifications
+            .channels
+            .entry("C1".into())
+            .or_default()
+            .insert("desktop_push_enabled".into(), value.clone());
+        assert_eq!(delivers(&ws, &mention), expected, "channel value {value}");
+    }
+    ws.notifications.channels.get_mut("C1").unwrap().clear();
+    assert!(delivers(&ws, &mention));
+    ws.notifications.loaded = false;
+    assert!(!delivers(&ws, &mention));
+}
+
+#[test]
 fn muted_channels_allow_personal_mentions_but_muted_dms_stay_silent() {
     let mut ws = workspace();
     for channel in ["C1", "D1"] {
@@ -324,4 +364,187 @@ fn temporary_schedule_boot_and_partial_updates_preserve_cache_capability_boundar
     assert!(!config.user.contains_key("dnd_before_monday"));
     let legacy: NotificationConfig = serde_json::from_value(json!({"loaded":true})).unwrap();
     assert!(!legacy.temporary_schedule_loaded);
+}
+
+#[test]
+fn complete_schedule_hydration_preserves_raw_null_and_cache_migration() {
+    let mut config = NotificationConfig::default();
+    let prefs:BootPrefs=serde_json::from_value(serde_json::json!({"dnd_enabled":true,"dnd_days":"custom","dnd_start_hour":"20:00","dnd_end_hour":"8:00","dnd_after_monday":"22:00","dnd_before_monday":null,"tz":null,"set_tz_automatically":true,"time24":true})).unwrap();
+    config.apply_prefs(&prefs);
+    assert!(config.schedule_loaded && config.temporary_schedule_loaded);
+    assert_eq!(config.user["dnd_after_monday"], "22:00");
+    assert_eq!(config.user["dnd_end_hour"], "8:00");
+    assert_eq!(config.user["dnd_before_monday"], Value::Null);
+    let encoded = serde_json::to_value(&config).unwrap();
+    let restored: NotificationConfig = serde_json::from_value(encoded).unwrap();
+    assert!(restored.schedule_loaded);
+    assert_eq!(restored.user, config.user);
+    let old: NotificationConfig = serde_json::from_value(
+        serde_json::json!({"temporary_schedule_loaded":true,"user":{"dnd_days":"every_day"}}),
+    )
+    .unwrap();
+    assert!(!old.schedule_loaded);
+    config.apply_change("dnd_after_monday", serde_json::json!("19:30"));
+    assert_eq!(config.user["dnd_after_monday"], "19:30");
+    config.apply_prefs(&BootPrefs::default());
+    assert!(!config.user.contains_key("dnd_after_monday"));
+    assert!(!config.user.contains_key("tz"));
+}
+
+#[test]
+fn absent_message_sound_is_silent_even_for_vip_but_none_can_use_vip_override() {
+    let mut ws = workspace();
+    ws.vip_users.insert("U2".into());
+    let mut m = message("D1", "hello");
+    m.user = Some("U2".into());
+    for value in [None, Some(Value::Null), Some(json!(""))] {
+        ws.notifications.global.remove("desktop_sound");
+        if let Some(value) = value {
+            ws.notifications
+                .global
+                .insert("desktop_sound".into(), value);
+        }
+        assert_eq!(
+            ws.notifications
+                .message_options(&ws, &m, 100)
+                .unwrap()
+                .sound,
+            None
+        );
+    }
+    ws.notifications
+        .global
+        .insert("desktop_sound".into(), json!("none"));
+    assert_eq!(
+        ws.notifications
+            .message_options(&ws, &m, 100)
+            .unwrap()
+            .sound
+            .as_deref(),
+        Some("knock_brush.mp3")
+    );
+    ws.notifications
+        .global
+        .insert("desktop_sound".into(), json!("b2.mp3"));
+    ws.notifications
+        .global
+        .insert("priority_desktop_sound".into(), json!(""));
+    assert_eq!(
+        ws.notifications
+            .message_options(&ws, &m, 100)
+            .unwrap()
+            .sound
+            .as_deref(),
+        Some("b2.mp3")
+    );
+}
+#[test]
+fn truthy_raw_privacy_and_mute_values_never_expose_or_sound_message() {
+    for value in [json!("false"), json!(1), json!([]), json!({})] {
+        let mut ws = workspace();
+        ws.notifications
+            .global
+            .insert("no_text_in_notifications".into(), value.clone());
+        ws.notifications.user.insert("mute_sounds".into(), value);
+        let o = ws
+            .notifications
+            .message_options(&ws, &message("D1", "private"), 100)
+            .unwrap();
+        assert!(!o.preview);
+        assert_eq!(o.sound, None);
+    }
+    for value in [Value::Null, json!(false), json!(0), json!("")] {
+        let mut ws = workspace();
+        ws.notifications
+            .global
+            .insert("no_text_in_notifications".into(), value.clone());
+        ws.notifications.user.insert("mute_sounds".into(), value);
+        let o = ws
+            .notifications
+            .message_options(&ws, &message("D1", "private"), 100)
+            .unwrap();
+        assert!(o.preview);
+        assert!(o.sound.is_some());
+    }
+}
+
+#[test]
+fn team_plan_comes_only_from_current_boot_and_missing_boot_retires_old_entitlement() {
+    let mut ws = workspace();
+    assert_eq!(ws.team_plan, None);
+    for plan in [json!("plus"), json!(""), Value::Null, json!(true)] {
+        let boot: crate::slack::models::BootData =
+            serde_json::from_value(json!({"team":{"id":"T1","plan":plan}})).unwrap();
+        ws.apply_boot(boot);
+        assert_eq!(ws.team_plan.as_deref(), plan.as_str());
+    }
+    ws.team_plan = Some("plus".into());
+    ws.apply_boot(Default::default());
+    assert_eq!(ws.team_plan, None);
+}
+
+#[test]
+fn bounce_projection_preserves_stock_truthiness_and_existing_delivery_policy() {
+    let mut ws = workspace();
+    for (raw, expected) in [
+        (Value::Null, None),
+        (json!(""), None),
+        (json!(false), None),
+        (json!(0), None),
+        (json!("short"), Some(DockAttention::Once)),
+        (json!("future"), Some(DockAttention::Once)),
+        (json!(true), Some(DockAttention::Once)),
+        (json!([]), Some(DockAttention::Once)),
+        (json!("long"), Some(DockAttention::UntilActive)),
+    ] {
+        ws.notifications.user.insert("mac_ssb_bounce".into(), raw);
+        assert_eq!(ws.notifications.dock_attention(), expected);
+    }
+    ws.notifications.apply_change("mute_sounds", json!(true));
+    let o = ws
+        .notifications
+        .message_options(&ws, &message("D1", "hello"), 100)
+        .unwrap();
+    assert_eq!(o.sound, None);
+    assert_eq!(
+        ws.notifications.dock_attention(),
+        Some(DockAttention::UntilActive)
+    );
+    ws.notifications
+        .global
+        .insert("global_desktop_push_enabled".into(), json!(false));
+    assert!(
+        ws.notifications
+            .message_options(&ws, &message("D1", "hello"), 100)
+            .is_none()
+    );
+}
+#[test]
+fn bounce_hydrates_from_boot_realtime_and_old_cache() {
+    let mut ws = workspace();
+    let prefs: crate::slack::models::BootPrefs =
+        serde_json::from_value(json!({"mac_ssb_bounce":"long"})).unwrap();
+    ws.notifications.apply_prefs(&prefs);
+    assert_eq!(
+        ws.notifications.dock_attention(),
+        Some(DockAttention::UntilActive)
+    );
+    let mut cached: NotificationConfig =
+        serde_json::from_value(serde_json::to_value(&ws.notifications).unwrap()).unwrap();
+    assert_eq!(cached.dock_attention(), Some(DockAttention::UntilActive));
+    cached.apply_change("mute_sounds", json!(true));
+    assert_eq!(cached.dock_attention(), Some(DockAttention::UntilActive));
+    cached.apply_prefs(&crate::slack::models::BootPrefs::default());
+    assert!(!cached.user.contains_key("mac_ssb_bounce"));
+    assert_eq!(cached.dock_attention(), None);
+    assert_eq!(cached.user.get("mute_sounds"), Some(&json!(true)));
+    let null: crate::slack::models::BootPrefs =
+        serde_json::from_value(json!({"mac_ssb_bounce":null})).unwrap();
+    cached.apply_prefs(&null);
+    assert_eq!(cached.user.get("mac_ssb_bounce"), Some(&Value::Null));
+    assert_eq!(cached.dock_attention(), None);
+    ws.notifications.apply_change("mac_ssb_bounce", json!(""));
+    assert_eq!(ws.notifications.dock_attention(), None);
+    let old: NotificationConfig = serde_json::from_value(json!({})).unwrap();
+    assert_eq!(old.dock_attention(), None);
 }
