@@ -4,7 +4,8 @@
 use super::{
     DraftKey, DraftStore, Entries, LocalDraft,
     sync::{
-        self, Commit, LoadMode, Loaded, LocalChoice, LocalReview, LocalSettlement, Prepare, Release,
+        self, Commit, LoadMode, Loaded, LocalChoice, LocalReview, LocalSettlement, Prepare,
+        Release, RemoteChoice, RemoteReview, RemoteSettlement,
     },
 };
 use crate::{
@@ -24,6 +25,7 @@ enum Request {
     Upload(uploads::Command),
     ReadLocalReview(Scope, Reply<LocalReview>),
     SettleLocalVersions(LocalReview, LocalChoice, Reply<LocalSettlement>),
+    ReconcileRemoteReview(RemoteReview, RemoteChoice, Reply<RemoteSettlement>),
     Load(String, Reply<Entries>),
     LoadSynced(String, LoadMode, Reply<Loaded>),
     Commit(
@@ -134,6 +136,24 @@ impl Worker {
                             return Ok(LocalSettlement::Blocked);
                         }
                         let result = store.settle_local_versions(&review, &choice)?;
+                        let blocked: bool = store.0.query_row("SELECT EXISTS(SELECT 1 FROM composer_draft_blocked) OR EXISTS(SELECT 1 FROM composer_draft_alternates)", [], |row| row.get(0))?;
+                        let mut pending = self.pending.lock().unwrap();
+                        if blocked { pending.blocked.insert(scope.account_id.clone()); }
+                        else { pending.blocked.remove(&scope.account_id); }
+                        Ok(result)
+                    });
+                    let _ = reply.send(result);
+                }
+                Request::ReconcileRemoteReview(review, choice, reply) => {
+                    let scope = &review.inventory().scope;
+                    let result = open(&scope.account_id).and_then(|mut store| {
+                        // Failed/queued legacy input is not part of the durable
+                        // inventory the human reviewed. Keep it and refuse CAS.
+                        // Later enqueues remain queued; no UI mutex spans I/O.
+                        if self.pending.lock().unwrap().updates.contains_key(&(scope.account_id.clone(), scope.key.clone())) {
+                            return Ok(RemoteSettlement::Blocked);
+                        }
+                        let result = store.reconcile_remote_review(&review, &choice)?;
                         let blocked: bool = store.0.query_row("SELECT EXISTS(SELECT 1 FROM composer_draft_blocked) OR EXISTS(SELECT 1 FROM composer_draft_alternates)", [], |row| row.get(0))?;
                         let mut pending = self.pending.lock().unwrap();
                         if blocked { pending.blocked.insert(scope.account_id.clone()); }
@@ -471,6 +491,17 @@ pub fn settle_local_versions(
     receive(receiver)
 }
 
+/// Background-only explicit positive review CAS, serialized with local writers.
+/// A lost reply is recovered by reading; this never retries or dispatches Slack.
+pub fn reconcile_remote_review(
+    review: RemoteReview,
+    choice: RemoteChoice,
+) -> Result<RemoteSettlement, AppError> {
+    let (sender, receiver) = mpsc::sync_channel(1);
+    worker().submit(Request::ReconcileRemoteReview(review, choice, sender));
+    receive(receiver)
+}
+
 pub fn save_failed(account: &str) -> bool {
     let pending = worker().pending.lock().unwrap();
     pending.failed.contains(account) || pending.blocked.contains(account)
@@ -478,3 +509,7 @@ pub fn save_failed(account: &str) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "worker/remote_review_tests.rs"]
+mod remote_review_tests;

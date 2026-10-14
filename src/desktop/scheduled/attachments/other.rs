@@ -5,6 +5,7 @@ use super::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Action {
     Edit,
+    Copy,
     Unschedule,
     Send,
     Delete,
@@ -21,6 +22,8 @@ pub(crate) enum Phase {
 pub(crate) enum Outcome {
     /// A read-only preflight failed, or the transport proved no dispatch occurred.
     NotDispatched,
+    /// A complete, narrowly recognized explicit server rejection; no replay.
+    Rejected,
     Confirmed,
     Unknown,
 }
@@ -112,7 +115,7 @@ impl Operations {
         }
         match outcome {
             Outcome::Unknown => other.phase = Phase::Uncertain,
-            Outcome::NotDispatched | Outcome::Confirmed => {
+            Outcome::NotDispatched | Outcome::Rejected | Outcome::Confirmed => {
                 if other.attached {
                     other.phase = Phase::Idle;
                     other.expected = None;

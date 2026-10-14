@@ -410,6 +410,7 @@ impl ShellState {
             profile_generation: 0,
             profile_dm_generation: 0,
             profile_dm_opening: None,
+            profile_dm_link_generation: None,
             group_panel: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
@@ -552,6 +553,7 @@ impl ShellState {
             profile_generation: 0,
             profile_dm_generation: 0,
             profile_dm_opening: None,
+            profile_dm_link_generation: None,
             group_panel: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
@@ -881,6 +883,7 @@ impl ShellState {
             profile_generation: 0,
             profile_dm_generation: 0,
             profile_dm_opening: None,
+            profile_dm_link_generation: None,
             group_panel: None,
             profile_pane_width: 495.0,
             profile_menu_open: false,
@@ -1115,6 +1118,15 @@ impl ShellState {
             }
             "draft-native-projection" | "draft-native-projection-narrow" => {
                 crate::drafts::projection_fixture::apply(&mut state)
+            }
+            "draft-remote-review" | "draft-remote-review-narrow" => {
+                crate::drafts::remote_review_fixture::apply(&mut state)
+            }
+            "scheduled-attachments" | "scheduled-attachments-narrow" => {
+                crate::scheduled::attachments::fixture::apply(&mut state)
+            }
+            "user-links" | "user-links-narrow" => {
+                crate::slack_links::user_fixture::install(&mut state)
             }
             "send-outcomes" | "send-outcomes-narrow" | "send-outcomes-thread" => {
                 crate::messaging::send_outcomes_fixture(&mut state, name)

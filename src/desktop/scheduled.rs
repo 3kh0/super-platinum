@@ -1,4 +1,6 @@
 //! Account guarded scheduled-message orchestration.
+pub(crate) mod attachments;
+pub(crate) mod mutation;
 use crate::state::ShellState;
 use dioxus::prelude::*;
 use std::sync::Arc;
@@ -79,58 +81,8 @@ pub async fn load(mut state: Signal<ShellState>, more: bool) {
         }
     }
 }
-pub async fn remove(mut state: Signal<ShellState>, expected: ScheduledMessage) {
-    let Some(ctx) = Context::get(&state) else {
-        return;
-    };
-    let id = expected.id.clone();
-    let limit = {
-        let mut shell = state.write();
-        let Some(queue) = visible(&shell) else {
-            return;
-        };
-        if !queue.items.contains_key(&id) {
-            return;
-        }
-        if !shell.core.scheduled.begin_mutation(&id) {
-            return;
-        }
-        shell.core.scheduled.error = None;
-        shell.core.scheduled.limit
-    };
-    let result = async {
-        let current =
-            api::fetch_active_draft(&ctx.transport, &ctx.client, &ctx.session, &id, limit).await?;
-        if !ctx.current(&state.peek()) {
-            return Err(super_platinum_core::slack::Error::Api(
-                "draft_account_changed".into(),
-            ));
-        }
-        if !state
-            .write()
-            .core
-            .scheduled
-            .verify_revision(&expected, current)
-        {
-            return Err(super_platinum_core::slack::Error::Api(
-                "draft_has_conflict".into(),
-            ));
-        }
-        api::delete_scheduled_message(&ctx.transport, &ctx.client, &ctx.session, &id).await
-    }
-    .await;
-    if !ctx.current(&state.peek()) {
-        return;
-    }
-    let mut shell = state.write();
-    shell.core.scheduled.busy.remove(&id);
-    match result {
-        Ok(()) => {
-            shell.core.scheduled.items.remove(&id);
-            shell.show_toast("Draft deleted.");
-        }
-        Err(error) => shell.core.scheduled.error = Some(failure(&error)),
-    }
+pub async fn remove(state: Signal<ShellState>, expected: ScheduledMessage) {
+    mutation::remove(state, expected).await;
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -151,89 +103,12 @@ pub async fn send_reviewed(state: Signal<ShellState>, reviewed: ScheduledMessage
     .await;
 }
 async fn act_revision(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     id: String,
     action: DraftAction,
     reviewed: Option<ScheduledMessage>,
 ) {
-    let Some(ctx) = Context::get(&state) else {
-        return;
-    };
-    let draft = {
-        let mut shell = state.write();
-        if !shell
-            .core
-            .scheduled
-            .matches_scope(ctx.epoch, &ctx.session.team_id)
-        {
-            return;
-        }
-        let Some(draft) = shell.core.scheduled.items.get_mut(&id) else {
-            return;
-        };
-        if draft.client_msg_id.is_empty() {
-            draft.client_msg_id =
-                api::ScheduleMessage::new(String::new(), None, vec![], 0).client_msg_id;
-        }
-        let mut expected = reviewed.unwrap_or_else(|| draft.clone());
-        expected.client_msg_id = draft.client_msg_id.clone();
-        if !shell.core.scheduled.begin_mutation(&id) {
-            return;
-        }
-        shell.core.scheduled.error = None;
-        expected
-    };
-    let limit = state.peek().core.scheduled.limit;
-    let result = async {
-        let mut current =
-            api::fetch_active_draft(&ctx.transport, &ctx.client, &ctx.session, &id, limit).await?;
-        if !ctx.current(&state.peek()) {
-            return Err(super_platinum_core::slack::Error::Api(
-                "draft_account_changed".into(),
-            ));
-        }
-        match action {
-            DraftAction::Send => {
-                if !state
-                    .write()
-                    .core
-                    .scheduled
-                    .verify_revision(&draft, current.clone())
-                {
-                    return Err(super_platinum_core::slack::Error::Api(
-                        "draft_has_conflict".into(),
-                    ));
-                }
-                current.client_msg_id = draft.client_msg_id.clone();
-                api::send_draft(&ctx.transport, &ctx.client, &ctx.session, &current)
-                    .await
-                    .map(|_| None)
-            }
-            DraftAction::Unschedule => {
-                api::unschedule_message(&ctx.transport, &ctx.client, &ctx.session, &current)
-                    .await
-                    .map(Some)
-            }
-        }
-    }
-    .await;
-    if !ctx.current(&state.peek()) {
-        return;
-    }
-    let mut shell = state.write();
-    shell.core.scheduled.busy.remove(&id);
-    match result {
-        Ok(Some(draft)) => {
-            shell.core.scheduled.accept_remote(draft);
-            shell.core.scheduled.filter = super_platinum_core::scheduled::DraftFilter::Drafts;
-            shell.show_toast("Schedule canceled. Message saved to drafts.");
-        }
-        Ok(None) => {
-            shell.core.scheduled.items.remove(&id);
-            shell.show_toast("Message sent.");
-        }
-        Err(error) => shell.core.scheduled.error = Some(failure(&error)),
-    }
+    mutation::act(state, id, action, reviewed).await;
 }
 pub fn saved(mut state: Signal<ShellState>, ctx: &Context, draft: ScheduledMessage) {
     if !ctx.current(&state.peek()) {
@@ -260,6 +135,9 @@ pub fn saved(mut state: Signal<ShellState>, ctx: &Context, draft: ScheduledMessa
 pub fn failure(error: &super_platinum_core::slack::Error) -> String {
     use super_platinum_core::slack::Error;
     match error {
+        Error::Api(code) if code == "draft_result_unconfirmed" => "The result is unknown. Review the reserved action in Drafts before making another change.".into(),
+        Error::Api(code) if code == "draft_mutation_reserved" => "This draft already has an open editor or an action awaiting confirmation.".into(),
+        Error::Api(code) if code == "draft_account_changed" => "The account or draft editor changed before this action could continue.".into(),
         Error::Api(code) if code == "draft_mutation_not_sent_offline" => "Reconnect to Slack to manage scheduled messages. Nothing was sent.".into(),
         Error::Api(code) if code=="draft_not_active"=>"This draft was already sent or deleted. Refresh the list to see its current state.".into(),
         Error::Api(code) if code=="draft_not_loaded"=>"Refresh and load more drafts before changing this message.".into(),
@@ -272,6 +150,9 @@ pub fn failure(error: &super_platinum_core::slack::Error) -> String {
             "Choose a time within the next 120 days.".into()
         }
         Error::Api(code) if code == "time_in_past" => "Choose a time in the future.".into(),
+        Error::Api(code) if matches!(code.as_str(), "invalid_auth" | "not_authed" | "token_revoked" | "token_expired" | "not_allowed_token_type" | "account_inactive") => {
+            "Slack rejected this action because of authentication. Reconnect before trying again.".into()
+        }
         Error::RateLimited { .. } => {
             "Slack is limiting requests. Wait a moment, then retry.".into()
         }

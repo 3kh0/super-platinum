@@ -26,6 +26,17 @@ class FakeIO:
 
 
 class PointerTests(unittest.TestCase):
+    def test_empty_taskbar_sample_does_not_exempt_later_obstructions_or_failures(self):
+        parked, io, window = self.fixture()
+        window.update(taskbar_rects=[], taskbar_probe_completed=True)
+        parked.park()
+        parked.check("before_capture", require_clear=True)
+        window.update(taskbar_rects=[[0, 700, 2560, 72]], taskbar_client_overlap=True)
+        with self.assertRaises(RuntimeError): parked.check("after_capture", require_clear=True)
+        window.update(taskbar_probe_completed=False, taskbar_client_overlap=None)
+        with self.assertRaises(RuntimeError): parked.check("after_capture", require_clear=True)
+        parked.close()
+
     def fixture(self):
         io = FakeIO()
         window = copy.deepcopy(WINDOW)

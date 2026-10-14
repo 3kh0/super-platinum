@@ -27,6 +27,9 @@ pub(crate) struct Owner {
 
 impl Owner {
     pub fn capture(shell: &ShellState, draft: &str) -> Option<Self> {
+        if crate::fixture::is_fixture() {
+            return fixture::owner(shell, draft);
+        }
         let account = shell.core.active_account.clone()?;
         let team = shell.core.active_team.clone()?;
         let session = shell.core.session.as_ref()?.workspaces.get(&team)?;
@@ -110,6 +113,7 @@ pub(crate) enum Fault {
     Busy,
     StaleLease,
     WrongDraft,
+    QueuedRevisionChanged,
     Retained,
     CoolingDown,
     Edit(EditError),
@@ -334,6 +338,25 @@ impl Operations {
         Ok(())
     }
 
+    /// The mounted queue may know a revision newer than a lagging info read.
+    /// Compare every represented field, including at equal or absent stamps.
+    /// Absence is not evidence of deletion; the positive info preflight still
+    /// supplies complete admission when no queue row is present.
+    pub fn admit_current(
+        &mut self,
+        attempt: &Attempt,
+        response: &Value,
+        queue: &super_platinum_core::scheduled::ScheduledState,
+    ) -> Result<(), Fault> {
+        let editing = self.editing_mut(&attempt.lease)?;
+        if !queue.review_is_current(&editing.original) {
+            editing.model.reject_stale_preflight(&attempt.frozen)?;
+            return Err(Fault::QueuedRevisionChanged);
+        }
+        editing.model.admit_dispatch(&attempt.frozen, response)?;
+        Ok(())
+    }
+
     pub fn acknowledge(&mut self, attempt: &Attempt, response: &Value) -> Result<bool, Fault> {
         Ok(self
             .editing_mut(&attempt.lease)?
@@ -348,6 +371,29 @@ impl Operations {
             .model
             .mark_uncertain(&attempt.frozen)?;
         Ok(())
+    }
+
+    pub fn not_dispatched(&mut self, attempt: &Attempt) -> Result<(), Fault> {
+        let editing = self.editing_mut(&attempt.lease)?;
+        editing.model.not_dispatched(&attempt.frozen)?;
+        editing.attempt = None;
+        editing.error =
+            Some("Reconnect to Slack before saving. No attachment update was sent.".into());
+        Ok(())
+    }
+
+    pub fn rejected(&mut self, attempt: &Attempt, response: &Value) -> Result<bool, Fault> {
+        let editing = self.editing_mut(&attempt.lease)?;
+        if !editing.model.rejected(&attempt.frozen, response)? {
+            return Ok(false);
+        }
+        editing.attempt = None;
+        let code = super_platinum_core::scheduled::edit::definite_rejection(response)
+            .expect("model accepted only a recognized rejection");
+        editing.error = Some(super::failure(&super_platinum_core::slack::Error::Api(
+            code.into(),
+        )));
+        Ok(true)
     }
 
     pub fn review_attempt(&mut self, lease: &Lease) -> Result<Attempt, Fault> {
@@ -487,6 +533,8 @@ fn cooling_down(editing: &Editing) -> bool {
         .is_some_and(|(started, duration)| started.elapsed() < duration)
 }
 
+pub(crate) mod cleanup;
+pub(crate) mod fixture;
 pub(crate) mod native;
 pub(crate) mod other;
 #[cfg(test)]

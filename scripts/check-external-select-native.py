@@ -12,7 +12,7 @@ from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 
 MESSAGE_STAGES = ("initial", "short-query", "loading", "groups", "confirmation", "selected", "error", "uncertain")
 MODAL_STAGES = ("initial", "short-query", "loading", "groups", "selected", "cleared", "validation", "error", "uncertain")
-COMMON = ("exactRawWire", "minimumAndDebounce", "groupOrder", "initialOutsideResults",
+COMMON = ("exactRawWire", "heldLoading", "minimumAndDebounce", "groupOrder", "initialOutsideResults",
           "selectionSurvivedEmptyResults", "uncertainNoReplay", "cooldownExpiryWithoutReplay", "cooldownAcrossVisits",
           "fullSiblingState", "noTransport", "noOverflow", "eachVisible", "hitTestedControls", "compactSearch")
 MESSAGE_SPEC = CheckSpec(fixture="message-external-select", flag="SUPER_PLATINUM_EXTERNAL_SELECT_CHECK",
@@ -22,6 +22,43 @@ MODAL_SPEC = CheckSpec(fixture="app-modal-external-select", flag="SUPER_PLATINUM
     prefix="external-select-check: ", prepared_requests=2,
     required=COMMON + ("inlineNoDispatch", "optionalClear", "closeBesideSearch", "focusRestoredAfterDoneAndEscape"))
 FIXTURES = (MESSAGE_SPEC.fixture, MESSAGE_SPEC.fixture+"-narrow", MODAL_SPEC.fixture, MODAL_SPEC.fixture+"-narrow")
+
+
+def validate_attempts(fixture, receipt):
+    modal = fixture.startswith("app-modal-")
+    attempts = receipt.get("attempts")
+    if not isinstance(attempts, list) or len(attempts) != 2:
+        raise RuntimeError("Missing actual single-external request ledger")
+    for index, attempt in enumerate(attempts):
+        try:
+            state = attempt["state"]
+            encoded = json.loads(attempt["fields"]["state"])
+            if encoded != (state if modal else {"values": state}):
+                raise ValueError("Encoded state differs from retained state")
+            values = state["values"] if modal else state
+            selected = values["choice"]["pick"]["selected_option"]
+            expected = None if modal and index == 0 else {
+                "text": {"type": "plain_text", "text": "Release Beta" if modal else "Release Alpha"},
+                "value": "beta" if modal else "alpha,desktop",
+                "description": {"type": "plain_text", "text": "App-provided release option"},
+            }
+            if selected != expected:
+                raise ValueError("Raw selected option changed")
+            if modal:
+                if values["note"]["value"]["value"] != "Keep this sibling":
+                    raise ValueError("Modal sibling changed")
+            else:
+                if values["review"]["environment"]["selected_option"]["value"] != "prod":
+                    raise ValueError("Message sibling changed")
+                action = attempt["action"]
+                if json.loads(attempt["fields"]["actions"]) != [action]:
+                    raise ValueError("Encoded action differs from retained action")
+                if action["type"] != ("external_select" if index == 0 else "button"):
+                    raise ValueError("Wrong action order")
+                if index == 0 and action["selected_option"] != expected:
+                    raise ValueError("Action selected option differs from state")
+        except (KeyError, TypeError, ValueError) as error:
+            raise RuntimeError(f"Invalid single-external request {index}: {error}") from error
 
 
 def run(fixture, binary, captures):
@@ -45,6 +82,7 @@ def run(fixture, binary, captures):
                         for receipt in receipts:
                             evidence["native"] = receipt
                             validate_receipt(spec, fixture, receipt)
+                            validate_attempts(fixture, receipt)
                             for stage in stages:
                                 path = captures / f"{fixture}-{stage}.png"
                                 if receipt.get("captures", {}).get(stage) != str(path) or not path.is_file():

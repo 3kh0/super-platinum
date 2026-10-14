@@ -6,6 +6,33 @@ from visual_placement import capture_area, clamp_window, fit_work_area
 
 
 class PlacementTests(unittest.TestCase):
+    def test_empty_taskbars_require_completed_probe_on_every_sample(self):
+        work = [0, 0, 2560, 1600]
+        self.assertEqual(capture_area(work, [], taskbar_probe_completed=True), work)
+        for bars, completed in ((None, True), ([], False), ([], None), ([], 1)):
+            with self.assertRaises(RuntimeError):
+                capture_area(work, bars, taskbar_probe_completed=completed)
+        window, io = self.fixture()
+        window.update(taskbar_rects=[], taskbar_probe_completed=True)
+        evidence = {}
+        fit_work_area(lambda: copy.deepcopy(window), lambda: None, evidence, io)
+        self.assertEqual(evidence["available_capture_area_physical"], work)
+        self.assertEqual(io.moves, [])
+        for stage in (2, 3):
+            for failure in ("probe", "reappearing_bar"):
+                with self.subTest(stage=stage, failure=failure):
+                    calls = 0
+                    def observe():
+                        nonlocal calls
+                        calls += 1
+                        result = copy.deepcopy(window)
+                        if calls >= stage:
+                            if failure == "probe": result["taskbar_probe_completed"] = False
+                            else: result["taskbar_rects"] = [[0, 1528, 2560, 72]]
+                        return result
+                    with self.assertRaises(RuntimeError):
+                        fit_work_area(observe, lambda: None, {}, io)
+
     def test_capture_area_excludes_auto_hide_strip_on_all_edges(self):
         self.assertEqual(capture_area([0, 0, 2560, 1600], [[0, 1528, 2560, 72]]),
                          [0, 0, 2560, 1528])

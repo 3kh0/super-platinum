@@ -7,6 +7,7 @@ use crate::{
 };
 use dioxus::prelude::*;
 use super_platinum_core::{scheduled::edit::EditPhase, slack::models::Message};
+pub(crate) mod host;
 pub(crate) mod recovery;
 
 #[component]

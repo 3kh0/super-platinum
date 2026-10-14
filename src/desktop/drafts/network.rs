@@ -15,6 +15,8 @@ use super_platinum_core::{
     slack::{Error, PreparedRequest, SlackClient, Transport, api},
 };
 mod decode;
+mod draft_review;
+pub(crate) use draft_review::RemoteProof;
 mod readback;
 pub(crate) use readback::Readback;
 

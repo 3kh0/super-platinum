@@ -151,6 +151,8 @@ fn app() -> Element {
     });
     let desktop = dioxus::desktop::window();
     use_context_provider(|| state);
+    let attachment_operations = use_signal(scheduled::attachments::Operations::default);
+    use_context_provider(|| attachment_operations);
     read_visibility::use_focus_read_marks(state);
     #[cfg(target_os = "macos")]
     notification::attention::use_cleanup();

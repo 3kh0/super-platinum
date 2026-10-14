@@ -14,6 +14,9 @@ use super_platinum_core::{
 use crate::state::{ChannelOpen, ChannelTab, MainView, Overlay, ShellState};
 
 mod parse;
+mod user;
+pub(crate) mod user_check;
+pub(crate) mod user_fixture;
 use parse::{Link, WorkspaceRef};
 
 const UNAVAILABLE: &str = "This Slack workspace is not signed in here.";
@@ -94,6 +97,22 @@ pub(crate) fn open(mut state: Signal<ShellState>, input: &str) {
     if let Link::External { url } = link {
         if crate::media::open_external(&url).is_err() {
             state.write().show_toast("Could not open this link.");
+        }
+        return;
+    }
+    if let Link::User { team, user } = link {
+        let intent = {
+            let mut shell = state.write();
+            match user::Intent::begin(&mut shell, team, user) {
+                Ok(intent) => intent,
+                Err(message) => {
+                    shell.show_toast(message);
+                    return;
+                }
+            }
+        };
+        if let Some(intent) = intent {
+            dioxus::core::spawn_forever(user::navigate(state, intent));
         }
         return;
     }

@@ -201,6 +201,18 @@ impl ScheduledState {
             self.items.remove(&draft.id);
         }
     }
+    /// A late info response cannot override a newer or differently represented
+    /// queued revision, including equal/absent stamps. Missing membership alone
+    /// is inconclusive; an explicitly retired identity is known stale evidence.
+    pub fn review_is_current(&self, expected: &ScheduledMessage) -> bool {
+        expected.active()
+            && !self.remote_is_obsolete(expected)
+            && self
+                .items
+                .get(&expected.id)
+                .is_none_or(|current| edit::same_reviewed(expected, current))
+    }
+
     /// Gate a mutation against the revision the user reviewed. A rejected
     /// mutation keeps the fresh content and invalidates any older list request.
     /// This is a preflight check, not a server-side compare-and-swap guarantee.

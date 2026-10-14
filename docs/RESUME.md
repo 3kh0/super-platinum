@@ -2,10 +2,24 @@
 
 ## Windows continuation, 2026-10-14
 
-**Latest completed Windows gate:** independently locked core **1,235 passed /
-5 ignored**, desktop **1,201 passed / 7 ignored**, formatting and
-locked dev build **3m58s** pass. Executable SHA:
-`e3cb05e350c98981a914e6313da17cee3a9c87cf130c2dbcd405ce971e4d4122`.
+**Latest completed Windows gate:** independently locked core **1,289 passed /
+5 ignored**, desktop **1,273 passed / 7 ignored**, formatting/whitespace and
+locked dev build **4m49s** pass. Executable SHA:
+`dd5a3aa090147859234f152c0b4b2bdfe70a6f4b077a2b9eedbe79dedcdda2a1`.
+The remote-review retry passes all 12 scenario/restart pairs with 112 inspected
+PNGs, but narrow channel/thread headers clip while review is open. A scoped
+layout correction is pending a new native gate. Post-reboot capture now accepts
+successful empty taskbar enumeration while retaining failed-probe rejection;
+21 focused tests pass. No OS settings changed. Board results below use the
+prior `adaa29ff...` executable; latest single-selector evidence uses `dd5a3aa0...`.
+
+Board lane Add passes both Windows sizes with **all 14 PNGs inspected** in
+`tmp/agent-ui/windows-board-add-pilot/`. Exact ordered typed seeds, four actual
+requests per run, stale-preflight refusal, pending duplicate suppression and
+uncertain no-replay checks pass. Header/status/actions are readable; narrow
+cards and lanes use bounded scrolling. The runner independently verifies closed
+logs, unchanged executable, owned process exit and pointer restoration. This
+is disconnected synthetic evidence, not live create interoperability.
 
 Native draft projection passes **20/20 normal/narrow scenarios**, across 40
 processes, with **all 120 PNGs inspected** in
@@ -22,13 +36,19 @@ and ordinary remote autosave remain disabled. See
 The prior single-external selector gate passed all four native fixtures with
 **38 inspected PNGs**, exact raw/full sibling state, debounce, cooldown and
 uncertainty without replay on `df0017fa...`. Checker-isolation/notification
-presentation added 18 inspected PNGs. A regression run on the latest binary
-passes both ordinary fixtures, then fails in the normal modal checker waiting
-for a picker; 24 retained PNGs are under review. Investigation is active; do not
-claim this new single-select regression gate passed.
+presentation added 18 inspected PNGs. The subsequent regression found a changed
+single clear-button accessible label; all 24 failed-run PNGs were inspected and
+the original label is restored. On the latest binary all four corrected checks
+pass, with all 38 PNGs inspected in `windows-single-external-regression-corrected/`.
+That run's narrow loading captures already show results. A subsequent held-loading
+gate on `dd5a3aa0...` passes all four checks with all 38 PNGs inspected in
+`windows-single-external-held-loading/`. Both narrow loading captions are visible
+with no rows; all eight raw requests independently preserve options and full
+sibling state. Legacy per-process lifecycle receipts remain incomplete; see the
+worklog for exact limits.
 
 **Multi-external native gate complete:** all four final fixtures pass on the
-latest executable, with **all 50 PNGs inspected** in
+`e3cb05e3...`, with **all 50 PNGs inspected** in
 `tmp/agent-ui/windows-multi-external-select-verified/`. The toast now clears the
 whole narrow picker; footer hit tests and measured nonoverlap pass. Held loading,
 saved-empty reopening, ordered raw selections, full sibling state, modal inline
@@ -38,14 +58,36 @@ proof. Fourteen toast JS and fifteen runner tests pass. These are disconnected
 fixtures, not live callback interoperability. Root owns every Cargo/build/native
 launch.
 
-**Current work:** positive `drafts.info` and explicit supported-conflict
-reconciliation, Board lane Add core/desktop/fixtures, and the existing-server-draft
-attachment edit core model are referenced and awaiting the new compile gate.
-Attachment desktop controller/UI remains unreferenced pending integration review;
-remote conflict review desktop work is next. Primary retained
+**Current work:** positive `drafts.info`, explicit supported-conflict reconciliation
+core, Board lane Add, and the server-draft attachment edit core model are compiled
+and unit tested. Subsequent serialized worker/Editor remote-review hooks are now
+being integrated with explicit UI and isolated read/commit/projection/restart
+checks. Attachment desktop controller/UI integration is also underway. Those
+new desktop workflows are not part of the latest executable yet. Primary retained
 bundles prove ordinary positive lookup/listing; missing or partial results cannot
 prove deletion. No production ingress, storage-format change or autosave is
 introduced by this preparatory work. Keep the broad remaining matrix open.
+
+The subsequent independently locked core gate passes **1,289 / 5 ignored** in
+20.13s after 20.04s compilation. It includes serialized remote review, exact
+known-unsent handling, definite-rejection recovery and raw-marker collision
+regressions. The subsequent desktop gate passes **1,273 / 7 ignored** in 4.44s
+after 41.72s compilation; formatting passes. It covers the remote-review UI,
+worker/Editor adapters, isolated fixtures and attachment lifecycle integration.
+The locked dev build passes in 4m49s. Ten remote-review runner tests pass, including
+the corrected exact request URL/query validation. Attachment disconnected
+adapter/fixtures and user-link work are now being integrated for the next build,
+while native checks retain the frozen executable. No native outcome is claimed for these changes
+yet. The user rebooted Windows; restart Slack with CDP if live reference work
+requires it. Real sessions, clipboard and drafts remain untouched in these checks.
+
+The next independently locked core gate passes **1,294 / 5 ignored** in 19.98s,
+compilation 31.92s. Attachment Source/fixtures and legacy compatibility/queue
+guards, plus known-human DM-and-profile user links, are independently reviewed
+and source-frozen. Desktop compilation awaits the remote-review layout correction
+preserving mention suggestion visibility. Next native gates: corrected review,
+ten attachment cases (48 PNGs), and two user-link cases (16 PNGs). Broad acceptance
+remains open; ordinary bidirectional remote autosave is still disabled.
 
 Trusted keyboard/file-paste regressions pass on `ad6f18f2...`, with all **22 PNGs
 inspected**. Normal keyboard captures have taskbar overlap, but edit results are

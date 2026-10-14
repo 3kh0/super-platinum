@@ -7,19 +7,29 @@ use crate::state::MainView;
 use crate::state::ShellState;
 
 pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
-    {
-        let mut shell = state.write();
-        shell.close_profile();
-        shell.profile_user = Some(user.clone());
-        shell.group_panel = None;
-        shell.profile_hover = None;
-        shell.profile_menu_open = false;
-        shell.close_thread();
-        shell.core.profile_pane = Some(super_platinum_core::domain::ProfilePaneState {
-            user: user.clone(),
-            loading: true,
-            error: None,
-        });
+    show_profile(&mut state.write(), user.clone());
+    refresh_open_profile(state, user).await;
+}
+
+/// Establish the pane synchronously so a link can commit its DM and profile
+/// together before either independent hydration request yields.
+pub(crate) fn show_profile(shell: &mut ShellState, user: String) {
+    shell.close_profile();
+    shell.profile_user = Some(user.clone());
+    shell.group_panel = None;
+    shell.profile_hover = None;
+    shell.profile_menu_open = false;
+    shell.close_thread();
+    shell.core.profile_pane = Some(super_platinum_core::domain::ProfilePaneState {
+        user,
+        loading: true,
+        error: None,
+    });
+}
+
+pub(crate) async fn refresh_open_profile(mut state: Signal<ShellState>, user: String) {
+    if state.peek().profile_user.as_ref() != Some(&user) {
+        return;
     }
     let Some(visit) = super::profile_navigation::ProfileVisit::capture(&state.read()) else {
         return;
@@ -102,6 +112,7 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
         },
     );
     if !visit.current(&state.read()) {
+        visit.retire(&mut state.write());
         return;
     }
     let profile_emojis = profile
@@ -173,6 +184,7 @@ pub async fn open_profile(mut state: Signal<ShellState>, user: String) {
         },
     );
     if !visit.current(&state.read()) {
+        visit.retire(&mut state.write());
         return;
     }
     let mut shell = state.write();

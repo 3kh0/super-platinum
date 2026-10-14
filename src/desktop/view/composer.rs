@@ -6,6 +6,7 @@ use crate::state::{ComposerTarget, ShellState};
 
 mod field;
 pub(crate) mod projection;
+mod remote_review;
 pub(crate) use projection::RendererApplied;
 
 // Dioxus's implicit `.*` filter is passed as a literal extension on macOS.
@@ -221,6 +222,7 @@ pub(crate) fn composer(state: Signal<ShellState>, text: &str, channel_name: &str
                 }
                 super::scheduled::ScheduleButton {state,target:ComposerTarget::Channel}
             }
+            remote_review::RemoteReview { key:"{field_key}:remote-review", state, target:ComposerTarget::Channel }
         }
     }
 }
@@ -277,6 +279,7 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
                 }
                 span {"{broadcast_label}"}
             }
+            remote_review::RemoteReview { key:"{field_key}:remote-review", state, target:ComposerTarget::Thread }
         }
     }
 }

@@ -329,6 +329,52 @@
 .thread-broadcast span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .thread-broadcast:has(input:disabled) { cursor:default; opacity:.6; }
 
+/* A version review shares the remaining pane height with its composer. The
+   scrollable inventory must shrink before the footer can push a conversation
+   header outside the viewport. These bounds apply only while review is open. */
+.draft-remote-review { padding: 8px; }
+.draft-remote-review-versions {
+  max-height: min(44vh, 320px);
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+:is(.composer-wrap, .thread-composer):has(.draft-remote-review-versions) {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  /* A very tall file strip or wrapped action bar remains reachable as well. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+:is(.composer-wrap, .thread-composer):has(.draft-remote-review-versions) > * { flex-shrink: 0; }
+/* The ordinary popup sits above the footer. An open review can fill that
+   space, so keep suggestions in this bounded scroll surface instead. Sticky
+   positioning keeps them reachable while the longer contents scroll. */
+:is(.composer-wrap, .thread-composer):has(.draft-remote-review-versions) > .composer-completion {
+  position: sticky;
+  top: 0;
+  bottom: auto;
+  left: auto;
+  width: 100%;
+  max-height: min(160px, 25vh);
+  margin-bottom: 8px;
+}
+:is(.composer-wrap, .thread-composer):has(.draft-remote-review-versions) textarea {
+  max-height: min(160px, 20vh);
+}
+:is(.composer-wrap, .thread-composer) > .draft-remote-review:has(.draft-remote-review-versions) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 128px;
+}
+.draft-remote-review > .scheduled-actions { flex-shrink: 0; }
+.draft-remote-review-versions { flex: 1 1 auto; }
+.draft-remote-review .scheduled-item { padding: 8px 0; }
+.draft-remote-review .scheduled-hint { margin: 8px 0; }
+
 /* Explicit upload verification is read-only and stays with its pending files. */
 .upload-delivery { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); margin-top:var(--space-2); min-width:0; }
 .upload-delivery-check { flex:0 0 auto; min-width:112px; height:var(--control-height); padding:0 var(--space-3); border:0; border-radius:var(--radius-md); background:var(--surface-raised); color:var(--text); font-size:var(--text-sm); }

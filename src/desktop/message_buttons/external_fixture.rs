@@ -20,14 +20,24 @@ pub(crate) struct Fixture {
 }
 pub(crate) fn enabled() -> bool {
     super::multi_external_fixture::enabled()
-        || (std::env::var("SUPER_PLATINUM_EXTERNAL_SELECT_CHECK").as_deref() == Ok("1")
-            && matches!(
-                std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
-                Ok("message-external-select"
+        || single_enabled(
+            std::env::var("SUPER_PLATINUM_EXTERNAL_SELECT_CHECK")
+                .ok()
+                .as_deref(),
+            std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
+        )
+}
+fn single_enabled(flag: Option<&str>, fixture: Option<&str>) -> bool {
+    flag == Some("1")
+        && matches!(
+            fixture,
+            Some(
+                "message-external-select"
                     | "message-external-select-narrow"
                     | "app-modal-external-select"
-                    | "app-modal-external-select-narrow")
-            ))
+                    | "app-modal-external-select-narrow"
+            )
+        )
 }
 pub(crate) fn modal() -> bool {
     std::env::var("SUPER_PLATINUM_FIXTURE").is_ok_and(|n| {
@@ -137,8 +147,8 @@ pub(crate) async fn suggestions(
             .push(json!({"query":query,"fields":fields,"valid":valid}));
     }
     tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
-    if super::multi_external_fixture::enabled() {
-        // Only the synthetic multi checker can hold its Loading screenshot.
+    if enabled() {
+        // Only exact-gated synthetic single/multi checkers can hold Loading.
         // The enclosing query task still owns cancellation; never wait forever.
         let released = tokio::time::timeout(std::time::Duration::from_secs(15), async {
             loop {
@@ -286,4 +296,36 @@ pub(crate) fn record_modal(shell: &mut ShellState, payload: &Value, token: &str)
     f.attempts.push(json!({"state":wire,"fields":fields}));
     f.modal_pending = Some((view.id.clone(), session.modal.revision(), token.into()));
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::single_enabled;
+
+    #[test]
+    fn single_loading_barrier_requires_explicit_flag_and_exact_fixture() {
+        for fixture in [
+            "message-external-select",
+            "message-external-select-narrow",
+            "app-modal-external-select",
+            "app-modal-external-select-narrow",
+        ] {
+            assert!(single_enabled(Some("1"), Some(fixture)));
+            for flag in [None, Some(""), Some("0"), Some("true"), Some("1 ")] {
+                assert!(!single_enabled(flag, Some(fixture)));
+            }
+            assert!(!single_enabled(
+                Some("1"),
+                Some(&format!("{fixture}-extra"))
+            ));
+        }
+        for fixture in [
+            None,
+            Some("channel"),
+            Some("message-multi-external-select"),
+            Some("app-modal-multi-external-select"),
+        ] {
+            assert!(!single_enabled(Some("1"), fixture));
+        }
+    }
 }

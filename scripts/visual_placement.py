@@ -6,9 +6,10 @@ import time
 from windows_capture import _libraries, _physical_pixels, _MonitorInfo, contains_rect
 
 
-def capture_area(work, taskbars):
+def capture_area(work, taskbars, *, taskbar_probe_completed=False):
     """Exclude only observed full edge strips, including auto-hide taskbars."""
-    if not isinstance(taskbars, (list, tuple)) or not taskbars:
+    if (not isinstance(taskbars, (list, tuple))
+            or (not taskbars and taskbar_probe_completed is not True)):
         raise RuntimeError("Taskbar bounds unavailable; cannot derive unobstructed capture area")
     left, top, width, height = work
     right, bottom = left + width, top + height
@@ -90,7 +91,8 @@ def fit_work_area(observe, verify_identity, evidence, io=None, *, position_polic
     work = io.work_area(before["hwnd"])
     evidence["work_area_physical"] = work
     evidence["observed_taskbar_rects"] = before.get("taskbar_rects")
-    available = capture_area(work, before.get("taskbar_rects"))
+    available = capture_area(work, before.get("taskbar_rects"),
+                             taskbar_probe_completed=before.get("taskbar_probe_completed"))
     evidence["available_capture_area_physical"] = available
     target = clamp_window(before["window_rect_physical"], available,
                           position_policy=position_policy)
@@ -102,7 +104,8 @@ def fit_work_area(observe, verify_identity, evidence, io=None, *, position_polic
         raise RuntimeError("Owned foreground/geometry changed before work-area placement")
     if io.work_area(before["hwnd"]) != work:
         raise RuntimeError("Monitor work area changed before placement")
-    if capture_area(work, current.get("taskbar_rects")) != available:
+    if capture_area(work, current.get("taskbar_rects"),
+                    taskbar_probe_completed=current.get("taskbar_probe_completed")) != available:
         raise RuntimeError("Observed taskbar capture area changed before placement")
     if target != before["window_rect_physical"]:
         evidence["move_attempted"] = True
@@ -118,7 +121,8 @@ def fit_work_area(observe, verify_identity, evidence, io=None, *, position_polic
             raise RuntimeError("Owned window identity or dimensions changed during placement")
         if io.work_area(after["hwnd"]) != work:
             raise RuntimeError("Monitor work area changed during placement")
-        current_area = capture_area(work, after.get("taskbar_rects"))
+        current_area = capture_area(work, after.get("taskbar_rects"),
+                                    taskbar_probe_completed=after.get("taskbar_probe_completed"))
         evidence["available_capture_area_after_physical"] = current_area
         if not contains_rect(current_area, target):
             raise RuntimeError("Observed taskbar now obstructs requested placement")

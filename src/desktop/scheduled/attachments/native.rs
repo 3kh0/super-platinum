@@ -1,13 +1,17 @@
-//! Retained async adapters. No adapter is mounted or called until the shared
-//! app-root reservation hooks and disconnected fixture checks are integrated.
+//! Retained async adapters shared by live requests and disconnected native fixtures.
 use super::{Attempt, Lease, Operations};
-use crate::{scheduled::Context, state::ShellState};
+use crate::state::ShellState;
+mod source;
 use dioxus::prelude::*;
+use source::Source;
 use super_platinum_core::slack::{Error, api};
 
-fn capture(state: Signal<ShellState>, lease: &Lease) -> Option<Context> {
-    let context = Context::get(&state)?;
-    lease.current(&state.peek(), &context).then_some(context)
+fn capture(state: Signal<ShellState>, lease: &Lease) -> Option<Source> {
+    Source::capture(&state.peek(), lease)
+}
+
+pub(crate) fn admitted(state: Signal<ShellState>, lease: &Lease) -> bool {
+    capture(state, lease).is_some()
 }
 
 fn report(mut operations: Signal<Operations>, lease: &Lease, message: &str) {
@@ -27,7 +31,7 @@ pub(crate) fn save(state: Signal<ShellState>, mut operations: Signal<Operations>
         return;
     };
     dioxus::core::spawn_forever(async move {
-        if !lease.current(&state.peek(), &context) {
+        if !context.current(&state.peek(), &lease) {
             let _ = operations.write().preflight_failed(
                 &attempt,
                 "The account changed before saving. No attachment update was sent.".into(),
@@ -35,7 +39,7 @@ pub(crate) fn save(state: Signal<ShellState>, mut operations: Signal<Operations>
             return;
         }
         let readback = read(&context, attempt.draft_id()).await;
-        if !lease.current(&state.peek(), &context) {
+        if !context.current(&state.peek(), &lease) {
             let _ = operations.write().preflight_failed(
                 &attempt,
                 "The account changed before saving. No attachment update was sent.".into(),
@@ -58,19 +62,38 @@ pub(crate) fn save(state: Signal<ShellState>, mut operations: Signal<Operations>
         // Exact frozen clone, built before admission; no user editable state is
         // reread and no await separates final owner/lease admission from dispatch.
         let request = api::drafts_schedule(
-            &context.client,
-            &context.session,
+            context.client(),
+            context.session(),
             &attempt.request(),
             Some(attempt.draft_id()),
         );
-        if !lease.current(&state.peek(), &context)
-            || operations.write().admit(&attempt, current.raw()).is_err()
-        {
+        if !context.current(&state.peek(), &lease) {
             return;
         }
-        let result = context.transport.execute_draft_mutation(request).await;
+        let admission = {
+            let shell = state.peek();
+            operations
+                .write()
+                .admit_current(&attempt, current.raw(), &shell.core.scheduled)
+        };
+        if admission.is_err() {
+            // Only an actual stale baseline refreshes the queue. A canceled or
+            // replaced lease must not publish its late preflight response.
+            if admission == Err(super::Fault::Edit(super::EditError::PreflightMismatch)) {
+                project_conflict(state, &context, &lease, current.raw());
+            }
+            return;
+        }
+        let result = context.execute_mutation(request).await;
         match result {
             Ok(response) => {
+                if operations
+                    .write()
+                    .rejected(&attempt, &response)
+                    .unwrap_or(false)
+                {
+                    return;
+                }
                 let confirmed = operations
                     .write()
                     .acknowledge(&attempt, &response)
@@ -78,6 +101,11 @@ pub(crate) fn save(state: Signal<ShellState>, mut operations: Signal<Operations>
                 if confirmed {
                     project_confirmed(state, &context, &attempt, &response);
                 }
+            }
+            Err(Error::Api(code)) if code == "draft_mutation_not_sent_offline" => {
+                // This branch receives Transport's local pre-dispatch marker.
+                // Server errors remain Ok(raw) on this structured transport path.
+                let _ = operations.write().not_dispatched(&attempt);
             }
             Err(error) => {
                 let _ = operations.write().uncertain(&attempt);
@@ -102,12 +130,12 @@ pub(crate) fn review(state: Signal<ShellState>, mut operations: Signal<Operation
         return;
     };
     dioxus::core::spawn_forever(async move {
-        if !lease.current(&state.peek(), &context) {
+        if !context.current(&state.peek(), &lease) {
             let _ = operations.write().review(&attempt, None);
             return;
         }
         let result = read(&context, attempt.draft_id()).await;
-        if !lease.current(&state.peek(), &context) {
+        if !context.current(&state.peek(), &lease) {
             let _ = operations.write().review(&attempt, None);
             return;
         }
@@ -159,9 +187,9 @@ fn cooldown(mut operations: Signal<Operations>, lease: Lease, seconds: u64) {
     });
 }
 
-async fn read(context: &Context, id: &str) -> Result<api::DraftInfo, Error> {
-    let request = api::drafts_info(&context.client, &context.session, id)?;
-    let response = context.transport.execute(request).await?;
+async fn read(context: &Source, id: &str) -> Result<api::DraftInfo, Error> {
+    let request = api::drafts_info(context.client(), context.session(), id)?;
+    let response = context.execute_read(request).await?;
     api::decode_drafts_info(id, response)
 }
 
@@ -177,12 +205,12 @@ pub(crate) fn review_other(
         return;
     }
     dioxus::core::spawn_forever(async move {
-        if !lease.current(&state.peek(), &context) {
+        if !context.current(&state.peek(), &lease) {
             let _ = operations.write().finish_other_review(&lease, None);
             return;
         }
         let result = read(&context, lease.draft_id()).await;
-        if !lease.current(&state.peek(), &context) {
+        if !context.current(&state.peek(), &lease) {
             let _ = operations.write().finish_other_review(&lease, None);
             return;
         }
@@ -209,9 +237,25 @@ pub(crate) fn review_other(
     });
 }
 
+fn project_conflict(
+    mut state: Signal<ShellState>,
+    source: &Source,
+    lease: &Lease,
+    response: &serde_json::Value,
+) {
+    if !source.current(&state.peek(), lease) {
+        return;
+    }
+    if let Some(current) =
+        super_platinum_core::scheduled::edit::complete_readback(response, lease.draft_id())
+    {
+        state.write().core.scheduled.accept_remote(current);
+    }
+}
+
 fn project_confirmed(
     state: Signal<ShellState>,
-    context: &Context,
+    context: &Source,
     attempt: &Attempt,
     response: &serde_json::Value,
 ) {
@@ -220,11 +264,11 @@ fn project_confirmed(
 
 fn project_readback(
     mut state: Signal<ShellState>,
-    context: &Context,
+    context: &Source,
     lease: &Lease,
     response: &serde_json::Value,
 ) {
-    if !lease.current(&state.peek(), context) {
+    if !context.current(&state.peek(), lease) {
         return;
     }
     // Deserialization is projection only, after the complete raw proof. It can
@@ -236,7 +280,7 @@ fn project_readback(
     shell
         .core
         .scheduled
-        .ensure_scope(context.epoch, &context.session.team_id);
+        .ensure_scope(context.epoch(), &context.session().team_id);
     shell.core.scheduled.accept_remote(draft);
     shell.show_toast("Draft changes confirmed.");
 }
@@ -248,6 +292,10 @@ pub(crate) fn load_metadata(
     mut operations: Signal<Operations>,
     lease: Lease,
 ) {
+    if crate::fixture::is_fixture() {
+        super::fixture::metadata(state, operations, &lease);
+        return;
+    }
     let Some(context) = capture(state, &lease) else {
         return;
     };
@@ -256,7 +304,7 @@ pub(crate) fn load_metadata(
     };
     dioxus::core::spawn_forever(async move {
         for row in snapshot.rows.into_iter().take(16) {
-            if !lease.current(&state.peek(), &context)
+            if !context.current(&state.peek(), &lease)
                 || operations.peek().snapshot(&lease).is_err()
             {
                 return;
@@ -271,13 +319,13 @@ pub(crate) fn load_metadata(
                 continue;
             }
             let result = api::fetch_file(
-                &context.transport,
-                &context.client,
-                &context.session,
+                &context.live().expect("live metadata source").transport,
+                context.client(),
+                context.session(),
                 &row.id,
             )
             .await;
-            if !lease.current(&state.peek(), &context) {
+            if !context.current(&state.peek(), &lease) {
                 return;
             }
             match result {
@@ -311,13 +359,16 @@ pub(crate) fn preview(
     }
     let cached = operations.peek().preview(&lease, &id).ok().flatten();
     dioxus::core::spawn_forever(async move {
-        if !lease.current(&state.peek(), &context) || operations.peek().snapshot(&lease).is_err() {
+        if !context.current(&state.peek(), &lease) || operations.peek().snapshot(&lease).is_err() {
             return;
         }
         let file = match cached {
             Some(file) => file,
             None => {
-                match api::fetch_file(&context.transport, &context.client, &context.session, &id)
+                let Some(live) = context.live() else {
+                    return;
+                };
+                match api::fetch_file(&live.transport, context.client(), context.session(), &id)
                     .await
                 {
                     Ok(file) => file,
@@ -332,7 +383,7 @@ pub(crate) fn preview(
                 }
             }
         };
-        if !lease.current(&state.peek(), &context)
+        if !context.current(&state.peek(), &lease)
             || operations
                 .write()
                 .metadata(&lease, &id, file.clone())

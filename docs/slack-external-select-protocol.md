@@ -457,5 +457,15 @@ Narrow modal maximum/dirty-sibling copy is below the captured fold; native state
 and raw receipt checks cover it, not those pixels. Closed-log identity/stages,
 owned process exit and pointer restoration pass. This is synthetic disconnected
 evidence, not live callback or trusted OS input proof. The subsequent legacy
-single-external regression stopped in the normal modal checker and is under
-investigation; preserve that separate failure rather than inferring a pass.
+single-external regression exposed a changed clear-button accessible label.
+Restoring its established single-select label fixes the regression: all four
+checks pass on `adaa29ff...`, with all 38 PNGs inspected. A subsequent gate on
+`dd5a3aa0...` passes all four checks with 38 inspected PNGs in
+`windows-single-external-held-loading/`: both narrow loading captions now remain
+visible with no rows. Eight actual raw requests independently preserve exact
+option metadata, optional null, and full sibling state. Each fixture records
+two attempts and five queries. Empty-result preservation remains a native
+assertion without a dedicated PNG. The legacy runner still lacks per-process
+creation/exit, pointer and binary-SHA receipts; root's unchanged binary check
+does not supply those missing lifecycle records. Narrow ordinary uncertainty
+copy clears the composer but overlaps disabled background controls.

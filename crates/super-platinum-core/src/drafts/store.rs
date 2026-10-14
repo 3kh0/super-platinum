@@ -9,8 +9,9 @@ pub mod uploads;
 mod worker;
 pub use worker::{
     LocalWrite, commit_synced, enqueue, load, load_synced, prepare_synced,
-    queue_local_if_unchanged, queue_owned_local_if_unchanged, read_local_review, release_synced,
-    save_failed, save_local_alternate, save_owned_local_alternate, settle_local_versions,
+    queue_local_if_unchanged, queue_owned_local_if_unchanged, read_local_review,
+    reconcile_remote_review, release_synced, save_failed, save_local_alternate,
+    save_owned_local_alternate, settle_local_versions,
 };
 pub type Entries = Vec<(DraftKey, LocalDraft)>;
 pub use sync::{LocalAlternate, LocalWriter};

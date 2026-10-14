@@ -1,5 +1,5 @@
 //! Explicit positive review transaction. No HTTP or renderer installation.
-//! Pending module hooks; production storage stays on its existing FIFO worker.
+//! Production storage stays on its existing FIFO worker.
 use super::*;
 use super_platinum_core::drafts::store::sync::{RemoteChoice, RemoteReview, RemoteSettlement};
 impl Owner {

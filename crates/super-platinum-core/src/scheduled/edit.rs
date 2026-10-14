@@ -179,6 +179,17 @@ impl AttachmentEdit {
         Ok(())
     }
 
+    /// A newer independently observed queue revision also invalidates this
+    /// preflight. No mutation was dispatched; reopening must review that version.
+    pub fn reject_stale_preflight(
+        &mut self,
+        attempt: &FrozenAttachmentEdit,
+    ) -> Result<(), EditError> {
+        self.require_attempt(attempt, EditPhase::Prepared)?;
+        self.phase = EditPhase::Conflict;
+        Ok(())
+    }
+
     /// Complete raw mutation response. Partial/error/mismatching responses stay uncertain.
     /// Even an error response is not automatically classified as safe to replay here.
     pub fn acknowledge(
@@ -187,8 +198,7 @@ impl AttachmentEdit {
         response: &Value,
     ) -> Result<bool, EditError> {
         self.require_attempt(attempt, EditPhase::InFlight)?;
-        let confirmed = positive_draft(response)
-            .is_some_and(|draft| matches_payload(draft, attempt.draft_id(), &attempt.0.payload));
+        let confirmed = confirms_submission(response, attempt.draft_id(), &attempt.0.payload);
         self.phase = if confirmed {
             EditPhase::Confirmed
         } else {
@@ -203,6 +213,32 @@ impl AttachmentEdit {
         Ok(())
     }
 
+    /// Use only with an application-generated transport receipt proving dispatch
+    /// never occurred. A remote API error string, timeout, 429 or generic Offline
+    /// error is not such proof. Staging survives; the old attempt is retired.
+    pub fn not_dispatched(&mut self, attempt: &FrozenAttachmentEdit) -> Result<(), EditError> {
+        self.require_attempt(attempt, EditPhase::InFlight)?;
+        self.attempt = None;
+        self.phase = EditPhase::Editing;
+        Ok(())
+    }
+
+    /// A narrowly recognized explicit rejection retires this attempt without
+    /// replaying it. Staged removals remain editable; the next save preflights again.
+    pub fn rejected(
+        &mut self,
+        attempt: &FrozenAttachmentEdit,
+        response: &Value,
+    ) -> Result<bool, EditError> {
+        self.require_attempt(attempt, EditPhase::InFlight)?;
+        if definite_rejection(response).is_none() {
+            return Ok(false);
+        }
+        self.attempt = None;
+        self.phase = EditPhase::Editing;
+        Ok(true)
+    }
+
     /// Positive read-only response envelope only. Missing records, old content,
     /// deletion and list absence never clear the no-replay latch.
     pub fn review(
@@ -211,9 +247,9 @@ impl AttachmentEdit {
         response: Option<&Value>,
     ) -> Result<bool, EditError> {
         self.require_attempt(attempt, EditPhase::Uncertain)?;
-        let confirmed = response
-            .and_then(positive_draft)
-            .is_some_and(|draft| matches_payload(draft, attempt.draft_id(), &attempt.0.payload));
+        let confirmed = response.is_some_and(|response| {
+            confirms_submission(response, attempt.draft_id(), &attempt.0.payload)
+        });
         if confirmed {
             self.phase = EditPhase::Confirmed;
         }
@@ -242,6 +278,89 @@ impl AttachmentEdit {
     }
 }
 
+/// Exact positive full-payload readback for an existing draft update. This is
+/// state equality only, not proof of authorship, server CAS, send or deletion.
+pub fn confirms_submission(response: &Value, id: &str, payload: &ScheduleMessage) -> bool {
+    positive_draft(response).is_some_and(|draft| matches_payload(draft, id, payload))
+}
+
+/// Decode an explicitly complete positive draft for reviewed legacy mutations.
+/// UUID and revision were optional in legacy queue rows; absence remains absence,
+/// while null/malformed fields and defaulted content never become read authority.
+/// Sent/deleted rows are retained here so a conflict can refresh the visible queue.
+pub fn complete_readback(response: &Value, id: &str) -> Option<ScheduledMessage> {
+    let draft = positive_draft(response)?;
+    if draft.get("id").and_then(Value::as_str) != Some(id)
+        || id.is_empty()
+        || !["blocks", "destinations", "file_ids"]
+            .iter()
+            .all(|key| draft.get(*key).is_some_and(Value::is_array))
+        || !["is_deleted", "is_sent"]
+            .iter()
+            .all(|key| draft.get(*key).is_some_and(Value::is_boolean))
+        || draft.get("date_scheduled").is_none()
+        || !["client_msg_id", "last_updated_ts"]
+            .iter()
+            .all(|key| draft.get(*key).is_none_or(Value::is_string))
+    {
+        return None;
+    }
+    serde_json::from_value(draft.clone()).ok()
+}
+
+/// Compare the exact reviewed legacy baseline before any mutation. Unlike
+/// `same_revision`, equal stamps never excuse changed payload or identity.
+pub fn matches_reviewed(response: &Value, expected: &ScheduledMessage) -> bool {
+    complete_readback(response, &expected.id).is_some_and(|current| {
+        expected.active() && current.active() && same_reviewed(expected, &current)
+    })
+}
+
+pub(super) fn same_reviewed(original: &ScheduledMessage, current: &ScheduledMessage) -> bool {
+    original.id == current.id
+        && original.client_msg_id == current.client_msg_id
+        && original.last_updated_ts == current.last_updated_ts
+        && original.post_at == current.post_at
+        && original.blocks == current.blocks
+        && original.destinations == current.destinations
+        && original.file_ids == current.file_ids
+        && original.is_deleted == current.is_deleted
+        && original.is_sent == current.is_sent
+}
+
+/// Only explicit time/authentication rejection, never a transport result or an
+/// ambiguous service failure. Slack's chat.scheduleMessage error reference
+/// documents these time/authentication denials; fatal_error/internal_error may
+/// partially succeed and are deliberately excluded. Existing draft decoding
+/// preserves these raw errors. Unknown envelope fields (including any receipt)
+/// prevent a rejection from overriding contradictory evidence.
+pub fn definite_rejection(response: &Value) -> Option<&str> {
+    let object = response.as_object()?;
+    if object.get("ok") != Some(&Value::Bool(false))
+        || object.keys().any(|key| {
+            !matches!(
+                key.as_str(),
+                "ok" | "error" | "needed" | "provided" | "response_metadata"
+            )
+        })
+    {
+        return None;
+    }
+    let code = object.get("error")?.as_str()?;
+    matches!(
+        code,
+        "time_in_past"
+            | "time_too_far"
+            | "invalid_auth"
+            | "not_authed"
+            | "token_revoked"
+            | "token_expired"
+            | "not_allowed_token_type"
+            | "account_inactive"
+    )
+    .then_some(code)
+}
+
 fn positive_draft(response: &Value) -> Option<&Value> {
     if response.get("ok") != Some(&Value::Bool(true))
         || response.get("error").is_some_and(|error| !error.is_null())
@@ -258,8 +377,11 @@ fn matches_payload(draft: &Value, id: &str, payload: &ScheduleMessage) -> bool {
             .or_else(|| value.as_str().and_then(|value| value.parse::<i64>().ok()))
     });
     draft.get("id").and_then(Value::as_str) == Some(id)
-        && draft.get("client_msg_id").and_then(Value::as_str)
-            == Some(payload.client_msg_id.as_str())
+        && match draft.get("client_msg_id") {
+            None => payload.client_msg_id.is_empty(),
+            Some(Value::String(id)) => id == &payload.client_msg_id,
+            Some(_) => false,
+        }
         && draft.get("blocks").and_then(Value::as_array) == Some(&payload.blocks)
         && draft.get("destinations").and_then(Value::as_array) == Some(&payload.destinations)
         && draft.get("file_ids") == Some(&serde_json::json!(payload.file_ids))

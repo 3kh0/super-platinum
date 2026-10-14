@@ -20,7 +20,7 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
     });
 }
 async fn run(
-    state: Signal<ShellState>,
+    mut state: Signal<ShellState>,
     d: &dioxus::desktop::DesktopContext,
 ) -> Result<Value, String> {
     let modal = fixture::modal();
@@ -43,13 +43,35 @@ async fn run(
         modal_focus_returned(d).await?;
         open(d, true).await?;
     }
-    query(d, "rel").await?;
-    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-    if queries(state) != 0 {
-        return Err("Suggestion request dispatched before debounce".into());
+    // Exact-gated fixture barrier: native capture can outlast the response delay.
+    state
+        .write()
+        .message_buttons
+        .external_fixture
+        .as_mut()
+        .unwrap()
+        .hold_suggestions = true;
+    let loading = async {
+        query(d, "rel").await?;
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        if queries(state) != 0 {
+            return Err("Suggestion request dispatched before debounce".into());
+        }
+        wait_dom(d, LOADING).await?;
+        let capture = capture(d, "loading").await?;
+        checked(d, LOADING).await?;
+        Ok::<Value, String>(capture)
     }
-    wait_dom(d,"({ok:document.querySelector('[data-external-search]')?.textContent.includes('Loading options')})").await?;
-    captures.insert("loading".into(), capture(d, "loading").await?);
+    .await;
+    // Release even when an assertion/capture fails; never strand a fixture query.
+    state
+        .write()
+        .message_buttons
+        .external_fixture
+        .as_mut()
+        .unwrap()
+        .hold_suggestions = false;
+    captures.insert("loading".into(), loading?);
     results(d).await?;
     let layout = wait_dom(d, LAYOUT).await?;
     captures.insert("groups".into(), capture(d, "groups").await?);
@@ -165,11 +187,13 @@ async fn run(
         return Err("Prepared request or isolation contract failed".into());
     }
     Ok(
-        json!({"ok":true,"noTransport":true,"preparedRequests":record.attempts.len(),"queries":record.queries,
+        json!({"ok":true,"noTransport":true,"preparedRequests":record.attempts.len(),"attempts":record.attempts,"queries":record.queries,"heldLoading":true,
         "exactRawWire":true,"minimumAndDebounce":true,"groupOrder":true,"initialOutsideResults":true,"selectionSurvivedEmptyResults":true,"confirmationCancelNoCommit":!modal,"inlineNoDispatch":modal,"optionalClear":modal,"focusRestoredAfterDoneAndEscape":modal,"closeBesideSearch":layout["closeBesideSearch"],"uncertainNoReplay":true,"cooldownExpiryWithoutReplay":true,"cooldownAcrossVisits":true,"fullSiblingState":true,
         "compactSearch":layout["compactSearch"],"searchHeight":layout["searchHeight"],"eachVisible":layout["eachVisible"],"hitTestedControls":layout["hitTestedControls"],"noOverflow":layout["noOverflow"],"viewport":layout["viewport"],"captures":captures}),
     )
 }
+const LOADING: &str = "({ok:document.querySelector('[data-external-search]')?.textContent.includes('Loading options')&&document.querySelectorAll('[data-option-index]').length===0})";
+
 async fn open(d: &dioxus::desktop::DesktopContext, modal: bool) -> Result<(), String> {
     click(
         d,

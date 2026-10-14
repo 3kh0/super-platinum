@@ -1,4 +1,4 @@
-//! Future child of drafts::storage; no direct production database bypass.
+//! Serialized storage adapter; no direct production database bypass.
 use super::*;
 use super_platinum_core::drafts::store::sync::{RemoteChoice, RemoteReview, RemoteSettlement};
 impl Backend {

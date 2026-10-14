@@ -1,3 +1,4 @@
+use crate::scheduled::attachments::{Lease, Operations, Owner};
 use crate::{
     icons::{Icon, icon},
     scheduled::{self, Context},
@@ -5,10 +6,19 @@ use crate::{
 };
 use dioxus::prelude::*;
 use super_platinum_core::{scheduled::DraftFilter, slack::api};
+pub(crate) mod attachments;
 pub(crate) mod clear_check;
 mod composer_clear;
 use composer_clear::complete_source;
 const DRAFT_CONFLICT: &str = "This draft changed in Slack. Your edits are still here. You can save them as a separate draft.";
+
+#[derive(Clone, PartialEq)]
+pub(crate) struct EditorVisit {
+    id: String,
+    schedule: bool,
+    lease: Option<Lease>,
+    epoch: u64,
+}
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct ComposeSource {
@@ -163,14 +173,46 @@ pub(crate) fn ScheduleButton(state: Signal<ShellState>, target: ComposerTarget) 
 }
 #[component]
 pub(crate) fn ScheduledPanel(mut state: Signal<ShellState>) -> Element {
+    let mut operations = use_context::<Signal<Operations>>();
+    let mut attachment_edit = use_signal(|| None::<Lease>);
     let mut editing = use_signal(|| {
         if matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
             Ok("scheduled-edit" | "drafts-edit" | "drafts-conflict")
         ) {
-            Some(("DrFixture".to_owned(), false))
+            Some(EditorVisit {
+                id: "DrFixture".into(),
+                schedule: false,
+                lease: None,
+                epoch: state.peek().core.account_epoch,
+            })
         } else {
-            None::<(String, bool)>
+            None::<EditorVisit>
+        }
+    });
+    use_effect(move || {
+        let shell = state.read();
+        let editor = editing.read().clone();
+        let attachment = attachment_edit.read().clone();
+        let stale_editor = editor.as_ref().is_some_and(|editor| {
+            editor.epoch != shell.core.account_epoch
+                || editor
+                    .lease
+                    .as_ref()
+                    .is_some_and(|lease| !lease.matches_shell(&shell))
+        });
+        let stale_attachment = attachment
+            .as_ref()
+            .is_some_and(|lease| !lease.matches_shell(&shell));
+        drop(shell);
+        if stale_editor {
+            editing.set(None);
+        }
+        if stale_attachment {
+            if let Some(lease) = attachment {
+                let _ = operations.write().cancel(&lease);
+            }
+            attachment_edit.set(None);
         }
     });
     let mut confirmation = use_signal(|| {
@@ -236,10 +278,11 @@ pub(crate) fn ScheduledPanel(mut state: Signal<ShellState>) -> Element {
           if let Some(error)=queue.and_then(|q|q.error.as_ref()){p{class:"later-error",role:"alert","{error}"}}
           if loading{p{class:"files-status",role:"status","Loading drafts…"}}
           if filter==DraftFilter::Drafts {crate::forward::inventory::SavedForwards{state}super::local_drafts::LocalDraftRows{state}}
+          attachments::host::Inventory{state,operations,editor_open:editing.read().is_some()||attachment_edit.read().is_some(),onopen:move |lease|{if editing.peek().is_none(){attachment_edit.set(Some(lease));}}}
           if let Some(queue)=queue{
             for item in queue.sorted(){
               {let id=item.id.clone();let edit=id.clone();let schedule=id.clone();let confirm=item.clone();let send=item.clone();let unschedule=id.clone();
-               let name=destination_label(&shell,&item.destinations);let preview=workspace.map(|w|crate::message_vm::message_vm_with_pending(w,&item.preview(),&shell.media,false));let busy=queue.busy.contains(&id);
+               let name=destination_label(&shell,&item.destinations);let preview=workspace.map(|w|crate::message_vm::message_vm_with_pending(w,&item.preview(),&shell.media,false));let busy=queue.busy.contains(&id)||Owner::capture(&shell,&id).is_some_and(|owner|operations.read().blocked(&owner));let manage=id.clone();let manage_trigger=attachments::host::trigger_id(&id);
                let pending=confirmation.read().as_ref().filter(|(target,_)|target.id==id).cloned();
                rsx!{article{class:"scheduled-item",key:"{id}","aria-busy":busy,
                  div{class:"scheduled-meta",strong{if name.is_empty(){"No destination"}else{"{name}"}}span{class:"spacer"}
@@ -253,10 +296,11 @@ pub(crate) fn ScheduledPanel(mut state: Signal<ShellState>) -> Element {
                      button{class:if sending{"primary"}else{"danger"},disabled:busy,onclick:move |_|{confirmation.set(None);if sending{dioxus::core::spawn_forever(scheduled::send_reviewed(state,reviewed.clone()));}else{dioxus::core::spawn_forever(scheduled::remove(state,reviewed.clone()));}},if sending{"Send now"}else{"Delete"}}
                      button{onclick:move |_|confirmation.set(None),"Cancel"}
                    }else{
-                     button{disabled:busy,onclick:move |_|editing.set(Some((edit.clone(),false))),if item.scheduled(){"Edit or reschedule"}else{"Edit draft"}}
+                     button{disabled:busy||attachment_edit.read().is_some()||editing.read().is_some(),onclick:move |_|{if attachment_edit.peek().is_none()&&editing.peek().is_none(){editing.set(attachments::host::text_editor(state,operations,edit.clone(),false));}},if item.scheduled(){"Edit or reschedule"}else{"Edit draft"}}
+                     if !item.file_ids.is_empty(){button{id:"{manage_trigger}",disabled:busy||editing.read().is_some()||attachment_edit.read().is_some(),onclick:move |_|{if editing.peek().is_none()&&attachment_edit.peek().is_none(){attachment_edit.set(attachments::host::open(state,operations,&manage));}},"Manage attachments"}}
                      button{disabled:busy||!item.can_send(),onclick:move |_|confirmation.set(Some((send.clone(),true))),"Send now"}
                      if item.scheduled(){button{disabled:busy,onclick:move |_|{dioxus::core::spawn_forever(scheduled::act(state,unschedule.clone(),scheduled::DraftAction::Unschedule));},"Save to drafts"}}
-                     else{button{disabled:busy||!item.can_send(),onclick:move |_|editing.set(Some((schedule.clone(),true))),"Schedule"}}
+                     else{button{disabled:busy||!item.can_send()||editing.read().is_some()||attachment_edit.read().is_some(),onclick:move |_|{if editing.peek().is_none()&&attachment_edit.peek().is_none(){editing.set(attachments::host::text_editor(state,operations,schedule.clone(),true));}},"Schedule"}}
                      button{disabled:busy,onclick:move |_|confirmation.set(Some((confirm.clone(),false))),"Delete"}
                    }
                  }
@@ -269,7 +313,8 @@ pub(crate) fn ScheduledPanel(mut state: Signal<ShellState>) -> Element {
           }
         }
       }
-      if let Some((id,schedule))=editing(){ScheduleDialog{key:"{id}-{schedule}",state,draft_id:Some(id),force_schedule:schedule,onclose:move |_|editing.set(None)}}
+      if let Some(editor)=editing(){ScheduleDialog{key:"{editor.id}-{editor.schedule}-{editor.epoch}",state,draft_id:Some(editor.id),force_schedule:editor.schedule,lease:editor.lease,onclose:move |_|editing.set(None)}}
+      if let Some(lease)=attachment_edit(){attachments::host::Editor{state,operations,lease,onclose:move |_|attachment_edit.set(None)}}
     }
 }
 
@@ -279,8 +324,20 @@ fn ScheduleDialog(
     #[props(default)] source: Option<ComposeSource>,
     #[props(default)] draft_id: Option<String>,
     #[props(default)] force_schedule: bool,
+    #[props(default)] lease: Option<Lease>,
     onclose: EventHandler,
 ) -> Element {
+    let operations = use_context::<Signal<Operations>>();
+    let cleanup = lease.clone();
+    use_drop(move || {
+        if let Some(lease) = &cleanup {
+            crate::scheduled::attachments::cleanup::run(
+                operations,
+                lease.clone(),
+                crate::scheduled::attachments::cleanup::Action::Detach,
+            );
+        }
+    });
     let initial = use_hook(|| {
         draft_id
             .as_ref()
@@ -346,6 +403,14 @@ fn ScheduleDialog(
         .as_ref()
         .map(|s| s.attachments.len())
         .unwrap_or(request.peek().file_ids.len());
+    let reservation = lease
+        .as_ref()
+        .and_then(|lease| operations.read().other_snapshot(lease).ok());
+    let reservation_blocked = reservation.as_ref().is_some_and(|reservation| {
+        reservation.phase == crate::scheduled::attachments::other::Phase::Uncertain
+            || reservation.cooling_down
+    });
+    let review_lease = lease.clone();
     if (
         state.read().core.account_epoch,
         state.read().core.active_team.clone(),
@@ -370,10 +435,16 @@ fn ScheduleDialog(
       p{class:"scheduled-hint","Uses your local time zone. Messages can be scheduled up to 120 days ahead."}
       }
       if !error.read().is_empty(){p{class:"later-error",role:"alert","{error}"}}
+      if let (Some(lease),Some(snapshot))=(review_lease,reservation.clone()){
+        if snapshot.phase==crate::scheduled::attachments::other::Phase::Uncertain{
+          {let review=lease.clone();rsx!{attachments::recovery::MutationRecovery{state,lease,snapshot,onreview:move |_|crate::scheduled::attachments::native::review_other(state,operations,review.clone())}}}
+        }
+      }
       if conflicted(){label{class:"schedule-toggle",input{r#type:"checkbox",checked:copying(),disabled:saving(),onchange:move |e|copying.set(e.checked())}span{"Save my edits as a separate, unscheduled draft"}}}
       footer{button{disabled:saving(),onclick:move |_|{close_dialog(onclose);if let Some(source)=&close_source{super::composer::focus_field_when_mounted(if source.thread.is_some(){"thread-composer"}else{"channel-composer"});}},"Cancel"}
-       button{class:"primary",disabled:saving()||(scheduling()&&!copying()&&date.read().is_empty()),onclick:move |_|{
+       button{class:"primary",disabled:saving()||reservation_blocked||(scheduling()&&!copying()&&date.read().is_empty()),onclick:move |_|{
         if saving(){return;}saving.set(true);error.set(String::new());let as_copy=copying();let copy_id=copy_id.clone();let schedule=scheduling()&&!as_copy;let date_value=date();let same_date=date_value==original_date();let source=source.clone();let id=if as_copy{None}else{draft_id.clone()};let scope=scope.clone();let expected=if as_copy{None}else{initial.clone()};
+        let mut run=if let Some(lease)=lease.clone(){match crate::scheduled::mutation::Run::editor(state,operations,lease,if as_copy{crate::scheduled::attachments::other::Action::Copy}else{crate::scheduled::attachments::other::Action::Edit}){Ok(run)=>Some(run),Err(problem)=>{saving.set(false);error.set(scheduled::failure(&problem));return;}}}else if draft_id.is_some(){saving.set(false);error.set("Reconnect to this draft's account before editing.".into());return;}else{None};
         dioxus::core::spawn_forever(async move{
          let value=serde_json::to_string(&date_value).unwrap();
          let mut eval=dioxus::document::eval(&format!("try{{const time=Date.parse({value});dioxus.send({{time:Number.isFinite(time)?Math.floor(time/1000):0,blocks:window.superPlatinumRichEditor.read('schedule-message'),text:document.getElementById('schedule-message').textContent}})}}catch(error){{dioxus.send({{error:error.name}})}} await dioxus.recv();"));
@@ -388,12 +459,12 @@ fn ScheduleDialog(
           if read.get("text").and_then(|v|v.as_str()).is_none_or(|t|t.trim().is_empty())&&file_count==0{return Err("Add a message or a file.".into());}
           let ctx=Context::get(&state).ok_or("Connect to Slack to schedule this message.")?;
           if (ctx.epoch,Some(ctx.session.team_id.clone()))!=scope{return Err("The active account changed.".into());}
+          if let Some(run)=run.as_ref(){run.check(state).map_err(|problem|scheduled::failure(&problem))?;}
           if let Some(source)=&source{crate::drafts::integration::legacy_allowed(&state.peek(),&source.key()).map_err(str::to_owned)?;}
           if let Some(expected)=&expected{
-           let limit=state.peek().core.scheduled.limit;
-           let fetched=api::fetch_active_draft(&ctx.transport,&ctx.client,&ctx.session,&expected.id,limit).await;
+           let fetched=run.as_ref().ok_or("The draft editor reservation is missing.")?.preflight(state,expected).await;
            if !ctx.current(&state.peek()){return Err("The active account changed.".into());}
-           let current=match fetched{Ok(draft)=>draft,Err(super_platinum_core::slack::Error::Api(code)) if code=="draft_not_active"=>{if let Ok(mut value)=conflicted.try_write(){*value=true;}return Err("This draft was sent or deleted. You can save your edits as a separate draft.".into());},Err(error)=>return Err(scheduled::failure(&error))};
+           let current=match fetched{Ok(draft)=>draft,Err(super_platinum_core::slack::Error::Api(code)) if code=="draft_has_conflict"=>{if let Ok(mut value)=conflicted.try_write(){*value=true;}return Err(DRAFT_CONFLICT.into());},Err(error)=>return Err(scheduled::failure(&error))};
            if !state.write().core.scheduled.verify_revision(expected,current){if let Ok(mut value)=conflicted.try_write(){*value=true;}return Err(DRAFT_CONFLICT.into());}
           }
           let mut args=request.peek().clone();args.blocks=blocks;args.post_at=time;
@@ -407,14 +478,24 @@ fn ScheduleDialog(
           // Ownership may change during draft verification or attachment upload.
           // Recheck the exact captured destination immediately before dispatch.
           if let Some(source)=&source{crate::drafts::integration::legacy_allowed(&state.peek(),&source.key()).map_err(str::to_owned)?;}
-          let saved=api::schedule_message(&ctx.transport,&ctx.client,&ctx.session,&args,id.as_deref()).await.map_err(|e|scheduled::failure(&e))?;
-          if !ctx.current(&state.peek()){return Ok(());}
+          let saved=if let Some(run)=run.as_mut(){
+           run.check(state).map_err(|problem|scheduled::failure(&problem))?;
+           if !as_copy{run.expect(args.clone()).map_err(|problem|scheduled::failure(&problem))?;}
+           let prepared=api::drafts_schedule(&run.context.client,&run.context.session,&args,id.as_deref());
+           let response=run.dispatch(state,prepared).await.map_err(|problem|scheduled::failure(&problem))?;
+           let returned_id=id.as_deref().or_else(||response["draft"]["id"].as_str().filter(|id|!id.is_empty())).ok_or("The saved draft identity could not be confirmed.")?;
+           if !super_platinum_core::scheduled::edit::confirms_submission(&response,returned_id,&args){return Err(scheduled::failure(&crate::scheduled::mutation::unconfirmed()));}
+           let saved=serde_json::from_value(response["draft"].clone()).map_err(|_|"The saved draft could not be read.")?;
+           run.confirmed();saved
+          }else{api::schedule_message(&ctx.transport,&ctx.client,&ctx.session,&args,id.as_deref()).await.map_err(|e|scheduled::failure(&e))?};
+          if !ctx.current(&state.peek())||run.as_ref().is_some_and(|run|!run.lease.current(&state.peek(),&run.context)){return Ok(());}
           scheduled::saved(state,&ctx,saved);
           if let Some(source)=&source{complete_source(state,source).await;}
           if saving.try_read().is_ok(){close_dialog(onclose);}Ok::<(),String>(())
          }.await;
+         let unknown=run.as_ref().is_some_and(crate::scheduled::mutation::Run::unknown);drop(run);
          if let Ok(mut value)=saving.try_write(){*value=false;}
-         if let Err(message)=result{if let Ok(mut value)=error.try_write(){*value=message;}}
+         if let Err(message)=result{if let Ok(mut value)=error.try_write(){*value=if unknown{String::new()}else{message};}}
         });
        },if saving(){"Saving…"}else if copying(){"Save copy"}else if !scheduling(){"Save draft"}else if existing{"Save changes"}else{"Schedule message"}}
       }

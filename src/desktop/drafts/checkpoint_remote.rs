@@ -1,5 +1,5 @@
 //! Explicit reviewed remote choice stays parked until native projection acknowledgment.
-//! Pending checkpoint child hook. No request, DOM write, enrollment or autosave.
+//! No request, DOM write, enrollment or autosave.
 use super::*;
 use super_platinum_core::drafts::store::sync::{LocalReview, RemoteChoice, RemoteReview};
 use super_platinum_core::drafts::sync::Workflow;
@@ -109,6 +109,9 @@ fn validate_lease(editor: &Arc<Editor>, state: &State, lease: &RemoteLease) -> R
     Ok(())
 }
 impl Editor {
+    pub fn remote_review_current(self: &Arc<Self>, lease: &RemoteLease) -> bool {
+        validate_lease(self, &self.state.lock().unwrap(), lease).is_ok()
+    }
     /// Cheap render eligibility only; event-time lease/read/CAS guards remain
     /// authoritative. Idle owners surface this action only for a parked handoff.
     pub fn remote_review_available(&self) -> bool {
@@ -127,6 +130,37 @@ impl Editor {
                         || matches!(row.state.workflow(), Workflow::Conflict { .. }))
             })
     }
+    /// Explicitly preserve the immutable previous visible version for a NEW
+    /// whole-inventory review when another writer prevents finishing the choice.
+    /// The mounted controller proves current live/Book equality; this never
+    /// refreshes the barrier or authorizes projecting the already chosen value.
+    pub async fn preserve_remote_predecessor(
+        self: &Arc<Self>,
+        barrier_id: String,
+        serial: u64,
+        live: LocalDraft,
+    ) -> Result<PreservedAlternate, Fault> {
+        {
+            let state = self.state.lock().unwrap();
+            let barrier = state.projection.as_ref().ok_or(Fault::Stale)?;
+            let after = barrier.after.as_ref().ok_or(Fault::Stale)?;
+            if !available(&state)
+                || barrier.id != barrier_id
+                || barrier.scope != self.owner.scope
+                || state.serial != serial
+                || barrier.serial != serial
+                || state.error != Some(Fault::Stale)
+                || !live.attachments.is_empty()
+                || !same_local(&barrier.before.local, &live)
+                || !same_view(&state.base, after)
+            {
+                return Err(Fault::Stale);
+            }
+        }
+        self.preserve_projection_input(barrier_id, serial, live)
+            .await
+    }
+
     /// Supply the exact complete foreground predecessor. The controller must
     /// guard its native mount/live/Book before and after this await and the read.
     pub async fn prepare_remote_review(
@@ -254,6 +288,8 @@ impl Editor {
             state.settling = true;
         }
         self.changed.notify_waiters();
+        // Disabled outside the exact installed isolated fixture owner/editor.
+        super::super::remote_review_fixture::commit_checkpoint(&self.owner.scope, self).await;
         let result = apply(self.owner.clone(), review, choice).await;
         let barrier = {
             let mut state = self.state.lock().unwrap();
@@ -290,4 +326,4 @@ impl Editor {
 }
 #[cfg(test)]
 #[path = "checkpoint_remote_tests.rs"]
-mod tests;
+pub(crate) mod tests;

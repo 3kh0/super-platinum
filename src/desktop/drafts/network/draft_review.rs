@@ -1,5 +1,5 @@
 //! Explicit positive conflict readback. No storage, projection, mutation or retry.
-//! Pending module hook: this file is not yet part of the application.
+//! Called only by an explicit review action; no automatic request scheduling.
 use super::*;
 use std::{collections::BTreeMap, sync::OnceLock};
 use super_platinum_core::drafts::{

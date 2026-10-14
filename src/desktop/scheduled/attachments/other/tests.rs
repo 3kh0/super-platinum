@@ -48,6 +48,21 @@ fn idle_unmount_releases_but_running_unmount_retains_exact_lease() {
 }
 
 #[test]
+fn explicit_rejection_releases_detached_action_and_preserves_attached_editor_reservation() {
+    let (mut operations, lease) = running(Action::Edit);
+    operations.expect_other(&lease, payload()).unwrap();
+    operations.settle_other(&lease, Outcome::Rejected).unwrap();
+    assert_eq!(
+        operations.other_snapshot(&lease).unwrap().phase,
+        Phase::Idle
+    );
+    operations.begin_other(&lease, Action::Send).unwrap();
+    operations.detach_other(&lease).unwrap();
+    operations.settle_other(&lease, Outcome::Rejected).unwrap();
+    assert!(!operations.blocked(&owner()));
+}
+
+#[test]
 fn confirmed_attached_editor_returns_idle_without_replacing_its_local_content() {
     let (mut operations, lease) = running(Action::Edit);
     operations.expect_other(&lease, payload()).unwrap();

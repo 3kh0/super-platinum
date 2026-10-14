@@ -70,7 +70,10 @@ async fn positive_info_is_one_identity_only_read_with_exact_inventory_and_raw() 
     let result = binding
         .read_remote_review_with(review.clone(), 1000, |request| {
             calls.set(calls.get() + 1);
-            assert!(request.url.ends_with("/api/drafts.info"));
+            assert_eq!(
+                request.url.split('?').next(),
+                Some("https://fixture.slack.com/api/drafts.info")
+            );
             assert!(!request.retry_safe());
             assert_eq!(
                 request.body,

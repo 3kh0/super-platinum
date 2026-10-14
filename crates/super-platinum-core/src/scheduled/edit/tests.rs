@@ -381,3 +381,232 @@ fn explicit_null_error_is_accepted() {
     edit.mark_uncertain(&attempt).unwrap();
     assert!(edit.review(&attempt, Some(&response)).unwrap());
 }
+
+#[test]
+fn proven_not_dispatched_preserves_staging_and_retires_attempt() {
+    let (mut edit, attempt) = submitted();
+    edit.not_dispatched(&attempt).unwrap();
+    assert_eq!(edit.phase(), EditPhase::Editing);
+    assert_eq!(edit.file_ids(), ["F1", "F3"]);
+    assert_eq!(
+        edit.not_dispatched(&attempt),
+        Err(EditError::ForeignAttempt)
+    );
+    let replacement = edit.freeze().unwrap();
+    assert_eq!(
+        edit.admit_dispatch(&attempt, &envelope(raw())),
+        Err(EditError::ForeignAttempt)
+    );
+    edit.admit_dispatch(&replacement, &envelope(raw())).unwrap();
+    edit.mark_uncertain(&replacement).unwrap();
+    assert_eq!(
+        edit.not_dispatched(&replacement),
+        Err(EditError::InvalidPhase)
+    );
+}
+
+#[test]
+fn remote_error_matching_unsent_marker_is_still_uncertain() {
+    let (mut edit, attempt) = submitted();
+    assert!(
+        !edit
+            .acknowledge(
+                &attempt,
+                &json!({"ok":false,"error":"draft_mutation_not_sent_offline"})
+            )
+            .unwrap()
+    );
+    assert_eq!(edit.phase(), EditPhase::Uncertain);
+    assert_eq!(edit.not_dispatched(&attempt), Err(EditError::InvalidPhase));
+}
+
+#[test]
+fn explicit_rejection_preserves_staging_and_retires_only_exact_inflight_attempt() {
+    for code in [
+        "time_in_past",
+        "time_too_far",
+        "invalid_auth",
+        "not_authed",
+        "token_revoked",
+        "token_expired",
+        "not_allowed_token_type",
+        "account_inactive",
+    ] {
+        let (mut edit, attempt) = submitted();
+        let response = json!({"ok":false,"error":code});
+        let (_, foreign) = submitted();
+        assert_eq!(
+            edit.rejected(&foreign, &response),
+            Err(EditError::ForeignAttempt)
+        );
+        assert!(edit.rejected(&attempt, &response).unwrap());
+        assert_eq!(edit.phase(), EditPhase::Editing);
+        assert_eq!(edit.file_ids(), ["F1", "F3"]);
+        assert_eq!(
+            edit.rejected(&attempt, &response),
+            Err(EditError::ForeignAttempt)
+        );
+        let next = edit.freeze().unwrap();
+        edit.admit_dispatch(&next, &envelope(raw())).unwrap();
+        edit.mark_uncertain(&next).unwrap();
+        assert_eq!(
+            edit.rejected(&next, &response),
+            Err(EditError::InvalidPhase)
+        );
+    }
+}
+
+#[test]
+fn ambiguous_or_contradictory_rejection_never_unlocks_attempt() {
+    let mut responses = vec![
+        json!({"ok":true,"error":"invalid_auth"}),
+        json!({"error":"invalid_auth"}),
+        json!({"ok":false,"error":null}),
+    ];
+    for code in [
+        "internal_error",
+        "fatal_error",
+        "ratelimited",
+        "draft_mutation_not_sent_offline",
+        "unknown",
+    ] {
+        responses.push(json!({"ok":false,"error":code}));
+    }
+    for key in [
+        "draft",
+        "ts",
+        "file_msg_ts",
+        "scheduled_message_id",
+        "message",
+        "new_receipt",
+    ] {
+        let mut response = json!({"ok":false,"error":"time_in_past"});
+        response[key] = Value::Null;
+        responses.push(response);
+    }
+    for response in responses {
+        let (mut edit, attempt) = submitted();
+        assert!(!edit.rejected(&attempt, &response).unwrap());
+        assert_eq!(edit.phase(), EditPhase::InFlight);
+        assert!(!edit.acknowledge(&attempt, &response).unwrap());
+        assert_eq!(edit.phase(), EditPhase::Uncertain);
+    }
+}
+
+#[test]
+fn legacy_baseline_accepts_only_absent_or_empty_optional_metadata() {
+    let mut original = raw();
+    original.as_object_mut().unwrap().remove("client_msg_id");
+    original.as_object_mut().unwrap().remove("last_updated_ts");
+    let expected: ScheduledMessage = serde_json::from_value(original.clone()).unwrap();
+    assert!(matches_reviewed(&envelope(original.clone()), &expected));
+    original["client_msg_id"] = json!("");
+    original["last_updated_ts"] = json!("");
+    assert!(matches_reviewed(&envelope(original.clone()), &expected));
+    for key in ["client_msg_id", "last_updated_ts"] {
+        for invalid in [Value::Null, json!(3), json!("new-identity-or-revision")] {
+            let mut changed = original.clone();
+            changed[key] = invalid;
+            assert!(!matches_reviewed(&envelope(changed), &expected));
+        }
+    }
+    assert_eq!(
+        AttachmentEdit::new(expected).unwrap_err(),
+        EditError::InvalidBaseline
+    );
+}
+
+#[test]
+fn complete_legacy_readback_refuses_defaulted_content_but_can_refresh_retired_rows() {
+    let original = raw();
+    let expected: ScheduledMessage = serde_json::from_value(original.clone()).unwrap();
+    for key in [
+        "id",
+        "blocks",
+        "destinations",
+        "file_ids",
+        "date_scheduled",
+        "is_deleted",
+        "is_sent",
+    ] {
+        let mut partial = original.clone();
+        partial.as_object_mut().unwrap().remove(key);
+        assert!(
+            complete_readback(&envelope(partial.clone()), "D1").is_none(),
+            "{key}"
+        );
+        assert!(!matches_reviewed(&envelope(partial), &expected));
+    }
+    for key in ["is_deleted", "is_sent"] {
+        let mut retired = original.clone();
+        retired[key] = json!(true);
+        assert!(
+            !complete_readback(&envelope(retired.clone()), "D1")
+                .unwrap()
+                .active()
+        );
+        assert!(!matches_reviewed(&envelope(retired), &expected));
+    }
+    let mut changed = original.clone();
+    changed["blocks"] = json!([]); // Same stamp is not a content proof.
+    assert!(!matches_reviewed(&envelope(changed), &expected));
+}
+
+#[test]
+fn legacy_update_acknowledgement_preserves_absent_identity_without_weakening_known_identity() {
+    let mut original = raw();
+    original.as_object_mut().unwrap().remove("client_msg_id");
+    let expected: ScheduledMessage = serde_json::from_value(original.clone()).unwrap();
+    let payload = ScheduleMessage::from_draft(&expected);
+    assert!(confirms_submission(
+        &envelope(original.clone()),
+        "D1",
+        &payload
+    ));
+    for value in [Value::Null, json!(false), json!("unrelated")] {
+        let mut malformed = original.clone();
+        malformed["client_msg_id"] = value;
+        assert!(!confirms_submission(&envelope(malformed), "D1", &payload));
+    }
+    let known = ScheduleMessage::from_draft(&serde_json::from_value(raw()).unwrap());
+    assert!(!confirms_submission(&envelope(original), "D1", &known));
+}
+
+#[test]
+fn independently_known_stale_preflight_requires_exact_prepared_attempt() {
+    let (mut edit, attempt) = prepared();
+    let (_, foreign) = prepared();
+    assert_eq!(
+        edit.reject_stale_preflight(&foreign),
+        Err(EditError::ForeignAttempt)
+    );
+    assert_eq!(edit.phase(), EditPhase::Prepared);
+    edit.reject_stale_preflight(&attempt).unwrap();
+    assert_eq!(edit.phase(), EditPhase::Conflict);
+    assert_eq!(
+        edit.admit_dispatch(&attempt, &envelope(raw())),
+        Err(EditError::InvalidPhase)
+    );
+}
+
+#[test]
+fn queue_admission_distinguishes_absence_from_explicit_retirement_and_compares_full_revision() {
+    let expected: ScheduledMessage = serde_json::from_value(raw()).unwrap();
+    let mut queue = crate::scheduled::ScheduledState::default();
+    assert!(queue.review_is_current(&expected));
+    queue.accept_remote(expected.clone());
+    assert!(queue.review_is_current(&expected));
+    let mut changed = expected.clone();
+    changed.blocks.clear(); // Same stamp is still changed known content.
+    queue.accept_remote(changed);
+    assert!(!queue.review_is_current(&expected));
+    for sent in [true, false] {
+        let mut queue = crate::scheduled::ScheduledState::default();
+        let mut retired = expected.clone();
+        retired.is_sent = sent;
+        retired.is_deleted = !sent;
+        queue.accept_remote(retired);
+        assert!(queue.items.is_empty());
+        assert!(!queue.review_is_current(&expected));
+    }
+}

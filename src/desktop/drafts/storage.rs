@@ -169,3 +169,6 @@ fn isolated_queue(
 
 #[path = "settlement/storage.rs"]
 mod settlement;
+
+#[path = "remote_review/storage.rs"]
+mod remote_review;

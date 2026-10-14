@@ -2,11 +2,15 @@
 use crate::state::{ChannelOpen, MainView, Overlay, ShellState};
 use dioxus::prelude::*;
 use std::sync::Arc;
+use super_platinum_core::config::WorkspaceSession;
 use super_platinum_core::slack::{Transport, api};
 
 pub(super) struct ProfileVisit {
+    account: Option<String>,
     epoch: u64,
     team: String,
+    self_user: Option<String>,
+    session: Option<WorkspaceSession>,
     transport: Option<Arc<Transport>>,
     generation: u64,
     user: Option<String>,
@@ -14,17 +18,72 @@ pub(super) struct ProfileVisit {
 
 impl ProfileVisit {
     pub(super) fn capture(shell: &ShellState) -> Option<Self> {
+        let team = shell.core.active_team.clone()?;
         Some(Self {
+            account: shell.core.active_account.clone(),
             epoch: shell.core.account_epoch,
-            team: shell.core.active_team.clone()?,
+            self_user: shell
+                .core
+                .workspaces
+                .get(&team)
+                .map(|workspace| workspace.self_user_id.clone()),
+            session: shell
+                .core
+                .session
+                .as_ref()
+                .and_then(|session| session.workspaces.get(&team))
+                .cloned(),
+            team,
             transport: shell.core.transport.clone(),
             generation: shell.profile_generation,
             user: shell.profile_user.clone(),
         })
     }
-    fn account_current(&self, shell: &ShellState) -> bool {
-        shell.core.account_epoch == self.epoch
+    fn owner_current(&self, shell: &ShellState) -> bool {
+        shell.core.active_account == self.account
+            && shell.core.account_epoch == self.epoch
             && shell.core.active_team.as_ref() == Some(&self.team)
+            && shell
+                .core
+                .workspaces
+                .get(&self.team)
+                .map(|workspace| &workspace.self_user_id)
+                == self.self_user.as_ref()
+            && match (
+                &self.session,
+                shell
+                    .core
+                    .session
+                    .as_ref()
+                    .and_then(|session| session.workspaces.get(&self.team)),
+            ) {
+                (Some(expected), Some(current)) => {
+                    expected.team_id == current.team_id && expected.user_id == current.user_id
+                }
+                (None, None) => true,
+                _ => false,
+            }
+    }
+    fn account_current(&self, shell: &ShellState) -> bool {
+        self.owner_current(shell)
+            && match (
+                &self.session,
+                shell
+                    .core
+                    .session
+                    .as_ref()
+                    .and_then(|session| session.workspaces.get(&self.team)),
+            ) {
+                (Some(expected), Some(current)) => {
+                    expected.team_id == current.team_id
+                        && expected.user_id == current.user_id
+                        && expected.token == current.token
+                        && expected.url == current.url
+                        && expected.enterprise_id == current.enterprise_id
+                }
+                (None, None) => true,
+                _ => false,
+            }
             && match (&self.transport, &shell.core.transport) {
                 (Some(a), Some(b)) => Arc::ptr_eq(a, b),
                 (None, None) => true,
@@ -44,6 +103,20 @@ impl ProfileVisit {
             && shell.profile_generation == self.generation
             && shell.profile_user == self.user
     }
+
+    /// A credential refresh invalidates data, but must not leave this same
+    /// account's unchanged pane permanently showing a loading indicator.
+    pub(super) fn retire(&self, shell: &mut ShellState) {
+        if self.owner_current(shell)
+            && shell.profile_generation == self.generation
+            && shell.profile_user == self.user
+            && let Some(pane) = shell.core.profile_pane.as_mut()
+            && Some(&pane.user) == self.user.as_ref()
+        {
+            pane.loading = false;
+            pane.error = Some("Open this profile again to refresh its details.".into());
+        }
+    }
 }
 
 struct DmVisit {
@@ -60,7 +133,9 @@ struct DmVisit {
 
 impl DmVisit {
     fn begin(shell: &mut ShellState, user: String) -> Option<Self> {
-        if shell.profile_dm_opening.as_ref() == Some(&user) {
+        if shell.profile_dm_opening.as_ref() == Some(&user)
+            && shell.profile_dm_link_generation.is_none()
+        {
             return None;
         }
         let profile = ProfileVisit::capture(shell)?;
@@ -99,8 +174,9 @@ impl DmVisit {
             && shell.search_open_generation == self.search
     }
     fn release(&self, shell: &mut ShellState) {
-        if self.profile.account_current(shell) && shell.profile_dm_generation == self.request {
+        if self.profile.owner_current(shell) && shell.profile_dm_generation == self.request {
             shell.profile_dm_opening = None;
+            shell.profile_dm_link_generation = None;
         }
     }
     fn finish(&self, shell: &mut ShellState, id: String) -> bool {
@@ -347,5 +423,125 @@ mod tests {
         assert_eq!(shell.profile_dm_opening.as_deref(), Some("U2"));
         current.release(&mut shell);
         assert!(shell.profile_dm_opening.is_none());
+    }
+
+    #[test]
+    fn message_supersedes_a_user_links_pending_intent_and_still_closes_profile() {
+        let mut shell = shell();
+        shell.cancel_profile_dm();
+        shell.profile_dm_opening = Some("U1".into());
+        shell.profile_dm_link_generation = Some(shell.slack_link_generation);
+        let link_request = shell.profile_dm_generation;
+        let message = DmVisit::begin(&mut shell, "U1".into()).unwrap();
+        assert_ne!(shell.profile_dm_generation, link_request);
+        assert!(shell.profile_dm_link_generation.is_none());
+        assert!(message.finish(&mut shell, "D_PROFILE_NEW".into()));
+        assert!(shell.profile_user.is_none());
+    }
+
+    #[test]
+    fn profile_data_is_invalid_after_account_or_same_transport_session_replacement() {
+        for change in 0..8 {
+            let mut shell = shell();
+            shell.core.active_account = Some("account-one".into());
+            let session = WorkspaceSession {
+                team_id: "T1".into(),
+                user_id: shell.core.workspaces["T1"].self_user_id.clone(),
+                token: "synthetic-only".into(),
+                url: "https://fixture.slack.com".into(),
+                enterprise_id: None,
+                name: "Fixture".into(),
+            };
+            shell.core.session = Some(super_platinum_core::config::Session {
+                d_cookie: "synthetic-only".into(),
+                workspaces: [("T1".into(), session)].into(),
+            });
+            let visit = ProfileVisit::capture(&shell).unwrap();
+            assert!(visit.current(&shell));
+            match change {
+                0 => shell.core.active_account = Some("account-two".into()),
+                1 => {
+                    shell
+                        .core
+                        .session
+                        .as_mut()
+                        .unwrap()
+                        .workspaces
+                        .get_mut("T1")
+                        .unwrap()
+                        .token = "rotated".into()
+                }
+                2 => {
+                    shell
+                        .core
+                        .session
+                        .as_mut()
+                        .unwrap()
+                        .workspaces
+                        .get_mut("T1")
+                        .unwrap()
+                        .url = "https://other.slack.com".into()
+                }
+                3 => {
+                    shell
+                        .core
+                        .session
+                        .as_mut()
+                        .unwrap()
+                        .workspaces
+                        .get_mut("T1")
+                        .unwrap()
+                        .enterprise_id = Some("EOTHER".into())
+                }
+                4 => {
+                    shell
+                        .core
+                        .session
+                        .as_mut()
+                        .unwrap()
+                        .workspaces
+                        .get_mut("T1")
+                        .unwrap()
+                        .user_id = "OTHER".into()
+                }
+                5 => {
+                    shell
+                        .core
+                        .session
+                        .as_mut()
+                        .unwrap()
+                        .workspaces
+                        .get_mut("T1")
+                        .unwrap()
+                        .team_id = "OTHER".into()
+                }
+                6 => shell.core.workspaces.get_mut("T1").unwrap().self_user_id = "OTHER".into(),
+                _ => shell.core.session = None,
+            }
+            assert!(!visit.current(&shell));
+            if matches!(change, 0 | 4 | 5 | 6 | 7) {
+                shell.core.profile_pane.as_mut().unwrap().loading = true;
+                visit.retire(&mut shell);
+                assert!(shell.core.profile_pane.as_ref().unwrap().loading);
+            }
+        }
+    }
+
+    #[test]
+    fn retired_profile_cleanup_clears_only_the_same_owners_unchanged_pane() {
+        let mut shell = shell();
+        let old = ProfileVisit::capture(&shell).unwrap();
+        shell.core.transport = Some(Arc::new(Transport::new("synthetic-only").unwrap()));
+        old.retire(&mut shell);
+        assert!(!shell.core.profile_pane.as_ref().unwrap().loading);
+        assert!(shell.core.profile_pane.as_ref().unwrap().error.is_some());
+        shell.core.profile_pane.as_mut().unwrap().loading = true;
+        shell.core.active_account = Some("replacement".into());
+        old.retire(&mut shell);
+        assert!(shell.core.profile_pane.as_ref().unwrap().loading);
+        shell.core.active_account = None;
+        shell.profile_generation += 1;
+        old.retire(&mut shell);
+        assert!(shell.core.profile_pane.as_ref().unwrap().loading);
     }
 }

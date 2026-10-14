@@ -98,6 +98,9 @@ FIXTURES=(
   slack-links slack-links-narrow
   rejected-thread-return rejected-thread-return-narrow
   draft-native-projection draft-native-projection-narrow
+  draft-remote-review draft-remote-review-narrow
+  scheduled-attachments scheduled-attachments-narrow
+  user-links user-links-narrow
   rejected-send rejected-send-narrow
   media-loading-state media-failed timeline-variable-height timeline-latest-opening
   usergroup-members usergroup-channels system-messages send-outcomes send-outcomes-narrow send-outcomes-thread managed-draft-recovery managed-draft-recovery-narrow message-marked-unread message-marked-unread-narrow member-live-refresh channel-members member-add member-add-error member-remove member-add-narrow member-remove-narrow

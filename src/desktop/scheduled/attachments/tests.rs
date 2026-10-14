@@ -318,3 +318,122 @@ fn cooldown_blocks_another_read_or_save_without_overflowing_large_retry_after() 
     operations.review_cooldown(&lease, 30).unwrap();
     assert_eq!(operations.freeze(&lease).unwrap_err(), Fault::CoolingDown);
 }
+
+#[test]
+fn explicit_rejection_keeps_staging_and_requires_a_fresh_attempt() {
+    let (mut operations, lease, attempt) = prepared();
+    operations.admit(&attempt, &envelope(raw())).unwrap();
+    assert!(
+        operations
+            .rejected(&attempt, &json!({"ok":false,"error":"invalid_auth"}))
+            .unwrap()
+    );
+    let snapshot = operations.snapshot(&lease).unwrap();
+    assert_eq!(snapshot.phase, EditPhase::Editing);
+    assert!(snapshot.rows[0].removed);
+    assert!(snapshot.error.unwrap().contains("authentication"));
+    assert!(operations.acknowledge(&attempt, &desired()).is_err());
+    let next = operations.freeze(&lease).unwrap();
+    operations.admit(&next, &envelope(raw())).unwrap();
+    assert!(
+        !operations
+            .rejected(
+                &next,
+                &json!({"ok":false,"error":"invalid_auth","draft":null})
+            )
+            .unwrap()
+    );
+    assert!(
+        !operations
+            .acknowledge(
+                &next,
+                &json!({"ok":false,"error":"invalid_auth","draft":null})
+            )
+            .unwrap()
+    );
+    assert_eq!(
+        operations.snapshot(&lease).unwrap().phase,
+        EditPhase::Uncertain
+    );
+}
+
+#[test]
+fn queued_newer_or_equal_stamp_changed_content_blocks_lagging_preflight_without_rollback() {
+    for stamp in ["2", "1", ""] {
+        let (mut operations, lease, attempt) = prepared();
+        let mut queue = super_platinum_core::scheduled::ScheduledState::default();
+        queue.ensure_scope(1, "T1");
+        queue.accept_remote(draft());
+        let mut newer = draft();
+        newer.last_updated_ts = stamp.into();
+        newer.blocks = vec![
+            json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"New realtime content"}]}]}),
+        ];
+        let expected_blocks = newer.blocks.clone();
+        queue.accept_remote(newer);
+        let admission = operations.admit_current(&attempt, &envelope(raw()), &queue);
+        assert_eq!(admission, Err(Fault::QueuedRevisionChanged));
+        assert_eq!(
+            operations.snapshot(&lease).unwrap().phase,
+            EditPhase::Conflict
+        );
+        assert_eq!(queue.items["D1"].blocks, expected_blocks);
+        assert_eq!(queue.items["D1"].last_updated_ts, stamp);
+        // No mutation may be acknowledged because admission never entered InFlight.
+        assert_eq!(
+            operations.acknowledge(&attempt, &desired()),
+            Err(Fault::Edit(EditError::InvalidPhase))
+        );
+    }
+}
+
+#[test]
+fn current_queue_admission_preserves_cancel_and_positive_matching_readback() {
+    let (mut operations, lease, attempt) = prepared();
+    operations.cancel(&lease).unwrap();
+    assert_eq!(
+        operations.admit_current(
+            &attempt,
+            &envelope(raw()),
+            &super_platinum_core::scheduled::ScheduledState::default()
+        ),
+        Err(Fault::StaleLease)
+    );
+    for present in [true, false] {
+        let (mut operations, lease, attempt) = prepared();
+        let baseline = draft();
+        let mut queue = super_platinum_core::scheduled::ScheduledState::default();
+        if present {
+            queue.accept_remote(baseline);
+        }
+        operations
+            .admit_current(&attempt, &envelope(raw()), &queue)
+            .unwrap();
+        assert_eq!(
+            operations.snapshot(&lease).unwrap().phase,
+            EditPhase::InFlight
+        );
+    }
+}
+
+#[test]
+fn explicitly_retired_queue_refuses_old_active_attachment_info() {
+    for sent in [true, false] {
+        let (mut operations, lease, attempt) = prepared();
+        let mut queue = super_platinum_core::scheduled::ScheduledState::default();
+        let mut retired = draft();
+        retired.is_sent = sent;
+        retired.is_deleted = !sent;
+        queue.accept_remote(retired);
+        assert!(queue.items.is_empty());
+        assert_eq!(
+            operations.admit_current(&attempt, &envelope(raw()), &queue),
+            Err(Fault::QueuedRevisionChanged)
+        );
+        assert_eq!(
+            operations.snapshot(&lease).unwrap().phase,
+            EditPhase::Conflict
+        );
+        assert!(queue.items.is_empty());
+    }
+}

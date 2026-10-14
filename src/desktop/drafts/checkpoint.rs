@@ -11,6 +11,11 @@ pub(crate) use observation::ProjectionBarrier;
 #[path = "checkpoint_projection.rs"]
 mod projection;
 pub(crate) use projection::{PreservedAlternate, ProjectionTicket};
+#[path = "checkpoint_remote.rs"]
+mod remote;
+pub(crate) use remote::RemoteLease;
+#[cfg(test)]
+pub(crate) use remote::tests::Fixture as RemoteReviewFixture;
 
 #[derive(Clone, Debug)]
 pub(crate) struct Snapshot {

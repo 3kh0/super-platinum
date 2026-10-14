@@ -114,6 +114,8 @@ pub struct ShellState {
     pub profile_generation: u64,
     pub profile_dm_generation: u64,
     pub profile_dm_opening: Option<String>,
+    /// A user link keeps the profile open; the profile's Message action does not.
+    pub(crate) profile_dm_link_generation: Option<u64>,
     pub group_panel: Option<crate::usergroups::GroupPanel>,
     pub profile_pane_width: f64,
     pub profile_menu_open: bool,
@@ -332,6 +334,7 @@ impl ShellState {
     pub fn cancel_profile_dm(&mut self) {
         self.profile_dm_generation = self.profile_dm_generation.wrapping_add(1);
         self.profile_dm_opening = None;
+        self.profile_dm_link_generation = None;
     }
 
     pub fn close_profile(&mut self) {

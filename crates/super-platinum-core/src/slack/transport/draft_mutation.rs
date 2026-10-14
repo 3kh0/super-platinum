@@ -151,4 +151,33 @@ mod tests {
             server.await.unwrap();
         }
     }
+
+    #[tokio::test]
+    async fn server_error_cannot_impersonate_local_not_dispatched_receipt() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut bytes = [0; 4096];
+            let count = stream.read(&mut bytes).await.unwrap();
+            assert!(
+                String::from_utf8_lossy(&bytes[..count]).starts_with("POST /api/drafts.update")
+            );
+            let body = r#"{"ok":false,"error":"draft_mutation_not_sent_offline"}"#;
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        let transport = Transport::new("synthetic-cookie").unwrap();
+        let result = transport
+            .execute_draft_mutation(request(address, "/api/drafts.update"))
+            .await;
+        assert_eq!(
+            result.unwrap(),
+            serde_json::json!({"ok":false,"error":"draft_mutation_not_sent_offline"})
+        );
+        server.await.unwrap();
+    }
 }

@@ -21,6 +21,7 @@ pub(crate) fn MutationRecovery(
     }
     let title = match snapshot.action {
         Action::Edit => "Draft edit",
+        Action::Copy => "Save draft copy",
         Action::Unschedule => "Schedule change",
         Action::Send => "Send message",
         Action::Delete => "Delete draft",
@@ -34,6 +35,8 @@ pub(crate) fn MutationRecovery(
                 p { class: "later-error", role: "alert", "The result could not be confirmed. This draft is reserved so the action cannot be sent again." }
                 if snapshot.can_confirm_by_readback {
                     p { class: "scheduled-hint", "Review checks whether Slack has the complete saved changes. It does not send the changes again." }
+                } else if snapshot.action == Action::Copy {
+                    p { class: "scheduled-hint", "Review Slack for a possible saved copy. This app cannot confirm a new copy without its exact draft identity, and will not create it again." }
                 } else {
                     p { class: "scheduled-hint", "Review the message in Slack. A missing draft does not prove that it was sent or deleted, so this app cannot unlock the action from draft presence alone." }
                 }

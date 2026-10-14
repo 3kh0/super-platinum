@@ -75,7 +75,7 @@ existing fixtures or unit tests do not replace live interoperability checks.
 
 | Workflow | Current status and latest evidence | Remaining implementation and verification |
 | --- | --- | --- |
-| Native Windows dev environment | Transferred artifacts verified; locked native dev builds, 1,235 core / 1,201 desktop tests passed; isolated TCP ping/state and DPI-correct screenshots inspected. Activity, media, five message-control families, Lists and delete/undo pass normal/narrow checks; latest timestamp checks add 50 inspected List PNGs. Eleven sink stages and six production projection stages have inspected taskbar pixels; boxed startup fixes an observed Windows stack overflow | Adapt remaining platform-assuming runners and verify remaining required workflows on WebView2; live sign-in/reference and full OS integration are not established by fixtures |
+| Native Windows dev environment | Transferred artifacts verified; locked native dev builds, 1,289 core / 1,273 desktop tests passed; isolated TCP ping/state and DPI-correct screenshots inspected. Activity, media, five message-control families, Lists and delete/undo pass normal/narrow checks; latest timestamp checks add 50 inspected List PNGs. Eleven sink stages and six production projection stages have inspected taskbar pixels; boxed startup fixes an observed Windows stack overflow | Adapt remaining platform-assuming runners and verify remaining required workflows on WebView2; live sign-in/reference and full OS integration are not established by fixtures |
 | Conversation reading, unread markers, history, navigation | Channel/thread bounded rich projection, complete row metadata, anchors, exact old targets and thread paging; Mac private warm-start/history/pagination checks and large synthetic native selection/window checks passed; Windows channel and five thread fixture checks pass with all six PNGs inspected, including 10,001-row bounds and selection pin/release | Cold Later/search/draft metadata paths, real 200-plus-reply native pagination, scrollbar/selection edge coverage, delayed live account/outage races, synchronized opening/read preferences and broader cross-client comparison |
 | Compose/reply, formatting, edits/deletes, broadcasts | Native Unicode/reference/IME guards and formatting; private bold/italic send proof; text and file broadcasts plus ordinary thread-only reply proved in **Live composer verification and channel mute integration**; late edit ownership guarded; supported channel/thread text enters the shared durable send journal; Windows trusted Unicode/edit-key and isolated synthetic file-paste checks pass both sizes with 22 inspected PNGs | Remaining edit/delete/list/link/mention and cross-client races; full rich-note/composer parity; actual OS IME sessions; broader rich/file/scheduled journal integration and live thread fault proof; Windows live end-to-end send/upload verification and remaining integration |
 | Drafts, scheduling and local recovery | Local destination-owned persistence, server Drafts/Scheduled queue/realtime, send-now/cancel/conflict copy and private Mac lifecycle proof; supported channel/thread text shares durable direct-send ownership, with thread/broadcast capture and exact destination readback tests; local version settlement and rejected channel-send return verified with isolated SQLite/native fixtures; Windows rejected-thread return and two-process restart pass at both sizes with all ten captures inspected, preserving broadcast and unrelated drafts; Windows scheduling acknowledgments preserve newer native text, attachment changes, synthetic composition and reopened visits; native draft projection passes 20 normal/narrow cases with 120 inspected PNGs and exact two-process durable dictionaries, retaining newer input and rejecting stale mounts | Ordinary bidirectional composer autosave remains disabled; lossless broader blocks/files, server identity/revision and simultaneous edits; scheduled journal integration and live thread fault proof; destination/multi-destination scheduling, attachment editing, large queues, actual timed delivery and live recovery/fault proof |
@@ -94,8 +94,8 @@ existing fixtures or unit tests do not replace live interoperability checks.
 | Channel/global notifications, DND and accounts | Permanent/temporary channel mute and detailed preferences privately API/native verified; recurring hours/global defaults and macOS presentation checked. Windows direct WinRT submission, unpackaged shortcut/COM identity and bounded diagnostics implemented; isolated silent preview passes submission/history/cleanup, registration restoration and inspected OS banner pixels; synthetic COM account-owned routing reaches the exact thread reply without switching accounts; actual warm OS preview activation restores the same minimized window; actual cold OS activation launches a new process and paints the channel, with exact cleanup and inspected delayed captures; global defaults pass both Windows sizes with two inspected PNGs, seven reached controls and exact synthetic 9-write/12-read receipts; recurring schedules pass both sizes with inspected PNGs, seven reached days and exact 8-write/10-read receipts; presentation passes both sizes with local audio completion and 6-write/11-read receipts | Authorized live schedule/global/presentation writes, real OS/mobile message delivery, visible Dock attention, selected custom platform sounds, full account isolation/preferences; Windows live conversation routing and Linux delivery |
 | Huddles, camera, sharing and devices | Existing Slack room/Chime state machine and media bridge/UI | Human-approved controlled private call: join/leave, mute, audio/video, sharing, device/permission changes and reconnect; Windows secure-origin/media/OS behavior |
 | Canvases | Native reader/create/rename; bounded checkbox and existing-paragraph rich editing with private Mac cross-client save/restore, canonical section preservation and retained CRDT reuse; paired first-load/event recovery verified; Windows normal/narrow text and checklist checks pass with all 20 intermediate/final PNGs inspected | General authoring/structure, comments, concurrent collaboration/sharing, unsupported rich shapes/title cases, durable creation drafts, live lost-response/credential rotation and IME; bounded paragraph editing is not full canvas parity |
-| Lists | Saved tables/boards/filter/sort/date groups, details/open tracking, ordinary cell edits, create/delete and same-ID Undo/Redo; private Mac evidence through **Integrated Link verification and private cleanup complete**. Source-backed Duplicate and stable delivery receipts pass Windows fixtures. Readable timestamps, locale/tooltips and minute reprojection pass 72 source oracle cases and normal/narrow native checks; all 50 latest PNGs inspected | Source-verified server continuation (do not invent cursor contract), saved-view/schema writes, group/subitem creation, drag/lane management, personal To-dos/assignee/reminders and remaining fields/actions/comments; live duplicate copy/parent/subtree semantics, mixed/incomplete orderings, remote-user and fault coverage |
-| App interactions and workflows | Typed modal lifecycle/forms; ordinary buttons, static single/multiple, radio/checkbox, date/time, user/conversation/public-channel, multi-user, multi-channel and overflow controls with full-state and ownership guards; ordinary and modal multi-channel/multi-conversation selectors pass Windows normal/narrow prepared-request checks with 24/26 captures inspected, alongside the earlier families; corrected compact controls pass eight rerun fixtures with all 50 PNGs inspected and exact 32px/alignment checks; bounded modal viewed-origin defaults pass normal/narrow checks, with 36 inspected multi/single regression PNGs; ordinary boolean defaults preserve supplied/absent state without inventing an origin, with all 26 new ordinary/modal regression PNGs inspected; single external selectors pass all four Windows fixtures with 38 inspected PNGs, exact raw state and retained cooldown; multi-external ordinary/modal selectors pass four Windows fixtures with all 50 final PNGs inspected, ordered raw/empty/full-sibling state and unobstructed narrow uncertainty controls; the latest single-selector regression has a modal label failure under correction | Broader missing/filtered/IM origins and other controls, specialized client actions/Agentforce/Grid restrictions, slash commands, app/workflow discovery/execution; owned private live receipt/response target and complete modal response/error proof |
+| Lists | Saved tables/boards/filter/sort/date groups, details/open tracking, ordinary cell edits, create/delete and same-ID Undo/Redo; private Mac evidence through **Integrated Link verification and private cleanup complete**. Source-backed Duplicate and stable delivery receipts pass Windows fixtures. Readable timestamps, locale/tooltips and minute reprojection pass 72 source oracle cases and normal/narrow native checks; all 50 timestamp PNGs inspected; Board lane Add passes both Windows sizes with all 14 PNGs inspected, exact typed seed requests and stale/uncertain guards | Source-verified server continuation (do not invent cursor contract), saved-view/schema writes, group/subitem creation, drag/lane management, personal To-dos/assignee/reminders and remaining fields/actions/comments; live duplicate copy/parent/subtree semantics, mixed/incomplete orderings, remote-user and fault coverage |
+| App interactions and workflows | Typed modal lifecycle/forms; ordinary buttons, static single/multiple, radio/checkbox, date/time, user/conversation/public-channel, multi-user, multi-channel and overflow controls with full-state and ownership guards; ordinary and modal multi-channel/multi-conversation selectors pass Windows normal/narrow prepared-request checks with 24/26 captures inspected, alongside the earlier families; corrected compact controls pass eight rerun fixtures with all 50 PNGs inspected and exact 32px/alignment checks; bounded modal viewed-origin defaults pass normal/narrow checks, with 36 inspected multi/single regression PNGs; ordinary boolean defaults preserve supplied/absent state without inventing an origin, with all 26 new ordinary/modal regression PNGs inspected; single external selectors pass all four Windows fixtures with 38 inspected PNGs, exact raw state and retained cooldown; multi-external ordinary/modal selectors pass four Windows fixtures with all 50 final PNGs inspected, ordered raw/empty/full-sibling state and unobstructed narrow uncertainty controls; the single clear-label regression is corrected and all four new native checks pass with 38 PNGs inspected (narrow loading images raced ahead to results) | Broader missing/filtered/IM origins and other controls, specialized client actions/Agentforce/Grid restrictions, slash commands, app/workflow discovery/execution; owned private live receipt/response target and complete modal response/error proof |
 | Keyboard, focus, accessibility and narrow windows | Native focus traps, shortcut typing handoff, selected controls/selection and synthetic IME guards; multiple normal/minimum Mac fixtures verified; Windows SendInput Unicode/Backspace/selection/replacement passes channel and thread at both sizes with 16 inspected PNGs and trusted-event receipts | Real OS IME and broader trusted keyboard coverage, screen-reader/labels, full focus restoration and reduced-motion/contrast sweeps, Windows shortcuts/WebView2 controls; isolated DOM events are not trusted-input proof |
 | Geist visual system | Local Geist/Mono, neutral tokens, uniform selection, muted system activity, compact Files/List/settings/control refinements and many inspected Mac fixtures; scoped on-fill/secondary-text contrast corrections pass four Windows palette fixtures, with 12 inspected captures and named actual/probe measurements; 21 Windows search/navigation and 32 resource static fixtures add inspected layouts, with stated taskbar limits and four unobstructed resource recaptures | Inspect every required surface/state at normal/narrow sizes on Windows; loading/error/empty/long labels, selected palettes, keyboard focus, AA contrast and reduced motion; full system consistency review |
 | Speed, memory, idle work and large workspaces | Paired component measurements for palette, channel rich projection/geometry, thread indexing, source validation, DM lookup, metadata/presence/reactions; bounded rendering and idle/tick work; async capture fault test; Windows disconnected idle pairs and six normalized scroll runs have inspected captures, with 6.1ms p50 and 6.2ms median p95 in both arms; three normalized draft-projection idle samples per arm have six inspected PNGs, with tree CPU 0.046875 → 0.0625s per 15s, private commit 260.94 → 262.06 MiB and first paint 577.88 → 626.51ms; no general speedup established | Paired input/startup/scroll and memory/idle coverage for broader live workloads; investigate intermittent native startup/stalls independently; similar Mac frame samples do not prove FPS gains and thread indexing adds measured full-sync cost |
@@ -9366,3 +9366,218 @@ one invalid Board unit-test fixture: two helper setups introduce the same
 `todo_completed` schema identity. The four dedicated native-fixture Rust tests
 pass. The test-only setup is being corrected before rerunning; no failing gate
 is treated as complete.
+
+The corrected desktop gate now passes **1,216 tests / 7 ignored** in **4.46s**,
+after **1m42s** compilation; formatting passes. Shared Board unit setup now gives
+the Board helper sole ownership of its completion column, uses a valid synthetic
+viewer and preserves the independent reservation/owner/preflight assertions.
+Whitespace checking passes (Git emitted line-ending conversion warnings only).
+The dev build is running, followed by the two-size Board workflow and corrected
+single-external regression. New remote-review adapters passed independent source
+review after making pre-choice inventory refresh non-projectable; those files
+and attachment desktop integration remain outside this build.
+
+The locked dev build passes in **4m08s**, SHA
+`adaa29ffe473e4802c566088b0a552602b37fc1252084b8b02943e6c2ab978ae`.
+Both dedicated Board normal/narrow runs pass all native assertions, with seven
+stage PNGs each under `windows-board-add-pilot/`. Root inspected the normal
+initial Board and narrow uncertainty state; all fourteen images and raw receipts
+are undergoing independent review before visual acceptance. The complete
+single-external regression is running against this same frozen executable.
+Referenced source work has resumed for the subsequent draft-review worker/UI
+and scheduled attachment workflows; those changes are not in this binary.
+
+### Board lane Add Windows gate complete (2026-10-14)
+
+All **14 Board PNGs** and both receipts were independently read and validated.
+Normal and narrow layouts pass, with readable pending/stale/uncertain copy and
+32-by-32 CSS-pixel lane Add controls. Narrow cards/details and lanes use bounded
+vertical/horizontal scrolling; hidden lower content is not claimed simultaneously
+visible. Neither fixture has taskbar or hover obstruction. Each records four actual
+one-shot create requests with ordered name, authenticated viewer and lane seeds:
+selected option, explicit empty selection, unchecked, unchecked. Pending duplicate
+clicks retain one request, stale preflight leaves three, and uncertainty retains
+four through attempted repeated controls and refresh. Closed logs, full PNG data,
+unchanged SHA, owned creation-matched process exit and pointer restoration pass.
+The artifact directory remains `windows-board-add-pilot/`; its name does not imply
+a different binary. No live Slack, session or trusted OS input proof is claimed.
+
+All four corrected single-external checks also pass on the same `adaa29ff...`
+binary, with 38 PNGs under independent review. Root rechecked the unchanged SHA
+after the final native process. No Cargo/native process is currently running.
+The next source slice now references serialized remote-review worker adapters and
+scheduled attachment hooks. Root supplies a separate app-lifetime Operations
+signal so account/ShellState resets cannot discard retained attachment outcomes.
+These subsequent changes are not in the last tested executable.
+
+All **38 corrected single-external PNGs** and four receipts were inspected:
+ordinary18 and modal20. The clear-button regression is visibly resolved at both
+sizes; normal/narrow modal controls are unobstructed, with visible optional clear,
+validation, cooldown and retained uncertain state. Two prepared requests and five
+queries pass per fixture. Exact action/full-sibling state is asserted in native
+code, but this older receipt format omits the raw action ledger and explicit
+process/pointer/SHA evidence; binary attribution uses root's before/after gate.
+Both narrow `loading` PNGs already show results, so they do not prove the loading
+appearance. A fixture response barrier and retained raw attempts are being added
+for a later evidence correction. The narrow ordinary terminal toast overlaps the
+underlying disabled Submit choices control, with no picker open, while clearing
+the composer. No whole-background-control clearance is claimed.
+
+### Draft review and attachment integration in progress (2026-10-14)
+
+The independently locked core suite now passes **1,287 / 5 ignored** in **20.26s**,
+after **32.26s** compilation; formatting passes. This includes the serialized
+whole-inventory remote-review worker path (five new tests), exact known-unsent
+attachment recovery/comparator checks (two), and a transport regression proving a
+server error string cannot impersonate the local not-dispatched marker (one).
+This does not establish the subsequent desktop workflows, which are still being
+integrated. Review found lifecycle gaps in legacy mutation reservation cleanup
+and same-owner credential-rotation busy state; fixes and regression tests are
+pending before the desktop gate. Remote review also needs explicit Finish applying
+recovery for a chosen version deferred by composition/remount, without a second
+read or CAS. That path is being implemented against the existing immutable barrier.
+
+Single-external evidence improvements are now source-frozen: a held initial
+suggestion response around loading captures and raw action attempts retained in
+terminal receipts. Two runner tests pass, but the updated checker is not yet in
+the `adaa29ff...` executable and has not been run natively.
+
+### List continuation source recheck (2026-10-14)
+
+Read-only reinspection verified the retained B/S/V/P hashes and still found no
+next-page request contract. V `84hR` 9785800 is the generated `lists.records.list`
+wrapper; its sole importer B `l2X+` 7286616 passes no cursor/limit at 7287430.
+It consumes one records array and stores only cursor truthiness as `recordsLoaded`
+at 7287819-7287855. The ordinary reducer at B 7236045 replaces membership; archived
+fetches upsert, so it is not an append-pages contract. S 4614478 sorts effective
+positions/creation time rather than response order. Known-ID `records.info` and
+50-ID `infoBatch` hydration at B 7283969/7285237 cannot discover unknown next-page
+membership. Nearby cursors belong to List history versions (B 7237541/7261328).
+Errors return null without replacing records, and a workspace/List/archive sequence
+suppresses older completed results. No cursor replay, terminal page-size, append
+or snapshot-consistency rule was established. Keep incomplete-result notices and
+completeness-dependent guards; server continuation remains required and unproven.
+No source changes, live Slack or session access occurred during this research.
+
+The follow-up independently locked core suite passes **1,289 / 5 ignored** in
+**20.13s**, compilation **20.04s**, with formatting passed. Two additional model
+regressions cover a narrow definite-rejection transition, exact attempt ownership
+and contradictory/ambiguous envelope refusal; retry is always explicit. Remote
+review UI/controller and isolated fixtures are now hooked and source-frozen.
+Recovery reuses the immutable chosen barrier, and explicit Review can preserve
+its exact visible predecessor when a concurrent foreign alternate prevents clean
+projection. Six isolated native scenarios per size are prepared, including restart;
+nine Python runner tests and JS syntax checks pass. None has been compiled or
+run natively yet. Attachment Source/fixture preparation continues unreferenced
+until the next build release; current desktop lifecycle integration is being
+frozen for the combined format/test/dev-build gate.
+
+The focused attachment lifecycle rereview is clear for compilation. Deferred
+app-root cleanup settles only its exact reservation even when a Signal is
+borrowed during component/task teardown; same-owner credential rotation clears
+only the captured scheduled queue's busy flag. Explicit recognized rejection
+keeps staged removals available for deliberate retry, while ambiguous results
+retain uncertainty. Full-payload preflight deliberately refuses incomplete
+legacy draft shapes, including an absent `client_msg_id`; compatibility with
+those shapes remains open. Desktop formatting passes and the combined locked
+desktop suite is running. These source-review findings are not native or live
+Slack verification.
+
+The first combined desktop compilation failed at four integration sites: two
+borrowed temporary errors in scheduled mutation reporting, a private storage
+method called by fixture seeding, and a moved review-panel value. Fixes retain
+an owned error, seed through the existing public managed-alternate operation,
+and clone the review's `Arc`. No core visibility was widened. The corrected
+format check passes and the full locked desktop suite is rerunning.
+
+That corrected run compiles in **2m55s**, then reports **1,272 passed / 1 failed /
+7 ignored** in **4.47s**. The sole failure is a new request test comparing the
+full URL against an endpoint without the existing client's query parameters.
+The assertion now checks the exact base URL, matching the core request test;
+the native runner's equivalent assumption is also being corrected while keeping
+the full actual request URL in its ledger. The full desktop suite is rerunning.
+
+The final desktop run passes **1,273 / 7 ignored** in **4.44s**, after **41.72s**
+compilation. Formatting passes. After the user's pause/reboot/resume, root found
+the test process terminal and its complete success log; no duplicate test run
+was started. The locked dev build is now running. All **ten** remote-review
+Python receipt tests pass, including actual default query parameters and
+rejection of wrong request URLs. New attachment fixture and human-user link
+files remain unreferenced pending the build freeze release. The previous turn
+made progress through compile fixes and test evidence; this is a continuation
+of the same broad acceptance scope, not a completion claim.
+
+The locked dev build passes in **4m49s**, executable SHA
+`dd5a3aa090147859234f152c0b4b2bdfe70a6f4b077a2b9eedbe79dedcdda2a1`.
+The first remote-review native launch stops before capture in placement setup:
+after reboot, complete successful Windows enumeration finds no `Shell_TrayWnd`
+or `Shell_SecondaryTrayWnd`; Explorer and Progman exist, and monitor work area
+is the full 2560-by-1600 display. The capture helper formerly required a visible
+taskbar. The owned fixture exited with matching process-creation evidence and
+no pointer move. Its single automatic failure PNG was inspected: the initial
+channel/thread fixture and review entry controls paint, but no review workflow
+stage or restart outcome is claimed (`windows-draft-remote-review-first/`). A successful-empty observation
+path is being added, separate from probe errors; no OS settings or Explorer
+restart is used. Subsequent attachment Source/legacy-compatibility and human
+DM-plus-profile link integration has resumed in source, outside this binary.
+
+### Explicit draft review Windows workflow gate, layout correction pending (2026-10-14)
+
+Capture recovery now distinguishes successful empty taskbar enumeration from a
+failed probe; taskbar-required callers remain strict. All **21** focused Python
+tests pass, independent source review is clear, and no OS settings changed.
+The retry on `dd5a3aa0...` passes **12/12** normal/narrow scenarios across **24**
+processes in `windows-draft-remote-review-second/`, with all **112 PNGs read**.
+Exact canonical/blocked/writer-alternate dictionaries match each restart;
+exercise read counts are **1/1/3/2/2/1**, with zero reads on every restart.
+Explicit choice, newer input during read/commit, changed native input and Finish
+after composition/remount all pass. The latter reuses the same durable choice
+without another read or commit. Unrelated destination and broadcast state remain
+exact. Closed logs, binary SHA, process identity/exit and pointer restoration
+pass. This is disconnected synthetic input/IME evidence, not live sync or OS IME.
+
+Visual inspection prevents full UI acceptance: narrow channel and thread review
+screens clip their conversation header, and narrow second-choice content can
+extend below the window. Result/restart text, recovery explanations and deferred
+Finish controls are readable; toasts clear the composers. Normal thread review
+footer labels show, but their lower edges are clipped by the scroll viewport.
+A scoped flex-height/focus/scroll correction and explicit header/footer/row
+containment checks are being finalized for the next build. Three JS geometry
+tests pass; revised native layout remains unverified.
+
+All four single-external checks pass on the same unchanged executable, with
+**38 PNGs** in `windows-single-external-held-loading/` under image/receipt review.
+The fixture now holds initial suggestions through capture and retains the actual
+raw action ledger. No native process remains running at this point. New user
+link and attachment integration will be compiled together with the layout fix.
+
+All **38 single-external PNGs** and all four closed receipts are now inspected.
+Normal and narrow loading captures visibly show `Loading options...` with no
+rows, closing the prior capture race. All eight retained attempts independently
+decode to the exact raw option and full sibling state: ordinary Alpha
+(`alpha,desktop`) plus Production, then button; modal optional null then Beta
+plus `Keep this sibling`. There are two attempts and five queries per fixture.
+Empty-result preservation has no dedicated PNG; it remains a native assertion.
+The narrow ordinary terminal toast still overlaps disabled background controls,
+while clearing the composer; modal notes can lie below the fold. The old runner
+still omits per-process creation/exit, pointer and binary evidence. Root checked
+the unchanged `dd5a3aa0...` SHA after all runs; this does not retroactively add
+those missing per-process receipts. Raw payload evidence is now retained.
+
+The next independently locked core gate passes **1,294 / 5 ignored** in
+**19.98s**, compilation **31.92s**, with formatting passed. It includes legacy
+optional metadata compatibility and shared full-payload/explicit-retirement
+queue guards, preventing lagging readback from overwriting a newer queued draft.
+Attachment integration and user links are independently cleared for compilation;
+the remote-review layout fix is correcting a mention-popover clipping regression
+before the combined desktop gate. No new native attachment/user-link result is
+claimed yet.
+
+The combined desktop compile initially reports twelve diagnostics caused by two
+attachment fixture naming collisions: the domain `Owner` versus Dioxus's prelude
+`Owner`, and a local `owner` shadowing the fixture function. An explicit domain
+alias and reservation-variable rename resolve those sites; core remains unchanged.
+Formatting passes and the complete desktop suite is rerunning. The reviewed
+layout fix now keeps mention suggestions in flow only during version review;
+its isolated geometry probe restores exact DOM/input/scroll state. Revised
+native geometry and actual mention interactions remain separate evidence.

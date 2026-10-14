@@ -119,6 +119,17 @@ async fn read_review(owner: Owner) -> Result<LocalReview, Fault> {
 }
 
 impl Editor {
+    /// Cheap render hint for finishing an already chosen immutable barrier.
+    /// Full transactional inventory and fresh native mount checks still occur
+    /// in prepare_projection/capture/apply/ack; this never refreshes authority.
+    pub fn projection_finish_available(&self) -> bool {
+        let state = self.state.lock().unwrap();
+        state
+            .projection
+            .as_ref()
+            .is_some_and(|barrier| eligible(&state, &self.owner.scope, &barrier.id).is_ok())
+    }
+
     pub async fn prepare_projection(
         self: &Arc<Self>,
         barrier_id: &str,

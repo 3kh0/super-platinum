@@ -149,10 +149,12 @@ def window_observation(pid):
                 "virtual_desktop_rect": virtual, "window_within_virtual_bounds": contains_rect(virtual, bounds),
                 "webview_viewport": None, "other_window_occlusion_checked": False}
         try:
-            bars = taskbar_rects(hwnd)
-            data.update(taskbar_rects=bars, taskbar_client_overlap=any(overlap(client_bounds, bar) for bar in bars))
+            bars = taskbar_rects(hwnd, allow_empty=True)
+            data.update(taskbar_probe_completed=True, taskbar_rects=bars,
+                        taskbar_client_overlap=any(overlap(client_bounds, bar) for bar in bars))
         except (OSError, RuntimeError) as error:
-            data.update(taskbar_client_overlap=None, taskbar_probe_error=str(error))
+            data.update(taskbar_probe_completed=False, taskbar_client_overlap=None,
+                        taskbar_probe_error=str(error))
         return data
 
 

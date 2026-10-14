@@ -86,33 +86,58 @@ def contains_rect(outer, inner):
             and left + width <= x + w and top + height <= y + h)
 
 
-def taskbar_rects(hwnd=None):
-    """Visible taskbar rectangles; optionally only the fixture window's monitor."""
+def taskbar_rects(hwnd=None, *, allow_empty=False):
+    """Visible taskbars; an opt-in empty result requires a complete successful probe.
+
+    Absence is a sampled observation, not a claim about Explorer or OS settings.
+    Consumers that need a taskbar (for example badge captures) stay strict.
+    """
     user, _ = _libraries()
     callback_type = ctypes.WINFUNCTYPE(W.BOOL, W.HWND, W.LPARAM)
     user.EnumWindows.argtypes = [callback_type, W.LPARAM]
     user.EnumWindows.restype = W.BOOL
-    result = []
+    result, failures = [], []
     with _physical_pixels(user):
         monitor = user.MonitorFromWindow(W.HWND(hwnd), 2) if hwnd else None
+        if hwnd and not monitor:
+            raise RuntimeError("Fixture monitor probe failed")
 
         @callback_type
         def visit(window, _):
             name = ctypes.create_unicode_buffer(128)
-            user.GetClassNameW(window, name, len(name))
+            # A failed classification cannot establish that this is not a taskbar.
+            # Callback exceptions cannot propagate safely through ctypes.
+            # https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-getclassnamew
+            if not user.GetClassNameW(window, name, len(name)):
+                failures.append("Window class probe failed during taskbar enumeration")
+                return False
             if (name.value in ("Shell_TrayWnd", "Shell_SecondaryTrayWnd")
-                    and user.IsWindowVisible(window)
-                    and (not monitor or user.MonitorFromWindow(window, 2) == monitor)):
+                    and user.IsWindowVisible(window)):
+                bar_monitor = user.MonitorFromWindow(window, 2) if monitor else None
+                if monitor and not bar_monitor:
+                    failures.append("Visible taskbar monitor probe failed")
+                    return False
+                if monitor and bar_monitor != monitor:
+                    return True
                 rect = W.RECT()
-                if user.GetWindowRect(window, ctypes.byref(rect)):
-                    width, height = rect.right - rect.left, rect.bottom - rect.top
-                    if width > 0 and height > 0:
-                        result.append((rect.left, rect.top, width, height))
+                if not user.GetWindowRect(window, ctypes.byref(rect)):
+                    failures.append("Visible taskbar rectangle probe failed")
+                    return False
+                width, height = rect.right - rect.left, rect.bottom - rect.top
+                if width <= 0 or height <= 0:
+                    failures.append("Visible taskbar has invalid dimensions")
+                    return False
+                result.append((rect.left, rect.top, width, height))
             return True
 
-        if not user.EnumWindows(visit, 0):
+        # A zero return is failure or callback termination, never evidence of absence.
+        # https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-enumwindows
+        completed = user.EnumWindows(visit, 0)
+        if failures:
+            raise RuntimeError(failures[0])
+        if not completed:
             raise ctypes.WinError(ctypes.get_last_error())
-    if not result:
+    if not result and not allow_empty:
         raise RuntimeError("No visible taskbar found for fixture monitor; OS settings unchanged")
     return result
 

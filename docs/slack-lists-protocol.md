@@ -1175,13 +1175,13 @@ empty/read-only/filter-sensitive lanes, primary/grouping field rules, keyboard
 traversal, paging, horizontal overflow, ordinary and heading checkbox writes,
 and typed editor readback. Their execution results belong in the parity worklog.
 Date, rating, user/channel, and other Board grouping families remain explicitly
-unsupported. Drag-and-drop, lane reordering/creation, card creation, saved-view
+unsupported. Drag-and-drop, lane reordering/creation, saved-view
 writes, server cursor continuation, and personal-task completion side effects
 are outside this slice. Incomplete loaded-page notices remain visible.
 
 ### Lane Add continuation (Windows, 2026-10-14)
 
-Card creation now has a separate implementation awaiting native verification.
+Card creation now has a separate implementation with bounded native verification.
 `creation/board.rs` derives ordered typed defaults from the selected saved view
 and clicked lane, then uses the existing one-request create contract. The header
 Add action keeps its blank-item semantics. Source anchors are B BoardView
@@ -1204,7 +1204,13 @@ all records and uses the existing stable uncertain-write receipt. Closing or
 changing the lane cannot authorize a stale request or replay an uncertain one.
 The dedicated fixtures include a real unassigned record, so their explicit
 empty-select test does not invent an empty Ungrouped lane. Core tests pass in the
-1,279-test gate; desktop compilation and native normal/narrow checks remain next.
+1,279-test gate and desktop tests in the 1,216-test gate. Both normal/narrow native
+runs pass on `adaa29ffe473e4802c566088b0a552602b37fc1252084b8b02943e6c2ab978ae`,
+with all 14 PNGs inspected in `windows-board-add-pilot/`. Each run records four
+exact typed create requests, stale canonical refusal and uncertain no replay.
+Lane Add measures 32 by 32 CSS pixels; narrow content remains scrollable while
+header/status/actions stay bounded. This is disconnected synthetic proof, not
+live server interoperability, trusted OS input or continuous occlusion proof.
 
 ## Local record details
 
