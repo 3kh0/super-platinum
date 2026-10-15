@@ -7,7 +7,11 @@ use serde_json::Value;
 use std::collections::HashSet;
 
 mod edit;
+mod replacement_edit;
+mod structure_edit;
+pub use replacement_edit::execute_canvas_replacement_edit;
 mod text_edit;
+pub use structure_edit::execute_canvas_structure_edit;
 pub use text_edit::execute_canvas_text_edit;
 mod encoding;
 pub use edit::execute_canvas_checkbox_edit;

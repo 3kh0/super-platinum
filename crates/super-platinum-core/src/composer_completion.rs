@@ -2,6 +2,9 @@
 //! The renderer displays labels; only explicit selection inserts a wire token.
 use crate::{ComposerState, state::Workspace};
 
+pub mod index;
+mod person_scan;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
     Person,
@@ -178,6 +181,9 @@ pub const LIMIT: usize = 8;
 /// Rank exact/prefix before substring; keep only visible candidates while
 /// scanning, rather than sorting or cloning a large workspace directory.
 pub fn suggestions(workspace: &Workspace, trigger: &Trigger) -> Vec<Suggestion> {
+    if trigger.kind == Kind::Person {
+        return person_scan::suggestions(workspace, trigger);
+    }
     type Rank = (bool, bool, u8, String, String);
     let query = trigger.query.to_lowercase();
     let mut best: Vec<(Rank, Suggestion)> = Vec::with_capacity(LIMIT + 1);
@@ -217,68 +223,7 @@ pub fn suggestions(workspace: &Workspace, trigger: &Trigger) -> Vec<Suggestion> 
         }
     };
     match trigger.kind {
-        Kind::Person => {
-            for user in workspace.users.values().filter(|u| !u.deleted) {
-                let name = workspace.display_name(&user.id);
-                let handle = user.name.as_deref().unwrap_or_default();
-                let real = user
-                    .real_name
-                    .as_deref()
-                    .or_else(|| user.profile.as_ref().and_then(|p| p.real_name.as_deref()))
-                    .unwrap_or_default();
-                add(
-                    format!("@{name}"),
-                    if handle.is_empty() {
-                        real.into()
-                    } else {
-                        format!("@{handle}")
-                    },
-                    Target::User(user.id.clone()),
-                    &[&name, handle, real],
-                    0,
-                );
-            }
-            for group in workspace.usergroups.values().filter(|g| g.date_delete == 0) {
-                let handle = group.handle.as_str();
-                let name = group.name.as_str();
-                if !handle.is_empty() {
-                    add(
-                        format!("@{handle}"),
-                        name.into(),
-                        Target::Group(group.id.clone()),
-                        &[handle, name],
-                        1,
-                    );
-                }
-            }
-            // Explicit selections only; plain typed text is never upgraded to
-            // a broadcast merely because it happens to spell @channel.
-            for (name, kind, detail) in [
-                (
-                    "here",
-                    Broadcast::Here,
-                    "Notify people online in this conversation",
-                ),
-                (
-                    "channel",
-                    Broadcast::Channel,
-                    "Notify everyone in this conversation",
-                ),
-                (
-                    "everyone",
-                    Broadcast::Everyone,
-                    "Notify everyone in the workspace",
-                ),
-            ] {
-                add(
-                    format!("@{name}"),
-                    detail.into(),
-                    Target::Broadcast(kind),
-                    &[name],
-                    2,
-                );
-            }
-        }
+        Kind::Person => unreachable!("Person scan dispatched above"),
         Kind::Channel => {
             for channel in workspace
                 .channels

@@ -215,6 +215,8 @@ fn boot_self_user_provides_self_avatar_url() {
         usergroups: HashMap::new(),
         deleted_files: Default::default(),
         custom_emoji: HashMap::new(),
+        custom_emoji_revision: 0,
+        emoji_preferences: Default::default(),
         messages: HashMap::new(),
         typing: HashMap::new(),
         presence: HashMap::new(),

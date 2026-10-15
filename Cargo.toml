@@ -34,6 +34,10 @@ panic = "abort"
 [build-dependencies]
 winresource = "0.1"
 
+[features]
+emoji-retirement-observation = ["windows/Win32_System_Memory"]
+protected-native-fixture = ["super-platinum-core/protected-test-support"]
+
 [dependencies]
 base64 = "0.23"
 dioxus = { git = "https://github.com/DioxusLabs/dioxus", rev = "57d6794ad60b949e5bd8aa282f6f8c3dc97a365e", default-features = false, features = ["desktop", "document", "minimal"] }
@@ -54,6 +58,9 @@ rfd = { version = "0.17.2", default-features = false, features = ["xdg-portal"] 
 # Keep Wry's default X11 feature for the standalone Linux login window.
 # Update this pin together with Dioxus's Wry dependency.
 wry = "=0.53.5"
+
+[dev-dependencies]
+super-platinum-core = { path = "crates/super-platinum-core", features = ["protected-test-support"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 # Match the version already used by the pinned desktop dependency graph.

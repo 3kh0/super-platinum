@@ -169,6 +169,8 @@ fn prune_typing_drops_stale() {
         usergroups: HashMap::new(),
         deleted_files: Default::default(),
         custom_emoji: HashMap::new(),
+        custom_emoji_revision: 0,
+        emoji_preferences: Default::default(),
         messages: HashMap::new(),
         typing: HashMap::new(),
         presence: HashMap::new(),

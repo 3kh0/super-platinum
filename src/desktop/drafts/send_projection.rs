@@ -2,7 +2,7 @@
 //! conversation that happened to become visible during a durable send.
 use super::*;
 
-pub(super) fn append_pending(
+pub(crate) fn append_pending(
     shell: &mut ShellState,
     intent: &ConsumeIntent,
     local: &LocalDraft,
@@ -69,7 +69,7 @@ fn message(pending: &PendingSend, intent: &ConsumeIntent, user: String, ts: Stri
     }
 }
 
-pub(super) fn apply_outcome(
+pub(crate) fn apply_outcome(
     shell: &mut ShellState,
     pending: &PendingSend,
     intent: &ConsumeIntent,

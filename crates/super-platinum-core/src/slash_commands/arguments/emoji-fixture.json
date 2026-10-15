@@ -1,0 +1,68 @@
+{
+  "16": {
+    "grinning": {
+      "name": "grinning",
+      "unicode": "1f600"
+    },
+    "thumbsup": {
+      "name": "thumbsup",
+      "unicode": "1f44d",
+      "aliasOf": "+1",
+      "skinVariations": {
+        "2": {
+          "name": "thumbsup::skin-tone-2",
+          "unicode": "1f44d-1f3fb"
+        },
+        "3": {
+          "name": "thumbsup::skin-tone-3",
+          "unicode": "1f44d-1f3fc"
+        },
+        "4": {
+          "name": "thumbsup::skin-tone-4",
+          "unicode": "1f44d-1f3fd"
+        },
+        "5": {
+          "name": "thumbsup::skin-tone-5",
+          "unicode": "1f44d-1f3fe"
+        },
+        "6": {
+          "name": "thumbsup::skin-tone-6",
+          "unicode": "1f44d-1f3ff"
+        }
+      }
+    }
+  },
+  "17": {
+    "grinning": {
+      "name": "grinning",
+      "unicode": "1f600"
+    },
+    "thumbsup": {
+      "name": "thumbsup",
+      "unicode": "1f44d",
+      "aliasOf": "+1",
+      "skinVariations": {
+        "2": {
+          "name": "thumbsup::skin-tone-2",
+          "unicode": "1f44d-1f3fb"
+        },
+        "3": {
+          "name": "thumbsup::skin-tone-3",
+          "unicode": "1f44d-1f3fc"
+        },
+        "4": {
+          "name": "thumbsup::skin-tone-4",
+          "unicode": "1f44d-1f3fd"
+        },
+        "5": {
+          "name": "thumbsup::skin-tone-5",
+          "unicode": "1f44d-1f3fe"
+        },
+        "6": {
+          "name": "thumbsup::skin-tone-6",
+          "unicode": "1f44d-1f3ff"
+        }
+      }
+    }
+  }
+}

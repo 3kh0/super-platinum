@@ -138,6 +138,8 @@ mod tests {
             bots: Default::default(),
             usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
+            custom_emoji_revision: 0,
+            emoji_preferences: Default::default(),
             messages,
             typing: HashMap::new(),
             presence: HashMap::new(),

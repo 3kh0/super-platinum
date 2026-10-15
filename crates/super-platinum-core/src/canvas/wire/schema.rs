@@ -267,15 +267,15 @@ impl LoadDataResponse {
     pub fn preserialized(&self) -> Option<&RawMessage> {
         self.preserialized.as_ref()
     }
-    /// Nonempty preserialized items need their own captured type dispatch. Do
-    /// not silently hand a caller an incomplete canonical payload.
+    /// Project the source-backed SECTION subset without altering retained wire
+    /// evidence. Unsupported or ambiguous dispatch never yields a partial load.
     pub fn payload(&self) -> Result<Option<RawMessage>, Error> {
-        if self
+        if let Some(items) = self
             .preserialized
             .as_ref()
-            .is_some_and(|raw| !raw.fields().is_empty())
+            .filter(|raw| !raw.fields().is_empty())
         {
-            return Err(Error::Preserialized);
+            return super::preserialized::project(&self.raw, self.response.as_ref(), items);
         }
         self.response
             .as_ref()

@@ -256,14 +256,14 @@ pub fn BookmarksPanel(mut state: Signal<ShellState>, channel: String) -> Element
                             label {r#for:"bookmark-destination","Folder"}
                             select {id:"bookmark-destination",value:"{movement.parent}",disabled:busy||d.uncertain,
                                 onchange:move |e|change(state,|d|if let Some(m)=d.movement.as_mut(){m.parent=e.value();m.before.clear();}),
-                                option {value:"","Top level"}
-                                if !d.folder {for folder in store.into_iter().flat_map(|s|&s.items).filter(|b|b.folder()) {option {value:"{folder.id}","{folder.title()}"}}}
+                                option {value:"",selected:movement.parent.is_empty(),"Top level"}
+                                if !d.folder {for folder in store.into_iter().flat_map(|s|&s.items).filter(|b|b.folder()) {option {value:"{folder.id}",selected:movement.parent==folder.id,"{folder.title()}"}}}
                             }
                             label {r#for:"bookmark-position","Position"}
                             select {id:"bookmark-position",value:"{movement.before}",disabled:busy||d.uncertain,onchange:move |e|change(state,|d|if let Some(m)=d.movement.as_mut(){m.before=e.value();}),
-                                option {value:"","At the end"}
+                                option {value:"",selected:movement.before.is_empty(),"At the end"}
                                 for sibling in store.into_iter().flat_map(|s|&s.items).filter(|b|b.parent_id.as_deref().unwrap_or("")==movement.parent&&d.base.as_ref().is_none_or(|base|base.id!=b.id)) {
-                                    option {value:"{sibling.id}","Before {sibling.title()}"}
+                                    option {value:"{sibling.id}",selected:movement.before==sibling.id,"Before {sibling.title()}"}
                                 }
                             }
                         } else
@@ -422,3 +422,7 @@ fn organize(mut state: Signal<ShellState>, channel: &str, bookmark: Bookmark) {
         });
     }
 }
+
+#[cfg(test)]
+#[path = "bookmarks/picker_tests.rs"]
+mod picker_tests;

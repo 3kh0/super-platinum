@@ -102,7 +102,15 @@ impl Mapping {
 }
 
 pub(in crate::canvas) fn update_mapping(shell: &ShellState, reader: &mut super::super::Reader) {
+    if super::super::text::structure_fixture::enabled(shell) {
+        if let Some(snapshot) = presentation(shell).and_then(|view| view.snapshot) {
+            reader.document = Some(Arc::new(super::super::text::structure_fixture::document(
+                &snapshot,
+            )));
+        }
+    }
     let view = presentation(shell);
+    reader.canonical_loading = view.as_ref().is_some_and(|view| view.loading);
     let owner = view.as_ref().map(|view| (view.visit, view.read));
     reader.checklist = match (reader.document.as_deref(), view.and_then(|v| v.snapshot)) {
         (Some(document), snapshot) => Mapping::project(document, snapshot.as_deref()),
@@ -126,6 +134,7 @@ pub(in crate::canvas) async fn load(
     mut reader: Signal<super::super::Reader>,
     read: Read,
 ) {
+    recovery::load(state, &read).await;
     let mut read = read;
     let mut retries = 1;
     loop {
@@ -176,6 +185,8 @@ pub(in crate::canvas) async fn load(
             confirm_readback(&mut shell, &attempt, &read);
         }
         update_mapping(&shell, &mut reader.write());
+        drop(shell);
+        recovery::settle(state, &read).await;
         return;
     }
 }

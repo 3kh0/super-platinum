@@ -68,13 +68,27 @@ class NativeFixture:
         self.endpoint = None
         self._temporary = None
         self._output = None
+        self._temporary_owner = None
+        self._temporary_path = None
+        self._temporary_name = None
+        self._temporary_identity = None
+        self.cleanup_errors = []
 
     def __enter__(self):
         if not self.binary.is_file():
             raise FileNotFoundError(f"native binary missing: {self.binary}; build it first")
         self.log.parent.mkdir(parents=True, exist_ok=True)
         self._temporary = tempfile.TemporaryDirectory(prefix="sp-fixture-")
-        temporary = Path(self._temporary.name)
+        temporary = Path(self._temporary.name).resolve(strict=True)
+        self._temporary_owner = self._temporary
+        self._temporary_path = temporary
+        self._temporary_name = self._temporary.name
+        info = temporary.stat()
+        self._temporary_identity = (info.st_dev, info.st_ino)
+        # Cleanup is explicit and ownership-checked below. Disable the stdlib
+        # finalizer so a retained/redirected path is never deleted later without
+        # that check. TemporaryDirectory.cleanup still works after detach.
+        self._temporary._finalizer.detach()
         self._marker = temporary / "super-platinum-agent.sock.path"
         # Rust's temp_dir uses TMPDIR on Unix and the OS temporary path on
         # Windows. Overriding all three isolates the server discovery file as
@@ -110,8 +124,8 @@ class NativeFixture:
             self.control("ping")
             self.focus()
             return self
-        except BaseException:
-            self.close()
+        except BaseException as error:
+            self._close_preserving(error)
             raise
 
     def require_running(self):
@@ -145,35 +159,84 @@ class NativeFixture:
             raise RuntimeError(f"{self.fixture}: screenshot is not a valid PNG header: {path}")
         return response
 
+    def _cleanup_error(self, stage, error, attempts=1):
+        self.cleanup_errors.append({
+            "stage": stage, "type": type(error).__name__, "message": str(error),
+            "path": str(self._temporary_path) if stage == "temporary" else None,
+            "attempts": attempts,
+        })
+
+    def _close_preserving(self, primary):
+        try:
+            self.close()
+        except BaseException as cleanup:
+            if primary is None:
+                raise
+            # A cleanup failure must not replace the exception that caused exit.
+            # The structured record is available even on Python without notes.
+            if hasattr(primary, "add_note"):
+                primary.add_note(f"Native fixture cleanup also failed: {type(cleanup).__name__}: {cleanup}")
+
+    def _verify_temporary(self):
+        path = self._temporary_path
+        if (self._temporary is not self._temporary_owner or path is None
+                or not path.is_absolute() or not path.name.startswith("sp-fixture-")
+                or self._temporary.name != self._temporary_name
+                or Path(self._temporary.name).resolve() != path):
+            raise RuntimeError("Refusing cleanup of an unverified fixture temporary directory")
+        try:
+            info = path.stat()
+        except FileNotFoundError:
+            return path  # Already gone: stdlib cleanup is an idempotent no-op.
+        if (info.st_dev, info.st_ino) != self._temporary_identity:
+            raise RuntimeError("Refusing cleanup of a replaced fixture temporary directory")
+        return path
+
     def close(self):
-        if self.process is not None and self.process.poll() is None:
-            self.process.terminate()
-            try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait(timeout=5)
-        if self._output is not None:
-            self._output.close()
-            self._output = None
-        if self._temporary is not None:
-            # WebView2 descendants can release scratch files shortly after the
-            # owned GUI process exits. Retry only cleanup of our own directory;
-            # never kill browser processes by name or mask assertion evidence.
-            deadline = time.monotonic() + 3
-            while True:
+        try:
+            if self.process is not None and self.process.poll() is None:
+                self.process.terminate()
                 try:
+                    self.process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    self.process.kill()
+                    self.process.wait(timeout=5)
+        except BaseException as error:
+            self._cleanup_error("process", error)
+            raise
+        try:
+            if self._output is not None:
+                self._output.close()
+                self._output = None
+        except BaseException as error:
+            self._cleanup_error("output", error)
+            raise
+        if self._temporary is not None:
+            # WebView2 descendants can release/recreate scratch files shortly
+            # after the owned GUI exits. Retry only this verified directory,
+            # including Windows directory-not-empty (145), for at most 3 seconds.
+            deadline = time.monotonic() + 3
+            attempts = 0
+            while True:
+                attempts += 1
+                try:
+                    self._verify_temporary()
                     self._temporary.cleanup()
                     break
-                except OSError as error:
-                    if sys.platform != "win32" or error.winerror not in (5, 32, 33):
+                except BaseException as error:
+                    retryable = (isinstance(error, OSError) and sys.platform == "win32"
+                                 and getattr(error, "winerror", None) in (5, 32, 33, 145))
+                    if not retryable:
+                        self._cleanup_error("temporary", error, attempts)
                         raise
                     if time.monotonic() >= deadline:
+                        self._cleanup_error("temporary", error, attempts)
                         warnings.warn(f"fixture exited but temporary files remain locked at "
-                                      f"{self._temporary.name}: {error}", RuntimeWarning)
+                                      f"{self._temporary_path}: {error}", RuntimeWarning)
                         break
                     time.sleep(.1)
             self._temporary = None
+            self._temporary_owner = None
 
     def __exit__(self, exception_type, exception, traceback):
-        self.close()
+        self._close_preserving(exception)

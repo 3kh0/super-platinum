@@ -153,7 +153,8 @@ pub(super) fn begin_with_authority(
     if view.stale || view.loading || view.unavailable || view.retry_at > now() {
         return Err("Refresh this list before editing it.");
     }
-    if create::blocks_mutation(shell)
+    if rename::blocks_mutation(shell)
+        || create::blocks_mutation(shell)
         || delete::blocks_mutation(shell)
         || view.editor.is_some()
         || shell.slack_lists.operations.contains_key(&view.id)
@@ -336,7 +337,8 @@ pub(super) fn begin_save(
     {
         return Err("This editor is out of date. Cancel and reopen the cell before saving.");
     }
-    if create::blocks_mutation(shell)
+    if rename::blocks_mutation(shell)
+        || create::blocks_mutation(shell)
         || delete::blocks_mutation(shell)
         || shell.slack_lists.operations.contains_key(&view.id)
     {

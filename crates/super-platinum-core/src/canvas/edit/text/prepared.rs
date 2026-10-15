@@ -102,12 +102,32 @@ impl PreparedTextEdit {
         }
         let wire = section.crdt()?.ok_or(Error::Unconfirmed)?;
         let document = crdt::validate(&wire, section, &self.desired, Some(0))?;
-        let outgoing = self
-            .data
-            .message(1)?
-            .ok_or(Error::Unsupported)?
-            .message(38)?
-            .ok_or(Error::Unsupported)?;
+        let update = self.data.message(1)?.ok_or(Error::Unsupported)?;
+        let outgoing = update.message(38)?.ok_or(Error::Unsupported)?;
+        let zero_sent_head = if outgoing.uint(2)? == Some(0) {
+            let sent_head = outgoing.string(12)?.ok_or(Error::Unsupported)?;
+            if !processed_contains(&wire, sent_head)?
+                || wire.uint(2)? != Some(0)
+                || section.raw().uint(20)? != update.uint(20)?
+                || wire.string(8)? != outgoing.string(8)?
+                || zero_stable(&self.canonical)?
+                    != zero_stable(&self.canonical.merge_partial(section)?)?
+            {
+                return Err(Error::Unconfirmed);
+            }
+            let sent = automerge::Automerge::load(outgoing.bytes(5)?.ok_or(Error::Unsupported)?)
+                .map_err(|_| Error::Unsupported)?;
+            if sent
+                .get_changes(&[])
+                .iter()
+                .any(|change| document.get_change_by_hash(&change.hash()).is_none())
+            {
+                return Err(Error::Unconfirmed);
+            }
+            Some(sent_head.to_owned())
+        } else {
+            None
+        };
         let sent_head = outgoing
             .string(12)?
             .ok_or(Error::Unsupported)?
@@ -130,11 +150,14 @@ impl PreparedTextEdit {
             desired: self.desired.clone(),
             session: self.session.clone(),
             sequence: self.sequence,
+            zero_sent_head,
         })
     }
 }
 
 pub struct AcceptedText {
+    // Sealed outgoing head; a descendant alone cannot confirm this save.
+    zero_sent_head: Option<String>,
     pub(super) key: retained::Key,
     pub(super) baseline: Section,
     pub(super) section: Section,
@@ -164,6 +187,13 @@ impl AcceptedText {
         {
             return Ok(false);
         }
+        if self
+            .section
+            .crdt()?
+            .is_some_and(|wire| wire.uint(2).ok() == Some(Some(0)))
+        {
+            return self.confirms_zero_base_readback(section);
+        }
         // The direct sealed ACK already proves this save. A later canonical
         // revision may contain another author's subsequent edit; do not hold
         // the file's mutation lock until that author recreates our old text.
@@ -181,4 +211,67 @@ impl AcceptedText {
                 .parents()?
                 .is_none_or(|p| p.fields().is_empty()))
     }
+    fn confirms_zero_base_readback(&self, section: &Section) -> Result<bool, Error> {
+        // No current-server omission or later-revision normalization is claimed
+        // for this new cohort. All existing positive-base policy stays unchanged.
+        if section.sequence()? != self.section.sequence()?
+            || retained::association(section)? != retained::association(&self.baseline)?
+        {
+            return Ok(false);
+        }
+        let Some(wire) = section.crdt()? else {
+            return Ok(false);
+        };
+        let acknowledged = self.section.crdt()?.ok_or(Error::Unconfirmed)?;
+        let Some(sent_head) = self.zero_sent_head.as_deref() else {
+            return Ok(false);
+        };
+        if !processed_contains(&wire, sent_head)?
+            || wire.uint(2)? != Some(0)
+            || wire.string(8)? != acknowledged.string(8)?
+        {
+            return Ok(false);
+        }
+        let Ok(doc) = crdt::validate(&wire, section, &self.desired, Some(0)) else {
+            return Ok(false);
+        };
+        let ack_doc = automerge::Automerge::load(acknowledged.bytes(5)?.ok_or(Error::Unconfirmed)?)
+            .map_err(|_| Error::Unconfirmed)?;
+        Ok(ack_doc
+            .get_changes(&[])
+            .iter()
+            .all(|change| doc.get_change_by_hash(&change.hash()).is_some()))
+    }
+}
+
+// Only reviewed write/receipt fields may differ in a base0 text ACK. Reorder
+// independent identity tags only; preserve all other relative raw-field bytes.
+fn zero_stable(section: &Section) -> Result<RawMessage, Error> {
+    if section.section_type()?.unwrap_or(0) != 0 {
+        return Err(Error::Unconfirmed);
+    }
+    let mut raw = retained::association(section)?;
+    for tag in [2, 9, 12, 19, 20, 33] {
+        raw = raw.remove(tag)?;
+    }
+    let mut fields = raw.fields().iter().collect::<Vec<_>>();
+    fields.sort_by_key(|field| match field.tag() {
+        1 | 6 | 7 => field.tag(),
+        _ => 0,
+    });
+    let mut bytes = Vec::new();
+    for field in fields {
+        bytes.extend_from_slice(raw.encoded_field(field)?);
+    }
+    Ok(RawMessage::decode(&bytes)?)
+}
+
+fn processed_contains(wire: &RawMessage, head: &str) -> Result<bool, Error> {
+    for field in wire.fields().iter().filter(|field| field.tag() == 6) {
+        let value = RawMessage::decode(wire.encoded_field(field)?)?;
+        if value.string(6)? == Some(head) {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }

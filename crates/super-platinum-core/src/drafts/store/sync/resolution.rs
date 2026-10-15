@@ -2,8 +2,16 @@
 //! work, acknowledges a remote draft, or retires an immutable consume intent.
 use super::*;
 use crate::drafts::codec;
+#[cfg(test)]
+mod continuity;
+mod protected_recovery;
+pub use protected_recovery::api as protected;
+mod rejected_schedule;
 mod remote;
+mod schedule;
+pub use rejected_schedule::RejectedScheduleCommit;
 pub use remote::{RemoteChoice, RemoteReview, RemoteSettlement};
+pub use schedule::ReviewedScheduleCommit;
 
 #[derive(Clone, Debug)]
 pub struct LocalReview {
@@ -173,8 +181,8 @@ impl DraftStore {
                         row.state.edit(scope, desired);
                     }
                     Err(_) => {
-                        // The only established opaque-local capability belongs
-                        // to an immutable direct-send intent, never remote autosave.
+                        // Opaque-local capability belongs only to an exact
+                        // frozen terminal intent, never remote autosave.
                         let Some(intent) = row.state.consumption().cloned() else {
                             return Ok(LocalSettlement::Blocked);
                         };

@@ -200,7 +200,9 @@ async fn open(desktop: &dioxus::desktop::DesktopContext) -> Result<(), String> {
     editor_layout(desktop).await?;
     Ok(())
 }
-async fn editor_layout(desktop: &dioxus::desktop::DesktopContext) -> Result<Value, String> {
+pub(super) async fn editor_layout(
+    desktop: &dioxus::desktop::DesktopContext,
+) -> Result<Value, String> {
     // Viewport visibility alone misses clipping by the reader and modal. Do not
     // scroll here: the label, toolbar, editable field and actions must coexist.
     checked(desktop, r#"(()=>{
@@ -213,15 +215,24 @@ async fn editor_layout(desktop: &dioxus::desktop::DesktopContext) -> Result<Valu
       return {ok:d.scrollWidth<=d.clientWidth+1&&sc.scrollWidth<=sc.clientWidth+1&&bounds.every(b=>b.visible)&&field.clientHeight>=46,viewport:[innerWidth,innerHeight],clip,bounds,editor:[er.x,er.y,er.width,er.height],readerScroll:sc.scrollTop};
     })()"#).await
 }
-async fn click(desktop: &dioxus::desktop::DesktopContext, selector: &str) -> Result<(), String> {
+pub(super) async fn click(
+    desktop: &dioxus::desktop::DesktopContext,
+    selector: &str,
+) -> Result<(), String> {
     wait(desktop,&format!(r#"(()=>{{const e=document.querySelector({});if(!e||e.disabled||!e.isConnected)return {{ok:false,selector:{}}};e.scrollIntoView({{block:'nearest'}});e.focus();e.click();return {{ok:true}};}})()"#,json!(selector),json!(selector))).await?;
     Ok(())
 }
-async fn set_draft(desktop: &dioxus::desktop::DesktopContext, html: &str) -> Result<(), String> {
+pub(super) async fn set_draft(
+    desktop: &dioxus::desktop::DesktopContext,
+    html: &str,
+) -> Result<(), String> {
     checked(desktop,&format!(r#"(()=>{{const e=document.getElementById('canvas-text-draft');e.innerHTML={};e.dispatchEvent(new InputEvent('input',{{bubbles:true,inputType:'insertText'}}));e.focus();return {{ok:e.isContentEditable}};}})()"#,json!(html))).await?;
     Ok(())
 }
-async fn wait(desktop: &dioxus::desktop::DesktopContext, script: &str) -> Result<Value, String> {
+pub(super) async fn wait(
+    desktop: &dioxus::desktop::DesktopContext,
+    script: &str,
+) -> Result<Value, String> {
     let mut last = Value::Null;
     for _ in 0..80 {
         last = eval(desktop, script).await?;
@@ -232,7 +243,10 @@ async fn wait(desktop: &dioxus::desktop::DesktopContext, script: &str) -> Result
     }
     Err(format!("Canvas did not reach expected state: {last}"))
 }
-async fn checked(desktop: &dioxus::desktop::DesktopContext, script: &str) -> Result<Value, String> {
+pub(super) async fn checked(
+    desktop: &dioxus::desktop::DesktopContext,
+    script: &str,
+) -> Result<Value, String> {
     let receipt = eval(desktop, script).await?;
     if receipt["ok"] == true {
         Ok(receipt)

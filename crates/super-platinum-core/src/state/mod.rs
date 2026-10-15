@@ -292,6 +292,8 @@ pub struct Workspace {
     pub bots: bots::BotLookupState,
     pub usergroups: HashMap<String, crate::slack::models::UserGroup>,
     pub custom_emoji: HashMap<String, Emoji>,
+    pub custom_emoji_revision: u64,
+    pub emoji_preferences: crate::composer_emoji::preferences::Preferences,
     pub messages: HashMap<ChannelId, ChannelMessages>,
     pub typing: HashMap<ChannelId, Vec<(UserId, Instant)>>,
     pub presence: HashMap<UserId, Presence>,
@@ -335,6 +337,8 @@ impl Workspace {
             bots: Default::default(),
             usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
+            custom_emoji_revision: 0,
+            emoji_preferences: Default::default(),
             messages: HashMap::new(),
             typing: HashMap::new(),
             presence: HashMap::new(),
@@ -416,6 +420,7 @@ impl Workspace {
         self.notifications.apply_prefs(&boot.prefs);
         if boot.prefs.is_present() {
             self.read_preferences.apply_boot(&boot.prefs);
+            self.emoji_preferences.replace(&boot.prefs.extra);
             self.clear_unreads_preference.apply_boot(&boot.prefs);
         }
         if let Some(locale) = boot.prefs.extra.get("locale") {
@@ -630,7 +635,13 @@ impl Workspace {
         }
     }
 
+    pub fn replace_emojis(&mut self, emojis: Vec<Emoji>) {
+        self.custom_emoji.clear();
+        self.apply_emojis(emojis);
+    }
+
     pub fn apply_emojis(&mut self, emojis: Vec<Emoji>) {
+        self.custom_emoji_revision = self.custom_emoji_revision.wrapping_add(1);
         for emoji in emojis {
             self.custom_emoji.insert(emoji.name.clone(), emoji);
         }

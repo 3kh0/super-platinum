@@ -11,8 +11,11 @@ pub(crate) mod check;
 pub(super) mod event_reads;
 pub(super) mod fixture;
 pub(super) mod reader;
+pub(super) mod recovery;
+pub(super) mod replacement_ops;
 pub(super) mod save;
 mod scope;
+pub(super) mod structure_ops;
 pub(super) mod text_ops;
 use scope::Scope;
 #[cfg(test)]
@@ -25,8 +28,10 @@ pub(crate) struct State {
     serial: u64,
     view: Option<Visit>,
     operations: Vec<Operation>,
+    recovery: recovery::State,
     sessions: Vec<OwnedSession>,
     fixture: Option<fixture::State>,
+    pub(in crate::canvas) structure_fixture: Option<super::text::structure_fixture::State>,
     pub(in crate::canvas) text_fixture: Option<super::text::fixture::State>,
 }
 struct OwnedSession {
@@ -68,11 +73,15 @@ pub(super) struct Attempt {
 }
 #[derive(Clone)]
 enum Mutation {
+    Replacement { replacement: String },
     Checkbox(bool),
+    Structure(Arc<super_platinum_core::canvas::edit::text::TextDraft>),
     Text(Arc<super_platinum_core::canvas::edit::text::TextDraft>),
 }
 enum Accepted {
+    Replacement(super_platinum_core::canvas::edit::structure::AcceptedReplacement),
     Checkbox(AcceptedCheckbox),
+    Structure(super_platinum_core::canvas::edit::structure::AcceptedStructure),
     Text(super_platinum_core::canvas::edit::text::AcceptedText),
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -92,7 +101,11 @@ struct Operation {
     stage: Stage,
     dispatched_after_read: u64,
     dispatched: Option<(String, u64)>,
+    structural_request: Option<super_platinum_core::canvas::wire::RawMessage>,
     accepted: Option<Accepted>,
+    durable: Option<recovery::Ticket>,
+    durable_verified: Option<u64>,
+    durable_finishing: bool,
 }
 /// Only the canvas integration consumes these outcomes. An accepted HTTP result
 /// is not enough to unlock another edit: fresh canonical proof is still required.
@@ -319,6 +332,9 @@ pub(super) fn presentation(shell: &ShellState) -> Option<Presentation> {
     })
 }
 fn capacity_reason(shell: &ShellState) -> Option<&'static str> {
+    if let Some(reason) = recovery::reason(shell) {
+        return Some(reason);
+    }
     // Never discard an uncertain operation to make room. The per-owner limit
     // survives credential rotation; the global ceiling bounds retained snapshots
     // across accounts and is surfaced explicitly, not attributed to this canvas.
@@ -388,7 +404,11 @@ pub(super) fn begin(
         stage: Stage::Preparing,
         dispatched_after_read: read,
         dispatched: None,
+        structural_request: None,
         accepted: None,
+        durable: None,
+        durable_verified: None,
+        durable_finishing: false,
     });
     Ok(attempt)
 }
@@ -569,7 +589,6 @@ pub(super) fn confirm_readback(shell: &mut ShellState, attempt: &Attempt, read: 
     };
     if snapshot.thread_id() != attempt.snapshot.thread_id()
         || snapshot.document_id() != attempt.snapshot.document_id()
-        || snapshot.section(&attempt.section).is_none()
     {
         return false;
     }
@@ -588,6 +607,32 @@ pub(super) fn confirm_readback(shell: &mut ShellState, attempt: &Attempt, read: 
     let Some(accepted) = shell.canvas_checklist.operations[index].accepted.as_ref() else {
         return false;
     };
+    if let Accepted::Replacement(accepted) = accepted {
+        if !accepted.confirms_readback(snapshot).unwrap_or(false) {
+            return false;
+        }
+        if shell.canvas_checklist.operations[index].durable.is_some() {
+            shell.canvas_checklist.operations[index].durable_verified = Some(read.serial);
+            return false;
+        }
+        shell.canvas_checklist.view.as_mut().unwrap().settled_text = Some(attempt.serial);
+        shell.canvas_checklist.operations.remove(index);
+        return true;
+    }
+    if let Accepted::Structure(accepted) = accepted {
+        if !accepted.confirms_readback(snapshot).unwrap_or(false) {
+            return false;
+        }
+        // The source proof alone must not unlock before its durable receipt is
+        // removed. Only recovery::settle consumes this exact verified read.
+        if shell.canvas_checklist.operations[index].durable.is_some() {
+            shell.canvas_checklist.operations[index].durable_verified = Some(read.serial);
+            return false;
+        }
+        shell.canvas_checklist.view.as_mut().unwrap().settled_text = Some(attempt.serial);
+        shell.canvas_checklist.operations.remove(index);
+        return true;
+    }
     if let Accepted::Text(accepted) = accepted {
         if !accepted.confirms_readback(snapshot).unwrap_or(false) {
             return false;

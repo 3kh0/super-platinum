@@ -136,6 +136,7 @@ fn unavailable(shell: &ShellState) -> Option<&'static str> {
     if view.editor.is_some()
         || shell.slack_lists.operations.contains_key(&view.id)
         || create::blocks_mutation(shell)
+        || rename::blocks_mutation(shell)
         || blocks_mutation(shell)
     {
         return Some("Finish the current change before deleting an item.");
@@ -364,6 +365,7 @@ pub(super) fn confirm_shell(
             .receipts
             .contains_key(&attempt.key())
         || create::blocks_mutation(shell)
+        || rename::blocks_mutation(shell)
         || shell
             .slack_lists
             .operations

@@ -97,6 +97,22 @@ class WindowsAPI:
             raise C.WinError(C.get_last_error())
         return handle
 
+    def creation(self, pid):
+        # Discovery does not need termination status. Query identity with the
+        # minimum documented GetProcessTimes right before requiring SYNCHRONIZE.
+        # A stale numeric parent PID must not make an unrelated process owned.
+        handle = self.kernel.OpenProcess(0x1000, False, pid)  # QUERY_LIMITED only
+        if not handle:
+            raise C.WinError(C.get_last_error())
+        try:
+            creation, exit_time, kernel, user = (W.FILETIME() for _ in range(4))
+            if not self.kernel.GetProcessTimes(handle, C.byref(creation), C.byref(exit_time),
+                                              C.byref(kernel), C.byref(user)):
+                raise C.WinError(C.get_last_error())
+            return ticks(creation)  # Never interpret undefined live exit_time.
+        finally:
+            self.kernel.CloseHandle(handle)
+
     def times(self, handle):
         status = self.kernel.WaitForSingleObject(handle, 0)
         if status not in (0, 258):  # WAIT_OBJECT_0 (exited), WAIT_TIMEOUT (live)
@@ -149,9 +165,17 @@ class OwnedProcessTree:
                     continue
                 del remaining[pid]
                 handle = None
+                access_stage = "query_creation"
                 try:
+                    candidate_creation = self.api.creation(pid)
+                    parent_times = self.api.times(parent["handle"])
+                    if not parent_lifetime_contains(parent_times, candidate_creation):
+                        continue  # Proven stale parent-PID link, no retained open.
+                    access_stage = "retain_and_validate"
                     handle = self.api.open(pid)
                     creation = self.api.times(handle)["creation_filetime"]
+                    if creation != candidate_creation:
+                        raise OSError("candidate PID changed identity during discovery")
                     parent_times = self.api.times(parent["handle"])
                     if not parent_lifetime_contains(parent_times, creation):
                         self.api.kernel.CloseHandle(handle)
@@ -167,7 +191,8 @@ class OwnedProcessTree:
                     if handle:
                         self.api.kernel.CloseHandle(handle)
                     errors.append({"pid": pid, "parent_pid": entry["parent_pid"],
-                                   "stage": "discover", "error": str(error)})
+                                   "name": entry["name"], "stage": "discover",
+                                   "access_stage": access_stage, "error": str(error)})
         records = []
         for process in self.owned.values():
             record = {key: value for key, value in process.items() if key != "handle"}

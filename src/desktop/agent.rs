@@ -51,6 +51,15 @@ pub async fn serve(
     crate::drafts::projection_check::start(state, desktop.clone());
     crate::drafts::remote_review_check::start(state, desktop.clone());
     crate::drafts::recovery::update_check::start(state, desktop.clone());
+    crate::drafts::recovery::schedule_check::start(state, desktop.clone());
+    crate::drafts::send::check::start(state, desktop.clone());
+    #[cfg(feature = "protected-native-fixture")]
+    crate::drafts::protected::native_fixture::check::start(state, desktop.clone());
+    #[cfg(feature = "protected-native-fixture")]
+    crate::drafts::protected::enrollment_fixture::check::start(state, desktop.clone());
+    #[cfg(feature = "protected-native-fixture")]
+    crate::drafts::protected::adoption_fixture::check::start(state, desktop.clone());
+    crate::view::managed_schedule_check::start(state, desktop.clone());
     crate::scheduled::attachments::fixture::check::start(state, desktop.clone());
     crate::slack_links::user_check::start(state, desktop.clone());
     crate::read_preferences::settings::check::start(state, desktop.clone());
@@ -65,12 +74,19 @@ pub async fn serve(
     crate::message_buttons::multi_check::start(state, desktop.clone());
     crate::canvas::checklist::check::start(state, desktop.clone());
     crate::canvas::text::check::start(state, desktop.clone());
+    crate::canvas::text::structure_check::start(state, desktop.clone());
+    crate::canvas::text::continuation_check::start(state, desktop.clone());
+    crate::canvas::text::structure_recovery_check::start(state, desktop.clone());
+    crate::canvas::text::replacement_check::start(state, desktop.clone());
     crate::message_buttons::radio_check::start(state, desktop.clone());
     crate::slack_links_check::start(state, desktop.clone());
     crate::activity_feed::check::start(state, desktop.clone());
     crate::media::check::start(state, desktop.clone());
     crate::view::theme::check::start(state, desktop.clone());
     crate::composer_emoji::check::start(state, desktop.clone());
+    crate::emoji_native::start(state, desktop.clone());
+    crate::performance::emoji_lifecycle::start(state, desktop.clone());
+    crate::performance::emoji_retirement::start(state, desktop.clone());
     crate::channel_mute::check::start(state, desktop.clone());
     crate::channel_mute::settings::check::start(state, desktop.clone());
     crate::notification_schedule::check::start(state, desktop.clone());

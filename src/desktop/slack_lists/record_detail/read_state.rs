@@ -68,6 +68,7 @@ fn claim(shell: &mut ShellState, open: u64) -> Option<Attempt> {
 /// Called by the stable detail component's mount, including accepted-created
 /// records. Ordinary shell updates, field paging and fresh reads do not mount it.
 pub(crate) fn track_open(mut state: Signal<ShellState>, open_generation: u64) {
+    super::hydration::start(state, open_generation);
     let Some(attempt) = claim(&mut state.write(), open_generation) else {
         return;
     };

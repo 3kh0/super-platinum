@@ -1,5 +1,6 @@
 //! Ordered, acknowledged journal operations. No operation is automatically retried.
 use super::{AppError, DraftStore, Reply, Request, mpsc, receive, worker};
+use crate::drafts::store::terminal;
 use crate::drafts::store::uploads::{Draft, Reservation, Stored, Ticket};
 
 pub(super) enum Command {
@@ -8,25 +9,62 @@ pub(super) enum Command {
     Retire(Stored, Reply<bool>),
     Load(String, Reply<Vec<Stored>>),
 }
-pub(super) fn execute(command: Command, open: &impl Fn(&str) -> Result<DraftStore, AppError>) {
+#[cfg(any(test, feature = "protected-test-support"))]
+impl Command {
+    pub(super) fn identity(&self) -> (&str, &'static str) {
+        match self {
+            Self::Reserve(draft, _) => (&draft.account_id, "upload-reserve"),
+            Self::Finalize(ticket, _, _) => (ticket.account_id(), "upload-finalize"),
+            Self::Retire(stored, _) => (stored.ticket.account_id(), "upload-retire"),
+            Self::Load(account, _) => (account, "upload-load"),
+        }
+    }
+}
+pub(super) fn execute(
+    command: Command,
+    open: &impl Fn(&str) -> Result<DraftStore, AppError>,
+) -> terminal::Report {
     match command {
         Command::Reserve(draft, reply) => {
             let result = open(&draft.account_id).and_then(|mut store| store.reserve_upload(&draft));
+            let report = terminal::app(&result, |value| {
+                if value.created {
+                    terminal::accepted(value)
+                } else {
+                    terminal::read(value)
+                }
+            });
             let _ = reply.send(result);
+            report
         }
         Command::Finalize(ticket, files, reply) => {
             let result = open(ticket.account_id())
                 .and_then(|mut store| store.finalize_upload(&ticket, files));
+            let report = terminal::app(&result, |value| match value {
+                Some(_) => terminal::accepted(value),
+                None => terminal::refused(value),
+            });
             let _ = reply.send(result);
+            report
         }
         Command::Retire(stored, reply) => {
             let result =
                 open(stored.ticket.account_id()).and_then(|mut store| store.retire_upload(&stored));
+            let report = terminal::app(&result, |value| {
+                if *value {
+                    terminal::accepted(value)
+                } else {
+                    terminal::refused(value)
+                }
+            });
             let _ = reply.send(result);
+            report
         }
         Command::Load(account, reply) => {
             let result = open(&account).and_then(|mut store| store.load_uploads(&account));
+            let report = terminal::app(&result, terminal::read);
             let _ = reply.send(result);
+            report
         }
     }
 }

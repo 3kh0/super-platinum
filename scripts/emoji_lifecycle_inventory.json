@@ -1,0 +1,12 @@
+{
+  "aliases": 16000,
+  "extra_json_bytes": 18638290,
+  "fixture_fnv1a": "9e4a16cfa4295f4d",
+  "map_key_bytes_not_captured": 3520000,
+  "name_bytes": 3520000,
+  "rows": 64000,
+  "url_bytes_max": 297,
+  "url_bytes_min": 297,
+  "urls": 48000,
+  "value_bytes": 15232000
+}

@@ -5,7 +5,7 @@
 use super::{CanonicalTitle, CanvasCollabSnapshot, EditSession, Error, F, RawMessage, Section};
 use std::sync::Arc;
 
-mod crdt;
+pub(super) mod crdt;
 mod draft;
 mod prepared;
 pub(super) mod retained;

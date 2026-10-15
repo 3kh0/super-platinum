@@ -172,3 +172,8 @@ mod settlement;
 
 #[path = "remote_review/storage.rs"]
 mod remote_review;
+
+#[path = "rejected_schedule_storage.rs"]
+mod rejected_schedule;
+#[path = "schedule_storage.rs"]
+mod schedule;

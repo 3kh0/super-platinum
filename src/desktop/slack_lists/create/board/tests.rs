@@ -4,6 +4,8 @@ use serde_json::json;
 fn shell(selected: &str) -> ShellState {
     let mut shell =
         ShellState::fixture_variant(crate::media::MediaRegistry::default(), "slack-list");
+    shell.core.active_account = Some(format!("creation-test-{}", next_id()));
+    shell.slack_lists.scope = Scope::capture(&shell);
     shell.self_account.user_id = "U00000001".into();
     let team = shell.core.active_team.clone().unwrap();
     shell.core.workspaces.get_mut(&team).unwrap().self_user_id = "U00000001".into();

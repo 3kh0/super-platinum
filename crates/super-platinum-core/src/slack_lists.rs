@@ -4,6 +4,19 @@ use serde_json::Value;
 use std::collections::{BTreeMap, HashSet};
 
 mod cell_edit;
+mod column_rename;
+mod view_create;
+mod view_rename;
+pub use column_rename::{ColumnRename, ColumnRenameAttempt, ColumnRenamePermit, ColumnRenamePhase};
+pub use view_create::{
+    ViewCreate, ViewCreateAttempt, ViewCreatePermit, ViewCreatePhase, ViewLayout,
+};
+pub use view_rename::{ViewRename, ViewRenameAttempt, ViewRenamePermit, ViewRenamePhase};
+mod subitem;
+pub use subitem::{
+    SUBITEM_INPUT_LIMIT, SubitemCreateAttempt, SubitemCreatePermit, SubitemCreationIntent,
+    SubitemReadback, subitem_input_bytes,
+};
 mod creation;
 pub use creation::{CreationIntent, ListClock, ListTimestamp};
 mod deletion;
@@ -14,6 +27,8 @@ pub use deletion::{
 mod cells;
 mod edits;
 mod hierarchy;
+mod hydration;
+pub use hydration::ListRecordHydration;
 pub mod numbers;
 mod ordering;
 mod policy;

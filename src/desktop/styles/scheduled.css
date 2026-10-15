@@ -29,3 +29,32 @@
 .schedule-toggle input { accent-color: var(--accent); }
 .scheduled-actions button:disabled { opacity: .5; cursor: default; }
 .scheduled-actions .draft-resume { min-width: 136px; }
+
+/* This dialog is mounted beside the composer button, inside a positioned
+   composer. Its layer must use the viewport, never that button's containing block. */
+.scrim.managed-schedule-scrim { position: fixed; }
+.modal.managed-schedule-dialog {
+  position: fixed;
+  top: var(--space-4);
+  box-sizing: border-box;
+  max-height: calc(100vh - var(--space-4) - var(--space-4));
+  overflow: hidden;
+}
+.managed-schedule-dialog > header,
+.managed-schedule-dialog > .scheduled-hint,
+.managed-schedule-dialog > footer { flex-shrink: 0; }
+.modal.managed-schedule-dialog > header { flex: 0 0 auto; min-height: var(--control-height); padding: 0; border-bottom: 0; }
+.managed-schedule-dialog > footer > .primary { margin-top: 0; }
+.managed-schedule-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.managed-schedule-time-fields { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
+.managed-schedule-time-fields > label { font-size: var(--text-sm); font-weight: 500; }
+.managed-schedule-time-fields > input {
+  box-sizing: border-box; width: 100%; min-height: var(--control-height);
+  padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--text); font: inherit; color-scheme: dark;
+}
+.managed-schedule-time-fields > input:focus { border-color: var(--accent); }
+.managed-schedule-body .rich-reminder-editor {
+  box-sizing: border-box;
+  max-height: clamp(88px, calc(100vh - 280px), 240px);
+}

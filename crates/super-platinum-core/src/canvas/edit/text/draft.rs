@@ -27,7 +27,7 @@ pub struct TextDraft {
 
 /// Source GoiO marks refer to escaped text, not visible Unicode character
 /// offsets. In particular '&' occupies five units and a soft break four.
-pub(super) struct Model {
+pub(in crate::canvas::edit) struct Model {
     pub text: String,
     pub marks: Vec<automerge::marks::Mark>,
 }
@@ -186,7 +186,7 @@ impl TextDraft {
         Ok(result)
     }
 
-    pub(super) fn model(&self) -> Result<Model, Error> {
+    pub(in crate::canvas::edit) fn model(&self) -> Result<Model, Error> {
         self.validate()?;
         let mut text = String::new();
         let mut marks = Vec::new();

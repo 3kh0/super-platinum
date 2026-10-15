@@ -523,3 +523,5 @@ fn definite_offline_preflight_is_not_reported_as_dispatched_or_uncertain() {
 }
 
 mod acknowledgement;
+
+mod neutral_metadata;

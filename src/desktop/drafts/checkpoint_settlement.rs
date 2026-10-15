@@ -56,8 +56,8 @@ impl Editor {
                 state.local_writer = Default::default();
                 state.released = view.stored.is_none();
                 state.released_tail = view.local.clone();
-                // A direct-send capability can remain valid immediately after
-                // its receipt removes consumption; checkpoint validates it.
+                // Exact persisted completion provenance can retain local-only
+                // capability after consumption ends; checkpoint validates it.
                 if let Some(intent) = view.stored.as_ref().and_then(local::direct_intent) {
                     state.direct_local = Some(intent);
                 }

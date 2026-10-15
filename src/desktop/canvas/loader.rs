@@ -11,6 +11,12 @@ pub(super) async fn load(
     mut reader: Signal<Reader>,
     target: CanvasTarget,
 ) {
+    if text::structure_fixture::enabled(&state.peek()) {
+        let mut shell = state.write();
+        text::structure_fixture::refresh(&mut shell);
+        checklist::reader::update_mapping(&shell, &mut reader.write());
+        return;
+    }
     if text::fixture::enabled(&state.peek()) {
         let mut shell = state.write();
         text::fixture::refresh(&mut shell);
@@ -48,6 +54,7 @@ pub(super) async fn read_pair(
     mut reader: Signal<Reader>,
     read: checklist::Read,
 ) {
+    checklist::recovery::load(state, &read).await;
     let context = read.request(&state.peek());
     let Some(ctx) = context else {
         if checklist::finish_read(
@@ -86,19 +93,22 @@ pub(super) async fn read_pair(
             "This canvas could not load. Try again or open it in Slack."
         }
     });
-    let mut shell = state.write();
-    // Do not access a destroyed/replacement component's Reader after awaiting.
-    if !read.owns_view(&shell) {
-        return;
+    {
+        let mut shell = state.write();
+        // Do not access a destroyed/replacement component's Reader after awaiting.
+        if !read.owns_view(&shell) {
+            return;
+        }
+        finish(
+            &mut shell,
+            &mut reader.write(),
+            &read,
+            generation,
+            canonical,
+            export,
+        );
     }
-    finish(
-        &mut shell,
-        &mut reader.write(),
-        &read,
-        generation,
-        canonical,
-        export,
-    );
+    checklist::recovery::settle(state, &read).await;
 }
 
 fn finish(

@@ -185,8 +185,15 @@ pub(crate) fn finish_reconcile(s: &mut ShellState, c: &Context, id: u64, success
         if e.operation.is_none() {
             if e.refresh_failed {
                 e.message = Some(if e.acknowledged {"The request succeeded, but current read state could not be refreshed. Refresh when connected."} else {"Current read state could not be refreshed. Refresh when connected."}.into());
-            } else if e.notice.is_none() {
-                e.message = None;
+            } else {
+                e.message = e.notice.as_ref().map(|notice| {
+                    if notice.undone {
+                        "Unread state restored."
+                    } else {
+                        "Unread messages and notifications cleared."
+                    }
+                    .into()
+                });
             }
         }
     }

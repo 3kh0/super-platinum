@@ -9,14 +9,24 @@ use crate::state::ts_key;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 mod consume;
+mod continuity;
+mod neutral_metadata;
+pub use neutral_metadata::supports_neutral_metadata;
 mod direct_local;
 mod observation;
 pub mod owned_index;
+mod protected_facade;
+mod protected_slash;
 pub(crate) mod reconciliation;
 mod recovery;
+mod rejected_schedule;
+mod reviewed_schedule;
+mod slash_cleanup;
 pub use consume::{ConsumeError, ConsumeIntent, ConsumeKind};
 pub use observation::{DraftObservation, ObservationError, ObservationKind};
 pub use recovery::{CheckBlock, CheckTicket};
+pub use rejected_schedule::{RejectedScheduleChoice, RejectedScheduleError};
+pub use reviewed_schedule::ReviewedScheduleError;
 
 /// Account identity and the verified destination, never the currently visible
 /// composer. Adapters must derive a remote scope from its own destination.
@@ -125,6 +135,10 @@ pub struct DraftSync {
     retired_ids: Vec<String>,
     #[serde(default)]
     consumption: Option<ConsumeIntent>,
+    /// Exact positive terminal receipt provenance for local-only newer input.
+    /// Legacy rows without it remain loadable but grant no post-ACK capability.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    local_completion: Option<direct_local::LocalCompletion>,
     #[serde(default)]
     check_deadline: Option<recovery::CheckDeadline>,
     #[serde(default)]
@@ -147,6 +161,7 @@ impl DraftSync {
             tombstone: false,
             retired_ids: vec![],
             consumption: None,
+            local_completion: None,
             check_deadline: None,
             check_ticket: None,
             observed_events: Default::default(),
@@ -220,6 +235,7 @@ impl DraftSync {
             tombstone: false,
             retired_ids: vec![],
             consumption: None,
+            local_completion: None,
             check_deadline: None,
             check_ticket: None,
             observed_events: Default::default(),
@@ -295,6 +311,9 @@ impl DraftSync {
                 return None;
             }
         };
+        // A new ordinary remote operation ends the completed intent's local
+        // handoff authority, even if that operation is later rejected.
+        self.local_completion = None;
         let op = Operation {
             id: uuid::Uuid::new_v4().to_string(),
             scope: self.scope.clone(),
@@ -405,6 +424,7 @@ impl DraftSync {
                 .is_none_or(|base| ts_key(&remote.last_updated_ts) > ts_key(&base.last_updated_ts))
     }
     fn accept_operation(&mut self, op: Operation, remote: RemoteDraft) {
+        self.local_completion = None;
         self.acknowledged_local_revision = op.local_revision;
         self.acknowledged = Some(remote);
         // Preserve newer local edits and clearing that arrived during this write.
@@ -470,6 +490,7 @@ impl DraftSync {
                     // Even unchanged content can be a newer authoritative
                     // revision. Retain it so a delayed older write receipt
                     // cannot replace the server state already observed.
+                    self.local_completion = None;
                     self.acknowledged = Some(remote);
                     return true;
                 }
@@ -500,6 +521,7 @@ impl DraftSync {
                 self.tombstone = false;
             }
             self.acknowledged_local_revision = self.local_revision;
+            self.local_completion = None;
             self.acknowledged = Some(remote);
         } else if self
             .acknowledged
@@ -507,6 +529,7 @@ impl DraftSync {
             .is_some_and(|base| base.snapshot == remote.snapshot)
         {
             // A repeat of the base is not a conflict with unsaved local edits.
+            self.local_completion = None;
             self.acknowledged = Some(remote);
         } else {
             self.workflow = Workflow::Conflict {
@@ -533,6 +556,7 @@ impl DraftSync {
         self.acknowledged_local_revision = op.local_revision;
         self.retired_ids.push(remote_id.into());
         self.acknowledged = None;
+        self.local_completion = None;
         self.client_msg_id = uuid::Uuid::new_v4().to_string();
         self.workflow = Workflow::Idle;
         true
@@ -585,6 +609,7 @@ impl DraftSync {
             self.local_revision = self.local_revision.saturating_add(1);
             self.acknowledged_local_revision = self.local_revision;
             self.tombstone = true;
+            self.local_completion = None;
             self.client_msg_id = uuid::Uuid::new_v4().to_string();
         } else {
             self.workflow = Workflow::Conflict {

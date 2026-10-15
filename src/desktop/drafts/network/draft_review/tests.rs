@@ -160,3 +160,47 @@ async fn rate_limit_blocks_reopened_binding_without_automatic_retry() {
     assert!(!result.requested);
     assert_eq!(result.cooldown_until_ms, Some(until));
 }
+
+#[tokio::test]
+async fn neutral_metadata_review_retains_full_positive_and_rejected_raw_evidence() {
+    let (binding, review, mut raw) = fixture();
+    raw["draft"]["date_stashed"] = json!(0);
+    raw["draft"]["file_permissions"] = json!([]);
+    let result = binding
+        .read_remote_review_with(review.clone(), 1000, |_| {
+            std::future::ready(Ok(raw.clone()))
+        })
+        .await;
+    let proof = result.proof.expect("neutral metadata review");
+    assert_eq!(proof.review().raw_info(), &raw);
+    assert_eq!(proof.review().inventory().scope, review.scope);
+    assert_eq!(
+        proof.review().inventory().stored.as_ref().unwrap().revision,
+        review.stored.as_ref().unwrap().revision
+    );
+    for (field, value) in [
+        ("date_stashed", json!("0")),
+        ("date_stashed", json!(1)),
+        ("date_stashed", Value::Null),
+        ("date_stashed", json!(false)),
+        ("file_permissions", json!({})),
+        ("file_permissions", json!([{"file_id":"F1","grant":false}])),
+        ("file_permissions", Value::Null),
+        ("mpdm_name", json!("")),
+        ("is_from_composer", Value::Null),
+        ("is_from_composer", json!("false")),
+        ("is_sent", json!(true)),
+        ("user_id", json!("U2")),
+        ("future_field", json!(false)),
+    ] {
+        let mut bad = raw.clone();
+        bad["draft"][field] = value;
+        let result = binding
+            .read_remote_review_with(review.clone(), 1000, |_| {
+                std::future::ready(Ok(bad.clone()))
+            })
+            .await;
+        assert!(result.proof.is_none(), "{field}");
+        assert_eq!(result.raw, Some(bad));
+    }
+}

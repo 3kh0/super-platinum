@@ -51,7 +51,8 @@ pub(super) fn begin_edit_with_authority(
     if view.stale || view.loading || view.unavailable || view.retry_at > now() {
         return Err("Refresh this list before changing it.");
     }
-    if create::blocks_mutation(shell)
+    if rename::blocks_mutation(shell)
+        || create::blocks_mutation(shell)
         || delete::blocks_mutation(shell)
         || shell.slack_lists.operations.contains_key(&view.id)
         || view.editor.is_some()

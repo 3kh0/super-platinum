@@ -172,7 +172,7 @@ async fn unknown_or_conflicting_draft_lifecycle_is_preserved_without_acknowledge
             ("is_sent", json!(true)),
             ("date_scheduled", json!(1000)),
             ("future_lifecycle", json!(false)),
-            ("date_stashed", json!(0)),
+            ("date_stashed", json!(1)),
             ("file_permissions", json!({})),
             ("mpdm_name", json!("")),
             ("deleted_ts", json!("200.000001")),

@@ -2,6 +2,7 @@
 //! This module does not authorize edits, invent missing defaults, or log content.
 use std::{collections::HashSet, ops::Range, sync::Arc};
 
+mod preserialized;
 mod schema;
 pub use schema::{DocumentData, EditAck, FetchLatest, LoadDataResponse, Section};
 

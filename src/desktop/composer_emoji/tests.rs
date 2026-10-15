@@ -6,7 +6,11 @@ use super_platinum_core::slack::models::Emoji;
 fn stale_picker_close_cannot_dismiss_a_new_picker_visit() {
     let mut shell = ShellState::fixture(MediaRegistry::default());
     let scope = Scope::capture(&shell, ComposerTarget::Channel).unwrap();
-    shell.composer_emoji.active = Some(Visit { serial: 2, scope });
+    shell.composer_emoji.active = Some(Visit {
+        serial: 2,
+        scope,
+        snapshot: None,
+    });
     shell.overlay = Some(Overlay::ComposerEmoji);
     close_visit(&mut shell, 1);
     assert_eq!(shell.overlay, Some(Overlay::ComposerEmoji));
@@ -53,23 +57,46 @@ fn unavailable_composer_and_missing_thread_cannot_admit_a_picker() {
 
 #[test]
 fn standard_glyphs_and_custom_aliases_keep_correct_workspace_identity() {
-    let mut shell = ShellState::fixture(MediaRegistry::default());
-    assert_eq!(insertion(&shell, "rocket").as_deref(), Some("🚀"));
-    assert!(insertion(&shell, "unknown-not-a-choice").is_none());
-    let custom = &mut shell.core.workspaces.get_mut("T1").unwrap().custom_emoji;
-    for (name, value) in [
-        ("rocket", "https://example.invalid/rocket.png"),
-        ("ship_it", "alias:rocket"),
-    ] {
-        custom.insert(
-            name.into(),
+    use super_platinum_core::composer_emoji::{
+        catalog::Catalog, insertion::Representation, preferences::Preferences, standard::Version,
+    };
+    let mut preferences = Preferences::default();
+    let standard = Catalog::build(Version::V16, vec![]).unwrap();
+    assert!(insertion(&standard, &preferences, "rocket", "").is_none());
+    preferences.replace(&Default::default());
+    assert_eq!(
+        insertion(&standard, &preferences, "rocket", "")
+            .unwrap()
+            .insertion(Representation::Rendered),
+        "\u{1f680}"
+    );
+    assert!(insertion(&standard, &preferences, "unknown-not-a-choice", "").is_none());
+    let custom = Catalog::build(
+        Version::V16,
+        vec![
             Emoji {
-                name: name.into(),
-                value: value.into(),
+                name: "rocket".into(),
+                value: "https://example.invalid/rocket.png".into(),
                 ..Default::default()
             },
-        );
-    }
-    assert_eq!(insertion(&shell, "rocket").as_deref(), Some(":rocket:"));
-    assert_eq!(insertion(&shell, "ship_it").as_deref(), Some(":ship_it:"));
+            Emoji {
+                name: "ship_it".into(),
+                value: "alias:rocket".into(),
+                ..Default::default()
+            },
+        ],
+    )
+    .unwrap();
+    assert_eq!(
+        insertion(&custom, &preferences, "rocket", "")
+            .unwrap()
+            .insertion(Representation::Rendered),
+        ":rocket:"
+    );
+    assert_eq!(
+        insertion(&custom, &preferences, "ship_it", "")
+            .unwrap()
+            .insertion(Representation::Rendered),
+        ":ship_it:"
+    );
 }

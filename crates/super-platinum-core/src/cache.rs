@@ -29,6 +29,8 @@ struct CachedSidebar {
     #[serde(default)]
     read_preferences: crate::state::ReadPreferences,
     #[serde(default)]
+    emoji_preferences: crate::composer_emoji::preferences::Preferences,
+    #[serde(default)]
     clear_unreads_preference: crate::state::ClearUnreadsPreference,
     #[serde(default)]
     config: crate::state::SidebarConfig,
@@ -48,6 +50,7 @@ struct CachedSidebarRef<'a> {
     thread_counts: Option<&'a crate::slack::models::ThreadCounts>,
     notifications: &'a crate::state::NotificationConfig,
     read_preferences: &'a crate::state::ReadPreferences,
+    emoji_preferences: &'a crate::composer_emoji::preferences::Preferences,
     clear_unreads_preference: &'a crate::state::ClearUnreadsPreference,
     config: &'a crate::state::SidebarConfig,
     vip_users: &'a std::collections::HashSet<String>,
@@ -56,6 +59,8 @@ struct CachedSidebarRef<'a> {
 }
 const MAX_CACHED_MESSAGES_PER_CHANNEL: usize = 200;
 
+#[cfg(test)]
+mod emoji_preferences_tests;
 #[cfg(test)]
 mod read_preferences_tests;
 #[cfg(test)]
@@ -208,6 +213,8 @@ impl Cache {
             bots: Default::default(),
             usergroups: HashMap::new(),
             custom_emoji: HashMap::new(),
+            custom_emoji_revision: 0,
+            emoji_preferences: Default::default(),
             messages: HashMap::new(),
             typing: HashMap::new(),
             presence: HashMap::new(),
@@ -227,6 +234,7 @@ impl Cache {
             ws.sidebar = sidebar.config;
             ws.notifications = sidebar.notifications;
             ws.read_preferences = sidebar.read_preferences;
+            ws.emoji_preferences = sidebar.emoji_preferences;
             ws.clear_unreads_preference = sidebar.clear_unreads_preference;
             ws.locale = sidebar.locale;
             ws.team_plan = sidebar.team_plan;
@@ -347,6 +355,7 @@ impl Cache {
                     thread_counts: ws.thread_counts.snapshot.as_ref(),
                     notifications: &ws.notifications,
                     read_preferences: &ws.read_preferences,
+                    emoji_preferences: &ws.emoji_preferences,
                     clear_unreads_preference: &ws.clear_unreads_preference,
                     config: &ws.sidebar,
                     vip_users: &ws.vip_users,

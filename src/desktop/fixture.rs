@@ -184,3 +184,31 @@ pub(crate) fn fixture_core() -> super_platinum_core::CoreAppState {
     core.workspaces.insert("T1".into(), workspace);
     core
 }
+
+/// Enrollment fixtures have a separate exact opt-in; both kinds fail closed.
+pub(crate) fn protected_enrollment_requested() -> bool {
+    std::env::var("SUPER_PLATINUM_FIXTURE")
+        .is_ok_and(|value| value.starts_with("protected-enrollment"))
+        || ["CHECK", "ROOT", "NONCE", "SCENARIO", "CAPTURE_DIR"]
+            .iter()
+            .any(|suffix| {
+                std::env::var_os(format!("SUPER_PLATINUM_PROTECTED_ENROLLMENT_{suffix}")).is_some()
+            })
+}
+
+/// Presence of any protected fixture request fails closed before ordinary boot.
+pub(crate) fn protected_requested() -> bool {
+    std::env::var("SUPER_PLATINUM_FIXTURE").is_ok_and(|value| value.starts_with("protected-drafts"))
+        || std::env::var_os("SUPER_PLATINUM_PROTECTED_DRAFTS_CHECK").is_some()
+}
+
+/// Exact native-adoption opt-in. Partial requests cannot reach ordinary boot.
+pub(crate) fn protected_adoption_requested() -> bool {
+    std::env::var("SUPER_PLATINUM_FIXTURE")
+        .is_ok_and(|value| value.starts_with("protected-adoption"))
+        || ["CHECK", "ROOT", "NONCE", "SCENARIO", "CAPTURE_DIR"]
+            .iter()
+            .any(|suffix| {
+                std::env::var_os(format!("SUPER_PLATINUM_PROTECTED_ADOPTION_{suffix}")).is_some()
+            })
+}

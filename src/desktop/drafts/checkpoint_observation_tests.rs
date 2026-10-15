@@ -25,6 +25,7 @@ struct Fixture {
     editor: Arc<Editor>,
     shell: crate::state::ShellState,
     source: Source,
+    _worker: crate::drafts::observation::WorkerSource,
 }
 impl Fixture {
     async fn new() -> Self {
@@ -33,7 +34,7 @@ impl Fixture {
         let mut shell = crate::state::ShellState::fixture(crate::media::MediaRegistry::default());
         let team = shell.core.active_team.clone().unwrap();
         let user = shell.core.workspaces[&team].self_user_id.clone();
-        shell.core.workspaces.get_mut(&team).unwrap().rt_generation = 9;
+        shell.core.workspaces.get_mut(&team).unwrap().rt_generation = 0;
         shell.core.active_account = Some(ACCOUNT.into());
         shell.core.account_epoch = 7;
         shell.core.transport = Some(Arc::new(Transport::new("fixture-only-cookie").unwrap()));
@@ -52,7 +53,18 @@ impl Fixture {
             )]
             .into(),
         });
-        let source = Source::capture(&shell, &team, 9).unwrap();
+        let params = super_platinum_core::slack::realtime::ConnectParams {
+            team: team.clone(),
+            ws_url: super_platinum_core::slack::realtime::flannel_url("fixture-only-token", &team),
+            d_cookie: "fixture-only-cookie".into(),
+            user_agent: "fixture-only-agent".into(),
+        };
+        let mut worker =
+            crate::drafts::observation::WorkerSource::capture(&mut shell, params).unwrap();
+        worker.take_connect_params(&shell).unwrap();
+        assert!(worker.can_accept(&shell, &team, 9));
+        shell.core.workspaces.get_mut(&team).unwrap().rt_generation = 9;
+        let source = worker.accept(&mut shell, &team, 9).unwrap();
         let key = DraftKey {
             team,
             channel: "C1".into(),
@@ -85,6 +97,7 @@ impl Fixture {
             editor,
             shell,
             source,
+            _worker: worker,
         }
     }
 
@@ -101,7 +114,7 @@ impl Fixture {
         }))
         .unwrap();
         self.source
-            .prepare(&self.shell, &self.owner.scope.key, &raw)
+            .prepare(&self.shell, 9, &self.owner.scope.key, &raw)
             .unwrap()
     }
 

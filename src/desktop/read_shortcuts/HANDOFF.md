@@ -121,5 +121,10 @@ Bulk also passes both sizes in `tmp/agent-ui/br-final3/` on SHA
 All 28 PNGs and both closed receipts were independently audited, including exact
 request ordering, Undo, expiry, focus return, owner guards, process identity and
 pointer restoration. Its reconciliation fixture is counts-only. The full async
-Threads/Activity/history/replies pipeline and live acknowledgements remain open;
-source preparation for the disconnected full-pipeline gate has begun.
+Threads/Activity/history/replies pipeline now passes 25 focused async/reducer
+tests, including eighteen new cases using the actual production sequence with
+synthetic execution. Exact subscription/cursor guards reject missing or malformed
+reply authority and ABA; successful explicit retry restores the notice copy.
+The full source gates pass core 1,398 / 5 ignored and desktop 1,427 / 7 ignored.
+This source cohort has not been rebuilt into a dev executable. Live
+acknowledgements and full workspace-history coverage remain open.

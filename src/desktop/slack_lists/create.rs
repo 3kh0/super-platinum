@@ -5,6 +5,7 @@ use super_platinum_core::slack_lists::{CreationIntent, ListClock, ListTimestamp,
 pub(crate) mod board;
 pub(crate) mod duplicate;
 mod network;
+mod retained;
 #[cfg(test)]
 mod tests;
 
@@ -88,7 +89,10 @@ fn receipt(shell: &ShellState) -> Option<&Receipt> {
         .filter(|r| r.attempt.scope.stable_current(shell))
 }
 pub(crate) fn blocks_mutation(shell: &ShellState) -> bool {
-    receipt(shell).is_some()
+    legacy_blocks_mutation(shell) || subitem::blocks(shell)
+}
+pub(super) fn legacy_blocks_mutation(shell: &ShellState) -> bool {
+    receipt(shell).is_some() || key(shell).is_some_and(|k| retained::contains(&k))
 }
 fn unavailable(shell: &ShellState) -> Option<&'static str> {
     unavailable_for(shell, false)
@@ -103,7 +107,7 @@ fn unavailable_for(shell: &ShellState, duplicate: bool) -> Option<&'static str> 
     if view.loading || view.stale {
         return Some("Refresh this list before adding an item.");
     }
-    if view.retry_at > now() {
+    if view.retry_at > now() || subitem::blocked(shell) {
         return Some("Wait before adding another item.");
     }
     if view.editor.is_some() || (!duplicate && view.detail.is_some()) {
@@ -112,6 +116,7 @@ fn unavailable_for(shell: &ShellState, duplicate: bool) -> Option<&'static str> 
     if shell.slack_lists.operations.contains_key(&view.id)
         || blocks_mutation(shell)
         || delete::blocks_mutation(shell)
+        || rename::blocks_mutation(shell)
     {
         return Some("Wait for the current change to be confirmed.");
     }
@@ -131,11 +136,11 @@ pub(crate) fn presentation(shell: &ShellState) -> CreatePresentation {
     let reason = unavailable(shell).map(str::to_owned);
     let operation=receipt(shell).map(|receipt|CreateOperationView {
         serial:receipt.attempt.serial,
-        pending:matches!(receipt.stage,Stage::Preparing|Stage::Sending),
+        pending:matches!(receipt.stage,Stage::Preparing|Stage::Sending)||retained::pending(&receipt.attempt.key(),receipt.attempt.serial),
         can_cancel:receipt.stage==Stage::Preparing,
-        can_retire:receipt.stage==Stage::Uncertain,
+        can_retire:receipt.stage==Stage::Uncertain&&!retained::pending(&receipt.attempt.key(),receipt.attempt.serial),
         can_dismiss:receipt.stage==Stage::AwaitingRead,
-        message:if receipt.attempt.origin.is_some() { match receipt.stage {
+        message:if receipt.stage==Stage::Uncertain&&retained::pending(&receipt.attempt.key(),receipt.attempt.serial) {"The original item request is still finishing. Wait for its result before dismissing this receipt."} else if receipt.attempt.origin.is_some() { match receipt.stage {
             Stage::Preparing=>"Checking this item before duplicating it...",
             Stage::Sending=>"Duplicating item...",
             Stage::AwaitingRead=>"Item duplicated. Refresh to load its fields.",
@@ -147,6 +152,7 @@ pub(crate) fn presentation(shell: &ShellState) -> CreatePresentation {
             Stage::Uncertain=>"Could not confirm whether the item was added. Check this list in Slack before adding another item.",
         }},
     });
+    let operation = operation.or_else(|| key(shell).and_then(|key| retained::presentation(&key)));
     let notice = shell.slack_lists.create.notice.as_ref().filter(|notice| {
         notice_current(&notice.scope, shell)
             && shell
@@ -244,6 +250,7 @@ fn reserve(
         intent,
         timestamp,
     };
+    retained::reserve(&attempt.key(), attempt.serial)?;
     shell.slack_lists.create.notice = None;
     shell.slack_lists.create.receipts.insert(
         attempt.key(),
@@ -271,7 +278,9 @@ impl Attempt {
     }
     pub(super) fn current(&self, shell: &ShellState) -> bool {
         self.owns(shell)
+            && retained::owns(&self.key(), self.serial)
             && self.scope.current(shell)
+            && !rename::creation_cooldown(&self.scope)
             && self
                 .board
                 .as_ref()
@@ -302,6 +311,7 @@ pub(super) fn validate(
 ) -> Result<(), &'static str> {
     if !attempt.current(shell)
         || delete::blocks_mutation(shell)
+        || rename::blocks_mutation(shell)
         || shell
             .slack_lists
             .operations
@@ -332,6 +342,7 @@ pub(super) fn validate(
         .get_mut(&attempt.key())
         .unwrap()
         .stage = Stage::Sending;
+    retained::sending(&attempt.key(), attempt.serial);
     Ok(())
 }
 pub(super) fn rejected(
@@ -340,6 +351,10 @@ pub(super) fn rejected(
     message: &str,
     error: Option<&Error>,
 ) {
+    if let Some(error) = error {
+        rename::record_creation_limit(&attempt.scope, error);
+    }
+    retained::reject(&attempt.key(), attempt.serial);
     if !attempt.owns(shell) {
         return;
     }
@@ -359,6 +374,10 @@ pub(super) fn finish(
     attempt: &Attempt,
     result: Result<Value, Error>,
 ) -> bool {
+    if let Err(error) = &result {
+        rename::record_creation_limit(&attempt.scope, error);
+    }
+    retained::complete(&attempt.key(), attempt.serial, &result);
     if !attempt.owns(shell)
         || shell
             .slack_lists
@@ -441,11 +460,15 @@ fn dismiss(shell: &mut ShellState, serial: u64) -> bool {
     let Some(key) = key(shell) else {
         return false;
     };
+    if receipt(shell).is_none() {
+        return retained::retire(&key, serial, Stage::AwaitingRead);
+    }
     if receipt(shell).is_none_or(|receipt| {
         receipt.attempt.serial != serial || receipt.stage != Stage::AwaitingRead
     }) {
         return false;
     }
+    retained::remove(&key, serial);
     shell.slack_lists.create.receipts.remove(&key);
     true
 }
@@ -453,11 +476,18 @@ fn retire(shell: &mut ShellState, serial: u64) -> bool {
     let Some(key) = key(shell) else {
         return false;
     };
+    if retained::pending(&key, serial) {
+        return false;
+    }
+    if receipt(shell).is_none() {
+        return retained::retire(&key, serial, Stage::Uncertain);
+    }
     if receipt(shell)
         .is_none_or(|receipt| receipt.attempt.serial != serial || receipt.stage != Stage::Uncertain)
     {
         return false;
     }
+    retained::remove(&key, serial);
     shell.slack_lists.create.receipts.remove(&key);
     true
 }
@@ -501,18 +531,26 @@ fn cancel(shell: &mut ShellState, serial: u64) -> bool {
     let Some(key) = key(shell) else {
         return false;
     };
+    if receipt(shell).is_none() {
+        return retained::retire(&key, serial, Stage::Preparing);
+    }
     if receipt(shell)
         .is_none_or(|receipt| receipt.attempt.serial != serial || receipt.stage != Stage::Preparing)
     {
         return false;
     }
+    retained::remove(&key, serial);
     shell.slack_lists.create.receipts.remove(&key);
     true
 }
 pub(crate) fn close_visit(shell: &mut ShellState) {
     let visit = shell.slack_lists.view.as_ref().map(|view| view.generation);
-    shell.slack_lists.create.receipts.retain(|_, receipt| {
-        receipt.stage != Stage::Preparing || Some(receipt.attempt.visit) != visit
+    shell.slack_lists.create.receipts.retain(|key, receipt| {
+        let keep = receipt.stage != Stage::Preparing || Some(receipt.attempt.visit) != visit;
+        if !keep {
+            retained::remove(key, receipt.attempt.serial);
+        }
+        keep
     });
 }
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
@@ -526,6 +564,9 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
         .collect::<Vec<_>>();
     let mut changed = !stale.is_empty();
     for key in stale {
+        if let Some(r) = shell.slack_lists.create.receipts.get(&key) {
+            retained::remove(&key, r.attempt.serial);
+        }
         shell.slack_lists.create.receipts.remove(&key);
     }
     let disconnected = shell
@@ -591,6 +632,7 @@ pub(crate) fn reconcile(shell: &mut ShellState) {
             .map_or_else(|| view.detail.is_none(), |origin| origin.still_open(view))
         && view.editor.is_none();
     let visit = view.generation;
+    retained::remove(&receipt.attempt.key(), receipt.attempt.serial);
     shell
         .slack_lists
         .create
@@ -629,14 +671,18 @@ pub(super) fn reconcile_deleted(
         return;
     }
     let owner = scope.stable_owner();
-    shell.slack_lists.create.receipts.retain(|_, receipt| {
-        !(receipt.stage == Stage::AwaitingRead
+    shell.slack_lists.create.receipts.retain(|key, receipt| {
+        let remove = receipt.stage == Stage::AwaitingRead
             && receipt.attempt.scope.stable_owner() == owner
             && receipt.attempt.intent.list_id() == readback.list_id()
             && receipt
                 .record
                 .as_ref()
-                .is_some_and(|record| record.id == readback.record_id()))
+                .is_some_and(|record| record.id == readback.record_id());
+        if remove {
+            retained::remove(key, receipt.attempt.serial);
+        }
+        !remove
     });
     if shell
         .slack_lists
@@ -651,4 +697,20 @@ pub(super) fn reconcile_deleted(
     {
         shell.slack_lists.create.notice = None;
     }
+}
+
+/// Shared source-backed List clock; timestamp is never a retry key.
+pub(super) fn subitem_timestamp(
+    shell: &mut ShellState,
+) -> Result<super_platinum_core::slack_lists::ListTimestamp, &'static str> {
+    let ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|_| "Clock unavailable.")?
+        .as_millis();
+    shell
+        .slack_lists
+        .create
+        .clock
+        .tick(u64::try_from(ms).map_err(|_| "Clock unavailable.")?)
+        .map_err(|e| e.0)
 }

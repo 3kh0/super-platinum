@@ -20,6 +20,8 @@ mod huddle;
 mod huddle_stage;
 mod later;
 mod local_drafts;
+pub(crate) mod managed_schedule;
+pub(crate) mod managed_schedule_check;
 pub(crate) mod media_image;
 mod member_admin;
 mod message;
@@ -69,6 +71,22 @@ use composer::{composer, load_older_if_needed, schedule_timeline_measure, thread
 use message::{RowSurface, message_row};
 use secondary::{activity_list_panel, dm_list_panel, secondary_view};
 use theme::theme_css;
+
+fn enrollment_fixture_view(state: Signal<ShellState>) -> Element {
+    #[cfg(feature = "protected-native-fixture")]
+    {
+        if crate::drafts::protected::adoption_fixture::named() {
+            crate::drafts::protected::adoption_fixture::view(state)
+        } else {
+            crate::drafts::protected::enrollment_fixture::view(state)
+        }
+    }
+    #[cfg(not(feature = "protected-native-fixture"))]
+    {
+        let _ = state;
+        rsx! {}
+    }
+}
 
 const CSS: &str = concat!(
     include_str!("../styles/base.css"),
@@ -516,6 +534,7 @@ pub fn shell() -> Element {
                 },
                 if let Some(overlay) = snapshot.overlay { {overlay_view(state, overlay, &snapshot)} }
                 {crate::read_shortcuts::bulk::view(state, &snapshot)}
+                {enrollment_fixture_view(state)}
             }
             if let Some(hover) = snapshot.profile_hover.as_ref() {
                 {crate::profile::profile_hover_card(state, &snapshot, hover)}

@@ -75,6 +75,11 @@ impl EditSession {
             crdt::validate(&wire, section, seed, Some(now))?;
             Some(wire)
         } else if let Some(entry) = retained {
+            // Omitted-38 association is not established for the newly admitted
+            // modern/base0 cohort. Never replace its known history by bootstrap.
+            if entry.wire.uint(2)? == Some(0) {
+                return Err(Error::Unsupported);
+            }
             if entry.usable
                 && association(&entry.source)? == association(section)?
                 && crdt::validate(&entry.wire, section, seed, Some(now)).is_ok()

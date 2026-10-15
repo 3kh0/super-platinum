@@ -1,0 +1,2975 @@
+[
+  {
+    "name": "no_args",
+    "ops": [
+      {
+        "insert": "/DeMo"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/DeMo",
+      "remaining": [
+        {
+          "insert": "\n"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/DeMo",
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "empty_suffix",
+    "ops": [
+      {
+        "insert": "/demo \t\n"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "\n"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "plain",
+    "ops": [
+      {
+        "insert": "/demo ordinary argument"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "ordinary argument"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "ordinary argument"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "unicode_text",
+    "ops": [
+      {
+        "insert": "/demo café 🌱"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "café 🌱"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "café 🌱"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "leading_trailing_spaces",
+    "ops": [
+      {
+        "insert": "/demo    keep  internal  "
+      }
+    ],
+    "options": {
+      "thread": true
+    },
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "keep  internal  "
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "keep  internal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "thread_ts": "1.000001",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "js_spaces",
+    "ops": [
+      {
+        "insert": "/demo﻿ arg "
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "arg "
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "arg"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "multiline",
+    "ops": [
+      {
+        "insert": "/demo first  \nnext  \n"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first  \nnext  \n"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first\nnext"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "tab_before_spaces",
+    "ops": [
+      {
+        "insert": "/demo first\t  \nlast"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first\t  \nlast"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first\t  \nlast"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "line_anchors",
+    "ops": [
+      {
+        "insert": "/demo first\r  \nnext   \nlast"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first\r  \nnext   \nlast"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first\r\nnext \nlast"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "split_plain",
+    "ops": [
+      {
+        "insert": "/demo #fff"
+      },
+      {
+        "insert": "fff"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "#ffffff"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "color",
+                      "value": "#FFFFFF"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "false_style_boundary",
+    "ops": [
+      {
+        "insert": "/demo #fff",
+        "attributes": {
+          "bold": false
+        }
+      },
+      {
+        "insert": "fff"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "#fff",
+          "attributes": {
+            "bold": false
+          }
+        },
+        {
+          "insert": "fff"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "#ffffff"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "style_bold",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": " x  ",
+        "attributes": {
+          "bold": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "x  ",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "x  ",
+                      "style": {
+                        "bold": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "style_italic",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": " x  ",
+        "attributes": {
+          "italic": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "x  ",
+          "attributes": {
+            "italic": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "x  ",
+                      "style": {
+                        "italic": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "style_underline",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": " x  ",
+        "attributes": {
+          "underline": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "x  ",
+          "attributes": {
+            "underline": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "x  ",
+                      "style": {
+                        "underline": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "style_strike",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": " x  ",
+        "attributes": {
+          "strike": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "x  ",
+          "attributes": {
+            "strike": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "x  ",
+                      "style": {
+                        "strike": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "style_code",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": " x  ",
+        "attributes": {
+          "code": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "x  ",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "x  ",
+                      "style": {
+                        "code": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "style_unlink",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": " x  ",
+        "attributes": {
+          "unlink": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "x  ",
+          "attributes": {
+            "unlink": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "x  ",
+                      "style": {
+                        "unlink": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "mixed_styles",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "bold",
+        "attributes": {
+          "bold": true
+        }
+      },
+      {
+        "insert": " / "
+      },
+      {
+        "insert": "code #ffffff",
+        "attributes": {
+          "code": true
+        }
+      },
+      {
+        "insert": " end"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "bold",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": " / "
+        },
+        {
+          "insert": "code #ffffff",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " end"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "bold",
+                      "style": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": " / "
+                    },
+                    {
+                      "type": "text",
+                      "text": "code #ffffff",
+                      "style": {
+                        "code": true
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": " end"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "combined_style",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "both",
+        "attributes": {
+          "bold": true,
+          "italic": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "both",
+          "attributes": {
+            "bold": true,
+            "italic": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "both",
+                      "style": {
+                        "bold": true,
+                        "italic": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "colors",
+    "ops": [
+      {
+        "insert": "/demo #abcDEF and #000000"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "#abcDEF and #000000"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "color",
+                      "value": "#ABCDEF"
+                    },
+                    {
+                      "type": "text",
+                      "text": " and "
+                    },
+                    {
+                      "type": "color",
+                      "value": "#000000"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "color_suffix",
+    "ops": [
+      {
+        "insert": "/demo (#aabbcc---) #ffffff_ #112233…"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "(#aabbcc---) #ffffff_ #112233…"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "("
+                    },
+                    {
+                      "type": "color",
+                      "value": "#AABBCC"
+                    },
+                    {
+                      "type": "text",
+                      "text": "---) "
+                    },
+                    {
+                      "type": "color",
+                      "value": "#FFFFFF"
+                    },
+                    {
+                      "type": "text",
+                      "text": "_ "
+                    },
+                    {
+                      "type": "color",
+                      "value": "#112233"
+                    },
+                    {
+                      "type": "text",
+                      "text": "…"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "color_consumed_prefix",
+    "ops": [
+      {
+        "insert": "/demo #ffffff___#112233"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "#ffffff___#112233"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "color",
+                      "value": "#FFFFFF"
+                    },
+                    {
+                      "type": "text",
+                      "text": "___#112233"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "not_colors",
+    "ops": [
+      {
+        "insert": "/demo x#aabbcc #abc #aabbccgg"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "x#aabbcc #abc #aabbccgg"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "x#aabbcc #abc #aabbccgg"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "styled_color",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "#aabbcc",
+        "attributes": {
+          "bold": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "#aabbcc",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "color",
+                      "value": "#AABBCC",
+                      "style": {
+                        "bold": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "user",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "@Ada",
+        "attributes": {
+          "slackmention": {
+            "id": "U12345678",
+            "label": "@Ada"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "@Ada",
+          "attributes": {
+            "slackmention": {
+              "id": "U12345678",
+              "label": "@Ada"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "user",
+                      "user_id": "U12345678"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "styled_user",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "@Ada",
+        "attributes": {
+          "slackmention": {
+            "id": "U12345678",
+            "label": "@Ada"
+          },
+          "bold": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "@Ada",
+          "attributes": {
+            "slackmention": {
+              "id": "U12345678",
+              "label": "@Ada"
+            },
+            "bold": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "user",
+                      "user_id": "U12345678",
+                      "style": {
+                        "bold": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "group",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "@team",
+        "attributes": {
+          "slackmention": {
+            "id": "S12345678",
+            "label": "@team"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "@team",
+          "attributes": {
+            "slackmention": {
+              "id": "S12345678",
+              "label": "@team"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "usergroup",
+                      "usergroup_id": "S12345678"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "channel",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "#general",
+        "attributes": {
+          "slackmention": {
+            "id": "C12345678",
+            "label": "#general",
+            "tabId": "tab1"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "#general",
+          "attributes": {
+            "slackmention": {
+              "id": "C12345678",
+              "label": "#general",
+              "tabId": "tab1"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "channel",
+                      "channel_id": "C12345678",
+                      "tab_id": "tab1"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "broadcast",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "@here",
+        "attributes": {
+          "slackmention": {
+            "id": "BKhere",
+            "label": "@here"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "@here",
+          "attributes": {
+            "slackmention": {
+              "id": "BKhere",
+              "label": "@here"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "broadcast",
+                      "range": "here"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "repeated_user",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "@Ada@Ada",
+        "attributes": {
+          "slackmention": {
+            "id": "U12345678",
+            "label": "@Ada"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "@Ada@Ada",
+          "attributes": {
+            "slackmention": {
+              "id": "U12345678",
+              "label": "@Ada"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "user",
+                      "user_id": "U12345678"
+                    },
+                    {
+                      "type": "user",
+                      "user_id": "U12345678"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "code_user",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "@Ada",
+        "attributes": {
+          "slackmention": {
+            "id": "U12345678",
+            "label": "@Ada"
+          },
+          "code": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "@Ada",
+          "attributes": {
+            "slackmention": {
+              "id": "U12345678",
+              "label": "@Ada"
+            },
+            "code": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "@Ada",
+                      "style": {
+                        "code": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "mixed_entities",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "@Ada",
+        "attributes": {
+          "slackmention": {
+            "id": "U12345678",
+            "label": "@Ada"
+          }
+        }
+      },
+      {
+        "insert": " in "
+      },
+      {
+        "insert": "#general",
+        "attributes": {
+          "slackmention": {
+            "id": "C12345678",
+            "label": "#general"
+          }
+        }
+      },
+      {
+        "insert": " "
+      },
+      {
+        "insert": {
+          "slackemoji": {
+            "text": ":grinning:"
+          }
+        }
+      },
+      {
+        "insert": " done"
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "@Ada",
+          "attributes": {
+            "slackmention": {
+              "id": "U12345678",
+              "label": "@Ada"
+            }
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "#general",
+          "attributes": {
+            "slackmention": {
+              "id": "C12345678",
+              "label": "#general"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":grinning:"
+            }
+          }
+        },
+        {
+          "insert": " done"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "user",
+                      "user_id": "U12345678"
+                    },
+                    {
+                      "type": "text",
+                      "text": " in "
+                    },
+                    {
+                      "type": "channel",
+                      "channel_id": "C12345678"
+                    },
+                    {
+                      "type": "text",
+                      "text": " "
+                    },
+                    {
+                      "type": "emoji",
+                      "name": "grinning",
+                      "unicode": "1f600"
+                    },
+                    {
+                      "type": "text",
+                      "text": " done"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "standard_emoji16",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": {
+          "slackemoji": {
+            "text": ":grinning:"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":grinning:"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "emoji",
+                      "name": "grinning",
+                      "unicode": "1f600"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "standard_emoji17",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": {
+          "slackemoji": {
+            "text": ":grinning:"
+          }
+        }
+      }
+    ],
+    "options": {
+      "emoji17": true
+    },
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":grinning:"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "emoji",
+                      "name": "grinning",
+                      "unicode": "1f600"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "skin_tone",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": {
+          "slackemoji": {
+            "text": ":thumbsup::skin-tone-3:"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":thumbsup::skin-tone-3:"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "emoji",
+                      "name": "thumbsup",
+                      "unicode": "1f44d-1f3fc"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "custom_emoji",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": {
+          "slackemoji": {
+            "text": ":custom_party:"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":custom_party:"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "emoji",
+                      "name": "custom_party"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "custom_skin",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": {
+          "slackemoji": {
+            "text": ":custom_party::skin-tone-5:"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":custom_party::skin-tone-5:"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "emoji",
+                      "name": "custom_party",
+                      "skin_tone": 5
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "code_emoji",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": {
+          "slackemoji": {
+            "text": ":grinning:"
+          }
+        },
+        "attributes": {
+          "code": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":grinning:"
+            }
+          },
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": ":grinning:"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "styled_emoji",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": {
+          "slackemoji": {
+            "text": ":grinning:"
+          }
+        },
+        "attributes": {
+          "bold": true,
+          "unlink": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":grinning:"
+            }
+          },
+          "attributes": {
+            "bold": true,
+            "unlink": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "emoji",
+                      "name": "grinning",
+                      "unicode": "1f600",
+                      "style": {
+                        "bold": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "url",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "https://example.test/a",
+        "attributes": {
+          "link": "https://example.test/a"
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "https://example.test/a",
+          "attributes": {
+            "link": "https://example.test/a"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "link",
+                      "url": "https://example.test/a"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "labeled_link",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "Example",
+        "attributes": {
+          "link": "https://example.test/a",
+          "italic": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "Example",
+          "attributes": {
+            "link": "https://example.test/a",
+            "italic": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "link",
+                      "url": "https://example.test/a",
+                      "text": "Example",
+                      "style": {
+                        "italic": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "truncated_link",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "https://example.test/[…]/z",
+        "attributes": {
+          "link": "https://example.test/long/z"
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "https://example.test/[…]/z",
+          "attributes": {
+            "link": "https://example.test/long/z"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "link",
+                      "url": "https://example.test/long/z"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "code_link",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "Example",
+        "attributes": {
+          "link": "https://example.test/a",
+          "code": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "Example",
+          "attributes": {
+            "link": "https://example.test/a",
+            "code": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "link",
+                      "url": "https://example.test/a",
+                      "text": "Example",
+                      "style": {
+                        "code": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "unknown_op",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": {
+          "unrecognized": {
+            "text": "must retain"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": false,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": {
+            "unrecognized": {
+              "text": "must retain"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": []
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "unknown_attribute",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "must retain",
+        "attributes": {
+          "future": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": false,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "must retain",
+          "attributes": {
+            "future": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "must retain"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "mention_suffix",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "@Ada!",
+        "attributes": {
+          "slackmention": {
+            "id": "U12345678",
+            "label": "@Ada"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": false,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "@Ada!",
+          "attributes": {
+            "slackmention": {
+              "id": "U12345678",
+              "label": "@Ada"
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "user",
+                      "user_id": "U12345678"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "private_agent",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "@Ada",
+        "attributes": {
+          "slackmention": {
+            "id": "U12345678",
+            "label": "@Ada",
+            "privateAgentMention": true
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": false,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "@Ada",
+          "attributes": {
+            "slackmention": {
+              "id": "U12345678",
+              "label": "@Ada",
+              "privateAgentMention": true
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "@Ada"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "file_mention",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "document",
+        "attributes": {
+          "slackmention": {
+            "id": "F12345678",
+            "label": "document"
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": false,
+    "source_error": "Error: unsupported source dependency Ltli.Lp"
+  },
+  {
+    "name": "list_block",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "item"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      }
+    ],
+    "options": {},
+    "accepted": false,
+    "source": {
+      "route": "ordinary"
+    }
+  },
+  {
+    "name": "quoted_block",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "quote"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "blockquote": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": false,
+    "source": {
+      "route": "ordinary"
+    }
+  },
+  {
+    "name": "styled_newline",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": "styled\n",
+        "attributes": {
+          "bold": true
+        }
+      }
+    ],
+    "options": {},
+    "accepted": false,
+    "source": {
+      "route": "ordinary"
+    }
+  },
+  {
+    "name": "opaque_embed",
+    "ops": [
+      {
+        "insert": "/demo "
+      },
+      {
+        "insert": {
+          "slackopaqueblock": {
+            "block": {
+              "type": "unknown"
+            }
+          }
+        }
+      }
+    ],
+    "options": {},
+    "accepted": false,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "unknown"
+              }
+            }
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": []
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  }
+]

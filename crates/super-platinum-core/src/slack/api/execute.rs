@@ -55,10 +55,10 @@ pub async fn fetch_history(
     workspace: &WorkspaceSession,
     args: HistoryArgs,
 ) -> Result<HistoryPage, Error> {
-    let value = transport
-        .execute(conversations_history(client, workspace, args))
-        .await?;
-    decode(value, "conversations.history")
+    fetch_history_with(client, workspace, args, |request| {
+        transport.execute(request)
+    })
+    .await
 }
 
 pub async fn fetch_replies(
@@ -67,10 +67,10 @@ pub async fn fetch_replies(
     workspace: &WorkspaceSession,
     args: RepliesArgs,
 ) -> Result<HistoryPage, Error> {
-    let value = transport
-        .execute(conversations_replies(client, workspace, args))
-        .await?;
-    decode(value, "conversations.replies")
+    fetch_replies_with(client, workspace, args, |request| {
+        transport.execute(request)
+    })
+    .await
 }
 
 pub async fn mark_channel(
@@ -136,12 +136,10 @@ pub async fn fetch_threads_view(
     current_ts: Option<MessageTs>,
     vip_only: bool,
 ) -> Result<ThreadsViewPage, Error> {
-    let value = transport
-        .execute(subscriptions_thread_get_view(
-            client, workspace, limit, current_ts, vip_only,
-        ))
-        .await?;
-    decode(value, "subscriptions.thread.getView")
+    fetch_threads_view_with(client, workspace, limit, current_ts, vip_only, |request| {
+        transport.execute(request)
+    })
+    .await
 }
 
 pub async fn fetch_counts(
@@ -149,8 +147,7 @@ pub async fn fetch_counts(
     client: &SlackClient,
     workspace: &WorkspaceSession,
 ) -> Result<CountsPage, Error> {
-    let value = transport.execute(client_counts(client, workspace)).await?;
-    decode(value, "client.counts")
+    fetch_counts_with(client, workspace, |request| transport.execute(request)).await
 }
 
 pub async fn fetch_generic_info(
@@ -210,10 +207,10 @@ pub async fn fetch_activity_feed(
     cursor: Option<String>,
     unread_only: bool,
 ) -> Result<ActivityFeedPage, Error> {
-    let value = transport
-        .execute(activity_feed(client, workspace, limit, cursor, unread_only))
-        .await?;
-    decode(value, "activity.feed")
+    fetch_activity_feed_with(client, workspace, limit, cursor, unread_only, |request| {
+        transport.execute(request)
+    })
+    .await
 }
 
 pub async fn fetch_messages_list(

@@ -17,6 +17,13 @@ use super_platinum_core::{
     state::ChannelMessages,
 };
 
+#[cfg(test)]
+mod fixture;
+#[cfg(test)]
+mod pipeline_tests;
+mod reader;
+mod reply_state;
+
 pub(crate) struct Baseline {
     snapshot: Snapshot,
 }
@@ -33,6 +40,7 @@ struct Snapshot {
     visible_thread: Option<Value>,
     activity: Value,
     thread_feed: Value,
+    subscription: Option<reply_state::SubscriptionBaseline>,
 }
 
 // Counts may replace these fields, but cannot replace a channel's transcript.
@@ -148,6 +156,7 @@ impl Snapshot {
                 .map(bag_state),
             activity: json!([shell.core.activity.items, workspace.activity_unread_count]),
             thread_feed: json!(shell.core.threads_view.items),
+            subscription: reply_state::capture(shell, team),
         }
     }
     fn current(&self, shell: &ShellState, context: &Context, id: u64) -> bool {
@@ -186,7 +195,23 @@ pub(crate) async fn run(
     baseline: Arc<Baseline>,
     id: u64,
 ) {
-    let success = refresh(state, &context, &baseline, id).await;
+    let Some(transport) = context.transport.clone() else {
+        super::finish_reconcile(&mut state.write(), &context, id, false);
+        return;
+    };
+    run_with(state, context, baseline, id, &reader::Network(transport)).await;
+}
+
+// Injection changes only request execution. Every guard, reducer and terminal
+// transition below is shared by production and the disconnected tests.
+async fn run_with<E: reader::Executor>(
+    mut state: Signal<ShellState>,
+    context: Arc<Context>,
+    baseline: Arc<Baseline>,
+    id: u64,
+    executor: &E,
+) {
+    let success = refresh(state, &context, &baseline, id, executor).await;
     let mut shell = state.write();
     super::finish_reconcile(&mut shell, &context, id, success);
     if context.current(&shell) {
@@ -194,21 +219,17 @@ pub(crate) async fn run(
     }
 }
 
-async fn refresh(
+async fn refresh<E: reader::Executor>(
     mut state: Signal<ShellState>,
     context: &Context,
     baseline: &Baseline,
     id: u64,
+    executor: &E,
 ) -> bool {
-    // Isolated fixtures use their own raw-response ledger; never acquire live
-    // credentials or synthesize counts when no transport was captured.
-    let Some(transport) = context.transport.as_ref() else {
-        return false;
-    };
     if !baseline.snapshot.current(&state.peek(), context, id) {
         return false;
     }
-    let counts = api::fetch_counts(transport, &context.client, &context.session).await;
+    let counts = reader::counts(executor, context).await;
     let mut expected = {
         let mut shell = state.write();
         if !baseline.snapshot.current(&shell, context, id) {
@@ -221,16 +242,16 @@ async fn refresh(
         shell.refresh_from_core();
         Snapshot::capture(&shell, &context.owner.team)
     };
-    if !threads(state, context, id, &mut expected).await {
+    if !threads(state, context, id, &mut expected, executor).await {
         return false;
     }
-    if !activity(state, context, id, &mut expected).await {
+    if !activity(state, context, id, &mut expected, executor).await {
         return false;
     }
-    if !history(state, context, id, &mut expected).await {
+    if !history(state, context, id, &mut expected, executor).await {
         return false;
     }
-    if !replies(state, context, id, &mut expected).await {
+    if !replies(state, context, id, &mut expected, executor).await {
         return false;
     }
     if !expected.current(&state.peek(), context, id) {
@@ -300,11 +321,12 @@ pub(crate) fn apply_fixture(
     applied
 }
 
-async fn threads(
+async fn threads<E: reader::Executor>(
     mut state: Signal<ShellState>,
     context: &Context,
     id: u64,
     expected: &mut Snapshot,
+    executor: &E,
 ) -> bool {
     let team = &context.owner.team;
     let (request, cursors) = {
@@ -326,15 +348,7 @@ async fn threads(
         *expected = Snapshot::capture(&shell, team);
         (request, cursors)
     };
-    let result = api::fetch_threads_view(
-        context.transport.as_ref().unwrap(),
-        &context.client,
-        &context.session,
-        30,
-        request.cursor.clone(),
-        false,
-    )
-    .await;
+    let result = reader::threads(executor, context, request.cursor.clone()).await;
     let mut shell = state.write();
     if !expected.current(&shell, context, id) {
         if shell.core.threads_view.matches_scope(context.epoch, team) {
@@ -369,11 +383,12 @@ async fn threads(
     true
 }
 
-async fn activity(
+async fn activity<E: reader::Executor>(
     mut state: Signal<ShellState>,
     context: &Context,
     id: u64,
     expected: &mut Snapshot,
+    executor: &E,
 ) -> bool {
     let team = &context.owner.team;
     let request = {
@@ -388,15 +403,7 @@ async fn activity(
         *expected = Snapshot::capture(&shell, team);
         request
     };
-    let result = api::fetch_activity_feed(
-        context.transport.as_ref().unwrap(),
-        &context.client,
-        &context.session,
-        20,
-        request.cursor.clone(),
-        false,
-    )
-    .await;
+    let result = reader::activity(executor, context, request.cursor.clone()).await;
     let mut shell = state.write();
     if !expected.current(&shell, context, id) {
         shell.core.activity.fail(&request);
@@ -414,11 +421,12 @@ async fn activity(
     true
 }
 
-async fn history(
+async fn history<E: reader::Executor>(
     mut state: Signal<ShellState>,
     context: &Context,
     id: u64,
     expected: &mut Snapshot,
+    executor: &E,
 ) -> bool {
     let channel = {
         let shell = state.peek();
@@ -433,10 +441,9 @@ async fn history(
         };
         channel
     };
-    let result = api::fetch_history(
-        context.transport.as_ref().unwrap(),
-        &context.client,
-        &context.session,
+    let result = reader::history(
+        executor,
+        context,
         api::HistoryArgs {
             channel: channel.clone(),
             limit: Some(100),
@@ -463,11 +470,12 @@ async fn history(
     true
 }
 
-async fn replies(
+async fn replies<E: reader::Executor>(
     mut state: Signal<ShellState>,
     context: &Context,
     id: u64,
     expected: &mut Snapshot,
+    executor: &E,
 ) -> bool {
     let (channel, root) = {
         let shell = state.peek();
@@ -480,12 +488,14 @@ async fn replies(
         let Some(channel) = shell.core.active_channel.clone() else {
             return false;
         };
+        if expected.subscription.as_ref().is_none_or(|s| s.pending) {
+            return false;
+        }
         (channel, root)
     };
-    let result = api::fetch_replies(
-        context.transport.as_ref().unwrap(),
-        &context.client,
-        &context.session,
+    let result = reader::replies(
+        executor,
+        context,
         api::RepliesArgs {
             channel: channel.clone(),
             ts: root.clone(),
@@ -500,21 +510,23 @@ async fn replies(
     }
     let Ok(page) = result else { return false };
     let key = (context.owner.team.clone(), channel, root.clone());
-    let cursor = page
-        .messages
-        .iter()
-        .find(|m| m.ts.as_ref() == Some(&root))
-        .and_then(|m| m.extra.get("last_read"))
-        .and_then(Value::as_str)
-        .map(str::to_owned);
+    let Some(proof) = reply_state::proof(&page, &key) else {
+        return false;
+    };
+    let Some(subscription) = expected.subscription.as_ref() else {
+        return false;
+    };
+    if !subscription.accepts(&shell, &key) {
+        return false;
+    }
+    if !reply_state::apply(&mut shell, &key, subscription, proof) {
+        return false;
+    }
     merge_history(
         shell.core.threads.entry(key.clone()).or_default(),
         page,
         Some(&root),
     );
-    if let Some(cursor) = cursor {
-        shell.core.apply_thread_mark(&key, &cursor);
-    }
     shell.refresh_from_core();
     *expected = Snapshot::capture(&shell, &context.owner.team);
     true

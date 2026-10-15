@@ -737,7 +737,7 @@ async fn restart_derives_local_only_capability_from_uncertain_direct_intent() {
 }
 
 #[tokio::test]
-async fn scheduled_consume_does_not_authorize_local_only_checkpoint() {
+async fn scheduled_consume_preserves_newer_local_content_without_dispatching() {
     let (f, editor) = Fixture::new(ACCOUNT).await;
     let frozen = editor
         .consume(
@@ -748,8 +748,18 @@ async fn scheduled_consume_does_not_authorize_local_only_checkpoint() {
         )
         .await
         .unwrap();
-    assert!(local::direct_intent(&frozen).is_none());
+    assert_eq!(
+        local::direct_intent(&frozen).as_ref(),
+        frozen.state.consumption()
+    );
     editor.submit(unsupported_local(true));
-    assert!(matches!(editor.flush().await, Err(Fault::Unsupported)));
-    assert!(f.owner.load().await.unwrap().local.empty());
+    let saved = editor.flush().await.unwrap();
+    assert!(same_local(&saved.local, &unsupported_local(true)));
+    assert!(saved.blocked.is_none());
+    let state = f.owner.load().await.unwrap().stored.unwrap().state;
+    assert_eq!(state.consumption(), frozen.state.consumption());
+    assert!(state.pending().is_none());
 }
+
+#[path = "checkpoint_terminal_local_tests.rs"]
+mod terminal_local;

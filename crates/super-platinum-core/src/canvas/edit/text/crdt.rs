@@ -18,7 +18,7 @@ fn seconds(now: u64) -> Result<i64, Error> {
     i64::try_from(now / 1_000_000).map_err(|_| Error::Unsupported)
 }
 
-pub(super) fn bootstrap(
+pub(in crate::canvas::edit) fn bootstrap(
     section: &Section,
     draft: &TextDraft,
     session: &str,
@@ -60,6 +60,9 @@ pub(super) fn validate(
     draft: &TextDraft,
     now: Option<u64>,
 ) -> Result<Automerge, Error> {
+    if wire.uint(2)? == Some(0) {
+        return super::super::structure::canonical_zero_base_history(wire, section, draft, now);
+    }
     if wire
         .fields()
         .iter()
@@ -126,6 +129,14 @@ fn known_head(doc: &Automerge, value: &str) -> Result<(), Error> {
 }
 
 fn check_document(doc: &Automerge, draft: &TextDraft) -> Result<(), Error> {
+    check_document_state(doc, draft, false)
+}
+
+pub(in crate::canvas::edit) fn check_document_state(
+    doc: &Automerge,
+    draft: &TextDraft,
+    deleted: bool,
+) -> Result<(), Error> {
     if doc.keys(ROOT).any(|key| key != "text" && key != "deleted") {
         return Err(Error::Unsupported);
     }
@@ -138,7 +149,7 @@ fn check_document(doc: &Automerge, draft: &TextDraft) -> Result<(), Error> {
             .get(ROOT, "deleted")
             .map_err(|_| Error::Unsupported)?
             .map(|v| v.0)
-            != Some(Value::from(false))
+            != Some(Value::from(deleted))
     {
         return Err(Error::Unsupported);
     }

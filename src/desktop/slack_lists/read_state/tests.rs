@@ -116,6 +116,7 @@ fn recovered_feature_flags_start_only_the_unattempted_personal_default_request()
         todos: false,
         todos_rollback: false,
         default_view_dual_write: true,
+        sub_tasks: false,
     });
     assert_eq!(claim(view), Some((false, true)));
     assert_eq!(claim(view), None);

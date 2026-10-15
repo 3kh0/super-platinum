@@ -1,4 +1,6 @@
 //! Real SQLite/editor/dispatch orchestration; the only fake is the HTTP result.
+#[path = "send_acknowledged_tests.rs"]
+mod acknowledged;
 use super::*;
 use crate::drafts::{checkpoint::Queue, network::Attempt, storage::Backend};
 use std::sync::atomic::{AtomicUsize, Ordering};

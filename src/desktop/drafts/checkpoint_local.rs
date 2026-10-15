@@ -1,13 +1,9 @@
-//! Only a proven direct-send editor may preserve arbitrary newer local content.
+//! An exact frozen consumption owns local-only newer input until safe release.
 use super::*;
 use super_platinum_core::drafts::sync::ConsumeIntent;
 
 pub(super) fn direct_intent(stored: &Stored) -> Option<ConsumeIntent> {
-    stored
-        .state
-        .consumption()
-        .filter(|intent| stored.state.accepts_direct_local(intent))
-        .cloned()
+    stored.state.local_preservation_intent().cloned()
 }
 
 impl Owner {

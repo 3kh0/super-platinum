@@ -19,7 +19,9 @@ pub(in crate::canvas) struct Mapping {
     pub items: BTreeMap<String, Item>,
 }
 pub(in crate::canvas) struct Item {
-    pub intent: Arc<TextIntent>,
+    pub intent: Option<Arc<TextIntent>>,
+    pub structure: Option<super_platinum_core::canvas::edit::structure::ParagraphActions>,
+    pub replacement: bool,
     pub blocks: String,
     pub preview: Vec<RichNode>,
 }
@@ -71,12 +73,20 @@ impl Mapping {
             })
             .collect();
         let intents = TextIntent::capture_batch(snapshot, &targets, now);
+        let actions = super_platinum_core::canvas::edit::structure::paragraph_actions(
+            snapshot, &targets, now,
+        );
         let mut items = BTreeMap::new();
-        for (id, intent) in targets.into_iter().zip(intents) {
-            let Ok(intent) = intent else {
+        for ((id, intent), structure) in targets.into_iter().zip(intents).zip(actions) {
+            let intent = intent.ok();
+            let seed = intent
+                .as_ref()
+                .map(TextIntent::seed)
+                .or_else(|| structure.as_ref().map(|action| &action.seed));
+            let Some(seed) = seed else {
                 continue;
             };
-            let blocks = intent.seed().rich_blocks();
+            let blocks = seed.rich_blocks();
             let preview = blocks
                 .iter()
                 .flat_map(|block| block_nodes(BlockCtx::new(workspace, &shell.media), block))
@@ -84,7 +94,19 @@ impl Mapping {
             items.insert(
                 id.into(),
                 Item {
-                    intent: Arc::new(intent),
+                    intent: intent.map(Arc::new),
+                    replacement: super::checklist::presentation(shell).is_some_and(|view| {
+                        !view.loading
+                            && !view.stale
+                            && view
+                                .snapshot
+                                .as_ref()
+                                .is_some_and(|s| s.file_id() == snapshot.file_id())
+                    })
+                        && super_platinum_core::canvas::edit::structure::can_replace_main_canvas(
+                            snapshot, id, now,
+                        ),
+                    structure,
                     blocks: serde_json::to_string(&blocks).unwrap(),
                     preview,
                 },

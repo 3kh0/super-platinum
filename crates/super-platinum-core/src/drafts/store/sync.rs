@@ -15,8 +15,10 @@ mod alternates;
 mod resolution;
 pub use alternates::{LocalAlternate, LocalWriter};
 use alternates::{has_alternates, preserve_owned_alternate, read_alternates, reviewed_revision};
+pub use resolution::protected;
 pub use resolution::{
-    LocalChoice, LocalReview, LocalSettlement, RemoteChoice, RemoteReview, RemoteSettlement,
+    LocalChoice, LocalReview, LocalSettlement, RejectedScheduleCommit, RemoteChoice, RemoteReview,
+    RemoteSettlement, ReviewedScheduleCommit,
 };
 
 // Version 5 adds operation-bound read-check tickets and durable completion.
@@ -573,6 +575,8 @@ impl DraftStore {
 #[cfg(test)]
 mod consume_tests;
 #[cfg(test)]
+mod local_completion_tests;
+#[cfg(test)]
 pub(super) mod tests;
 
 #[cfg(test)]
@@ -581,3 +585,6 @@ mod observation_tests;
 mod recovery_tests;
 #[cfg(test)]
 mod release_tests;
+
+#[cfg(test)]
+mod schedule_recovery_tests;

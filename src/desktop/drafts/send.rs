@@ -1,8 +1,15 @@
 //! Direct text sends consume a durable local draft before the native field clears.
 //! A captured operation is attempted once; account changes cannot redirect it.
-use super::{Account, Fault, Owner, View, checkpoint::Editor, dispatch::Outcome, network::Binding};
+use super::{Account, Fault, Owner, View, checkpoint::Editor, dispatch::Outcome};
+#[path = "send_check.rs"]
+pub(crate) mod check;
+#[path = "send_fixture.rs"]
+pub(crate) mod fixture;
+#[path = "send_source.rs"]
+mod source;
 use crate::state::{ComposerTarget, PendingDeliveryStatus, PendingSend, ShellState};
 use dioxus::prelude::*;
+use source::Source;
 use std::sync::Arc;
 use super_platinum_core::{
     drafts::{
@@ -19,16 +26,22 @@ pub(crate) fn intercept(state: Signal<ShellState>) -> bool {
 }
 
 pub(crate) fn intercept_target(mut state: Signal<ShellState>, target: ComposerTarget) -> bool {
-    if crate::fixture::is_fixture() {
-        return false;
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::native_fixture::intercept(state, target) {
+        return true;
+    }
+    if crate::fixture::is_fixture() && !fixture::enabled() {
+        // A named managed-Send fixture never falls through to legacy sending,
+        // even when its required explicit opt-in is absent or malformed.
+        return fixture::named();
     }
     let captured = {
         let mut shell = state.write();
         let Some(account_id) = shell.core.active_account.clone() else {
-            return false;
+            return fixture::named();
         };
         let Some(key) = shell.composer_key(target) else {
-            return false;
+            return fixture::named();
         };
         let epoch = shell.core.account_epoch;
         if shell.draft_writes.sending.contains(&key) {
@@ -58,16 +71,16 @@ pub(crate) fn intercept_target(mut state: Signal<ShellState>, target: ComposerTa
         }
         if super::local_snapshot(&key, &local).is_err() {
             if managed.is_none() {
-                return false;
+                return fixture::named();
             }
             shell.show_toast("This draft has saved delivery state. Review it in Drafts before sending this content.");
             return true;
         }
-        let Ok(binding) = Binding::capture(&shell, &key.team) else {
+        let Ok(binding) = Source::capture(&shell, &key.team) else {
             shell.show_toast("Connect to Slack before sending. Your draft is still here.");
             return true;
         };
-        let Ok(account) = Account::production(&account_id) else {
+        let Ok(account) = binding.account(&account_id) else {
             shell.show_toast("Your draft could not be saved. The message has not been sent.");
             return true;
         };
@@ -108,6 +121,7 @@ pub(crate) fn intercept_target(mut state: Signal<ShellState>, target: ComposerTa
                 });
             }
         }
+        fixture::ui_completed(&captured.account_id, &captured.key);
     });
     true
 }
@@ -118,7 +132,7 @@ struct Captured {
     key: DraftKey,
     local: LocalDraft,
     account: Arc<Account>,
-    binding: Binding,
+    binding: Source,
     field_scope: String,
     thread_generation: Option<u64>,
 }
@@ -168,7 +182,6 @@ fn can_consume(view: &View) -> bool {
         && view.uncommitted.is_none()
         && view.stored.as_ref().is_some_and(|stored| {
             matches!(stored.state.workflow(), Workflow::Idle)
-                && stored.state.acknowledged().is_none()
                 && stored.state.consumption().is_none()
         })
 }
@@ -370,7 +383,7 @@ async fn abort_enrollment(
 
 async fn dispatch_once(
     owner: &Owner,
-    binding: &Binding,
+    binding: &Source,
     intent: &ConsumeIntent,
 ) -> Result<(super::dispatch::DispatchResult, Outcome), Fault> {
     dispatch_once_with(owner, intent, |operation| async move {
@@ -500,6 +513,9 @@ fn clear_consumed_at(
 #[path = "send_projection.rs"]
 mod projection;
 use projection::{append_pending, apply_outcome};
+pub(crate) use projection::{
+    append_pending as protected_append_pending, apply_outcome as protected_apply_outcome,
+};
 
 pub(super) fn now_ms() -> u64 {
     std::time::SystemTime::now()

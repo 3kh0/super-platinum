@@ -4,6 +4,9 @@ use std::time::Instant;
 
 use crate::state::ShellState;
 
+pub(crate) mod completion;
+pub(crate) mod emoji_lifecycle;
+pub(crate) mod emoji_retirement;
 pub(crate) mod runtime_probe;
 
 #[derive(Clone, Copy)]
@@ -79,7 +82,7 @@ pub(crate) async fn mark_history_painted(
     }
 }
 
-pub async fn mark_painted(mut state: Signal<ShellState>) {
+pub async fn mark_painted(state: Signal<ShellState>) {
     // Capture readiness before waiting: loading content after this evaluation
     // starts must get its own paint acknowledgement.
     let ready = {
@@ -99,7 +102,19 @@ pub async fn mark_painted(mut state: Signal<ShellState>) {
     if ready {
         record(StartupStage::ConversationPaint);
     }
-    let now = std::time::Instant::now();
+    record_paint_latency(state, Instant::now());
+}
+
+/// Timing acknowledgements with no pending sample must not invalidate the UI.
+/// Real samples retain the ordinary notifying write and existing take-once rules.
+fn record_paint_latency(mut state: Signal<ShellState>, now: Instant) {
+    let pending = {
+        let shell = state.peek();
+        shell.channel_switch_started.is_some() || shell.realtime_insert_started.is_some()
+    };
+    if !pending {
+        return;
+    }
     let mut shell = state.write();
     if let Some(started) = shell.channel_switch_started.take() {
         shell.performance.channel_switch_ms =
@@ -223,3 +238,6 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod paint_tests;

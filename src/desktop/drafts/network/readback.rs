@@ -34,6 +34,7 @@ impl Binding {
         match operation.kind {
             OperationKind::Send => self.check_send(operation, now_ms).await,
             OperationKind::Update => self.check_update(operation, now_ms).await,
+            OperationKind::Schedule { .. } => self.check_schedule(operation, now_ms).await,
             _ => Readback::blocked(Block::Unsupported),
         }
     }

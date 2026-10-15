@@ -109,9 +109,11 @@ thread/document relationships, and present canonical sequences. Every returned
 section must identify that same thread/document and have a sequence. Exactly one
 `Section/<documentID>` index must exist, with unique entries accounting for every
 returned non-deleted section and no missing or extra active section. The observed
-complete index has `chunked=true`; that flag alone is not rejected. Nonempty
-preserialized response payloads are currently unsupported rather than silently
-accepted as a complete document. Unknown protobuf fields remain in the snapshot.
+complete index has `chunked=true`; that flag alone is not rejected. The loader
+projects a bounded SECTION-only subset of preserialized response payloads, with
+exactly associated CRDT sidecars; unsupported or ambiguous payloads are refused.
+Original wrapper, response, items and unknown protobuf bytes remain retained;
+projection does not weaken snapshot completeness or edit-history validation.
 A valid snapshot establishes identity and completeness, **not edit permission**;
 file, thread, document and section eligibility remain separate builder checks.
 
@@ -604,3 +606,75 @@ receipts require initialLoadRecovery, latestPairWins and exactly three synthetic
 read pairs; root inspected both PNGs. Evidence:
 `tmp/conversation-canvas-final-tests.log`,
 `tmp/canvas-paired-load-native-final.log` and `tmp/agent-ui/canvas-text*.png`.
+
+
+## Modern inserted paragraphs: subsequent text edits
+
+The retained source-method oracle in `tmp/canvas-base0-text-prep` extends the
+structural base-zero contract to CONTENT edits. It runs captured `updateText`,
+server CRDT update, source ACK finish admission and Section projection twice,
+under distinct actors, while retaining the original zero base and prior history.
+Canonical ACK inputs and Section hosts are synthetic; this is not current-server
+interoperability or a complete reducer/renderer execution.
+
+Text preparation admits this bounded case through the existing strict structural
+history validator: exact modern stable ID, positive canonical section sequence,
+base_sequence zero, last_saved_sequence equal to that sequence, one dependency-
+complete head already processed, exact typed content/marks and valid expiry.
+Legacy zero-base IDs, conflicts, unsupported history fields and expired sessions
+remain refused. The text update preserves original history and base head.
+
+For this newly admitted cohort, the direct ACK additionally binds the original
+zero base/base head, exact local sequence, all outgoing changes, and unchanged
+opaque fields outside reviewed write/receipt metadata. Present-target readback
+requires the exact ACK revision and raw canonical association, readable CRDT38,
+and every acknowledged change. A later revision, missing/replaced history or
+unknown-field drift remains unresolved. Existing positive-base text behavior is
+unchanged. An own retained zero-base history cannot be bootstrapped or rotated
+away just because a later load omits38.
+
+Structural present-target readback still requires CRDT38 and sealed history.
+Previously observed checkbox/text load omissions do not establish structural
+omission rules. Current deployed source/read-request options and an independently
+correlated structural ACK/full-load pair are still required before any wider
+omission policy can be considered. The exact read-only observation checklist is
+`tmp/canvas-base0-text-prep/readonly-evidence.md`. No live write was used for this
+source implementation; root compilation and fresh native workflow remain gates.
+
+The base-zero text receipt retains the exact outgoing head and requires it in
+processed_heads on both direct ACK and readback; a processed descendant with all
+ancestor changes present is insufficient. A focused negative/positive pair covers
+that distinction. Positive-base text admission and settlement stay unchanged.
+
+
+## Preserialized SECTION load projection
+
+The currently loaded public quip-collab bundle captured read-only by root has
+SHA256 `70bcf0fae7e0d32451aed03924b88dc13e137956ea562b2e855a9b297b56dca0`.
+Five loader/schema/Section-update excerpts exactly match the retained source;
+spans and verifier are in `tmp/canvas-current-source-comparison`. Its nEcU.Wf
+function joins wrapper3.crdt_sessions (field2) by section_id onto preserialized
+SECTION values (record IdType2, repeated bytes2), before appending to Payload7.
+It does not attach those sidecars to ordinary inline payload Sections.
+
+`wire::preserialized` implements a conservative subset: SECTION-only records,
+unambiguous identities, exact matching sidecars, and byte-identical duplicate
+inline/sidecar history only. Duplicate section/session IDs, orphan sidecars,
+conflicting history, unknown dispatch fields, unsupported kinds and malformed
+wire values refuse the entire projection. Stock's last-wins/overwrite/ignore
+behavior for these ambiguous cases is deliberately outside this subset. Missing
+history stays absent. Unknown fields within payloads, Sections and sessions keep
+their bytes and order; untouched payload fields are not regrouped. Original wire
+evidence is retained separately from the derived payload.
+
+Aggregate sections and parsed fields are bounded across records and sidecars;
+retained input plus newly attached history and the projected payload each obey
+byte limits. This is response decoding only. Existing canonical index/owner
+checks and exact CRDT38/sent-head/history ACK/readback guards remain in force.
+The source-method oracle uses synthetic adapters, and the new Rust cases are
+synthetic binary fixtures. Neither establishes that a current private server
+load uses this representation or repairs the previously observed omission.
+No current owned-Canvas insertion ACK/full-load pair has been recovered. The
+captured asset does not contain the editor startClientSession implementation;
+its reconstruction implementation remains historical evidence. No write or lazy
+history request was introduced.

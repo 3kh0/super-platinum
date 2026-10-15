@@ -8,8 +8,12 @@ mod board;
 mod create;
 mod delete;
 mod editor;
+#[cfg(test)]
+mod picker_tests;
 mod record;
+mod rename;
 mod row;
+mod subitem;
 const PAGE_SIZE: usize = 50;
 const KEYBOARD_HELP: &str = "Arrow keys move between cells; Right and Left expand or collapse items and groups. Space changes a checkbox. Alt+Enter opens item details. F2 edits a cell. Enter opens cell controls; Escape returns to the cell.";
 pub(crate) fn dialog(state: Signal<ShellState>) -> Element {
@@ -47,6 +51,8 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
     let media_epoch = state.read().media_epoch;
     let generation = view.generation;
     let layout = view.layout_generation;
+    let selection_generation =
+        crate::slack_lists::rename::selection(&state.read()).unwrap_or_default();
     let selected = view.selected_view.clone().unwrap_or_default();
     let page_previous = view.selected_view.clone();
     let page_next = view.selected_view.clone();
@@ -97,7 +103,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
     rsx! {
         div{class:"scrim",onclick:move |_|crate::slack_lists::close_shell(&mut state.write())}
         section{id:"shell-overlay-dialog",class:"modal slack-list-dialog",role:"dialog","aria-modal":"true","aria-labelledby":"slack-list-title",tabindex:"-1",
-            "data-keyboard-dialog":"true","data-dialog-kind":"other","data-dialog-generation":generation,"data-layout-generation":layout,"data-list-id":"{view.list_id}",
+            "data-keyboard-dialog":"true","data-dialog-kind":"other","data-dialog-generation":generation,"data-layout-generation":layout,"data-list-id":"{view.list_id}","data-view-selection":"{selection_generation}",
             onkeydown:move |event|if event.key()==Key::Escape{event.prevent_default();event.stop_propagation();if let Some(detail)=detail_generation {crate::slack_lists::close_record_detail(state,detail);}else{crate::slack_lists::close_shell(&mut state.write());}},
             onmounted:move |_|{dioxus::document::eval(INSTALL_KEYBOARD);},
             header{class:"slack-list-header",
@@ -106,13 +112,15 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                         span{"View"}
                         select{id:"slack-list-view-select",value:"{selected}",
                             onchange:move |event|{let id=event.value();crate::slack_lists::select_view(state,(!id.is_empty()).then_some(id),generation,layout);page.set((None,0));reset_scroll();},
-                            option{value:"","All loaded items"}
-                            for choice in view.view_choices.iter(){option{key:"{choice.id}",value:"{choice.id}","{choice.name}"}}
+                            option{value:"",selected:selected.is_empty(),"All loaded items"}
+                            for choice in view.view_choices.iter(){option{key:"{choice.id}",value:"{choice.id}",selected:choice.id==selected,"{choice.name}"}}
                             if view.selected_view.as_ref().is_some_and(|id|!view.view_choices.iter().any(|choice|&choice.id==id)) {
-                                option{value:"{selected}","Unavailable saved view"}
+                                option{value:"{selected}",selected:true,"Unavailable saved view"}
                             }
                         }
                     }
+                    {rename::view_action(state,generation)}
+                    {rename::create_action(state,generation)}
                 }
                 {create::action(state,generation,layout)}
                 button{id:"slack-list-refresh",r#type:"button",class:"slack-list-action",disabled:view.loading||deleting,onclick:move |_|crate::slack_lists::refresh(state),"Refresh"}
@@ -140,7 +148,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                 KeyboardHelp{id:"slack-list-shortcuts",label:"List keyboard shortcuts",help:KEYBOARD_HELP}
                 div{class:"slack-list-scroll","aria-busy":view.loading,
                     table{class:"slack-list-grid",role:if view.selected_view.is_none(){"treegrid"}else{"grid"},"aria-labelledby":"slack-list-title","aria-describedby":"slack-list-keyboard","aria-rowcount":row_count,"aria-colcount":column_count,
-                        thead{tr{"aria-rowindex":1,for (index,column) in view.columns.iter().enumerate(){th{key:"{column.id}",scope:"col","aria-colindex":index+1,"data-column-id":"{column.id}","data-pinned":column.pinned.to_string(),"data-column-size":column.size,"{column.label}"}}}}
+                        thead{tr{"aria-rowindex":1,for (index,column) in view.columns.iter().enumerate(){th{key:"{column.id}",scope:"col","aria-colindex":index+1,"data-column-id":"{column.id}","data-pinned":column.pinned.to_string(),"data-column-size":column.size,{rename::action(state,column,generation)}}}}}
                         tbody{ {rendered_rows.into_iter()} }
                     }
                 }
@@ -153,6 +161,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
             }
             if let Some(open)=detail_open {record::RecordDetail{key:"record-detail-{open}",state}}
             {delete::confirmation(state,generation)}
+            {rename::panel(state)}
             if let Some(editor)=view.editor {editor::CellEditor{key:"list-cell-editor-{editor.generation}",state,editor,visit:generation}}
         }
     }

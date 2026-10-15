@@ -4,6 +4,9 @@
 use super::*;
 use std::sync::Arc;
 use super_platinum_core::slack_lists::Record;
+mod hydration;
+pub(super) use hydration::ensure as ensure_hydration;
+pub(crate) use hydration::native_fixture as hydration_fixture;
 mod read_state;
 pub(crate) use read_state::track_open;
 
@@ -16,11 +19,14 @@ pub(crate) struct RecordDetailView {
     pub columns: Arc<Vec<ColumnView>>,
     pub row: Arc<RowView>,
     pub unavailable: bool,
+    pub parent_return: bool,
+    pub return_child: Option<String>,
 }
 #[derive(Clone)]
 pub(super) struct Detail {
     open_generation: u64,
     read_started: bool,
+    hydration: hydration::State,
     generation: u64,
     selection_generation: u64,
     revision: u64,
@@ -31,6 +37,10 @@ pub(super) struct Detail {
     row: Arc<RowView>,
     unavailable: bool,
     duplicate_reason: Option<&'static str>,
+    parent_return: Option<ParentReturn>,
+    return_child: Option<String>,
+    subitems: Arc<Vec<subitem::Child>>,
+    subitem_reason: Option<&'static str>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum EditAuthority {
@@ -155,6 +165,8 @@ pub(super) fn presentation(view: &View) -> Option<RecordDetailView> {
         columns: detail.columns.clone(),
         row,
         unavailable,
+        parent_return: detail.parent_return.is_some(),
+        return_child: detail.return_child.clone(),
     })
 }
 pub(super) fn reconcile(view: &mut View) {
@@ -172,8 +184,12 @@ pub(super) fn reconcile(view: &mut View) {
         .then(|| view.loaded.as_ref().map(columns))
         .flatten();
     let duplicate_reason = compute_duplicate_reason(view, &detail.record_id);
+    let subitems = subitem::project_children(view, &detail.record_id);
+    let subitem_reason = subitem::project_reason(view, &detail.record_id);
     let detail = view.detail.as_mut().unwrap();
     detail.duplicate_reason = duplicate_reason;
+    detail.subitems = subitems;
+    detail.subitem_reason = subitem_reason;
     if !identity_current || row.is_none() {
         detail.unavailable = true;
         detail.generation = next_id();
@@ -263,6 +279,7 @@ fn install_detail(shell: &mut ShellState, record_id: &str) -> bool {
     let detail = Detail {
         open_generation: generation,
         read_started: false,
+        hydration: hydration::State::Idle,
         generation,
         selection_generation: view.layout.selection_generation,
         revision: view.revision,
@@ -273,6 +290,10 @@ fn install_detail(shell: &mut ShellState, record_id: &str) -> bool {
         row,
         unavailable: false,
         duplicate_reason: compute_duplicate_reason(view, &record.id),
+        parent_return: None,
+        return_child: None,
+        subitems: subitem::project_children(view, &record.id),
+        subitem_reason: subitem::project_reason(view, &record.id),
     };
     let view = shell.slack_lists.view.as_mut().unwrap();
     layout::protect_selection(view);
@@ -280,7 +301,9 @@ fn install_detail(shell: &mut ShellState, record_id: &str) -> bool {
     true
 }
 pub(crate) fn close_record_detail(mut state: Signal<ShellState>, generation: u64) {
-    close_shell(&mut state.write(), generation);
+    if !return_parent(&mut state.write(), generation) {
+        close_shell(&mut state.write(), generation);
+    }
 }
 pub(super) fn close_shell(shell: &mut ShellState, generation: u64) -> bool {
     let Some(view) = shell.slack_lists.view.as_ref() else {
@@ -389,3 +412,149 @@ fn report(shell: &mut ShellState, generation: u64, error: &str) {
 
 #[cfg(test)]
 mod tests;
+
+#[derive(Clone)]
+struct ParentReturn {
+    id: String,
+    created: Option<Value>,
+    creator: Option<Value>,
+    visit: u64,
+    selection: u64,
+}
+pub(super) fn subitem_origin(view: &View, parent: &str) -> Option<(u64, u64)> {
+    let d = view.detail.as_ref()?;
+    if d.record_id != parent
+        || d.unavailable
+        || d.revision != view.revision
+        || d.selection_generation != view.layout.selection_generation
+    {
+        return None;
+    }
+    canonical(view, d)?;
+    Some((d.open_generation, d.generation))
+}
+pub(super) fn subitem_target(view: &View, generation: u64) -> Option<String> {
+    let d = view.detail.as_ref()?;
+    if d.generation != generation || matches!(d.hydration, hydration::State::Pending(_)) {
+        return None;
+    }
+    subitem_origin(view, &d.record_id)?;
+    let row = canonical(view, d)?;
+    if row.parent_id().is_some() {
+        return None;
+    }
+    Some(row.id.clone())
+}
+pub(super) fn navigate_subitem(shell: &mut ShellState, parent: &str, child: &str) -> bool {
+    let Some(v) = shell.slack_lists.view.as_ref() else {
+        return false;
+    };
+    if !checkbox_visit_current(shell, v.generation)
+        || subitem_origin(v, parent).is_none()
+        || v.editor.is_some()
+        || v.stale
+        || v.loading
+        || v.unavailable
+    {
+        return false;
+    }
+    let Some(l) = v.loaded.as_ref() else {
+        return false;
+    };
+    let Some(p) = l.records.record(parent) else {
+        return false;
+    };
+    if l.records
+        .record(child)
+        .is_none_or(|r| !available(r) || r.parent_id() != Some(parent))
+    {
+        return false;
+    }
+    let target = ParentReturn {
+        id: parent.into(),
+        created: p.raw.get("date_created").cloned(),
+        creator: p.raw.get("created_by").cloned(),
+        visit: v.generation,
+        selection: v.layout.selection_generation,
+    };
+    if !install_detail(shell, child) {
+        return false;
+    }
+    shell
+        .slack_lists
+        .view
+        .as_mut()
+        .unwrap()
+        .detail
+        .as_mut()
+        .unwrap()
+        .parent_return = Some(target);
+    true
+}
+pub(crate) fn open_subitem(mut state: Signal<ShellState>, generation: u64, child: String) {
+    let mut shell = state.write();
+    if create::blocks_mutation(&shell)
+        || delete::blocks_mutation(&shell)
+        || rename::blocks_mutation(&shell)
+    {
+        return;
+    }
+    let Some(v) = shell.slack_lists.view.as_ref() else {
+        return;
+    };
+    let Some(parent) = subitem_target(v, generation) else {
+        return;
+    };
+    navigate_subitem(&mut shell, &parent, &child);
+}
+fn return_parent(shell: &mut ShellState, generation: u64) -> bool {
+    let Some(v) = shell.slack_lists.view.as_ref() else {
+        return false;
+    };
+    if !checkbox_visit_current(shell, v.generation) || v.stale || v.loading || v.editor.is_some() {
+        return false;
+    }
+    let Some(d) = v.detail.as_ref().filter(|d| d.generation == generation) else {
+        return false;
+    };
+    let Some(p) = d.parent_return.clone() else {
+        return false;
+    };
+    if p.visit != v.generation || p.selection != v.layout.selection_generation {
+        return false;
+    }
+    if v.loaded
+        .as_ref()
+        .and_then(|l| l.records.record(&p.id))
+        .is_none_or(|r| {
+            !available(r)
+                || r.raw.get("date_created") != p.created.as_ref()
+                || r.raw.get("created_by") != p.creator.as_ref()
+        })
+    {
+        return false;
+    }
+    let child = d.record_id.clone();
+    if !install_detail(shell, &p.id) {
+        return false;
+    }
+    shell
+        .slack_lists
+        .view
+        .as_mut()
+        .unwrap()
+        .detail
+        .as_mut()
+        .unwrap()
+        .return_child = Some(child);
+    true
+}
+
+pub(super) fn subitem_children(view: &View, parent: &str) -> Option<Arc<Vec<subitem::Child>>> {
+    let d = view.detail.as_ref()?;
+    (d.record_id == parent).then(|| d.subitems.clone())
+}
+
+pub(super) fn subitem_reason(view: &View) -> Option<&'static str> {
+    view.detail.as_ref().and_then(|d| d.subitem_reason)
+}

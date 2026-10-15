@@ -1,4 +1,4 @@
-function mountListRecordDetail(generation,visit,recordId){
+function mountListRecordDetail(generation,visit,recordId,returnChild=null){
  const panel=document.getElementById('slack-list-record-detail');
  if(!panel||panel.dataset.detailOpenGeneration!==String(generation))return;
  const dialog=panel.closest('.slack-list-dialog');
@@ -87,11 +87,16 @@ function mountListRecordDetail(generation,visit,recordId){
  });
  observer.observe(dialog,{childList:true,subtree:true,attributes:true,attributeFilter:['tabindex','disabled']});
  const previous=document.activeElement;
+ let mountInput=false;
+ const cancelMount=e=>{if(e.isTrusted)mountInput=true;};
+ if(returnChild!==null){document.addEventListener('pointerdown',cancelMount,true);document.addEventListener('keydown',cancelMount,true);}
  requestAnimationFrame(()=>{
-   if(!panel.isConnected||dialog.dataset.dialogGeneration!==String(visit)||dialog.querySelector('#slack-list-cell-editor'))return;
+   document.removeEventListener('pointerdown',cancelMount,true);document.removeEventListener('keydown',cancelMount,true);
+   if(mountInput||!panel.isConnected||document.getElementById('slack-list-record-detail')!==panel||dialog.dataset.dialogGeneration!==String(visit)||dialog.querySelector('#slack-list-cell-editor'))return;
    const active=document.activeElement;
    if(active!==panel&&panel.contains(active)){normalize();return;}
    if(active&&active!==document.body&&active!==previous)return;
-   panel.querySelector('#slack-list-record-back')?.focus({preventScroll:true});normalize();
+   const child=typeof returnChild==='string'?[...panel.querySelectorAll('[data-subitem-id]')].find(e=>e.dataset.subitemId===returnChild&&!e.disabled):null;
+   const target=child||panel.querySelector('#slack-list-record-back');target?.focus({preventScroll:true});if(child)child.scrollIntoView({block:'nearest',inline:'nearest'});normalize();
  });normalize();
 }

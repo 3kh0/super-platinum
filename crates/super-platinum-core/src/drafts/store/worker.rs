@@ -1,15 +1,17 @@
 //! One worker orders legacy writes and explicit durable sync requests. Replies
 //! to commit/prepare are never sent before SQLite commits, and failed requests
 //! are never automatically retried. Only ordinary local writes are coalesced.
+use super::terminal;
 use super::{
     DraftKey, DraftStore, Entries, LocalDraft,
     sync::{
         self, Commit, LoadMode, Loaded, LocalChoice, LocalReview, LocalSettlement, Prepare,
-        Release, RemoteChoice, RemoteReview, RemoteSettlement,
+        RejectedScheduleCommit, Release, RemoteChoice, RemoteReview, RemoteSettlement,
+        ReviewedScheduleCommit,
     },
 };
 use crate::{
-    drafts::sync::{DraftSync, Scope},
+    drafts::sync::{DraftSync, RejectedScheduleChoice, Scope, Snapshot},
     error::AppError,
 };
 use std::{
@@ -17,15 +19,36 @@ use std::{
     sync::{Condvar, Mutex, OnceLock, mpsc},
 };
 
+#[cfg(any(test, feature = "protected-test-support"))]
+mod accounting;
+#[cfg(any(test, feature = "protected-test-support"))]
+mod admission;
+pub(crate) mod protected_queue;
+#[cfg(any(test, feature = "protected-test-support"))]
+#[path = "worker/request_identity.rs"]
+mod request_identity;
 pub(super) mod uploads;
 
 type Updates = BTreeMap<(String, DraftKey), LocalDraft>;
 type Reply<T> = mpsc::SyncSender<Result<T, AppError>>;
 enum Request {
+    #[cfg(any(test, feature = "protected-test-support"))]
+    StoreUpgrade(Box<super::protected::upgrade::Command>),
+    SlashJournal(Box<crate::slash_commands::journal::Command>),
+    #[cfg(any(test, feature = "protected-test-support"))]
+    SlashProtected(Box<super::protected::slash_runtime::Command>),
+    Protected(Box<super::protected::commands::Command>),
     Upload(uploads::Command),
     ReadLocalReview(Scope, Reply<LocalReview>),
     SettleLocalVersions(LocalReview, LocalChoice, Reply<LocalSettlement>),
     ReconcileRemoteReview(RemoteReview, RemoteChoice, Reply<RemoteSettlement>),
+    CommitReviewedSchedule(LocalReview, Snapshot, i64, Reply<ReviewedScheduleCommit>),
+    ReviewRejectedSchedule(
+        LocalReview,
+        RejectedScheduleChoice,
+        i64,
+        Reply<RejectedScheduleCommit>,
+    ),
     Load(String, Reply<Entries>),
     LoadSynced(String, LoadMode, Reply<Loaded>),
     Commit(
@@ -52,6 +75,12 @@ enum Request {
 }
 #[derive(Default)]
 struct Pending {
+    #[cfg(any(test, feature = "protected-test-support"))]
+    accounting: Option<accounting::Book>,
+    #[cfg(any(test, feature = "protected-test-support"))]
+    admission: Option<admission::State>,
+    #[cfg(any(test, feature = "protected-test-support"))]
+    upgrade_generation: u64,
     updates: Updates,
     requests: Vec<Request>,
     failed: BTreeSet<String>,
@@ -59,36 +88,110 @@ struct Pending {
 }
 #[derive(Default)]
 struct Worker {
+    #[cfg(test)]
+    slash_open_gate: Mutex<Option<(mpsc::Sender<()>, mpsc::Receiver<()>)>>,
+    #[cfg(any(test, feature = "protected-test-support"))]
+    upgrade_id: OnceLock<String>,
+    protected_fixture: bool,
     pending: Mutex<Pending>,
     ready: Condvar,
+    #[cfg(any(test, feature = "protected-test-support"))]
+    accounted: Condvar,
+    #[cfg(test)]
+    accounted_waiters: std::sync::atomic::AtomicUsize,
 }
 impl Worker {
     fn enqueue(&self, account: String, entries: BTreeMap<DraftKey, LocalDraft>) {
         let mut pending = self.pending.lock().unwrap();
+        #[cfg(any(test, feature = "protected-test-support"))]
+        {
+            pending.upgrade_generation = pending.upgrade_generation.saturating_add(1);
+            if let Some(admission) = &mut pending.admission {
+                admission.unsupported = true;
+            }
+        }
         for (key, draft) in entries {
+            #[cfg(any(test, feature = "protected-test-support"))]
+            if let Some(book) = &mut pending.accounting {
+                book.update(&account, &key, false);
+            }
             pending.updates.insert((account.clone(), key), draft);
         }
         self.ready.notify_one();
     }
     fn submit(&self, request: Request) {
-        self.pending.lock().unwrap().requests.push(request);
+        self.submit_recorded(request, false);
+    }
+    #[cfg(any(test, feature = "protected-test-support"))]
+    fn submit_bootstrap(&self, request: Request) {
+        // Only existing retained A/B startup routes call this. Old Client calls
+        // are latched before routing, including rejected AfterRestart attempts.
+        let bootstrap = matches!(&request, Request::StoreUpgrade(_))
+            || matches!(&request, Request::Protected(command) if matches!(&command.action, super::protected::commands::Action::Load {mode:super::protected::LoadMode::AfterRestart,..}));
+        self.submit_recorded(request, bootstrap);
+    }
+    fn submit_recorded(&self, request: Request, _bootstrap: bool) {
+        let mut pending = self.pending.lock().unwrap();
+        #[cfg(any(test, feature = "protected-test-support"))]
+        if !_bootstrap {
+            if let Some(admission) = &mut pending.admission {
+                admission.unsupported = true;
+            }
+        }
+        #[cfg(any(test, feature = "protected-test-support"))]
+        {
+            pending.upgrade_generation = pending.upgrade_generation.saturating_add(1);
+        }
+        #[cfg(any(test, feature = "protected-test-support"))]
+        {
+            let index = pending.requests.len();
+            if let Some(book) = &mut pending.accounting {
+                book.request(index, request.identity());
+            }
+        }
+        pending.requests.push(request);
+        drop(pending);
         self.ready.notify_one();
     }
     fn cycle(&self, open: impl Fn(&str) -> Result<DraftStore, AppError>) -> bool {
+        #[cfg(any(test, feature = "protected-test-support"))]
+        let upgrade_generation;
+        #[cfg(any(test, feature = "protected-test-support"))]
+        let accounting_batch;
         let (updates, requests) = {
             let mut pending = self.pending.lock().unwrap();
+            #[cfg(any(test, feature = "protected-test-support"))]
+            {
+                upgrade_generation = pending.upgrade_generation;
+            }
+            #[cfg(any(test, feature = "protected-test-support"))]
+            {
+                let requests = pending.requests.len();
+                let updates = pending.updates.len();
+                accounting_batch = pending
+                    .accounting
+                    .as_mut()
+                    .map(|book| book.detach(requests, updates))
+                    .unwrap_or_default();
+            }
             (
                 std::mem::take(&mut pending.updates),
                 std::mem::take(&mut pending.requests),
             )
         };
+        #[cfg(any(test, feature = "protected-test-support"))]
+        let mut executing = accounting::Executing::new(self, accounting_batch);
         let mut accounts: BTreeMap<String, Entries> = BTreeMap::new();
         for ((account, key), draft) in updates {
             accounts.entry(account).or_default().push((key, draft));
         }
         let mut retry = false;
         for (account, entries) in accounts {
+            #[cfg(any(test, feature = "protected-test-support"))]
+            let diagnostic_account = executing.update_account(&account);
             let result = open(&account).and_then(|mut store| store.save_legacy(&entries));
+            #[cfg(any(test, feature = "protected-test-support"))]
+            let update_reports = executing.update_reports(&account, &result);
             let mut pending = self.pending.lock().unwrap();
             match result {
                 Ok(rejected) => {
@@ -101,16 +204,123 @@ impl Worker {
                     retry = true;
                     pending.failed.insert(account.clone());
                     for (key, draft) in entries {
-                        pending
-                            .updates
-                            .entry((account.clone(), key))
-                            .or_insert(draft);
+                        let Pending {
+                            updates,
+                            #[cfg(any(test, feature = "protected-test-support"))]
+                            accounting,
+                            ..
+                        } = &mut *pending;
+                        // Move the original key into the real entry. Diagnostics
+                        // borrow it only after proving this retry is inserted;
+                        // no unbounded diagnostic key clone under Pending.
+                        if let std::collections::btree_map::Entry::Vacant(entry) =
+                            updates.entry((account.clone(), key))
+                        {
+                            #[cfg(any(test, feature = "protected-test-support"))]
+                            if let Some(book) = accounting {
+                                let (owner, key) = entry.key();
+                                book.update(owner, key, true);
+                            }
+                            entry.insert(draft);
+                        }
                     }
                 }
             }
+            drop(pending);
+            #[cfg(any(test, feature = "protected-test-support"))]
+            if let Some(account) = diagnostic_account {
+                executing.finish_updates(&account, update_reports);
+            }
         }
-        for request in requests {
-            match request {
+        #[cfg(any(test, feature = "protected-test-support"))]
+        let upgrade_sole = requests.len() == 1;
+        #[cfg(any(test, feature = "protected-test-support"))]
+        let mut slash_detached: BTreeMap<String, usize> = {
+            let mut counts = BTreeMap::new();
+            for request in &requests {
+                if let Some(account) = request.slash_fence_account() {
+                    *counts.entry(account.to_owned()).or_insert(0) += 1;
+                }
+            }
+            counts
+        };
+        for (_request_index, request) in requests.into_iter().enumerate() {
+            #[cfg(any(test, feature = "protected-test-support"))]
+            if let Some(account) = request.slash_fence_account() {
+                if let Some(count) = slash_detached.get_mut(account) {
+                    *count -= 1;
+                }
+            }
+            let _report = match request {
+                #[cfg(any(test, feature = "protected-test-support"))]
+                Request::SlashProtected(command) => {
+                    let account = command.account().to_owned();
+                    match open(&account) {
+                        Ok(mut store) => {
+                            #[cfg(test)]
+                            if let Some((entered, resume)) =
+                                self.slash_open_gate.lock().unwrap().take()
+                            {
+                                entered.send(()).expect("isolated opener observer");
+                                resume
+                                    .recv_timeout(std::time::Duration::from_secs(5))
+                                    .expect("isolated opener release");
+                            }
+                            // Sample AFTER opener, covering same-batch detached work,
+                            // new arrivals, failed writes and preserved blocked input.
+                            let pending = self.pending.lock().unwrap();
+                            let activity = pending.upgrade_generation;
+                            let failed_inputs = self.slash_failed_inputs(&pending);
+                            let blocked = failed_inputs
+                                || slash_detached.get(&account).is_some_and(|n| *n > 0)
+                                || pending.failed.contains(&account)
+                                || pending.blocked.contains(&account)
+                                || pending.updates.keys().any(|(owner, _)| owner == &account)
+                                || pending
+                                    .requests
+                                    .iter()
+                                    .any(|r| r.slash_fence_account() == Some(account.as_str()));
+                            drop(pending);
+                            (*command).execute(Ok(&mut store), blocked, activity)
+                        }
+                        Err(_) => {
+                            (*command).execute(Err(super::protected::Error::Storage), false, 0)
+                        }
+                    }
+                }
+                #[cfg(any(test, feature = "protected-test-support"))]
+                Request::StoreUpgrade(command) => {
+                    upgrade::execute(self, *command, upgrade_generation, upgrade_sole)
+                }
+                Request::SlashJournal(command) => {
+                    let account = command.account().to_owned();
+                    match open(&account) {
+                        Ok(mut store) => {
+                            let blocked = {
+                                let pending = self.pending.lock().unwrap();
+                                pending.failed.contains(&account)
+                                    || pending.blocked.contains(&account)
+                                    || pending.updates.keys().any(|(owner, _)| owner == &account)
+                            };
+                            store.slash_journal_command(*command, blocked)
+                        }
+                        Err(_) => (*command)
+                            .execute(Err(crate::slash_commands::Failure::Persistence), false),
+                    }
+                }
+                Request::Protected(command) => {
+                    let updates = self
+                        .pending
+                        .lock()
+                        .unwrap()
+                        .updates
+                        .iter()
+                        .filter(|((owner, _), _)| owner == &command.account)
+                        .map(|((_, key), value)| (key.clone(), value.clone()))
+                        .collect();
+                    command.execute(&open, updates, self.protected_fixture)
+                }
+
                 Request::Upload(command) => uploads::execute(command, &open),
                 Request::ReadLocalReview(scope, reply) => {
                     let result = open(&scope.account_id).and_then(|mut store| {
@@ -125,7 +335,9 @@ impl Worker {
                         }
                         store.read_local_review(&scope)
                     });
+                    let report = terminal::app(&result, terminal::read);
                     let _ = reply.send(result);
+                    report
                 }
                 Request::SettleLocalVersions(review, choice, reply) => {
                     let scope = &review.scope;
@@ -142,7 +354,9 @@ impl Worker {
                         else { pending.blocked.remove(&scope.account_id); }
                         Ok(result)
                     });
+                    let report = terminal::app(&result, terminal::legacy::local_settlement);
                     let _ = reply.send(result);
+                    report
                 }
                 Request::ReconcileRemoteReview(review, choice, reply) => {
                     let scope = &review.inventory().scope;
@@ -160,7 +374,48 @@ impl Worker {
                         else { pending.blocked.remove(&scope.account_id); }
                         Ok(result)
                     });
+                    let report = terminal::app(&result, terminal::legacy::remote_settlement);
                     let _ = reply.send(result);
+                    report
+                }
+                Request::CommitReviewedSchedule(expected, reviewed, post_at, reply) => {
+                    let scope = &expected.scope;
+                    let result = open(&scope.account_id).and_then(|mut store| {
+                        // Failed or queued legacy input is not in this durable review. Refuse
+                        // at the same pending-input linearization boundary as RemoteReview.
+                        // Later inputs remain queued. Never hold a UI mutex across disk I/O.
+                        if self
+                            .pending
+                            .lock()
+                            .unwrap()
+                            .updates
+                            .contains_key(&(scope.account_id.clone(), scope.key.clone()))
+                        {
+                            return Ok(ReviewedScheduleCommit::Blocked);
+                        }
+                        store.commit_reviewed_schedule(&expected, &reviewed, post_at)
+                    });
+                    let report = terminal::app(&result, terminal::legacy::reviewed_schedule);
+                    let _ = reply.send(result);
+                    report
+                }
+                Request::ReviewRejectedSchedule(expected, choice, now_secs, reply) => {
+                    let scope = &expected.scope;
+                    let result = open(&scope.account_id).and_then(|mut store| {
+                        if self
+                            .pending
+                            .lock()
+                            .unwrap()
+                            .updates
+                            .contains_key(&(scope.account_id.clone(), scope.key.clone()))
+                        {
+                            return Ok(RejectedScheduleCommit::Blocked);
+                        }
+                        store.review_rejected_schedule(&expected, &choice, now_secs)
+                    });
+                    let report = terminal::app(&result, terminal::legacy::rejected_schedule);
+                    let _ = reply.send(result);
+                    report
                 }
                 Request::Load(account, reply) => {
                     let result = open(&account).and_then(|store| {
@@ -177,7 +432,9 @@ impl Worker {
                         }
                         Ok(entries.into_iter().collect())
                     });
+                    let report = terminal::app(&result, terminal::read);
                     let _ = reply.send(result);
+                    report
                 }
                 Request::LoadSynced(account, mode, reply) => {
                     let result = open(&account)
@@ -198,7 +455,16 @@ impl Worker {
                                 .collect();
                             loaded
                         });
+                    let report = terminal::app(&result, |_| match mode {
+                        LoadMode::Current => {
+                            terminal::Report::new(terminal::Execution::ReadObserved)
+                        }
+                        LoadMode::AfterRestart => {
+                            terminal::Report::new(terminal::Execution::StorageAccepted)
+                        }
+                    });
                     let _ = reply.send(result);
+                    report
                 }
                 Request::Commit(scope, expected, local, state, settle, reply) => {
                     let result = open(&scope.account_id).and_then(|mut store| {
@@ -222,7 +488,9 @@ impl Worker {
                         }
                         Ok(result)
                     });
+                    let report = terminal::app(&result, terminal::legacy::commit);
                     let _ = reply.send(result);
+                    report
                 }
                 Request::ConditionalLocal(scope, expected, local, reply) => {
                     let result = open(&scope.account_id).and_then(|mut store| {
@@ -245,7 +513,9 @@ impl Worker {
                             .blocked
                             .insert(scope.account_id.clone());
                     }
+                    let report = terminal::app(&result, terminal::legacy::conditional);
                     let _ = reply.send(result);
+                    report
                 }
                 Request::OwnedConditionalLocal(scope, expected, local, writer, revision, reply) => {
                     let result = open(&scope.account_id).and_then(|mut store| {
@@ -271,7 +541,9 @@ impl Worker {
                             .blocked
                             .insert(scope.account_id.clone());
                     }
+                    let report = terminal::app(&result, terminal::legacy::conditional);
                     let _ = reply.send(result);
+                    report
                 }
                 Request::Release(scope, expected, reply) => {
                     let result = open(&scope.account_id).and_then(|mut store| {
@@ -289,7 +561,9 @@ impl Worker {
                         }
                         store.release_synced(&scope, expected)
                     });
+                    let report = terminal::app(&result, terminal::legacy::release);
                     let _ = reply.send(result);
+                    report
                 }
                 Request::Alternate(scope, local, reply) => {
                     let result = open(&scope.account_id)
@@ -301,7 +575,9 @@ impl Worker {
                             .blocked
                             .insert(scope.account_id);
                     }
+                    let report = terminal::app(&result, terminal::accepted);
                     let _ = reply.send(result);
+                    report
                 }
                 Request::OwnedAlternate(scope, local, writer, revision, reply) => {
                     let result = open(&scope.account_id).and_then(|mut store| {
@@ -314,7 +590,9 @@ impl Worker {
                             .blocked
                             .insert(scope.account_id);
                     }
+                    let report = terminal::app(&result, terminal::accepted);
                     let _ = reply.send(result);
+                    report
                 }
                 Request::Prepare(scope, expected, reply) => {
                     // A failed or newer queued local edit must be dealt with
@@ -331,9 +609,13 @@ impl Worker {
                         open(&scope.account_id)
                             .and_then(|mut store| store.prepare_synced(&scope, expected))
                     };
+                    let report = terminal::app(&result, terminal::legacy::prepare);
                     let _ = reply.send(result);
+                    report
                 }
-            }
+            };
+            #[cfg(any(test, feature = "protected-test-support"))]
+            executing.finish_request(_request_index, _report);
         }
         retry
     }
@@ -364,6 +646,9 @@ fn worker() -> &'static Worker {
             .expect("draft worker starts");
         Worker::default()
     })
+}
+pub(crate) fn enqueue_slash_journal(command: crate::slash_commands::journal::Command) {
+    worker().submit(Request::SlashJournal(Box::new(command)));
 }
 fn receive<T>(receiver: mpsc::Receiver<Result<T, AppError>>) -> Result<T, AppError> {
     receiver
@@ -502,6 +787,31 @@ pub fn reconcile_remote_review(
     receive(receiver)
 }
 
+/// Background-only exact inventory CAS; never prepares or dispatches Slack.
+pub fn commit_reviewed_schedule(
+    expected: LocalReview,
+    reviewed: Snapshot,
+    post_at: i64,
+) -> Result<ReviewedScheduleCommit, AppError> {
+    let (sender, receiver) = mpsc::sync_channel(1);
+    worker().submit(Request::CommitReviewedSchedule(
+        expected, reviewed, post_at, sender,
+    ));
+    receive(receiver)
+}
+
+pub fn review_rejected_schedule(
+    expected: LocalReview,
+    choice: RejectedScheduleChoice,
+    now_secs: i64,
+) -> Result<RejectedScheduleCommit, AppError> {
+    let (sender, receiver) = mpsc::sync_channel(1);
+    worker().submit(Request::ReviewRejectedSchedule(
+        expected, choice, now_secs, sender,
+    ));
+    receive(receiver)
+}
+
 pub fn save_failed(account: &str) -> bool {
     let pending = worker().pending.lock().unwrap();
     pending.failed.contains(account) || pending.blocked.contains(account)
@@ -513,3 +823,33 @@ mod tests;
 #[cfg(test)]
 #[path = "worker/remote_review_tests.rs"]
 mod remote_review_tests;
+
+#[cfg(test)]
+#[path = "worker/schedule_tests.rs"]
+mod schedule_tests;
+
+#[cfg(test)]
+#[path = "worker/rejected_schedule_tests.rs"]
+mod rejected_schedule_tests;
+
+#[cfg(test)]
+#[path = "worker/dispatch_stack_tests.rs"]
+mod dispatch_stack_tests;
+
+#[cfg(test)]
+#[path = "worker/slash_journal_tests.rs"]
+mod slash_journal_tests;
+
+#[cfg(any(test, feature = "protected-test-support"))]
+#[path = "worker/upgrade.rs"]
+mod upgrade;
+#[cfg(test)]
+pub(in crate::drafts::store) use upgrade::TestWorker as UpgradeTestWorker;
+#[cfg(any(test, feature = "protected-test-support"))]
+pub(in crate::drafts::store) use upgrade::UpgradeFence;
+#[cfg(any(test, feature = "protected-test-support"))]
+pub(crate) mod owned_queue;
+
+#[cfg(test)]
+#[path = "worker/terminal_tests.rs"]
+mod terminal_tests;

@@ -68,9 +68,10 @@ pub struct ShellState {
     pub overlay: Option<Overlay>,
     pub reaction_target: Option<ReactionTarget>,
     pub composer_emoji: crate::composer_emoji::State,
+    pub(crate) emoji_catalog: crate::emoji_catalog::State,
+    pub(crate) emoji_preferences: crate::emoji_preferences::State,
     pub forward_target: Option<crate::forward::ForwardTarget>,
-    /// Successful catalog loads are scoped to the authenticated transport.
-    pub emoji_catalog_loaded: HashMap<String, crate::reaction_picker::CatalogCache>,
+
     pub settings_section: SettingsSection,
     pub notification_schedule: crate::notification_schedule::State,
     pub presentation_notifications: crate::presentation_notifications::State,

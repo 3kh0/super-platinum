@@ -5,19 +5,29 @@ use rusqlite::{Connection, TransactionBehavior, params};
 use std::{collections::BTreeSet, path::Path};
 
 pub mod sync;
+pub use sync::protected;
+pub(crate) mod terminal;
 pub mod uploads;
 mod worker;
+pub(crate) use worker::enqueue_slash_journal;
 pub use worker::{
-    LocalWrite, commit_synced, enqueue, load, load_synced, prepare_synced,
-    queue_local_if_unchanged, queue_owned_local_if_unchanged, read_local_review,
-    reconcile_remote_review, release_synced, save_failed, save_local_alternate,
-    save_owned_local_alternate, settle_local_versions,
+    LocalWrite, commit_reviewed_schedule, commit_synced, enqueue, load, load_synced,
+    prepare_synced, queue_local_if_unchanged, queue_owned_local_if_unchanged, read_local_review,
+    reconcile_remote_review, release_synced, review_rejected_schedule, save_failed,
+    save_local_alternate, save_owned_local_alternate, settle_local_versions,
 };
 pub type Entries = Vec<(DraftKey, LocalDraft)>;
 pub use sync::{LocalAlternate, LocalWriter};
 
 pub struct DraftStore(Connection);
 impl DraftStore {
+    pub(crate) fn slash_journal_command(
+        &mut self,
+        command: crate::slash_commands::journal::Command,
+        pending: bool,
+    ) -> terminal::Report {
+        command.execute(Ok(&mut self.0), pending)
+    }
     pub fn open(path: impl AsRef<Path>) -> Result<Self, AppError> {
         let conn = Connection::open(path)?;
         conn.busy_timeout(std::time::Duration::from_secs(2))?;
@@ -119,6 +129,7 @@ fn managed(conn: &Connection, key: &DraftKey) -> Result<bool, AppError> {
     )?)
 }
 fn write_local(conn: &Connection, key: &DraftKey, draft: &LocalDraft) -> Result<(), AppError> {
+    protected::touch_local(conn, key)?;
     let key = serde_json::to_string(key)?;
     if draft.empty() {
         conn.execute("DELETE FROM composer_drafts WHERE destination=?1", [key])?;

@@ -1,0 +1,359 @@
+{
+  "source": {
+    "path": "tmp/sb/js/gantry-v2-shared.0b81595876785d7a.min.js",
+    "sha256": "f085df09fb4f938caf425ea66fb0244c8f92a8012eea8eb298e4f629b377dbf7",
+    "module": "UHpe",
+    "scalar_offset": 2400463,
+    "utf16_offset": 2400463,
+    "utf8_offset": 2400463
+  },
+  "context": {
+    "locale": "en-US identity localization",
+    "collection": "ordered Object.keys",
+    "tracing": "no-op"
+  },
+  "cases": [
+    {
+      "custom": [
+        [
+          "second",
+          "alias:custom"
+        ],
+        [
+          "custom",
+          "https://example.invalid/custom.png"
+        ],
+        [
+          "first",
+          "alias:custom"
+        ],
+        [
+          "hankey",
+          "https://example.invalid/hankey.png"
+        ]
+      ],
+      "rows": [
+        {
+          "name": "+1",
+          "id": "E1f44d",
+          "aliases": [
+            "thumbsup"
+          ],
+          "keywords": [
+            "+1",
+            "good",
+            "hand",
+            "like",
+            "thumb",
+            "up",
+            "yes",
+            "thumbsup",
+            "y",
+            "people",
+            "person"
+          ]
+        },
+        {
+          "name": "hankey",
+          "id": "Ehankey",
+          "aliases": [
+            "poop",
+            "shit"
+          ],
+          "keywords": [
+            "bs",
+            "comic",
+            "doo",
+            "dung",
+            "face",
+            "fml",
+            "monster",
+            "pile",
+            "poo",
+            "poop",
+            "smelly",
+            "smh",
+            "stink",
+            "stinks",
+            "stinky",
+            "turd",
+            "shit"
+          ]
+        },
+        {
+          "name": "smile",
+          "id": "E1f604",
+          "aliases": [],
+          "keywords": [
+            "eye",
+            "eyes",
+            "face",
+            "grin",
+            "grinning",
+            "happy",
+            "laugh",
+            "lol",
+            "mouth",
+            "open",
+            "smile",
+            "smiling",
+            "person",
+            "people"
+          ]
+        },
+        {
+          "name": "loop",
+          "id": "E27bf",
+          "aliases": [],
+          "keywords": [
+            "curl",
+            "curly",
+            "double",
+            "loop",
+            "symbol"
+          ]
+        },
+        {
+          "name": "custom",
+          "id": "Ecustom",
+          "aliases": [
+            "second",
+            "first"
+          ],
+          "keywords": []
+        }
+      ],
+      "count": 1912
+    },
+    {
+      "custom": [
+        [
+          "smile",
+          "alias:custom"
+        ],
+        [
+          "custom",
+          "https://example.invalid/custom.png"
+        ],
+        [
+          "thumbsup",
+          "https://example.invalid/override.png"
+        ]
+      ],
+      "rows": [
+        {
+          "name": "+1",
+          "id": "E1f44d",
+          "aliases": [
+            "thumbsup"
+          ],
+          "keywords": [
+            "+1",
+            "good",
+            "hand",
+            "like",
+            "thumb",
+            "up",
+            "yes",
+            "thumbsup",
+            "y",
+            "people",
+            "person"
+          ]
+        },
+        {
+          "name": "hankey",
+          "id": "E1f4a9",
+          "aliases": [
+            "poop",
+            "shit"
+          ],
+          "keywords": [
+            "bs",
+            "comic",
+            "doo",
+            "dung",
+            "face",
+            "fml",
+            "monster",
+            "pile",
+            "poo",
+            "poop",
+            "smelly",
+            "smh",
+            "stink",
+            "stinks",
+            "stinky",
+            "turd",
+            "shit"
+          ]
+        },
+        {
+          "name": "smile",
+          "id": "E1f604",
+          "aliases": [],
+          "keywords": [
+            "eye",
+            "eyes",
+            "face",
+            "grin",
+            "grinning",
+            "happy",
+            "laugh",
+            "lol",
+            "mouth",
+            "open",
+            "smile",
+            "smiling",
+            "person",
+            "people"
+          ]
+        },
+        {
+          "name": "loop",
+          "id": "E27bf",
+          "aliases": [],
+          "keywords": [
+            "curl",
+            "curly",
+            "double",
+            "loop",
+            "symbol"
+          ]
+        },
+        {
+          "name": "custom",
+          "id": "Ecustom",
+          "aliases": [
+            "smile"
+          ],
+          "keywords": []
+        },
+        {
+          "name": "thumbsup",
+          "id": "Ethumbsup",
+          "aliases": [],
+          "keywords": []
+        }
+      ],
+      "count": 1913
+    },
+    {
+      "custom": [
+        [
+          "party",
+          "alias:thumbsup"
+        ],
+        [
+          "broken",
+          "alias:absent"
+        ],
+        [
+          "loop",
+          "alias:loop"
+        ]
+      ],
+      "rows": [
+        {
+          "name": "+1",
+          "id": "E1f44d",
+          "aliases": [
+            "thumbsup"
+          ],
+          "keywords": [
+            "+1",
+            "good",
+            "hand",
+            "like",
+            "thumb",
+            "up",
+            "yes",
+            "thumbsup",
+            "y",
+            "people",
+            "person"
+          ]
+        },
+        {
+          "name": "hankey",
+          "id": "E1f4a9",
+          "aliases": [
+            "poop",
+            "shit"
+          ],
+          "keywords": [
+            "bs",
+            "comic",
+            "doo",
+            "dung",
+            "face",
+            "fml",
+            "monster",
+            "pile",
+            "poo",
+            "poop",
+            "smelly",
+            "smh",
+            "stink",
+            "stinks",
+            "stinky",
+            "turd",
+            "shit"
+          ]
+        },
+        {
+          "name": "smile",
+          "id": "E1f604",
+          "aliases": [],
+          "keywords": [
+            "eye",
+            "eyes",
+            "face",
+            "grin",
+            "grinning",
+            "happy",
+            "laugh",
+            "lol",
+            "mouth",
+            "open",
+            "smile",
+            "smiling",
+            "person",
+            "people"
+          ]
+        },
+        {
+          "name": "loop",
+          "id": "E27bf",
+          "aliases": [
+            "loop"
+          ],
+          "keywords": [
+            "curl",
+            "curly",
+            "double",
+            "loop",
+            "symbol"
+          ]
+        },
+        {
+          "name": "thumbsup",
+          "id": null,
+          "aliases": [
+            "party"
+          ],
+          "keywords": []
+        },
+        {
+          "name": "absent",
+          "id": null,
+          "aliases": [
+            "broken"
+          ],
+          "keywords": []
+        }
+      ],
+      "count": 1913
+    }
+  ]
+}

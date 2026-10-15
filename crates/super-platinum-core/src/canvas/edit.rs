@@ -9,6 +9,7 @@ use crate::slack::api::CanvasCollabSnapshot;
 mod batch;
 pub mod bootstrap;
 mod retained;
+pub mod structure;
 pub mod text;
 mod title;
 use title::CanonicalTitle;

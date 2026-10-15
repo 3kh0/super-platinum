@@ -1,0 +1,12 @@
+.protected-enrollment-dialog { width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+.protected-enrollment-dialog header, .protected-enrollment-dialog form { flex: none; }
+.protected-enrollment-inventory { overflow: auto; min-height: 0; }
+.protected-enrollment-draft { margin-block: var(--space-3); }
+.protected-enrollment-draft h3, #protected-enrollment-pending h3 { font-size: var(--text-md); font-weight: 600; margin: 0 0 var(--space-2); }
+.protected-enrollment-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+.protected-enrollment-dialog footer { display: flex; gap: var(--space-2); }
+.protected-enrollment-dialog footer button { flex: 1; min-width: 0; }
+.toast.protected-enrollment-status { grid-template-columns: minmax(0, 1fr); }
+.protected-enrollment-status .toast-text { min-width: 0; overflow-wrap: anywhere; }
+.protected-enrollment-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.protected-enrollment-actions button { min-height: 32px; }

@@ -109,7 +109,7 @@ fn canonical_seed_never_comes_from_export_and_ambiguous_anchors_are_inert() {
     let map = Mapping::project(&shell, &document, Some(&snapshot));
     assert_eq!(map.items.len(), 1);
     assert!(
-        *map.items["paragraph"].intent.seed()
+        *map.items["paragraph"].intent.as_ref().unwrap().seed()
             == TextDraft::from_rtml("Original <b>paragraph</b>").unwrap()
     );
     for body in [
@@ -204,7 +204,7 @@ fn pending_draft(attempt: &checklist::Attempt) -> Draft {
         read: 0,
         section: "paragraph".into(),
         blocks: serde_json::to_string(&intent.seed().rich_blocks()).unwrap(),
-        intent,
+        kind: Kind::Text(intent),
         reading: false,
         pending: Some(attempt.clone()),
         error: None,

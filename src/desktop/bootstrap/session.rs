@@ -655,12 +655,8 @@ pub async fn sign_in(mut state: Signal<ShellState>) {
         .await;
     match status {
         Ok(status) if status.success() => {
-            let mut loaded = super::startup::load_environment(media).await;
-            {
-                let mut previous = state.write();
-                crate::read_preferences::settings::carry_pending(&mut previous, &mut loaded);
-                *previous = loaded;
-            }
+            let loaded = super::startup::load_environment(media).await;
+            install_loaded(state, loaded);
             super::startup::restore_transcripts(state).await;
             crate::messaging::upload_journal::load(state);
             refresh(state).await;
@@ -712,12 +708,8 @@ pub async fn remove_account(mut state: Signal<ShellState>, account_id: String) {
 
 async fn reload_account(mut state: Signal<ShellState>) {
     let media = state.read().media.clone();
-    let mut loaded = super::startup::load_environment(media).await;
-    {
-        let mut previous = state.write();
-        crate::read_preferences::settings::carry_pending(&mut previous, &mut loaded);
-        *previous = loaded;
-    }
+    let loaded = super::startup::load_environment(media).await;
+    install_loaded(state, loaded);
     super::startup::restore_transcripts(state).await;
     crate::messaging::upload_journal::load(state);
     refresh(state).await;
@@ -732,4 +724,11 @@ pub(super) async fn refresh_media(
     // here: a single slow host would otherwise hold back every avatar that
     // already arrived in the same batch.
     media.load_pending(transport).await;
+}
+
+pub(crate) fn install_loaded(mut state: Signal<ShellState>, mut loaded: ShellState) {
+    let mut previous = state.write();
+    let _release = crate::performance::emoji_retirement::scope(14, 1, 0);
+    crate::read_preferences::settings::carry_pending(&mut previous, &mut loaded);
+    *previous = loaded;
 }

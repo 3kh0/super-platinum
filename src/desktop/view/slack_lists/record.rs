@@ -20,10 +20,12 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
     } else {
         detail.title.as_str()
     };
+    let parent_return = detail.parent_return;
     let generation = detail.generation;
     let open_generation = detail.open_generation;
     let visit = view.generation;
     let record_id = serde_json::to_string(&detail.record_id).unwrap();
+    let return_child = serde_json::to_string(&detail.return_child).unwrap();
     let count = detail.columns.len();
     let pages = count.div_ceil(FIELD_PAGE).max(1);
     let current = (*page.read()).min(pages - 1);
@@ -56,8 +58,8 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
             }}
         }).collect::<Vec<_>>();
     rsx! {section{id:"slack-list-record-detail",class:"slack-list-record-detail",role:"region","aria-labelledby":"slack-list-record-title","aria-describedby":"slack-list-record-help","data-record-id":"{detail.record_id}","data-detail-generation":generation,"data-detail-open-generation":open_generation,"data-escape-local":"true",tabindex:"-1",
-        onmounted:move |_|{dioxus::document::eval(&format!("{MOUNT}\nmountListRecordDetail({open_generation},{visit},{record_id});"));crate::slack_lists::track_open(state,open_generation);},
-        header{class:"slack-list-record-header",button{id:"slack-list-record-back",r#type:"button",class:"slack-list-action",onclick:move |_|crate::slack_lists::close_record_detail(state,generation),{icon(Icon::ChevronRight,"icon")}"Back to list"}
+        onmounted:move |_|{dioxus::document::eval(&format!("{MOUNT}\nmountListRecordDetail({open_generation},{visit},{record_id},{return_child});"));crate::slack_lists::track_open(state,open_generation);},
+        header{class:"slack-list-record-header",button{id:"slack-list-record-back",r#type:"button",class:"slack-list-action",onclick:move |_|crate::slack_lists::close_record_detail(state,generation),{icon(Icon::ChevronRight,"icon")}if parent_return{"Back to parent"}else{"Back to list"}}
             h3{id:"slack-list-record-title","{title}"}
             div{class:"slack-list-record-actions",
             button{id:"slack-list-record-duplicate",r#type:"button",class:"slack-list-action",disabled:duplicate_reason.is_some(),title:duplicate_reason.unwrap_or("Duplicate item"),onclick:move |_|crate::slack_lists::create::duplicate::duplicate_item(state,generation),"Duplicate item"}
@@ -67,7 +69,9 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
         p{id:"slack-list-record-help",class:"slack-list-help","{HELP}"}
         KeyboardHelp{id:"slack-list-record-shortcuts",label:"Item keyboard shortcuts",help:HELP}
         if detail.unavailable{p{class:"slack-list-warning",role:"status","This item is no longer available. Its last loaded fields are shown below."}}
-        div{class:"slack-list-detail-scroll","aria-busy":view.loading,{fields.into_iter()}}
+        div{class:"slack-list-detail-scroll","aria-busy":view.loading,{fields.into_iter()}
+            if detail.row.parent_id.is_none()&&crate::slack_lists::subitem::visible(&state.read()){super::subitem::Subitems{state,record:detail.record_id.clone(),generation,open:open_generation,visit}}
+        }
         if pages>1{footer{class:"slack-list-detail-pagination",span{role:"status","Fields {start+1}–{end} of {count}"}
             button{id:"slack-list-detail-previous",r#type:"button",disabled:current==0,onclick:move |_|page.set(current.saturating_sub(1)),"Previous fields"}
             button{id:"slack-list-detail-next",r#type:"button",disabled:current+1>=pages,onclick:move |_|page.set(current+1),"Next fields"}

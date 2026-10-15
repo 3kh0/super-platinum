@@ -39,6 +39,7 @@ pub(crate) fn refresh(mut state: Signal<ShellState>) {
         let result = load(&context, &attempt.id).await;
         let refresh_again = finish_read(&mut state.write(), &attempt, result);
         read_state::ensure(state);
+        record_detail::ensure_hydration(state);
         if refresh_again {
             refresh(state);
         }

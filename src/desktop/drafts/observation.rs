@@ -31,7 +31,7 @@ enum PreparedKind {
     },
 }
 impl Prepared {
-    fn scope(&self) -> &Scope {
+    pub(super) fn scope(&self) -> &Scope {
         match &self.content {
             PreparedKind::Event(event) => &event.scope,
             PreparedKind::Delete { scope, .. } => scope,
@@ -40,7 +40,7 @@ impl Prepared {
     /// Resolve an omitted UUID only from the exact currently acknowledged
     /// identity, under the owner's gate. Pending creates and UI state cannot
     /// supply this proof; CAS retry repeats the lookup against the new record.
-    fn resolve(&self, state: &DraftSync) -> Result<Option<DraftObservation>, Fault> {
+    pub(super) fn resolve(&self, state: &DraftSync) -> Result<Option<DraftObservation>, Fault> {
         match &self.content {
             PreparedKind::Event(event) => Ok(Some(event.clone())),
             PreparedKind::Delete {
@@ -80,65 +80,8 @@ pub(crate) struct Observed {
     pub changed: bool,
 }
 
-/// Capture once when accepting the authenticated socket generation, before
-/// awaiting any frames. Never recapture a source around an already queued frame.
-/// Binding owns credentials, so this type deliberately does not implement Debug.
-pub(crate) struct Source {
-    binding: network::Binding,
-    account: String,
-    team: String,
-    user: String,
-    generation: u64,
-}
-impl Source {
-    pub fn capture(shell: &ShellState, team: &str, generation: u64) -> Result<Self, Invalid> {
-        if crate::fixture::is_fixture() || generation == 0 {
-            return Err(Invalid::Source);
-        }
-        let workspace = shell.core.workspaces.get(team).ok_or(Invalid::Source)?;
-        if workspace.rt_generation != generation {
-            return Err(Invalid::Source);
-        }
-        Ok(Self {
-            binding: network::Binding::capture(shell, team).map_err(|_| Invalid::Source)?,
-            account: shell.core.active_account.clone().ok_or(Invalid::Source)?,
-            team: team.into(),
-            user: workspace.self_user_id.clone(),
-            generation,
-        })
-    }
-
-    /// The candidate destination must already have a durable owner. That owner
-    /// rechecks its server/client identity when applying this immutable event.
-    pub fn prepare(
-        &self,
-        shell: &ShellState,
-        key: &DraftKey,
-        raw: &RawEvent,
-    ) -> Result<Prepared, Invalid> {
-        if !self.binding.current(shell)
-            || key.team != self.team
-            || shell
-                .core
-                .workspaces
-                .get(&self.team)
-                .is_none_or(|workspace| {
-                    workspace.rt_generation != self.generation
-                        || workspace.self_user_id != self.user
-                })
-        {
-            return Err(Invalid::Source);
-        }
-        decode(
-            &Scope {
-                account_id: self.account.clone(),
-                key: key.clone(),
-            },
-            &self.user,
-            raw,
-        )
-    }
-}
+mod socket_source;
+pub(crate) use socket_source::{Source, Sources, WorkerId, WorkerSource};
 
 fn identifier(value: &str) -> bool {
     !value.is_empty() && !value.chars().any(|c| c.is_whitespace() || c.is_control())
@@ -308,13 +251,20 @@ fn active(scope: &Scope, id: &str, client: &str, raw: &Value) -> Option<RemoteDr
         "date_scheduled",
         "date_created",
         "attachments",
+        "is_from_composer",
+        "date_stashed",
+        "file_permissions",
     ];
     if raw
         .as_object()?
         .keys()
         .any(|field| !FIELDS.contains(&field.as_str()))
+        || !super_platinum_core::drafts::sync::supports_neutral_metadata(raw)
         || raw.get("is_deleted")?.as_bool()?
         || raw.get("is_sent")?.as_bool()?
+        || raw
+            .get("is_from_composer")
+            .is_some_and(|value| value.as_bool() != Some(false))
         || raw
             .get("attachments")
             .is_some_and(|value| !matches!(value, Value::Array(values) if values.is_empty()))

@@ -123,6 +123,8 @@ fn draft(
         "date_created",
         "attachments",
         "is_from_composer",
+        "date_stashed",
+        "file_permissions",
     ];
     if raw
         .as_object()
@@ -133,6 +135,9 @@ fn draft(
     let Ok(wire) = serde_json::from_value::<WireDraft>(raw.clone()) else {
         return uncertain(Issue::MalformedResponse);
     };
+    if !super_platinum_core::drafts::sync::supports_neutral_metadata(raw) {
+        return uncertain(Issue::UnsupportedResponse);
+    }
     if wire.is_deleted
         || wire.is_sent
         || wire.client_msg_id != operation.client_msg_id

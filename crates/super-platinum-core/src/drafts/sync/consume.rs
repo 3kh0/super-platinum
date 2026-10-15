@@ -103,6 +103,9 @@ impl DraftSync {
         self.desired = None;
         self.local_revision = detached_revision;
         self.tombstone = false;
+        // A later intent must never revive the prior completion's authority,
+        // including when the later action is canceled before dispatch.
+        self.local_completion = None;
         self.consumption = Some(intent.clone());
         Ok(intent)
     }
@@ -261,6 +264,7 @@ impl DraftSync {
         self.acknowledged_local_revision = intent.local_revision + 1;
         self.client_msg_id = uuid::Uuid::new_v4().to_string();
         self.workflow = Workflow::Idle;
+        self.retain_local_completion(intent);
         // desired/local_revision/tombstone describe newer input or clearing.
         // Never replace them with the older consumed snapshot.
     }
@@ -291,6 +295,7 @@ impl DraftSync {
                 .as_ref()
                 .is_some_and(|base| base.snapshot == remote.snapshot)
         {
+            self.local_completion = None;
             self.acknowledged = Some(remote.clone());
         } else {
             self.conflict(remote.clone());
@@ -300,6 +305,9 @@ impl DraftSync {
 
     /// Fail closed when durable state contains inconsistent consumption links.
     pub(crate) fn consumption_valid(&self) -> bool {
+        if !self.local_completion_valid() {
+            return false;
+        }
         let terminal = self.pending().is_some_and(|op| {
             matches!(
                 op.kind,

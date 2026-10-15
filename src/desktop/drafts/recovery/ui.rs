@@ -1,4 +1,6 @@
 use super::*;
+#[path = "schedule_ui.rs"]
+mod schedule;
 use crate::state::ShellState;
 use dioxus::prelude::*;
 use super_platinum_core::slack::models::Message;
@@ -6,33 +8,53 @@ use super_platinum_core::slack::models::Message;
 enum Source {
     Network(Binding),
     Fixture(Arc<update_fixture::FixtureBinding>),
+    ScheduleFixture(Arc<schedule_fixture::FixtureBinding>),
 }
 impl Source {
     fn current(&self, shell: &ShellState) -> bool {
         match self {
             Self::Network(b) => b.current(shell),
             Self::Fixture(b) => b.current(shell),
+            Self::ScheduleFixture(b) => b.current(shell),
         }
     }
     async fn read(&self, op: &Operation, now: u64) -> Readback {
         match self {
             Self::Network(b) => b.check_operation(op, now).await,
             Self::Fixture(b) => b.read(op, now).await,
+            Self::ScheduleFixture(b) => b.read(op, now).await,
         }
     }
 }
 
 pub(crate) async fn check(
+    state: Signal<ShellState>,
+    op: Operation,
+    publish_inline: impl FnMut(&'static str) -> bool,
+) -> Result<&'static str, CheckError> {
+    let scope = op.scope.clone();
+    let result = check_inner(state, op, publish_inline).await;
+    schedule_fixture::ui_completed(&scope);
+    result
+}
+
+async fn check_inner(
     mut state: Signal<ShellState>,
     op: Operation,
     mut publish_inline: impl FnMut(&'static str) -> bool,
 ) -> Result<&'static str, CheckError> {
-    let (owner, binding, epoch, editor) = {
+    let (owner, binding, epoch, editor, schedule_queue) = {
         let shell = state.try_peek().map_err(|_| Fault::Stale)?;
         if shell.core.active_account.as_deref() != Some(&op.scope.account_id) {
             return Err(Fault::Stale.into());
         }
-        let (owner, binding) = if let Some(binding) = update_fixture::binding(&shell) {
+        let (owner, binding) = if schedule_fixture::named() {
+            let binding = schedule_fixture::binding(&shell).ok_or(Fault::Unsupported)?;
+            (
+                binding.owner(&op.scope.key),
+                Source::ScheduleFixture(binding),
+            )
+        } else if let Some(binding) = update_fixture::binding(&shell) {
             (binding.owner(&op.scope.key), Source::Fixture(binding))
         } else {
             let binding =
@@ -47,7 +69,8 @@ pub(crate) async fn check(
             shell.core.account_epoch,
             &op.scope.key,
         );
-        (owner, binding, shell.core.account_epoch, editor)
+        let queue = schedule::QueueVisit::capture(&shell, &op, shell.core.account_epoch);
+        (owner, binding, shell.core.account_epoch, editor, queue)
     };
     // The caller uses spawn_forever: receipt storage is independent of the row.
     // A retained completion retries SQLite only; it never repeats the form read.
@@ -64,6 +87,20 @@ pub(crate) async fn check(
             })
             .await?
     };
+    if matches!(op.kind, OperationKind::Schedule { .. }) {
+        schedule_fixture::checkpoint(&op.scope, "project").await;
+        return schedule::finish(
+            state,
+            op,
+            binding,
+            epoch,
+            editor,
+            checked,
+            schedule_queue,
+            publish_inline,
+        )
+        .await;
+    }
     let update = op.kind == OperationKind::Update;
     if update && let Some(editor) = editor.as_ref() {
         if let Ok(snapshot) = editor.refresh_receipt().await {
@@ -217,7 +254,7 @@ fn now_ms() -> u64 {
 
 /// The reader already proved sender, destination, thread and exact client UUID.
 /// Only replace a still-pending optimistic row, never a realtime edit/deletion.
-fn reconcile(shell: &mut ShellState, op: &Operation, read: &Readback) {
+pub(crate) fn reconcile(shell: &mut ShellState, op: &Operation, read: &Readback) {
     if op.scope.key.thread.is_some() {
         return;
     }

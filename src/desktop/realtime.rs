@@ -484,6 +484,9 @@ pub(crate) fn apply_in_view(
             }
             workspace.notifications.apply_change(&name, value.clone());
             workspace
+                .emoji_preferences
+                .apply_change(&name, value.clone());
+            workspace
                 .read_preferences
                 .apply_change(&name, value.clone());
             workspace
@@ -692,6 +695,7 @@ pub(crate) fn apply_in_view(
             activity_counts::mark_channel_read(core, team, &channel, &ts);
         }
         RtEvent::Unknown(raw) => {
+            super_platinum_core::composer_emoji::changes::apply(workspace, &raw);
             // Canonical saved counts belong to every workspace, independently
             // of which account-scoped Later page is currently visible.
             if matches!(

@@ -116,11 +116,12 @@ def inventory(value, target, text):
     return state
 
 
-def native(value, text, viewport):
+def native(value, text, viewport, *, expected_composing=False):
+    require(type(expected_composing) is bool, "Expected composition state must be boolean")
     require(isinstance(value, dict) and value.get("ok") is True, "Missing native projection")
     for name, expected in {"text": text, "display": text, "codePoints": [ord(c) for c in text],
                            "utf16Length": len(text.encode("utf-16-le")) // 2, "viewport": viewport,
-                           "composing": False}.items():
+                           "composing": expected_composing}.items():
         same(value.get(name), expected, "Native Unicode/projection mismatch: " + name)
     require(isinstance(value.get("scope"), str) and value["scope"] and isinstance(value.get("visit"), str)
             and value["visit"], "Missing mounted scope/visit")

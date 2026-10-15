@@ -11,6 +11,7 @@ use std::{
 use super_platinum_core::drafts::{DraftKey, LocalDraft, store};
 
 pub(crate) struct Desktop {
+    pub(crate) socket_sources: super::observation::Sources,
     pub(crate) projection_fixture: Option<Arc<super::projection_fixture::Binding>>,
     pub view_id: u64,
     pub writers: Queue,
@@ -22,6 +23,7 @@ impl Default for Desktop {
     fn default() -> Self {
         static VISITS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Self {
+            socket_sources: Default::default(),
             projection_fixture: None,
             view_id: VISITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             writers: Default::default(),
@@ -86,7 +88,35 @@ impl Desktop {
 /// Legacy send/upload/schedule paths must not consume content owned by the
 /// paired managed store. An unknown startup state is never proof of no owner.
 pub(crate) fn legacy_allowed(shell: &ShellState, key: &DraftKey) -> Result<(), &'static str> {
-    if crate::fixture::is_fixture() {
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::adoption_fixture::named() {
+        return Err("Protected adoption fixture has no delivery route.");
+    }
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::enrollment_fixture::named() {
+        return Err("Protected enrollment fixture has no delivery route.");
+    }
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::native_fixture::named() {
+        return Err("Protected local fixture has no delivery route.");
+    }
+    legacy_allowed_in(
+        shell,
+        key,
+        crate::fixture::is_fixture(),
+        super::schedule::fixture::named(),
+    )
+}
+
+pub(super) fn legacy_allowed_in(
+    shell: &ShellState,
+    key: &DraftKey,
+    fixture: bool,
+    managed_schedule: bool,
+) -> Result<(), &'static str> {
+    // This fixture owns the real paired managed inventory. Bypassing ownership
+    // here would reopen the legacy Schedule dialog after an uncertain write.
+    if fixture && !managed_schedule {
         return Ok(());
     }
     legacy_ownership(shell, key)
@@ -135,6 +165,47 @@ fn legacy_ownership(shell: &ShellState, key: &DraftKey) -> Result<(), &'static s
 }
 
 pub(crate) fn route(shell: &mut ShellState, changes: BTreeMap<DraftKey, LocalDraft>) {
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::adoption_fixture::named() {
+        super::protected::adoption_fixture::route(shell, changes);
+        return;
+    }
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::enrollment_fixture::named() {
+        super::protected::enrollment_fixture::route(shell, changes);
+        return;
+    }
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::native_fixture::named() {
+        super::protected::native_fixture::route(shell, changes);
+        return;
+    }
+    if super::schedule::fixture::named() {
+        if let Some(binding) = super::schedule::fixture::binding(shell) {
+            let total = changes.len();
+            let refused = route_existing(shell, changes);
+            binding.record_routing(total - refused.len(), refused.len());
+        }
+        return;
+    }
+    if super::recovery::schedule_fixture::named() {
+        if let Some(binding) = super::recovery::schedule_fixture::binding(shell) {
+            let total = changes.len();
+            let refused = route_existing(shell, changes);
+            binding.record_routing(total - refused.len(), refused.len());
+        }
+        return;
+    }
+    if super::send::fixture::enabled() {
+        // The fixture is fail-closed and uses the same existing Editor route.
+        // Never forward unmatched edits to production account storage.
+        if let Some(binding) = super::send::fixture::binding(shell) {
+            let submitted = changes.len();
+            let remaining = route_existing(shell, changes);
+            binding.record_routing(submitted - remaining.len(), remaining.len());
+        }
+        return;
+    }
     if super::recovery::update_fixture::enabled() {
         super::recovery::update_fixture::route(shell, changes);
         return;
@@ -230,6 +301,18 @@ fn route_existing(
 }
 
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::adoption_fixture::named() {
+        return false;
+    }
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::enrollment_fixture::named() {
+        return false;
+    }
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::native_fixture::named() {
+        return false;
+    }
     let Some(account) = shell.core.active_account.clone() else {
         return false;
     };

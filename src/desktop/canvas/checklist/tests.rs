@@ -1,6 +1,8 @@
 use super::*;
 fn shell() -> ShellState {
-    ShellState::fixture(crate::media::MediaRegistry::default())
+    let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+    shell.core.active_account = Some("00000000-0000-4000-8000-000000000091".into());
+    shell
 }
 fn open(shell: &mut ShellState, file: &str) {
     shell.shortcut_generation = shell.shortcut_generation.wrapping_add(1);
@@ -83,6 +85,7 @@ fn unrelated_events_do_not_retire_the_current_load() {
 pub(super) mod fixtures;
 fn loaded(shell: &mut ShellState, checked: bool, sequence: u64) -> Read {
     let read = begin_read(shell).unwrap();
+    recovery::tests::load_empty_isolated(shell, &read);
     assert!(finish_read(
         shell,
         &read,
@@ -270,7 +273,7 @@ fn credential_rotation_keeps_duplicate_lock_but_old_ack_can_settle_via_current_r
 fn stable_owner_capacity_survives_rotation_and_other_accounts_have_separate_capacity() {
     let mut shell = shell();
     for owner in 0..4 {
-        shell.core.active_account = Some(format!("account-{owner}"));
+        shell.core.active_account = Some(format!("00000000-0000-4000-8000-{owner:012}"));
         shell.core.account_epoch += 1;
         for item in 0..MAX_RECEIPTS {
             shell.core.transport = Some(Arc::new(
@@ -290,7 +293,7 @@ fn stable_owner_capacity_survives_rotation_and_other_accounts_have_separate_capa
         assert!(begin(&mut shell, view.visit, view.read, "item", true).is_err());
         assert_eq!(view.outstanding_total, (owner + 1) * MAX_RECEIPTS);
     }
-    shell.core.active_account = Some("fifth-account".into());
+    shell.core.active_account = Some("00000000-0000-4000-8000-000000000004".into());
     shell.core.account_epoch += 1;
     open(&mut shell, "FEXTRA");
     loaded(&mut shell, false, 1000);
@@ -416,6 +419,7 @@ fn late_ack_after_auth_rotation_settles_receipt_without_adopting_old_crdt() {
         Stage::AwaitingRead
     );
     let read = begin_read(&mut shell).unwrap();
+    recovery::tests::load_empty_isolated(&mut shell, &read);
     finish_read(&mut shell, &read, Ok(canonical.clone()));
     assert!(confirm_readback(&mut shell, &first, &read));
     let view = presentation(&shell).unwrap();
@@ -633,4 +637,25 @@ fn accepted_notice_requests_manual_refresh_only_when_no_read_is_running() {
         reader::notice(&presentation(&shell).unwrap()),
         Some("Change accepted. Refreshing canvas state…")
     );
+}
+
+#[test]
+fn synthetic_transport_requires_actual_empty_journal_completion_before_editing() {
+    let mut shell = shell();
+    shell.core.transport = Some(Arc::new(
+        super_platinum_core::slack::Transport::new("synthetic").unwrap(),
+    ));
+    open(&mut shell, "FCANVAS");
+    let read = begin_read(&mut shell).unwrap();
+    assert!(finish_read(
+        &mut shell,
+        &read,
+        Ok(fixtures::snapshot_for_file("FCANVAS", false, 1000))
+    ));
+    let view = presentation(&shell).unwrap();
+    assert!(begin(&mut shell, view.visit, view.read, "item", true).is_err());
+    assert!(shell.canvas_checklist.operations.is_empty());
+    recovery::tests::load_empty_isolated(&mut shell, &read);
+    let pending = attempt(&mut shell);
+    assert!(dispatchable(&shell, &pending));
 }

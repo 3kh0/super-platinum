@@ -1,4 +1,6 @@
 use super::*;
+#[path = "ordinary_flag_tests.rs"]
+mod ordinary_flag;
 use serde_json::json;
 use super_platinum_core::{ComposerState, drafts::store::DraftStore};
 
@@ -270,7 +272,7 @@ fn captured_socket_source_rejects_account_transport_credential_and_generation_ch
         let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
         let team = shell.core.active_team.clone().unwrap();
         let user = shell.core.workspaces[&team].self_user_id.clone();
-        shell.core.workspaces.get_mut(&team).unwrap().rt_generation = 9;
+        shell.core.workspaces.get_mut(&team).unwrap().rt_generation = 0;
         shell.core.active_account = Some("00000000-0000-4000-8000-000000000071".into());
         shell.core.account_epoch = 7;
         shell.core.transport = Some(Arc::new(Transport::new("fixture-only-cookie").unwrap()));
@@ -289,7 +291,18 @@ fn captured_socket_source_rejects_account_transport_credential_and_generation_ch
             )]
             .into(),
         });
-        let source = Source::capture(&shell, &team, 9).unwrap();
+        let params = super_platinum_core::slack::realtime::ConnectParams {
+            team: team.clone(),
+            ws_url: super_platinum_core::slack::realtime::flannel_url("fixture-only-token", &team),
+            d_cookie: "fixture-only-cookie".into(),
+            user_agent: "fixture-only-agent".into(),
+        };
+        let mut worker =
+            crate::drafts::observation::WorkerSource::capture(&mut shell, params).unwrap();
+        worker.take_connect_params(&shell).unwrap();
+        assert!(worker.can_accept(&shell, &team, 9));
+        shell.core.workspaces.get_mut(&team).unwrap().rt_generation = 9;
+        let source = worker.accept(&mut shell, &team, 9).unwrap();
         let key = DraftKey {
             team: team.clone(),
             channel: "C1".into(),
@@ -298,7 +311,7 @@ fn captured_socket_source_rejects_account_transport_credential_and_generation_ch
         let raw: RawEvent = serde_json::from_value(json!({"type":"draft_delete", "draft_id":"Dr1",
             "client_msg_id":"00000000-0000-4000-8000-000000000072", "event_ts":"10.000001"}))
         .unwrap();
-        assert!(source.prepare(&shell, &key, &raw).is_ok());
+        assert!(source.prepare(&shell, 9, &key, &raw).is_ok());
         match change {
             "account" => {
                 shell.core.active_account = Some("00000000-0000-4000-8000-000000000099".into())
@@ -324,7 +337,7 @@ fn captured_socket_source_rejects_account_transport_credential_and_generation_ch
             _ => unreachable!(),
         }
         assert!(matches!(
-            source.prepare(&shell, &key, &raw),
+            source.prepare(&shell, 9, &key, &raw),
             Err(Invalid::Source)
         ));
     }
@@ -491,3 +504,6 @@ async fn uuidless_delete_refuses_unknown_id_unbound_create_and_conflicting_suppl
         prepared_create.stored.state
     );
 }
+
+#[path = "neutral_metadata_tests.rs"]
+mod neutral_metadata;

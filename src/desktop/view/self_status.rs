@@ -20,8 +20,8 @@ fn StatusEditor(state: Signal<ShellState>) -> Element {
     if choosing_emoji() {
         return rsx! {crate::reaction_picker::EmojiPicker {
             state,title:"Choose status emoji".to_owned(),
-            onchoose:move |name:String|{
-                crate::self_status::change_emoji(state,format!(":{name}:"));
+            onchoose:move |selection:crate::emoji_catalog::Selection|{
+                crate::self_status::change_emoji(state,format!(":{}:",selection.name));
                 choosing_emoji.set(false);
             },
             onclose:move |_|choosing_emoji.set(false),

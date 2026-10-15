@@ -1,0 +1,3614 @@
+[
+  {
+    "name": "list_bullet",
+    "ops": [
+      {
+        "insert": "/demo\none"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      },
+      {
+        "insert": "two"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "one"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet"
+          }
+        },
+        {
+          "insert": "two"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "bullet",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "one"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "two"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "bullet",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "one"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "two"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "list_ordered",
+    "ops": [
+      {
+        "insert": "/demo\none"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "ordered"
+        }
+      },
+      {
+        "insert": "two"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "ordered"
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "one"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered"
+          }
+        },
+        {
+          "insert": "two"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "ordered",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "one"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "two"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "ordered",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "one"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "two"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "list_checked",
+    "ops": [
+      {
+        "insert": "/demo\none"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "checked"
+        }
+      },
+      {
+        "insert": "two"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "checked"
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "one"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "checked"
+          }
+        },
+        {
+          "insert": "two"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "checked"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "checked",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "one"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "two"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "checked",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "one"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "two"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "list_unchecked",
+    "ops": [
+      {
+        "insert": "/demo\none"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "unchecked"
+        }
+      },
+      {
+        "insert": "two"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "unchecked"
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "one"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "unchecked"
+          }
+        },
+        {
+          "insert": "two"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "unchecked"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "unchecked",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "one"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "two"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "unchecked",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "one"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "two"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "ordered_nested_return",
+    "ops": [
+      {
+        "insert": "/demo\nouter1"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "ordered"
+        }
+      },
+      {
+        "insert": "inner"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "ordered",
+          "indent": 1
+        }
+      },
+      {
+        "insert": "outer2"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "ordered"
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "outer1"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered"
+          }
+        },
+        {
+          "insert": "inner"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 1
+          }
+        },
+        {
+          "insert": "outer2"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "ordered",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "outer1"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_list",
+                  "style": "ordered",
+                  "indent": 1,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "inner"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_list",
+                  "style": "ordered",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "outer2"
+                        }
+                      ]
+                    }
+                  ],
+                  "offset": 1
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "ordered",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "outer1"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "ordered",
+              "indent": 1,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "inner"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "ordered",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "outer2"
+                    }
+                  ]
+                }
+              ],
+              "offset": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "ordered_style_switch",
+    "ops": [
+      {
+        "insert": "/demo\nfirst"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "ordered"
+        }
+      },
+      {
+        "insert": "bullet"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      },
+      {
+        "insert": "next"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "ordered"
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered"
+          }
+        },
+        {
+          "insert": "bullet"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet"
+          }
+        },
+        {
+          "insert": "next"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "ordered",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "first"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_list",
+                  "style": "bullet",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "bullet"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_list",
+                  "style": "ordered",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "next"
+                        }
+                      ]
+                    }
+                  ],
+                  "offset": 1
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "ordered",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "bullet",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "bullet"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "ordered",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "next"
+                    }
+                  ]
+                }
+              ],
+              "offset": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "list_border_first",
+    "ops": [
+      {
+        "insert": "/demo\nfirst"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet",
+          "border": 1
+        }
+      },
+      {
+        "insert": "second"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet",
+          "border": 2
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "second"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 2
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "bullet",
+                  "indent": 0,
+                  "border": 1,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "first"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "second"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "bullet",
+              "indent": 0,
+              "border": 1,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "second"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "list_empty_item",
+    "ops": [
+      {
+        "insert": "/demo\nfirst"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      },
+      {
+        "insert": "third"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n\n",
+          "attributes": {
+            "list": "bullet"
+          }
+        },
+        {
+          "insert": "third"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "bullet",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "first"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": []
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "third"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "bullet",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": []
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "third"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "list_styles",
+    "ops": [
+      {
+        "insert": "/demo\n"
+      },
+      {
+        "insert": "bold",
+        "attributes": {
+          "bold": true
+        }
+      },
+      {
+        "insert": " "
+      },
+      {
+        "insert": "@Ada",
+        "attributes": {
+          "slackmention": {
+            "id": "U12345678",
+            "label": "@Ada"
+          }
+        }
+      },
+      {
+        "insert": " "
+      },
+      {
+        "insert": {
+          "slackemoji": {
+            "text": ":grinning:"
+          }
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "bold",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "@Ada",
+          "attributes": {
+            "slackmention": {
+              "id": "U12345678",
+              "label": "@Ada"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":grinning:"
+            }
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "bullet",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "bold",
+                          "style": {
+                            "bold": true
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "text": " "
+                        },
+                        {
+                          "type": "user",
+                          "user_id": "U12345678"
+                        },
+                        {
+                          "type": "text",
+                          "text": " "
+                        },
+                        {
+                          "type": "emoji",
+                          "name": "grinning",
+                          "unicode": "1f600"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "bullet",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "bold",
+                      "style": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": " "
+                    },
+                    {
+                      "type": "user",
+                      "user_id": "U12345678"
+                    },
+                    {
+                      "type": "text",
+                      "text": " "
+                    },
+                    {
+                      "type": "emoji",
+                      "name": "grinning",
+                      "unicode": "1f600"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "list_trailing_spaces",
+    "ops": [
+      {
+        "insert": "/demo\nitem  "
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "item  "
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet"
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "bullet",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "item  "
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "bullet",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "item  "
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "quote_multiline",
+    "ops": [
+      {
+        "insert": "/demo\nfirst"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "blockquote": true
+        }
+      },
+      {
+        "insert": "second"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "blockquote": true
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "second"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_quote",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first\nsecond"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_quote",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "first\nsecond"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "quote_borders",
+    "ops": [
+      {
+        "insert": "/demo\nfirst  "
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "blockquote": true,
+          "border": 1
+        }
+      },
+      {
+        "insert": "second  "
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "blockquote": true
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first  "
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true,
+            "border": 1
+          }
+        },
+        {
+          "insert": "second  "
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_quote",
+                  "border": 1,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_quote",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "second"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_quote",
+              "border": 1,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "first"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_quote",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "second"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "quote_style",
+    "ops": [
+      {
+        "insert": "/demo\n"
+      },
+      {
+        "insert": "styled",
+        "attributes": {
+          "bold": true
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "blockquote": true
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "styled",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_quote",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "styled",
+                      "style": {
+                        "bold": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_quote",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "styled",
+                  "style": {
+                    "bold": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "pre_multiline",
+    "ops": [
+      {
+        "insert": "/demo\n #ffffff  "
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true
+        }
+      },
+      {
+        "insert": " line  "
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "#ffffff  "
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        },
+        {
+          "insert": " line  "
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_preformatted",
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "#ffffff  \n line  "
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_preformatted",
+              "border": 0,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": " #ffffff  \n line  "
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "pre_all_borders",
+    "ops": [
+      {
+        "insert": "/demo\nfirst"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true,
+          "border": 2
+        }
+      },
+      {
+        "insert": "second"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true,
+          "border": 1
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true,
+            "border": 2
+          }
+        },
+        {
+          "insert": "second"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true,
+            "border": 1
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_preformatted",
+                  "border": 1,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first\nsecond"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_preformatted",
+              "border": 1,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "first\nsecond"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "pre_mixed_borders",
+    "ops": [
+      {
+        "insert": "/demo\nfirst"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true,
+          "border": 1
+        }
+      },
+      {
+        "insert": "second"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true,
+            "border": 1
+          }
+        },
+        {
+          "insert": "second"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_preformatted",
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first\nsecond"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_preformatted",
+              "border": 0,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "first\nsecond"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "pre_rich",
+    "ops": [
+      {
+        "insert": "/demo\n"
+      },
+      {
+        "insert": "bold",
+        "attributes": {
+          "bold": true
+        }
+      },
+      {
+        "insert": " "
+      },
+      {
+        "insert": "@Ada",
+        "attributes": {
+          "slackmention": {
+            "id": "U12345678",
+            "label": "@Ada"
+          }
+        }
+      },
+      {
+        "insert": " "
+      },
+      {
+        "insert": {
+          "slackemoji": {
+            "text": ":grinning:"
+          }
+        }
+      },
+      {
+        "insert": " "
+      },
+      {
+        "insert": "url",
+        "attributes": {
+          "link": "https://example.test"
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "bold",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "@Ada",
+          "attributes": {
+            "slackmention": {
+              "id": "U12345678",
+              "label": "@Ada"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":grinning:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "url",
+          "attributes": {
+            "link": "https://example.test"
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_preformatted",
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "bold @Ada :grinning: "
+                    },
+                    {
+                      "type": "link",
+                      "url": "https://example.test",
+                      "text": "url"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_preformatted",
+              "border": 0,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "bold @Ada :grinning: "
+                },
+                {
+                  "type": "link",
+                  "url": "https://example.test",
+                  "text": "url"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "header_1",
+    "ops": [
+      {
+        "insert": "/demo\nHeading"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "header": 1
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "Heading"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "header": 1
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_header",
+                  "level": 1,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "Heading"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_header",
+              "level": 1,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "Heading"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "header_2",
+    "ops": [
+      {
+        "insert": "/demo\nHeading"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "header": 2
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "Heading"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "header": 2
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_header",
+                  "level": 2,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "Heading"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_header",
+              "level": 2,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "Heading"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "header_3",
+    "ops": [
+      {
+        "insert": "/demo\nHeading"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "header": 3
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "Heading"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "header": 3
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_header",
+                  "level": 3,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "Heading"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_header",
+              "level": 3,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "Heading"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "header_adjacent",
+    "ops": [
+      {
+        "insert": "/demo\none"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "header": 1
+        }
+      },
+      {
+        "insert": "two"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "header": 1
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "one"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "header": 1
+          }
+        },
+        {
+          "insert": "two"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "header": 1
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_header",
+                  "level": 1,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "one"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_header",
+                  "level": 1,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "two"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_header",
+              "level": 1,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "one"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_header",
+              "level": 1,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "two"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "header_truncated_link",
+    "ops": [
+      {
+        "insert": "/demo\n"
+      },
+      {
+        "insert": "https://example.test/[…]/z",
+        "attributes": {
+          "link": "https://example.test/long/z"
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "header": 2
+        }
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "https://example.test/[…]/z",
+          "attributes": {
+            "link": "https://example.test/long/z"
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "header": 2
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_header",
+                  "level": 2,
+                  "elements": [
+                    {
+                      "type": "link",
+                      "url": "https://example.test/long/z",
+                      "text": "https://example.test/[…]/z"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_header",
+              "level": 2,
+              "elements": [
+                {
+                  "type": "link",
+                  "url": "https://example.test/long/z",
+                  "text": "https://example.test/[…]/z"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "styled_later_newline",
+    "ops": [
+      {
+        "insert": "/demo\n"
+      },
+      {
+        "insert": "one\ntwo",
+        "attributes": {
+          "bold": true
+        }
+      },
+      {
+        "insert": "\n"
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "one\ntwo",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "one\ntwo",
+                      "style": {
+                        "bold": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                },
+                {
+                  "type": "text",
+                  "text": "one\ntwo",
+                  "style": {
+                    "bold": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "mixed_blocks",
+    "ops": [
+      {
+        "insert": "/demo\nplain\nitem"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      },
+      {
+        "insert": "quote"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "blockquote": true
+        }
+      },
+      {
+        "insert": "code"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true
+        }
+      },
+      {
+        "insert": "head"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "header": 2
+        }
+      },
+      {
+        "insert": "last\n"
+      }
+    ],
+    "accepted": true,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "plain\nitem"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet"
+          }
+        },
+        {
+          "insert": "quote"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "code"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        },
+        {
+          "insert": "head"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "header": 2
+          }
+        },
+        {
+          "insert": "last\n"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "plain\n"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_list",
+                  "style": "bullet",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "item"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_quote",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "quote"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "code"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_header",
+                  "level": 2,
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "head"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "last"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\nplain\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "bullet",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "item"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rich_text_quote",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "quote"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_preformatted",
+              "border": 0,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "code"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_header",
+              "level": 2,
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "head"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "last"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "first_list_refused",
+    "ops": [
+      {
+        "insert": "/demo item"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      }
+    ],
+    "accepted": false,
+    "source": {
+      "route": "ordinary"
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_list",
+              "style": "bullet",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "/demo item"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "first_false_style_refused",
+    "ops": [
+      {
+        "insert": "/demo item"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "bold": false
+        }
+      }
+    ],
+    "accepted": false,
+    "source": {
+      "route": "ordinary"
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo item"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown_block_attr",
+    "ops": [
+      {
+        "insert": "/demo\nitem"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet",
+          "future": true
+        }
+      }
+    ],
+    "accepted": false,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "item"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "future": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "bullet",
+                  "indent": 0,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "item"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "bullet",
+              "indent": 0,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "item"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "conflicting_block_attr",
+    "ops": [
+      {
+        "insert": "/demo\nitem"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet",
+          "blockquote": true
+        }
+      }
+    ],
+    "accepted": false,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "item"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "blockquote": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_quote",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "item"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_quote",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "item"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "fractional_indent",
+    "ops": [
+      {
+        "insert": "/demo\nitem"
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet",
+          "indent": 1.5
+        }
+      }
+    ],
+    "accepted": false,
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "item"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 1.5
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "bullet",
+                  "indent": 1.5,
+                  "border": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "item"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    },
+    "full": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "/demo\n"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_list",
+              "style": "bullet",
+              "indent": 1.5,
+              "border": 0,
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "item"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "file_metadata_absent",
+    "ops": [
+      {
+        "insert": "/demo\n"
+      },
+      {
+        "insert": "file",
+        "attributes": {
+          "slackmention": {
+            "id": "F12345678",
+            "label": "file"
+          }
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "list": "bullet"
+        }
+      }
+    ],
+    "accepted": false,
+    "error": "Error: unsupported source dependency Ltli.Lp"
+  }
+]

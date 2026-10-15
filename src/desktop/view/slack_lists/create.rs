@@ -28,6 +28,7 @@ pub(super) fn status(state: Signal<ShellState>, visit: u64) -> Element {
     }
     let view = crate::slack_lists::create::presentation(&state.read());
     rsx! {
+        {super::subitem::retained_status(state)}
         if let Some(operation)=view.operation {
             div{id:"slack-list-create-status",class:"slack-list-create-status",role:"status","aria-busy":operation.pending,
                 span{"{operation.message}"}

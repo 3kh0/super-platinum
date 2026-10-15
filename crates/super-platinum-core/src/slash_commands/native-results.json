@@ -1,0 +1,464 @@
+[
+  {
+    "name": "noargs",
+    "text": "/demo",
+    "runs": [
+      {
+        "type": "text",
+        "text": "/demo"
+      }
+    ],
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "\n"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "plain",
+    "text": "/demo argument",
+    "runs": [
+      {
+        "type": "text",
+        "text": "/demo argument"
+      }
+    ],
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "argument"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "argument"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "bold",
+    "text": "/demo *bold* end",
+    "runs": [
+      {
+        "type": "text",
+        "text": "/demo "
+      },
+      {
+        "type": "text",
+        "text": "bold",
+        "style": {
+          "bold": true
+        }
+      },
+      {
+        "type": "text",
+        "text": " end"
+      }
+    ],
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "bold",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": " end"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "bold",
+                      "style": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": " end"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "italic",
+    "text": "/demo _italic_",
+    "runs": [
+      {
+        "type": "text",
+        "text": "/demo "
+      },
+      {
+        "type": "text",
+        "text": "italic",
+        "style": {
+          "italic": true
+        }
+      }
+    ],
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "italic",
+          "attributes": {
+            "italic": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "italic",
+                      "style": {
+                        "italic": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "strike",
+    "text": "/demo ~strike~",
+    "runs": [
+      {
+        "type": "text",
+        "text": "/demo "
+      },
+      {
+        "type": "text",
+        "text": "strike",
+        "style": {
+          "strike": true
+        }
+      }
+    ],
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "strike",
+          "attributes": {
+            "strike": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "strike",
+                      "style": {
+                        "strike": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "code",
+    "text": "/demo `#ffffff`",
+    "runs": [
+      {
+        "type": "text",
+        "text": "/demo "
+      },
+      {
+        "type": "text",
+        "text": "#ffffff",
+        "style": {
+          "code": true
+        }
+      }
+    ],
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "#ffffff",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "#ffffff",
+                      "style": {
+                        "code": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "multiline",
+    "text": "/demo first\n*second*\nthird",
+    "runs": [
+      {
+        "type": "text",
+        "text": "/demo first\n"
+      },
+      {
+        "type": "text",
+        "text": "second",
+        "style": {
+          "bold": true
+        }
+      },
+      {
+        "type": "text",
+        "text": "\nthird"
+      }
+    ],
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "first\n"
+        },
+        {
+          "insert": "second",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "\nthird"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "first\n"
+                    },
+                    {
+                      "type": "text",
+                      "text": "second",
+                      "style": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": "\nthird"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  },
+  {
+    "name": "literal",
+    "text": "/demo a * unmatched",
+    "runs": [
+      {
+        "type": "text",
+        "text": "/demo a * unmatched"
+      }
+    ],
+    "source": {
+      "route": "command",
+      "lookup": "/demo",
+      "display": "/demo",
+      "remaining": [
+        {
+          "insert": "a * unmatched"
+        }
+      ],
+      "request": {
+        "method": "chat.command",
+        "args": {
+          "command": "/demo",
+          "disp": "/demo",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "a * unmatched"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C1",
+          "client_token": "web-synthetic",
+          "team_id": "T1",
+          "app_id": "A1"
+        },
+        "reason": "executeCommand"
+      }
+    }
+  }
+]

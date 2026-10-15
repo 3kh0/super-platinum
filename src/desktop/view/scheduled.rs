@@ -166,9 +166,14 @@ impl ComposeSource {
 #[component]
 pub(crate) fn ScheduleButton(state: Signal<ShellState>, target: ComposerTarget) -> Element {
     let mut source = use_signal(|| None::<ComposeSource>);
+    let mut managed = use_signal(|| None::<crate::drafts::schedule::Request>);
     rsx! {
-     button{class:"composer-icon-btn",title:"Schedule or save draft","aria-label":"Schedule or save draft",disabled:!can_schedule(&state.read(),target),onclick:move |_|source.set(ComposeSource::capture(&state.peek(),target)),{icon(Icon::Schedule,"icon sm")}}
+     button{class:"composer-icon-btn",title:"Schedule or save draft","aria-label":"Schedule or save draft",disabled:!can_schedule(&state.read(),target),onclick:move |_|{
+       if let Some(request)=crate::drafts::schedule::Request::create(&state.peek(),target){managed.set(Some(request));}
+       else if can_schedule(&state.peek(),target){source.set(ComposeSource::capture(&state.peek(),target));}
+     },{icon(Icon::Schedule,"icon sm")}}
      if let Some(current)=source(){ScheduleDialog{state,source:Some(current),onclose:move |_|source.set(None)}}
+     if let Some(request)=managed(){super::managed_schedule::ManagedScheduleDialog{state,request,onclose:move |_|managed.set(None)}}
     }
 }
 #[component]
@@ -548,6 +553,9 @@ pub(super) fn destination_label(shell: &ShellState, destinations: &[serde_json::
         .join(", ")
 }
 fn can_schedule(shell: &ShellState, target: ComposerTarget) -> bool {
+    if crate::drafts::schedule::Request::create(shell, target).is_some() {
+        return true;
+    }
     let Some(key) = shell.composer_key(target) else {
         return false;
     };

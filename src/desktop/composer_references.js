@@ -287,7 +287,7 @@
     });
   }
   window.superPlatinumReferences = {Text, mount, clipboardType, decodeFragment, remember(field, labels) {fields.get(field)?.remember(labels);},
-    insert(field, token, label, start, end, spacer) {
+    insert(field, token, label, start, end, spacer, finalDirection) {
       const text = fields.get(field), before = field.value;
       if (!text) return false;
       text.remember({[token]:label});
@@ -296,7 +296,7 @@
       const inserted = insertNativeText(label+spacer);
       if (!inserted) HTMLTextAreaElement.prototype.setRangeText.call(field,label+spacer,displayStart,displayEnd,'end');
       field.value = before.slice(0,start)+token+spacer+before.slice(end);
-      field.setSelectionRange(start+token.length+spacer.length,start+token.length+spacer.length);
+      field.setSelectionRange(start+token.length+spacer.length,start+token.length+spacer.length,finalDirection);
       field.dispatchEvent(new Event('input',{bubbles:true}));
       return true;
     },

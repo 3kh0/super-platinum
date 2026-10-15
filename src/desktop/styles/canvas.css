@@ -110,3 +110,18 @@
   .canvas-text-editor .rich-reminder-editor { padding:8px 10px; }
   .canvas-text-editor .canvas-text-hint { font-size:var(--text-xs); }
 }
+
+/* Structural actions stay reachable without shrinking canonical paragraph text. */
+.canvas-paragraph-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:var(--space-1); max-width:50%; }
+@media(max-width:650px) {
+  .canvas-editable-paragraph { flex-direction:column; }
+  .canvas-paragraph-actions { max-width:100%; justify-content:flex-start; }
+}
+
+.canvas-local-review { max-width:760px; margin:auto; padding:var(--space-4); display:flex; flex-direction:column; gap:var(--space-3); font-size:var(--text-sm); line-height:1.5; }
+.canvas-local-review h3,.canvas-local-review p { margin:0; }
+.canvas-local-review h3 { font-size:var(--text-lg); }
+.canvas-local-review label { display:flex; align-items:flex-start; gap:var(--space-2); }
+.canvas-local-review input { flex-shrink:0; margin-top:4px; }
+.canvas-review-preview { white-space:pre-wrap; overflow-wrap:anywhere; padding:var(--space-3); border-radius:var(--radius-md); background:var(--surface); }
+.canvas-scroll:has(> .canvas-local-review) > .canvas-document { display:none; }

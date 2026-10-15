@@ -206,3 +206,23 @@
 @media (max-width: 600px) {
   .slack-list-dialog .slack-list-record-header .slack-list-delete-action { margin-inline-start: 0; }
 }
+
+/* Rename headers share the action states; label/icon stay on one bounded line. */
+.slack-list-dialog button.slack-list-rename-header { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: min(100%, 280px); vertical-align: top; }
+.slack-list-rename-header > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slack-list-rename-header > .icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* The shared schema editor's creation-only layout and wrapped footer. */
+#slack-list-new-view-layout { width: 100%; min-height: var(--control-height); padding: 0 8px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
+#slack-list-rename[data-view-create]:not([data-view-create=""]) .slack-list-editor-actions { flex-wrap: wrap; }
+
+/* Direct subitems reuse detail controls; wrapping does not resize on hover. */
+.slack-list-subitems { padding: var(--space-3); border-top: 1px solid var(--border); }
+.slack-list-subitems-header,.slack-list-subitems-actions { display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap; }
+.slack-list-subitems-header h4 { margin:0;flex:1;font-size:var(--text-md); }
+.slack-list-subitems-rows { display:flex;flex-direction:column;align-items:stretch;gap:var(--space-1);max-height:180px;overflow:auto; }
+#slack-list-subitem-add, .slack-list-subitems-rows > button { display: inline-flex; align-items: center; justify-content: flex-start; gap: var(--space-1); min-width: 0; max-width: 100%; text-align: start; }
+#slack-list-subitem-add > .icon, .slack-list-subitems-rows > button > .icon { width: 16px; height: 16px; flex-shrink: 0; }
+.slack-list-subitem-label { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slack-list-subitem-status { padding:var(--space-2);background:var(--surface);border-radius:var(--radius-md); }
+.slack-list-subitem-status:focus-visible { outline:2px solid var(--accent);outline-offset:2px; }

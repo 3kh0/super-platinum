@@ -5,7 +5,10 @@ use crate::{
     state::{ComposerTarget, ShellState},
 };
 use dioxus::{core::Task, prelude::*};
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    rc::Rc,
+};
 use super_platinum_core::{
     composer_completion::{self, Kind, LIMIT, Suggestion, Target, Trigger},
     slack::models::User,
@@ -13,6 +16,9 @@ use super_platinum_core::{
 };
 
 mod directory;
+#[path = "completion/emoji.rs"]
+mod emoji;
+use super_platinum_core::composer_emoji::admission::{Gate, Snapshot, Ticket};
 
 #[derive(serde::Deserialize)]
 struct Event {
@@ -26,6 +32,35 @@ struct Event {
     cursor: usize,
     #[serde(default)]
     token: String,
+    #[serde(default = "selection_direction")]
+    direction: String,
+    #[serde(default)]
+    serial: u64,
+    #[serde(default)]
+    owner: String,
+    #[serde(default)]
+    catalog: String,
+    #[serde(default)]
+    choice: String,
+    #[serde(default)]
+    snapshot: Option<Snapshot>,
+    #[serde(default)]
+    after: Option<Snapshot>,
+}
+fn selection_direction() -> String {
+    "none".into()
+}
+impl Event {
+    fn ticket(&self) -> Option<Ticket> {
+        Some(Ticket {
+            serial: self.serial,
+            seq: self.seq,
+            owner: self.owner.clone(),
+            catalog: self.catalog.clone(),
+            choice: self.choice.clone(),
+            snapshot: self.snapshot.clone()?,
+        })
+    }
 }
 #[derive(Clone, serde::Serialize)]
 struct Choice {
@@ -132,313 +167,510 @@ fn merge_remote(choices: &mut Vec<Choice>, workspace: &Workspace, users: &[User]
     }
 }
 
+#[derive(Clone, PartialEq, Eq)]
+struct EmojiOwner {
+    scope: String,
+    mount: Option<String>,
+}
+impl EmojiOwner {
+    fn capture(shell: &ShellState, target: ComposerTarget) -> Self {
+        Self {
+            scope: super::composer::field_scope(shell, target),
+            mount: super::composer::field_mount_token(shell, target),
+        }
+    }
+    fn current(&self, shell: &ShellState, target: ComposerTarget) -> bool {
+        *self == Self::capture(shell, target)
+    }
+}
+
 #[component]
 pub(super) fn ComposerCompletion(
     mut state: Signal<ShellState>,
     target: ComposerTarget,
     field_id: &'static str,
 ) -> Element {
-    use_future(move || async move {
-        let (epoch, destination, initial_labels, workspace) = {
-            let shell = state.peek();
-            let text = match target {
-                ComposerTarget::Channel => &shell.core.composer.text,
-                ComposerTarget::Thread => &shell.core.thread_composer.text,
-            };
-            let labels = shell
+    let bridge_slot = use_hook(|| Rc::new(RefCell::new(None::<(String, document::Eval)>)));
+    let observed = use_hook(|| Rc::new(RefCell::new(None::<String>)));
+    let effect_bridge = bridge_slot.clone();
+    use_effect(move || {
+        let shell = state.read();
+        let signature = serde_json::to_string(&(
+            super::composer::field_scope(&shell, target),
+            super::composer::field_mount_token(&shell, target),
+            crate::emoji_catalog::current(&shell).map(|c| c.token.clone()),
+            shell
                 .core
                 .active_team
                 .as_ref()
-                .and_then(|team| shell.core.workspaces.get(team))
-                .map(|w| labels(w, text))
-                .unwrap_or_default();
-            (
-                shell.core.account_epoch,
-                shell.composer_key(target),
-                labels,
-                shell.core.active_team.clone().unwrap_or_default(),
-            )
-        };
-        let current = move |shell: &ShellState| {
-            shell.core.account_epoch == epoch && shell.composer_key(target) == destination
-        };
-        let script = format!(
-            "{}\nconst fieldId = {}; const labels = {}; const workspace = {};\n{}",
-            include_str!("../composer_references.js"),
-            serde_json::to_string(field_id).unwrap(),
-            serde_json::to_string(&initial_labels).unwrap(),
-            serde_json::to_string(&workspace).unwrap(),
-            include_str!("../composer_completion.js")
-        );
-        let mut bridge = document::eval(&script);
-        let mut task: Option<Task> = None;
-        let remote = Rc::new(RefCell::new((0u64, Vec::<User>::new())));
-        while let Ok(event) = bridge.recv::<Event>().await {
-            if !current(&state.peek()) {
-                break;
+                .and_then(|t| shell.core.workspaces.get(t))
+                .map(|w| w.emoji_preferences.revision()),
+        ))
+        .unwrap();
+        let changed = observed
+            .borrow_mut()
+            .replace(signature.clone())
+            .is_some_and(|old| old != signature);
+        if changed {
+            if let Some((owner, bridge)) = effect_bridge.borrow().as_ref() {
+                let _ = bridge.send(serde_json::json!({"kind":"emoji_invalidate","owner":owner}));
             }
-            if event.kind == "choose" {
-                let user = {
-                    let remote = remote.borrow();
-                    (remote.0 == event.seq)
-                        .then(|| {
-                            remote
-                                .1
-                                .iter()
-                                .find(|u| {
-                                    Target::User(u.id.clone()).token().as_deref()
-                                        == Some(&event.token)
-                                })
-                                .cloned()
-                        })
-                        .flatten()
-                };
-                if let Some(user) = user {
-                    let mut shell = state.write();
-                    if let Some(team) = shell.core.active_team.clone() {
-                        if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-                            workspace.users.entry(user.id.clone()).or_insert(user);
-                        }
-                    }
-                }
-                continue;
-            }
-            if let Some(task) = task.take() {
-                task.cancel();
-            }
-            *remote.borrow_mut() = (event.seq, Vec::new());
-            if event.kind != "query" {
-                continue;
-            }
-            let trigger = Trigger::at(
-                &event.text,
-                utf16_to_byte(&event.text, event.anchor),
-                utf16_to_byte(&event.text, event.cursor),
-            );
-            let Some(trigger) = trigger else {
-                let _ = bridge.send(Results {
-                    seq: event.seq,
-                    start: 0,
-                    end: 0,
-                    spacer: "",
-                    choices: vec![],
-                    status: "",
-                });
-                continue;
-            };
-            let (choices, context, channel_generation, thread_generation) = {
+        }
+    });
+    use_future(move || {
+        let bridge_slot = bridge_slot.clone();
+        async move {
+            let (epoch, destination, initial_labels, workspace) = {
                 let shell = state.peek();
-                let choices = shell
+                let text = match target {
+                    ComposerTarget::Channel => &shell.core.composer.text,
+                    ComposerTarget::Thread => &shell.core.thread_composer.text,
+                };
+                let labels = shell
                     .core
                     .active_team
                     .as_ref()
-                    .and_then(|t| shell.core.workspaces.get(t))
-                    .map(|ws| {
-                        composer_completion::suggestions(ws, &trigger)
-                            .into_iter()
-                            .filter_map(Choice::from)
-                            .collect()
-                    })
+                    .and_then(|team| shell.core.workspaces.get(team))
+                    .map(|w| labels(w, text))
                     .unwrap_or_default();
                 (
-                    choices,
-                    Context::capture(&shell),
-                    shell.channel_generation,
-                    shell.thread_generation,
+                    shell.core.account_epoch,
+                    shell.composer_key(target),
+                    labels,
+                    shell.core.active_team.clone().unwrap_or_default(),
                 )
             };
-            let lookup = trigger.kind == Kind::Person
-                && !trigger.query.is_empty()
-                && context.is_some()
-                && !crate::fixture::is_fixture();
-            let mut results = Results {
-                seq: event.seq,
-                start: byte_to_utf16(&event.text, trigger.start),
-                end: byte_to_utf16(&event.text, trigger.end),
-                spacer: if event.text[trigger.end..]
-                    .chars()
-                    .next()
-                    .is_some_and(|c| c.is_whitespace() || ",.;:!?)]}".contains(c))
-                {
-                    ""
-                } else {
-                    " "
-                },
-                choices,
-                status: if lookup { "Searching people…" } else { "" },
+            let current = move |shell: &ShellState| {
+                shell.core.account_epoch == epoch && shell.composer_key(target) == destination
             };
-            if results.choices.is_empty() && !lookup {
-                results.status = "No matches";
+            static NEXT_MOUNT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+            let scope = super::composer::field_scope(&state.peek(), target);
+            let completion_owner = format!(
+                "{scope}:mount:{}",
+                NEXT_MOUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            );
+            let mut mount = None;
+            for _ in 0..60 {
+                mount = super::composer::field_mount_token(&state.peek(), target);
+                if mount.is_some() {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(16)).await;
             }
-            let _ = bridge.send(&results);
-            if lookup {
-                let ctx = Rc::new(context.unwrap());
-                let remote = remote.clone();
-                let current = current.clone();
-                task = Some(spawn(async move {
-                    let valid = |shell: &ShellState| {
-                        current(shell)
-                            && directory::owner_current(shell, &ctx)
-                            && shell.channel_generation == channel_generation
-                            && shell.thread_generation == thread_generation
+            let Some(mount) = mount else {
+                return;
+            };
+            let emoji_owner = EmojiOwner {
+                scope,
+                mount: Some(mount),
+            };
+            let emoji_current = move |shell: &ShellState| emoji_owner.current(shell, target);
+            let script = format!(
+                "{}\n{}\nconst fieldId = {}; const labels = {}; const workspace = {}; const completionOwner = {}; const emojiNativeProbe = {};\n{}",
+                include_str!("../composer_references.js"),
+                include_str!("completion/emoji_selection_gate.js"),
+                serde_json::to_string(field_id).unwrap(),
+                serde_json::to_string(&initial_labels).unwrap(),
+                serde_json::to_string(&workspace).unwrap(),
+                serde_json::to_string(&completion_owner).unwrap(),
+                crate::emoji_native::enabled(),
+                crate::performance::completion::controller_script()
+            );
+            let mut bridge = document::eval(&script);
+            *bridge_slot.borrow_mut() = Some((completion_owner.clone(), bridge));
+            let gate = Rc::new(RefCell::new(Gate::new(completion_owner.clone())));
+            let latest = Rc::new(Cell::new(0u64));
+            let (queries, mut receiver) = tokio::sync::watch::channel(None::<emoji::Query>);
+            let worker_gate = gate.clone();
+            let worker_latest = latest.clone();
+            let worker_current = emoji_current.clone();
+            let emoji_task = spawn(async move {
+                let mut worker = None::<emoji::Worker>;
+                loop {
+                    if let Some(worker) = &mut worker {
+                        worker.waiting();
+                    }
+                    if receiver.changed().await.is_err() {
+                        break;
+                    }
+                    let Some(query) = receiver.borrow_and_update().clone() else {
+                        continue;
                     };
-                    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
-                    if !valid(&state.peek()) {
-                        return;
+                    let calculated = tokio::task::spawn_blocking(move || {
+                        let mut worker = worker.unwrap_or_default();
+                        let result = worker.calculate(query);
+                        (worker, result)
+                    })
+                    .await;
+                    let _result_release = crate::performance::emoji_retirement::scope(7, 0, 0);
+                    let Ok((returned, calculated)) = calculated else {
+                        break;
+                    };
+                    worker = Some(returned);
+                    let query = &calculated.query;
+                    if crate::performance::emoji_lifecycle::enabled() {
+                        crate::performance::emoji_lifecycle::record(
+                            "worker-returned",
+                            serde_json::json!({"seq":query.seq,"owner":query.owner,"snapshot":query.snapshot,"catalog":query.loaded.token,"preferences":query.preferences.revision(),"choices":calculated.results.choices}),
+                        );
                     }
-                    let fetched =
-                        directory::fetch(state, ctx.clone(), trigger.query.clone(), &valid).await;
                     let shell = state.peek();
-                    if !valid(&shell) {
-                        return;
+                    let revision = shell
+                        .core
+                        .active_team
+                        .as_ref()
+                        .and_then(|t| shell.core.workspaces.get(t))
+                        .map(|w| w.emoji_preferences.revision());
+                    if worker_latest.get() != query.seq
+                        || !worker_current(&shell)
+                        || !query.loaded.current(&shell)
+                        || revision != Some(query.preferences.revision())
+                    {
+                        continue;
                     }
-                    results.status = "";
-                    match fetched {
-                        Ok(users) => {
-                            if let Some(workspace) = shell.core.workspaces.get(&ctx.session.team_id)
+                    if crate::emoji_native::enabled() {
+                        crate::emoji_native::observe(
+                            "worker-present",
+                            serde_json::json!({"seq":query.seq,"owner":query.owner,"snapshot":query.snapshot,"catalog":query.loaded.token,"preferences":query.preferences.revision(),"choices":calculated.results.choices}),
+                        );
+                    }
+                    {
+                        let _gate_release = crate::performance::emoji_retirement::scope(
+                            6,
+                            0,
+                            crate::performance::emoji_retirement::scalar_id(&query.owner),
+                        );
+                        worker_gate.borrow_mut().present(
+                            query.seq,
+                            query.snapshot.clone(),
+                            query.loaded.clone(),
+                            query.loaded.token.clone(),
+                            query.preferences.revision(),
+                            calculated.choices,
+                        );
+                    }
+                    if crate::performance::emoji_lifecycle::enabled() {
+                        crate::performance::emoji_lifecycle::record(
+                            "worker-present",
+                            serde_json::json!({"seq":query.seq,"owner":query.owner,"catalog":query.loaded.token}),
+                        );
+                    }
+                    let _ = bridge.send(calculated.results);
+                }
+            });
+            let mut task: Option<Task> = None;
+            let remote = Rc::new(RefCell::new((0u64, Vec::<User>::new())));
+            while let Ok(event) = bridge.recv::<Event>().await {
+                if crate::emoji_native::enabled() && event.kind == "emoji_choose" {
+                    crate::emoji_native::boundary(
+                        "completion-choose",
+                        serde_json::json!({"ticket":event.ticket()}),
+                    )
+                    .await;
+                }
+                if !current(&state.peek()) {
+                    break;
+                }
+                if matches!(event.kind.as_str(), "emoji_choose" | "emoji_inserted") {
+                    let mut sent_answer = false;
+                    let admitted = {
+                        let shell = state.peek();
+                        let loaded = crate::emoji_catalog::current(&shell);
+                        let revision = shell
+                            .core
+                            .active_team
+                            .as_ref()
+                            .and_then(|t| shell.core.workspaces.get(t))
+                            .map(|w| w.emoji_preferences.revision());
+                        match (event.ticket(), loaded, revision) {
+                            (Some(ticket), Some(loaded), Some(revision))
+                                if emoji_current(&shell) =>
                             {
-                                merge_remote(
-                                    &mut results.choices,
-                                    workspace,
-                                    &users,
-                                    &trigger.query,
-                                );
+                                if event.kind == "emoji_choose" {
+                                    let answer = gate.borrow_mut().admit(
+                                        ticket,
+                                        &completion_owner,
+                                        &loaded,
+                                        revision,
+                                    );
+                                    if crate::emoji_native::enabled() {
+                                        crate::emoji_native::observe(
+                                            "completion-admission",
+                                            serde_json::json!({"answer":answer}),
+                                        );
+                                    }
+                                    if let Some(answer) = answer {
+                                        let _ = bridge.send(answer);
+                                        sent_answer = true;
+                                    }
+                                    None
+                                } else {
+                                    event.after.as_ref().and_then(|after| {
+                                        gate.borrow_mut().inserted(
+                                            &ticket,
+                                            after,
+                                            &completion_owner,
+                                            &loaded,
+                                            revision,
+                                        )
+                                    })
+                                }
                             }
-                            *remote.borrow_mut() = (event.seq, users);
-                            if results.choices.is_empty() {
-                                results.status = "No matches";
+                            _ => {
+                                crate::performance::emoji_retirement::synchronous(
+                                    6,
+                                    0,
+                                    crate::performance::emoji_retirement::scalar_id(
+                                        &completion_owner,
+                                    ),
+                                    || gate.borrow_mut().dismiss(),
+                                );
+                                None
                             }
                         }
-                        Err(status) => results.status = status,
+                    };
+                    if crate::emoji_native::enabled() && event.kind == "emoji_inserted" {
+                        crate::emoji_native::observe(
+                            "completion-ack",
+                            serde_json::json!({"ticket":event.ticket(),"after":event.after,"validated":admitted.is_some(),"model":match target {crate::state::ComposerTarget::Channel=>state.peek().core.composer.text.clone(),crate::state::ComposerTarget::Thread=>state.peek().core.thread_composer.text.clone()}}),
+                        );
                     }
-                    let _ = bridge.send(&results);
-                }));
+                    if let Some(usage) = admitted {
+                        dioxus::core::spawn_forever(crate::emoji_preferences::record(state, usage));
+                    }
+                    if event.kind == "emoji_choose" && !sent_answer {
+                        let _ =
+                            bridge.send(serde_json::json!({"kind":"emoji_admit","allowed":false,
+                        "serial":event.serial,"seq":event.seq,"owner":event.owner,
+                        "catalog":event.catalog,"choice":event.choice}));
+                    }
+                    continue;
+                }
+                if event.kind == "choose" {
+                    let user = {
+                        let remote = remote.borrow();
+                        (remote.0 == event.seq)
+                            .then(|| {
+                                remote
+                                    .1
+                                    .iter()
+                                    .find(|u| {
+                                        Target::User(u.id.clone()).token().as_deref()
+                                            == Some(&event.token)
+                                    })
+                                    .cloned()
+                            })
+                            .flatten()
+                    };
+                    if let Some(user) = user {
+                        let mut shell = state.write();
+                        if let Some(team) = shell.core.active_team.clone() {
+                            if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
+                                workspace.users.entry(user.id.clone()).or_insert(user);
+                            }
+                        }
+                    }
+                    continue;
+                }
+                if let Some(task) = task.take() {
+                    task.cancel();
+                }
+                latest.set(event.seq);
+                crate::performance::emoji_retirement::synchronous(
+                    6,
+                    0,
+                    crate::performance::emoji_retirement::scalar_id(&completion_owner),
+                    || gate.borrow_mut().dismiss(),
+                );
+                let _ = crate::performance::emoji_retirement::synchronous(
+                    5,
+                    0,
+                    crate::performance::emoji_retirement::scalar_id(&completion_owner),
+                    || queries.send(None),
+                );
+                *remote.borrow_mut() = (event.seq, Vec::new());
+                if event.kind != "query" {
+                    continue;
+                }
+                let snapshot = Snapshot {
+                    text: event.text.clone(),
+                    anchor: event.anchor,
+                    focus: event.cursor,
+                    direction: event.direction.clone(),
+                };
+                let japanese = state
+                    .peek()
+                    .core
+                    .active_team
+                    .as_ref()
+                    .and_then(|team| {
+                        state
+                            .peek()
+                            .core
+                            .workspaces
+                            .get(team)
+                            .and_then(|w| w.locale.as_deref())
+                            .map(|locale| locale.starts_with("ja"))
+                    })
+                    .unwrap_or(false);
+                if emoji::trigger(&snapshot, japanese).is_some() && emoji_current(&state.peek()) {
+                    crate::emoji_preferences::ensure(state);
+                    if let Some(loaded) = crate::emoji_catalog::ensure(state) {
+                        let preferences = state.peek().core.workspaces[&workspace]
+                            .emoji_preferences
+                            .clone();
+                        let now_ms = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_millis() as f64;
+                        let _query_release = crate::performance::emoji_retirement::scope(
+                            5,
+                            0,
+                            crate::performance::emoji_retirement::scalar_id(&completion_owner),
+                        );
+                        let _ = queries.send(Some(emoji::Query {
+                            seq: event.seq,
+                            owner: completion_owner.clone(),
+                            snapshot,
+                            loaded,
+                            preferences,
+                            japanese,
+                            now_ms,
+                        }));
+                    } else {
+                        let _ = bridge.send(Results {
+                            seq: event.seq,
+                            start: 0,
+                            end: 0,
+                            spacer: "",
+                            choices: vec![],
+                            status: "Loading emoji…",
+                        });
+                    }
+                    continue;
+                }
+                let trigger = Trigger::at(
+                    &event.text,
+                    utf16_to_byte(&event.text, event.anchor),
+                    utf16_to_byte(&event.text, event.cursor),
+                );
+                let Some(trigger) = trigger else {
+                    let _ = bridge.send(Results {
+                        seq: event.seq,
+                        start: 0,
+                        end: 0,
+                        spacer: "",
+                        choices: vec![],
+                        status: "",
+                    });
+                    continue;
+                };
+                let (choices, context, channel_generation, thread_generation) = {
+                    let shell = state.peek();
+                    let choices = shell
+                        .core
+                        .active_team
+                        .as_ref()
+                        .and_then(|t| shell.core.workspaces.get(t))
+                        .map(|ws| {
+                            composer_completion::suggestions(ws, &trigger)
+                                .into_iter()
+                                .filter_map(Choice::from)
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    (
+                        choices,
+                        Context::capture(&shell),
+                        shell.channel_generation,
+                        shell.thread_generation,
+                    )
+                };
+                let lookup = trigger.kind == Kind::Person
+                    && !trigger.query.is_empty()
+                    && context.is_some()
+                    && !crate::fixture::is_fixture();
+                let mut results = Results {
+                    seq: event.seq,
+                    start: byte_to_utf16(&event.text, trigger.start),
+                    end: byte_to_utf16(&event.text, trigger.end),
+                    spacer: if event.text[trigger.end..]
+                        .chars()
+                        .next()
+                        .is_some_and(|c| c.is_whitespace() || ",.;:!?)]}".contains(c))
+                    {
+                        ""
+                    } else {
+                        " "
+                    },
+                    choices,
+                    status: if lookup { "Searching people…" } else { "" },
+                };
+                if results.choices.is_empty() && !lookup {
+                    results.status = "No matches";
+                }
+                let _ = bridge.send(&results);
+                if lookup {
+                    let ctx = Rc::new(context.unwrap());
+                    let remote = remote.clone();
+                    let current = current.clone();
+                    task = Some(spawn(async move {
+                        let valid = |shell: &ShellState| {
+                            current(shell)
+                                && directory::owner_current(shell, &ctx)
+                                && shell.channel_generation == channel_generation
+                                && shell.thread_generation == thread_generation
+                        };
+                        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                        if !valid(&state.peek()) {
+                            return;
+                        }
+                        let fetched =
+                            directory::fetch(state, ctx.clone(), trigger.query.clone(), &valid)
+                                .await;
+                        let shell = state.peek();
+                        if !valid(&shell) {
+                            return;
+                        }
+                        results.status = "";
+                        match fetched {
+                            Ok(users) => {
+                                if let Some(workspace) =
+                                    shell.core.workspaces.get(&ctx.session.team_id)
+                                {
+                                    merge_remote(
+                                        &mut results.choices,
+                                        workspace,
+                                        &users,
+                                        &trigger.query,
+                                    );
+                                }
+                                *remote.borrow_mut() = (event.seq, users);
+                                if results.choices.is_empty() {
+                                    results.status = "No matches";
+                                }
+                            }
+                            Err(status) => results.status = status,
+                        }
+                        let _ = bridge.send(&results);
+                    }));
+                }
             }
-        }
-        if let Some(task) = task {
-            task.cancel();
+            if let Some(task) = task {
+                task.cancel();
+            }
+            emoji_task.cancel();
+            crate::performance::emoji_retirement::synchronous(
+                6,
+                0,
+                crate::performance::emoji_retirement::scalar_id(&completion_owner),
+                || gate.borrow_mut().dismiss(),
+            );
+            *bridge_slot.borrow_mut() = None;
         }
     });
-    rsx! { div {id:"{field_id}-completion",class:"composer-completion",role:"listbox","aria-label":"Mention suggestions",hidden:true} }
+    rsx! { div {id:"{field_id}-completion",class:"composer-completion",role:"listbox","aria-label":"Composer suggestions",hidden:true} }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use super_platinum_core::{
-        config::WorkspaceSession,
-        slack::models::{Channel, UserGroup},
-    };
-
-    fn workspace() -> Workspace {
-        Workspace::from_session(&WorkspaceSession {
-            team_id: "T1".into(),
-            user_id: "U1".into(),
-            name: "Fixture".into(),
-            url: "https://example.invalid".into(),
-            token: String::new(),
-            enterprise_id: None,
-        })
-    }
-    #[test]
-    fn draft_labels_resolve_only_referenced_identities_including_legacy_tokens() {
-        let mut ws = workspace();
-        for id in ["U1", "U2", "U3"] {
-            ws.users.insert(
-                id.into(),
-                User {
-                    id: id.into(),
-                    name: Some("Alex".into()),
-                    ..Default::default()
-                },
-            );
-        }
-        ws.channels.insert(
-            "C1".into(),
-            Channel {
-                id: "C1".into(),
-                name: Some("design".into()),
-                ..Default::default()
-            },
-        );
-        ws.usergroups.insert(
-            "S1".into(),
-            UserGroup {
-                id: "S1".into(),
-                handle: "helpers".into(),
-                ..Default::default()
-            },
-        );
-        let found = labels(
-            &ws,
-            "<@U1> <@U2|old-name> <#C1> <!subteam^S1> <@MISSING> @Alex <https://example.invalid>",
-        );
-        assert_eq!(found.len(), 4);
-        assert_eq!(found["<@U1>"], "@Alex");
-        assert_eq!(found["<@U2>"], "@Alex");
-        assert_eq!(found["<#C1>"], "#design");
-        assert_eq!(found["<!subteam^S1>"], "@helpers");
-        assert!(!found.contains_key("<@U3>"));
-    }
-    #[test]
-    fn remote_candidates_use_current_profiles_and_skip_deleted_or_invalid_identities() {
-        let mut ws = workspace();
-        let remote = User {
-            id: "U9".into(),
-            name: Some("old-handle".into()),
-            real_name: Some("Old Name".into()),
-            ..Default::default()
-        };
-        assert_eq!(remote_choice(&ws, &remote).unwrap().label, "@Old Name");
-        ws.users.insert(
-            "U9".into(),
-            User {
-                id: "U9".into(),
-                real_name: Some("New Name".into()),
-                ..Default::default()
-            },
-        );
-        assert_eq!(remote_choice(&ws, &remote).unwrap().label, "@New Name");
-        assert_eq!(remote_choice(&ws, &remote).unwrap().token, "<@U9>");
-        ws.users.get_mut("U9").unwrap().deleted = true;
-        assert!(remote_choice(&ws, &remote).is_none());
-        assert!(
-            remote_choice(
-                &ws,
-                &User {
-                    id: "bad>id".into(),
-                    ..Default::default()
-                }
-            )
-            .is_none()
-        );
-        assert!(remote_choice(&ws, &User::default()).is_none());
-    }
-    #[test]
-    fn exact_remote_match_is_not_hidden_by_eight_cached_prefix_matches() {
-        let ws = workspace();
-        let mut choices: Vec<_> = (0..8)
-            .map(|i| {
-                remote_choice(
-                    &ws,
-                    &User {
-                        id: format!("U{i}"),
-                        name: Some(format!("alex{i}")),
-                        ..Default::default()
-                    },
-                )
-                .unwrap()
-            })
-            .collect();
-        let remote = User {
-            id: "U99".into(),
-            name: Some("alex".into()),
-            ..Default::default()
-        };
-        merge_remote(&mut choices, &ws, &[remote.clone(), remote], "alex");
-        assert_eq!(choices.len(), LIMIT);
-        assert_eq!(choices[0].token, "<@U99>");
-        assert_eq!(choices[1].token, "<@U0>");
-        assert_eq!(choices.iter().filter(|c| c.token == "<@U99>").count(), 1);
-    }
-}
+mod tests;

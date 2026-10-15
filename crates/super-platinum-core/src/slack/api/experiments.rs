@@ -7,6 +7,7 @@ use serde_json::Value;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ListExperiments {
+    pub sub_tasks: bool,
     pub grid_todos: bool,
     pub todos: bool,
     pub todos_rollback: bool,
@@ -30,7 +31,9 @@ pub fn list_experiments(c: &SlackClient, w: &WorkspaceSession) -> PreparedReques
 }
 
 pub fn parse_list_experiments(response: &Value) -> Result<ListExperiments, Error> {
-    if response.get("ok") != Some(&Value::Bool(true)) {
+    if response.get("ok") != Some(&Value::Bool(true))
+        || response.get("error").is_some_and(|v| !v.is_null())
+    {
         return Err(Error::Api(
             "List experiment lookup was not successful.".into(),
         ));
@@ -50,6 +53,7 @@ pub fn parse_list_experiments(response: &Value) -> Result<ListExperiments, Error
         }
     };
     Ok(ListExperiments {
+        sub_tasks: enabled("lists_sub_tasks")?,
         grid_todos: enabled("lists_grid_todos")?,
         todos: enabled("todos")?,
         todos_rollback: enabled("lists_todos_rollback")?,
@@ -108,6 +112,30 @@ mod tests {
                 )
                 .is_err()
             );
+        }
+    }
+    #[test]
+    fn subitems_require_exact_assignment_and_positive_uncontradicted_envelope() {
+        let flags = parse_list_experiments(
+            &json!({"ok":true,"assignments":{"lists_sub_tasks":{"group":"on"}}}),
+        )
+        .unwrap();
+        assert!(flags.sub_tasks);
+        for group in ["control", "off", "ON"] {
+            assert!(
+                !parse_list_experiments(
+                    &json!({"ok":true,"assignments":{"lists_sub_tasks":{"group":group}}})
+                )
+                .unwrap()
+                .sub_tasks
+            );
+        }
+        for raw in [
+            json!({"ok":true,"error":"denied","assignments":{"lists_sub_tasks":{"group":"on"}}}),
+            json!({"ok":true,"assignments":{"lists_sub_tasks":null}}),
+            json!({"ok":true,"assignments":{"lists_sub_tasks":{"group":true}}}),
+        ] {
+            assert!(parse_list_experiments(&raw).is_err());
         }
     }
 }

@@ -16,8 +16,8 @@ data. A passing unit suite is not evidence of live Slack behavior.
 ## Current evidence, reconciled 2026-10-14
 
 The acceptance matrix below incorporates the chronological ledger through
-**Attachment/user-link build and review-layout pilot**, including the Windows
-selector, notification, profile, bookmark and performance continuation.
+**Acknowledged Send native completion and Schedule/socket source gates**,
+including the Windows selector, reading, notification and performance continuation.
 It preserves completed slices and their remaining boundaries; no row establishes
 full parity. Later dated implementation and verification receipts supersede old
 "next" or "not implemented" notes. The historical **Changes underway** and early
@@ -75,30 +75,30 @@ existing fixtures or unit tests do not replace live interoperability checks.
 
 | Workflow | Current status and latest evidence | Remaining implementation and verification |
 | --- | --- | --- |
-| Native Windows dev environment | Transferred artifacts verified; locked native dev builds, 1,368 core / 1,401 desktop tests passed; isolated TCP ping/state and DPI-correct screenshots inspected. Activity, media, five message-control families, Lists and delete/undo pass normal/narrow checks; latest timestamp checks add 50 inspected List PNGs. Eleven sink stages and six production projection stages have inspected taskbar pixels; boxed startup fixes an observed Windows stack overflow | Adapt remaining platform-assuming runners and verify remaining required workflows on WebView2; live sign-in/reference and full OS integration are not established by fixtures |
-| Conversation reading, unread markers, history, navigation | Channel/thread bounded rich projection, complete row metadata, anchors, exact old targets and thread paging; Mac private warm-start/history/pagination checks and large synthetic native selection/window checks passed; Windows channel and five thread fixture checks pass with all six PNGs inspected, including 10,001-row bounds and selection pin/release; source-backed opening/read preferences, exact settings synchronization and resumable cold unread loading pass core/desktop tests and source review; corrected reading navigation and Reading settings each pass both Windows sizes with all twenty PNGs inspected per workflow, including settings focus preservation; Escape and bulk read pass both sizes with twenty and twenty-eight inspected PNGs respectively | Production bulk Threads/Activity/history reconciliation and live read acknowledgements; cold Later/search/draft metadata paths, real 200-plus-reply native pagination, scrollbar/selection edge coverage, delayed live account/outage races, live synchronized opening/read preference verification and broader cross-client comparison |
+| Native Windows dev environment | Main Rich core 2,130 / 5 plus doctest and compile checks pass. Current isolated V19 adds one reviewed cfg(test) signature correction; formatting passes and full desktop tests are running in session 1901. After passing tests, fresh V19 build/seal and EXE/PDB comparison precede native decisions. Prior V18 includes applied V17 payload and two Python corrections; formatting, 22 Search Python tests and runtime check pass; V18 build is sealed and actual known poll-chain measurement is 734,240 bytes (314,336 bytes below reserve), constructor chain 491,400; unknown ancestors/callees prevent a whole-stack safety claim. Independent frame review is clear for bounded retry only. Full desktop session 12181 failed E0308 compilation in a stale test-helper return type before tests ran; cfg(test)-only V19 correction is installed, with full tests and a fresh matching build still pending. No V18 native launch or whole-stack safety claim. Prior V16 formatting, 19 Python/five Node tests, combined feature desktop **1,903 / 7**, default runtime check and sealed native build pass. Latest isolated core full remains V12 **2,161 / 5 plus doctest**. Actual V16 frame inspection retains an over-reserve direct edge (1,376,016 bytes) and constructor chain (1,049,336 bytes before return addresses/ancestors). [Exact gates and history](RESUME.md) | Root holds Send retry; helper success is not whole-stack safety, and V16 Send has not launched. V5/native2 failed-artifact audits do not prove Send/HTTP/durable outcomes. Isolated changes are not promoted to main. Separate Search V16 cohort failed: normal eight PNGs succeeded, narrow midpoint oracle failed before accepted stage (one PNG, 1 ULP). Root read all nine; independent failure audit is complete, cohort still failed. Immediate extra preflight failed shell quoting; only prior seal/post-run whole-input verification passed. Mouse released/no readiness pending; Canvas/download unlaunched. Older Canvas cp1 accepts eight processes / 40 PNGs on ae21 only, with width-fix native follow-up open. No overhead repeat; production protected storage/autosave/realtime ingress/native Slash activation remain off and broad parity remains incomplete |
+| Conversation reading, unread markers, history, navigation | Channel/thread bounded rich projection, complete row metadata, anchors, exact old targets and thread paging; Mac private warm-start/history/pagination checks and large synthetic native selection/window checks passed; Windows channel and five thread fixture checks pass with all six PNGs inspected, including 10,001-row bounds and selection pin/release; source-backed opening/read preferences, exact settings synchronization and resumable cold unread loading pass core/desktop tests and source review; corrected reading navigation and Reading settings each pass both Windows sizes with all twenty PNGs inspected per workflow, including settings focus preservation; Escape and bulk read pass both sizes with twenty and twenty-eight inspected PNGs respectively | Live bulk/read acknowledgements and full workspace-history coverage (production Threads/Activity/history/replies sequence now passes 25 focused tests with synthetic execution); cold Later/search/draft metadata paths, real 200-plus-reply native pagination, scrollbar/selection edge coverage, delayed live account/outage races, live synchronized opening/read preference verification and broader cross-client comparison |
 | Compose/reply, formatting, edits/deletes, broadcasts | Native Unicode/reference/IME guards and formatting; private bold/italic send proof; text and file broadcasts plus ordinary thread-only reply proved in **Live composer verification and channel mute integration**; late edit ownership guarded; supported channel/thread text enters the shared durable send journal; Windows trusted Unicode/edit-key and isolated synthetic file-paste checks pass both sizes with 22 inspected PNGs | Remaining edit/delete/list/link/mention and cross-client races; full rich-note/composer parity; actual OS IME sessions; broader rich/file/scheduled journal integration and live thread fault proof; Windows live end-to-end send/upload verification and remaining integration |
-| Drafts, scheduling and local recovery | Local destination-owned persistence, server Drafts/Scheduled queue/realtime, send-now/cancel/conflict copy and private Mac lifecycle proof; supported channel/thread text shares durable direct-send ownership, with thread/broadcast capture and exact destination readback tests; local version settlement and rejected channel-send return verified with isolated SQLite/native fixtures; Windows rejected-thread return and two-process restart pass at both sizes with all ten captures inspected, preserving broadcast and unrelated drafts; Windows scheduling acknowledgments preserve newer native text, attachment changes, synthetic composition and reopened visits; native draft projection passes 20 normal/narrow cases with 120 inspected PNGs and exact two-process durable dictionaries, retaining newer input and rejecting stale mounts; scheduled attachment editing passes all ten Windows scenarios with 48 successful captures and two retained failure PNGs inspected, exact request and no-replay checks | Ordinary bidirectional composer autosave remains disabled; lossless broader blocks/files, server identity/revision and simultaneous edits; scheduled journal integration and live thread fault proof; destination/multi-destination scheduling, live attachment-editing verification, large queues, actual timed delivery and live recovery/fault proof |
-| Mentions, emoji, custom emoji and reactions | Native mention/reference completion and in-app clipboard event/model checks; retained mention Retry-After; emoji picker insertion normal/narrow passed; real Mac undo/redo and private custom reaction add/remove across both clients/thread root passed | Live directory mention/send-render proof, broadcast eligibility/member ordering, shortcode emoji completion, tone/recents, arbitrary reply reactions; real system clipboard/cross-window/Slack interoperability and long undo/cold-draft coverage |
-| Search, filters, results navigation | Channel/sender/date controls, sort/paging, literal syntax, shortcuts, exact thread replies and archived private navigation verified; guarded missing-metadata resolution tested; Windows search/filter/loading/empty/error and palette static layouts inspected at available normal/narrow fixture sizes | Additional filter types, current cross-client ranking/filter comparison, live cold metadata, multi-account/outage races and Windows keyboard behavior |
-| Files, upload/download, previews and file actions | Browser/paging, text/code/audio/searchable PDF, channel Files & links, own-file rename/delete/save and viewer actions; pasted Unicode filenames now remain independent of staging paths through display/normal/thread/broadcast/scheduled upload, with exact loopback HTTP and six inspected Windows PNGs; private API round trips; file-name event refresh plus Later copy reconciliation; dense Files normal/narrow native checks passed | Broader non-name/content realtime refresh and late history/index reconciliation; direct attachment actions/share, Office/richer PDF/codecs/password paths, original downloads beyond cache limits, live UI/permission/lost-response/account-race coverage |
+| Drafts, scheduling and local recovery | Destination-owned local persistence, Drafts/Scheduled queues, guarded send/cancel/conflict recovery and source-backed reconciliation are implemented. Windows accepted slices include Update recovery **12 pairs / 52 PNGs** on da7ebcd0, acknowledged Send **12 pairs / 72 PNGs** on cd881dcc, and managed rich Schedule ms9 **22 pairs / 44 processes / 154 PNGs** on e3d70217 with exact SQLite and zero restart requests. Protected scenarios pass across pd3/pd4; enrollment pe2 independently passes **12 cases / 80 PNGs** on 076ce07d. D pa4 independently accepts all **14 runs / 150 PNGs** on feature3 **89687b72**, with exact raw SQLite/lease/glyph/process proof; [current status](RESUME.md) separates it from earlier native receipts | D acceptance is disconnected synthetic only, without live/IME/restart/global HTTP proof. Production protected storage selection, observation ingress and ordinary bidirectional remote autosave remain off. Broader lossless blocks/files, simultaneous edits, multi-destination scheduling, actual timed delivery, live thread/attachment recovery, process-crash and disk-failure coverage remain outstanding; isolated synthetic/controlled-restart evidence is not live or crash proof |
+| Mentions, emoji, custom emoji and reactions | Native mention/reference completion, retained mention Retry-After and in-app clipboard checks; prior private Mac undo/redo and custom reaction round trips. Emoji en2 independently passes normal/narrow with **32 inspected PNGs** and complete ledger/hash/process/pointer evidence on e4c09596. The unready choice is correctly disabled while visually unchanged. Combined emoji wiring and the audited thin desktop projection are installed; [current source gates](RESUME.md) pass  Insertion3 independently passes both sizes: **32 inspected PNGs / two closed processes / 64 edges**, three ACKs per process and stale guards on thin3028bf91. | Broader live/thread shortcode, tone/recents and directory send/render verification; broadcast eligibility/member ordering and arbitrary reply reactions; real clipboard/cross-window interoperability, OS input and long undo/cold-draft coverage. En2 is synthetic channel evidence, not general live/thread acceptance |
+| Search, filters, results navigation | Channel/sender/date controls, sort/paging, literal syntax, shortcuts, exact thread replies and archived private navigation verified; guarded missing-metadata resolution tested; Windows search/filter/loading/empty/error and palette static layouts inspected at available normal/narrow fixture sizes. Structured `has:file` / `has:link` filters are implemented in isolated V9: 15 focused core tests, full core 2,146 / 5 ignored plus one doctest, default desktop 1,880 / 7, runtime feature check and formats pass. The Search fixture is installed as isolated V15 and included in V16's passing combined feature desktop 1,903 / 7 and default runtime check. The first V16 native cohort failed: normal seven stages/final passed, narrow initial midpoint assertion failed by one ULP before an accepted stage; all nine PNGs were read by root and the independent failure audit is complete. V18's two-file Python correction and 22 passing tests do not retroactively accept the failed cohort. No complete native acceptance. [Exact source gates](RESUME.md) | Isolated structured filters still need main promotion and native/live verification; other additional filter types, current cross-client ranking/filter comparison, live cold metadata, multi-account/outage races and Windows keyboard behavior remain open |
+| Files, upload/download, previews and file actions | Browser/paging, text/code/audio/searchable PDF, channel Files & links, own-file rename/delete/save and viewer actions; pasted Unicode filenames now remain independent of staging paths through display/normal/thread/broadcast/scheduled upload, with exact loopback HTTP and six inspected Windows PNGs; private API round trips; file-name event refresh plus Later copy reconciliation; dense Files normal/narrow native checks passed. Original-file streaming beyond the media cache limit is implemented in isolated V10: four policy and eight HTTP focused tests, all five desktop download tests, full core 2,158 / 5 ignored plus one doctest, default desktop 1,885 / 7, runtime feature check and formats pass. [Exact source gates](RESUME.md) | Isolated original-file streaming still needs main promotion and native/live verification; its busy/cancel fixture was installed as isolated V11, passed V12 focused/combined Rust gates and is included in V16's passing combined feature desktop 1,903 / 7 and default runtime check. Native captures remain unrun and the OS save dialog is separately unverified. Broader non-name/content realtime refresh and late history/index reconciliation; direct attachment actions/share, Office/richer PDF/codecs/password paths, and live UI/permission/lost-response/account-race coverage remain open |
 | Uncertain upload/file operations | File rename/delete journals and inventory passed restart fixtures; Windows normal/narrow seed/restart/retire pass with all six PNGs inspected and exact read-only SQL comparison; uploads persist reservation before staging and exact staged IDs before publication, restore inert receipts and offer bounded read-only checks; **Durable upload recovery and own-profile text editing** verified two-process SQLite/native restoration; Windows normal/narrow seed/restart and exact receipt retirement pass with all four PNGs inspected | Real lost-response/restart/outage proof, mid-commit disk failure/process-crash injection, unknown/no-ID receipts and broader cross-account scenarios; no automatic replay or inference from a missing result |
 | Later, save/remind, completed items | Message save/complete/remind/archive and realtime privately verified; rich personal reminders; saved files hydrate/open and retain durable operation recovery, normal/narrow native and SQLite proof | Live saved-file mutation/readback/realtime, full saved-index coverage, delayed cold message destinations and live preview edits/deletes; absence from a page must not imply removal |
 | Pins, bookmarks and channel tabs | Pins/private realtime round trip and exact saved/pinned reply routing; bookmark links/folders/order/cascade safeguards with private API proof and native fixtures; portable Windows normal/narrow workflow passes with two inspected PNGs plus the inspected singular-copy retake | Custom tabs and combined resources parity, bookmark emoji/non-link actions, live native bookmark mutation/realtime; old targets beyond loaded pages, large lists, offline/permission/reconnect cases |
-| Forwarding and message links | Rich notes, directory recipients/deferred DM opens, per-destination outcomes; durable forwarding journal/inventory with restart/retirement native checks; Windows normal/narrow three-process recovery passes with six inspected PNGs; typed Slack channel/workspace/permalink routing and old reply native checks | Scheduled forwarding/full note controls; live new-DM/multi-destination/ambiguous-delivery recovery; user DM/profile deep links, OS-delivered links and cross-workspace app-button ownership |
+| Forwarding and message links | Rich notes, directory recipients/deferred DM opens, per-destination outcomes; durable forwarding journal/inventory with restart/retirement native checks; Windows normal/narrow three-process recovery passes with six inspected PNGs; typed Slack channel/workspace/permalink routing and old reply native checks | Scheduled forwarding/full note controls; live new-DM/multi-destination/ambiguous-delivery recovery; live first-DM behavior beyond the verified known-human DM/profile links, OS-delivered links and cross-workspace app-button ownership |
 | Channels, membership, details and management | Create/rename/archive/private discovery and websocket outage recovery proved on Mac; About/Members, topic/purpose edits, people invite/remove UI and event/reconnect refresh implemented | Successful live add/remove and nonsingleton self join/leave, app/agent and cross-workspace invitations, large membership paging, policy/offline/uncertain outcomes and broader channel settings |
-| DMs, group DMs and presence | Palette people/self-DM, guarded profile Message navigation, new DM/group recipients and remote directory implemented; cached self-DM and remote search verified; presence-only projection measured; Windows static DM and recipient/directory states pass inspected captures, including narrow dialogs; known-human user links open DM and profile with both Windows native checks and all 16 PNGs inspected, preserving outgoing drafts and rejecting stale/wrong-recipient responses (narrow profile overlays composer) | Real first-DM/group creation and remote recipient selection, directory permission/429 paths, live multi-account races and large DM feed bounds/performance |
+| DMs, group DMs and presence | Palette people/self-DM, guarded profile Message navigation, new DM/group recipients and remote directory implemented; cached self-DM and remote search verified; presence-only projection measured; Windows static DM and recipient/directory states pass inspected captures, including narrow dialogs; known-human user links open DM and profile with both Windows native checks and all 16 PNGs inspected, preserving outgoing drafts and rejecting stale/wrong-recipient responses (narrow profile overlays composer) | Real first-DM/group creation and remote recipient selection, directory permission/ 429 paths, live multi-account races and large DM feed bounds/performance |
 | Own profile and status | Text/emoji/expiry status and full/display name/pronouns plus modern Header Title editors; owner/readback/no-replay guards and normal/narrow fixtures passed; live read-only capabilities/preferences verified; all six Windows profile/title/status fixtures pass with inspected PNGs and isolated prepared-request checks | Live profile/status/title mutation semantics when authorized, profile photo/custom sections, broader permissions/SCIM cases; fixture writes are not production confirmation |
-| Threads, Activity, read state and subscriptions | Thread unread/follow/unfollow/feed paging/live preview updates privately proved on Mac. Windows cursor-bounded channel/thread ACKs and realtime marks, threaded mentions, raw category deltas, bundle min-unread/latest mapping, page overlays and cursor ABA guards now pass core/desktop tests; normal/narrow native cursor and exact-reply checks passed | Private cross-client cursor proof, remaining read preferences/shortcuts, account/outage races and broader Windows thread workflows |
+| Threads, Activity, read state and subscriptions | Thread unread/follow/unfollow/feed paging/live preview updates privately proved on Mac. Windows cursor-bounded channel/thread ACKs and realtime marks, threaded mentions, raw category deltas, bundle min-unread/latest mapping, page overlays and cursor ABA guards now pass core/desktop tests; normal/narrow native cursor and exact-reply checks passed | Private cross-client cursor proof and live synchronized read preferences/shortcuts (Reading settings, Escape and bulk disconnected native gates are complete); account/outage races and broader Windows thread workflows |
 | Activity/DM/Dock badge policy | Exact Inbox category gates, authoritative count snapshots/revisions and separate DM rail selector implemented; Mac paired snapshot Activity35/DM46; canonical Dock aggregation/AppKit readback passed. Windows direct taskbar sink, failure/recovery/owner safeguards and eleven inspected numeric/unread/clear stages pass, including synthetic recreation; six production hook stages verify Activity/Later/account retirement with inspected pixels | Authentic unified-user/MRU/org-channel Enterprise context for unknown legacy/ordinary-unread branches; real badge-event delivery and preference controls; actual Windows Explorer-restart recovery |
-| Channel/global notifications, DND and accounts | Permanent/temporary channel mute and detailed preferences privately API/native verified; recurring hours/global defaults and macOS presentation checked. Windows direct WinRT submission, unpackaged shortcut/COM identity and bounded diagnostics implemented; isolated silent preview passes submission/history/cleanup, registration restoration and inspected OS banner pixels; synthetic COM account-owned routing reaches the exact thread reply without switching accounts; actual warm OS preview activation restores the same minimized window; actual cold OS activation launches a new process and paints the channel, with exact cleanup and inspected delayed captures; global defaults pass both Windows sizes with two inspected PNGs, seven reached controls and exact synthetic 9-write/12-read receipts; recurring schedules pass both sizes with inspected PNGs, seven reached days and exact 8-write/10-read receipts; presentation passes both sizes with local audio completion and 6-write/11-read receipts | Authorized live schedule/global/presentation writes, real OS/mobile message delivery, visible Dock attention, selected custom platform sounds, full account isolation/preferences; Windows live conversation routing and Linux delivery |
+| Channel/global notifications, DND and accounts | Permanent/temporary channel mute and detailed preferences privately API/native verified; recurring hours/global defaults and macOS presentation checked. Windows direct WinRT submission, unpackaged shortcut/COM identity and bounded diagnostics implemented; isolated silent preview passes submission/history/cleanup, registration restoration and inspected OS banner pixels; synthetic COM account-owned routing reaches the exact thread reply without switching accounts; actual warm OS preview activation restores the same minimized window; actual cold OS activation launches a new process and paints the channel, with exact cleanup and inspected delayed captures; global defaults pass both Windows sizes with two inspected PNGs, seven reached controls and exact synthetic 9-write/ 12-read receipts; recurring schedules pass both sizes with inspected PNGs, seven reached days and exact 8-write/ 10-read receipts; presentation passes both sizes with local audio completion and 6-write/ 11-read receipts | Authorized live schedule/global/presentation writes, real OS/mobile message delivery, visible Dock attention, selected custom platform sounds, full account isolation/preferences; Windows live conversation routing and Linux delivery |
 | Huddles, camera, sharing and devices | Existing Slack room/Chime state machine and media bridge/UI | Human-approved controlled private call: join/leave, mute, audio/video, sharing, device/permission changes and reconnect; Windows secure-origin/media/OS behavior |
-| Canvases | Native reader/create/rename; bounded checkbox and existing-paragraph rich editing with private Mac cross-client save/restore, canonical section preservation and retained CRDT reuse; paired first-load/event recovery verified; Windows normal/narrow text and checklist checks pass with all 20 intermediate/final PNGs inspected | General authoring/structure, comments, concurrent collaboration/sharing, unsupported rich shapes/title cases, durable creation drafts, live lost-response/credential rotation and IME; bounded paragraph editing is not full canvas parity |
-| Lists | Saved tables/boards/filter/sort/date groups, details/open tracking, ordinary cell edits, create/delete and same-ID Undo/Redo; private Mac evidence through **Integrated Link verification and private cleanup complete**. Source-backed Duplicate and stable delivery receipts pass Windows fixtures. Readable timestamps, locale/tooltips and minute reprojection pass 72 source oracle cases and normal/narrow native checks; all 50 timestamp PNGs inspected; Board lane Add passes both Windows sizes with all 14 PNGs inspected, exact typed seed requests and stale/uncertain guards | Source-verified server continuation (do not invent cursor contract), saved-view/schema writes, group/subitem creation, drag/lane management, personal To-dos/assignee/reminders and remaining fields/actions/comments; live duplicate copy/parent/subtree semantics, mixed/incomplete orderings, remote-user and fault coverage |
-| App interactions and workflows | Typed modal lifecycle/forms; ordinary buttons, static single/multiple, radio/checkbox, date/time, user/conversation/public-channel, multi-user, multi-channel and overflow controls with full-state and ownership guards; ordinary and modal multi-channel/multi-conversation selectors pass Windows normal/narrow prepared-request checks with 24/26 captures inspected, alongside the earlier families; corrected compact controls pass eight rerun fixtures with all 50 PNGs inspected and exact 32px/alignment checks; bounded modal viewed-origin defaults pass normal/narrow checks, with 36 inspected multi/single regression PNGs; ordinary boolean defaults preserve supplied/absent state without inventing an origin, with all 26 new ordinary/modal regression PNGs inspected; single external selectors pass all four Windows fixtures with 38 inspected PNGs, exact raw state and retained cooldown; multi-external ordinary/modal selectors pass four Windows fixtures with all 50 final PNGs inspected, ordered raw/empty/full-sibling state and unobstructed narrow uncertainty controls; the single clear-label regression is corrected and all four new native checks pass with 38 PNGs inspected (narrow loading images raced ahead to results); a subsequent held-loading run passes all four with all 38 PNGs inspected and eight exact raw request dictionaries, closing that capture gap | Broader missing/filtered/IM origins and other controls, specialized client actions/Agentforce/Grid restrictions, slash commands, app/workflow discovery/execution; owned private live receipt/response target and complete modal response/error proof |
+| Canvases | Native reader/create/rename and bounded rich paragraph/checklist editing retain private Mac cross-client evidence. Windows cu2 UI passes 22 PNGs; recovery cr2 passes four processes / 16 PNGs; local-review cl2 passes eight processes / 32 PNGs, each with its recorded limits. Paired-runtime cp1 is independently CLEAR on sealed ae21a080 only: **eight closed processes / 40 original PNGs / 32 ordered stages**, exact logs/counts/geometry/SQLite (active empty, one archive, integrity OK), eight restored pointers and empty errors; root and auditor read all 40. [Exact current evidence](RESUME.md) | cp1 showed primary-button loading width shifting Cancel. The source fix is installed in isolated V12 and 19 JavaScript geometry cases pass; fresh native validation remains open. cp1 uses synthetic ACKs and controlled restart; owned termination exit 1 is not graceful shutdown or crash proof. Earlier and cp1 receipts retain their own binary attribution and do not validate isolated V10. General authoring/structure, comments, collaboration, rich-shape/title coverage, durable creation, live credential/lost-response/IME/crash behavior remain incomplete |
+| Lists | Saved tables/boards/filter/sort/date groups, details/open tracking, cell edits, create/delete/Undo and source-backed Duplicate retain earlier evidence. Timestamp checks include **50 inspected PNGs**; Board lane Add **14 PNGs**. Bounded hydration lh1 independently passes **14 PNGs** with unchanged opaque cursor/stale exclusion. Column rename lr5 independently passes both sizes (**16 PNGs**); saved-view rename lv2 independently passes **16 PNGs**, normal Table/narrow Board, all stale/observed/final picker states and focus. Exact eight-request ledgers preserve unknown schema, raw records and cursor; see [lv2 visual review](../tmp/agent-ui/lv2/root-visual-review.txt) | Subitem si2 independently CLEAR on corrected f8957b3e: four processes/ 36 inspected PNGs, 46 calls/ 10 opens/ 72 edges/cleanup; root all 36 read. Si1 visual HOLD remains historical. Live server continuation/global pagination and broader permission/fault behavior remain unproved; never infer full membership from a bounded page. Other schema writes, drag/lane management, To-dos/assignee/reminders and remaining actions/comments still require work |
+| App interactions and workflows | Typed modal forms and ordinary controls, multi-user/channel selectors, scoped origin/state, external selectors and late-response guards retain accepted normal/narrow fixtures and earlier private evidence. The held external-selector checks retain **4 cases / 38 PNGs** and exact raw request dictionaries. Slash core, durable journal, atomic intent, completion, archive/remote cleanup and reviewed legacy execution are integrated; the latest main core suite passes **2,130 tests / 5 ignored + one doctest**. Earlier test/import/zero-filter failures remain in the dated ledger | Mounted Slash routing and native/live execution acceptance remain pending; source/domain passes do not establish production activation. Broader missing/filtered/IM origins, specialized client actions/Agentforce/Grid restrictions, app/workflow discovery/execution, owned private live receipt targets and complete modal response/error proof remain outstanding |
 | Keyboard, focus, accessibility and narrow windows | Native focus traps, shortcut typing handoff, selected controls/selection and synthetic IME guards; multiple normal/minimum Mac fixtures verified; Windows SendInput Unicode/Backspace/selection/replacement passes channel and thread at both sizes with 16 inspected PNGs and trusted-event receipts | Real OS IME and broader trusted keyboard coverage, screen-reader/labels, full focus restoration and reduced-motion/contrast sweeps, Windows shortcuts/WebView2 controls; isolated DOM events are not trusted-input proof |
 | Geist visual system | Local Geist/Mono, neutral tokens, uniform selection, muted system activity, compact Files/List/settings/control refinements and many inspected Mac fixtures; scoped on-fill/secondary-text contrast corrections pass four Windows palette fixtures, with 12 inspected captures and named actual/probe measurements; 21 Windows search/navigation and 32 resource static fixtures add inspected layouts, with stated taskbar limits and four unobstructed resource recaptures | Inspect every required surface/state at normal/narrow sizes on Windows; loading/error/empty/long labels, selected palettes, keyboard focus, AA contrast and reduced motion; full system consistency review |
-| Speed, memory, idle work and large workspaces | Paired component measurements for palette, channel rich projection/geometry, thread indexing, source validation, DM lookup, metadata/presence/reactions; bounded rendering and idle/tick work; async capture fault test; Windows disconnected idle pairs and six normalized scroll runs have inspected captures, with 6.1ms p50 and 6.2ms median p95 in both arms; three normalized draft-projection idle samples per arm have six inspected PNGs, with tree CPU 0.046875 → 0.0625s per 15s, private commit 260.94 → 262.06 MiB and first paint 577.88 → 626.51ms; no general speedup established | Paired input/startup/scroll and memory/idle coverage for broader live workloads; investigate intermittent native startup/stalls independently; similar Mac frame samples do not prove FPS gains and thread indexing adds measured full-sync cost |
+| Speed, memory, idle work and large workspaces | Quiet Person native comparison and pure emoji reports retain their accepted, separately attributed evidence. Cold measured3 is independently CLEAR: **24 processes / 96 inspected PNGs**, all **16 JS endpoint median/maximum comparisons improve** for the synthetic 64k fixture. Normal cold colon accepted-result median/p95 **675.3 / 681.5 -> 482.6 / 486.4 ms**; picker **554.8 / 557.4 -> 369.4 / 372.7 ms**. All 52 comparisons, 312 values, nine regression rows and 21 positive nominal differences retained; [report and limits](../tmp/emoji-cold-measured-report/summary.md) | Three repetitions per case make p95 the observed maximum, not a stable tail. Synthetic event-to-DOM/two-RAF latency is not physical paint, trusted input, CPU/memory/startup/idle/network or general responsiveness proof. Remaining serial capture ~24 ms, controlled release ~38-40 ms and worker build/projection ~317-331 ms miss a 16.7 ms frame budget. Whole-binary attribution, no exclusive causality/significance; historical baseline PNG byte identity is unproved. Packed v2 three-process report is independently CLEAR: capture faster but total pipeline median/p95 worse; all regressions retained, no production adoption. Finite diagnostic plan852020 is independently CLEAR, authorized temporary preparation only; no new native cohort/adoption  Packed native report e0086c13 retains76 comparisons/ 56 regressions: all 8 capture medians improve13.14-14.66 ms, delivery/joint fail; no adoption/repeat cohort. Final96 images/ 24receipts/report reproduction independently CLEAR; 11 / 16 JS delivery comparisons fail, no adoption/repeat; n3 maxima/synthetic DOM-twoRAF limits apply. |
 
 ## Changes underway
 
@@ -9626,7 +9626,8 @@ that subsequent behavior is included in these counts.
 ### Attachment/user-link build and review-layout pilot (2026-10-14)
 
 Locked dev build passes in **4m19s**, executable SHA
-0415fe6dded03a2da3788c6ff752f9420398d243c0f8c36fecaddabfac437eb.
+
+0415fe6dded03a2da3788c6ff752f9420398d243c0f8c36fecaddabfac437eb.
 The independently locked core **1,294 / 5 ignored** and desktop
 **1,296 / 7 ignored** gates above apply to this build. Later read-preference
 integration is outside this executable and has not yet been compiled.
@@ -10265,3 +10266,4879 @@ This includes the compiled pure owned-index helper. Core1,384 /5 ignored and
  desktop1,405 /7 ignored are the latest test gates. Full twelve-pair recovery
 matrix `ur-final4/` is now running, with independent normal/narrow pixel and
 closed-receipt audits assigned. Do not attribute prior native gates to this hash.
+
+## Update recovery Windows gate complete, 2026-10-14
+
+On `da7ebcd098b04f1c704a1e4f17f2975d81a5c6caf6d1dd5da4689cccf0e5daec`,
+all **twelve normal/narrow scenario/restart pairs pass**, with **all 52 successful
+PNGs independently inspected**. Normal evidence is `ur-final4/`; fresh narrow
+is `ur-n4/`. Root also inspected narrow cooldown result: complete text, action
+and focus ring are unobscured. Inline cooldown/pending feedback remains readable;
+positive confirmations retain their toast, and newer Unicode channel/thread text
+visibly survives restart. Exact strict row flags, bounds and full durable paired
+state pass. All 24 successful owned processes have matching creation/exit/cleanup,
+before/after binary hash and pointer restoration. Narrow adds 274 sampled pointer/
+window checks. Normal six SQLite databases were independently opened read-only and
+exactly matched complete canonical/FORMAT5/revision dictionaries. Twelve actual
+`drafts.info` POST read builders, zero writes and zero restart requests are recorded.
+
+The initial narrow attempt in `ur-final4/` aborted on pointer movement from
+[512,25] to [505,0]. Both PNGs and failed cleanup were inspected: initial/checking
+content is readable, the owned process exited, and restoration was correctly
+skipped to preserve the new pointer position. Its closed log has readiness but no
+terminal workflow receipt. It is not counted as a successful pair. The fresh
+narrow rerun retained every guard and did not require source/binary changes.
+
+This closes the disconnected explicit Update recovery/visibility gate, not live
+payload compatibility, OS IME, arbitrary crash/power-loss durability, or ordinary
+autosave. Restarts use controlled owned process termination. The broader acceptance
+matrix remains open. Next source integration is released for the independently
+reviewed full bulk reconciliation seam/tests and terminal-consumption newer-local
+preservation; their eighteen tests each are authored but not yet run. No automatic
+remote draft synchronization or Send/Schedule eligibility is activated by them.
+
+The reviewed bulk patch is integrated across eleven targets and its actual wiring
+is independently clear. It adds eighteen async tests while preserving all seven
+existing reducer tests and the counts-only native fixture. Core execution wrappers
+share their original builders/decoder through the injected boundary. Terminal-local
+preservation is also integrated, with fourteen new core/store and four desktop
+regressions plus the updated existing Schedule preservation case. Its actual hooks
+are under final review; root Cargo gates have not run on either integration yet.
+
+Actual integrated terminal-local review is now independently clear: constructor
+initialization, sole positive-receipt mint, later ownership invalidation, legacy
+missing-marker loading, historical-base marker omission, and full-state indexed
+candidate revalidation were checked in the actual source. The independently locked
+core suite passes **1,398 / 5 ignored** (36.90s compilation, 19.90s tests), including
+all fourteen new core/store regressions. Formatting passes. Focused desktop bulk
+reconciliation and checkpoint suites are compiling; full desktop remains pending.
+
+The first focused desktop compile stops before running tests: new pipeline fixtures
+import both production and fixture `run` through glob imports (24 ambiguity errors),
+and one unread-count assertion compares Option<u32> to a bare integer. These are
+scoped test compile corrections; no runtime success is claimed. The sequential
+checkpoint suite was not reached. Original failure log is retained at
+`tmp/windows-bootstrap/reconcile-pipeline-focused-tests.log`.
+
+The new VirtualDom test harness was checked against the official Dioxus0.7 testing
+and hooks guides, exact pinned revision57d6794ad60b949e5bd8aa282f6f8c3dc97a365e,
+and the existing new_dm/directory_runtime_tests.rs pattern. new_with_props plus
+rebuild_in_place is the documented no-renderer test path; the retained VirtualDom
+owns the test signal lifetime. No native window is created by these async tests.
+The compile fixes change only explicit test imports and the optional-count type;
+all eighteen new behavior assertions remain in place.
+
+The corrected focused desktop gates pass: **25 bulk reconciliation tests** in
+0.08s after3m05s compilation, and **26 checkpoint tests** in0.38s. Full desktop
+then passes **1,427 /7 ignored** in4.84s; formatting and whitespace checks pass.
+Core remains independently locked **1,398 /5 ignored**. This verifies the actual
+production reconciliation pipeline with synthetic execution, including the new
+subscription/cursor guard and successful retry feedback; it is not live Slack
+acknowledgement or full workspace-history coverage. New terminal-local capability
+and migration regressions also pass. No dev executable has been rebuilt for this
+cohort yet; the last captured binary remains da7ebcd0 from the recovery gate.
+
+Unreferenced bulk preparation was safely moved from src/.../reconcile/prepared to
+`tmp/bulk-reconcile-prep-validated/` after validation. The original patch/snapshots
+remain there as historical evidence; promoted source and compile fixes are the
+current implementation. Acknowledged supported-text Send preparation at
+`tmp/acknowledged-send-prep/` is now independently reviewed and integrated: one
+production eligibility condition removed, seven tests wired. Actual-diff review
+is clear; root focused/full desktop gates are next. No Schedule/files/autosave or
+realtime activation is included.
+
+
+## Acknowledged supported-text Send source gate, 2026-10-14
+
+The reviewed change removes only the acknowledged-none eligibility condition in
+`drafts/send.rs`; all blocked/uncommitted/workflow/consumption, captured binding,
+local snapshot and shared Editor checks remain. Seven isolated SQLite/Editor/
+single-attempt regressions verify acknowledged channel/thread requests with exact
+server ID, supplied UUID and frozen newer blocks; subsequent typing; lost ACK and
+restart without replay; prepare/receipt storage failures; stale clicks; and
+captured-owner completion after account replacement. Retained primary client
+source proves forwarding of supplied UUID/draft_id, not server deduplication.
+
+The first focused command compiled in 2m18s but matched zero tests because its
+filter used the filename rather than module/test names. Preserve that log as
+compile evidence only. Corrected `acknowledged_` filter passes 13 tests including
+all seven new cases in 0.25s. Full `cargo test --locked` passes **1,434 / 7 ignored**
+in 5.46s; formatting and whitespace checks pass. Logs are under
+`tmp/windows-bootstrap/acknowledged-send-*`. Core source is unchanged from the
+independently locked **1,398 / 5 ignored** gate. No new dev executable or native
+send outcome is claimed. Schedule/files, automatic autosave and production draft
+realtime ingress remain separate work. Slack CDP9222 remains reachable with one
+client renderer after the reboot; no additional Slack restart was necessary.
+
+
+Supplemental Update recovery audit: all six `ur-n4/` SQLite databases were opened
+read-only and independently matched both destinations' exact restart receipt
+state, including owner, format5, storage revision, full sync/canonical content,
+and absence of blocked/alternate rows. This adds durable-state inspection to the
+already completed 26 narrow PNG/closed-receipt audit; no new native run occurred.
+
+The next draft work remains dependency ordered: exact reviewed rich Schedule
+handoff and known-ID positive uncertainty recovery; source-backed ordinary
+observation-flag alignment; captured pre-connect provenance; durable continuity
+and enrollment/index lifecycle; then ordered bounded observation ingress and
+native projection. Production autosave must not precede those prerequisites.
+The broad Lists/Canvas/app-workflow, live interoperability, platform accessibility
+and measured performance requirements in the acceptance matrix remain open.
+
+
+## Ordinary observation flag and reviewed Schedule helper, 2026-10-14
+
+The ordinary observation decoder now admits absent or Boolean false
+`is_from_composer`, matching the existing ACK/review contract and independently
+verified retained B/S primary source. True/nonboolean values, unknown fields,
+partials and unsupported lifecycle still retain exact raw evidence and block
+owned writes. The production delta is four lines; five new regressions cover
+classification and real isolated SQLite persistence/restart/ordering. Actual
+integration review is clear. This does not connect realtime ingress.
+
+The pure `DraftSync::request_reviewed_schedule` helper is integrated and its
+actual diff independently reviewed. It freezes raw dialog blocks against the
+complete predecessor while preserving known base ID/UUID and exact routing,
+then uses the existing terminal consumption path without an intermediate Update.
+Ten authored tests cover stale/blocked/pending states, routing, broadcast forms,
+invalid time, revision exhaustion, newer local preservation and restart. Existing
+structural raw validation is deliberately not full Block Kit semantic validation.
+Only acknowledged, file-free ownership is in this first helper; no desktop caller
+activates it. Exact Editor/dialog handoff, known-ID Schedule checks and lossless
+rich rejection recovery remain required; local-only Schedule is still open.
+Root's locked core and desktop gates are next/running for this cohort.
+
+
+The observation/Schedule-helper source gates pass: independently locked core
+**1,408 / 5 ignored**, compilation40.09s/tests22.55s; focused desktop observation
+**15 passed** in0.26s, including all five flag regressions; full desktop
+**1,439 / 7 ignored** in5.45s. Both formatting checks and whitespace checks pass.
+Logs: `tmp/windows-bootstrap/schedule-helper-*` and
+`ordinary-observation-focused-tests.log`. No new dev build/native evidence yet.
+
+The next reviewed preparations are known-ID Schedule readback (13 tests), exact
+Editor/Owner plus whole-inventory SQLite handoff (10 desktop/3 worker tests),
+and captured pre-connect socket provenance. They remain separate from activation.
+The acknowledged Send native fixture/runner preparation exercises the shared
+runtime with synthetic HTTP results; its 17 Python receipt tests pass while Rust
+preparation and native execution remain unverified. Production source extraction
+and fixture review are required before root's next frozen build/native gate.
+
+
+Known-ID Schedule readback is integrated and actual-diff review is clear: thirteen
+new tests are wired, while Binding::check_operation and desktop recovery UI still
+admit only Send/Update. The Editor/Owner full-inventory transaction and FIFO worker
+adapter are also integrated with actual review clear (ten desktop, three worker
+tests); no scheduling UI or HTTP coordinator calls them yet. The first combined
+core gate stops at a test compilation error: schedule_recovery_tests indexed
+Loaded.local by DraftKey even though it is a vector of key/value pairs. No new
+runtime outcome is claimed; the original log is retained at
+`tmp/windows-bootstrap/schedule-handoff-core-tests.log`. A scoped key-lookup test
+correction is in progress before rerunning the gate.
+
+
+The corrected combined core gate passes **1,418 / 5 ignored**, compilation38.56s,
+tests22.57s (`schedule-handoff-core-tests2.log`). The key-lookup correction retained
+the full local-preservation assertion; original failed compile and prep remain.
+This includes five pure/two SQLite Schedule-readback tests and three new FIFO
+worker Schedule tests, in addition to the prior helper suite. Desktop compilation
+is running for the six readback, ten Editor-handoff and ten socket-source tests.
+
+Captured socket provenance is integrated and actual-diff reviewed clear. It
+splits immutable pre-connect parameters/Binding from accepted generation, uses
+per-team worker allocation identity, and requires `can_accept` before the host
+changes core generation. Ten tests cover stale/duplicate updates, credential
+changes, account return, equal-binding shell replacement and background teams.
+No realtime worker hookup is present; durable stream/admission work stays outside
+compiled source under `tmp/draft-ingress-prep/` and does not change format5.
+
+
+The first combined desktop draft gate compiled, then reported **268 passed /
+1 failed / 1 ignored** (1,202 filtered). The new whole-inventory Schedule race
+test incorrectly used `DraftStore::save` against a managed row; that API correctly
+refused the non-atomic write before the intended race could be injected. This is
+a test setup failure, not proof of the intended race guard. The original log is
+retained at `tmp/windows-bootstrap/schedule-source-focused-desktop-tests.log`.
+The full desktop suite and following format checks did not run after this failure.
+The scoped correction and rerun precede native Send fixture integration. Slack
+CDP remains available on port 9222 after the reboot; no additional restart needed.
+
+
+The Schedule test correction is independently reviewed clear. It uses the existing
+conditional local handoff, which preserves rejected input as a blocked version,
+and verifies the injected inventory before the whole-inventory commit: paired
+local plus complete sync state/revision unchanged, blocked content retained, and
+exactly zero/one owned alternate. Original stale/no-consumption assertions remain.
+To avoid two repeated compilations, the corrected test and reviewed acknowledged
+Send native fixture are included in one next desktop gate. The promoted runner's
+**23 Python receipt tests pass** (0.625s). No native result is claimed yet.
+
+
+Actual Send fixture integration review confirms all fifteen files match the
+reviewed preparation, including retained Schedule/socket hooks. The first Rust
+compile exposed two nested module path declarations under the explicitly mapped
+`send_fixture.rs`; root added explicit `send_fixture/isolation.rs` and
+`send_fixture/seed.rs` paths without behavior changes. Failed compile log is
+`ack-native-focused-desktop-tests.log`; the corrected combined gate uses the
+`ack-native-...tests2.log` files. Core remains at its passing 1,418-test gate.
+
+
+Corrected combined gate passes: focused desktop drafts **272 / 1 ignored**
+(compilation2m45s, tests2.16s); full desktop **1,468 / 7 ignored** (tests5.22s);
+root/core formatting and whitespace checks all pass. Logs are
+`tmp/windows-bootstrap/ack-native-focused-desktop-tests2.log`,
+`ack-native-desktop-tests2.log`, and `ack-native-*format2/whitespace2.log`.
+This includes six Schedule readback, ten Editor handoff, ten socket-source and
+three Send fixture tests beyond the prior desktop1,439 gate. Independently locked
+core remains **1,418 / 5 ignored**; no core source changed in native fixture
+integration. Locked dev build is running (`ack-native-build.log`). No new native
+result yet.
+
+
+## Acknowledged Send native pilot, 2026-10-14
+
+Locked dev build passes in **4m45s**, executable SHA
+`70998090763344f6c8ca92c2838f56c033c80d83479a9bf7fcd4526bc74ef345`.
+The first normal `ack-newer-channel` pilot in `tmp/agent-ui/as1/` stops before
+Send on the checker visibility assertion. Its sole failure PNG was inspected by
+root and independent reviewer: the Send button is visibly unobscured. The checker
+sampled rectangular 5% corners on a 28px button with 6px rounded corners; these
+points are 6.505px from the arc center and outside the actual hit shape. This is
+a checker false failure, not a successful native Send. Owned process exit and
+pointer restoration are observed; no restart or later scenario ran. The fixture
+log, database, failure receipt and PNG are retained. A button-only shape-aware
+sampler with explicit hit-point diagnostics and occlusion regression checks is
+being prepared; field/footer visibility gates remain unchanged.
+
+
+The scoped Send checker correction is independently reviewed clear: nine required
+hits cover the center, four edges one CSS pixel inward, and four radius-derived
+45-degree arc points one pixel inward. Unsupported computed radius shapes fail
+closed; original field/footer grids and complete viewport containment remain.
+Each hit retains its coordinate, name, ownership result and actual element.
+`scripts/test-managed-draft-send-hit-surface.py` extracts the actual embedded JS;
+all **11 tests pass**, including visible rounded geometry, edge/corner/center
+occlusion, unchanged field/footer failures, and unsupported shapes. Root format
+and whitespace checks pass; locked dev build2 is running. No production Send
+behavior or UI style changed in this correction. The full Rust suite was not
+repeated for this JS-only checker change; its preceding1,468/7 gate is above.
+
+
+The corrected locked dev build passes in **3m31s**, SHA
+`cd881dcc690e54e9fa799ab1d18f4e64648c9a800657e7e00e4274ffbb4352d9`.
+All **twelve normal/narrow acknowledged-Send scenario/restart pairs pass** in
+`tmp/agent-ui/as2/`, spanning **24 owned processes and 72 successful PNGs, all
+independently inspected**. Root also inspected both pilot result PNGs. The final
+receipt validator independently checks sampled coordinates/shape/ownership and
+passes **28 Python tests** (1.671s); the promoted actual-JS test passes eleven.
+Logs: `ack-native-build2.log`, `ack-native-receipts2.log`,
+`ack-native-hit-promoted-tests.log`, `ack-native-pilot2.log`, `ack-native-tail2.log`
+under `tmp/windows-bootstrap/`. Original as1 failure remains separately retained.
+
+Closed readiness/terminal/stage records, full prepared request/message/pending
+state, exact executable hashes and owned creation/exit identities pass. Twelve
+actual `chat.postMessage` builders each freeze acknowledged base ID/supplied UUID,
+raw blocks and routing; all twelve restarts prepare **zero requests**. All twelve
+databases were independently opened read-only and matched against complete restart
+inventories: both canonical drafts, every format5 revision/state, account owner,
+unchanged sibling, expected target release or retained uncertainty, and no
+unexpected blocked/alternate/reviewed-writer/upload rows. Held-response restart
+changes only InFlight to Uncertain with the expected storage revision increment.
+
+Normal audit inspected36PNG and362 pointer samples; narrow inspected36PNG and351
+samples (**713 total**). All24 phases exit and restore the pointer. Newer Unicode
+text, backward native selection and focus remain; thread post-clear input resets
+broadcast while the frozen send retains its original broadcast. Positive thread
+messages appear in the channel only after confirmation; lost ACK shows unconfirmed
+status, held response remains Sending until controlled termination, and unresolved
+restart Send is blocked with readable feedback and no state mutation/replay.
+Complete composer controls are contained at both sizes; no scoped clipping or
+obstruction observed. These are synthetic DOM inputs/HTTP results and controlled
+owned process termination, not live delivery, trusted OS IME or crash durability.
+No general performance improvement is claimed. Ordinary autosave/realtime ingress
+and managed Schedule creation remain inactive; the broad acceptance matrix remains.
+
+
+## Managed Schedule recovery and rejection source cohort, 2026-10-14
+
+The previous turn made concrete progress: the acknowledged-Send native matrix
+completed with inspected artifacts. The next reviewed Schedule recovery UI is now
+integrated (ten targets, nineteen authored tests): explicit Schedule labels and
+known-ID read dispatch, durable completion before projection, captured queue
+scope/generation and successor/writer guards. It never reconciles chat or clears
+native input, and it retains managed local ownership for explicit Continue
+editing locally rather than using generic release across later successors. Actual
+integration review is clear; tests have not run yet.
+
+Rejected-Schedule retry/replace helpers are also integrated and actual-review
+clear (eight implementation/test files and eight wiring changes; fifteen tests).
+Only definitive rejection qualifies. Retry retains the frozen intent; an explicit
+replacement creates a fresh intent against the same verified owner/base, while
+full-inventory SQLite comparison preserves the separate local draft bytes. No
+UI or HTTP caller activates these helpers yet. Neutral metadata integration and
+the combined locked source gates are next; current native attribution remains
+cd881dcc. Raw-rich creation/rejection UI and Schedule recovery native fixtures
+are being prepared outside compiled source.
+
+
+All reviewed preparations are now integrated and actual-review clear. Neutral
+metadata's twelve-file delta matches its reviewed patch and preserves all29
+protected files; it adds nine regressions. Continuity is a private **cfg(test)**
+cohort only: seven exact candidate files, two guarded module declarations and
+two read-only private test getters. No runtime callers or production v6 migration
+were introduced.
+
+The combined independently locked core suite passes **1,447 / 5 ignored**
+(compilation46.74s, tests20.93s) at
+`tmp/windows-bootstrap/schedule-recovery-cohort-core-tests.log`. This includes
+the eighteen continuity tests, six rejected-Schedule policy/three worker tests,
+and two core neutral-metadata tests beyond the prior1,418 gate. The desktop
+focused/full gate is compiling for the remaining nineteen recovery, six rejected
+Editor and seven metadata regressions. Current executable/native evidence remains
+cd881dcc; these newer source changes have not been built or captured yet.
+
+The desktop gate completed before the reboot: focused drafts **304 passed / 1
+ignored**, full desktop **1,500 passed / 7 ignored** (5.79s), with no failed tests.
+Logs are `schedule-recovery-cohort-focused-desktop-tests2.log` and
+`schedule-recovery-cohort-desktop-tests2.log` under `tmp/windows-bootstrap/`.
+The first compile attempt failed at the recovery row conditional label; checking
+the official Dioxus0.7 conditional-rendering documentation established the RSX
+expression needs its own braces. That small correction is mirrored in the
+reviewed preparation. Root/core formatting and whitespace checks were rerun
+successfully after the reboot. No new dev build or native capture is claimed.
+Slack's existing CDP endpoint on127.0.0.1:9222 responds with a client renderer,
+so no restart was necessary. The Schedule recovery native preparation's accidental
+UTF8 corruption was confined to staged copies, retained as failure evidence,
+corrected from intact active files and independently cleared; final receipt
+oracle review remains before promotion.
+
+The next raw-rich managed Schedule UI/controller source package is now integrated
+from its reviewed 17-target patch, with all installed LF hashes matching the
+manifest before the sole formatter-required module ordering adjustment. It adds
+eleven authored tests (two final-admission races, three real storage/request
+pipelines and six projection guards). Review corrected equal/unversioned queue
+replacement and stale editor projection; final projection rechecks current state
+and retains newer input. Creation and rejected Retry/Change use mode-specific
+copy. The fixture Binding is an uninhabited inert stub pending the separate
+creation native package. Compilation/tests and native proof are not yet claimed.
+
+Root ran the staged Schedule recovery receipt suite: the first attempt found an
+undefined variable in a newly split test. The corrected suite passes all19 tests
+(1.316s), including the full16-case/both-size valid matrix and two restart paths.
+This is validator evidence only; native Schedule launches remain pending.
+
+Schedule recovery's18-target package is now installed and actual-review clear;
+the only whitespace cleanup removes one trailing blank line from the receipt
+helper. Promoted Python checks pass19 (1.403s). UI actual review confirms16/17
+manifest hashes, with only the approved module ordering differing. The initial
+combined Rust compile failed because the successor fixture called a private
+Owner helper. Its scoped correction uses a local Queue and public Editor
+submit/flush, checks the consumed revision, and leaves shell writer identity
+None-to-None; no production visibility was widened. Focused recompile is running
+with source frozen. No additional native attribution yet.
+
+The correction passes independent actual review. Focused draft tests now pass
+**318 / 1 ignored** (compile3m20s, tests2.71s), and the full desktop suite passes
+**1,514 / 7 ignored** (6.13s). All14 newly integrated Rust tests are included.
+Formatting and whitespace checks pass. Logs are
+`managed-schedule-integrated-focused2.log` and `managed-schedule-integrated-full.log`.
+The locked dev build is running in `managed-schedule-recovery-native-build.log`.
+The independently locked core remains at its previous1,447/5 gate; this cohort
+changes no core source. Actual native Schedule evidence is still pending.
+
+Locked dev build passes in **5m49s**, SHA
+`068eae94f4d2257a46b611744f77964890d96df2e4e1fd45e53b03135dca845b`.
+The Schedule recovery positive-channel pilot passes both sizes in
+`tmp/agent-ui/sr1/`: **all14 PNGs independently inspected**, both complete SQLite
+inventories match all five canonical/format5 rows, and blocked/alternate/writer/
+upload tables are empty as expected. Closed logs, ordered stages, owned process
+identities, unchanged executable hash,133 pointer samples and restoration pass.
+Each process prepares exactly one actual drafts.info request; no message mutation
+or resend occurs. Root also inspected the narrow Scheduled capture. Frozen rich
+content, three withheld unsupported actions and retained current text are readable.
+
+The next positive-thread run fails after its result capture with **Timeline anchor
+unavailable** in the subsequent composer-remount checker. All four PNGs have been
+inspected; the recovery result itself shows retained local text and confirmation.
+The run is retained as failed evidence, not a passed thread case. Root is running
+independent channel cases on the same frozen binary while the helper is diagnosed.
+No full-matrix, restart, live Slack or OS IME claim is made from the pilot.
+
+The remaining eleven channel scenarios pass both sizes on the same068eae94
+binary: **24 successful case receipts total**, including the pilot, and28 owned
+processes including cooldown/pending restarts. The failed thread run is separate.
+Both-width audits have personally read all120 successful PNGs and checked every
+database read-only against the complete recorded inventory. All24 channel cases
+are verified within their synthetic scope. The remount correction is source-reviewed and passes10 actual-JS tests;
+it waits for the exact timeline tail and preserves the real navigation-success
+and final-position gates. It is not yet promoted or natively verified.
+
+## Bounded public Lists continuation interoperability probe, 2026-10-14
+
+The documented `slackLists.items.list` endpoint has a cursor contract, but its
+compatibility with the existing desktop session was unproven. The independently
+reviewed temporary probe passed14 pure tests (compile12.13s) and a locked core
+example build (3.54s). It used captured modern metadata and a temporary debug/
+env-gated secret-only reader, avoiding migration-capable config loading. Exact
+private channel membership and positive List sharing association were checked
+before reading rows. Its caps were15 HTTP sends, six public pages, four hydration
+reads,20s/call and180s network phase; redirects and retries were disabled.
+
+The real read-only public-host experiment completed four calls in9.587s: private
+channel and List guards passed, internal `lists.records.list` returned five rows
+with a terminal cursor, and public `slackLists.items.list` returned
+**not_allowed_token_type**. No public page or hydration was accepted, and there
+were zero writes, redirects, retries or application-state publication. This
+rejects the proposed public-endpoint route for these captured desktop credentials;
+it does not establish internal pagination or another token's compatibility.
+No workspace-host fallback was attempted. Logs are `list-public-probe-tests.log`,
+`list-public-probe-build.log` and sanitized `list-public-probe-live.log` under
+`tmp/windows-bootstrap/`. All six temporary example sources were hash-checked
+then removed, and the accessor patch was reversed; config source is restored
+exactly. The reviewed tmp preparation and sanitized evidence remain.
+
+## Large-directory completion baseline, 2026-10-14
+
+Added the isolated reusable `examples/completion_baseline.rs` and
+`scripts/completion_baseline/corpus.rs`, which invoke the actual core suggestions
+function under the application's locked dev profile. Build passes in19.80s. The
+immutable before executable is retained at `tmp/completion-baseline-binaries/before.exe`,
+SHA `3ac5794fc79280b8d9bd38beecb761a4a766f1ee013143eb3aea3e941d1927bf`.
+Five processes each ran24 queries over2,000/10,000/64,000 metadata rows, with two
+warmup rounds and twelve measured rounds. Exact full suggestion identities,
+labels, details and order match across all processes; executable hashes match
+before/after. Raw samples and receipt are in `tmp/completion-baseline-before/`.
+
+For `@alex`, pooled median/p95 actual-model wall time is **1.406/1.570ms** at2k,
+**7.797/9.161ms** at10k and **57.884/68.685ms** at64k. The64k no-hit person query
+is **54.682/63.463ms**; `#project` is **3.374/3.888ms**. These are60 samples per
+query across five randomized-map processes, not a real Slack population census.
+Timings exclude corpus construction, trigger parsing, comparison, serialization
+and result deallocation. This demonstrates expensive synchronous person-search
+work for the large synthetic directory and justifies an indexed-search candidate.
+It is not input-to-paint latency, startup performance or a speedup. Correlated
+native baseline instrumentation and an equivalent-ranking optimization remain.
+
+## Next managed Schedule native source gate, 2026-10-14
+
+The reviewed recovery remount correction is now promoted with its two strict
+Python anchor validators (22 tests pass) and10 actual-JS tests. The creation/
+rejection native package is also promoted:18 exact reviewed targets, including
+the same checked remount sequence, eleven scenarios and four authored Rust tests.
+Its promoted Python suite initially failed a test that assumed it was still in
+tmp; the test now forces staged refusal explicitly while checking the actual
+location flag. All24 Python tests and10 actual-JS tests pass; formatting passes.
+The focused Rust gate is running in `managed-schedule-native-focused.log`.
+No new build/capture attribution is claimed for these changes yet.
+
+The first native-fixture Rust compile failed on private Account/Backend access
+from the view checker and private Editor construction in one seed test. Root
+replaced these with a fixture-specific boolean that checks the exact isolated
+account/path and the public Queue editor factory; no production API visibility
+was widened. Formatting passes, and corrected focused compilation is running
+in `managed-schedule-native-focused2.log`. Original failure log is retained.
+
+The corrected focused gate passes **322 / 1 ignored** (2.75s), and the full
+desktop suite passes **1,518 / 7 ignored** (5.71s). Formatting and whitespace
+checks pass. The locked Windows dev build is running in
+`managed-schedule-native-build2.log`; new native evidence is still pending.
+Slack's local CDP endpoint has a client renderer after the reboot notification,
+so no Slack restart or session change was needed.
+
+The locked dev build now passes in **4m38s**, SHA
+`7796e904b3acb259dd18e328b3569a60b25e7c81c035377f96e7cb3b04870c9a`.
+The corrected positive-thread recovery pilot passes both native sizes in
+`tmp/agent-ui/sr2/`; its eight PNGs and exact receipts are being independently
+inspected. The remaining recovery matrix is running on this same binary.
+The earlier `sr1/` evidence remains attributed to `068eae94`, including its
+separately retained thread remount failure.
+
+The new recovery sweep completed all32 scenarios/sizes on `7796e904`:31 runner
+passes, with153 successful PNGs and one failed narrow typing-commit case with
+six retained PNGs. Independent source/receipt review traced that failure to
+`details.inputProjection`: the captured Editor was already settled at revision3
+with the exact newer draft, while the shell's managed view still held revision1
+plus the same newer draft as `uncommitted`. Final Editor, shell and SQLite all
+agree at revision4 with no uncommitted value. The fixture flushes the Editor
+but does not await normal shell publication before its strict intermediate
+snapshot. A bounded read-only publication barrier is being prepared; the
+validator is not weakened and the failed run is not relabeled as a pass.
+All75 non-pilot normal PNGs, both positive-thread pilot8 PNGs, and five
+additional narrow-case25 PNGs have been inspected (108 successful images total);
+the final nine narrow cases are under inspection. Raw-rich Schedule creation
+normal/narrow pilots are now running separately in `tmp/agent-ui/ms1/`.
+
+All153 successful `sr2/` PNGs are now independently inspected, along with all
+six failed-run PNGs. Closed receipts, exact read-only SQLite inventories,
+process identities, binary hashes and pointer restoration pass for the31
+successful cases. The reviewed publication barrier is promoted unchanged:
+it waits for normal runtime publication of the captured settled Editor view,
+including exact owner/pointer/serial/scope and durable newer text, and adds
+three focused tests. No receipt-oracle allowance was added.
+
+The creation pilot stops on its first normal rich-channel case before its editor
+capture. Both initial/failure PNGs are inspected. The dialog inherits absolute
+positioning while mounted inside the positioned composer; its top follows the
+composer and autofocus scrolls its ancestor, leaving the dialog footer outside
+the viewport. A scoped fixed dialog/scrim with a bounded body and stable
+header/destination/footer is being prepared, with separate honest body scroll
+captures for narrow windows. No creation scenario is claimed passed.
+
+The reviewed native completion baseline's14 manifest targets are promoted
+byte-for-byte. Its twelve JS checks and four Python groups were independently
+reviewed; compilation/native results remain pending. The protected recovery v7
+prototype is also promoted as14 private test-only files plus two cfg(test)
+hooks and a cfg(test) deadline getter. All33 authored tests are pending. Initial
+core compilation rejected a SQLite u64 read in archive release; the correction
+reads i64 and checks u64 conversion, rejecting negative revisions. The corrected
+independently locked core suite is running in `protected-recovery-core-full2.log`.
+Production v5 selection, ordinary observation ingress and autosave are unchanged.
+
+The corrected independently locked core gate passes **1,480 / 5 ignored**,
+including all33 new protected-recovery regressions (41.60s compile,22.83s tests).
+The actual-integration review confirms all14 performance files byte-for-byte,
+both publication-helper files text-for-text, and all protected-recovery source
+apart from the explicitly reviewed checked integer conversion. Test-only hooks
+and unchanged production bases are verified. Full desktop tests are now running
+in `completion-publication-desktop-full.log`; no new native binary has been built.
+
+The desktop gate for completion instrumentation and the recovery publication
+barrier passes **1,523 / 7 ignored** (6.64s tests). The seven-target dialog layout
+correction is now promoted from independently verified patch
+`901c2f885a10eb58202f56eb3ac0f84eb62b490774c83dc95b7fb35cf4509cc9`.
+All six base hashes matched; the unchanged runner is excluded. Promoted31 Python
+tests pass (0.618s), all8 actual-JS layout tests pass, and formatting passes.
+The next full desktop suite and locked dev build are running sequentially in
+`schedule-layout-desktop-full.log` and `schedule-layout-native-build.log`.
+Native verification of the corrected viewport containment and publication barrier
+still awaits that new executable; prior31 recovery passes remain on7796e904.
+
+The full desktop suite after the layout correction passes **1,523 / 7 ignored**
+(6.11s). Formatting and whitespace checks also pass. The sequential locked dev
+build is now running; no new native screenshot attribution yet.
+
+The locked dev build passes in **4m43s**, SHA
+`497d9587dea353f7aa0133e11fe4c7bdb98f980e81b0559ee28c2d1742d5995f`.
+Both typing-recovery scenarios at both sizes are now running in `tmp/agent-ui/sr3/`.
+The same executable is preserved at `tmp/completion-baseline-binaries/native-before.exe`
+for native before/after performance comparison; this is separate from the earlier
+pure-model `before.exe`. No new native pass is inferred from the build result.
+
+## Completion source integration and partial native baseline, 2026-10-14
+
+The seven-target completion index and three emoji cohorts (18 source/assets plus
+two declaration hooks) are promoted and actual-review clear. Runtime callers remain
+unchanged; neither index nor new emoji helpers are activated. Core compilation
+succeeds, but the full gate fails: **1,517 passed / 1 failed / 5 ignored** (22.99s).
+`composer_emoji::search::tests::complete_source_catalog_matching_metadata_and_final_order`
+finds an exact ratio mismatch for `sm` / `sweat_smile` (0.18181818181818182 versus
+0.18181818181818185). The suspected JSON parser rounding boundary was checked
+against the actual JavaScript decimal; a source IEEE-bit oracle correction is
+under review. Preserve `tmp/windows-bootstrap/completion-emoji-core-full.log`;
+there is no passing replacement gate yet. The negative reviewed-writer-floor
+regression is also promoted, with execution still pending.
+
+The six-target Schedule notice fixture correction is promoted. It records the
+actual expected notice, uses its real dismiss control, proves absence, then keeps
+the existing strict panel checks. Its 36 Python and eight actual-JS checks pass;
+new native verification remains pending. No production toast/CSS behavior changes.
+
+Native completion `cb1/` plus the four successful `cb2/` 2k/10k normal/narrow runs
+have **five closed receipts / 20 inspected PNGs**, independently audited clear:
+504 queries and 209 pointer samples. The cb2 DOM / next-RAF medians are **8.8 /
+11.6ms** (2k normal), **8.6 / 12.1ms** (2k narrow), **17.7 / 22.7ms** (10k normal)
+and **16.1 / 19.1ms** (10k narrow), on immutable `native-before.exe` / `497d9587`.
+These are synthetic warmed-directory measurements, not physical paint or a
+before/after speedup. Both cb2 and cb3 64k normal attempts failed before measurement:
+24 reference queries blocked the UI thread for roughly 800ms, exceeding the 250ms
+caption timeout. Both failure PNGs were read by root. cb3 cleanup also raised
+WinError145 and masked the receipt; its traceback is retained. Bounded untimed
+setup yielding and cleanup diagnostic preservation are staged, without weakening
+measurement assertions. The full native baseline remains incomplete.
+
+The corrected source gate now passes independently locked core **1,519 / 5
+ignored** (22.93s compile, 22.02s tests), including the 34th protected-recovery
+negative writer-floor regression. The oracle adds source-produced IEEE bits while
+preserving the original decimals, metadata and ordering exactly; only test
+comparison changes. Log: `completion-emoji-core-full2.log`; retain the first
+failed log. Index/emoji runtime activation and production storage remain unchanged.
+
+The paired fixture setup three-target and cleanup two-target patches are promoted
+exactly and actual-review clear. Ten cleanup Python tests, formatting and
+whitespace checks pass. Full desktop passes **1,526 / 7 ignored** (5m04s compile,
+5.94s tests) in `completion-schedule-desktop-full.log`. Schedule notice's 36 Python
+and eight JS checks already pass. The locked dev build is running in
+`completion-schedule-native-build.log`; new binary and native reruns are pending.
+Keep the partial 497d9587 completion baseline and cb2/cb3 failures separately
+attributed. These source gates do not complete the native baseline or establish
+an optimized runtime result.
+
+## Setup-corrected native baseline and Schedule continuation, 2026-10-14
+
+Locked dev build passes in **5m23s**, SHA
+`9284265ea21390955089707acca1de6944187a012bd48ded1ad65f34344f4680`,
+preserved at `tmp/completion-baseline-binaries/native-before-setup.exe`.
+`cb4/` 64k normal/narrow passes independent audit: five rounds, 240 samples,
+all eight PNGs inspected, 164 pointer samples and empty cleanupErrors. @alex
+DOM / next-RAF medians are **70.5 / 73.7ms** normal and **74.2 / 77.4ms** narrow.
+No optimization is active. The older 497d9587 2k/10k results remain separately
+attributed; this is not a complete same-binary baseline or a speedup claim.
+
+`ms3/` narrow rich-channel/thread passes two restart pairs / four processes with
+all14 PNGs independently audited, exact SQLite inventories, one drafts.update per
+exercise, zero restart requests and actual notice-dismissal UI proof. The `ms4/`
+full sweep passes two normal rich pairs / 14 PNGs (audit underway), then stops on
+its third normal case, retry-channel. Root read all four failure PNGs. Source
+diagnosis identifies a real UI lifetime bug: the conditional RejectedSchedule
+child unmounts when consumption changes its row, dropping the dialog before the
+HTTP acknowledgment. A retained host fix is staged; the receipt oracle is not
+relaxed. `ms5/` is running twelve non-retry cases. Preserve original failures and
+passed receipts; no complete creation/rejection matrix is claimed.
+
+The `ms4/` normal rich-channel/thread pairs now pass independent acceptance audit
+with all14 PNGs. Its four retry failure PNGs are audited and confirm the transient
+conditional-host lifetime bug; the retained host fix remains staged. `ms5/` normal
+newer-channel/thread pairs also pass independent audit: all14 PNGs, exact SQLite,
+one request per exercise, zero restart requests and143 pointer samples.
+
+The next `ms5/` stale-owner case fails with all four PNGs read. The footer correctly
+retires stale context; the fixture incorrectly expects the stale modal to remain.
+`ms6/` lost-ACK fails with all six PNGs read by review_layout. Source diagnosis
+finds an unconditional fixture bypass in integration::legacy_allowed that permits
+the legacy modal; production's managed-owner gate already rejects that path.
+The narrow fixture correction is pending. These failed runs are not exact
+request/durability-ledger evidence. `ms7/` held-response runner terminates with
+exit1; its review_layout audit remains pending. No native run is active, and no
+full Schedule matrix pass is claimed. Slack CDP responds; no restart was needed.
+All earlier artifacts and broader unfinished acceptance boundaries are preserved.
+
+`ms7/` remains overall FAIL after review_layout read all six PNGs. The complete
+held exercise proves one prepared request with pending delivery false; restart
+fails the same fixture legacy bypass, so it has no validated restart request
+ledger. Exact SQLite evidence does establish thread InFlight ? Uncertain, storage
+revision4 ? 5 and local revision2, with newer content, frozen intent and sibling
+unchanged. `ms8/` narrow newer-channel/thread passes independent audit: two restart
+pairs / four processes / all14 PNGs, exact SQLite, one request per exercise and
+zero restart requests.
+
+The ten-target Schedule retained-host, fixture ownership and stale retirement
+correction is integrated. Installed bytes match all reviewed candidates, including
+the durable pipeline regression; patch SHA
+`e71e899eb3d33ef48a71618ef6f9d015b7ef37b39c0e3b0f1cede18eb980cd23`.
+40 Python and eight actual-JS checks plus root formatting pass. Full Rust and
+corrected native gates remain pending; no failed run is relabeled as a pass.
+
+The new core history six-target, Canvas13-target and slash seven-target cohorts
+plus three hooks are integrated and actual-review clear. The first compile error
+required the ReadDoc import. The second full gate reports **1,565 passed / four
+Canvas failures / five ignored** (52.27s compile,22.44s tests). Fixture emoji-
+corruption and stable protobuf-envelope ordering corrections are being staged;
+there is no passing full-suite claim or new runtime activation.
+
+`cb5/` closes four passing 2k/10k normal/narrow receipts after five rounds; its16
+PNGs await independent acceptance_audit. `cb6/` all six fixtures is running as the
+second process cohort against immutable9284265e. Keep source frozen during that
+run and preserve all previous artifacts. A full same-binary native baseline and
+the broader Schedule/parity matrix remain unfinished.
+
+The reviewed core full3 gate passes **1,572 / 5 ignored** (21.50s tests), plus one
+compile-fail doctest (0.18s). Three Canvas corrections match reviewed manifest
+`e8236314f6660dd36f9a560333857336657b35d667cb3746516ad243af8260cd`;
+all20 structural/API tests pass. Only known identity tags1/6/7 are normalized;
+unknown encoded bytes and their relative ordering remain exact. Preserve the
+initial missing ReadDoc trait import and full2 four-failure evidence. Desktop
+full compilation is running, then the example and main builds follow sequentially.
+No new main binary or runtime activation is claimed.
+
+cb5 and cb6 audits are independently CLEAR, with all16 and24 PNGs read. Combined
+cb4+cb5+cb6 totals **12 processes / 48 inspected PNGs / 1,440 samples** on immutable
+9284265e; `tmp/completion-report-prep/cb456-report.json` aggregation passes. cb7
+third replication has not run. Fresh pure-model before2 passes five processes /
+twelve rounds on immutable3ac5794f and is under read_preferences audit. Pure and
+native evidence remain separate; no optimized runtime or speedup is established.
+
+The closed desktop gate passes **1,527 / 7 ignored** (5m12s compile,6.26s tests),
+logged in `reviewed-schedule-desktop-full.log`. The explicit index example build
+passes in0.80s; locked main dev build passes in5m16s in
+`reviewed-schedule-native-build.log`. Immutable main artifact
+`tmp/completion-baseline-binaries/native-schedule-reviewed.exe` has SHA
+`e3d70217d2d5ac60fd487cf66bb9a9197087f55cbe6e7ac9c7a6499e87d66a29`.
+The separate `index-candidate.exe` benchmark has SHA
+`4933499169c1953595d3591955e97dacede895bb6daefd8e852842af502738ee`.
+Full core1,572/5 plus one compile-fail doctest remains the passing core gate.
+
+Refreshed pure before2 audit is independently CLEAR: five processes,4,320 samples,
+full ranking equality, empty stderr and unchanged3ac5794f executable. Checked,
+index and scan modes are running five processes / twelve rounds, then aggregation.
+No new native rerun or runtime optimization is active, and no measured improvement
+is inferred from compilation. Slack CDP REST confirms one client renderer; no
+restart was needed. All earlier binary attribution and failed artifacts remain.
+
+## Managed Schedule native matrix complete; index runtime boundary, 2026-10-14
+
+Final `ms9/` passes all **22 scenario/restart pairs / 44 closed processes** on
+`e3d70217d2d5ac60fd487cf66bb9a9197087f55cbe6e7ac9c7a6499e87d66a29`.
+All **154 PNGs** are independently read: acceptance_audit normal first6=42,
+read_preferences normal last5=35, review_layout narrow first6=42, user_links narrow
+last5=35. Full exact SQLite inventories and pointer/process contracts pass, with
+**20 prepared exercise requests and zero restart requests**. Historical failures
+remain preserved. This is disconnected synthetic DOM/HTTP and controlled restart
+evidence, not live Slack, trusted OS input or crash durability. Production ordinary
+draft ingress/autosave and the broader parity matrix remain unfinished.
+
+The pure index report is complete and independently audited by
+completion_performance: `tmp/completion-report-prep/index-report.json`, SHA
+`974f1c2385040463d4e0bac05ddebfd421a78acddbe4aee55cca7465cc999c2f`.
+All42 Person cases improve median/p95; all ten64k channel cases regress. Future
+channel triggers must use legacy suggestions before index lookup or validation.
+No runtime optimization is active. The lifecycle audit at
+`tmp/completion-runtime-prep/refresh-boundary-audit.json` records64k cohort median
+ranges: capture20.2959-34.9739ms (observed max46.2554), build63.0575-72.4727ms
+(max95.3533), publication scan7.7808-9.3001ms (max12.7337), and replacement
+retirement18.9994-21.8497ms (max26.9447). Capture and destructor costs cannot be
+hidden in the serial UI path.
+
+Runtime wiring is blocked on a complete recurring metadata source owned outside
+the renderer. Boot/persistence alone misses unsaved UserChanged, search/member
+hydration and remote Person adoption; exact validation preserves correctness but
+can leave stale data falling back forever. A complete ownership/refresh boundary
+must prove eventual replacement, account ABA, late publication, cancellation and
+retirement before activation. No full UI persistence clone or periodic cache poll
+is an accepted substitute. cb7 exits0 but its audit is pending; do not count it as
+verified baseline evidence yet. Pure results do not establish optimized native
+latency or physical paint improvements.
+
+## Completion descriptive baseline independently complete, 2026-10-14
+
+cb7 acceptance_audit is CLEAR: all24 PNGs read,720 exact samples, six closed
+processes,349 pointer checkpoints and empty cleanupErrors. The combined
+cb4+cb5+cb6+cb7 report passes at `tmp/completion-report-prep/cb4567-report.json`, SHA
+`5f361af20f081edf0c9a25685198dca7b2aae88ddde7222039a76898b0b8eb66`.
+It contains **18 unique processes / 72 inspected PNGs / 2,160 samples**, three
+processes per fixture and1,056 pointer samples, all on immutable9284265e. This
+completes the descriptive synthetic completion baseline, not optimized-runtime,
+statistical-significance or physical-paint proof.
+
+Startup cs1/cs2/cs3 runners all exit0 on9284265e; independent audit remains pending.
+Idle ci1 is inconclusive: WinError5 while discovering PIDs1264/1412 under1248 leaves
+process coverage incomplete. The retained PNG also shows taskbar overlap despite
+the detector returning an empty list. No idle result is accepted. Preserve this
+failed evidence. Root is preparing protected core/HTTP integration; no new runtime
+activation is introduced, and the broader parity and recurring-capture ownership
+boundaries remain open.
+
+Startup cs1/cs2/cs3 audits are independently CLEAR by read_preferences: all three
+PNGs read, exact closed logs, process/hash/pointer identities and progress. First
+paint measures **673.6556 / 798.1069 / 659.7641ms**, conversation **673.7418 /
+798.1878 / 659.8732ms**. These are probe-on, focused20s observations only; they do
+not establish idle behavior or a live-stall fix. ci1 remains inconclusive.
+
+The44-target protected core/FIFO/HTTP cohort with the empty core test-support
+feature is integrated. Actual audit confirms41 exact targets and three
+compiler-only fixes. Initial default compilation failed on ambiguous glob names;
+corrected default2 compiles in1m01s then aborts with a Windows
+protected-isolated-drafts stack overflow. **Current full gate is NOT PASS**; feature
+tests have not run. Twelve focused HTTP tests pass3.69s, empty-local passes, and
+archived-writer reproduces overflow single-threaded. Root/agents are investigating
+a frame fix. Preserve prior core1,572/5+doctest and desktop1,527/7 as earlier source
+revision gates, not current validation. No production selector, autosave or
+realtime ingress is activated; broader parity remains unfinished.
+
+Guarded idle ci2/ci3/ci5 audits are independently CLEAR by read_preferences: all
+three PNGs read,21 process identities,255 observer records,2,295 hits and pointer
+restoration. Same immutable9284265e,5s settle / 15s quiet. Total CPU median is
+**0.078125s** (range0.015625-0.125); private commit median **329,580,544 bytes**
+(range327,311,360-336,060,416); shared-inclusive working set median **550,215,680
+bytes** (range548,421,632-556,474,368); quiet median **15.0014575s**. The modified
+observer queries may add implicit hit-test overhead. Private commit is not RSS;
+shared pages can be double-counted; coverage is sampled and non-atomic. These are
+descriptive baseline results, not an improvement claim. Startup cs1/2/3 keeps its
+previous separately audited focused-probe scope.
+
+ci1 remains failed/inconclusive with incomplete counters and overlay. ci4's new
+guard correctly refuses a foreign bottom obstruction before quiet sampling; it
+has no PNG/counters. Preserve both. The six collector files are promoted exactly,
+and25 installed mocked tests pass. This does not claim that the historical
+denied-PID root cause was fixed.
+
+The reviewed13-target core frame fix is integrated, with43 branch bodies unchanged,
+boxed command and nine non-inline handlers, plus one normal-stack mixed-worker
+regression. Sequential focused/full/default/feature gates are ongoing; **no current
+full PASS yet**. The earlier broad gate excluding31 API tests passed **1,584 /
+5 ignored** plus one doctest (22.49s/0.23s); it does not validate omitted APIs.
+No new production selector, autosave or realtime ingress is activated.
+
+Protected core final gates PASS: default4 **1,616 / 5 ignored** (22.68s) plus one
+doctest (0.19s); protected-test-support feature full **1,616 / 5 ignored** (1m02s
+compile,26.54s tests) plus one doctest (0.14s). Preserve default3's1,615 passed /
+one failed / five ignored. The sole correction is test-only: actual baseline
+reserve/claim/retain/finish now exercises the expected Unverified-to-Gap transition
+with full rollback/retry assertions intact.
+
+The reviewed stack correction preserves43 branch bodies. Actual dispatcher frame
+is **1,160 bytes** (old1,288,464), Default+isolatedWorker **131,392** (old217,968),
+and maximum handler **327,568**. Worst measured combined frame is about460KB
+versus1.51MB; no stack override was used. Both focused regressions pass0.08s/0.07s.
+Original ambiguous-name compile and stack-overflow artifacts remain retained.
+
+The48-target protected desktop cohort plus reviewed dev-dependency is promoted;
+rustfmt and ten actual-JS checks pass, with focused/full desktop gates pending.
+The six additive direct-Person-scan experiment targets are promoted; five Python
+checks and formatting pass, while seven Rust tests/build follow desktop gates.
+No runtime optimization, new production selector, autosave or realtime ingress
+is activated. Prior native evidence remains bound to its immutable executables.
+
+The protected desktop first focused compile fails on ambiguous protected
+Action/Owner names, missing Applied.native_clear and a Signal guard expression;
+root applies four scoped fixes. focused2 fails on the second identical guard
+expression at source.rs:86; that scoped correction is now applied. Preserve both
+failure logs. The third focused/full desktop and direct-scan Rust gates are
+running; **no current desktop PASS is claimed**.
+
+Independent receipt reconstruction resolves all48 desktop original targets exactly;
+post-format differences are harmless and no receipt is altered. The combined
+53-target emoji package is independently CLEAR under manifest `1e6770e5c975424c8d70bd8aaa51e1390250b0c1ed8615ff8661ca1e9b86263b`, but is
+not promoted while root awaits desktop gates. This review is not compilation or
+native evidence. No new runtime selector, autosave or realtime ingress is active.
+
+Protected focused3 compiles in4m10s, then exits101 with **33 passed / one failed**
+(3.87s). `old_send_completion_cannot_release_a_newer_consumption` fails at
+`tests/delivery.rs:30` when its second consume returns Gap. Full desktop was not
+reached; there is no current desktop PASS. capture_recovery is staging a fix with
+attachment_integration review. Preserve the original failure and earlier compile
+logs; do not infer a product fix or successful full suite from a staged change.
+
+The additive direct-Person-scan seven Rust tests pass (4.57s compile,0.06s tests)
+and dev example build passes3.96s. Immutable `direct-candidate.exe` has SHA
+`ba843e9f58db5840d1f9c4ab5eae9dcb9843b10177b1a1ca22ba2fbdeb596fe7`.
+Root is running pure direct five processes / twelve rounds, followed by same-
+binary legacy five processes / twelve rounds. No measured performance claim yet.
+The conditional five-target core promotion (reviewed manifestdb86a777...) is
+CLEAR but NOT integrated. Runtime activation remains unchanged.
+
+### 2026-10-14 - Audited direct Person measurements and source promotion
+
+Pure direct and same-binary legacy control each finish five processes / twelve
+rounds with exit0, retaining all72 rankings on immutable `direct-candidate.exe`
+SHA `ba843e9f58db5840d1f9c4ab5eae9dcb9843b10177b1a1ca22ba2fbdeb596fe7`.
+Independent audit report `tmp/completion-direct-core-prep/measured-report.json`
+has SHA `ab3dfc5c4b736935e1d782595705f341ba716e8545b9ce377c9759d8de09a3a0`.
+All42 Person cases improve median/p95 against both controls. At64k, @alex is
+24.6764/34.1508ms versus original59.81415/72.5353ms and same-binary control
+59.65885/68.0839ms; direct process medians span23.02665-25.8774ms. Observed
+channel regressions remain: original12 median/10 p95, control0 median/9 p95.
+The channel path is unchanged; no channel improvement is claimed. JSON is valid;
+console CP1252 printing failed after its write, with TSV preserved. This is pure
+ranking evidence, not native performance improvement.
+
+The five direct core targets are installed exactly (db86a777...), and the current
+independently locked core full suite is running. Combined53-target emoji source
+is installed exactly (backup b516ce...), with19 Python/12 actual-JS checks and
+formatting passing. The reviewed test-only protected delivery reverification
+correction is also installed; Rust/full desktop gates remain pending. Preserve
+the earlier focused3 failure and all prior gate attribution. These new changes
+activate emoji wiring and direct Person optimization in the next built binary;
+there is no new native result yet. Cached-index wiring and the protected
+production selector, ordinary autosave and realtime observation ingress remain
+off. The prior1,616/5 core gates do not validate these new source changes.
+
+### 2026-10-14 - Emoji/Person core gate and protected-native promotion
+
+`emoji-person-core-full.log` passes **1,637 / 5 ignored** after1m01s compile,
+23.87s tests, plus one doctest (0.27s). The protected-native27-target package is
+promoted under manifest508cf28..., with dependency63-hash receiptdf80f... and
+root-before/receipt backups retained. Installed formatting,14 Python checks and
+ten DOM checks pass. This package adds no Rust fixture tests.
+
+Root's default full desktop gate is running in `emoji-person-desktop-full.log`,
+to be followed on success by a `protected-native-fixture` feature build. Preserve
+the prior protected focused3 result33 passed / one failed until that corrected
+full gate passes. The protected native plan remains unrun: five cases at two
+sizes, ten processes and56 PNGs. Emoji's32 planned native PNGs are also unrun.
+Default feature-off must refuse a requested protected fixture before boot, and
+the feature alone does not activate protected storage. No native result or
+performance improvement is inferred from source promotion or the core pass.
+
+### 2026-10-14 - Default desktop gate passes; feature import correction
+
+Default full desktop tests pass **1,585 / 7 ignored** (5m05s compile,7.45s tests)
+in `emoji-person-desktop-full.log`, including the corrected protected delivery
+regression and new emoji coverage. Preserve the earlier focused3 failure and
+both earlier compile failures as historical evidence.
+
+The first protected-native feature build fails E0425, missing Task at
+`native_fixture.rs:41`; `emoji-person-native-build.log` is preserved. Root checks
+Dioxus0.7 async documentation, the pinned Task/cancel API and existing import
+pattern, then changes only `use dioxus::{core::Task, prelude::*};`. Formatting
+passes. The second feature build is running in `emoji-person-native-build2.log`.
+No native run has begun; protected56-PNG and emoji32-PNG plans remain unrun.
+The feature-only import change does not require rerunning the unchanged default
+tests and does not activate protected production storage.
+
+### 2026-10-14 - Corrected feature build passes; emoji pilot underway
+
+The second feature dev build passes in5m11s, exit0, recorded in
+`emoji-person-native-build2.log`. Immutable
+`tmp/completion-baseline-binaries/native-emoji-person-protected.exe` has SHA
+`0beb554f51a2e071dd66b3cd0d6ae9a4481e0f0777d0426ae460f2e3eba288d7`.
+Core1,637/5 and default desktop1,585/7 remain current apart from the independently
+reviewed feature-only Task import; preserve the first feature compile failure.
+
+The normal `emoji-native` pilot is running at `tmp/agent-ui/en1`; no successful
+native result is claimed. The full32-PNG emoji and protected ten-process/56-PNG
+matrices remain incomplete/unrun respectively. Feature-off requested-fixture
+runtime refusal is still pending; default tests compiled that branch only.
+The fixture feature alone does not activate protected production storage, and
+no new native latency improvement follows from the build pass.
+
+### 2026-10-14 - Emoji and protected-consume pilots fail on0beb554f
+
+The normal emoji pilot `tmp/agent-ui/en1` fails after12 stage PNGs through
+`guard-catalog` plus one failure PNG; all13 were independently read by
+acceptance_audit, with the failure also read by root. After same-query reseeding
+and Escape, the next rocket choice is hidden with a zero rectangle. Actual
+controller deduplication is correct; fixture correction234f3c... is staged for
+review. The terminal receipt contains only error/okfalse, so no complete ACK
+ledger or completed-case acceptance is claimed.
+
+The normal protected-consume pilot `tmp/agent-ui/pd1` fails after initial/input
+captures. Both unobscured PNGs were read by root. The log records a main-thread
+stack overflow; the runner pointer failure is secondary to the process vanishing.
+`processExited: true` and `cleanupErrors: []` confirm cleanup, not delivery or
+completion. PDB-frame analysis is underway without a stack override. Both failed
+artifact trees are retained; all new native acceptance remains pending.
+
+Both runs use immutable0beb554f; core/default desktop/build passes remain source
+gates and do not establish native acceptance. Preserve the terminal failure
+receipts and original logs without inferring completed cases from intermediate
+stage screenshots.
+
+### 2026-10-14 - Native corrections promoted; rerun gates pending
+
+The native corrections are now promoted with exact backups/receipts: emoji guard
+reseed (one Rust target, manifest234f3c...) plus the permanent fifth JavaScript
+regression (supplemental738bacc...), and two reviewed renderer stack targets.
+The stack change uses Box::pin at the existing fixture-intercept spawn and shared
+Editor.apply_review spawn_forever boundaries. The prebuild executable retains a
+1MiB PE stack; measured handoff frames Runtime::with788,752 + Scope315,552 +
+intercept157,856 exceed1.2MiB. The shared path measures435,168 +290,128 bytes,
+with poll299,176. No stack override is introduced; postbuild frames remain pending.
+
+The independent pd1 SQLite audit finds integrity OK, input persisted at storage
+revision3/local2/clock7, workflowIdle and consumptionNone, with sibling unchanged.
+This preserves input but proves no delivery. Installed formatting and13 JavaScript
+checks pass. Full default tests then the feature build are running sequentially in
+`native-fixes-desktop-full.log` / `native-fixes-build.log`; results, postbuild frames
+and native reruns are pending. Two malformed opt-in runtime checks pass with early
+exit2 on0beb554f at `tmp/protected-native-negative-0beb`; these do not prove the
+feature-off requested-fixture guard.
+
+### 2026-10-14 - Post-fix default desktop gate passes
+
+`native-fixes-desktop-full.log` passes **1,585 / 7 ignored** (2m11s compile,
+6.24s tests), covering the shared task heap-boxing boundary in default compilation
+and tests. The feature build is still running in `native-fixes-build.log`.
+Actual postbuild frames and native reruns remain pending. No core source changed
+since1,637/5 plus one doctest passed. Failed en1/pd1 receipts and their acceptance
+limits are unchanged; this test pass does not establish native acceptance.
+
+### 2026-10-14 - Post-fix feature build passes; frame measurements pending
+
+The post-fix feature build passes in3m52s with exit0 in `native-fixes-build.log`.
+Immutable `tmp/completion-baseline-binaries/native-emoji-person-protected-fixed.exe`
+has SHA `e4c09596aca6974e9bda2149d431a1920cd022cefd61abbe8ba896d292876d72`.
+Matching-PDB frame measurements are underway before a pilot; no native e4c09596
+run has begun. Default desktop1,585/7 and core1,637/5 plus doctest remain passed.
+The prior0beb554f en1/pd1 failures and their immutable artifacts are unchanged.
+
+### 2026-10-14 - Measured renderer frame reductions and pending native acceptance
+
+Paired executable/PDB measurements on e4c09596 show spawn Runtime788,752 to144
+bytes and nested scope315,552 to112; Editor with-scope435,168 to128 and nested
+290,128 to112. PE stack reserve remains1MiB. No Rust source changed after the
+last build/tests; these verify frame reduction without a stack override.
+
+The pd2 consume-channel run reaches its full terminal state, but the runner fails
+an incorrect assumption that the retention ID is a UUID. Actual source uses
+`protected-checked` plus AtomicU64. Independent semantic and closed-SQLite review
+passes with the source-correct predicate. All six PNGs were read by review_layout,
+with root also reading the settled capture. The original failed receipt remains;
+a strict Python validator correction is staged, with no acceptance claimed yet.
+
+Both normal and narrow en2 emoji runs exit0/PASS on e4c09596. Their32 PNGs and
+visual/ledger evidence are under acceptance_audit review; root read the normal
+custom-emoji capture. Runner success is not yet independent acceptance. The ca1
+native after-cohort64k run passes; ca2 all-fixture collection is running. No
+performance improvement is claimed before the complete cohort is audited.
+
+### 2026-10-14 - Emoji audit complete; protected and new source gates pending
+
+The en2 emoji audit is independently CLEAR: all32 PNGs were read and the complete
+ledger, exact binary hash, closed processes and pointer checks pass on e4c09596.
+Scope remains synthetic channel input; the unready choice looks unchanged but is
+disabled. This does not prove live Slack, trusted OS composition or thread parity.
+
+The protected pd3 full matrix exits1 with nine passing cases: all five normal,
+and narrow consume-channel, consume-thread, expired and canceled. Narrow failed-
+write return fails after navigation away because Composer controllers are not
+mounted; that case has no acceptance. The run has54 PNGs. Root read the failure,
+read_settings read all five failure captures, and acceptance_review is reviewing
+the remaining images. Do not treat runner-passing cases as fully audited yet.
+The two-target checker identity correctionba87090c is installed with15 tests passing.
+
+Canvas32 targets (1b390932...) and Lists11 targets (40b4eb25...) are installed
+exactly with root-before backups/receipts; formatting passes. The initial core
+full gate fails E0616 on private checkpoint access in two new Canvas tests. Root
+changes only those assertions to `.checkpoint() == &c`; the original log remains.
+The second core full gate is running. Earlier core1,637/desktop1,585 gates apply
+to their prior source revision, not these additions.
+
+Exploratory ca1/ca2 runs all report runner-PASS, but ca2 overlaps concurrent review
+workload. These runs are excluded from the quiet comparison. The final quiet
+three-process by six-fixture cohort is pending; no native performance improvement
+claim follows from the exploratory runs.
+
+### 2026-10-14 - Current core gate and protected matrix audit complete
+
+The corrected full core suite passes **1,654 / 5 ignored**, plus one doctest:
+45.31s compile, 22.33s tests and 0.23s doctest. The first E0616 private-checkpoint
+compile failure remains preserved; the scoped test accessor correction is the
+only related change. Full desktop is still compiling. The earlier desktop
+1,585/7 gate and immutable e4c09596 native evidence predate Canvas/Lists additions.
+
+Protected pd3 independent review has read all **54 PNGs**. Nine complete receipts
+and SQLite inventories pass; all ten processes close with **350 pointer checks**.
+Narrow failed-write return remains failed and unaccepted. The four-file remount
+correction e31d08e6... is independently reviewed CLEAR with **19 JavaScript tests
+passing**, binding the exact new Rust scope and prior visit, but is not integrated.
+The original failure is preserved; source review does not substitute for its rerun.
+
+The RESUME opening and Native Windows acceptance row are consolidated around
+current gates and next steps. Detailed source hashes, log paths, frame measurements
+and chronological failures remain in the existing dated ledger; no historical
+receipt is reattributed to the current source or binary.
+
+### 2026-10-14 - Desktop Canvas setup failures; readiness fix installed
+
+Current full desktop gate **FAILS: 1,619 passed / 4 failed / 7 ignored** after
+**5m 00s compile and 7.44s tests**, read from
+`tmp/windows-bootstrap/canvas-hydration-desktop-full.log`. The four existing Canvas
+checklist credential/auth-rotation and validated-file-event tests receive
+"Checking saved canvas changes before editing" at tests.rs:95/422. Their fake
+Transport disables the disconnected bypass, but manual setup lacks journal
+recovery loading and uses invalid fake accounts. The author is staging isolated
+actual-Journal begin_load/publish_load setup; production guards remain unchanged.
+No correction or successful full rerun is claimed yet. Core 1,654/5 plus doctest
+remains passed; preserve all original desktop failures.
+
+The four-file protected readiness/remount correction e31d08e6... is now installed
+exactly with root-before backups/receipt. Installed 19 JavaScript tests and
+formatting pass. The feature dev build is running in
+`tmp/windows-bootstrap/canvas-hydration-native-build.log` against current
+production source; the test-only Canvas setup correction will follow. Protected
+native acceptance of the failed return still needs a built and audited rerun.
+
+### 2026-10-14 - Protected repair accepted; Canvas and quiet performance audit limits
+
+Current core remains **1,654 / 5 ignored + one doctest PASS**. The first full
+desktop failure (1,619 passed / 4 failed / 7 ignored) is preserved. Eighteen new
+targets are now promoted exactly: Canvas test setup3ffbf8794..., native Lists
+14-target package51f02de0..., and Canvas owner correction1bc6e1c65..., with
+backups/receipts retained. Formatting and six Lists Python checks pass. The full
+desktop rerun is running in `tmp/windows-bootstrap/canvas-hydration-desktop-full2.log`.
+
+The feature build passes in5m21s. Immutable
+`tmp/completion-baseline-binaries/native-canvas-hydration-protected.exe` has SHA
+`15d1967055d7c23f36a13816dbaf67327b590c3a24d7136e87253fed325084f9`.
+On this binary, pd4 repaired narrow failed-write return passes independent audit:
+all seven PNGs, exact full SQLite, epochs0 to1 to2, visits3 to4 to5, no extra ACK,
+closed process and36 pointer checks. Across pd3 and pd4 all protected scenarios
+are proved; this is not a fresh whole-matrix run. Earlier pd3 failure is retained.
+
+Canvas cu1 normal/narrow exits0 with all22 PNGs inspected and exact ordered logs
+and source assertions. Its legacy runner omits contemporary executable-hash,
+process-creation and pointer details; only the retained executable's actual hash
+is available. Canvas cr1 recovery fails with two PNGs (initial/failure); root read
+the failure, whose bottom taskbar is visible. Shell U0/canonical U1 mismatch
+correctly rejects reserve, with no pending-receipt write. The owner correction
+is now installed but its new native recovery proof is pending. Runner evidence
+enhancement is staged; review requires preserving errors before promotion.
+
+Quiet cq1/cq2/cq3 all18 processes runner-PASS on e4c09596 without Cargo/test CPU
+load. The report executes with oktrue,432 rows and identical references. All72
+new PNGs and the summary are awaiting independent audit; no final native
+performance improvement is claimed. Exploratory ca1/ca2 remain excluded.
+
+### 2026-10-14 - Quiet completion comparison audited; one desktop failure remains
+
+The quiet whole-binary comparison (9284265e to e4c09596) exits 0 and is
+independently audited: all **432 rows, 4,320 samples and 12,960 durations** match
+recomputation. All **72 new PNGs** were personally read by the auditor. The 72
+original baseline PNGs retain their earlier visual audit and current hashes and
+dimensions; no original per-image hash manifest exists, so unchanged bytes since
+that earlier inspection are not claimed.
+
+All **84 Person accepted-result cases improve median and p95**. At 64k, @alex
+accepted-result median/p95 changes from **70.5/80.3 to 29.9/35.7 ms** normal and
+**70.7/84.8 to 28.9/35.9 ms** narrow. Two-RAF values change from **73.7/88.7 to
+34.0/44.2 ms** normal and **74.6/88.1 to 32.9/45.1 ms** narrow. All 51 rows with
+raw increases are retained: 41 have increases at least 0.05 ms; 10 contain only
+smaller floating-point residuals. That threshold is presentation only. This is
+a descriptive whole-binary result, not exclusive attribution to the Person scan,
+physical paint, trusted OS input, significance, startup or idle improvement.
+Pooled p95 over 15 samples is the maximum; correlated rounds remain a limitation.
+
+Report: `tmp/completion-quiet-report-prep/quiet-comparison.json`, SHA
+`50d95f6a06655eee946531d6659edfe900ac5c340d383db29e5dfb91161b5c58`.
+Audit: `tmp/completion-quiet-report-prep/quiet-audit.json`, SHA
+`503c6d4e695d75ec7c1ae9ab0b028648975ff9bb6ab3240ae5ccc2b79abfe5b9`.
+Readable results and complete limits: `tmp/completion-quiet-report-prep/quiet-summary.txt`.
+
+Desktop full2 **fails: 1,625 passed / 1 failed / 7 ignored**, with 2m59s compile
+and 6.41s tests. The remaining new recovery held-empty-load test reports a
+duplicate; timestamp-only test filepath collision is under investigation and an
+exclusive-create correction is being staged. No fix or full pass is claimed yet.
+Core 1,654/5 plus doctest remains passed. Canvas runner evidence enhancements
+(five targets, 731bfd10... plus d4538f39...) are installed exactly with **227 pure
+checks passing**. Fresh cu2 UI runs on the 15d19670 binary are underway. There is
+no fresh build yet containing the Canvas owner and native Lists additions.
+
+### 2026-10-14 - Canvas recovery and Lists native audits clear; desktop3 pending
+
+The corrected feature build passes in **4m12s**. Immutable
+`tmp/completion-baseline-binaries/native-canvas-hydration-recovery-fixed.exe` has
+SHA `0b5c379a9d21cedb5d1a417b7cb6b10fe4b096f392978a461b37b46fc9a34f75`.
+The later test-only allocator change does not alter this production binary.
+
+Canvas cu2 on 15d19670 is independently CLEAR: all **22 PNGs** read, full process
+and hash evidence, **107 pointer checks** and closed logs. Raw request/ACK behavior
+remains source-asserted. Canvas cr2 on 0b5c379a is independently CLEAR at both sizes:
+**four processes / 16 PNGs**, exact pending SQLite body unchanged from seed through
+restart/final and actual read-only database inspection, **56 pointer checks**, four
+identities and U1 scope. Seed counts are 2 dispatch / 3 reserve / 2 retire; restart
+counts are 0 / 0 / 0. Controlled termination exits 1; this is not crash or live proof.
+
+Lists lh1 on 0b5c379a is independently CLEAR at both sizes: all **14 PNGs** read,
+three exact builders including records.open, distinct opens 10/16/18 with serials
+11/17/19 and finish results [true,false,true], and **zero mutations**. Raw
+populations/responses retain the opaque +/= cursor unchanged, exclude stale
+results, and preserve omitted children and unrelated records. Closed logs, exact
+hash/process evidence and **83 pointer checks** pass without Session/Transport.
+The final narrow unrelated row is below fold, supported by the raw receipt and
+visible in normal; required controls remain visible. This accepts the bounded
+synthetic-response workflow, not live HTTP or global pagination coverage.
+
+The single test-allocator correction 0c9837... is installed exactly and formatting
+passes. No production behavior changes. Full desktop3 is running in
+`tmp/windows-bootstrap/canvas-hydration-desktop-full3.log`, including two new tests.
+Previous failure logs remain preserved. Timestamp-only filepath collision was a
+source-based inference, not a cause demonstrated by those logs. Core 1,654/5 plus
+doctest remains passed; feature-off requested-fixture runtime refusal is pending.
+
+### 2026-10-14 - Desktop full3 passes; default runtime probe pending
+
+Desktop full3 passes **1,628 tests / 7 ignored**, with **2m35s compile and 6.36s
+tests**, in `tmp/windows-bootstrap/canvas-hydration-desktop-full3.log`. Root and
+independently locked core formatting checks pass. Core remains **1,654 / 5 ignored
+plus one doctest PASS**. Preserve the earlier desktop failures and the distinction
+between the source-based filepath-collision inference and logged evidence.
+
+The default cargo build is still running; feature-off requested-fixture runtime
+refusal remains pending. The five-target protected discovery preparation is
+independently reviewed CLEAR, manifest
+`400210220792480a67102c1770e86ab98be8ad99e3527279a805f350f4f004e6`,
+but is unintegrated and uncompiled, with 16 authored tests unrun. The new Canvas
+local-unlock stage is also unintegrated. These preparations do not alter the
+current production activation boundaries or completed gate counts.
+
+### 2026-10-14 - Default build and feature-off refusal probes pass
+
+The default build passes in **6m28s**, recorded in
+`tmp/windows-bootstrap/canvas-hydration-default-build.log`. Immutable
+`tmp/completion-baseline-binaries/native-canvas-hydration-default.exe` has SHA
+`d631dda62ee6bda105d381203708697b6dc078e9dbdc62630407adbe366d869c`.
+
+Actual feature-off requested-fixture refusal passes three bounded probes: alias
+plus CHECK1, alias only, and CHECK1 only. Each exits 2 with exact expected stderr
+and empty stdout; before/after executable SHA is unchanged. Receipt:
+`tmp/protected-native-negative-default/receipt.json`. This proves those refusal
+paths, not ordinary startup: no ordinary launch was requested. The five-target
+inactive discovery package still awaits promotion after root verification.
+
+### 2026-10-14 - Inactive discovery integrated; focused validation pending
+
+The five-target inactive protected discovery package is now integrated exactly,
+manifest `9752fceda0e2139ce5c1e931651e5216e33bc92df05b1ecb691ccc8a6f85ca66`.
+This replaces400210... only for the reviewed documentation dependency refresh;
+all five source files and the patch are unchanged. Root-before backups and
+`root-integration-receipt.json` are retained. Root formatting passes. Focused2
+Cargo compilation is running; all **16 authored tests remain pending**.
+
+The first promotion attempt stopped before writes because a documentation hash
+had changed. Accidental shell continuation then ran zero matching tests in
+`protected-discovery-focused.log`; that run is **not validation**. Preserve the
+log and do not count it as a successful focused gate. No production discovery
+activation is implied by this inactive integration.
+
+An isolated enrollment native fixture is being staged. Canvas local review,
+List column rename and durable slash work also remain staged/review work, without
+new acceptance claims.
+
+### 2026-10-14 - Inactive discovery focused and full desktop gates pass
+
+Inactive protected discovery focused2 passes **16 tests / 0 failed** after
+**3m49s compile and 0.43s tests**. The full desktop gate passes **1,644 / 7 ignored**
+with **0.86s compile and 7.93s tests**, docs0, in
+`tmp/windows-bootstrap/protected-discovery-desktop-full.log`. Root formatting
+passes. No core source changed; independently locked core remains **1,654 / 5
+ignored plus one doctest PASS**.
+
+There is no native discovery/enrollment evidence yet and no build is active.
+The original zero-matching-test focused log remains retained and is not counted
+as validation. These test gates do not activate production discovery, storage
+selection, ordinary autosave or realtime observation ingress.
+
+### 2026-10-14 - Canvas local review integrated; Rust and native gates pending
+
+Canvas local review is integrated exactly across **15 targets**, manifest
+`4ed191444b6268ef93da2fd511e2339e1f11f5c8d7c13f924677060d44ec550a`,
+with root-before backups and integration receipt retained. Root/core formatting
+passes. Independent source review is CLEAR, with **406 pure checks** passing
+before integration. The **13 new Rust tests remain unrun**; independently locked
+core full tests are running in `tmp/windows-bootstrap/canvas-local-review-core-full.log`.
+Earlier core 1,654/5 plus doctest and desktop 1,644/7 belong to the prior source.
+
+Before integration, root found and fixed review::open adoption checking only the
+serial before loading. The admitted result now checks original owner, file,
+visit and receipt plus the exact new Read; the regression is included. This is
+reviewed source behavior, not a completed Rust/native gate.
+
+The expected native plan is **eight processes / 30 PNGs**, not yet run; no local-
+unlock acceptance is claimed. Archive v2 migrates with limits of **32 records /
+64 MiB**, preserves unknown outcomes and does not prune. Capacity management is
+not implemented. Broader production activation boundaries remain unchanged.
+
+### 2026-10-14 - Canvas local-review core test setup failure retained
+
+Canvas local-review full core **fails: 1,661 passed / 1 failed / 5 ignored**,
+with **40.87s compile and 22.95s tests**. The new
+`review_refuses_changed_canonical_owner_and_full_raw_inventory` test changes
+public metadata file.id without changing validated private file_id(); canonical
+identity therefore remains unchanged, making that assertion incorrect. The author
+is staging a minimal alternate-canonical-file fixture through from_responses;
+independent user_links review is pending. Production code is unchanged, and no
+corrected core pass is claimed. Preserve the original core failure log.
+
+Installed `scripts/test_canvas_structure_recovery.py` passes **406 pure checks**,
+recorded in `canvas-local-review-python.log`. This does not replace the failed
+Rust gate. The eight-process/30-PNG local-review native plan remains unrun.
+
+### 2026-10-14 - Corrected Canvas local-review core gate passes
+
+The sole cfg(test) canonical-owner fixture correction is integrated exactly,
+SHA `2c738abda4861218153719f92bcd73945277751603f7dda58e662e594539680a`,
+with backup and receipt retained. It constructs the alternate canonical file via
+from_responses and asserts valid Inventory, so the test reaches its intended
+owner-rejection boundary. Production behavior is unchanged; the reviewed
+15-target feature differs only by this corrected test.
+
+Independently locked core full2 passes **1,662 / 5 ignored**, with **24.95s compile
+and 23.24s tests**, plus one doctest (0.19s). Root/core formatting passes. The
+original 1,661/1/5 failure remains preserved. Full desktop is running in
+`tmp/windows-bootstrap/canvas-local-review-desktop-full.log`; the current
+Canvas local-review native plan remains unrun, with no acceptance claimed yet.
+
+### 2026-10-14 - Canvas local-review desktop gate passes; native build pending
+
+Canvas local-review full desktop passes **1,649 / 7 ignored** after **4m22s
+compile and 8.04s tests**, docs0, in
+`tmp/windows-bootstrap/canvas-local-review-desktop-full.log`. Independent core
+remains **1,662 / 5 ignored plus one doctest PASS**. These gates cover the reviewed
+15-target feature and sole cfg(test) canonical fixture correction; original
+failure logs remain preserved.
+
+The native build with `protected-native-fixture` is running in
+`tmp/windows-bootstrap/canvas-local-review-native-build.log`. Source is unchanged
+during the build. No Canvas local-review native result or local-unlock acceptance
+is claimed; the eight-process/30-PNG plan still requires execution and inspection.
+
+### 2026-10-14 - Canvas local-review build passes; native matrix running
+
+The Canvas local-review feature build passes in **5m12s**. Immutable
+`tmp/completion-baseline-binaries/native-canvas-local-review.exe` has SHA
+`91fb820df3159b37a5a3b7edb04db3a507c6260230fe247edc6b0babbb2886e8`.
+The full `--local-review` native run is active at `tmp/agent-ui/cl1`, logged in
+`canvas-local-review-native-run.log`. Closed receipts and inspection of the planned
+30 PNGs are still required; no native acceptance is claimed yet.
+
+### 2026-10-14 - Canvas local-review runner passes with narrow visual evidence gap
+
+Canvas local-review cl1 exits **0** with all **eight phases**, top-level oktrue
+and **30 PNGs** on immutable91fb820d. Root personally read narrow confirmation,
+unchecked and fourth-reopen captures; acceptance_review has read all 30 and is
+completing the audit. Final auditor SQLite details remain pending.
+
+This is bounded semantic/SQL success, **not full narrow visual acceptance**.
+Both narrow unchecked and checked confirmation screenshots are taken at the top
+scroll position: the checkbox, Cancel and Remove controls are below fold and
+never pictured. The checker uses query-based clicks without scrolling or hit
+assertions. Natural inner scrolling may be correct, but these receipts do not
+prove action reachability. The author is staging a minimal checker/runner
+extra-stage correction to expose controls and verify geometry. Preserve cl1
+unchanged; do not upgrade its visual claim based on the successful terminal flag.
+
+### 2026-10-14 - cl1 storage/process audit complete; narrow reachability still open
+
+The independent cl1 audit is complete: all **30 PNGs** read, with semantic,
+storage and process checks PASS on exact91fb820d. Eight PIDs are retained:
+9584 / 15428 / 11460 / 8468 / 4268 / 14352 / 15276 / 16096. All **108 pointer
+checks** restore correctly, no errors are recorded, and ordered logs are closed.
+
+Both read-only SQLite v2 inspections pass integrity and unchanged-hash checks,
+with **zero active records and one archive**. Original operation and body remain
+exact from seed through restart, review and archive. The fourth process retains
+outcome_unknown, raw unknown bytes and timestamp identically. Seed counters are
+**2 dispatch / 3 reserve / 2 retire**; restart, review and reviewed phases each
+remain **0 / 0 / 0**.
+
+Narrow visual reachability is still incomplete: actual mounted query clicks do
+not prove visible hits while the checkbox and action buttons are below fold.
+The corrected **32-PNG cohort remains pending**. Preserve original cl1 artifacts;
+no full narrow UI, live or crash-durability claim follows from this bounded audit.
+
+### 2026-10-14 - Enrollment and Canvas controls integrated; runtime gates pending
+
+The isolated enrollment package is integrated exactly across **32 targets**,
+manifest `1c5a8d0cf5dea35a99ed314d773d64110a5a7641505c081b1fa8ec5c1aa92b0d`,
+with backups/receipt and all 120 dependencies verified. Installed **24 Python
+checks pass (5.464s)**, **17 actual-JavaScript checks pass**, and formatting passes.
+Feature cargo check passes in **1m02s**, recorded in
+`protected-enrollment-feature-check.log`. No enrollment native or feature-off
+runtime result is established by that compile check.
+
+The four-target Canvas visible-controls correction is also integrated exactly,
+manifest `4cbc39aada206acb6f65b6c0d45c97873444fcc8e87584e21b2d9996a9d1fa1e`,
+with backup/receipt. Installed **583 Python checks** and **17 exact-JavaScript
+geometry checks** pass, along with formatting. Default full desktop is running
+in `enrollment-canvas-controls-desktop-full.log`. Core production code is unchanged;
+independent core **1,662 / 5 ignored plus one doctest PASS** remains applicable.
+
+Default build/refusal probes, feature build/opt-in probes, corrected Canvas cl2
+**32 PNGs**, and enrollment **12 runs / 80 PNGs** are all pending. The earlier
+cl1 semantic/storage/process audit remains valid with its narrow visual gap;
+source geometry tests do not close that native gap. Protected production
+activation remains OFF.
+
+### 2026-10-14 - Combined enrollment/Canvas desktop gate passes
+
+The combined enrollment32/Canvas-controls4 default full suite passes **1,649 /
+7 ignored** after **2m48s compile and 6.52s tests**, docs0. Root formatting passes;
+independent core remains **1,662 / 5 ignored plus one doctest PASS**.
+
+The default executable build is running in
+`enrollment-canvas-controls-default-build.log`. Planned next gates are pinning the
+binary, 18 feature-off preflight probes, Canvas cl2, then feature build, 16 opt-in
+probes and the enrollment matrix. The prepared
+`tmp/check-protected-enrollment-preflight.py` has help/import checks only; no
+process probe has run from it yet.
+
+Separate performance preparation is independently CLEAR under manifest
+`99dd1431508eff29f6b68b9aad4f1895f93ee1e741f17c7f8581b3a72965e3cf`,
+but is unintegrated with three VDom tests unrun and no improvement claim. Slash
+9a657... is staged CLEAR but uncompiled. Lists core936c... is CLEAR; desktop5a51...
+review remains pending. None changes the current accepted source/runtime scope.
+
+### 2026-10-14 - Default enrollment build and 18 refusal probes pass
+
+The default build passes in **5m46s**. Immutable
+`tmp/completion-baseline-binaries/native-enrollment-canvas-default.exe` has SHA
+`29851c547fa8a506681fb413423be82d00e54d298d296a66fe88badb643a2b88`.
+All **18 actual feature-off main-preflight probes PASS**, recorded in
+`tmp/protected-enrollment-negative-off1/receipt.json`. Each has owned PID,
+creation/exit evidence, exit2, exact stderr, empty stdout and unchanged executable
+SHA before/after. No ordinary boot was requested or established by these probes.
+
+Canvas cl2 is running at `tmp/agent-ui/cl2`, logged in
+`canvas-controls-native-run.log`; acceptance remains pending. Feature build,
+16 feature-on probes and enrollment pe1 are still pending. Lists latest8138...
+source review is CLEAR, but a native-runner cleanup block is being corrected;
+no Lists source from that preparation is integrated.
+
+### 2026-10-14 - Canvas cl2 runner completes; independent audit pending
+
+Canvas cl2 completes with **exit0, eight phases and 32 PNGs** on immutable
+29851c54. Independent acceptance_review audit is active. Root personally read
+narrow controls-unchecked, checked-confirmation and fourth-reopen decision
+captures: all controls are visible and enabled states are correct. Final
+acceptance awaits the complete independent audit; no additional native result
+is claimed from these selected inspections.
+
+The feature build is now running in
+`enrollment-canvas-controls-native-build.log`. Sixteen feature-on probes and
+enrollment pe1 remain pending.
+
+### 2026-10-14 - Canvas cl2 independently closes narrow reachability gap
+
+Canvas cl2 is independently **CLEAR** on exact29851c54: all **32 PNGs** read,
+eight distinct closed processes with creation/exit proof, clean closed logs and
+cleanup, and **112 restored pointer checks**. Narrow unchecked and checked
+controls are fully visible/readable with correct disabled/enabled states; strict
+clipping and center-hit checks pass. Root also read three narrow captures.
+
+Both read-only SQLite v2 audits pass integrity and unchanged-audit-SHA checks,
+with **zero active records / one unknown-outcome archive**. Original body, raw
+inventory, observation, timestamp and decision remain exact through the fourth
+fresh process. Seed counters are **2 dispatch / 3 reserve / 2 retire**;
+restart/review/reviewed each remain **0 / 0 / 0**, with no Session or Transport.
+
+This closes cl1's narrow visual reachability gap only for the disconnected,
+controlled-restart workflow. It does not prove crash durability, live Slack or
+trusted OS input. Original cl1 artifacts and their limited claims remain unchanged.
+The enrollment feature build is still active; its runtime probes and matrix
+remain pending.
+
+### 2026-10-14 - Enrollment feature probes pass; first native case fails
+
+The enrollment feature build passes in **4m59s**. Immutable
+`tmp/completion-baseline-binaries/native-enrollment-canvas-fixture.exe` has SHA
+`77bd9abc08331fb74766138a1eff83f3b339645c45b8c01e1664da8e58958d94`.
+All **16 actual feature-on preflight probes PASS**, recorded in
+`tmp/protected-enrollment-negative-on1/receipt.json`, with exit2, exact stderr,
+owned PID creation/exit times and unchanged executable hash scope.
+
+Enrollment pe1 fails its **first normal enroll-channel case before stage captures
+or consent**; every remaining case is unrun. Root and reviewers read the sole
+failure PNG. Shared toast_position requires .toast-dismiss height, but this
+fixture has an action row; min-height stays zero and the status never appears.
+A fixture-only real-action-height selector and actual-JS regression are being
+staged without weakening guards. Separately, the runner masks the native failure
+as "Wrong exact fields"; a correction is being staged to preserve the original
+native error plus closed failure hash/log/PNG evidence.
+
+Retain pe1's original failure on77bd9abc. No enrollment acceptance is claimed.
+Canvas cl2's independent PASS and bounded acceptance remain unchanged.
+
+### 2026-10-14 - Slash journal, Lists rename and enrollment status fixes integrated
+
+Root integrated the reviewed durable Slash journal9a657... across **14 writes**.
+The original seven-file inert core remains unchanged except reviewed hooks; no
+runtime activation occurs. Root reviewed the installer. Applied receipt:
+`tmp/slash-root-integration-prep/runs/d7c107cb882140468904e2e86e074be8/applied.json`.
+
+Combined Lists core936c... and desktopc4bbe... integrate exactly across **37
+targets**, with **36 effective new Rust tests (18 core / 18 desktop)**. Receipt:
+`tmp/list-rename-root-integration-prep/runs/20261015T014838Z-1fb3042da354/receipt.json`.
+Installed Python checks pass **10 tests (0.051s)**. An initial wrong unittest
+filename matched zero tests and exited1; it was immediately corrected to the
+actual file. The zero-test invocation provides no coverage.
+
+Root/core formatting passes. Enrollment status two-target fix457157... is also
+integrated exactly, with **seven adapted actual-JS checks passing**. No CSS,
+shared-toast behavior or hit guard is weakened. Runner failure two-target
+fix689580... is independently CLEAR with eight tests, but remains staged and
+uninstalled.
+
+The combined core suite is running in `slash-journal-list-rename-core-full.log`.
+All newly added Rust/native validation is pending; prior core1,662/5 plus doctest
+and desktop1,649/7 are historical pre-cohort gates. Next: complete core, install
+the reviewed runner fix when released, then desktop/build gates, enrollment pe2
+and the 16-run Lists rename native plan. No acceptance follows from integration.
+
+### 2026-10-14 - Combined core gate passes; runner correction installed
+
+The combined core suite passes **1,713 / 5 ignored** after **56.32s compile and
+23.67s tests**, plus one doctest (0.19s), in
+`slash-journal-list-rename-core-full.log`. All **51 new core tests** are included.
+
+Runner failure correction689580... is now installed exactly across two targets,
+with backups/receipt retained. Installed enrollment Python checks pass **27 tests
+in 5.545s** (prior24 plus three new tests). The active source cohort is journal14,
+Lists37, fixture-status2 and runner2. Full desktop is running in
+`slash-journal-list-rename-desktop-full.log`; enrollment pe2 and Lists rename
+native verification remain unrun. The core pass is not native acceptance.
+
+### 2026-10-14 - Combined desktop gate passes; feature build running
+
+The combined desktop full suite passes **1,667 / 7 ignored** after **5m12s
+compile and 7.93s tests**, docs0, in
+`slash-journal-list-rename-desktop-full.log`. Independent core remains **1,713 /
+5 ignored plus one doctest PASS**; root formatting already passes.
+
+The feature build is running in `list-rename-enrollment-fixed-native-build.log`.
+No new executable is available yet. Enrollment pe2 and the 16-run Lists rename
+native matrix remain pending; the source/test passes do not establish native
+acceptance or production activation.
+
+### 2026-10-14 - Fixed feature build passes; enrollment pe2 partially complete
+
+The feature build passes in **5m46s**, recorded in
+`list-rename-enrollment-fixed-native-build.log`. Immutable
+`tmp/completion-baseline-binaries/native-list-rename-enrollment-fixed.exe` has SHA
+`076ce07d194fc40c5bee2e6393e2bca7af5ab831c25c16dadf785575660b79fa`.
+
+Enrollment pe2 is active: all **six normal cases** have closed wrapper-PASS
+receipts and **40 PNGs** are under review_layout audit; narrow cases are still
+running. This is partial runner progress, not full acceptance. Lists lr1 has not
+run. The prior pe1 failure on77bd9abc remains unchanged.
+
+Protected Slash atomic preparation296a692b... is source-review CLEAR, with
+**16 authored tests unrun**, and remains staged only. No source changed for it;
+the root lifecycle plan remains read-only and native G0 is deferred.
+
+### 2026-10-14 - Enrollment matrix runner completes; Lists admission interrupted
+
+Enrollment pe2 completes **all 12 runs with exit0** on unchanged076ce07d.
+All **80 PNGs** are under independent audit: normal40 by review_layout and
+narrow40 by user_link_runner. Root read normal initial and narrow dialog captures;
+controls are visible. Full acceptance still awaits the completed independent
+ledger/storage/visual audits.
+
+Lists lr1 fails **before admission or any capture** because the pointer moved
+during settlement. Owned PID17192 closes. The requested pointer position
+[971,25] moved back to the original [1260,1379]; restoration is appropriately
+skipped. Only a waiting receipt exists, with no workflow terminal or requests.
+Retain `tmp/agent-ui/lr1` and `list-column-rename-native-run.log`. This is not
+evidence of a UI defect or completed Lists behavior.
+
+Root has asked the user for a quiet window for two Lists captures; dependent
+native work is waiting for the reply while other work continues. No Cargo or
+native process is currently active, and source/binary076ce07d is unchanged.
+
+### 2026-10-14 - Enrollment independently accepted; atomic Slash integrated
+
+Enrollment pe2 is independently **CLEAR across all 12 cases / 80 PNGs** on
+076ce07d. Both normal40 and narrow40 captures are read; complete validators,
+closed SQLite/log/readiness evidence, unique PID creation/exit times, exact hash
+and pointer checks pass. Normal audit retains **219 pointer checks and 80 capture
+checks**, with restoration; target clocks are 5/4, 4/5, 7/4, 4/4, 6/4 and 5/4.
+The narrow audit passes the same full oracle and identity/hash/pointer contracts.
+
+Positive and canceled scenarios enqueue exactly once. Late typing, owner change
+and failed Editor enqueue zero times. Native clear never occurs; newer failed
+input survives. Canceled completion reports currentfalse, followed by explicit
+reload without replay. The panel sits above the composer and saved/pending
+sections are fully readable. Scope is isolated local state and synthetic input,
+not restart, live Slack, global HTTP instrumentation or production activation.
+
+Separately, protected Slash atomic296a692b... is integrated across **10 targets
+(three new / seven hooks)**. All 21 package hashes, current bases/absences and
+backups are verified; receipt:
+`tmp/slash-protected-intent-prep/root-integration-receipt.json`. Root formatting
+passes. Core full is running in `protected-slash-intent-core-full.log`; **16 new
+tests have no result yet**. Earlier core1,713/5, desktop1,667/7 and native076ce07d
+validate the pre-atomic cohort only.
+
+Lists retry awaits the user's quiet-window reply; no native run is active.
+Lifecycle A-C preparation is being staged after G0 passed, with no active-source
+writes or additional production activation implied.
+
+### 2026-10-14 - Atomic core passes; Lists focus-return checks fail
+
+Protected Slash atomic core full passes **1,729 / 5 ignored** after **38.43s
+compile and 23.29s tests**, plus one doctest (0.23s), in
+`protected-slash-intent-core-full.log`. All **16 new tests pass**. Desktop1,667/7
+remains a pre-atomic gate and needs a later rerun.
+
+The user supplied a quiet window. Lists lr2 normal and lr3 narrow then ran
+sequentially on unchanged076ce07d; both **FAIL the same final focus-return
+assertion after the observed stage**. Each retains seven admitted-stage PNGs
+plus one diagnostic, **16 PNGs total across the two failed cohorts**; these do
+not establish the completed planned matrix. The native assertion combines a
+closed rename overlay, Delivery title header and activeElement data=C_NAME.
+Root's normal failure PNG shows the correct title and closed overlay but no
+header focus ring. The author is investigating/fixing; acceptance_audit is
+reading both failure cohorts. No Lists acceptance is claimed.
+
+Original lr1 pointer interruption is preserved. Captures are finished and the
+user was told the mouse is available again. No Cargo/native process is active.
+
+### 2026-10-14 - Paint candidate integrated; Lists failure audit complete
+
+The two-target paint candidate99dd... is now integrated exactly after independent
+current-base review and root verification of both candidates and all nine source
+audit checks. Root-before backups and `root-integration-receipt.json` are retained
+in `tmp/completion-startup-idle-prep`; frozen manifest-listed files are unchanged.
+Root formatting passes; the **three actual VDom regressions have not run**.
+No startup, CPU or memory improvement is claimed. Core formatting passes and
+atomic core1,729/5 plus doctest remains the current core result.
+
+Independent lr2/lr3 failure review has read all **16 PNGs** (seven stages plus
+diagnostic for each). Binary/process checks and **76 / 74 restored pointer checks**
+pass; no other layout blocker is identified. The failed terminal lacks the raw
+eight-request ledger, so exact wire proof remains pending. Final focus return
+still fails; a minor header-icon wrap fix was also requested with narrow scope.
+No Lists workflow acceptance follows from the completed failure-image audit.
+
+Root awaits the Lists focus fix before combined desktop tests/build. No Cargo
+or native process is active.
+
+### 2026-10-14 - Lists focus/header correction integrated; combined gate running
+
+The Lists focus/header correction95a7cc... is integrated exactly across **seven
+targets (five replacements / two additions)** after all base, absence and
+candidate checks. Backups and receipt are retained at
+`tmp/list-rename-focus-return-prep/root-integration-receipt.json`. Root formatting
+passes. Installed **12 actual-source Node tests pass (78ms)**; independent review
+also ran all 12 successfully. The strict native final assertion is unchanged;
+failure diagnostics and ledger evidence are expanded. README/failure-audit notes
+are additional documentation outside the frozen source manifest.
+
+Combined desktop tests are running in
+`focus-paint-protected-slash-desktop-full.log`, covering atomic Slash, the three
+previously unrun paint VDom regressions and the focus correction. Core source is
+unchanged, so **1,729 / 5 ignored plus one doctest PASS** remains current. There
+is no new native binary or Lists acceptance. Preserve pe2 acceptance on076ce07d
+and original lr2/lr3 failures without reattribution.
+
+### 2026-10-14 - Combined desktop and paint regressions pass; feature build running
+
+The combined desktop gate passes **1,670 / 7 ignored** after **3m49s compile
+and 7.10s tests**, doctests0, in
+`focus-paint-protected-slash-desktop-full.log`. All three performance::paint_tests
+pass: empty acknowledgment avoids render while normal writes render; real elapsed
+notification occurs once; and one pending update preserves the other. These are
+behavior regressions, not measured native performance gains.
+
+The feature build is running in `focus-paint-protected-slash-native-build.log`.
+No new executable/native evidence or Lists acceptance is established yet. Core
+remains **1,729 / 5 ignored plus one doctest PASS**; prior native receipts retain
+their original binary attribution.
+
+### 2026-10-14 - Feature build confirmed after wrapper error; lr4 running
+
+The feature build prints Cargo Finished after **4m44s**, but PowerShell stderr
+redirection returns wrapper exit1 with NativeCommandError. An explicit Cargo
+repeat that exits with $LASTEXITCODE confirms **exit0 / 0.91s**. Preserve both
+logs; the wrapper failure is not silently rewritten as success. Immutable
+`tmp/completion-baseline-binaries/native-focus-paint-protected-slash.exe` has SHA
+`988abc4fdfd3503e4526406e8919f26a112e8462cb5ae5e8f9bc15e924a5c70a`.
+
+Lists lr4 is running at both sizes, logged in
+`list-column-rename-native-run4.log`. No acceptance is claimed before terminal
+results and independent audit. Lifecycle A-C final source is independently CLEAR,
+manifest1c3175ec..., across **eight targets / 20 authored tests unrun**, and remains
+staged. This does not change production activation or current gate coverage.
+
+### 2026-10-14 - Lists lr4 runner passes; lifecycle focused run required rebuild
+
+Lists lr4 passes at both sizes with the root process closed. Root personally
+read both final PNGs: focus ring is on the exact renamed header, and the inline
+Material icon is correct in normal/narrow layouts. Independent acceptance_audit
+review of all **16 PNGs and the complete ledger** is still active; final acceptance
+awaits that audit.
+
+Lifecycle A-C is installed exactly across **eight targets**, with backups/receipt
+and formatting PASS. The first `protected-lifecycle-focused.log` invocation ran
+**zero tests (1,677 filtered)** because Copy-Item retained candidate mtimes older
+than the last test build. That run supplies **no coverage**. Root touched all
+eight files to current UTC without changing bytes; real compilation is now running
+in `protected-lifecycle-focused-rebuilt.log`. No lifecycle test pass is claimed.
+Native988abc4f remains pre-lifecycle evidence.
+
+### 2026-10-14 - Disconnected Lists rename independently accepted
+
+Lists lr4 is independently **CLEAR** at normal and narrow sizes: all **16 PNGs**
+(eight stages each) read, without clipping or obstruction. Final captures show
+the exact Delivery title focus ring and correct inline Material icon.
+
+Each process records **eight exact requests: seven reads / one synthetic mutation**,
+with no replay. Lost ACK and stale checks are unapplied; the fresh check applies
+at serial12 across visits1 to15. The only schema delta is the name; unknown fields,
+two full records and cursor `fixture-opaque-unloaded+/=` remain exact. Each has
+one readiness,16 edges and one terminal. PNG CRC/IDAT/dimensions, actual988abc4f
+binary hash and process creation/exit checks pass; cleanup/auditErrors are empty.
+Normal/narrow retain **47 / 46 pointer checks**, restored to [1546,637], with owned
+foreground and sampled taskbar clearance. Runner exits0; expected owned-process
+cleanup code1 is controlled termination, not crash-durability evidence.
+
+This accepts the bounded disconnected Lists rename workflow, not live mutation,
+global pagination, trusted OS input or crash recovery. Preserve lr1-lr3 failures
+unchanged. Lifecycle focused rebuild is still compiling; no lifecycle pass yet.
+
+### 2026-10-14 - Lifecycle rebuilt and full desktop gates pass
+
+The actual rebuilt lifecycle focused gate passes **20 tests / 1,677 filtered**
+after **3m28s compile and 6.63s tests**, in
+`protected-lifecycle-focused-rebuilt.log`. Full desktop passes **1,690 / 7 ignored**
+in **8.29s**, docs0, in `protected-lifecycle-desktop-full.log`. Root formatting
+passes. The initial zero-test invocation remains excluded from validation.
+
+Core source is unchanged; **1,729 / 5 ignored plus one doctest PASS** remains
+current. No new native build exists: immutable988abc4f predates lifecycle A-C.
+D implementation is released only into tmp from its reviewed plan, without
+factory, selector, autosave or realtime activation.
+
+The pure emoji lifecycle benchmark plan2040b... has source equality and pins
+verified by two independent agents, but has not run. No benchmark result or
+performance improvement is claimed.
+
+### 2026-10-14 - Emoji lifecycle baseline independently audited
+
+The emoji lifecycle baseline is independently audited CLEAR: **132 raw samples,
+1,584 phase values, 12 warmups and 48 report rows**, fully recomputed by user_links.
+The exact example `examples/emoji_catalog_lifecycle.rs` is installed without
+overrides; dev example build passes in **7.30s / exit0**, with root formatting
+passing afterward. Immutable benchmark SHA:
+`4c514c9ae88dfaa8861b2374f61c3410b3dde076a15e274b733526b00e400fec`.
+Raw receipts: `tmp/emoji-lifecycle-measured-1`. Report:
+`tmp/emoji-lifecycle-report/report.json`, SHA
+`806db3ea309f9dda33d042e7f1c1bd255685de0aa9c6803e99b8ab34f3f27caf`;
+The prose correction now names the unused method correctly; report data is
+unchanged. Final manifest SHA:
+`d6c8da4c400a01f1d835694b6b625903cca565364e5d0895d7251943e9b748eb`;
+summary SHA `c4569b6380f1c67de04a628a522f836a9f8459bb9d8f9e0aeb20f0e7d0d302dc`.
+The old d9d... manifest/summary remain under review-candidate/.
+
+At 64k, median/p95 milliseconds are initial capture **174.2121/187.7039**,
+replacement **207.0996/224.3218**, final old drop **133.0172/152.3163** and
+replacement drop **177.7622/197.8818**. Source performs the full clone serially
+under state.write; build/sort already runs on a worker. These are synthetic
+metadata component wall-time baselines, not live/frame/CPU/memory or speedup
+measurements. A thin name/value candidate and matched parity benchmark are
+now authorized in tmp only; no candidate improvement is established.
+
+Startup smoke cs4 control076ce07d and cs5 candidate988abc4f finish runner-PASS,
+exit0; root read both PNGs. Independent audit is pending, with no startup
+improvement claim. No native process is active.
+
+### 2026-10-14 - Startup cs4/cs5 audit complete with single-run limits
+
+Startup cs4/cs5 are independently CLEAR, with both PNGs read. Control076ce07d
+first-paint/conversation values are **803.4081 / 803.4584 ms**; candidate988abc4f
+values are **670.3938 / 670.4407 ms**. Ping is **818.1732 vs 678.2167 ms**.
+Each has ten successful agent polls for mainCPERF000001 and exact configured/
+finished20s duration. Seven JS observations have no errors. Pointer checks are
+**99 / 100**, with restoration, and process creation/exit, executable hash and
+PNG checks pass.
+
+These are one process per binary, probe-enabled disconnected observations using
+two-RAF acknowledgment, not physical paint. They establish no speedup, causal
+attribution, idle/live improvement or stall closure. The legacy receipt has no
+explicit cleanupErrors[] field; cleanup claims are limited to verified process
+closure and pointer restoration. No native process is active.
+
+Protected Slash completion preparation5f712cc... covers **nine targets / 20 tests**
+and remains staged under review, with no integration or acceptance yet.
+
+### 2026-10-14 - Protected Slash completion integrated; core gate pending
+
+Protected Slash completion is integrated exactly across **nine targets (four
+new / five hooks)** after root checks of all 20 package hashes, current bases/
+absences, combined patch and Rust formatting. Backups and root integration receipt
+are retained. WriteAllBytes gives fresh mtimes, avoiding the earlier copied-mtime
+validation issue. Root/core formatting passes; independent source review is CLEAR
+under5f712cc....
+
+The full core suite is running in `protected-slash-completion-core-full.log`,
+including **20 authored tests** with no result yet. The implementation remains
+natively unwired. Source-reviewed ACK handling clears only exact local ownership,
+preserving remote state, newer input and unknown pending state; binding remains
+guarded. Later rejected local-only archival is distinct from NotSent and has a
+separate review receipt. These are source semantics, not a new test/native pass.
+No native process is active.
+
+### 2026-10-14 - Completion core gate fails before completion admission
+
+Protected Slash completion core full **fails: 1,748 passed / 1 failed / 5
+ignored**, after **56.23s compile and 23.33s tests**, in
+`protected-slash-completion-core-full.log`. The new
+`acknowledged_remote_base_is_preserved_and_delete_stays_guarded` test fails at
+completion_tests.rs:22, where f.claim().unwrap returns ErrStorage **before
+c.complete**. Installation succeeds. Nineteen other new tests pass, but the full
+gate is not accepted.
+
+Root and the author are tracing admission and positive-baseline fixture conditions;
+no fix is identified or applied yet, and guards must not be softened. Preserve the
+failure log. Desktop1,690/7 and native988abc4f remain prior-completion-cohort
+evidence; no new native result or runtime activation is claimed.
+
+### 2026-10-14 - Completion fixture corrected through actual baseline flow
+
+The completion failure's source cause is confirmed: a Create ACK retains
+BasisLocal, while facade admission correctly requires Remote basis plus a
+positive baseline. The independently reviewed test-only correction is integrated
+exactly, SHA `395f16bd2c25d8551c5e6f053eb487297c95ffb75ae51d23add8a9af52aa75c2`,
+with backup/receipt and **63 added lines**. It asserts Local basis, the specific
+Remote-basis failure and unchanged claim refusal, then uses the actual gap/new-
+stream and baseline reserve/claim/retain/finish flow plus a fresh writer.
+Original remote-preservation and Delete-guard assertions remain unchanged.
+
+Root formatting passes. Focused testing is running in
+`protected-slash-completion-remote-focused.log`; no result yet. This is not a
+production fix and does not weaken guards. Preserve the failed full core result
+1,748/1/5 until corrected focused and full gates actually pass.
+
+### 2026-10-14 - First completion fixture correction fails; basis explanation corrected
+
+The first corrected-fixture focused run **fails: 0 passed / 1 failed / 1,753
+filtered**, after **23.42s compile and 0.02s test**, in
+`protected-slash-completion-remote-focused.log`. At line399 the actual basis is
+**Unverified**, not the fixture's expected Local. This supersedes the earlier
+incomplete/incorrect claim that Create ACK leaves the admitted successor Local.
+
+Root traced successor logic in mod.rs:245-255: acknowledged identity change
+invalidates the basis and sets **Unverified / epoch0**. A new positive baseline
+is therefore required. Both the original claim-admission failure and this focused
+fixture failure remain preserved. The author is staging test-only v2 with the
+proper guard message; no corrected test pass exists, and production guards are
+unchanged. Do not cite the first test-only correction as successful validation.
+
+### 2026-10-14 - Completion fixture v2 and thin core preparation integrated
+
+Test-only fixture v2 is installed exactly, SHA
+`52bdcfe70a19b5cef2d4d91c125f4c0f40a44950dc35392b463e257d4ebdded2`,
+with reviewed backups/receipt. Its full-record-to-successor path correctly expects
+**epoch0 / Unverified** and the matching guard message. No production behavior
+changes; both earlier failure logs remain preserved.
+
+The thin-catalog package719ba74a... is independently CLEAR. Root promotes only
+**six core/benchmark targets (one replacement / five new)** after exact pins,
+bases and artifact checks, with backups/fresh mtimes. Root/core formatting passes.
+The seventh desktop target is **not promoted**, pending measurements. Core now
+contains thin Catalog compatibility changes; canonical workspace state is unchanged.
+
+Combined core full tests are running in `slash-completion-thin-core-full.log`,
+covering completion20, three new parity tests and frozen-oracle tests. No corrected
+combined pass, new benchmark result or native result is claimed yet.
+
+### 2026-10-14 - Completion and thin core gates pass; desktop running
+
+Combined core full passes **1,755 / 5 ignored**, plus one doctest (0.21s), after
+**42.34s compile and 23.17s tests**, in `slash-completion-thin-core-full.log`.
+All **20 completion tests**, including corrected remote v2, and all **six thin
+namespace tests** (three new parity / three frozen original oracle) pass. The
+increase from1,729 to1,755 is26 tests. Root/core formatting passes; both earlier
+completion failures remain preserved.
+
+Full desktop is running in `slash-completion-thin-desktop-full.log`. The thin
+desktop projection remains unpromoted; no new benchmark measurement or native
+result exists yet. Earlier desktop1,690/7 and native988abc4f retain their prior-
+cohort attribution. Passing core behavior tests do not establish a performance
+gain or production activation.
+
+### 2026-10-14 - Combined desktop and benchmark build pass; matched run active
+
+Combined full desktop passes **1,690 / 7 ignored** after **5m45s compile and
+8.48s tests**, docs0, in `slash-completion-thin-desktop-full.log`. Independent
+core remains **1,755 / 5 ignored plus one doctest PASS**.
+
+The thin lifecycle example's explicit locked dev build passes exit0 after the
+full tests, recorded in `emoji-thin-lifecycle-dev-build`. Root retains verifier,
+toolchain and no-override records. The matched six-process run is active at
+`tmp/emoji-thin-lifecycle-measured-1`, starting with full0. No measurement result
+or gain is claimed yet. Desktop projection remains staged and there is no new
+native result.
+
+D shared23 and fixture13 preparations are separately source-review CLEAR; their
+checker/runner is not frozen. They are not covered by the completed current gates.
+
+### 2026-10-14 - Matched emoji runs complete; final report audit pending
+
+All six matched emoji lifecycle processes complete **exit0** at
+`tmp/emoji-thin-lifecycle-measured-1`, ordered full0/thin0/thin1/full1/full2/thin2.
+Each validates44 samples /528 phase values /4 warmups: **264 samples, 3,168 phase
+values and 24 warmups total**. Explicit dev build after the test build takes
+**1.18s**. Benchmark SHA:
+`8a35698b3830776d26bc13ee6de6bc5bdb6d73b6e13e39e054e20f24738039cd`.
+
+The independent report audit is ongoing; final report SHA and acceptance are
+pending. Preliminary64k full-to-thin median/p95 milliseconds are initial capture
+172.5360/203.5157 to20.4980/24.7353; replacement208.1698/232.0041 to20.5676/23.4149;
+final old drop135.0354/159.4875 to24.7590/29.6159; replacement drop179.4656/202.7834
+to26.8898/34.8080. Preserve all reported regressions; these are component wall-time
+measurements, not frame/native gains. Desktop projection remains unpromoted.
+
+Lists view preparation d829c... (31 targets /21 new tests) remains staged under
+review. D checker work is ongoing; neither expands completed acceptance.
+
+### 2026-10-14 - Current D/picker gates and qualified Lists native evidence reconciled
+
+Current source reconciliation: D53 (94c30...) and picker6 (e5a942...) are
+integrated. Full desktop passes **1,715 / 7 ignored**, docs0,8.75s tests in
+`protected-adoption-picker-desktop-full.log`. Core remains **1,797 / 5 ignored +
+one doctest** (26.26s compile,24.63s tests,0.22s doctest) in
+`archive-view-core-full.log`. D passes16 Rust/48 Python/25 JS; picker passes two
+actual ListDialog VDom tests (3m24s compile,0.02s tests) and11 Python checks.
+D feature14-process/150-PNG verification is pending.
+
+The latest native337c7d2 predates D/picker. lr5 column rename is independently
+CLEAR with16 PNGs read; lv1 saved-view runtime/ledger passes but visual acceptance
+is HOLD after all16 PNGs are read. Both stale captures show "All loaded items"
+while layout/model retain V_CUSTOM. Final label/focus is correct but does not
+close this defect. Four receipts retain PIDs164/8508/392/3796, pointer checks
+48/45/47/46 restored to[1728,88], explicit empty cleanup/audit errors, exact binary,
+creation/exit and PNG integrity. Each has8 requests (7 reads/1 write), completion
+writefalse/checkfalse/checktrue, and exact unknown schema/records/cursor retention.
+Fresh lv2 proof is pending despite passing picker source tests.
+
+Archive12 (31b3d6b1...d4b58) and saved-view31 (6a5f3492...cd3f1) passed exact
+integration checks. Archive's initial E0425 test-module shadowing failure is
+preserved. Test-only importfix8614c5d2 changes no assertions or production behavior.
+Its first filename-based filter matched0/1802filtered after49.28s compilation,
+which is no coverage; correct Rust module filter passes28/1774filtered in0.94s.
+Full core1,797 includes28 archive and14 saved-view core tests. Combined desktop
+then passed1,697/7 (5m30s compile,9.06s tests); subsequent one-line unused import
+cleanup a1b677b1 was runtime-neutral. D and picker later raised desktop to1,715.
+
+Matched emoji report independently passes all48 comparisons and9/9/32/32
+regression-set recomputation. Final manifest062a7506bc75e19ff1e964948f15f4f8c45242221cf383f37ba988cb937d9fbb,
+reportcd912b35ffd9daba23557887b43dbbdb6264578d87d1623ec7562a1fd0065a08.
+Desktop thin projection c1115c3e is installed after exact dependency/base checks;
+its full desktop gate passed1,690/7 (2m37s compile,8.49s tests). No cold native
+improvement follows from component results.
+
+Preflight3 67f81... and remote16 ace1db... are source-CLEAR but still staged until
+receipts. Current D full config/path validation is after WebView setup; source
+review is not preboot/runtime proof, and no unrun probe establishes session access.
+Cold plan a3c055... needs refresh after the imminent changes. All production
+activation boundaries remain off. Current RESUME/integration summaries are now
+rewritten around these gates; prior snapshots below them are explicitly historical.
+
+Preflight3 and remote archive16 are now integrated through
+`tmp/install-adoption-preflight-and-remote.py`, with exact before/after/manifest
+receipts in each prep/root-integration.json. Package verification, 11 mocked
+preflight tests (0.223s) and root/core formatting pass. The 38 focused remote
+SQLite tests are compiling in `slash-remote-archive-focused.log`; one extra pure
+test follows. No new Rust gate pass or native/preboot proof is claimed.
+
+Remote focused compilation fails exit101 before tests: **111 errors / 1 warning**
+in `tmp/windows-bootstrap/slash-remote-archive-focused.log`, with re-export
+visibility and ReadTicket glob conflicts cascading. A narrow correction is staged
+for independent review; no remote Rust pass is claimed. Core 1,797/desktop 1,715
+remain preceding-cohort evidence. Slack CDP9222 responds to direct /json/list
+after reboot; no restart is needed. Node capture --list returned targets before
+its uv_handle-closing assertion/exit1, which is not a Slack failure.
+
+### 2026-10-14 - Remote compile corrected; focused admission tests fail
+
+The five-target compile-only correction a91858d1... is installed exactly with
+root receipt and formatting PASS. Focused compilation succeeds in **48.16s**,
+then the actual 38-test run reports **10 passed / 28 failed / 1,803 filtered** in
+**1.26s**, recorded in `slash-remote-archive-focused-fixed.log`.
+
+The common failure is read reservation reporting "read admission record missing"
+before positive paths. The author is diagnosing it; no successful remote gate is
+claimed. Preserve both the original111-error compile log and this test-failure log.
+Default build and captures remain pending; earlier full core/desktop gates retain
+preceding-cohort attribution.
+
+### 2026-10-14 - Limited default build and separate pending corrections
+
+The separate cleanup_followup pure test passes **1 / 1** (0.00s, 1,840 filtered)
+in `slash-cleanup-followup-focused.log`; this does not clear the remote failures.
+The missing ledger insertion is confirmed as a production defect, not fixture
+setup. A ten-target correction ad4e24... with eight new SQLite tests is under
+review; existing team-read validation remains unchanged. No corrected gate yet.
+
+The first D feature check fails only E0599, DraftBook.clone at replacement.rs:20,
+in `protected-adoption-feature-check1.log`. Fixture-only whole-book move fix
+7ccb654... is source-review CLEAR but uninstalled during the default-build freeze.
+The running `adoption-default-native-build.log` build is pre-ledger/pre-D-clone fix;
+its 2,163-file before-inventory is `native-adoption-default-start.json`. Intended
+use is limited to **19 feature-off probes and picker-inclusive Lists lv2**.
+It cannot validate either pending correction; no fresh gate pass is claimed.
+
+### 2026-10-14 - Default linker failure and supported package cleanup
+
+The default native build fails at linking with **LNK1140: limit exceeded for
+program database**, recorded in `tmp/windows-bootstrap/adoption-default-native-build.log`.
+Only244 MB disk space was free, but causation is not established until retry.
+No new binary, probes or captures were produced; preserve the failed start inventory.
+
+Automatic policy rejected the manually validated cache-delete command; it did not
+execute. Supported Cargo package cleanup then succeeded after a dry run:
+`cargo clean -p super-platinum`, limited to root-package generated files. Logs are
+`package-clean-dry-run.log` and `package-clean.log`. Cargo reports129 GiB removed;
+actual free space is83.5 GiB. Immutable tmp binaries, captures and logs are preserved.
+No profile flags changed. Root plans to integrate both reviewed corrections before
+fresh gates and a new build snapshot; no corrected result is claimed yet.
+
+### 2026-10-15 - Remote corrections installed; default-stack gate overflows
+
+Both reviewed corrections are installed exactly with root receipts: ledger10
+ad4e24... and D replacement1 7ccb654.... Root/core formatting passes. The ledger
+focused46 compile takes38.60s, then aborts **0xc00000fd / STACK_OVERFLOW** in
+`positive_cleanup_before_restart_can_archive_with_fresh_stream_and_accepted_writer`,
+without a final summary, in `slash-remote-ledger-focused.log`. The exact test also
+overflows at default stack in `slash-remote-restart-stack-default.log`.
+
+**Diagnostic only:** with RUST_MIN_STACK=16777216, the exact test passes1/1 in1.34s
+and all46 pass in7.20s (`slash-remote-restart-stack-16m-diagnostic.log` and
+`slash-remote-ledger-16m-diagnostic.log`). The environment variable is removed in
+finally. These runs provide **no normal-stack acceptance**. A test-only phase
+split preserving every assertion is being staged; the remote suite must not be
+called passing until the corrected default-stack gate succeeds.
+
+Native feature check2 is running after the D fixture replacement correction.
+No new feature/native pass is claimed. The linker failure, earlier compile/test
+failures and diagnostic logs remain preserved.
+
+### 2026-10-15 - Normal-stack remote and full core gates pass; corrected build running
+
+Normal-stack acceptance is restored after the exact test-only frame correction
+508983... (candidatecb8d6f...), installed with root receipt. The exact test passes
+**1 / 1 in1.36s**; all remote tests pass **46 / 1,803 filtered in7.16s**, in
+`slash-remote-ledger-default-focused.log`. Independent full core then passes
+**1,844 / 5 ignored plus one doctest**, with **28.42s tests /0.16s doctest**, in
+`slash-remote-ledger-core-full.log`. Root/core formatting passes. The prior
+overflows and 16MiB diagnostic runs remain preserved; these new passes use the
+normal stack and do not rely on that diagnostic environment override.
+
+D feature check2 passes in **54.45s**, recorded in
+`protected-adoption-feature-check2.log`. The corrected default build retry2 is
+running in `adoption-default-native-build2.log`, with current2165-file source
+snapshot `native-adoption-default-start2.json`. The failed first inventory/log
+remain preserved. No new desktop full gate, native result or probes exist yet.
+
+Sequence: standalone default lv2 and feature-off probes, then feature D full
+functional verification, before building the cold paired instrumented binaries.
+This keeps any native-fixture corrections from invalidating the performance pair.
+No cold performance improvement is claimed.
+
+### 2026-10-15 - Corrected default build and 19 off probes pass; lv2 running
+
+Default build retry2 passes **exit0 /6m16s** (actual Finished line), in
+`adoption-default-native-build2.log`. Immutable
+`tmp/completion-baseline-binaries/native-adoption-default.exe` has SHA
+`866a4a0cdd0e02e972a94602d4c2cdd3e338e79a3cd992252f6db29e8cdd292f`.
+Its2165-file source inventory is sealed unchanged in `native-adoption-default.json`.
+All **19 feature-off negative probes PASS**, runner exit0, in
+`protected-adoption-negative-off1.log` and
+`tmp/protected-adoption-negative-off1/receipt.json`.
+
+This binary includes corrected D preflight, picker, core ledger and test frame fix.
+Feature-off probes do not cover feature-on D native behavior. Lists lv2 two captures
+are running in `list-view-rename-native-run2.log`; no acceptance before PNG/receipt
+audit. Preserve the LNK1140 failure. Retry succeeded after scoped Cargo cleanup and
+source corrections with unchanged profiles/flags; disk alone is not proven causal.
+
+Cold source preparation is refreshed and source-review CLEAR under manifest
+`ee2a4de6480674075cf70a8e77f8b59139e3f81d18bcc0ae01b8a2605a226147`:
+18 targets /20 prepared files unchanged from a3...,14 artifacts/110 dependencies,
+seven receipt manifests/31 final pins/11 chain links. Twelve JS and nine Python
+checks pass. Functional D verification still blocks installation; no cold native
+gain is claimed.
+
+### 2026-10-15 - Saved-view lv2 and feature-off probes independently accepted
+
+Lists lv2 is independently **CLEAR**, and root personally read all **16 PNGs**;
+root review: `tmp/agent-ui/lv2/root-visual-review.txt`. Both stale stages correctly
+retain Project delivery/V_CUSTOM; observed/final stages show Delivery overview.
+Normal Table and narrow Board render correctly, with readable, unobstructed final
+Rename focus rings. All eight stage picker IDs/text and renderer kinds pass.
+
+Strict installed validators pass against closed raw logs: each process has
+**eight requests (seven reads / one synthetic write)**; only the view name changes,
+with unknown schema, raw records and cursor preserved. Explicit cleanupErrors[]
+and auditErrors[], exact866a4a0c binary hash, owned PIDs18100/14524 closure and
+pointer restoration pass. Preserve lv1's historical visual failure.
+
+The **19 feature-off probes are independently CLEAR**: exact ordered requests,
+empty raw stdout, exact58-byte stderr, exit2, creation/exit identity, unchanged
+input inventories, empty cleanup, individual/aggregate equality and source
+preboot-guard provenance. These prove bounded refusal paths, not live HTTP,
+crash durability or feature-on D behavior.
+
+Feature desktop full tests are running in
+`protected-adoption-remote-feature-full.log`; no result yet.
+
+### 2026-10-15 - Current corrected feature desktop gate passes
+
+Current full feature desktop passes **1,715 / 7 ignored** in **7.45s tests**,
+docs0, exit0, on the normal stack, in
+`tmp/windows-bootstrap/protected-adoption-remote-feature-full.log`. This gate
+covers the current corrected cohort; it supersedes the earlier running/prior-
+cohort qualification. Independent core remains1,844/5 plus one doctest PASS.
+
+Standalone feature build is running in
+`tmp/windows-bootstrap/adoption-feature-native-build.log`, with2165-source snapshot
+`native-adoption-feature-start.json`. No feature-on native or D acceptance is
+claimed before the new binary, runtime probes and functional matrix are verified.
+
+### 2026-10-15 - Acceptance matrix reconciled to current accepted slices
+
+Current-status cells now distinguish corrected core1,844/feature desktop1,715,
+independent default/off19/lv2 evidence, and outstanding D feature-on/cold-native
+verification. Superseded en1/lr1-lr3/lv1 and compile/test/filter failures remain in
+the chronological ledger rather than masquerading as current blockers. Emoji en2,
+Canvas cu2/cr2/cl2, protected pe2, Lists lh1/lr5/lv2 and installed thin projection
+are recorded only within their measured synthetic/native scope. Broader live,
+crash/OS-input, pagination and production-ingress limitations remain open.
+
+### 2026-10-15 - Feature build passes; D pilot status controls fail acceptance
+
+The standalone feature build passes **5m56s / exit0** in
+`tmp/windows-bootstrap/adoption-feature-native-build.log`. Immutable
+`tmp/completion-baseline-binaries/native-adoption-feature.exe` has SHA
+`71f47834f0faca6295caf1f84e14b509f12487f3960ea0a92d80ac977a38b752`;
+start/sealed2165-file inventories are unchanged. Feature-on negative probes record
+**37 PASS / 1 symlink-root skip** (Windows1314 privilege), receipt
+`tmp/protected-adoption-negative-on1/receipt.json`; independent audit is running.
+
+D pilot pa1 normal adopt-channel **fails Python validation** with
+"Wrong exact fields: Actual status controls". Native terminal oktrue does not
+establish acceptance. Root read all **eight stage PNGs plus one failure PNG**;
+prepared status visibly clips Cancel waiting. review_layout is investigating.
+Owned PID20032 is closed, cleanupErrors[] and closedfailureaudittrue are recorded.
+The failure PNG was captured after pointer restoration and is diagnostic only.
+The remaining13 native runs have not executed. The mouse is released, production
+activation remains OFF, and no D functional acceptance is claimed.
+
+### 2026-10-15 - Feature negatives accepted; D status fix integrated
+
+All **37 feature-on negative probes are independently CLEAR**, with raw outputs,
+process/input-tree checks and source/build provenance; the sole symlink-root case
+remains skipped for Windows1314 privilege. Pa1 visual review is retained at
+`tmp/agent-ui/pa1/root-visual-review.txt`. Its prepared controls were stale: strict
+expected check/reload/adopt/cancel, actual reload/open/cancel, because Host mutex/
+state.peek did not subscribe reactively. Label clipping was a separate real issue.
+
+The ten-target status fix is now integrated exactly, manifest
+`eda79c0176a67079ff459f90f9ed0610171861205377f74a7ab867f491ef0dec`,
+with backups and `tmp/protected-adoption-status-fix-prep/root-integration.json`.
+Strict prepared control/copy expectations are unchanged. The fixture publishes
+four finite states before held registering/prepared/locked/installed and uses
+unconditional state.read; controls wrap at intrinsic width, full status copy is
+retained, and JS/Python verify label Range/overflow geometry. Root formatting,
+**31 installed Python tests (4.520s)** and **28 JS tests** pass.
+
+Three actual VDom tests are authored and compiling in
+`tmp/windows-bootstrap/protected-adoption-status-focused.log`; no result yet.
+There is no new build or native run;71f47834 is now pre-status-fix evidence.
+Pa1 remains a failure. Its diagnostic exact SQLite/events/lease audit at
+`tmp/pa1-diagnostic-audit.py` / `.json` is diagnostic only, never acceptance.
+
+### 2026-10-15 - Status-fix VDom and full feature gates pass; rebuild running
+
+Status-fix focused Rust passes **three actual VDom tests /1,722 filtered**
+(3m17s compile,0.00s tests), in `protected-adoption-status-focused.log`. Full feature
+desktop passes **1,718 /7 ignored**, docs0, **7.41s tests**, exit0 on the normal
+stack, in `protected-adoption-status-full.log`. Core remains **1,844 /5 ignored
+plus one doctest PASS** because the new source is fixture-only.
+
+Installed Python validation totals **50 tests**, explicitly31 receipt tests,
+nine storage tests (2.881s, `protected-adoption-status-storage.log`) and ten
+lifecycle tests (0.129s, `protected-adoption-status-lifecycle.log`). This does not
+inflate the separate historical48-test count. The28 JS checks remain passing.
+
+Feature build2 is running in `adoption-feature-native-build2.log` with2166-source
+snapshot `native-adoption-feature-start2.json`. No new native acceptance exists;
+pa1 remains a preserved failure until a corrected built run is independently
+verified.
+
+### 2026-10-15 - Corrected feature build passes; D refusal timeout repeats
+
+Status-fix independent review is CLEAR. Feature build2 passes **4m23s /exit0**,
+with2166-source seal unchanged. Immutable
+`tmp/completion-baseline-binaries/native-adoption-feature2.exe` has SHA
+`21a2c9e12480a6ece4743e410a5c2faa691cc700fb4f887c2089d535879e7e2f`.
+
+Pa2 normal/narrow adopt-channel and normal adopt-thread/late-input pass their
+strict runner checks: **four cases /32 PNGs**, independent audit ongoing. Root
+read both prepared channel captures; full Cancel text is visible/correct.
+Normal native-refusals then **fails the 250ms titlebar check after aba-refused**,
+despite closed native terminal oktrue with16 snapshots/17 stages and18 PNGs
+including failure. PID19712 closes with empty cleanup and stationary/restored
+pointer. Pa3 isolated quiet retry fails the same timeout, PID3416, retaining the
+same34 edges/terminal and18 PNGs. Both runs remain FAIL.
+
+Root has read the pa2 failure PNG; independent image audits are underway. The
+remaining **nine cases are unrun**. Investigation is examining synchronous,
+unbuffered eprintln Value serialization of roughly566KB on the UI terminal path;
+no fix or confirmed cause yet. The mouse is released, no Cargo/native process is
+active, and no full D acceptance is claimed.
+
+### 2026-10-15 - Terminal output offload integrated; full feature gate pending
+
+The two-target terminal offload fix is integrated exactly, manifest
+`fd9236db689b6ad5c9a2ce0ef5753062b3d43149501bb8e6c6500f1fd0a5a3b7`,
+with backups and `tmp/protected-adoption-terminal-fix-prep/root-integration.json`.
+Independent review is CLEAR and root formatting passes. Full feature Cargo is
+compiling in `protected-adoption-terminal-full.log`, including three new tests;
+no result yet.
+
+The owned Value, buffered JSON/prefix/newline, locked write_all and drop move to
+an awaited spawn_blocking task. Existing early-error/success shapes remain exact.
+Failures are nonterminal diagnostics only, with no fallback, replay or guard
+change. Candidate508938... contained corrupted ASCII??? test text; it was caught
+by root/reviewer, preserved in history/revision-1, and corrected to Unicode escapes
+before installation. Do not describe that intermediate candidate as installed.
+
+Source evidence points to UI-thread eprintln Value fragments, but no measured
+CPU-versus-I/O duration attribution is established. Pa2/pa3 failures remain retained.
+Root has now read both failure PNGs and pa2 expiry-locked/restored/aba-refused
+captures; controls are readable/correct. Full independent image audit is pending.
+Binary21a2c9e1 predates this fix; no new build or native result exists yet.
+
+### 2026-10-15 - Terminal feature gate and four D cases pass; refusal holds retained
+
+Full feature terminal-fix tests pass **1,721 /7 ignored**, docs0, **3m23s compile
+and7.32s tests**, in `protected-adoption-terminal-full.log`. All three new named
+terminal tests pass; core remains1,844/5 plus one doctest, unchanged.
+
+Independent acceptance audit has read **all68 PNGs**: four pa2 cases are CLEAR
+with32 PNGs and exact SQLite/ledger checks; pa2 and pa3 native-refusals remain
+failed titlebar checks,18 PNGs each. No failure is normalized into acceptance.
+
+A separate latent oracle bug hardcodes composing:false. The actual Rust sequence
+requires true only for composition-active native/geometry snapshots and the
+compositionStart/ResultWritable details before composition ends: exactly four
+expectations. A Python-only expected-composition parameter (default false), those
+four explicit true cases and adversarial regressions are being prepared, not
+integrated. Diagnostic use of only those four exact expectations allows remaining
+payload assertions to pass; this is diagnostic, not acceptance or normalization.
+Root is waiting for the checker freeze before build3; no new native binary yet.
+
+### 2026-10-15 - Composition oracle correction installed; build3 running
+
+The six-file Python composition correction is integrated exactly, manifest
+`784d35aebf274c602a34b8ca0f15d3965422a20f82ec9b48ca0a96851484a2ed`,
+with backups/root-integration.json and independent review CLEAR. Installed public/
+composition checks pass **36 tests in22.910s**, in
+`protected-adoption-composition-installed.log`. Dependent actual-helper suites
+also pass: **16 Update tests /0.269s**, **15 protected-draft tests /0.704s**, and
+**15 enrollment tests /0.231s**, in their respective -update-dependent,
+-protected-dependent and -enrollment-dependent logs.
+
+Optional expected_composing stays strictly boolean and defaults false; exactly
+four explicit true observations follow the actual sequence. No raw receipt data
+is normalized. Rust is unchanged, so full feature1,721/7 remains current.
+Build3 is running in `adoption-feature-native-build3.log` with2168-source snapshot
+`native-adoption-feature-start3.json`. New native proof is pending; preserve all68
+previously audited PNGs: four CLEAR cases/32 images and two failed refusal runs/
+36 images. Those failures are not retroactively accepted.
+
+### 2026-10-15 - Feature build3 and full pa4 runner matrix pass; audit pending
+
+Feature build3 passes **4m19s /exit0**, with2168-source seal unchanged. Immutable
+`tmp/completion-baseline-binaries/native-adoption-feature3.exe` has SHA
+`89687b728f2b6221cbc420509f2ee4b1804bb9697b4af8981d212c4a46c6fa3a`.
+Logs: `adoption-feature-native-build3.log`,
+`protected-adoption-native-refusals4.log` and `protected-adoption-native-matrix4.log`.
+
+Pa4 completes all **14 scenario/size runs**, runtime and runner PASS, with **150
+PNGs** and clean closed receipts/processes. Independent acceptance_audit review
+of all150 is actively pending; **no full D acceptance yet**. The mouse is released.
+Current full feature remains1,721/7; composition36 and the separate46 dependent
+helper checks pass. Preserve pa1/pa2/pa3 failures and diagnostic-only history;
+the completed new run does not retroactively change those results.
+
+### 2026-10-15 - D pa4 independently accepted; refreshed cold package ready
+
+Pa4 is independently **CLEAR**, recorded in `tmp/pa4-independent-audit.json`:
+all **150 PNGs personally read**,14 closed processes,300 ordered edges and136
+snapshots. Strict raw terminals, full SQLite inventories, native leases and glyphs
+pass against the same feature3 SHA; pointers restore and cleanup is empty. No raw
+normalization occurs. Root's12 representative reads are recorded in
+`tmp/agent-ui/pa4/root-visual-review.json`. Historical pa1-pa3 failures remain
+unchanged. Acceptance is disconnected only: no IME, live Slack, restart or global
+HTTP proof, and no production activation.
+
+The cold package is refreshed and independently source-review CLEAR, manifest
+`2341629a0036357fd5b9d1b8fd6e5633a6b3ed56d48fce8760249f1bf9e35e8d`.
+Verification covers18 bases/20 unchanged prepared files,10 receipts/47 source
+pins,16 artifacts/132 dependencies; prior archive92 is retained. Twelve JS and
+nine Python checks pass. Root installation is starting, with focused tests next;
+no compile result or native performance claim exists for this package yet.
+
+### 2026-10-15 - Cold full package installed; formatting correction staged
+
+The refreshed cold package is installed exactly across **18 full targets** under
+manifest2341629..., with root-integration.json and backups. Cargo fmt --check
+fails only on new corpus.rs import order/spacing. A minimal formatting candidate
+is staged and independently CLEAR at `tmp/emoji-cold-corpus-format-fix`, manifest
+`d7dae6589c0d56d9a0140b121a28c11f7cbfc2f4b06814ff274a618a7b7be065`;
+function bodies are byte-identical. The original frozen package is unchanged.
+
+Focused Cargo is compiling in `tmp/windows-bootstrap/emoji-cold-full-focused1.log`.
+Wait for completion before applying the formatting correction and reconciling
+the paired source freeze. No cold measurement result or performance gain is claimed.
+
+### 2026-10-15 - Cold focused1 and formatting pass; cleanup contract correction pending
+
+Cold full focused1 passes **one test /1,728 filtered**,0.00s tests after **5m27s
+compile**, exit0, in `emoji-cold-full-focused1.log`; no compiler errors occur.
+Root installs the import-only formatting candidate7852556... exactly with a
+separate root-integration.json, and cargo fmt --check now passes. Focused2 is
+recompiling after that format change in `emoji-cold-full-focused2.log`.
+
+Independent runner review found two cleanup-contract gaps: nonempty cleanupErrors
+did not force okfalse, and CloseHandle was unchecked. A narrow correction and
+new final freeze are being prepared. No source behavior or measured timing has
+changed; no cold binary or measurement result exists. Do not assign a new final
+package hash before frozen independent review.
+
+### 2026-10-15 - Final cold freeze verified; full arm build running
+
+Final composed cold freeze is independently CLEAR, manifest
+`be4a9d5e36ecdff52414cd4b7f7856aed101622004302090375ae582c1802338`:
+18 targets,22 artifacts,138 dependencies and195 archived234 files. Only corpus
+formatting and runner cleanup changed;18 other variants and historical bases
+remain unchanged. Both root correction receipts match exactly.
+
+Installed runner cleanup tests pass **7 /0.036s**, in
+`emoji-cold-cleanup-installed2.log`. The initial ad-hoc log ran zero tests/exit5
+and remains retained, not coverage. Focused2 passes **1 /1,728 filtered**,0.00s
+tests after24.59s compile. Prepared validation passes15 Rust-format checks,
+12 JS, nine protocol Python and seven runner tests.
+
+Root's `tmp/emoji-cold-build1/full-start.json` is independently read here: **2,177
+source files**, full arm, pins_ok true, zero overrides and dev profile. Fullbuild1
+is running in `tmp/emoji-cold-build1/full-build.log` with the normal dev feature
+configuration, no overrides; toolchain receipt records Rust/Cargo1.98.1. No cold
+native run, measurement result or performance gain is claimed yet.
+
+### 2026-10-15 - Cold full arm sealed; thin tests running and D status reconciled
+
+Cold full-arm build1 passes **5m35s /exit0**, with38 warnings and all2,177 sources
+unchanged, sealed in `tmp/emoji-cold-build1/full.json`. Immutable full.exe has SHA
+`c45bd2c0a5c3ac93eb6b096605aa7c92e24b8812f2172d5be9dac541d1e9b75d`.
+Exactly two variants are switched to thin using `tmp/switch-emoji-cold-thin1.py`,
+receipt `tmp/emoji-cold-build1/switch-thin.json`; formatting passes. Full feature
+desktop tests for thin are running in `tmp/emoji-cold-build1/thin-tests.log`, then
+the thin build follows. No cold native measurement has run.
+
+Current-status correction: D pa4 independently passes all14 runs/150 PNGs on
+feature3 SHA89687b72, while off19 on866a4a0c and on37/one Windows1314 skip on the
+earlier feature binary remain separately attributed. Earlier pa1-pa3 failures
+remain historical; they are not current D acceptance blockers. Production
+factory/selector/autosave/realtime/Slash activation remains OFF; live, crash and
+trusted OS IME proof remains absent.
+
+### 2026-10-15 - Thin feature desktop passes; native thin build running
+
+Thin-arm full feature desktop passes **1,722 /7 ignored**, docs0, exit0 on the
+normal stack, after **5m20s compile and7.41s tests**, in
+`tmp/emoji-cold-build1/thin-tests.log`. The named cold-anchor test passes. Root
+verifies2,177 current sources with exactly **two file differences** from full-start;
+the thin start snapshot records2,177 files. Native thin build is running in
+`tmp/emoji-cold-build1/thin-build.log`. Core thin source is restored byte-identical
+to its pre-cohort state, so prior core1,844/5 plus doctest remains unchanged.
+
+Production-store compatibility final report
+`3b30f483f359251dc6c3071237a353847ba06be27d7babf7f673bde9324ea1f1`
+is retained at `tmp/protected-production-store-compatibility-pa4`, covering73
+composed targets. It is plan-only, not activation or runtime acceptance. No cold
+native measurement or performance gain is claimed yet.
+
+### 2026-10-15 - Paired cold builds pass; first pilot arithmetic validation fails
+
+Build1 paired binaries pass: full **5m35s /c45bd2c0...**, thin **5m37s /exit0**,
+SHA `661b11b7eca71671c9c33d2804ac44bd7be9ca867fb23530ca17c13fd5477d03`.
+Both2,177-source inventories are sealed; comparison passes exactly two file changes.
+
+Pilot1 attempts only full normal colon and **fails "Accepted endpoint arithmetic"**.
+Native stages all report oktrue, but the JS/Rust JSON round trip reports
+701.7999999970198 while Python recomputes701.7999999970195 (about2.27e-13ms);
+RAF arithmetic has a similar discrepancy. This is a strict-oracle investigation,
+not an accepted timing result. Root read four stage PNGs and found the layout good;
+a fifth failure PNG is retained. PID1824 closes with cleanupErrors[] and
+handleClosedtrue. Other three pilots are unrun.
+
+Preserve `tmp/emoji-cold-build1/full-pilot.log` and
+`tmp/emoji-cold-pilot1/full/emoji-lifecycle-colon-64000`. A numerical-oracle
+correction is being staged and independently audited; no normalization or guard
+change is installed. Both arms must be refreshed/rebuilt before final pilots.
+No active Cargo/native process, pilot acceptance or timing-gain claim.
+
+### 2026-10-15 - Pilot arithmetic oracle correction installed; paired rebuild pending
+
+The two-target pilot-oracle correction is installed exactly, manifest4c8d6d...,
+receipt `44ea284bfc92f5757492d6ea998c63879ccc6847263fa79b28f72a7ab787cb58`.
+Independent user_links and acceptance_audit reviews are CLEAR. Root runs the
+installed checks: **10 Python /14 Node PASS**, plus cargo fmt PASS. Exact event-
+clock guards remain; only derived subtraction uses an ULP bound capped at
+**1e-9ms**, with an explicit forward seed. This does not normalize raw observations.
+
+Old pilot1 remains failed and excluded. Current thin source awaits a new composed
+freeze and both-arm rebuilds before new pilots. Existing Rust1,722/7 coverage is
+unchanged; no new Rust/native run or cold performance claim follows from these
+checker passes.
+
+### 2026-10-15 - New cold freeze and build2 full arm pass; thin build running
+
+New main freeze4bfeb440... is independently CLEAR: **18 targets /26 artifacts /
+152 dependencies**, both oracle corrections installed, root24 pure checks and
+formatting PASS. Build2 full arm passes **6m37s /exit0**,38 warnings. Immutable
+`tmp/emoji-cold-build2/full.exe` has SHA
+`2be85d9e57b61b6278ff10cb04822ef14bdc46699acfbe97b4da577f4e685540`;
+`full.json` seals unchanged sources.
+
+The exact two-file switch to thin is complete and thin is the current source;
+its build is running. No pilot2 or cold gain is claimed. Preserve the previous
+be4... build1 and excluded failed pilot1 as separate historical artifacts.
+
+### 2026-10-15 - Build2 pair sealed; colon pilot passes and picker deadline fails
+
+Build2 thin passes **6m29s /exit0**,38 warnings, SHA
+`ad99f629cca279f64f7832b33eb2f9f142314a658ed462499a0cbe6d76d531dd`.
+Both paired2,177-source inventories are sealed and pass the exact two-file delta.
+
+Pilot2 full colon passes with **four PNGs**; full picker **fails the native15s
+deadline**, retaining two PNGs. The click handler runs, but composer-emoji-open
+returns Err(Finished); no picker/catalog work occurs. Colon PID7440 and picker
+PID2032 are closed, with cleanupErrors[] and handleClosedtrue. Root and independent
+audit have read all six PNGs; audit:
+`tmp/cold-independent-audit-prep/pilot2-audit.json`.
+
+Thin pilots and the quiet cohort have **not run**; no gain is claimed. A correction
+to the actual composer_eval channel lifetime is being staged, with no active edits
+yet. The mouse is released. Preserve the picker failure and prior excluded pilot1.
+
+### 2026-10-15 - Reply-lifetime correction validated; cold build3 full running
+
+The reply-lifetime fix is installed exactly (6c878554..., target35b1...,
+root receipt8a3456...). The capture and choose paths retain unchanged guard
+handshakes. A best-effort ACK cancellation is not rollback, and error-path JS
+termination remains unproved. Root's nine Node tests and formatting pass.
+Full feature Rust passes **1,722 /7 ignored**, docs0, normal stack/exit0, after
+**3m29s compile and7.50s tests**, in
+`tmp/emoji-picker-eval-lifetime-fix/root-feature-tests.log`.
+
+The composed main freeze is independently CLEAR, manifest
+`fed38e63b3d32f17611c0026ba912eb01fc75d55bec41a58ebeca56e2f60f688`,
+covering19 targets/21 variants/29 artifacts/168 dependencies. Build3 full arm
+is running after the exact two-file switch to full. No build3 native result or
+performance gain is claimed. Build1/build2 failures remain preserved separately.
+
+
+### 2026-10-15 - Cold build3 full sealed; separate Canvas work remains staged
+
+Build3 full passes **6m38s /exit0**,38 warnings. Immutable
+`tmp/emoji-cold-build3/full.exe` has SHA
+`71ea0ca8c70eb300da28b6aefca3d82ee78e49d88ee9e713db92a3312d144e9f`.
+The2,177-source seal is unchanged under fed38...; exact two-file switch back to
+thin, formatting and snapshot checks pass. Thin build is running; no build3
+native measurement or gain is claimed.
+
+Separate Canvas preparation remains staged: core8 manifest52eaa1ee... and
+native11 manifestf518583a..., independently reviewed. Source27, receipt64 and
+geometry19 checks pass; **eight Rust tests and28 PNGs remain unrun**. No promotion
+occurs during the cold pair and no new Canvas acceptance is claimed.
+
+### 2026-10-15 - Cold pilots accepted; measured3 cohort complete pending audit
+
+Build3 thin passes **6m33s**,38 warnings, SHA
+`3028bf91a831772957d52346a5439ab92eaacd688ccf1ffc5b8b47c58e9c3f69`.
+Both2,177-source seals remain unchanged and compare at exactly two file differences.
+Pilot3 independently passes **all four pilots /16 PNGs**, with acceptance_audit
+and root visual review. The apparent missing-picker concern is disproved by
+identical image bytes/pixels; no picker defect is established.
+
+Planned measured3 sequence full0/thin0/thin1/full1/full2/thin2 completes **all six
+runs /24 processes /96 PNGs, runner PASS**. Independent audit and report are in
+progress; **no performance gain is claimed yet**. The mouse is released. Earlier
+build1/build2/pilot failures remain unchanged and excluded from the measured cohort.
+
+### 2026-10-15 - Three source packages installed; new gates pending
+
+Root installed protected-store slice 2a (**12 targets**, manifest e0fe...),
+Canvas core (**8 targets**, 52eaa...), and rebased Add-view (**36 targets**,
+f48e...) after independent review. Exact integration receipts, each retained
+with package backups and root-integration.json, are respectively:
+
+- Slice 2a: `e416a087b8fb14d802b9df9e6d8178825c349d82141c98aee01b720f0a36b6cb`.
+- Canvas core: `2b33b45af2c69835c2ccf025d288d278472277d86dc6afccb1431045bdd14268`.
+- Add-view: `f76cd2a28cad3c6478063d2787c69672a92960ec5d42b0581b491fc1901ea97a`.
+
+Root/core formatting passed after the first two packages, before Add-view.
+**All new Rust/compiler and native gates remain pending.** Canvas native
+additive-hook rebasing is underway; production protected-store activation is
+off. Core 1,844 / 5 plus one doctest and feature desktop 1,722 / 7 remain
+preceding-cohort evidence. Cold measured3 audit/report is still pending; these
+source installations do not change the sealed binaries or measured-run scope.
+
+### 2026-10-15 - Cold measured3 accepted; Canvas native installed and core gate pending
+
+The cold measured3 cohort is independently **CLEAR: six ordered runs, 24 fresh
+processes and all 96 PNGs personally inspected**. Full/thin build3 have sealed
+2,177-source inventories differing in exactly the two reviewed files. Full SHA:
+`71ea0ca8c70eb300da28b6aefca3d82ee78e49d88ee9e713db92a3312d144e9f`;
+thin SHA: `3028bf91a831772957d52346a5439ab92eaacd688ccf1ffc5b8b47c58e9c3f69`.
+All four pilot3 cases / 16 PNGs separately pass; earlier failed pilots remain
+excluded. The apparent missing-picker concern was disproved by identical pixels
+and bytes.
+
+All **16 JS endpoint comparisons improve in median and observed maximum** for
+the synthetic 64,000-emoji fixture. Normal cold colon accepted-result latency
+is **675.3 / 681.5 -> 482.6 / 486.4 ms** (median / p95); normal cold picker is
+**554.8 / 557.4 -> 369.4 / 372.7 ms**. With three repetitions per case, p95 is
+simply the maximum, not a stable tail estimate. All **52 comparisons / 312 timing
+values / 96 subtraction checks**, **nine regression rows** and **21 positive
+nominal repetition differences** are retained. Serial cold capture still takes
+about 24 ms, controlled final release about 38-40 ms, and cold worker build plus
+picker projection about 317-331 ms by case median. This does not meet a 16.7 ms
+frame budget.
+
+This is bounded synthetic event-to-DOM/two-RAF improvement, not physical paint,
+trusted OS input, CPU/memory/startup/idle/network or general responsiveness proof.
+Whole-binary attribution remains appropriate; no exclusive causality or statistical
+significance is claimed. Synthetic inputs, loaded preferences/no prewarm, one URL
+and alias refresh, controlled final-reader release, and disconnected/no-session
+fixtures bound the result. See the [accepted summary](../tmp/emoji-cold-measured-report/summary.md).
+Final report SHA `196b1b1141e40aee9fe118d7b64af170c9ead1a9f0d78813072fd04636cf5fed`;
+manifest `23ebdeb49ce28b41bb5985ff01f4ed2b2f2025918867df564b98ad453b8e5211`;
+visual/closed-cohort audit `tmp/cold-independent-audit-prep/measured3-final-audit.json`
+SHA `db5d81e763e8952603f259926675912c68f448d0a81b230d82df8d5d4c2a71fc`.
+
+Root installed the rebased Canvas native 11-target package f7e20b53... exactly,
+receipt `52287ac6f35e495336e36ef2e30455e2abb37bfff4595cf3f20fade4c854e01b`.
+Initial core-full was interrupted by PowerShell stderr handling without a Rust
+verdict. Core-full2 failed to compile on a missing Snapshot import in a new slice
+2a test. Root installed the one-line fix with before/after/receipt in
+`tmp/protected-store-slice2a-compile-fix`; core-full3 is running. No new Rust or
+Canvas-native pass is claimed. Production protected-store activation remains off.
+
+### 2026-10-15 - Insertion3 accepted; new core cohort still has two failures
+
+Insertion3 is separately independently **CLEAR: all 32 PNGs inspected, two
+closed processes / 64 ordered edges**, exact thin build3 SHA3028bf91..., three
+usage ACKs per process and stale guards preserved. Audit:
+`tmp/emoji-insertion3/independent-final-audit.json`, SHA
+`d312050a33c7ecb5a46a25561032aa36fa3e7813cf36e15e877a697302181c5a`.
+Root also recorded four representative reads. This correctness evidence is
+separate from the cold latency comparison; no live or trusted OS IME claim follows.
+The two-target cleanup fix6904... is installed, receipt
+`ee97c9099f17b313c9d225c9166c7d8fe721ea587ac9a85df3c283ecf3fa55ad`,
+with root's 11 + 19 checks passing. Handle closure is checked through the runner's
+BOOL result; the receipt has no literal processHandleClosed field.
+
+**Current gate is not passing:** core-full4 reports **1,892 passed / 2 failed /
+5 ignored**, after 31.96s compile and 28.92s tests. All Canvas tests pass; the two
+remaining store fixtures bypass durable prepare, and their correction is underway.
+Core-full3 remains a preserved failure (**1,865 / 26 / 5**, 57.76s compile,
+28.73s tests). Desktop `cargo check --locked` passes in 60s with 52 warnings;
+the default full desktop suite is running. Installed pure checks pass: 27 Node,
+12 List Python and 64 Canvas contract tests. New native gates remain pending;
+production protected-store activation is off.
+
+Root installed slice 2a Windows/fixture correction e1e107... (three targets),
+receipt `700c23ee42b14f6fb871c2fd24415de95e5c3bff470397f025254d6e232fa13b`,
+and Canvas no-op fixture correction af1a... (one target), receipt
+`c15d91b9f1dddf152200ab1b399546e9dbdfef91a7badd87b8f825eba8a5d2e2`.
+Both retain backups and exact installation receipts. Prior core 1,844 / 5 plus
+one doctest and feature desktop 1,722 / 7 remain preceding-cohort evidence.
+
+### 2026-10-15 - Core-full5 passes; expanded desktop gate running
+
+**Latest completed core gate passes: 1,894 passed / 5 ignored + one doctest**,
+32.76s compile / 29.57s tests / 0.27s doctest (65.13s total), in
+`tmp/combined-list-canvas-store-gates/core-full5.log`. The one-target seed fix
+9e3927... is installed with receipt e14b8421.... Earlier core-full3/full4 failures
+remain preserved.
+
+The first default desktop suite compiled in 5m40s and reported **1,723 passed /
+1 failed / 7 ignored**, 7.90s tests. Its old hydration Scope expectation after
+rotation contradicted the intentional shared guard. The independently reviewed
+test-only correction asserts true before rotation and false after it, retaining
+finish refusal and record assertions. **Desktop-default-full2 is running** with
+16 new tests from the installed five-target bounded 2b factory subset (original
+93aa..., composition545db8...). Both format checks pass. Installed pure checks
+remain 27 Node / 12 List Python / 64 Canvas contract PASS.
+
+**2b is not complete:** the actual 2a ownership bridge, current-only drain,
+global queues and 2c remain pending plan. No new native build or acceptance is
+claimed; production protected-store activation remains off.
+
+Exact installed receipts:
+
+- One-target seed fix9e3927...: `e14b842185a19911ab853215e5dd48ff61628f26a84838ad7325263e75a8239a`.
+- Hydration test-only pre-true/post-false correction, independently CLEAR:
+  `0786e223f475f08ec6e7b13998e187c10194e0afa9e9dbb13bd169826c83d873`,
+  retained in `tmp/list-hydration-scope-test-fix`.
+- Five-target bounded 2b factory subset, original93aa... plus reviewed composition545db8...:
+  `8862aa7d7bfc0a1cb4e9938a7fd821be6cd42787298f96f3b0f8ba27e67bdc96`.
+
+Desktop logs remain in `tmp/combined-list-canvas-store-gates/`; the original
+failed default suite is preserved beside desktop-default-full2.log. No new
+native build exists for this cohort.
+
+### 2026-10-15 - Desktop full3 retains one root-factory failure
+
+Desktop-default-full2 failed to compile with E0609 on two uses of nonexistent
+Snapshot.writer. The test-only writer_id correction preserves the failed-Editor
+identity assertion. Receipt `tmp/protected-store-slice2b-compile-fix/root-integration.json`
+SHA `b1177dbff061cac69ed9a515efec76934dbdcf0cecdf1931b3c41abe650b21bd`.
+
+Desktop-default-full3 compiled in **4m17s** and completed **1,739 passed /
+1 failed / 7 ignored**, **7.62s tests**. The failure is
+`drafts::protected::root_factory::tests::revisit_uses_current_and_does_not_revoke_live_stream`,
+line146: stream_state(T1) returns Err(Stale); open_stream is line147. The author is diagnosing a minimal
+correction. Both logs remain in `tmp/combined-list-canvas-store-gates/`;
+**no completed desktop gate or new native build is claimed**. Core-full5's
+1,894 / 5 plus one doctest remains the completed core evidence.
+
+Remainder plan39ed0364... and Canvas source comparison47445b9f... are independently
+CLEAR **as plans only**, not implementation or runtime acceptance. Actual 2a
+ownership bridge, current-only drain/global queues and 2c remain incomplete;
+production protected-store activation remains off.
+
+### 2026-10-15 - Desktop full4 passes after fixture enrollment correction
+
+**Default desktop full4 passes: 1,740 passed / 7 ignored**, 2m36s compile,
+8.01s tests, docs0 (165.2325s total), in
+`tmp/combined-list-canvas-store-gates/desktop-default-full4.log`. The c48f...
+test-fixture enrollment correction is installed, receipt
+`32051a23321d7f51393f87a82bfe2ff1c88b4d902a7052b0314a85afdce0c382`.
+The fresh fixture lacked continuity-team enrollment before stream_state(T1) at
+line146; open_stream is the following line147. The existing actual enrolled helper
+now supplies that precondition, with an absent-team negative and initial live
+check. Runtime behavior is unchanged. Earlier full2 compile and full3 test
+failures remain preserved. The new feature native build is running via
+`tmp/combined-list-canvas-store-gates/build_native.py`; no new native acceptance
+is claimed. Installed pure checks remain 27 Node / 12 List Python / 64 Canvas
+contract PASS.
+
+The missing continuity team is the corrected fixture precondition, not a runtime
+behavior change. Preserve the original full2 compile failure, full3 failure and
+writer_id correction. This entry also corrects the earlier failing-call label:
+line146 is stream_state(T1), not open_stream. Core-full5 remains 1,894 / 5 plus
+one doctest. Production protected-store activation is off; the actual ownership
+bridge/current-only drain/global queues and 2c remain incomplete.
+
+### 2026-10-15 - Current native build and Lists accepted; Canvas receipt audit pending
+
+The current feature native build passes in **377.9787s**, with **2,210 inputs
+sealed unchanged** in `tmp/combined-list-canvas-store-gates/native.json`.
+Binary SHA `af267fa990c9bd18767a07cc29f140be152c1ff152ca7e562e8abe16876fe4e8`.
+Lists' **six runs / all 46 PNGs** are independently CLEAR within disconnected
+fixtures; audit `tmp/list-current-cohort-final-audit.json`, SHA
+`5f79571ef1d551ceacd77c369d22eea3de7ebe068b92a678884d4180440797e0`.
+Root recorded six representative reads. Canvas ct1 pair exits0 in 27.1883s with
+28 PNGs: all 28 have independent visual clearance and root read four representatives,
+but **strict receipt audit is pending**, so full Canvas acceptance is not claimed.
+The mouse is released.
+
+After the build, Python helper983e... was installed with receipt
+`0277c4620dacc4b6f34944e4e791e43ea3962b280393ef61bce29092b251207e`;
+root's seven plus nine checks pass. The List runs used the older helper, archived
+and pinned by their audit; the later helper is not retroactively attributed to them.
+
+The packed example d1bb... (six files) is installed, receipt90aa.... The test
+E0283 correction specifies sum::<usize>; formatting and tests2 pass (14 tests,
+0.42s), followed by the dev build in 4.49s, binaryff96c81c.... Provenance composition
+is pending and **no packed-example measurements or improvement are claimed**.
+
+Production protected-store activation remains off. Core-full5 1,894 / 5 plus
+one doctest and desktop full4 1,740 / 7 retain their completed source gates;
+new packed-example work does not establish a new full-suite or performance result.
+
+### 2026-10-15 - Canvas ct1 final acceptance closes current native cohort
+
+Canvas ct1 is independently **CLEAR: all 28 original PNGs inspected**, two
+closed processes, 13 stages plus final per process, exact binaryaf267fa9 and
+original 2,210-input seal compared. Pointers are restored; cleanup/audit errors
+are empty. Audit `tmp/canvas-text-ct1-independent-audit.json`, SHA
+`6861472893d41d86399c4dc4151c3475ae7ab30a52d0e9d7be8c8f198071666b`.
+Only the documented runtime helper override (root0277...) applies. The pyc drift
+was generated by the auditor at07:50:59, after the07:47:29-56 run, and was not a
+runtime override. Root's four original-image representative reads are retained
+under ct1. Together with Lists, **eight processes / 74 PNGs are accepted within
+disconnected limits**. This is not live behavior, trusted OS IME or current-server
+history proof. The mouse is released.
+
+The List six-process/46-PNG audit remains separately accepted on the same
+binary. Earlier failed source/native gates remain preserved. No production
+protected-store activation or broader parity completion follows from these audits.
+
+### 2026-10-15 - Preserialized Canvas decoder core passes; desktop pending
+
+**Latest source cohort:** the seven-target Canvas preserialized decoder e41eb79a...
+is installed exactly, receipt `tmp/canvas-preserialized-decoder-prep/root-integration.json`
+SHA `e9726f06caa5d0440b5bd57515653adb3672b60224fd1376b88362ed9a3f8908`.
+Both format checks pass. Independently locked core passes **1,906 / 5 ignored +
+one doctest**, **49.78s compile / 28.96s tests / 0.21s doctest** (81.293s total),
+in `tmp/canvas-preserialized-root-gates/core-full.log`. **Desktop full suite is
+running.** This is a pure lossless wrapper for three conservative Sections;
+acceptance guards are not relaxed and no live-incident fix is claimed. The accepted
+74 native PNGs / eight processes remain evidence for the older af267fa9 cohort,
+not blanket native acceptance for this decoder.
+
+The prior core1,894/desktop1,740/nativeaf267fa9 evidence remains attributed to
+its original cohort. Canvas protocol documentation belongs to the installed
+package and is not changed by this status reconciliation.
+
+Packed v2's three-seed measurements and report are complete; independent audit
+is pending. Preliminary capture improves while the pipeline worsens. No packed
+adoption or accepted performance improvement is claimed. Production protected-store
+activation remains off.
+
+### 2026-10-15 - Packed v2 report independently audited; no adoption
+
+Packed v2's report is independently **CLEAR**, audit
+`tmp/emoji-packed-independent-audit/measured-audit.json`, SHA
+`3730d143bee74ac94238cf2a29f5981374e15e40a0c584be6718330822979bea`.
+The audit verifies three processes / 132 pairs / 264 arms / 4,224 values,
+64 rows / 2,304 distributions, 404 summary regressions, 1,008 positive pairs
+and 528 capacity records, plus both retained ff96 binary copies and the
+37-source provenance chain. At64k, initial capture median improves
+18.8657 -> 9.70425 ms, but total median/p95 worsens
+312.237/317.1819 -> 312.3289/348.7739 ms. Replacement capture improves
+20.6346 -> 9.8677 ms, while total median/p95 worsens
+314.1208/323.14 -> 315.01985/335.7254 ms. **No production adoption** follows;
+a separate native experiment plan is being prepared. This does not alter the
+accepted cold full-to-thin native comparison.
+
+### 2026-10-15 - Decoder desktop passes; subsequent work remains preparation
+
+Decoder desktop full now **passes 1,740 / 7 ignored**, **5m02s compile /
+8.27s tests**, docs0, total311.6674s, in
+`tmp/canvas-preserialized-root-gates/desktop-full.log`. Core1,906 / 5 plus one
+doctest and both format checks pass. The 74 accepted native PNGs remain tied to
+pre-decoder af267fa9; these new source gates do not establish new native acceptance.
+
+Packed finite diagnostic plan852020... is independently CLEAR and authorized
+for **temporary preparation only**: no new native cohort or production adoption.
+Protected A e6c... is held for the lost-successful-handoff-result reattachment
+correction and is **not installed**. The private Canvas URL is requested
+asynchronously because older captures are absent; independent work continues,
+with no live calls or writes performed by this step.
+
+### 2026-10-15 - Revised protected-store A installed; core gate running
+
+**Newest installed cohort:** revised protected-store A
+`e90fe7d90c20d6ec1389bd9857ea214c1fb4b6d9667dfd5aa6c832ae6fb8fc88`
+is independently CLEAR and installed exactly: 12 targets, 211 dependencies.
+Receipt `tmp/protected-store-owned-route-handoff-fix-prep/root-integration.json`,
+SHA `7ea888f6895764cc878d2871254b374207c0f57698eb5e134e2457cdd762f68e`.
+Both format checks pass. **Core full is running**, log
+`tmp/protected-store-owned-route-root-gates/core-full.log`; no test result is
+claimed for this cohort. This installs A only: **B/C and 2c remain incomplete,
+production activation remains off**. Decoder source passes and pre-decoder native
+evidence below retain their original cohort attribution.
+
+### 2026-10-15 - Protected-store A core rerun passes after test accessor correction
+
+A's first core-full failed to compile with E0616 at line123 because the new
+test used private loaded.managed/locals fields. The independently reviewed,
+test-only managed()/locals() accessor correction is installed; before/after and
+receipt are retained in `tmp/protected-store-owned-route-accessor-fix`.
+After SHA `e319576b31b332fd024ce658e4c5d44227880eda275edca53b4de2f6dcfd72ad`.
+Both format checks pass. **Core-full2 passes 1,927 / 5 ignored + one doctest**,
+56.06s compile / 29.84s tests / 0.22s doctest, total88.883481s, in
+`tmp/protected-store-owned-route-root-gates/core-full2.log`, log SHA
+`f599a23461f9a6b9a840566c2a76d86f7be5e4886efdd0db471c723710737714`.
+**Core feature check is running; desktop validation is upcoming**, with neither
+claimed passing. B is next temporary preparation only; B/C/2c remain incomplete
+and production activation remains off.
+
+### 2026-10-15 - A core feature check passes; A-only desktop suite running
+
+**A core feature check passes**, using locked core `protected-test-support`:
+2m26s compile / 146.622391s total, log
+`tmp/protected-store-owned-route-root-gates/core-feature-check.log`, SHA
+`5c3e1b7f30702558189b9f8f9d6e5ead0aab813b70addec9b6a358c8da759181`.
+**A-only feature desktop full suite is running**; no desktop pass is claimed
+for A yet. B is temporary preparation only; B/C/2c remain incomplete and production
+activation remains off.
+
+The current Native Windows matrix now distinguishes completed pre-A decoder/source
+and pre-decoder native acceptance from A's pending desktop gate. Earlier accepted
+2a/Canvas/Add-view work is no longer described as waiting for its already completed
+gates. This clarification does not extend any native receipt to newer source.
+
+### 2026-10-15 - A feature desktop full passes; native evidence remains older
+
+**A feature desktop full passes 1,746 / 7 ignored, docs0**, using
+`cargo test --locked --features protected-native-fixture`: 6m23s compile /
+7.93s tests / 392.4500926s total. Log
+`tmp/protected-store-owned-route-root-gates/desktop-feature-full.log`, SHA
+`aea8cd7466a863af58e9f6125b8987deb14b008491e772ee885d4710322ff862`.
+A now has passing core1,927 / 5 plus one doctest, core feature check and feature
+desktop1,746 / 7 gates, with the test-only accessor correction retained.
+**No A native run exists**; all 74 previously accepted native PNGs predate the
+decoder and A. B/subitem temporary candidates are uninstalled; B/C/2c remain
+incomplete and production activation remains off.
+
+The packed diagnostic final narrow source-proof correction remains under review.
+Installation/current-arm gate/paired builds are next, not completed. Historical
+accessor compile failure and its exact correction remain preserved.
+
+### 2026-10-15 - Packed native diagnostic current arm installed; gate running
+
+The packed native diagnostic final freeze
+`543cc2fd272b1716f6a7ea66542f8c5018a32cf052b96da59e18aabae40b53a2`
+is independently CLEAR and installed exactly: **eight targets, current arm**.
+Receipt `tmp/emoji-packed-native-build/root-integration.json`, SHA
+`6995cc99e6920f0f2bffa24c1254b966e14d92c1aa75d5cd5678b9a3b6f496f4`.
+Root formatting passes; **current-feature-full.log is running**, no test result
+yet. Core is unchanged. Production/ordinary thin remains in use; the packed arm
+is fixture-gated only. Paired builds and the native cohort have not run, and the
+earlier pure measurements do not justify packed adoption.
+
+The superseded preliminary186cf... freeze was not fully archived; the external
+revision record states this limitation. Intermediate4f98... has all listed files
+archived. Do not imply complete preservation of the preliminary freeze.
+
+### 2026-10-15 - Packed current feature suite passes; runner correction pending
+
+The packed current-arm full feature suite **passes 1,754 / 7 ignored, docs0**,
+3m49s compile / 7.99s tests / 237.7608116s total. Log
+`tmp/emoji-packed-native-build/current-feature-full.log`, SHA
+`7ad418aeff06ec97b50698f5afbc4320e5aab5bbbf1c6e23eca8d67b9a09ee22`.
+A runner-finally poll exception could bypass CloseHandle/receipt handling;
+the runtime-only v2 correction in `tmp/emoji-packed-native-v2-prep` is being
+prepared/reviewed and is **not installed, frozen or accepted**. Rust is unchanged.
+No paired build or native process has launched.
+
+List subitem final source a1531902... is independently CLEAR (48 targets,
+36 authored Rust tests), but **not installed**; integration follows the paired
+interval. B review remains held on cold/live command ordering. Neither item is
+completed implementation or native acceptance.
+
+Production ordinary thin and fixture-only packed boundaries remain unchanged.
+Prior core/A/decoder and native receipts retain their original source attribution.
+
+### 2026-10-15 - Reviewed cleanup v2 installed; current native build running
+
+Cleanup v2 `df0f7ba3f111e57fcd707c6d85e8a3c74a799630a91a603e34dbf0d0b89aa91c`
+is independently CLEAR; root installed the sole runner change. Receipt
+`tmp/emoji-packed-native-build/v2-integration.json`, SHA
+`bbf5a77bc03d2793d722bfb2d2d2cd575d97b3f68bec19868e9439f1ac2e2b56`.
+Root's five mock, six protocol and five decision tests pass. Rust is unchanged;
+the current-arm full feature 1,754 / 7 pass remains applicable. The current native
+build is running via `tmp/emoji-packed-native-build/build.py current`, with its
+start inventory/current-build.log and shared toolchain recorded, no overrides.
+**No paired build/native result yet.** Active src/assets/scripts are frozen until
+the pair and run complete; documentation updates are permitted.
+
+### 2026-10-15 - Current diagnostic binary sealed; packed focused gate running
+
+The current native build **passes in 370.906354s**, with its source inventory
+unchanged. Binary `tmp/emoji-packed-native-build/current.exe`, SHA
+`acea45f1495456931ce67136cb38e7f559db7b30116e219f64afa396447f0d19`.
+Seal current.json SHA `4d1c1cae5a38bc85055d69cf9d63b4628001d34794da6563eaadd047a2053d7b`;
+build-log SHA `6ea846bf68255ab2427efda15092fe655c9c9323f3c361fc6a62c0c3f3ecefdf`.
+Only diagnostic_arm.rs changed from current043875f0... to packede8dc2fa7...,
+recorded in packed-switch.json. **Packed emoji_catalog focused tests are running**
+in packed-emoji-tests.log; no result yet. Packed build, native pilots and cohort
+have not run. The source freeze continues.
+
+The read-only production retirement ownership map
+`tmp/emoji-retirement-ownership-audit/source-map.md` pins17 inputs. It supplies
+source evidence only, not natural-retirement timing or an implementation claim.
+
+### 2026-10-15 - Packed pair sealed; native captures await new quiet window
+
+Packed emoji_catalog focused tests **pass 10 / 0 ignored / 1,751 filtered**,
+0.03s tests / 90.572309s total; log SHA
+`9b0ace21a1dee702fc4bc31f1096f6c79c5596fe93e6a4c951f9042f51ee43bf`.
+Packed native build **passes in 176.651291s**, binary
+`tmp/emoji-packed-native-build/packed.exe`, SHA
+`ece24fd5d5004814b8eef6f7360317deb4c4a76a735e154cb252034fc6ddde76`.
+Seal SHA `7ecb3edd384888b41c1625574969b5b15702861c80b6ed48f5d17e596fa1e719`;
+log SHA `0f5ecbe01bf13cfccf181b2464d21cd4aa11a904404a46ee36a90a0e3c2d6db3`.
+Comparison with currentacea45f1 passes across **2,225 source entries, exactly one
+arm-file difference**. planned-cohort.json records four pilots and six final runs /
+24 processes. **No captures yet**; a new user quiet-window question is pending,
+and the earlier mouse release is honored. Source freeze continues; no native
+result, performance gain or packed adoption is claimed.
+
+### 2026-10-15 - Packed native capture improves but delivery gate fails
+
+Packed native measurements are complete: **four pilots / 16 PNGs independently
+CLEAR**, followed by **six final runs / 24 closed processes / 96 PNGs, all exit0**.
+The final all-96 independent audit is still running; root's eight representative
+originals are CLEAR (receipt0232df...). Pilot audit:
+`tmp/emoji-packed-native-measured-1/pilots-independent-audit.json`, SHA
+`2bb8e5a7273d7a0d7c2214aa347178efb17493208b1bd2ea2907d9dc3470137d`;
+root also read all16 pilot images (d21d644a... in the build folder).
+
+The [measured report](../tmp/emoji-packed-native-measured-1/report.json), SHA
+`e0086c13a29ec7e0538fa22c7530a1c48a1768e516e5ec8e394ffb91e147a7d5`,
+records **capture passes; delivery and joint gates fail**. Capture
+medians improve by13.14-14.66 ms across all eight cases, but normal colon cold
+accepted latency rises478.8 -> 483 ms and narrow picker cold two-RAF maximum
+rises445.7 -> 472.4 ms. All76 comparisons and56 regression rows remain retained.
+**No packing adoption and no repeat cohort.** With n=3, maxima are observed
+samples rather than population-tail estimates; synthetic DOM/two-RAF latency
+is not physical paint. Sources remain frozen until the final audit finishes;
+the constant is still packed fixture-only, ordinary production thin unchanged.
+
+B final9cfaf... and List subitem a1531902... are independently source-CLEAR and
+uninstalled; root plans installation after the audit. This removes the earlier
+B review hold without claiming completed B implementation or native acceptance.
+
+### 2026-10-15 - Diagnostic restored; B/subitem installed after sealed captures
+
+The completed capture/report artifacts are sealed and the build/run source freeze
+has ended. All96 final originals have been personally read CLEAR; independent
+structural/report audit remains in progress. Immutable binaries and measured runtime
+helpers are unchanged. diagnostic_arm was restored to exact currentfalse043875...
+at09:06:27Z, receipt `tmp/emoji-packed-native-build/current-restored.json`.
+
+**New installed cohort:** B9cfaf... (10 targets), receipt
+`499bf20d3381cd8d46def7ffc05ebafefd6c6a64561a045db8f50c6c685a2e6c`,
+and subitema153... (48 targets), receipt
+`2424010bb29d3d5faf3442c99861739c9794095067cc6b1f7530b8cb8d4de089`.
+Root/core formatting pass; combined core-full is running under
+`tmp/cold-subitem-root-gates`, no test result claimed. C1cab48... is source-CLEAR
+but uninstalled pending B's compiler outcome. Production protected-store remains off.
+
+### 2026-10-15 - Packed audit final CLEAR; combined source gate fails fixtures
+
+Final independent audit is **CLEAR: all 96 original PNGs / all 24 receipts**,
+including exact report reproduction and674 pointer checkpoints. Artifact
+`tmp/emoji-packed-native-measured-1/final-independent-audit.json`, SHA
+`108ef5d084ff1fc8f6d5c748e5fb24168c64582b8070cc0c0f3671580140663f`.
+Eleven of16 JS delivery comparisons fail; capture improvement does not justify
+adoption or another cohort. The post-run agent-ui-check.sh catalog drift was
+verified against the subitem backup/integration at09:06:41Z, after final run
+09:02:35Z and report09:02:55Z: it is not a measured runtime override.
+
+Combined core-full **failed: 1,944 passed / 8 failed / 5 ignored**, 48.01s
+compile / 29.82s tests / 78.350815s total; log
+`tmp/cold-subitem-root-gates/core-full.log`, SHA
+`5d1a565fefd6ec04af2a2390f4c0c4b79e8411c41d93cdb27e5bc58ef9fcea96`.
+Seven new subitem tests fail setup at ListClock::new().tick(1000); the test-only
+correction is installed in `tmp/list-subitem-clock-test-fix` (after4ab40...),
+with all assertions unchanged. The B migration test's empty destinations fail
+adopt_remote; one-line test-only candidate2f4c... awaits review/installation.
+No production issue is claimed. Installed14 Node and10 Python checks pass;
+further Rust gates remain pending.
+
+### 2026-10-15 - Corrected combined core passes; desktop compiling
+
+Combined core-full2 **passes 1,952 / 5 ignored + one doctest**, 29.62s tests /
+0.20s doctest / 32.019612s total; log
+`tmp/cold-subitem-root-gates/core-full2.log`, SHA
+`aae189acb37ad7fb0d27d9883be24f56eec7ed395e09fdbe9b92238ee269f701`.
+Focused subitem7 passes (31.302s total) and B8 passes (0.6795s). B fixture
+correction2f4c... was installed exactly at09:11:07Z, after SHA
+`8b6062598c931f549b56021a1ef4cf948c9d8b12e23bef9c3d9af684d1ba76ef`,
+with its correction-folder receipt retained. Earlier core1,944/8/5 failure and
+all test-only corrections remain recorded. **Desktop-default-full is compiling;
+no result yet.** Installed14 Node/10 Python pass; no new native acceptance.
+
+### 2026-10-15 - Default desktop corrected pass; feature gate compiling
+
+Default desktop full2 **passes 1,777 / 7 ignored, docs0**, 4m32s compile /
+8.18s tests / 281.038050s total; log SHA
+`10504ee4cc83880dcea1dc893e2adf53076732d9df584f2dd7cec0b78e92606f`.
+The first desktop compile failed with nine subitem visibility/Signal-borrow errors
+(125.0637685s, log SHA17830caea3c9174b29b62281ddd98746cf2d55c4a94fa27081e81d500f432684).
+The reviewed two-file compiler correction is installed in
+`tmp/list-subitem-desktop-compile-fix` (after mainffadb020... /
+presentation0e86c2...); root/core formatting pass. **Feature desktop full is
+compiling; native is unrun.** C1's composition against installed B81dd... is
+source-CLEAR but C1 is not installed and its15 tests are unrun.
+
+The original failed log remains in `tmp/cold-subitem-root-gates/` beside the
+corrected default-desktop log. Core1,952/5 plus one doctest remains the completed
+combined core evidence; production protected-store remains off.
+
+### 2026-10-15 - B/subitem feature/native build pass; subitem visual hold and C1 compile failure
+
+The B/subitem cohort passes independently locked core **1,952 / 5 ignored + one
+doctest**, default desktop **1,777 / 7**, and feature desktop **1,783 / 7, docs0**.
+The feature suite compiled in5m07s, ran in8.05s (316.0849057s total), log SHA
+`c9a5db820981388eefea6719350fe1f4041099bc2e9d8f5166b1ba33bdb398e6`.
+Logs and previous fixture/compiler failures remain in `tmp/cold-subitem-root-gates/`.
+
+Its native build passes **378.0591247s**, with **2,253 source entries unchanged**;
+binary SHA `343edea7d6ca4030d36e26f2dec2e1854ca16c6edcc43309c3048652e2931d8d`.
+These completed gates **precede C1**. C1 is now installed exactly (six targets),
+receipt `tmp/protected-store-queue-accounting-root-gates/root-integration.json`,
+SHA `c75bb9f3cc77bfa6b70f8742aa3f21c0d6ea94a39c6906bb3e7717289a67e82d`.
+Its first core compile **failed with ten E0369 test errors comparing LocalDraft**,
+22.9923362s, log SHA
+`4f3b4749f39efc8bd5dcc33152e1c909fa8cb4288ce2a37954384635e5f9203a`.
+A test-only correction is being prepared; **no C1 test pass is claimed**.
+
+**Latest native outcome: subitem visual hold**
+
+Subitem-si1 completes four processes /36 PNGs, runner exit0 in32.5201727s.
+Independent audit is ongoing. Root personally read all36 originals and records
+**visual HOLD**: icon/title stack at both widths, and the focused child label is
+clipped after narrow parent return. Minimal correction is being prepared.
+Root receipt `tmp/agent-ui/subitem-si1/root-visual-review.json`, SHA
+`fc718b95e2a2ef7b3cebb27254e8fbd864ef577c2a914d713298540788344a6b`.
+Runner success does not establish full subitem native acceptance.
+
+C2 remains plan-only and retirement planv2 is under review. Production protected-store
+activation remains off; no new live writes are claimed. These current results do
+not broaden earlier accepted native cohorts.
+
+### 2026-10-15 - Subitem si1 functional audit clear; visual hold confirmed
+
+Independent si1 audit is closed: **functional CLEAR, visual HOLD**. All36 images,
+four receipts,46 calls (42 reads/four creates),10 records.open and72 ordered edges
+are verified, with restored pointers/empty cleanup, exact2,253-source seal and89
+pins. Audit `tmp/subitem-si1-independent-audit.json`, SHA
+`78e2e4c77eee30a094ddc7794bb094eec6db50ab6ad6797ed3d60d6009c3e42a`.
+The narrow parent-return checker scrolls Add instead of the focused child;
+runner target-selection and CSS corrections remain pending. Root/core formatting
+passed on installed C1 before its test-only correction.
+
+### 2026-10-15 - C1 core/default desktop pass; visual correction awaits native proof
+
+Latest C1 core-full2 **passes 1,967 / 5 ignored + one doctest**, including all15
+C1 tests: 57.30s compile / 30.14s tests / 0.16s doctest / 89.9605454s total,
+log SHA `c77d04529d4045b4e975cc09b86f415b8957edba1e005f87c5dc096d590a869d`.
+Default desktop **passes 1,777 / 7, docs0**, 5m27s compile / 8.15s tests /
+336.237405s total, log SHA
+`13ff35d76b6b7e13645af9a0697442b5da7a213ef9612e357fd4f4f34a64fe0b`.
+Logs: `tmp/protected-store-queue-accounting-root-gates/`. Test-only fix37554...
+was installed exactly at09:42:15 (after2426968...); the original ten E0369
+LocalDraft-comparison compile errors remain preserved. Root/core formatting pass.
+**Feature desktop is compiling; corrected native binary is not yet built.**
+
+The six-target visual fix48950... is installed, independently CLEAR, receipt
+`d26b218d4dac2cf9ac584779b90d7c691b045b1f7b4f231d6262b3b4d88b1a61`.
+Installed three Node/11 Python checks pass. This does not clear the retained
+subitem-si1 visual HOLD; fresh native verification remains pending.
+
+C2.1 temporary implementation is underway; C2.2/C2.3/drain/production activation
+remain incomplete. Retirement planv2 e037... is independently CLEAR, with only
+protocol appendix preparation authorized and underway. Original compile failure
+and si1 visual HOLD remain preserved; no new full subitem visual acceptance.
+
+### 2026-10-15 - Corrected subitem native accepted; C2.1 installed and gate running
+
+C2.1 is newly installed exactly: **21 targets**, independently CLEAR manifest
+`3b80a6c74fa6bdaac0ed8ad1902736228108bdd163136791ea07c357b06bc5c3`,
+root receipt `85b73f615064fe9238a99e4388af0c27a34ae07a44a52917044a2e75a9838ead`.
+**Root core full is running; no new test pass is claimed for C2.1.**
+
+The preceding C1 cohort passes core **1,967 / 5 ignored + one doctest**, default
+desktop **1,777 / 7/docs0**, and feature desktop **1,783 / 7/docs0**. Feature
+compile4m32s / tests8.48s / total282.0786046s, log SHA
+`7bbaeeb4043a429c15912475078d59cd8a71b5e211f7890dec54df027448d699`.
+The C1 plus visual-fix native build passes **343.0006166s**, with **2,257 unchanged
+source entries**, binary SHA
+`f8957b3e966d88ecc2f327cc944a89f0c25ba292b9800df50520c8054728b626`.
+These gates and native receipts precede C2.1. Previous compile/fixture failures
+and their exact corrections remain in the dated ledger.
+
+**Latest native outcome: subitem accepted within disconnected limits**
+
+Si2 completes **four processes /36 PNGs in33.2553727s**. Root personally read
+all36 CLEAR, receipt
+`6dd98502a4e1b7ca83af77faac3ef4c67cdaa8d8fc9ca70493027d228c4fd666`.
+Independent audit is CLEAR across all36 images,46 calls,10 opens,72 ordered
+edges and cleanup; audit SHA
+`96b9fb349ae4ae3770d363b1c080e8612a0cba38937bb654a03e960b80789afd`.
+This closes the icon/title stacking and narrow focused-child clipping gap for
+the corrected cohort. **Si1 remains a historical visual HOLD** despite its
+functional pass; its failed images and audit are preserved. Acceptance is bounded
+to disconnected fixtures, not live server behavior or trusted OS IME.
+
+Complete C2.1's running core gate and subsequent required validation. C2.2/C2.3,
+drain and production activation remain incomplete. Retirement observation protocol
+v3 is independently CLEAR, SHA
+`e2e28b3e3cb85e914eae4558df79c54e92f1c4857ddf0f67f32126aa354b8691`:
+**protocol only**, with v1/v2 holds retained historically. Canvas paired oracle
+`8630e80df71f51be078fb1f4b88f0accf7a5f02d2791417300091ee04e6dbfcd`
+is independently CLEAR for29 finite source cases, **not production, native or
+server acceptance**.
+
+Production protected-store activation, ordinary remote autosave, realtime
+observation ingress and native Slash activation remain off. No new live writes
+are claimed. Preserve exact binary/receipt attribution and earlier failures in
+the [dated worklog](parity-worklog.md); later passes do not rewrite earlier results.
+
+### 2026-10-15 - C2.1 core/default pass; final feature gate running
+
+C2.1 core **passes 1,981 / 5 ignored + one doctest**, 1m00s compile /
+30.52s tests / 0.18s doctest / 93.17187s total. The log includes29 relevant
+successful tests (14 new terminal and15 accounting), SHA
+`8100d9258ac258286943b38352c4d37b4113f77dc58df58ca3524bc4d66c74a1`.
+Core protected-test-support check passes11.691s, log SHA
+`678cd5065ef1531aba896716eb32488d0c8c867c6ab8b72b5a030d50f185aa05`;
+both format checks pass. Default desktop **passes 1,777 / 7, docs0**,
+8.63s tests / 342.0402979s total, log SHA
+`41c37b2b45feaeadd4fc3fece1434a98f514def31ed4b1887d60cbb710b8758e`.
+Receipts: `tmp/protected-store-terminal-root-gates/`. **Final feature desktop
+suite is running**, with no result yet. Prior si2 native acceptance predates C2.1.
+
+C2.2 temporary candidates are authorized and being prepared. C3 desktop inventory
+is read-only; retirement slice1 diagnostic implementation is authorized only in
+temporary preparation under v3. Canvas private paired intent/validator/inert
+checkpoint preparation has no runtime admission. No new acceptance follows from
+these preparations; source/native cohort attribution and production OFF remain.
+
+### 2026-10-15 - C2.1 final feature gate closed PASS
+
+**Final feature desktop passes 1,783 / 7 ignored, docs0**, using
+`cargo test --locked --features protected-native-fixture`: 4m45s compile /
+8.89s tests / 295.2578143s total. Receipt
+`tmp/protected-store-terminal-root-gates/desktop-feature-full.json`, log SHA
+`da432bade50ba5783744f652dd0c1ecf1ab73e641c112a5442db889a279e0827`.
+**All required C2.1 core/default/feature/check/format gates are closed PASS.**
+No Cargo/native process is active; no new native build is required for this
+core-only slice. Si2 remains earlier f895/C1 plus visual-fix evidence.
+
+C2.2 candidate preparation is underway; independent source review and tests are
+pending. The C2 plan itself is independently clear, distinct from implementation.
+C3 read-only inventory continues.
+No new admission, drain or production activation is claimed; earlier failures
+and native attribution remain preserved.
+
+### 2026-10-15 - Canvas pair core passes; C2.2 installed before combined gates
+
+The Canvas pair is installed exactly (**eight targets**), manifest
+`89765c1b649007a1850adaeef5aec11fdeef65af85b629bf336be989c7edc814`, receipt
+`61248978ab22e710e8df17ca9905b40f72b4805ca6074c8c077bc1b2344fd442`.
+Its first focused run failed11/1 because the test helper unwrapped decoderDuplicate;
+the original log60292... is preserved. Reviewed test-only correction after
+`c56b62ff1ed0630dc60eab42f948112794e02ec509e6de72683102500c530512`
+passes the focused12 tests (31.37005s, log2b35d6...). Full core **passes1,993 /
+5 ignored + one doctest**, 51.6562222s total /30.88s tests /0.28s doctest,
+log SHA `171c296d6b929736f18e0f6e60f157ec9b5029a10cbc0fb3bc60d58af69ca829`.
+Receipts: `tmp/canvas-paired-root-gates/`.
+
+**Newest installation: C2.2, seven targets**, independently CLEAR manifest
+`1f364bcab5bf570ca43662a09274003ec3388a1cb30583c0de242278ae2e28cb`,
+receipt `df4d91ed2b0dd7fc55939a94a7c209dab0f6309a8d49eb9f51a3c3b38fb628d0`.
+Its tests are compiling; **no C2.2 test pass is claimed**. Current source combines
+Canvas pair and C2.2; upcoming default/feature desktop gates cover both. The
+1,993 core pass precedes C2.2. Earlier C2.1 required gates remain closed PASS
+(core1,981 /5+doctest, default1,777 /7, feature1,783 /7, check/formats).
+
+No new native build or capture validates this cohort. Si2 remains the earlier
+C1 plus visual-fix binary
+`f8957b3e966d88ecc2f327cc944a89f0c25ba292b9800df50520c8054728b626`,
+with2,257 unchanged source entries. Historical failures and exact corrections
+remain in the dated ledger.
+
+Complete the compiling C2.2 gate and combined default/feature desktop suites.
+Amended C3 inventory is independently CLEAR,87 pinned inputs, SHA
+`94c45e8d3b889d90797c348575bd062534beb1ef24be723009070899f698d8b8`:
+**plan only**; C3.1 temporary implementation is underway. Drain/production
+activation remain incomplete. Retirement observation protocolv3 remains protocol
+only; it does not establish runtime retirement behavior.
+
+Canvas current-editor freshness now has an observed public-fetch byte match;
+a separate addendum is under review. This is not server interoperability or
+runtime activation. Production protected-store activation, ordinary remote
+autosave, realtime observation ingress and native Slash activation remain off.
+No new live writes are claimed. Preserve binary/receipt attribution, historical
+failures and broad remaining parity gaps in the [dated worklog](parity-worklog.md).
+
+### 2026-10-15 - Combined admission core/default pass; feature remains pending
+
+Combined Canvas+C2.2 core **passes 2,012 / 5 ignored + one doctest**,
+40.3205439s total, log SHA
+`6469ccf1605f4b4a9d36948355dc6b7ba46360624bfdd57e55cc9064a86ca8b1`.
+The first admission-focused filter compiled but ran zero tests and is **not
+coverage**. Corrected focused2 passes19 tests in1.1047767s, log SHA
+`a70b12ae530e099dd0550483feb68b8b0cf375d3d375bd3559a44e3120bd7f91`.
+Core feature check and both format checks pass. Default desktop **passes1,777 /
+7 ignored, docs0**, 389.9998858s total, log SHA
+`9227fc5ca5810dfed667aa2c7047d7ac0e8b405b8a29e91af220b0d19dc94096`.
+Receipts: `tmp/protected-store-admission-root-gates/`. **Feature desktop remains
+pending**, potentially combined with C3.1; no new native evidence is claimed.
+
+Canvas freshness859f... independently clears source-only evidence; the full inline
+map was not retained and that limit is disclosed. C3.1 amended12-test candidate
+b70e2a... is under narrow review, not installed. No new native/server/runtime
+acceptance is claimed; prior source and native attribution remains intact.
+
+### 2026-10-15 - C3.1 installed; focused validation running
+
+**Newest installation: C3.1**, independently source-reviewed b70e2a..., six
+targets, receipt `135317295f5d0c448aca85dfcef23aa6b8e7cc9af86ba4eb70e2128972a05be0`
+under `tmp/protected-editor-open-root-gates/`. Root is running
+`cargo test --locked drafts::protected`; **no C3.1 test result yet**. The previous
+default desktop pass covers Canvas+C2.2 only. No new native evidence is claimed.
+
+### 2026-10-15 - C3.1 focused/default gates pass; feature gate running
+
+C3.1 focused protected-drafts tests **pass 122 / 0 failed, 1,674 filtered**,
+296.386163s total including 3.76s tests. Receipt
+`tmp/protected-editor-open-root-gates/desktop-protected-focused.json`, log SHA
+`e297a50c741257a3f02d3616345d009ed8cd0fc97802efd7194843fb7ab21456`.
+Full default desktop **passes 1,789 / 7 ignored, docs0**, 9.6713921s total /
+8.56s tests, log SHA
+`2332ae7b939d40145ac0957e6ffc9309c8a2133c3471857d3115cb21378d1375`.
+These gates cover **Canvas+C2.2+C3.1**. Feature desktop is running; current
+format checks are pending. Core has not changed since the 2,012-test pass.
+No new native evidence is claimed; broad remaining work stays open.
+
+### 2026-10-15 - Canvas/C2.2/C3.1 source gates fully closed
+
+Feature desktop **passes 1,795 / 7 ignored, docs0**, 325.8571448s total /
+9.20s tests, log SHA
+`e499e0d7565f3e2940590479e7875369f04bf3412baa558fe6d4b1e5ce922793`.
+Receipt: `tmp/protected-editor-open-root-gates/desktop-feature-full`.
+`cargo fmt --check` passes in 3.3260579s (format.json, empty-output SHAe3b0...);
+scoped C3 diff check passes. **Current Canvas+C2.2+C3.1 gates are fully passed**:
+unchanged core 2,012 / 5 plus one doctest, default 1,789 / 7 and feature 1,795 / 7.
+No new native or production activation follows from these source gates.
+
+C3.2 plan `94b0984efb9b1f8681c652bf8ee3460c593b56692aaaff3211cdc7d01b9f7605`
+is independently CLEAR, with 35 pinned inputs under
+`tmp/protected-desktop-c3-delivery-plan`. This is **design only**; the author is
+preparing a temporary implementation candidate. Mounted prepare/uncalled Delivery,
+renderer request retention, linked Send evidence, same-checkpoint cancellation
+and root-shutdown liveness/monotonic Unknown are design obligations, not accepted
+runtime behavior. C2.3 remains work in progress: the preregistration-capacity
+issue is being corrected; implementation source clearance is not claimed.
+
+### 2026-10-15 - Canvas runtime installed; new validation pending
+
+**Newest installed cohort: Canvas runtime**, 34 exact targets, independently
+CLEAR manifest `e6149fa7ebcb1ee52b9efc3dbf686f47c3a60871e2a3dfda31433e346fc88bb1`.
+Receipt `ef36c94eddab6e7ae365d27bf18baa8da3d92a738018dc6cb9189d1187e55124`
+under `tmp/canvas-paired-desktop-root-gates/`; 39 dependencies and nine artifacts.
+Before installation, independent checks passed: 666 Python, 10 mount, 19 hit and
+17 review-control checks. **The 12 authored Rust tests and eight-process /40-PNG
+native cohort remain pending**; no current native or live proof is claimed.
+Review added an actual-now retained-tombstone text-continuation test and a cheap
+length-two precheck to avoid quadratic projection work; these descriptions are
+not a claim that the pending Rust/native gates passed.
+
+The core 2,012 /5+doctest, default 1,789 /7 and feature 1,795 /7 passes below
+belong to the **pre-runtime source cohort**, not this new installation.
+
+C2.3 is frozen at8f6842... with 22 authored tests, including the preregistration
+capacity correction, but independent review is pending and it is **not installed**.
+No source clearance or test pass is claimed from the authored count.
+
+### 2026-10-15 - Canvas core passes before ID compatibility and C2.3 installations
+
+**Newest installed cohort:** the one-file ID compatibility correction d64db119...
+(candidate e11d361...) and independently reviewed C2.3 8f6842... (12 targets).
+ID-fix receipt `1f750b26712ffd61370c4326997a28b173f7739d9d181b3e841c0d431abc9a76`;
+C2.3 receipt `923270d49194021b97c8dd31faadb427f73c40ba8d4ba8c809bbe9b894dd8ecd`.
+The ID fix restores the original protected-N shape; original validators and the
+checked Account counter are unchanged. Its one new Rust test is pending.
+**C2.3's 22 focused tests are compiling, with no result yet.** Full core, default,
+feature, formatting and native gates remain pending for this newest cohort.
+
+Before those installations, Canvas focused tests passed **119 /2 ignored**,
+37.0182064s, log SHA
+`0f72f1b001dcb994405df70be24c3efbb804ffe6ba0784f23285ccb081087f12`.
+Canvas full core passed **2,017 /5 ignored + one doctest**, 50.7450741s total /
+31.42s tests /0.23s doctest, log SHA
+`ad9386c924aded541441d646041a5f4340c0de0a7f579bcfedf5c1c747cc36a4`,
+under `tmp/canvas-paired-desktop-root-gates/`. These are **pre-C2.3 and pre-ID-fix**
+passes, not validation of the current combined source.
+
+### 2026-10-15 - C2.3 focused gate fails unsupported check fixture
+
+C2.3 focused tests completed **18 passed /4 failed**, 59.4013516s; receipt
+`tmp/protected-store-completions-root-gates/core-completions-focused.json`, log SHA
+`66618fceb2bc5c72b835fae000bb7ace5599e6686670bd7205f1728fc6efb93d`.
+Diagnostic core-check-failure failed **0 /1**, 1.5486167s, log SHA
+`185b31daf24b598bb0df6d39f2e02bbb8e080175a1a3f6547ebdaceb742b4742`.
+The ReserveCheck fixture uses unsupported Create; supported_check admits Send,
+Update or known Schedule. The author is staging a real known-base Update
+**test-only correction**. Production guards are unchanged; **no fix or pass yet**.
+
+Slash correspondence e9ac07c8... is independently source-CLEAR, with six Node
+checks passing and five Rust tests unrun. It remains inert only. Preserve the
+focused/diagnostic failures and all preceding-cohort gate attribution.
+
+### 2026-10-15 - Installed C2.3 fixture correction still fails earlier baseline setup
+
+Reviewed test-only fixture fix67c303... is installed in two targets, receipt
+`a4603165251240d9bb9995c0ca612d0af821eeff03ea266aa83222dff9ccf6af`.
+Focused2 **still fails: 18 passed /4 failed**, 27.7639528s, log SHA
+`4bc185d76a69a877bb526ea02398b256c09c3c6b6a898b3b13ad59fdb208303c`.
+Backtrace2 fails **0 /1**, 1.4294296s, log SHA
+`d3295981d65fa4770e81bb3f278a8b7f2e42a80ed6680030132bb349ba2dd446`.
+This localizes the new failure earlier, to Fixture::seed hold_verify at line154:
+the restored known-base row requires a proper baseline. Investigation continues;
+**no new test pass is claimed**. Original focused/diagnostic failures remain preserved.
+
+Production core feature check passes in10.9955556s, log SHA
+`42710d17b23a7773c7019574008640734ff2b8f77a7a9b22b84b7598146c3bb3`.
+Both format checks passed **before** the test fix. Desktop full is compiling under
+`tmp/canvas-paired-desktop-root-gates/`, no result yet.
+
+### 2026-10-15 - Desktop passes; durable Update fixture correction awaits focused result
+
+Default desktop full **passes 1,797 /7 ignored, docs0**, 386.0837258s total /
+8.87s tests, started11:17:59.103990Z; log SHA
+`7ec357489adab682ef932376ae5a7a99a143972c8c8fb18e7f39e39db0165b3a`
+under `tmp/canvas-paired-desktop-root-gates/`. It covers installed Canvas+C2.3
+production code plus ID compatibility. **After that desktop gate**, the independently
+reviewed core test-only fixture fix
+`489d0ded10d8d86a31612675d806f880e0e001f24e84ee442f2035c1205dc11e`
+was installed, receipt
+`8dce5c7814026bcd8756a1326a9747eca7a1dd9ab2872c7aea35c4ace8538135`.
+It uses actual ordinary durable Update, migration, cold Uncertain and pending
+receipt; four status tests recover the interrupted existing update, with the other
+18 unchanged. **Focused3 is running; no result yet.** This test-only change has
+no desktop source impact. The earlier focused2/backtrace failures remain preserved.
+
+Emoji diagnostic e338f617... is frozen/source-CLEAR:38 Python and8 Node checks
+pass, Rust/overhead/native remain unrun. Integration is deferred until after
+Canvas native. C2.4 plan97496e81... is independently CLEAR and temporary stages
+a to b are proceeding; neither preparation activates production behavior.
+
+### 2026-10-15 - C2.3 focused/full core pass; feature desktop compiling
+
+Focused3 **passes22 /0 failed**, 31.0170923s total /1.36s tests, log SHA
+`41623cfa015f7042426aac3ed6b8e2d9bf27de05614b9526bac1da9fda6cfc1d`.
+Full core **passes2,039 /5 ignored + one doctest**, 50.8902659s total /
+33.71s tests /0.23s doctest, log SHA
+`8fc81857f90f41dd3615729c3681b4ab541686bfbb015159e1df6e0046700609`.
+Both final format checks pass (3.2486227s /2.1091924s, empty-output hashes),
+receipts under `tmp/protected-store-completions-root-gates/`. Default desktop
+1,797 /7/docs0 remains current for production code: only core test support changed.
+**Full feature desktop is compiling** under `tmp/canvas-paired-desktop-root-gates/`;
+no result yet and native validation remains pending. Earlier failed fixture
+receipts remain historical evidence, not silently replaced.
+
+C3.2 candidate8947d236... is frozen with24 targets,17 authored Rust tests unrun
+and16 Python checks passing. Independent final review is pending; it remains
+uninstalled. Previous fixture failures and exact correction receipts are preserved.
+
+### 2026-10-15 - Combined Rust gates close; native build running
+
+Feature desktop **passes 1,803 /7 ignored, docs0**, 331.2545917s total /
+9.74s tests, started11:26:42.952223Z; log SHA
+`b6b33339b228a2a2236849aa1b81af365ad8dac751e6f2095ab38154904943b7`
+under `tmp/canvas-paired-desktop-root-gates/`. **Current combined Rust gates
+fully pass**: core2,039 /5 plus one doctest, default1,797 /7, feature1,803 /7,
+format and core feature checks. The sealed dev native build is running via
+`tmp/canvas-paired-desktop-root-gates/build_native.py`; no build result or new
+native proof yet. Historical fixture/compiler failures remain preserved.
+
+C3.2 8947... has independent final source CLEAR and root preflight PASS:24 targets,
+16 Python checks pass;17 Rust tests and58 staged PNGs remain pending. It is not
+installed. Emoji e338... also has source CLEAR. Planned order after Canvas native
+is C3.2 installation, then minimal emoji rebase under plan4c96dba6... with main.rs
+as the only overlap, independently reviewed before installation. No staged count
+is promoted to runtime acceptance; broad remaining work and production OFF persist.
+
+### 2026-10-15 - Canvas native binary sealed; captures await new quiet window
+
+The sealed native build **passes in 368.3023434s**, with **2,287 unchanged source
+entries**. Immutable binary `tmp/canvas-paired-desktop-root-gates/native.exe`, SHA
+`ae21a080a067d108a7ba629ed03911a5663b42b093e0a68903f2cb3005c04d38`;
+full receipt native.json in the same directory. A new quiet-mouse availability
+question is pending; **no captures have run for this binary yet**. All current
+Rust gate passes remain valid; build success is not native visual acceptance.
+
+Combined Slash1f90... is independently source-CLEAR, with18 Rust tests unrun,
+four Node checks and82 source cases passing; it is uninstalled. A minimal
+candidate module-order formatting companion is being staged, so its final
+formatting is pending. C3/emoji/C2.4 staged status and production boundaries are
+unchanged; no broad completion or new native acceptance is claimed.
+
+### 2026-10-15 - Prepared handoff awaits new quiet-window reply
+
+**Current handoff:** no Cargo or native process is active. The ae21a080 native
+binary is ready and current Rust gates pass, but the planned40 Canvas PNGs have
+not started. The new quiet-mouse question was asked after the build was ready
+around11:38 and remains unanswered. The old List quiet-window reply does **not**
+authorize these new captures. The broader goal remains active and incomplete.
+
+C2.4a is independently source-CLEAR: nine targets,110 pins,16 Rust tests unrun,
+manifest `4a2c2a13509b6f947edcce82446f0c69939a5008834128c893cf1e13fd3c78b6`.
+Part b implementation continues; neither is installed and no activation/drain
+is claimed. Existing Release remains Clone; Claim is non-Clone.
+
+Slash formatting companion
+`a252d1f7fda98f14beb6f921ce1a3f157e5ab629f170d5e2fa76591ceb4f679d`
+is independently CLEAR. Its module hook replaces the parent1f90 hook; the parent's
+13 new targets are unchanged. Read-only preflight passes via
+`tmp/slash-rich-arguments-root-gates/integrate.py`, with no installation.
+C3's read-only preflight also passes for24 targets via
+`tmp/protected-renderer-operation-root-gates/integrate.py`; it remains uninstalled.
+
+### 2026-10-15 - Independent source integrations proceed with Canvas cohort isolated
+
+**Newest source cohort:** unrelated integrations proceed while preserving the
+immutable Canvas ae21 binary and its exact11-Python-helper closure. That closure
+is under audit and does not overlap the new C3/Slash/C2.4a targets. Any later
+Canvas capture will validate **only ae21**, not this newer source.
+
+Slash1f90 plus formatting companion a252 is installed (14 targets), receipt
+`65573c69ccef5fe7ee821173b2e4ced994a75a224aadad2a76b2fc65ad35eb73`.
+The slash_commands focused suite passes70 tests, 58.2170949s total /0.04s tests,
+log SHA `efc7600fae49a5e62cec780878d7606843fd325bc4ccb25d7f89634cfc45752e`.
+C2.4a4a2c is installed (nine targets), receipt
+`671e4f0ca7a6b79dd304bf4661d46ee744491b77301915a9702747307a1bc654`;
+its16 focused local-core tests are compiling, no result yet. C3.2 8947 is installed
+(24 targets), receipt
+`9b4901ac453a219951abe163a47789be2e09bea3291b7c2ccd5d01527deb5b50`;
+17 Rust tests and58 native PNGs remain pending. Earlier core2,039/default1,797/
+feature1,803 gates are **pre-new-cohort evidence**. The minimal emoji rebase after
+C3 is being prepared and remains uninstalled.
+
+Canvas captures are already authorized by the goal. The pending quiet-window
+reply concerns **current mouse availability, not additional permission**. No
+new captures have run; earlier availability does not establish current availability.
+
+This corrects the prior handoff's quiet-window authorization wording: goal
+authorization already covers captures. The outstanding question concerns mouse
+availability. Historical completed captures and source gates retain their exact
+cohort attribution.
+
+### 2026-10-15 - Combined core passes; Canvas helper closure audited
+
+C2.4a focused local-core tests **pass 16**, 44.0303174s total, log SHA
+`bbcb16883a1cb40e418b2490b993fa351d98f7184aebe790d9902e4677619e22`.
+Combined core **passes 2,073 /5 ignored + one doctest**, 58.4357248s total /
+32.83s tests /0.25s doctest, log SHA
+`23e687a5b780ba5bd6ceddda4c3fa95b5b36ae78459c14d90466f89c85120d6d`.
+Receipt `tmp/protected-store-local-bridge-root-gates/core-full.json`.
+C3 desktop compilation remains pending; these core passes are not desktop proof.
+
+Emoji successor `6f34f4e8860ec8f1ac85e1026dade019a80eb36c3b1d0bf4e155ddf4d3f0ba70`
+is independently CLEAR and root preflight passes. Integration is next; no
+performance run or new native result is claimed. Runtime audit6bb12084... now
+passes at root for all11 exact Canvas Python helpers. Immutable ae21 captures
+remain scoped to that old cohort and await current mouse availability; the old
+List availability reply is not fresh availability for this run.
+
+Attribution correction: the ID compatibility change and its regression are desktop
+code covered by the earlier desktop gates, not the combined core suite. This
+clarifies the earlier statement without inventing additional test coverage.
+
+### 2026-10-15 - Emoji successor installed; corrected desktop rerun compiling
+
+Emoji successor6f34f4e... is now installed exactly: **32 targets**, receipt
+`e895141fa91ebfbdc48f6db5b2e41f5060fe3839dedd15bbe002ddcc47f1f6ab`
+under `tmp/emoji-retirement-root-gates/`. Both format checks pass (3.2593s /
+2.2540s). Runtime emoji feature check passes61.2337245s, log SHA
+`efda4bb928956dc21da9a0b59818874b80c4e66f5c0f86c6b1d0b9d41e20c903`.
+The first full default desktop compile failed with one E0624 private Account.client
+access in a C3 test,126.8351822s, log SHA
+`12c79060cdd1eff20469c76a867e40acc502be3803140d01edcc2b922d8fc9ac`.
+Reviewed correction0b2f... is installed in two cfg(test) files, using the actual
+Stream helper without changing production privacy; receipt
+`f48db0a4dcd5c92f8ae52adcb4cef27dde5c570b5e5e594486e127f649aecd95`
+under `tmp/protected-renderer-operation-root-gates/compile-fix`.
+**Default full2 is compiling. Full feature tests, overhead and native runs are
+unrun.** No new capture or performance result is claimed.
+
+C2.4b has18 targets/13 authored tests and source clearance, but remains temporary
+pending one pin amendment. Legacy Slash actual-claim continuation is being authored
+temporarily. CDP127.0.0.1:9222 has one reachable client renderer, so no Slack restart
+is needed. Current Canvas mouse availability remains pending; no new captures.
+
+### 2026-10-15 - Audited one-shot overhead and b core pass; current desktop compiling
+
+C2.4b is installed exactly:18 targets, d1a... plus UTF-8 amendment2853fc7e...,
+receipt `c8886d4afc8393160351fa4d71c1ba607251d564184ef247f54368772e73bd0f`.
+Its corrected focused filter passes **seven tests**,0.8202s total /0.44s tests,
+log SHA `3fede5bd7121cdd9a6191a6cfd0fcdbc7fee1dcefd9d3f428ebd32350988d897`.
+The initial zero-test filter was compilation only, not seven-test coverage.
+Current core **passes2,080 /5 ignored + one doctest**,45.1390749s total /
+35.54s tests /0.17s doctest, log SHA
+`0dfad6d1da7c06cd819678668d829a3e8caf0716aea9b6786ef02871ee925847`.
+**Current b desktop full is compiling** under typed-bridge-root-gates. Protected
+feature/native validation remains pending; no new captures have run.
+
+Before b installation, corrected default full2 passed **1,814 /7 ignored, docs0**,
+288.8501661s total /8.48s tests, log SHA
+`4ef1a941260249e2c0c22702818ab714c0aab6520c24c9231f3e35889db87916`.
+Emoji feature full passed **1,821 /8 ignored, docs0**,303.1110198s total /8.87s
+tests, with2,326 sources and pins unchanged; log SHA
+`5894edd7589d137e6f64df3e93b6f2c62630436eae94c09f751a3ce7c6ea4cf1`.
+Sealed test executable SHA
+`7e0d275f9ca646d6af57a02d50f1d9690f02a222c562834c22ee18b55e0b6d24`.
+These are **pre-b desktop gates**, not validation of the current b source.
+
+**Emoji diagnostic overhead evidence**
+
+The overhead test ran **once at12:06:24**:100 blocks,10,000 drops,35,000 events;
+disabled2 ns /enabled266 ns /difference264 ns, within the10,000 ns budget.
+PID8420 exited0 with empty cleanup; raw evidence is retained in overhead-once/gate.json.
+Independent audit `tmp/emoji-retirement-plan-review/overhead-once-final-audit.json`,
+SHA `ce76231badb7c7dd91c420a3bd102b3afe8d516549734172cf9cbd4a88ee503d`.
+The audit binds the18 later b changes exactly; none overlaps emoji pins. Diagnostic
+TLS differs from production OnceLock cost: **this is not production latency,
+native acceptance or retirement adoption**.
+
+The Canvas ae21 binary and exact11-helper closure remain immutable and separately
+audited. Its authorized captures still await current mouse availability; no new
+captures or native acceptance are claimed. Older source and native receipts keep
+their original cohort attribution.
+
+Complete the compiling b desktop gate and subsequent protected feature/native
+validation. C3 route binding plus the b newer-input race are being implemented in
+temporary preparation. Legacy Slash Claim-arm review is pending the detached-work
+guard. Neither preparation establishes runtime acceptance or production activation.
+Canvas captures remain authorized but await current mouse availability; Slack CDP
+is reachable and does not require a restart.
+
+Production protected-store activation, ordinary remote autosave, realtime
+observation ingress and native Slash activation remain off. Broad parity remains
+incomplete. Keep zero-test attempts, failed fixture/compiler runs and exact
+binary/receipt attribution in the [dated worklog](parity-worklog.md).
+
+### 2026-10-15 - b desktop fails generated-URL comparison; import-only core checks pass
+
+Current b desktop full **fails: 1,819 passed /1 failed /7 ignored**,
+397.9054316s total /10.51s tests; log SHA
+`4a2150578a9a70b7caf7aa9aab8ea30b030a3050938a40abd5c5e514cc07ad37`
+under `tmp/protected-store-typed-bridge-root-gates/desktop-full`. One new test compares independently
+generated URL _x_id / _x_csid / fp values; stable body/headers match. Its test-only
+correction is pending review. The channel assertion panicked before thread
+coverage, so **both paths are not claimed passing**. Retry awaits that correction;
+protected feature/native remain pending.
+
+Reviewed import-only fix2ea45074... is installed in three files, receipt
+`1ed022874c380d508c569f4b40c7a6750e96365f519f04ed965fb86d89727a53`
+in the import-fix subdirectory. Explicit reexports preserve bodies and visibility.
+Core feature check passes13.5472s with no ambiguity warnings, log SHA
+`78675471e3e046be8598429ddf27f7b72471bdef54b902de528467ef2c00dc97`.
+Post-import full core **passes2,080 /5 ignored + one doctest**,56.3635765s total /
+34.71s tests /0.26s doctest, log SHA
+`5e8f43d6ea301e873033f02729fdfcf6b36b7efc3ffee6751a31a359b4b91a3d`.
+Both format checks pass (2.5008343s /3.2341967s).
+
+Earlier desktop1,814/7 and feature1,821/8 passes remain pre-b. The historical
+one-shot performance result is unchanged; this test failure does not alter it.
+
+### 2026-10-15 - Wire-test correction validates both destinations; default passes
+
+Reviewed wire-test fixffb95e63... is installed in one cfg(test) file, receipt
+`96128933ed81a43edf06890295bf952849a9e1651bf8a627ef81b2b59201d549`
+under `tmp/protected-store-typed-bridge-root-gates/wire-test-fix`. It validates then normalizes
+exactly three fresh UUIDv4 values; stable URL fields, method, headers and body
+remain exact. Two comparator regressions are included.
+Focused actual owned-attempt tests **pass eight**, explicitly covering both
+channel and thread,200.4077421s total /0.43s tests, log SHA
+`f446d602a53bd48dc929de9ea249106bcb2fec9a01b79cc7522ea3b0d9b81476`.
+Full current default desktop **passes1,822 /7 ignored, docs0**,22.3390301s total /
+10.14s tests, log SHA
+`dcd572801e9b5faad1bbef822eb7bf6e3982b53d1a7b3101c4c65a9f668003d6`.
+The earlier1,819/1/7 failed comparison remains preserved. **Protected-native-feature
+full is compiling** under the same gates/desktop-native-feature; final post-fix
+formatting is pending. Core2,080 /5 plus one doctest remains valid because this
+fix is desktop test-only. Native capture/observation awaits mouse availability
+and immutable builds. No production route activation, C3b routing or drain is claimed.
+
+### 2026-10-15 - Typed-bridge feature passes; newly installed Legacy Slash compile fails
+
+**Newest installed cohort: Legacy Slash5085...**, exactly20 targets, receipt
+`e85035cf8fc992ba4d1e30a8ab07f69e5db117f83c0d8f2f1279d035be87f5b2`,
+`tmp/slash-legacy-execution-root-gates/root-integration.json`.
+Its first core slash_execution_tests compile **failed E0277**: views::exact Error
+lacks Display at api_slash_runtime.rs:73,22.7650563s, log SHA
+`9fa135a4e5ee56b838a87288ca8603f177fe9a71003c1d0a34c8accc278ba6ff`.
+No tests ran. A narrow correction is being staged. Core2,080/default1,822/
+feature1,828 passes are now **pre-Slash evidence**, not current-cohort passes.
+
+The preceding protected feature compile failed with three E0277 Arc Serialize
+errors,67.5352524s, log SHA
+`0ce6fa5416c7c23be3f6c6b7147cc9fd26bb00001e51a8758eac9febb67025fb`.
+The reviewed borrowed-JSON fix manifest
+`9bb036a455d7356845c513522697f9918e55170138d4a633368b34a0e78465f6`
+is installed, receipt
+`4d154e504aa7255089629a7438eb8f6fb2cbceef84429980ce0f32c6678340c1`
+under `tmp/protected-store-typed-bridge-root-gates/inventory-borrow-fix`.
+Feature rerun **passes1,828 /7 ignored, docs0**,322.7189887s total /8.62s tests,
+log SHA `600772b1255516297c57496ca55f5716a6e7e37eaa687e02804b961ffc087942`.
+Final pre-Slash formatting passes: desktop3.3887452s/core2.1352966s.
+
+C0 actual C3 route/composition is in progress. No new native captures have run;
+Canvas capture remains authorized but awaits fresh mouse availability. Correct
+artifact root is `tmp/protected-store-typed-bridge-root-gates`; earlier shortened
+references in these docs are corrected without changing the underlying evidence.
+
+### 2026-10-15 - Slash compile correction lands; focused chain tests fail setup
+
+Reviewed compile fix664448fd... is installed, receipt
+`d41d6bee823f0f6f162de698a6c44c465b39763fe20d3b7416e001c1356c390c`
+under `tmp/slash-legacy-execution-root-gates/runtime-compile-fix`.
+Focused2 compiles but **fails all15 tests (0 passed /15 failed)** during setup:
+completion_test_support.rs:129 returns Err(Storage) before the chain executes.
+Time64.4273757s total /0.42s tests, log SHA
+`9fb7852ed4d3f1288fa52ccd1bd1d4590dee0a0d87c0fd6a6971ae2054f5cf20`.
+Separate fresh_clear_tests **pass three**,0.4631344s total /0.08s tests, log SHA
+`1b930802e874e8f78a7cc947cfd3af55c3ee5d0b9a4964608cb81e0bbe9b1daa`.
+Fixture initialization is under diagnosis. **Core protected-feature check is
+running**; no full Slash or native pass is claimed. The original E0277 compile
+failure remains preserved.
+
+### 2026-10-15 - Slash fixture/contract corrections installed; focused4 running
+
+Core protected-feature check **passes10.3138708s**, log SHA
+`96c5bbe2b6c6a2852d72377d5652001ab88dcc4dc90c8f011de4237efa0e64fd`.
+Pre-fixture format checks pass: core2.2511982s /desktop3.306692s.
+Fixture-only fix `95b74a6814f77cf5cf8db4666a5310baa8968ef6df42b6b41c970416290646e0`
+is installed, receipt
+`869ca02c1a87b3016ef871410b3c67433e38402648de314052516d95dcb2615b`
+under `tmp/slash-legacy-execution-root-gates/fixture-reopen-fix`. A seeded
+Protected7 requires Inspect, Handoff, then cold reopening rather than repeated
+Commit; the production guard is unchanged.
+
+Focused3 reports **13 passed /2 failed**,28.5007373s total /1.50s tests, log SHA
+`5ebb80d9e354e312cddf46cdda337d930264e9b1935ff6d2c00a2006e7402f3b`.
+The remaining assertions used the wrong URL-query and activity-stamp expectations
+(Incomplete before handoff, Stale after). Reviewed test-only correction
+`4ea2466a625c4336828cbbbf65ee7cb2cbd75fb436c9b7a667daa8c6adb8a505`
+is installed, receipt
+`92bad611e68b52c5a1dc2db2c6754989d4e1b8bb38a76711f3cf66c332a9a137`
+under the same root/test-contract-fix. It strengthens exact journal/report and
+one-use clear assertions. **Focused4 is running; no passing result yet.**
+Earlier compile/setup/contract failures remain preserved.
+
+C0 composed core279fe559... is source-CLEAR (21 targets/125 pins/13 authored tests
+unrun), awaiting possible4ea pin amendment before installation. Actual C3 route
+work remains in progress; no new native captures or production route claim.
+
+### 2026-10-15 - Slash focused pass; C0 installed and corrected focused compile pending
+
+Slash focused4 **passes15 tests**,40.5032484s total /1.50s tests, log SHA
+`759b4bad2e6abd8fd398f8a58fa652756a1b43164aa85d77a03d55930673420b`.
+C0 core279fe... plus exact one-test pin amendment
+`eab7f7205732b2ee051f04908c1126263e0ef8aa03e7bed6642904242b2eaac9`
+is now installed:21 targets, receipt
+`tmp/protected-store-c3-route-root-gates/root-integration.json`, SHA
+`377b93c7e6daf045ca766d920b0ec063e2e01fe2717d449ed4e5cadb1449f2a0`.
+The first focused compile **failed E0624 private .step** at owned_wait_tests:293,
+8.4096338s, log SHA
+`57af8f2ef156c8f87e609fabe9220822998b6e5f45d6459c39ccbe2b093fdbac`.
+Reviewed cfg(test)-only helper fix
+`f8b08b66e2d373083a3a48d02d8c98d95549ac9e9fcd08cde6c70549ea49af34`
+is installed in two targets, receipt
+`0d52d3a46ee53a24c7903a05866f5a23a16896c835cc4f26c5555a83f1d85cd3`
+under that root/replay-test-fix. **Focused2 is compiling**; the13 authored tests
+and full combined core/default/feature suites have no passing result yet.
+
+Core protected-feature check passes4.4691088s, log SHA
+`e9be0833f189bc2979ce6bab86129371d7dc7d9b0ad8e260f61125c3bb9dace0`.
+Pre-helper formatting passes: core2.2005685s /desktop3.2688733s. These checks do
+not replace the pending combined tests. Actual C3 routing and native mouse
+availability remain pending; no new captures have run.
+
+A new independent Bookmarks initial Move-select gap is source-only; its author
+is staging a correction. No new native failure is inferred or claimed.
+
+### 2026-10-15 - C0 second-intent fixture remains; reviewed correction staged
+
+C0 owned-waits focused2 reports **seven passed /one failed**,42.952902s total /
+0.38s tests, log SHA
+`45e7b5e7424a5acab8cc7e83d083e17ce0f2c79579d27675101649fc55031ea9`.
+Full core1 reports **2,110 passed /one failed /five ignored**,57.9548425s total /
+34s tests, log SHA
+`0714b78723c34cd618e324d6f27100c3e8ad614458e1332e05f788d7118df2c0`.
+Both fail the second-intent fixture that skips verification of a new LocalIssued
+identity; doctests did not run after the full-suite failure. Reviewed test-only
+correction `bb3f91b87ebe3c8e477fd33d3ab33651b861305435da3b2cdb463b1f07b1b7fc`
+is staged, **not installed**, while root desktop-full1 compiles. It performs
+actual verify_local in both branches plus identity/basis assertions; production
+guards are unchanged. No passing full C0 gate is claimed.
+
+Rich old-reader design c790291b223b91dac1ff56c13729da4d2e708a867993d17056de32ce8f7e8cbf
+is source-CLEAR with five isolated Python/SQLite3.50.4 tests, including negative
+WAL snapshot. Same-database renamed raw anchor/index collision blocks old cold
+openers subject to account-wide minimum-reader/cold-quiescent limitations.
+Private implementation staging is authorized, with no user database, activation
+or native acceptance and no new user approval requirement. Bookmarks initial
+Move-select correction remains staged; no new native captures have run.
+
+### 2026-10-15 - C0 default passes; second-send and Bookmarks fixes installed
+
+C0 desktop-full1 **passes1,822 /7 ignored, docs0**,393.0214938s total /
+9.60s tests, log SHA
+`6a8f61d57908801c5e6e8795b11869414218b4feaad461caa9d61857b2053e56`
+under `tmp/protected-store-c3-route-root-gates/`. It covers C0 runtime default
+but **predates the Bookmarks installation**; full feature after C0 remains pending.
+After that gate, reviewed bb3f... second-send test fix was installed, receipt
+`75ec3e8999450aeb81d049ab83d8e988e1abdf24a5ce47c1970697ed1f4c80f0`
+under that root/second-send-test-fix. **Core-focused3 is running**, no result yet.
+Earlier focused/full-core fixture failures remain preserved.
+
+Bookmarks fix `7e5b18a4783a76fe4f440af0f02c003abbc3d745f946bfcd1b3193f47a7dae2d`
+is installed in six targets; receipt
+`tmp/bookmarks-picker-root-gates/root-integration.json`, SHA
+`b2f6198af2ec7f27eb8f7f7d183433cced7b37ca70e86f791ab830e46afb175f`.
+Production changes are four option.selected attributes. Official Dioxus0.7
+attribute docs and the pinned revision were checked before installation.
+Nine Python native-checker tests pass in0.060s. **Two authored VDom tests and
+18 native PNGs (eight stages at each width plus two finals) are pending**.
+No new native acceptance is claimed.
+
+Diagnostic6f34 pins remain verified (32 targets/81 pins) after both installations.
+No overhead rerun or native capture has occurred.
+
+### 2026-10-15 - C0/Slash core passes; Bookmarks desktop and actual route remain pending
+
+Current C0+Slash core gates **pass**: owned-waits focused3 passes eight tests,
+31.118323s total /0.41s tests, log SHA
+`a0fda235e55f96fc3b108471ae2212fba3c0d0617461b274abf414478b048c7e`.
+Full core2 passes **2,111 /5 ignored + one doctest**,38.370034s total /
+35.75s tests /0.27s doctest, log SHA
+`3635325130b5d3119a47e03003618605265fc48d342c8b2d026135e82e625640`
+under `tmp/protected-store-c3-route-root-gates/`. The combined cohort includes
+13 new C0 and18 Slash tests. Earlier fixture failures remain preserved.
+**Post-Bookmarks full desktop is running**, receipt/log prefix
+`tmp/bookmarks-picker-root-gates/desktop-full1`; no result yet.
+
+Actual C3 route review identified bounded recovery gaps: missing retry after
+StartLocal storage failure and input arriving before LocalWriter installation
+could park as Unsupported. Same-capability retry and retained WriteLocal handling
+are being implemented. No data loss or source clearance is claimed. Existing
+C3.2 58-PNG validation remains pending; proposed four-process/about-five-stage
+actual-route coverage is distinct future work. No new capture or overhead repeat.
+
+### 2026-10-15 - Bookmarks default and VDom tests pass; feature/build gates pending
+
+Post-Bookmarks desktop full **passes1,824 /7 ignored, docs0**,199.7289239s total /
+9.27s tests, log SHA
+`24a3c93fc3ceaad704fd9de9dbdcf0f3a83c85dbd01c47d22d2415845c17d23d`,
+`tmp/bookmarks-picker-root-gates/desktop-full1`. Both actual bookmarks::picker_tests
+pass: prepopulated initial parent/before and existing child changed/reopen.
+Current core2,111 /5 plus one doctest remains passing. **Protected-native-feature
+full is compiling** under that root/desktop-native-feature1. Final formatting
+and immutable current protected/emoji native builds remain pending. Root freezes
+this source cohort through gates/builds; later C3 route and rich-storage work
+remain temporary WIP. No captures, visual acceptance or new overhead measurement.
+
+### 2026-10-15 - All current source gates pass; immutable protected build running
+
+Protected-native-feature full **passes1,830 /7 ignored, docs0**,329.8603196s
+total /10.27s tests, log SHA
+`df2f3d505000c1a1f26fbfec07b2484a1d1a25645812bcbef9e746a3c4b178df`,
+`tmp/bookmarks-picker-root-gates/desktop-native-feature1`. Final formatting passes:
+core2.3326955s /desktop3.2571312s, same root/fmt-*-final. **All current source gates
+pass**: core2,111 /5 plus one doctest, default1,824 /7 and feature1,830 /7, docs0.
+
+The immutable protected build is running via
+`python -X utf8 -B tmp/protected-combined-root-gates/build_native.py --output tmp/protected-combined-native-build1`.
+No binary seal or build result yet (nativeExecuted=false). The immutable emoji
+build is next and unrun. No new captures or native visual acceptance.
+
+Temporary review findings: rich migration's own-journal precommit guard rejects
+a valid transaction; C3 initial/retry writer installation needs current Editor/root
+guards after the inventory await. Authors are correcting temporary candidates;
+no new source clearance, production activation or native acceptance follows.
+
+### 2026-10-15 - Current handoff reconciled after final source gates
+
+Current source gates are unambiguously closed: core2,111/5+doctest, default1,824/7,
+protected feature1,830/7 and final formats PASS. Prior failures remain historical.
+Protected build is still running; emoji build next/unrun, no captures. Canvas
+still awaits a fresh mouse-availability reply, not additional authorization.
+Rich successor543fa87f... v2 is staged with19 authored tests unrun and review
+pending; no installation or runtime acceptance. Production activation remains off.
+
+### 2026-10-15 - Protected immutable build sealed; emoji build running
+
+The immutable protected build **passes in386.135375s**, with2,343 unchanged
+source entries. Binary SHA
+`71487d17c014ef487aa76935e6cc088eda8d119efed83043dda61f39d88ca54e`,
+log SHA `076b7455254598c9008c6f36ab3389c458d7612f429ccaaa29150854b581fa6e`,
+seal SHA `6444fdeeb5a109611b630a5b7e598b2ebfee8780cd7fb0cb02985a828ebff578`.
+Root's full runtime verifier passes all17 helpers. The immutable emoji build is
+now running (session94262) under `tmp/emoji-retirement-native-build1`.
+No native launch or capture has occurred. An exceptional-cleanup correction is
+being prepared only in temporary files, requiring an explicit post-build helper
+amendment before use; it is not yet installed or attributed to this build.
+
+### 2026-10-15 - Emoji build sealed; cleanup override and Rich v2 installed
+
+The immutable emoji build **passes in415.0895318s**, with2,343 unchanged source
+entries and unchanged pins. Binary SHA
+`a5b54faeb3be13e6a144f02657486b51d1143a0d12c1d315594537e8652a4d32`,
+log SHA `b633f0bf1462e330158d9275c36d1fc6f9246e73c0228012a48ad41d099b793e`,
+seal SHA `3e637c8966f88ed876c3252b8fe8a0aa2e0b7060d7ff149a6e5f78dca5c858ed`.
+Original full preflight passes32 targets/81 pins,14 helpers and retained overhead,
+recorded in preflight-complete.json. No native launch or overhead repeat.
+
+Reviewed cleanup55642... is installed exactly in three targets, explicit override
+receipt `tmp/protected-bookmarks-cleanup-root-gates/install-1/override-receipt.json`,
+SHA `a4845c050a2ffde2dabcd338d301d7bb727c7d556e9e18cdd5f9b85642ff3f70`.
+Installed verifier17 passes; root's10 mock tests pass in0.139s. This post-build
+override is separately attributed, not represented as original sealed source.
+
+**Newest source cohort: Rich v2**, independently reviewed543fa..., installed
+exactly five targets. Receipt
+`tmp/slash-rich-storage-root-integration-prep/installation/root-integration.json`,
+SHA `c405db020a2070ddc5c13a2548355ce29033d00203ebfb720f9b151536fa926f`.
+Its19 focused tests are compiling (session89045); **no Rich test result yet**.
+The source gates below and both immutable binaries are **pre-Rich evidence**.
+
+C3 handoff source-review holds are resolved, but final package, tests and native
+verification remain outstanding. No captures or overhead repeat; mouse availability
+is still pending. Production activation and broader parity remain incomplete.
+
+### 2026-10-15 - Rich preparation assertions fail; execution semantics under investigation
+
+Rich focused tests completed **17 passed /2 failed /0 ignored, 2,116 filtered**,
+9.25s tests /74.6677687s total, log SHA
+`57f48198b34ce2f644a04e3ebc03640a11c7a195adc0f71fc7da31f1f4123ead`.
+old.prepare SELECT unexpectedly succeeds in existing_connection_reprepares:334
+and primitive_wal:360. Cached-schema deferred reprepare at execution is suspected;
+author/reviewer are investigating actual query execution versus the preparation
+oracle. **No fix or pass is claimed.** Root-check is running via gate.py root-check
+(session56902); no result yet. No native run has occurred.
+
+### 2026-10-15 - Rich executed-query oracle passes; full core gate running
+
+Reviewed Rich test correction78b71ea... is installed exactly in one cfg(test)
+target, source1cc0b8d..., receipt
+`tmp/slash-rich-step-oracle-fix/root-integration.json`, SHA
+`dd88d3976944c22f31ef7d5e63b2ea1978298e73b7583ac72da7a74308f30cce`.
+Focused2 **passes19 /0 failed, 2,116 filtered**,29.8914107s total /5.76s tests,
+log SHA `ad3e0cf880b71b6419255ac4191ec6a92bc63b39eee0e81f6bc62495a01c237d`.
+Executed SELECT now requires the exact no-such-table error; pinned WAL negative
+proof is unchanged. The original17/2 preparation-oracle failure is preserved.
+
+Before this test-only fix, root-check passed52.4712793s, log SHA
+`af49338a9a5143c3f8d53e0253ffb44fbe5566eada71a54e46a2357d95d36a60`,
+and protected check passed54.4338234s, log SHA
+`ee150cead6ec6e618309bbfff26399b4da6472d59cceca1fbe62b15a35741755`.
+**Full core2 is running (session43093); formatting is pending.** Installed cleanup
+also passes nine Bookmarks Python checks (0.067s) and16 protected-receipt checks
+(1.482s). No native run or new full-suite pass is claimed.
+
+### 2026-10-15 - Rich core/formats close; C3 isolated validation preparation
+
+Rich full core2 **passes2,130 /5 ignored + one doctest**,39.5419317s total /
+36.99s tests /0.19s doctest, log SHA
+`aba9ac6e11d3efaecf9c39e8face41e4bbe9e303aa99cd6f9a047e7a8d213191`.
+Final formats pass: core2.29449s /root3.2531314s, empty logs. Earlier root/protected
+checks remain passing. No repeat default full desktop is required for the private
+core plus cfg(test)-only correction; this does not claim a new desktop test run.
+No native or overhead repeat has occurred.
+
+Emoji preflight v4 independently passes after three exact receipts, artifact
+preflight-complete-v4.json, SHA
+`b67409d3b727037ef9618569a38c3db8f929e7d7555c439a49a976f39f794f72`.
+No current runtime-pin drift is found.
+
+C3 route source package
+`f706f82f44aefdf6d3bbed22527a1481ea53cc39958f79bb382cd983cfd09d6c`
+is frozen at `tmp/protected-store-c3-route-binding-prep/route-source-review-v2`:
+53 targets /360 pins /18 authored Rust tests unrun. nativeLaunchReady=false;
+the strict runner remains outstanding. It overlaps five observer pins (agent.rs,
+main.rs, state/boot.rs, fixture.rs, media.rs), so root is preparing an isolated
+compile-validation copy. **No root promotion before the pending diagnostic**;
+this is not installed or native-accepted work.
+
+### 2026-10-15 - C3 isolated compile validation starts; root source unchanged
+
+C3 source f706... is independently CLEAR for compile feedback. Root created
+`tmp/protected-c3-validation1` with helper 6c23544c...: 2,351 source/context inputs,
+2,370 final isolated files and exactly 53 overlays. The root source is unchanged;
+all five observer pins remain untouched. Isolated inventory SHA
+`702c98fd55a5ac054a7d7550691688c9d33f30417f2bf696bb6aff9c8e390e97`;
+evidence is in that copy/.validation-evidence. The first core filter
+owned_inventory_tests is compiling (session 90924), with logs/receipts under
+`tmp/protected-c3-validation-root-gates`. No result is claimed yet.
+
+Validation uses the copied independent lock and explicit shared core target
+directory. Desktop tests use --bin; core uses --lib/--doc. Examples are intentionally
+excluded because an existing example references arbitrary temporary source. This
+is isolated compile feedback, **not root promotion**. Native runner and 20 PNGs
+remain pending. C4 source/observation inventory 5139f845... is staged: six targets,
+17 pins and 12 authored tests; review is pending and it is not installed.
+
+### 2026-10-15 - C3 isolated focused core tests pass; desktop route compile pending
+
+C3 isolated core validation preserves two zero-test attempts: the filename
+filter compiled but ran zero tests (72.4359488 s, log SHA
+`20cf66176f33056119cba3c768c9d34d8fbbbc3e26d0ed22738c9c661ad3ae75`),
+and a guessed alias also ran zero (0.4026503 s, log SHA
+`1f30d394713ce2650ed9e7062f64e36c9f101bad87a0c49ad509955e9cf69f6d`).
+Neither provides test coverage. Correct filter
+`owned_queue::operations::tests::inventory` passes **three tests**, 0.4902737 s
+total / 0.15 s tests, log SHA
+`b13b713ad32cf2857d97db4e863612745775af8a97386a3c53459e602f23295d`.
+The `local_fifo` filter passes **three tests**, 0.5894872 s total / 0.25 s tests,
+log SHA `8153e0c0407d21907aed96782467f1203d96546a1dfe766bbd9d495a6a35a3b7`.
+Evidence remains under `tmp/protected-c3-validation-root-gates`; root/isolated
+inventory checks are unchanged. **Desktop route-focused1 is compiling**
+(session49879), with 12 tests expected but no result yet. No full C3 suite,
+native acceptance or root promotion is claimed.
+
+### 2026-10-15 - Isolated C3 desktop compile fails Send requirement; test-only fix pending
+
+Isolated desktop route-focused1 **failed compilation; no desktop tests ran**.
+At owned_route_tests.rs:358, tokio::spawn requires Send, but actual protected
+execution Evidence retains Cell<bool>/Cell<Option<u64>> across an await. The two
+diagnostics are retained, 145.8719005 s total, log SHA
+`3f8d8cd169e240718c80d17a7ab46abfa9ceb6ddeefac5dc1cb6ab4a60561461`.
+Root/isolated source checks are unchanged. The author is staging a test-only local
+polling correction, with **no production Sync change**. Original f706 stays frozen.
+Isolated core-full1 --lib is running (session72002); the six focused core tests
+already passed. No native acceptance or root promotion is claimed.
+
+### 2026-10-15 - Isolated C3 full core/doc pass; desktop rerun compiling
+
+Isolated C3 full core --lib **passes 2,136 /5 ignored**,36.3675687 s total /
+35.95 s tests, log SHA
+`70e9ce3afe0413df0e0d11ef019a4be825881af4e2740815c7373cbccd128ee3`.
+Separate core --doc **passes one test**,35.6189233 s total /0.20 s test, log SHA
+`25df29755a8352f91c184b27d872525f32a9b7811d213fc0f2a2c75d10470ea8`.
+Test-only amendmentaba80df6... is applied **only to the isolated owned_route_tests.rs**;
+receipt copy/.validation-evidence/local-http-test-fix/receipt.json, SHA
+`3a14cd45ed39895f05519c811c22b25a51727556f4d84f83a448459703683892`.
+Isolated source v2 SHA
+`9aee77939843a0e88e8bb425c2a1f42fab5a534c29b99ade85990940cb3a377a`;
+the original source record is preserved and root source remains unchanged.
+**Desktop route-focused2 is compiling (session84292); no test result yet.**
+C4 component source review is clear, but its package needs an exact documentation-pin
+amendment and tests remain unrun. Pin updates are coordinated with acceptance_audit.
+
+### 2026-10-15 - Isolated C3 desktop retry paths fail; investigation continues
+
+Isolated desktop focused2 compiled and ran: **10 passed /2 failed /0 ignored /
+1,831 filtered**,5.62 s tests /297.9030552 s total, log SHA
+`8623c7883459058eaa41a7a5df322dbd464dc9b3aabbc95ac0e0690eeca09277`.
+StartLocal rollback retry returns Pending at test line508; retry-inventory
+retirement times out at line622 before reaching the held read. Initial handoff,
+post-await retirement and local FIFO paths passed. The author is investigating
+the actual retained retry flow; **no correction or full desktop pass yet**.
+Original isolated source v2 and root remain unchanged. Isolated protected-check1
+is running (session75538); no native launch or root promotion.
+
+### 2026-10-15 - Isolated C3 checks pass; retry amendment applying only to copy
+
+Isolated protected-check1 **passes in63.7800338 s**, log SHA
+`c5f16e2037c09173c953c27399688f6113eae2e6c3b1f734171c71c67fcc0007`;
+default-check1 **passes in59.1735017 s**, log SHA
+`4c4f86e2f2b1cf03bbc3bcced957822f24577dcbda49fbbd7abaec8ce96729c5`.
+Main and isolated sources were unchanged for these checks. Desktop focused2
+remains **10 passed /2 failed**; compile checks do not clear those failures.
+Reviewed retry amendmentae716993... is ready and root is applying it only to
+the isolated copy. No amended test result, native launch or root promotion is claimed.
+
+### 2026-10-15 - C3 isolated retry amendment installed; focused rebuild pending
+
+Reviewed retry amendmentae716993... is installed **only in the isolated copy**,
+receipt SHA `50545126a9a261c00888f581b3dbb708f196cf8d82ec621f2736d79842ad5a20`.
+Isolated v3 source inventory SHA
+`4981ae1fc0f15ad89885ea410d74ee997e9319b30f3d36841a62f82effb16509`.
+Focused3 is rebuilding; no result yet. Runneredddbf02... passes root verification
+of seven targets/17 pins and36 Python tests in1.676 s. Native is still unrun;
+these checks do not establish native acceptance or root source promotion.
+
+Current Rich attribution is clarified: focused19/full core2,130 and final formats
+pass. Older pre-Rich desktop/binary evidence remains separately attributed; no
+Rich validation-pending claim supersedes those completed core gates.
+
+### 2026-10-15 - Isolated C3 focused retry tests pass; runner remains on review hold
+
+Isolated C3 focused3 **passes12 /0 failed**,180.4392498 s total /0.76 s tests,
+log SHA `da3ebc320e668fd90971b3834ea716192052f15d7eb4209e1a4c646ca60f7c1d`.
+Root and isolated sources remain unchanged. **Full default desktop is running**;
+no full-suite result yet.
+
+C4 successor `d3f5277276093dc6bde9eb3cd73e7f19b1b717008f9abc0fc1d658c3524e7aa0`
+is independently clear for f706+aba80+ae716+02c36, but is not installed.
+Runnereddd review remains **HOLD**: cleanup can mask the primary failure, click
+scope/visit guards and distinct request UUID evidence need correction. Work is
+underway; passing pure tests does not clear the runner. Native remains unrun.
+
+### 2026-10-15 - Isolated C3 default suite and formats pass
+
+Isolated C3 full default desktop **passes 1,836 /7 ignored**,10.7147302 s total /
+9.84 s tests, log SHA
+`1becd75450945680715fdc6e5a818ac8d79d95e45a036ff046b633cf4a682932`.
+Core fmt1 passes2.4949219 s and root fmt1 passes3.2986606 s, both with empty logs.
+All source inventories remain unchanged; receipts are under
+`tmp/protected-c3-validation-root-gates`. Core is unchanged since the isolated
+2,136 /5 plus one doctest pass. **Feature full has not run**; it is planned after
+C4 installation. No native acceptance or root promotion is claimed.
+
+### 2026-10-15 - C4 isolated installation and focused passes; runner successor reviewed
+
+C4 is installed **only in the isolated copy**, receipt
+.validation-evidence/c4-install/receipt.json, SHA
+`a4f1ef95766f764c1f6a96c005343b817058e128463cadbd000945056a9b2768`.
+Isolated v4 inventory SHA
+`f921647638cfc0a2ac1caed41f89aea7d1d49d4f38078711f32fbe94d9e4fb13`.
+Source focused tests **pass five**,306.1804027 s total /0.13 s tests, log SHA
+`2e859811141bfe511c14e1a820f717a5359dbbdcb42f201f444df3f8faa81d50`.
+Observation focused tests **pass seven**,1.0235999 s total /0.15 s tests, log SHA
+`9eec433e3fbfb21f9ec930b47fb91ef9645b5d8d4a57577d314eca2a4fa5878c`.
+Main and isolated inventories are unchanged during validation. **Combined full
+default is running; feature full is unrun.** Prior C3-only full passes retain
+that earlier isolated source attribution.
+
+Runner successor
+`3629ecf84d96980c1fdf483d4fd810379ab1c609796bf14b1fb048d7435573b6`
+is independently CLEAR (seven targets/17 pins); root's41 Python tests pass in
+1.438 s. It is **uninstalled and native-unrun**. Prior eddd review HOLD remains
+historical evidence; successor source clearance is not native acceptance.
+
+### 2026-10-15 - C4 isolated full default passes; feature gate running
+
+Isolated C4 full default **passes 1,848 /7 ignored**,10.8686241 s total /
+10.16 s tests, log SHA
+`5d3a73f0f15ad82adcb27577c7f498eec9457aa303e29f40e0d52b8c0625ce18`.
+Feature full is now running as c4-feature-full1. The same v4 isolated inventory
+and main source remain unchanged; no feature result or native acceptance yet.
+
+### 2026-10-15 - C4 isolated feature passes; runner installed and native build starts
+
+Isolated C4 feature full **passes 1,854 /7 ignored**,330.1329403 s total /
+10.54 s tests, log SHA
+`de282b478f68b7296c04c5b4c69457b2a5611acf3951f018531707dcbf7144ed`.
+Core remains the isolated2,136 /5 plus one doctest pass because no core files changed.
+Final c4-root-fmt1 passes3.4059807 s with empty output; main and isolated checks
+remain unchanged.
+
+Runner3629 is installed **only in the isolated copy**, seven new scripts, receipt
+.validation-evidence/owned-send-runner-install/receipt.json, SHA
+`a547644a68be21adbe9a1700ade918b9fae3fb0f664559d9d4e1df7933a49acf`.
+Source v5 has2,381 files, SHA
+`6b7d6c1f2cb8c559d1358926a23b9c2f4bfa2e9a59906afd65cfa1b1ca1df4f4`.
+Installed41 Python tests pass in1.079 s. Exact build-helper855c check passes;
+**native build has started** under `tmp/protected-c3-native-build1`, using the
+isolated locked dev binary with the protected feature only. No launch or native
+result is claimed. Older sealed binaries remain untouched; root source is not promoted.
+
+### 2026-10-15 - Isolated V5 binary sealed; native preflight passes without launch
+
+Isolated V5 native build1 **passes in384.9611627 s**, with main and all2,381
+isolated source entries unchanged. Binary
+`tmp/protected-c3-native-build1/protected-c3-native.exe`, SHA
+`1d20595240a83acef69d0bad91af0345e80876d289780b1f5a162f636bf16752`;
+log SHA `403a8be6da2357ba5a3a0b36f6340183becbb005650ab382fc4119a3596eea34`,
+seal SHA `d5e0132426c7a60208b4e573e21090c115e2dbfa489f1ecfa772ab64154bdf33`,
+result SHA `4f559f1785aee704e02b1a0960562467fe046e5e98f611e0f6ac2cd3723284be`.
+Root read-only preflight passes422 runtime files for four planned processes /
+20 stages, receipt `tmp/protected-c3-native-preflight-prep/preflight-complete.json`,
+SHA `3ddc558eea516a825cf8dc90ff0ccf0c71910c4e40b57df276b4437918bfe64a`.
+Independent helper audit is underway. **No native launch or overhead run**.
+Final non-test c4-default-check1 is running on V5; no result yet. Main source is
+not promoted and older sealed binaries remain untouched.
+
+Next Account componentbc7c2a99... is source-CLEAR (15 targets/16 tests) but not
+installed; explicit V5 composition preparation is underway. Source review is
+not a test or native pass for that component.
+
+### 2026-10-15 - Isolated V5 final check and independent preflight clear
+
+V5 final c4-default-check1 **passes in41.1569954 s**, log SHA
+`26d084721138e315e43ecb761960e9e761efe39c00fc8a7437b234891d6d631c`;
+both inventories remain unchanged. The V5 build/preflight is independently CLEAR:
+the reviewer rechecked all422 runtime files, exact seal/result/binary and the
+seven-target/17-pin helper closure. **No native launch has occurred.**
+
+Account V5-to-V6 installer originalf904... passes read-only preflight. Root found
+a missing -X utf8 child invocation; the author is preparing an explicit successor.
+No installer execution yet. Componentbc7... remains unchanged and source-cleared;
+that clearance does not establish installed or runtime behavior.
+
+### 2026-10-15 - Isolated Account V6 installation and test compilation failure
+
+Account component bc7c2a99 is now installed **only in the isolated V6 copy**:
+15 targets (10 existing, five new), using independently cleared installer
+`a6de37b517dcd92e827009f46cf0354dc786bd6c3e97edeca745461534b0a44d`.
+Root's seven scratch tests pass. Receipt
+`.validation-evidence/account-inventory-c4-install/receipt.json`, SHA
+`d43c868fb1a168350d84cd798d6be5e89334da82ffcf4b5f6babef03762f48b8`;
+V6 inventory has 2,386 files, SHA
+`b23921623e5aaf7aad097c715713bc5798fabb80a9dff672fce46e9f14faf133`.
+Main source is unchanged. This supersedes the unexecuted f904 installer, whose
+missing `-X utf8` child invocation was corrected before installation.
+
+V6 runtime `c4-account-default-check1` **passes in 35.5964691 s**, log SHA
+`681eff532503b7881f30b896ab276ea1b8dda64699ee16a752d43d9ae5bc4d5a`.
+Ownership-focused1 then **failed compilation with nine private Guard diagnostics**
+in existing view/composer tests, 53.82764 s, log SHA
+`fd23bae6a2d6f0a9a29d5e5f8bff90b7a4c2019870a1e84878c3627d2e604048`.
+No tests executed; this is a test compilation failure, not a runtime failure.
+A minimal visibility amendment preserving assertions is being prepared. All 16
+Account tests and the remaining focused/full/feature/format gates are pending.
+Main and isolated inventories remain unchanged after these checks. The sealed
+V5 binary and independent preflight retain V5 attribution; **no native launch or
+overhead run has occurred**.
+
+### 2026-10-15 - Isolated Account V7 visibility amendment
+
+The independently cleared visibility amendment
+`a406ac466394e9f2c00e058106aa20a337a39f7f5e8145a68c7d0b2599f1f39e`
+is installed **only in the isolated copy**, changing four visibility declarations
+in one `ownership.rs` target, with no test or body changes. Receipt
+`.validation-evidence/account-inventory-visibility-fix/receipt.json`, SHA
+`3ce97fc18199036c73c26ac2e6b5e0ea4579ead00bbe1ce11bcfc1b3e75f944b`;
+V7 inventory SHA
+`dbd2ebce8300b009906847ad562ab95047bccd72d643252c273ab85b602c0a42`.
+Main source is unchanged. `c4-account-ownership-focused2` is compiling; no test
+pass is claimed. The earlier nine-diagnostic compilation failure is preserved.
+V5 remains the sealed, unlaunched native cohort; no overhead run has occurred.
+
+### 2026-10-15 - Isolated Account V7 focused tests pass
+
+All 16 new isolated V7 focused tests **pass**:
+
+- Ownership: five tests, 307.9265855 s total / 0.00 s tests, log SHA
+  `94a40b6493965b34ff31d57eb99e89e2029a8f3a44e62204b13a0acd002116f1`.
+- Account inventory: seven tests, 1.2589608 s total / 0.29 s tests, log SHA
+  `0ce6a6b7fbc1f96210589bcedb1f5a0bf36a2f5f6e5bac12039ccc1a32280904`.
+- Owned inventory: four tests, 0.9074997 s total / 0.24 s tests, log SHA
+  `373f6a25488f3ce9fb53a9eacb05fb348e37aa9b78a11ce3fcabf53c2c288c89`.
+
+Main and isolated inventories remain unchanged. `c4-account-desktop-full1` is
+running; feature tests, runtime feature check and formatting remain pending.
+The earlier nine-diagnostic compilation failure is preserved. V5 remains the
+sealed, unlaunched native cohort and does not provide V7 native proof.
+
+### 2026-10-15 - Isolated Account V7 full default pass
+
+Isolated V7 full default desktop **passes 1,864 / 7 ignored**, 11.3970552 s
+total / 10.67 s tests, log SHA
+`3240d563875860d2e316175becd66cb4962cc00a4ef69b3178f226e61a149d0e`.
+Both inventories remain unchanged. `c4-account-feature-full1` is building the
+same V7 source; runtime feature check and formatting remain pending.
+Source-jobs work is still being authored: a reviewer found a revoked Source
+reattachment case that is being corrected. It is not frozen, source-cleared or
+integrated. No new native launch or overhead run is claimed.
+
+### 2026-10-15 - Isolated Account V7 full feature pass
+
+Isolated V7 `c4-account-feature-full1` **passes 1,870 / 7 ignored**, 342.0381494 s
+total / 10.75 s tests, log SHA
+`9d5ccac7a79a3307e42faa0f8a1e9c0fc910fcea30426a58a558eb9cce0097d8`.
+Both inventories remain unchanged. The non-test feature check
+`c4-account-protected-check1` is running; final formatting follows.
+Main core remains at 2,130 passed, while isolated core remains at 2,136 passed /
+5 ignored plus one doctest; these are distinct source cohorts. V5 is still the
+sealed, unlaunched native cohort.
+
+The broader parity audit's two follow-ups are assigned for temporary preparation
+only: original downloads beyond the media cache limit to attachment_integration,
+and structured `has:file` / `has:link` search filters to read_navigation_fixture.
+Neither assignment establishes implementation, integration or acceptance.
+
+### 2026-10-15 - Isolated Account V7 component gates closed
+
+Isolated V7 final gates are closed: `c4-account-protected-check1` **passes in
+42.0360923 s**, log SHA
+`cdb06cca81254a11cc961c48a887e726beb0b25d3970e63515b9f9bd845e2ebf`;
+`c4-account-root-fmt1` **passes in 3.4349952 s**, with empty output.
+All 16 component focused tests, default desktop 1,864 / 7 ignored and feature
+desktop 1,870 / 7 ignored now pass. Main and isolated inventories are unchanged.
+The earlier 35.5964691 s default runtime check belongs to V6, before the four
+visibility-only declarations; the feature runtime check above covers V7.
+Core source is unchanged: main core 2,130 and isolated core 2,136 / 5 ignored
+plus one doctest retain their separate attribution. V5 remains the sealed,
+unlaunched native cohort. No native launch or overhead run has occurred.
+Source-jobs work remains separately staged and uncompiled; it is not covered by
+these component gates. Cargo is quiet.
+
+### 2026-10-15 - Source-jobs successor and reference-access checkpoint
+
+Source-jobs successor at `tmp/protected-source-jobs-c4-prep-v2`, manifest
+`a388032b899b9cefdbcf5d361958f846166f57f0a26fca0b2e46b48c6571b546`,
+is independently source-CLEAR; root strict verification passes for nine targets
+and 178 pins. Its 14 authored tests are unrun. The original 2f4524 package remains
+preserved on hold for a generation race. The V8 installer is being staged;
+no installation or Cargo gate has occurred for this successor.
+
+The four-target search package 2bada360 is staged awaiting final review; original-file
+streaming preparation is underway. Neither is integrated. Slack CDP was rechecked
+reachable (Chrome 152.0.7977.130, protocol 1.3); no restart was needed. No native
+launch or overhead run has occurred.
+
+### 2026-10-15 - Isolated source-jobs V8 installation
+
+Source-jobs V8 is installed **only in the isolated copy**, exactly nine targets;
+main source is unchanged. Installer 613319f9 is independently CLEAR, with seven
+root scratch tests passing in 0.292 s and a passing read-only check. Installation
+receipt `.validation-evidence/source-jobs-c4-install/receipt.json`, SHA
+`89b642f680f9e84d387503187829fb08a5e59bcedc4c133423891651534abef5`;
+`isolated-sources-v8.json` has 2,393 files, SHA
+`d3097290c43d19621233f69dde10005796e4586c5863bd652aaf586ffbb592d5`.
+`c4-source-jobs-focused1` is compiling; no test result is claimed. Prior V7
+component gates retain their attribution, and the original 2f4524 generation-race
+hold remains preserved.
+
+Search package 2bada360 is independently source-CLEAR and its ten source-oracle
+tests pass under root validation. V8-to-V9 preparation is only being authored;
+search is not installed. Original-file streaming preparation continues separately.
+No native launch or overhead run has occurred.
+
+### 2026-10-15 - Isolated source-jobs V8 checks and V8b test correction
+
+V8 `c4-source-jobs-focused1` **failed compilation before any tests ran**:
+three diagnostics at two cfg(test) sites, 54.4178797 s, log SHA
+`964550a6fa54bfcd04fff6bd22cf796d832491e7278c955d0b270f88e9bcd5e0`.
+The non-test protected check **passes in 39.1902102 s**, log SHA
+`0c6b0293213efe99e4fb9deb6445cd082bebe2fb6d7dc35ea4a6b804c5209867`.
+Reviewed test-only fix 7b9124ad changes two expressions in one isolated test file;
+receipt `.validation-evidence/source-jobs-renderer-compile-fix/receipt.json`, SHA
+`bbc9a649ec262e5e7b91b865c1ae196afb177694d2d0349cfa0ebae0876e2a8a`.
+V8b inventory SHA
+`6d0c8c706f3a3abe8507f02227693374d03091a840c64c75ad0ee74df94f3d0f`.
+Focused2 is compiling with no result yet. Search V9 installer work follows V8b;
+main source remains unchanged. No native launch or overhead run has occurred.
+
+### 2026-10-15 - Isolated source-jobs V8b focused and default passes
+
+Isolated V8b focused2 **passes 14 / 0 ignored, 1,871 filtered**, 322.3288644 s
+total / 0.38 s tests, log SHA
+`6907eabb60f34b0339df09c19bcd11266cabc937aad4db05f463138686d4e32a`.
+Desktop full1 **passes 1,878 / 7 ignored**, 25.0391183 s total / 11.28 s tests,
+log SHA `1c5acb86ca0cde6b7efa5ec24c322ccf55db2dfad24ee61e7a9365b5db254118`.
+Both inventories remain unchanged. Feature full1 is compiling; formatting remains
+pending. The earlier focused compilation failure remains historical evidence.
+
+Search installer successor
+`54c497135aff7c6d5f7ad0dd9751e27a7cdc802a723b72d2080e2d5fbf761cce`
+passes root's read-only check but awaits independent review; it has not been
+applied. Main source is unchanged. No native launch or overhead run has occurred.
+
+### 2026-10-15 - V8b gates closed and isolated Search V9 installed
+
+V8b feature full1 **passes 1,884 / 7 ignored**, 352.3917026 s total / 11.20 s
+tests, log SHA
+`8cc584d8b30ea2bb2c1a59dd2723fad82c00da89cc2fce920e548d591f7745d3`.
+Root formatting passes in 3.4393513 s; V8b gates are closed.
+
+Search V9 is installed **only in the isolated copy**, four targets through the
+independently cleared installer 54c497. Receipt
+`.validation-evidence/search-has-install/receipt.json`, SHA
+`aeb2364df31c026a8534089bed0889e2850a4000b98d6445b5d003219d8d10e5`;
+V9 inventory SHA
+`c59b1da44264cc03b344f969e1962b7fed462745547a0eb03d49d985996d0851`.
+Core focused tests **pass 15**, 43.6218167 s total, log SHA
+`c4befc3296595f84a2bda1f93f601af1c65d1ecfaf5ca60ec0daf9eff069f7fe`.
+Full core is running; the V8b full-suite results retain their earlier attribution.
+
+V5 preflight now detects one CSS drift from Search; all other 421 runtime files
+are unchanged. That CSS is embedded in the older sealed binary. An exact
+receipt-bound preflight successor is being prepared; no new preflight clearance
+is claimed yet. Download package 783 is on review HOLD for original-only URL
+reachability, with a successor being prepared. Main source remains unchanged;
+no V5 or other native launch, and no overhead run, has occurred.
+
+### 2026-10-15 - Isolated Search V9 core pass and download successor
+
+Isolated V9 core full1 **passes 2,146 / 5 ignored plus one doctest**,
+56.8224617 s total / 39.31 s tests / 0.29 s doctest, log SHA
+`411475d06b1b1efa3878cc38d7f28fd9ab5ce427c1a245a4344bc44d73446d9c`.
+Search desktop full1 is compiling; no desktop result for V9 is claimed yet.
+
+Download successor
+`fbcfb7cf04f6d468bd50972b200cfb5ef16cf8e179c854276547b44938bb9711`
+is independently source-CLEAR. It corrects actual original-only URL entry points
+and specifies a stable 96 px button. Its 17 authored Rust tests are unrun;
+isolated V10 composition preparation is assigned, with no installation or native
+acceptance. Original package 783's review hold remains historical evidence.
+
+V5 preflight successor c2237e4a passes the prepared full read-only check but awaits
+independent review. It binds exactly one embedded-CSS override and keeps the other
+421 runtime files strict. Main source is unchanged; no native launch or overhead
+run has occurred.
+
+### 2026-10-15 - Isolated Search V9 source gates closed
+
+Search V9 source gates are closed. Desktop full1 **passes 1,880 / 7 ignored**,
+332.4238544 s total / 11.16 s tests, log SHA
+`cc14e287d81ffda7dcebd2c21953456c306fb05c985e01f352dabaf451b781a5`.
+Protected non-test check1 **passes in 29.1948429 s**, log SHA
+`6d1ae300961db516a168a7ae776820c8b4a4830aa7e0a704fe0445d82a1ceaba`.
+Root formatting passes in 3.3271708 s and core formatting in 2.2201482 s, both
+with empty logs. Source inventories are unchanged. Core full 2,146 / 5 ignored
+plus one doctest and 15 focused tests already pass. No V9 feature full was
+repeated: common search is covered by default full and the runtime feature check;
+the latest full feature suite, 1,884 / 7 ignored, belongs to V8b.
+
+V5 preflight successor c2237e4a is now independently CLEAR, binding one embedded-CSS
+override while keeping 421 runtime files strict. Download V10 installer 364ece4e
+is independently CLEAR and passes root verification: 13 targets, main inventory
+2,351 files, V9 inventory 2,393 files, expected V10 inventory 2,400 files.
+Application is next, not yet recorded. Main source remains unchanged; no native
+launch or overhead run has occurred.
+
+### 2026-10-15 - Isolated original-download V10 installation
+
+Original-download V10 is installed **only in the isolated copy**, exactly 13
+targets, through installer 364ece4e and source package fbcfb7. Receipt
+`.validation-evidence/original-download-install/receipt.json`, SHA
+`1e664e753f5cf168245e15a1fa89bfefa67db775c86dac2f9dc5ee6adca7e914`.
+`isolated-sources-v10.json` contains 2,400 files, inventory SHA
+`002e85127d0a01ab08fbdda7aacbdb76d794bbf8452e43d300dd6bf367826bc2`.
+The alias is preserved and main source is unchanged.
+`original-download-core-focused1` is compiling; no test result is claimed yet.
+V9's passing gates are historical pre-download evidence. No native launch or
+overhead run has occurred.
+
+### 2026-10-15 - Isolated original-download V10 core gates pass
+
+V10 core gates pass:
+
+- Original-download focused1: four tests, 65.105096 s total / 0.03 s tests, log SHA
+  `7c1cfbe0a9eb85e4b0bddde999a07b4600bbee4d4f2df854af43e2c7c8eefdff`.
+- HTTP focused1: eight tests, 1.1914069 s total / 0.78 s tests, log SHA
+  `0f2d12460d3184337f21598d38ae10732ed0f6e96fe51ff3b3c8a4e7fa96e4ac`.
+- Full core1: **2,158 passed / 5 ignored plus one doctest**, 68.7555099 s total /
+  37.56 s tests / 0.24 s doctest, log SHA
+  `433ee72e5e31798700f174fa869a4acdbaf542d03deae84f04aa3e9d3ddf336e`.
+
+Desktop full1 is compiling; source inventories are unchanged. The normal/narrow
+download busy/cancel fixture plan is accepted for temporary preparation only:
+real handlers with a private feature-gated loopback and temporary destination.
+It has not been built or run; the OS save dialog remains separately unverified.
+Main source is unchanged. No native launch or overhead run has occurred.
+
+### 2026-10-15 - Isolated original-download V10 source gates closed
+
+V10 source gates are closed. Desktop full1 **passes 1,885 / 7 ignored**,
+404.2758797 s total / 11.13 s tests, log SHA
+`d32bbd55faf73d45bad0552f75d82eb6205ba9f1393a12398b447f89272d11ad`;
+all five `download::tests` are verified in the log. Non-test protected check1
+**passes in 52.4116729 s**, log SHA
+`d0888640e943e914fb22b958fa9fbebd29f943a518b04119f2e5e9d6e6e3680d`.
+Root formatting passes in 3.3275846 s and core formatting in 2.2389225 s, both
+with empty logs. Full core 2,158 / 5 ignored plus one doctest and all 12 focused
+core tests already pass. No V10 feature full was repeated: the latest full feature
+suite, 1,884 / 7 ignored, remains V8b evidence; V10's runtime feature check passes.
+All inventories and main source are unchanged, and Cargo is quiet.
+
+The download native fixture at `tmp/original-download-native-prep` is still WIP:
+ten hooks plus a checker/local server, with no freeze, compilation or native run.
+The OS save dialog remains separately unverified. V5 preflight c2237e4a is
+independently CLEAR. Fresh Canvas mouse availability is still pending; no native
+launch or overhead run occurred during this continuation.
+
+### 2026-10-15 - Current V10 handoff reconciled without new runtime evidence
+
+RESUME and draft-observation integration now lead with the closed isolated V10
+source gates and separate main/V8b/V5 attribution. The previously duplicated
+C3/C4 staged/uninstalled and runner-pending prose is retained verbatim under a
+clearly historical Rich-to-V10 execution sequence. Its hashes, failed checks,
+zero-test filters and intermediate instructions remain available without acting
+as current directions. The acceptance row is concise and aligned. This is a
+documentation reconciliation only: no source promotion, test run, native launch,
+overhead repeat or broader acceptance change.
+
+### 2026-10-15 - Search and Files acceptance rows reconciled
+
+The Search row now records isolated V9 structured `has:file` / `has:link`
+implementation and source gates. The Files row now records isolated V10
+original-file streaming and source gates instead of treating downloads beyond
+the media cache limit as wholly unimplemented. Both retain pending main promotion,
+native and live verification, with all other remaining scope preserved. This is
+an attribution correction, not new acceptance; cp1's independent audit is still
+pending and no Canvas acceptance update is made here.
+
+### 2026-10-15 - Canvas cp1 independent bounded acceptance
+
+Canvas cp1 is independently CLEAR for its **older ae21a080 cohort only**:
+eight distinct closed processes / 40 original PNGs / 32 ordered stages,
+43.504966 s, runner exit 0. Root and the independent auditor read all 40 PNGs.
+The binary's 2,287-source seal and pre/post 11-helper runtime audits pass; logs,
+counts, geometry and SQLite checks pass (integrity OK, active empty, one archive).
+All eight pointer restorations pass with empty error arrays. Owned-process
+termination exit 1 is controlled termination, not graceful shutdown evidence.
+Independent audit `tmp/canvas-cp1-independent-audit.json`, SHA
+`67f7d199ed8e2c11786e164352980289d9e2e89c55bb6a71aafa353e9b387bc7`;
+root run receipt `native-cp1.json`, SHA
+`0ff3fb0d73e2244db295fc4eac2328e66875cbcd07319d9c7f313c7222037cee`;
+root visual receipt `root-cp1-visual-review.json`, SHA
+`6b6de64288c2ead4090359e70336ad111abe90134d26b4ad8c4352b8593c663c`.
+
+The primary Delete paragraph / Saving / Checking / Unconfirmed labels still
+change button width and shift Cancel. Stable loading geometry remains an open
+visual follow-up, with only temporary preparation underway. cp1 proves bounded
+synthetic-ACK and controlled-restart behavior, not live Slack, crash recovery or
+trusted IME behavior. It does not validate isolated V10.
+
+The fresh Ready now reply superseded the earlier Canvas availability wait.
+Capture is complete and the mouse is released; a fresh availability question for
+next C3 checks is pending. V10 source is unchanged, with no Cargo work or overhead
+repeat. V5 remains unlaunched with independently cleared preflight c2237e4a.
+
+### 2026-10-15 - Isolated V11 download native fixture installation
+
+**Current isolated source: V11; validation pending.** Download native fixture
+V3 5333e0fe is installed in 16 targets through installer 95bf3baf. The 2,406-file
+inventory SHA is
+`a7c83bd6ac2a8ad0151a0ec9fdb02a77505b076828a519ad1965b2812c23e51f`;
+receipt `.validation-evidence/original-download-native-install/receipt.json`, SHA
+`3a1e6b7e751282a0a7f7ed1a1651a48bc2c07cacd5f8f007056701fe03915494`.
+Root's 13 installed Python tests pass in 0.067 s. New Rust and native checks have
+not run; the V10 gates below retain their prior-cohort attribution. Canvas width
+fix ac5ab001 is source-cleared and preparing for V12 before common Cargo gates.
+Initialization 8c6419a2 is source-cleared but staged only for later. Main source is
+unchanged; no overhead repeat has occurred.
+
+### 2026-10-15 - Isolated V12 Canvas width fix installed
+
+**Current isolated source: V12; Rust validation underway.** The reviewed Canvas
+width fix is installed through independently cleared installer e880905e.
+The 2,407-file inventory SHA is
+`9224137711542f3c44c15a0cf26788d0568344860914b8376121fd403b8ff65a`;
+Canvas installation receipt SHA
+`296062bf8330b75d8812bc59430b71cb182fff7e7a5defa41b1a2f42131c5b3e`.
+All 19 installed JavaScript geometry cases pass. Root formatting passes in
+3.301655 s and core formatting in 2.1983861 s. The core-feature `file_download`
+focused gate is compiling; remaining Rust and native gates are pending.
+V10's completed suites remain prior-cohort evidence. Main source is unchanged;
+no overhead repeat has occurred.
+
+### 2026-10-15 - V12 core gates pass; first V5 native attempt fails
+
+V12 core gates pass. Download focused1 passes **eight tests**, including three
+new core fixture tests, 75.2326212 s total / 0.14 s tests, log SHA
+`4964bfea791f99f98b0912608608313c0d21e9938e29432eeddb7b2db6a7f299`.
+Full core passes **2,161 / 5 ignored plus one doctest**, 73.47301490000973 s total /
+38.65 s tests / 0.22 s doctest, receipt `v12-core-full1.json`, log SHA
+`76196bffc93a77b45b224223d5d17cbdd1f1058bca72b43621d52e9c816abf03`.
+Main and isolated inventories are unchanged. The combined desktop download
+focused gate is compiling; remaining desktop/native validation is pending.
+V13 installer 3d17df0c is prepared and verified but **not installed**; current
+source remains V12. No overhead repeat has occurred.
+
+The first V5 native attempt **FAILED** at
+`tmp/protected-owned-send-native1`: the first normal/channel process overflowed
+its main-thread stack after the initial/input stages. No terminal receipt was
+emitted. Root personally read the two captured PNGs; the pointer was restored,
+`processExited` is true and `cleanupErrors` is empty. Independent audit is still
+underway. This is preserved failure evidence, not an accepted workflow.
+The sealed binary is unchanged:
+`tmp/protected-c3-native-build1/protected-c3-native.exe`, SHA
+`1d20595240a83acef69d0bad91af0345e80876d289780b1f5a162f636bf16752`.
+Root's preflight V3 a6459a65 passed immediately before launch; it supersedes the
+older c2237e4a checkpoint for this attempt. No rerun or overhead repeat occurred,
+and the mouse is released. Older protected, emoji and Canvas evidence retains
+its own source/helper attribution; this failed V5 attempt does not validate V12.
+
+### 2026-10-15 - V12 combined feature pass and finalized V5 failure audit
+
+V12 desktop download focused1 **passes ten tests / 0 failed / 0 ignored,
+1,890 filtered**, 425.5983033999946 s total / 0.02 s tests, log SHA
+`bbc788460dec779d2a76754f7df83567b41bc1063c97b3493a8842c4e23c5d09`.
+Combined feature desktop full1 **passes 1,893 / 7 ignored**, 11.764522199999192 s
+total / 10.80 s tests, log SHA
+`0c19ab9597fdd036341bdb67b2962bf9d45dc33d22099c4118d758f91fc8c707`.
+The exact command enables `protected-native-fixture,original-download-native-fixture`;
+this is the latest full feature result, superseding V8b's earlier attribution.
+Main and isolated inventories are unchanged. The default non-test check is running.
+
+The failed V5 audit is finalized at
+`tmp/protected-owned-send-native1-independent-audit.json`, SHA
+`6cd6d69f9f84a9850b4ec88adbf3fba89001a2fc0f6f13c8bb21c271ddcbc503`;
+root visual record: `tmp/protected-owned-send-native1/root-visual-review.json`.
+The native input after-edge exists, but the runner's pointer checkpoint did not
+observe it; no completed-edge guard is claimed. With no terminal or SQLite export,
+there is **no Send, HTTP or durable-outcome proof**.
+
+Independent measurement of matching EXE/PDB bytes found the direct call chain:
+`start` 490,696 bytes + `Root.install` 930,552 bytes = 1,421,248 bytes, exceeding
+the 1,048,576-byte main-thread reserve. The minimal `Box::pin` source candidate,
+manifest `8de8bfa9aa907d339cce6378c3c41cd10753dba8487665ca850b7134f862f330`,
+is independently source-CLEAR but **not installed, tested or natively verified**.
+V12 source is unchanged; no rerun or overhead repeat has occurred.
+
+### 2026-10-15 - V12 runtime check passes; combined native build running
+
+V12 `v12-default-runtime-check1` **passes in 50.03424599999562 s**, log SHA
+`63c39620b1e1c2dfcbc9c367f8d4bd141c5af2d88e78a4e895371b154c6dcfb4`;
+main and isolated inventories are unchanged. The combined native build
+`v12-native-build1` started at 16:27 UTC and is running in root session 24139.
+V12 source is frozen for this build; the planned seal directory is
+`tmp/download-canvas-native-build1`, using root's `seal_native.py`.
+Wrapper f7546aa1 at `tmp/download-canvas-native-run-prep` is prepared for 54 PNGs,
+but no new binary seal, capture result or native acceptance is claimed.
+
+The mouse is free and no new quiet-window request is pending. V13 and the reviewed
+boxing fix are not installed. A V13-to-V14 single-fix installer is being prepared
+for after the V12 seal/capture boundary. No overhead repeat has occurred.
+
+### 2026-10-15 - V12 sealed build ready; capture availability pending
+
+V12 native build **passes in 378.53641349999816 s**, log SHA
+`909ec130bb4ddd104e0c3444a41ea3feb8108cb3590831eaf029897e7a705a55`.
+Root session 24139 is terminal PASS; no build process remains live. Source
+inventories are unchanged. Sealed binary
+`tmp/download-canvas-native-build1/native.exe`, SHA
+`e5bd49556616d737d10828acb37185c85bab0cce784bab691de0fac94043c405`;
+`build.json` seal SHA
+`1411889d3bff7edd50ea2d358df746615da4101136cd9118428d86978d350cc4`.
+Root's exact wrapper preflight and five mocked tests pass. These are not native
+capture results. Wrapper f7546aa1 at `tmp/download-canvas-native-run-prep` is ready
+for the planned 54-PNG Canvas/download cohort, but it has not launched.
+The fresh approximately two-minute mouse-availability question sent at 12:34 EDT
+is pending; the mouse is free until a new reply.
+
+V13 and V14 remain uninstalled. Frozen V14 installer e99bb43a has been read by
+root and its preparation check passes. Reusable stack auditor dd1880acf is on
+review HOLD for a prologue parser that incorrectly classifies unknown input as
+known. Its author is preparing a strict probe-binding/Python-flag successor.
+This hold does not retract the manually and independently verified V5 frame
+measurements or source clearance of the 8de8 boxing fix. Earlier plain-Python
+auditor invocations and artifacts are preserved; new invocations use `-X utf8 -B`.
+No native rerun or overhead repeat has occurred.
+
+### 2026-10-15 - V13 metadata recovery and isolated V14 boxing fix applied
+
+**Current isolated source: V14; Rust validation underway.** V13 wrote all six
+initialization targets, then its postcheck failed because `account.rs` was both
+a target and a dependency and the helper expected its old base. Failed receipt
+`1977b01c57635405102ad171d0a676abf510ea4cada174799d8f5569389b4e3a`
+is preserved. Root's read-only whole-tree audit matched all 2,411 expected files
+with main unchanged. Metadata recovery through reviewed helper 29f24436 is now
+applied: `.validation-evidence/initialization-custody-recovery/receipt.json`, SHA
+`df24260253f30ce53e0f8f1f17e24c4240b6e4612f5425e904d4131c8af4e0c9`.
+The canonical LF V13 inventory SHA is
+`006fa790c46779977df4c75419da663c3981d1649d386215bea608f164715324`.
+The earlier 11bef value was only a CRLF prediction, not the published inventory.
+
+The V14 boxing fix is applied through installer
+`954963f75e384ebfc5534765a517c03a04b76bddd79354dd75cda9f5091d0f98`.
+Receipt `.validation-evidence/protected-owned-send-stack-install/receipt.json`, SHA
+`14a70e43f661e5c93a89f7de039c5b8b418bd730ea16ce73830cbbd1b8f19ab3`;
+actual V14 inventory has 2,411 files, SHA
+`cb5439e51b9ceb86fd300be9a6b38748e708d6083b1c67ebeb0a53c939eb5c7b`.
+Main source is unchanged. `v14-root-fmt1` passes in 3.4483424 s with empty output.
+The `drafts::protected::account::` focused gate is compiling with both fixture
+features in root session 17968; **no V14 Rust pass is claimed yet**. Full combined
+suite, runtime check, build, frame audit and Send native checks remain required.
+There is no new frame or native proof.
+
+Frame auditor v2 f40ca5fe is independently CLEAR with ten pure tests, limited to
+frame analysis. Gate-helper changes only add V13/V14 flags (SHA a07b275c; old
+ad15 retained). These tool checks are not V14 runtime validation. V12's source
+gates and sealed e5bd4955 Canvas/download binary retain their prior-cohort
+attribution; that cohort remains unlaunched pending the quiet-window reply.
+Wrapper v2 is being finalized against the exact new receipts and the same 13
+runtime helpers. No overhead repeat has occurred.
+
+### 2026-10-15 - V14 focused and combined feature suites pass
+
+V14 account focused1 **passes 18 / 0 failed / 0 ignored, 1,892 filtered**,
+348.33239210001193 s total / 0.38 s tests, log SHA
+`f8759dd45c9fbce93e3afa88962188c0aba41fea888e7a54a7c105cbea2a2556`.
+This includes ten new initialization tests, the adapted Editor test and seven
+inventory tests. Combined desktop full1 **passes 1,903 / 7 ignored**,
+12.094863499994972 s total / 10.77 s tests, log SHA
+`84a65416a99ebfddb94295dece68b746ef6300e66259e68838962b38b7a46614`.
+Both gates enable `protected-native-fixture,original-download-native-fixture`;
+whole main and isolated inventories are unchanged. The default non-test check
+is running in root session 91445. Rebuilt-frame and Send native proof remain
+pending; these suites do not prove the stack fix in the native executable.
+
+Root reviewed the full V12 wrapper v2 composition and preflight passes, SHA
+`7cae67ed448df149eb809e24e1654e44e53dc8b667971c10588add6d1f0818df`.
+It binds the same sealed e5bd4955 V12 binary only, with exact compatibility to
+current V14 and the same 13 unchanged runtime helpers. Captures have not run;
+the mouse-availability question remains unanswered. The structured-search
+fixture is being staged in temporary files only, with no acceptance claim.
+
+### 2026-10-15 - V14 runtime check passes; native build underway
+
+V14 default runtime check1 **passes in 37.80523730001005 s**, log SHA
+`778aa255ca265530576b6274d98477cf4fa69bc63fd7fa7194f1b01b9a7e0eaa`.
+Main and isolated inventories are unchanged. `v14-native-build1` is running in
+root session 13835, started approximately 16:51 UTC, with both fixture features
+and the same exact build command as V12 apart from gate/source V14 attribution.
+The planned seal directory is `tmp/protected-owned-send-v14-build1`, using the
+existing `seal_native.py`; the matching PDB must also be preserved.
+Frame auditor v2 f40 must read the actual new binary/PDB, followed by root's
+review, before the unchanged four-process / 20-PNG Send retry at
+`tmp/protected-owned-send-native2`. No build, frame or native result is claimed
+yet. The separate sealed V12 capture wrapper remains preflight-ready, with the
+mouse-availability reply still pending.
+
+### 2026-10-15 - V14 build and measured frames pass; native2 still fails
+
+V14 native build1 **passes in 367.7511188000062 s**, log SHA
+`253501001810be6b11aa3d46a24c00bb6d568570612c6502b7c74000b3ef0a26`.
+Seal `tmp/protected-owned-send-v14-build1/build.json`, SHA
+`984d32af6b1dd33e495ddf6b7b2ffcca39f6765f2890bebe5976fef6c2704f83`;
+EXE SHA `e2edf97aa9197188d4f65aeaf92efc1b670428e8b76e6a2eccc05dcb5b94689d`;
+PDB SHA `31c0fc9b033cb33a33d76c26ae0f8a2f97b91f9235cb537e23e4100606b19603`.
+The actual-binary frame audit is independently CLEAR:
+`tmp/protected-owned-send-v14-frame-audit1/report.json` measures `start` 490,696
+bytes, `install` 136 bytes and pushes 96 bytes, leaving 557,648 bytes within the
+unchanged 1,048,576-byte reserve. The construction-frame reduction is 930,416
+bytes versus V5. Root inspected the disassembly. This is not a whole-stack or
+poll-stack bound, and the native failure below disproves the fix's sufficiency,
+not the measured reduction.
+
+**V14 native2 FAILED** at `tmp/protected-owned-send-native2`: the first
+normal/channel process again overflowed its main-thread stack after initial/input.
+Root session 69182 exited 1; runner elapsed time was 3.8591086999949766 s.
+PID 17796 creation/exit values are 134365573442587576 / 134365573471268337.
+The closed log SHA is
+`ab58e9af4166d4dc0d3c54ee67c77984db349a8a9fdd29ef630d7782da922017`:
+one readiness record, four stage edges, zero terminal records and main-stack
+overflow. The input after-edge exists in the raw log but was not observed by the
+runner's pointer checkpoint. No completed-edge guard or Send/HTTP/durable outcome
+is proved. Root read both PNGs: the two-line Unicode input and selection remained
+intact, with no visual blocker. The EXE is unchanged, process closed, pointer
+restored to [1096, 1388] without movement, and both `cleanupErrors` and wrapper
+`finalizationErrors` are empty. Independent failed-artifact audit is pending.
+
+The user mouse is released; there is no automatic retry. Remaining actual frames
+are under investigation. V12 Canvas/download captures remain unlaunched; no
+capture result is inferred from the earlier availability reply. No overhead
+repeat or main-source promotion has occurred. Structured-search native fixture
+V2, package `85b9078bde575555385c6fc397b795b752976c4ffcc3d422c495e463357b2055`,
+is independently source-CLEAR (12 targets, 25 dependencies, 19 Python and five
+Node tests), but uninstalled, uncompiled and natively unverified.
+
+### 2026-10-15 - Native2 failed-artifact audit completed
+
+Independent audit `tmp/protected-owned-send-native2-independent-failed-audit.json`
+SHA `f4af1a8b7b7eb9a3934f4c103ab0c7f89522a41717a2840dbeb14f9c5733ec73`
+is complete; root and auditor read both PNGs. Root visual record is
+`tmp/protected-owned-send-native2/root-visual-review.json`. This is failure-evidence
+verification, not workflow acceptance.
+
+Next action is preparation of a debugger plan using existing LLVM LLDB and a
+Rust stack-overflow-handler breakpoint. No debugger launch or source patch has
+occurred. Search V15 installer preparation remains temporary-only and installation
+is held until the V14 debug capture preserves the current runtime-helper pins.
+The separate `gate-v15.py` has SHA
+`a4d960c05b65ca54cc4bd039e53634a35d90f190bcb6cb91e324df64a953432a`;
+it is unrun and the original a07 gate helper is unchanged.
+
+### 2026-10-15 - Isolated V15 Search and V16 poll-stack fix applied
+
+**Current isolated source: V16; desktop validation running.** V15 Search and the
+V16 poll-stack fix are root-applied; main's 2,351 files are unchanged. V16 has
+2,417 files, inventory SHA
+`1ca49a03d397a4539b4c7341b3dfaa249512d9490afbcc6cda6a6871d411df7f`.
+V15 install receipt SHA
+`174486992c76359cba62c131d2171f34832196a06d65e195da71b8cd85602f6e`,
+inventory SHA `0c3a7f3663451bc9c5cbf16515e8b8a1637acfae0e63f81076896a4040989194`.
+V16 receipt `.validation-evidence/protected-owned-send-poll-stack-install/receipt.json`
+has SHA `b92a13539dcff07ba5bdd08cba7f42d785d2cffb42f0cbcac1a217f785bc712f`.
+
+Poll fix 0f34aa15 is independently source-CLEAR: `run_owned` is now a non-inlined
+boxed-future constructor and `run_inner` is byte-identical. Static actual-code
+evidence identifies a private call edge of 608,552 + 767,336 + 128 push bytes =
+1,376,016 bytes, exceeding the 1,048,576-byte reserve by 327,440 bytes. Audit SHA
+`8c69141d53a76326d9f068ebb35631d6c0442aaadc322fbcbe3c3f38b3197c7a`.
+This is static evidence, **not dynamic attribution of the native2 crash**.
+
+V16 formatting passes in 3.5117094 s with empty output; installed 19 Python tests
+pass in 0.071 s and five Node tests in 81.3257 ms. `v16-desktop-full1` is running
+in root session 51726 with both fixture features and `--bin super-platinum`;
+no result is claimed yet. New `gate-v16.py` SHA
+`049d12d3f625f070252af549b2915c0d33595190893897ee3d48a3ece0a8df84`;
+prior gate helpers are unchanged.
+
+Root released the isolated-source hold to compile the confirmed candidate. The
+V14 diagnostic c558 is preserved unrun and now rejects current source. LLDB works
+with an official Python 3.11 portable temporary runtime and process-local
+environment only; there was no global installation or fixture/debugger attach.
+Fresh mouse availability remains unanswered and the mouse is free. Private-frame
+helper e726 is under review for a missing-dispatch-role issue, with correction
+underway. No native retry, performance adoption or main promotion is claimed.
+
+### 2026-10-15 - V16 desktop suite passes; frame helper cleared
+
+V16 desktop full1 **passes 1,903 / 7 ignored**, 250.53945580001164 s total /
+9.54 s tests; root session 51726 exited 0. Log SHA
+`b6d455e96d99c8f25461e1d4893bd44acdf44e5b71a7126a7d0dedf110ca556e`.
+Whole main and isolated inventories are unchanged. Default runtime check1 is
+running in root session 64396 with `cargo check --locked --bin super-platinum`
+and the existing target directory. No runtime-check result is claimed yet.
+
+Private-frame helper successor
+`41bc8f84e1f74d6df6fc103718808b6498c4490177c99ad51963981358816b81`
+is independently CLEAR with five tests. Missing dispatch now fails explicitly;
+the retained six-frame / three-edge reference is unchanged. Root read the
+original helper and exact delta. Native validation remains pending and will use
+existing named repository fixture scripts with actual source/build checks;
+no new combined runner is claimed.
+
+### 2026-10-15 - V16 runtime check passes; native dev build running
+
+V16 default runtime check1 **passes**, exit 0 in 14.295658500006539 s, log SHA
+`4de9f419e6c7c792c8248c58845b79c9b125a917f987fe624ccec24f9427d694`.
+Root session 64396 is terminal; before/after whole inventories are unchanged.
+V16 native dev build is **running** in root session 33513, started 17:25 UTC.
+The exact gate command is:
+
+```text
+gate-v16.py v16-native-build1 --source-v16 cargo build --locked --profile dev --no-default-features --features protected-native-fixture,original-download-native-fixture --bin super-platinum --message-format=json --target-dir C:/Users/mortar/Documents/GitHub/super-platinum/target
+```
+
+Next: seal the completed build at `tmp/parity-native-v16-build1` with unchanged
+`seal_native.py`, preserve its matching PDB with `preserve_pdb.py`, then inspect
+actual frames using both public f40 and private 41bc auditors before any retry.
+No build pass, sealed V16 binary or native result is claimed yet. Mouse
+availability remains unanswered; no native launch has occurred for V16.
+
+### 2026-10-15 - Fresh native Send/recovery availability confirmed
+
+The user replied Ready now for the next native Send/recovery quiet window.
+V16 build session 33513 remains running and no native launch has occurred.
+Earlier V14 mouse-release statements retain their historical attribution; this
+update changes current availability only, not build or workflow acceptance.
+
+### 2026-10-15 - V16 build sealed; actual frames hold native retry
+
+V16 native build **passes**, root session 33513 exit 0, 317.9029964000074 s,
+log SHA `6065697ba1ffd379429db33af4da12a0e1ee52b0fdba8f3973a379671e6b87d8`;
+whole inventories are unchanged. Seal `tmp/parity-native-v16-build1/build.json`,
+SHA `b738caf33fc73bca2b8e8e298ad9dc4298cd86cd47e9de452b23e855ad354e20`;
+EXE SHA `8be02b0ba98aa1d549f4f2b547320c15d07c4be92c4d0f1d63f79cbe0d653bd2`;
+PDB SHA `f6f5caae4a3a833ce7e69d9d2ca6f4ab96b0e63dabb7abc14f9fa07249295242`.
+
+**Native retry is on HOLD after actual frame inspection.** Public and private
+auditors ran under `tmp/protected-owned-send-v16-frame-audit1` and
+`tmp/protected-owned-send-v16-private-frame-audit1`. The private binary still has
+`start` 608,552 bytes directly calling `run_inner` 767,336 bytes at `0x1411896ce`:
+with 128 push bytes the edge totals 1,376,016 bytes, 327,440 above the unchanged
+1 MiB reserve. The new constructor is 415,640 bytes; its pair totals 1,024,288
+before surrounding frames. Helper success is not a whole-stack safety pass.
+Root read the actual disassembly and withheld the V16 native launch.
+A scoped actual stack-size reduction is being prepared, with independent audit
+review underway. No new source fix or native result is claimed.
+
+The user was told the reason and the mouse is released. The earlier Ready now
+reply preceded this hold; no V16 native launch occurred. No overhead repeat or
+main-source promotion has occurred.
+
+### 2026-10-15 - V16 constructor-chain bound and fixture attribution
+
+The constructor chain also exceeds the reserve: boxed `start` poll 24,992 + 56
+push bytes, then `start` 608,552 + 64, then constructor 415,640 + 32, totals
+**1,049,336 bytes**, 760 above 1 MiB before return addresses or other ancestors.
+Root decision: `tmp/protected-owned-send-v16-private-frame-audit1/root-decision.json`.
+Search V15 is installed and included in V16's passing Rust gates; the download
+fixture also has passing V12/V16 Rust gates. Main promotion and native/live
+verification remain pending. A separate Search/Canvas/download availability
+question is unanswered. No source change or native launch accompanied this update.
+
+### 2026-10-15 - Search V16 native failure and staged V17 payload candidate
+
+**Latest native result: Search V16 cohort FAILED**, runner exit 1 in
+8.5439179 s at `tmp/search-has-native-v16-1`. Normal completed seven stages plus
+final (eight PNGs) with a successful receipt; narrow failed the initial midpoint
+assertion before any accepted stage and produced one failure PNG. Both processes
+closed with empty cleanup arrays. Root read all nine PNGs and found no visual
+blocker; `root-visual-review.json` retains that review. The narrow mismatch is
+one ULP (1.42e-14 px); a scoped numeric-oracle correction is being prepared.
+Independent failed-artifact audit is pending; the overall cohort is not accepted.
+
+The extra immediate preflight failed because the Python `-c` shell quoting was
+wrong; root then continued with a separate runner call. **No successful immediate
+prelaunch check is claimed.** The prior seal verified source, and post-run
+`verify_v16_inputs.py` verified whole V16/main/EXE inputs. The user had replied
+Ready now for this separate capture; the mouse is now released with no pending
+readiness reply. Canvas/download have not launched. V16 Send remains on HOLD;
+independent artifact SHA
+`231d39ddde5b2533063eeddacb10f8cf1ca9045cb568c6a69a3e65be8224551c`.
+
+V17 payload candidate
+`05aa9d9157d3b0b899857155fabb307c34ae458630edb3a7c6fd74a87a00a29d`
+is independently source-CLEAR: six targets using `Box<Applied>`, `Arc<Finished>`
+and a boxed Baseline, with size/identity tests. Its installer is being prepared;
+the candidate is **uninstalled and uncompiled**, with no native proof.
+
+### 2026-10-15 - Isolated V17 payload and V18 Python corrections applied
+
+**Current isolated source: V18; runtime check running.** Root applied V17's six
+payload targets at 17:40:44-48 UTC through installer 44a70. V17 inventory SHA
+`8b330eacd760742cd9d1428376dd46162c1d87969c82ed497bdbb464f13cc4be`;
+installation receipt SHA
+`b482c5029f8a2ff260f786f2cfdce5b697a79cdcace81fb238bd958f4aa20b45`.
+Root then applied V18's two Python targets at 17:43:35-39 UTC through installer
+`465a655546f38e394d05482a51cce288fe6420a8c0389bcf90a94bcaee3b5767`.
+Current inventory has 2,417 files, SHA
+`dede68e4f2affd8b1c1bf1f7e43917abe15bb7c78182d1fa15d4640d77ae5237`;
+main's 2,351 files are unchanged. Root read both complete installer helpers.
+V18 formatting passes in 3.4866460999910487 s with empty output; installed Search
+Python tests pass **22 tests in 0.066 s**.
+
+Default runtime check is running in root session 32013:
+
+```text
+gate-v18.py v18-default-runtime-check1 --source-v18 cargo check --locked --bin super-platinum --target-dir C:/Users/mortar/Documents/GitHub/super-platinum/target
+```
+
+Next is a native build to inspect actual stack reduction, then full tests and
+native verification if viable. **No V17/V18 full-suite pass exists yet.** The
+mouse is free, no quiet-window question is pending, and no native run occurred
+after the Search failure. Earlier V16 suites/build/frame findings retain their
+original source attribution.
+
+Search failure audit completed, SHA
+`fdd3d7fc2aaa0ceab27dc31b2b58762eea5a448b4377a463d1018e0c1448feb4`.
+This verifies retained failure evidence; the cohort remains failed.
+
+### 2026-10-15 - V18 runtime check passes; native build underway
+
+V18 default runtime check **passes**, root session 32013 exit 0,
+11.985241200003657 s, log SHA
+`3fc5d481167e3161e0974e1ab897ec353334d00d07dedaa991432dddbcf897c7`;
+whole inventories are unchanged. V18 installation receipt SHA is
+`fbcea4d8e394896e0ec58b14ae5c76e15813c7c27f011a1303b6618f1f3025d7`.
+Native build is running in root session 81887, started 17:44 UTC:
+
+```text
+gate-v18.py v18-native-build1 --source-v18 cargo build --locked --profile dev --no-default-features --features protected-native-fixture,original-download-native-fixture --bin super-platinum --message-format=json --target-dir C:/Users/mortar/Documents/GitHub/super-platinum/target
+```
+
+Next: seal `tmp/parity-native-v18-build1`, preserve its matching PDB, then inspect
+actual frames with f40 and 41bc. No full Rust suite has run for this revision;
+no build pass, frame reduction or native result is claimed yet.
+
+### 2026-10-15 - V18 sealed build and measured frame reduction
+
+V18 native build **passes**, root session 81887 exit 0, 275.71541330000036 s,
+log SHA `e7634aa3b568b9c4a00c0b5d87a784099d107da8a4ad94e384d1315ce7e3bcb3`;
+whole inventories are unchanged. Seal `tmp/parity-native-v18-build1/build.json`,
+SHA `ea0b2085d1bc77e1e5ae3bc25c7661bb6244243bed643dabda947b2435228045`;
+EXE SHA `dad1d499679e8f7d07d91eb87136cfc285e83b7363b8891cfd6f483a5a94c34a`;
+PDB SHA `648800eeb3498b95338ca5a2ed1f8513b55955a008b54b88a620f3bae91b5c69`.
+
+Actual f40/41bc extraction completed under
+`tmp/protected-owned-send-v18-frame-audit1` and
+`tmp/protected-owned-send-v18-private-frame-audit1`. Root read seven prologues,
+private calls and matching PDB. Known poll chain: `start` 266,520 + 64 pushes,
+`Delivery` 281,304 + 64, dispatch 161,176 + 64, wrapper 24,992 + 56, totaling
+**734,240 bytes**, leaving 314,336 within the 1 MiB reserve. The constructor
+chain totals 491,400 bytes. The comparable V16 poll chain was 1,562,304 bytes.
+This measured reduction is meaningful, but extraction success is measurement
+completion only: unknown ancestors/callees remain, and total stack safety is
+not proved. Independent audit is ongoing.
+
+Full desktop tests are running in root session 12181, started 17:50 UTC:
+
+```text
+gate-v18.py v18-desktop-full1 --source-v18 cargo test --locked --no-default-features --features protected-native-fixture,original-download-native-fixture --bin super-platinum --target-dir C:/Users/mortar/Documents/GitHub/super-platinum/target
+```
+
+Successful tests and independent audit precede a fresh quiet-window check and
+any Send retry through the unchanged existing script. No quiet request is
+pending; the mouse is free and no V18 native launch has occurred.
+
+### 2026-10-15 - V18 test compile failure and bounded frame review
+
+V18 full desktop test gate **failed compilation before any tests executed**:
+E0308 at `owned_route_tests.rs:137`, expected `Applied`, found `Box<Applied>`;
+the test helper's return type at line 90 is stale. Root session 12181 exited with
+failure after 14.713822499994421 s, log SHA
+`cc13417fc733630ba4bc79ac618edadb634346d4adb352385969cccbc0c01e39`.
+Whole inventories are unchanged. Root read the helper and four callers; a tiny
+cfg(test)-only V19 return-type correction is being prepared to preserve the same
+output. It is not installed or tested yet; prior packages remain frozen.
+
+The actual V18 frame review is independently CLEAR **for a bounded retry**, at
+`tmp/protected-owned-send-v18-independent-frame-review.json`, SHA
+`268625b1d2904d7ac6a1f9e81d9a4a8f4f17e74ba4678baeb5cf7bee4ed01967`.
+Constructor chain is 491,400 bytes (557,176 margin); known poll chain is 734,240
+bytes (314,336 margin), both before unknown frames. This is not a whole-stack
+safety guarantee. Next: V19 tests, then a fresh matching build and seal. No quiet
+request is pending and no native launch has occurred.
+
+### 2026-10-15 - Isolated V19 test-only correction installed
+
+**Current isolated source: V19; full desktop tests running.** Root installed
+one cfg(test) signature change at 17:54:24-28 UTC through installer
+`55d9b65f984c00b83648631df38856156c7175695448a63052412d414c02888e`.
+Independent source review 70dbffde is CLEAR; root read the helper, four callers
+and cfg(test) module declaration. Receipt:
+`.validation-evidence/protected-owned-route-test-install/receipt.json`.
+Current inventory has 2,417 files, SHA
+`e956210c2f04966189dacaa79d18112084ee84b3bad15bdbd3c6df733af95bbc`;
+main's 2,351 files are unchanged. V19 formatting passes in 3.346554899995681 s,
+with empty output and unchanged inventories.
+
+Full desktop tests are running in root session 1901, started 17:54 UTC:
+
+```text
+gate-v19.py v19-desktop-full1 --source-v19 cargo test --locked --no-default-features --features protected-native-fixture,original-download-native-fixture --bin super-platinum --target-dir C:/Users/mortar/Documents/GitHub/super-platinum/target
+```
+
+After a pass, build and seal V19's actual current inventory, then compare EXE/PDB
+bytes with V18 before deciding whether frame re-extraction is needed. No native
+launch or quiet-window request is pending. Read-only `verify_sealed_inputs.py`
+is independently CLEAR, SHA
+`4210592fa8131a63118758e9e3f59c4cdf9dd9f75d32679d10f9912818ea4ba5`.
+It fails explicitly; root will inspect its success before any separate native
+launch. It is a verifier, not a runner.

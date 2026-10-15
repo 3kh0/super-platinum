@@ -1,0 +1,18 @@
+.toast.protected-adoption-status {
+  grid-template-columns: minmax(0, 1fr);
+  width: min(420px, calc(100vw - 36px));
+}
+.protected-adoption-status .toast-text {
+  min-width: 0;
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow-wrap: anywhere;
+}
+.protected-adoption-status .toast-text p { margin: 0; }
+.protected-adoption-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); min-width: 0; }
+.protected-adoption-actions button {
+  flex: 0 0 auto;
+  min-width: max-content;
+  min-height: var(--control-height);
+  white-space: nowrap;
+}

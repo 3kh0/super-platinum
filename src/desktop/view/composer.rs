@@ -5,7 +5,18 @@ use super::rich::attachment_chip;
 use crate::state::{ComposerTarget, ShellState};
 
 mod field;
+
+pub(crate) fn field_mount_token(shell: &ShellState, target: ComposerTarget) -> Option<String> {
+    field::current(shell, target).map(|lease| lease.token.clone())
+}
+
 pub(crate) mod projection;
+pub(crate) mod protected_actions;
+mod protected_admission;
+pub(crate) mod protected_adoption;
+pub(crate) mod protected_enrollment;
+pub(crate) mod protected_operations;
+pub(crate) mod protected_projection;
 mod remote_review;
 pub(crate) use projection::RendererApplied;
 

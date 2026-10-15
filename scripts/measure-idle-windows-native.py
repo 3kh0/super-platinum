@@ -7,7 +7,7 @@ One disconnected visible fixture, one fixed quiet window after paint/settling.
 The runner sends no agent commands, focuses no window, and captures no screenshot
 during that window. All captures happen after the second counter snapshot.
 Optional pointer/work-area normalization happens before settling. During the
-quiet window its 250ms Win32 observations are read-only; they send no window
+quiet window its 250ms Win32 observations are read-only; they send no explicit window
 messages. Use matching flags in paired runs. Observed input/geometry changes
 make a sample inconclusive; the runner never re-parks against user movement.
 
@@ -34,6 +34,7 @@ import time
 
 from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 from windows_process_metrics import OwnedProcessTree, filetime_now, summarize
+from windows_client_occlusion import sample_client_ownership
 
 
 def quiet_wait(seconds, observe=None):
@@ -47,11 +48,12 @@ def quiet_wait(seconds, observe=None):
 
 
 class NormalizedObservation:
-    """Optional passive guards; quiet polling never sends window messages."""
+    """Optional passive guards; quiet polling never explicitly sends window messages."""
     def __init__(self, fixture, tree, evidence):
         self.fixture, self.tree = fixture, tree
         self.data = evidence
         self.pointer = self.window = None
+        self.hit_probe = sample_client_ownership
         # Reuse the static runner's existing read-only physical geometry probe.
         self.visual = importlib.import_module("check-visual-native")
         self.observe = lambda: self.visual.window_observation(fixture.process.pid)
@@ -59,7 +61,7 @@ class NormalizedObservation:
         self.data["process_identity"] = {"pid": root["pid"],
                                         "creation_filetime": root["creation_filetime"]}
         self.data["observations"] = []
-        self.data["quiet_observer"] = "Passive Win32 cursor, process identity, foreground/window/taskbar geometry only"
+        self.data["quiet_observer"] = "Passive Win32 cursor, process identity, foreground/window/taskbar geometry and nine client HWND ownership hits"
         self.data["quiet_poll_interval_seconds"] = .25
         self.data["continuous_input_monitoring"] = False
 
@@ -89,7 +91,7 @@ class NormalizedObservation:
 
     def check(self, stage):
         # Do NOT call FixturePointer.check here: its caption hit-test sends
-        # WM_NCHITTEST. These observers only read OS state during the quiet window.
+        # WM_NCHITTEST. No explicit message is sent here; WindowFromPoint internal work is not excluded.
         record = {"stage": stage, "monotonic": time.monotonic()}
         self.data["observations"].append(record)
         try:
@@ -106,6 +108,9 @@ class NormalizedObservation:
                 raise RuntimeError("Owned foreground/window geometry changed; idle sample is inconclusive")
             if window.get("taskbar_client_overlap") is not False:
                 raise RuntimeError("Taskbar overlaps owned client; idle sample is inconclusive")
+            record["client_ownership"] = self.hit_probe(window)
+            if record["client_ownership"].get("ok") is not True:
+                raise RuntimeError("Client ownership hit was foreign or unknown; idle sample is inconclusive")
         except BaseException as error:
             record["error"] = str(error)
             self.data["inconclusive"] = True
@@ -151,6 +156,8 @@ def measure(args):
             "Foreground is requested before sampling; user focus changes or occlusion are not prevented.",
             "Optional normalization observes pointer/window state every 250ms; movement away and back between polls can escape detection.",
             "Optional passive Win32 polling adds runner-side observer work; compare only matching normalization settings.",
+            "WindowFromPoint may internally perform hit testing; zero implicit message work is not asserted. Compare matching observer-enabled runs.",
+            "Client HWND ownership uses nine physical points per poll; overlays between points/times or skipped by WindowFromPoint may escape detection. PNG inspection remains required.",
             "No live Slack traffic, hardware power control, GPU memory, or performance improvement is established.",
         ],
     }
@@ -220,7 +227,7 @@ def main():
     parser.add_argument("--binary", type=Path, default=DEFAULT_BINARY)
     parser.add_argument("--output", type=Path, default=ROOT / "tmp/agent-ui")
     parser.add_argument("--label", required=True)
-    parser.add_argument("--fixture", choices=("channel", "channel-window-10000"), default="channel")
+    parser.add_argument("--fixture", choices=("channel", "channel-window-10000", "completion-directory-2000", "completion-directory-10000", "completion-directory-64000"), default="channel")
     parser.add_argument("--seconds", type=float, default=15)
     parser.add_argument("--settle-seconds", type=float, default=5)
     parser.add_argument("--normalize-pointer", action="store_true",

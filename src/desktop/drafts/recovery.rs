@@ -1,7 +1,12 @@
-//! Explicit bounded readback of a frozen Send or Update, never another write.
+//! Explicit bounded readback of a frozen Send, Update or known-ID Schedule, never another write.
 use super::*;
+mod kind;
 mod return_draft;
+pub(crate) use kind::CheckKind;
+pub(crate) mod schedule_check;
+pub(crate) mod schedule_fixture;
 mod ui;
+pub(crate) use ui::reconcile as protected_reconcile;
 pub(crate) mod update_check;
 pub(crate) mod update_fixture;
 use super::{
@@ -24,11 +29,7 @@ pub(crate) fn clean_local(view: &View) -> bool {
 
 pub(crate) fn operation(view: &View) -> Option<Operation> {
     match view.stored.as_ref()?.state.workflow() {
-        Workflow::Uncertain(op)
-            if matches!(op.kind, OperationKind::Send | OperationKind::Update) =>
-        {
-            Some(op.clone())
-        }
+        Workflow::Uncertain(op) if CheckKind::for_operation(op).is_some() => Some(op.clone()),
         _ => None,
     }
 }
@@ -252,6 +253,7 @@ impl Owner {
     async fn commit_check(&self, completion: Completion) -> Result<Checked, Fault> {
         let op = completion.ticket.operation();
         update_fixture::commit_checkpoint(&self.scope).await;
+        schedule_fixture::checkpoint(&self.scope, "commit").await;
         let _guard = self.gate.lock().await;
         for _ in 0..4 {
             let view = self.current().await?;
@@ -309,3 +311,6 @@ pub(crate) struct Checked {
 mod tests;
 #[cfg(test)]
 mod update_tests;
+
+#[cfg(test)]
+mod schedule_tests;

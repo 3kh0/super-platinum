@@ -1,0 +1,5021 @@
+{
+  "repeat": [
+    null,
+    {
+      "match": ":-D",
+      "index": 0
+    },
+    null,
+    {
+      "match": ":-D",
+      "index": 0
+    }
+  ],
+  "score_method": {
+    "start": 9007737,
+    "end": 9008699
+  },
+  "scores": [
+    {
+      "query": "ok",
+      "name": "ok_hand",
+      "result": {
+        "score": 0,
+        "matchIndices": [
+          0,
+          1
+        ],
+        "queryLengthRatio": 1,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "ok",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "ok",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "smile",
+      "result": {
+        "score": 0.6,
+        "matchIndices": [
+          0,
+          1
+        ],
+        "queryLengthRatio": 0.4,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "sm",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "smiling_face",
+      "result": {
+        "score": 0.8333333333333334,
+        "matchIndices": [
+          0,
+          1
+        ],
+        "queryLengthRatio": 0.16666666666666666,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "sm",
+      "name": "smile_cat",
+      "result": {
+        "score": 0.7777777777777778,
+        "matchIndices": [
+          0,
+          1
+        ],
+        "queryLengthRatio": 0.2222222222222222,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "sm",
+      "name": "slightly_smiling_face",
+      "result": {
+        "score": 0.9047619047619048,
+        "matchIndices": [
+          9,
+          10
+        ],
+        "queryLengthRatio": 0.09523809523809523,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "sm",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "smile",
+      "result": {
+        "score": 0.4,
+        "matchIndices": [
+          0,
+          1,
+          2
+        ],
+        "queryLengthRatio": 0.6,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "smi",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "smiling_face",
+      "result": {
+        "score": 0.75,
+        "matchIndices": [
+          0,
+          1,
+          2
+        ],
+        "queryLengthRatio": 0.25,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "smi",
+      "name": "smile_cat",
+      "result": {
+        "score": 0.6666666666666667,
+        "matchIndices": [
+          0,
+          1,
+          2
+        ],
+        "queryLengthRatio": 0.3333333333333333,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "smi",
+      "name": "slightly_smiling_face",
+      "result": {
+        "score": 0.8571428571428572,
+        "matchIndices": [
+          9,
+          10,
+          11
+        ],
+        "queryLengthRatio": 0.14285714285714285,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "smi",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "smile",
+      "result": {
+        "score": 0.19999999999999996,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "queryLengthRatio": 0.8,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "smil",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "smiling_face",
+      "result": {
+        "score": 0.6666666666666667,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "queryLengthRatio": 0.3333333333333333,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "smil",
+      "name": "smile_cat",
+      "result": {
+        "score": 0.5555555555555556,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "queryLengthRatio": 0.4444444444444444,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "smil",
+      "name": "slightly_smiling_face",
+      "result": {
+        "score": 0.8095238095238095,
+        "matchIndices": [
+          9,
+          10,
+          11,
+          12
+        ],
+        "queryLengthRatio": 0.19047619047619047,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "smil",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "smil",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "smile",
+      "result": {
+        "score": 0,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "queryLengthRatio": 1,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "smile",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "smile_cat",
+      "result": {
+        "score": 0.4444444444444444,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "queryLengthRatio": 0.5555555555555556,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "smile",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "smile",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "heart",
+      "result": {
+        "score": 0,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "queryLengthRatio": 1,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "heart",
+      "name": "red_heart",
+      "result": {
+        "score": 0.4444444444444444,
+        "matchIndices": [
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "queryLengthRatio": 0.5555555555555556,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "heart",
+      "name": "heart_on_fire",
+      "result": {
+        "score": 0.6153846153846154,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "queryLengthRatio": 0.38461538461538464,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "heart",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "thumbsup",
+      "result": {
+        "score": 0.375,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "queryLengthRatio": 0.625,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "thumb",
+      "name": "thumbs_up",
+      "result": {
+        "score": 0.4444444444444444,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "queryLengthRatio": 0.5555555555555556,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "thumb",
+      "name": "thumbsup_party",
+      "result": {
+        "score": 0.6428571428571428,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "queryLengthRatio": 0.35714285714285715,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "thumb",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "thumb",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "thumbsup",
+      "result": {
+        "score": 0,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "queryLengthRatio": 1,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "thumbsup",
+      "name": "thumbs_up",
+      "result": {
+        "score": 0.11111111111111116,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8
+        ],
+        "queryLengthRatio": 0.8888888888888888,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "thumbsup",
+      "name": "thumbsup_party",
+      "result": {
+        "score": 0.4285714285714286,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "queryLengthRatio": 0.5714285714285714,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "thumbsup",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "thumbsup",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "thumbsup",
+      "result": {
+        "score": 1.375,
+        "matchIndices": [
+          0,
+          1,
+          5,
+          6,
+          7
+        ],
+        "queryLengthRatio": 0.625,
+        "totalComboBreaks": 1
+      }
+    },
+    {
+      "query": "thsup",
+      "name": "thumbs_up",
+      "result": {
+        "score": 1.4444444444444444,
+        "matchIndices": [
+          0,
+          1,
+          5,
+          7,
+          8
+        ],
+        "queryLengthRatio": 0.5555555555555556,
+        "totalComboBreaks": 1
+      }
+    },
+    {
+      "query": "thsup",
+      "name": "thumbsup_party",
+      "result": {
+        "score": 1.6428571428571428,
+        "matchIndices": [
+          0,
+          1,
+          5,
+          6,
+          7
+        ],
+        "queryLengthRatio": 0.35714285714285715,
+        "totalComboBreaks": 1
+      }
+    },
+    {
+      "query": "thsup",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "thsup",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "white_check_mark",
+      "result": {
+        "score": 0.375,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "queryLengthRatio": 0.625,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "whitecheck",
+      "name": "white-check-mark",
+      "result": {
+        "score": 0.375,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "queryLengthRatio": 0.625,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "whitecheck",
+      "name": "white--check-mark",
+      "result": {
+        "score": 0.375,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "queryLengthRatio": 0.625,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "whitecheck",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "white_check_mark",
+      "result": {
+        "score": 0.3125,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "queryLengthRatio": 0.6875,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "white_check",
+      "name": "white-check-mark",
+      "result": {
+        "score": 0.3125,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "queryLengthRatio": 0.6875,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "white_check",
+      "name": "white--check-mark",
+      "result": {
+        "score": 0.3125,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "queryLengthRatio": 0.6875,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "white_check",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "white_check",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "+1",
+      "result": {
+        "score": 0,
+        "matchIndices": [
+          0,
+          1
+        ],
+        "queryLengthRatio": 1,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "+1",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "+1",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "-1",
+      "result": {
+        "score": 0,
+        "matchIndices": [
+          0,
+          1
+        ],
+        "queryLengthRatio": 1,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "-1",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "-1",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "thumbsup_party",
+      "result": {
+        "score": 0.6428571428571428,
+        "matchIndices": [
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "queryLengthRatio": 0.35714285714285715,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "party",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "party_parrot",
+      "result": {
+        "score": 0.5833333333333333,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "queryLengthRatio": 0.4166666666666667,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "party",
+      "name": "party--parrot",
+      "result": {
+        "score": 0.5833333333333333,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "queryLengthRatio": 0.4166666666666667,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "party",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "party",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "party_parrot",
+      "result": {
+        "score": 0,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "queryLengthRatio": 1,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "party-parrot",
+      "name": "party--parrot",
+      "result": {
+        "score": 0,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "queryLengthRatio": 1,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "party-parrot",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "party_parrot",
+      "result": {
+        "score": 0,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "queryLengthRatio": 1,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "party--parrot",
+      "name": "party--parrot",
+      "result": {
+        "score": 0,
+        "matchIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "queryLengthRatio": 1,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "party--parrot",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "party--parrot",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "white_check_mark",
+      "result": {
+        "score": 0.875,
+        "matchIndices": [
+          1,
+          2
+        ],
+        "queryLengthRatio": 0.125,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "hi",
+      "name": "white-check-mark",
+      "result": {
+        "score": 0.875,
+        "matchIndices": [
+          1,
+          2
+        ],
+        "queryLengthRatio": 0.125,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "hi",
+      "name": "white--check-mark",
+      "result": {
+        "score": 0.875,
+        "matchIndices": [
+          1,
+          2
+        ],
+        "queryLengthRatio": 0.125,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "hi",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "pinching_hand",
+      "result": {
+        "score": 0.8461538461538461,
+        "matchIndices": [
+          4,
+          5
+        ],
+        "queryLengthRatio": 0.15384615384615385,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "hi",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "hi",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "china",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "dead",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "abc",
+      "result": {
+        "score": 0.33333333333333337,
+        "matchIndices": [
+          0,
+          1
+        ],
+        "queryLengthRatio": 0.6666666666666666,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a b",
+      "name": "a_b",
+      "result": {
+        "score": 0.33333333333333337,
+        "matchIndices": [
+          0,
+          2
+        ],
+        "queryLengthRatio": 0.6666666666666666,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a b",
+      "name": "a b",
+      "result": {
+        "score": 1.3333333333333335,
+        "matchIndices": [
+          0,
+          2
+        ],
+        "queryLengthRatio": 0.6666666666666666,
+        "totalComboBreaks": 1
+      }
+    },
+    {
+      "query": "a b",
+      "name": "😀abc",
+      "result": {
+        "score": 0.6,
+        "matchIndices": [
+          2,
+          3
+        ],
+        "queryLengthRatio": 0.4,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a b",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "😀abc",
+      "result": {
+        "score": 0.4,
+        "matchIndices": [
+          0,
+          1,
+          2
+        ],
+        "queryLengthRatio": 0.6,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "😀a",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "日本の顔",
+      "result": {
+        "score": 0.5,
+        "matchIndices": [
+          0,
+          1
+        ],
+        "queryLengthRatio": 0.5,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "日本",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "a",
+      "name": "ok_hand",
+      "result": {
+        "score": 0.8571428571428572,
+        "matchIndices": [
+          4
+        ],
+        "queryLengthRatio": 0.14285714285714285,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "a",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "a",
+      "name": "smiling_face",
+      "result": {
+        "score": 0.9166666666666666,
+        "matchIndices": [
+          9
+        ],
+        "queryLengthRatio": 0.08333333333333333,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "smile_cat",
+      "result": {
+        "score": 0.8888888888888888,
+        "matchIndices": [
+          7
+        ],
+        "queryLengthRatio": 0.1111111111111111,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "slightly_smiling_face",
+      "result": {
+        "score": 0.9523809523809523,
+        "matchIndices": [
+          18
+        ],
+        "queryLengthRatio": 0.047619047619047616,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "heart",
+      "result": {
+        "score": 0.8,
+        "matchIndices": [
+          2
+        ],
+        "queryLengthRatio": 0.2,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "red_heart",
+      "result": {
+        "score": 0.8888888888888888,
+        "matchIndices": [
+          6
+        ],
+        "queryLengthRatio": 0.1111111111111111,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "heart_on_fire",
+      "result": {
+        "score": 0.9230769230769231,
+        "matchIndices": [
+          2
+        ],
+        "queryLengthRatio": 0.07692307692307693,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "a",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "a",
+      "name": "thumbsup_party",
+      "result": {
+        "score": 0.9285714285714286,
+        "matchIndices": [
+          10
+        ],
+        "queryLengthRatio": 0.07142857142857142,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "white_check_mark",
+      "result": {
+        "score": 0.9375,
+        "matchIndices": [
+          13
+        ],
+        "queryLengthRatio": 0.0625,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "white-check-mark",
+      "result": {
+        "score": 0.9375,
+        "matchIndices": [
+          13
+        ],
+        "queryLengthRatio": 0.0625,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "a",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "a",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "a",
+      "name": "party_parrot",
+      "result": {
+        "score": 0.9166666666666666,
+        "matchIndices": [
+          1
+        ],
+        "queryLengthRatio": 0.08333333333333333,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "party--parrot",
+      "result": {
+        "score": 0.9166666666666666,
+        "matchIndices": [
+          1
+        ],
+        "queryLengthRatio": 0.08333333333333333,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "a",
+      "name": "pinching_hand",
+      "result": {
+        "score": 0.9230769230769231,
+        "matchIndices": [
+          10
+        ],
+        "queryLengthRatio": 0.07692307692307693,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "older_adult",
+      "result": {
+        "score": 0.9090909090909091,
+        "matchIndices": [
+          6
+        ],
+        "queryLengthRatio": 0.09090909090909091,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "abc",
+      "result": {
+        "score": 0.6666666666666667,
+        "matchIndices": [
+          0
+        ],
+        "queryLengthRatio": 0.3333333333333333,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "a_b",
+      "result": {
+        "score": 0.6666666666666667,
+        "matchIndices": [
+          0
+        ],
+        "queryLengthRatio": 0.3333333333333333,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "a b",
+      "result": {
+        "score": 0.6666666666666667,
+        "matchIndices": [
+          0
+        ],
+        "queryLengthRatio": 0.3333333333333333,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "😀abc",
+      "result": {
+        "score": 0.8,
+        "matchIndices": [
+          2
+        ],
+        "queryLengthRatio": 0.2,
+        "totalComboBreaks": 0
+      }
+    },
+    {
+      "query": "a",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "a",
+      "name": "",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "ok_hand",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "smile",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "some",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "smiling_face",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "smile_cat",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "slightly_smiling_face",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "heart",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "red_heart",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "heart_on_fire",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "thumbsup",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "thumbs_up",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "thumbsup_party",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "white_check_mark",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "white-check-mark",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "white--check-mark",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "+1",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "-1",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "party_parrot",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "party--parrot",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "shit",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "pinching_hand",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "older_adult",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "abc",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "a_b",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "a b",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "😀abc",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "日本の顔",
+      "result": null
+    },
+    {
+      "query": "",
+      "name": "",
+      "result": null
+    }
+  ],
+  "sources": [
+    {
+      "file": "gantry-v2-async-gantry-v2-shared-boot-async.56e901654548b2fe.min.js",
+      "sha256": "1681ecc18bbfead52efb391b1ccfb3e15f1b4a1093a8475d847b221ce196c537"
+    },
+    {
+      "file": "gantry-v2-shared.0b81595876785d7a.min.js",
+      "sha256": "f085df09fb4f938caf425ea66fb0244c8f92a8012eea8eb298e4f629b377dbf7"
+    },
+    {
+      "file": "gantry-v2-vendors.522a064003a98b05.min.js",
+      "sha256": "819ac26a4c6cd6d2122cb6edb1731a0f99d7070c16971579f52529d1030ae7b3"
+    }
+  ],
+  "grammar": "(^|\\s|\\S)([:|\\uFF1A][^~@#$%^&*()=[\\]{}\\\\|!?`;:\\uFF1A\",.<>/\\s]*)$",
+  "cjk": {
+    "hiragana": "぀-ゟ",
+    "katakana": "゠-ヿ",
+    "katakanaPhoneticExtensions": "ㇰ-ㇿ",
+    "halfwidthFullwidthForms": "＀-￯",
+    "hangulSyllables": "가-힯",
+    "hangulJamo": "ᄀ-ᇿ",
+    "hangulCompatabilityJamo": "㄰-㆏",
+    "hangulJamoExtendedA": "ꥠ-꥿",
+    "hangulJamoExtendedB": "ힰ-퟿",
+    "cjkIdeographs": "㐀-䶿一-拿挀-矿砀-賿贀-鿿",
+    "cjkRadicals": "⺀-⻿",
+    "cjkKangxiRadicals": "⼀-⿟",
+    "cjkIdeographicDescriptionCharacters": "⿰-⿿",
+    "cjkPunctuation": "、-〿",
+    "cjkStrokes": "㇀-㇯",
+    "cjkEnclosedLettersMonths": "㈀-㋿",
+    "cjkCompatability": "㌀-㏿豈-﫿︰-﹏"
+  },
+  "emoticons": {
+    ":o)": "monkey_face",
+    "</3": "broken_heart",
+    "=)": "smiley",
+    "=-)": "smiley",
+    ":D": "smile",
+    ":-D": "smile",
+    ":>": "laughing",
+    ":->": "laughing",
+    ";)": "wink",
+    ";-)": "wink",
+    "8)": "sunglasses",
+    ":|": "neutral_face",
+    ":-|": "neutral_face",
+    ":\\": "confused",
+    ":-\\": "confused",
+    ":/": "confused",
+    ":-/": "confused",
+    ":*": "kissing_heart",
+    ":-*": "kissing_heart",
+    ":p": "stuck_out_tongue",
+    ":-p": "stuck_out_tongue",
+    ":P": "stuck_out_tongue",
+    ":-P": "stuck_out_tongue",
+    ":b": "stuck_out_tongue",
+    ":-b": "stuck_out_tongue",
+    ";p": "stuck_out_tongue_winking_eye",
+    ";-p": "stuck_out_tongue_winking_eye",
+    ";b": "stuck_out_tongue_winking_eye",
+    ";-b": "stuck_out_tongue_winking_eye",
+    ";P": "stuck_out_tongue_winking_eye",
+    ";-P": "stuck_out_tongue_winking_eye",
+    "):": "disappointed",
+    ":(": "disappointed",
+    ":-(": "disappointed",
+    ">:(": "angry",
+    ">:-(": "angry",
+    ":'(": "cry",
+    "D:": "anguished",
+    ":o": "open_mouth",
+    ":-o": "open_mouth",
+    ":O": "open_mouth",
+    ":-O": "open_mouth",
+    ":)": "slightly_smiling_face",
+    "(:": "slightly_smiling_face",
+    ":-)": "slightly_smiling_face",
+    "<3": "heart"
+  },
+  "rows": [
+    {
+      "text": "",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": "",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": "",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": ":",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": ":",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":",
+        "index": 0
+      }
+    },
+    {
+      "text": ":",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": ":s",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": ":s",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":s",
+        "index": 0
+      }
+    },
+    {
+      "text": ":s",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":s",
+        "index": 0
+      }
+    },
+    {
+      "text": ":sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 0
+      }
+    },
+    {
+      "text": ":sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 0
+      }
+    },
+    {
+      "text": ":sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 0
+      }
+    },
+    {
+      "text": ":smile:",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": ":smile:",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": ":smile:",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": ":+1",
+      "options": {},
+      "result": {
+        "match": ":+1",
+        "index": 0
+      }
+    },
+    {
+      "text": ":+1",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":+1",
+        "index": 0
+      }
+    },
+    {
+      "text": ":+1",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":+1",
+        "index": 0
+      }
+    },
+    {
+      "text": ":-1",
+      "options": {},
+      "result": {
+        "match": ":-1",
+        "index": 0
+      }
+    },
+    {
+      "text": ":-1",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":-1",
+        "index": 0
+      }
+    },
+    {
+      "text": ":-1",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":-1",
+        "index": 0
+      }
+    },
+    {
+      "text": "+:s",
+      "options": {},
+      "result": {
+        "match": ":s",
+        "index": 1
+      }
+    },
+    {
+      "text": "+:s",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":s",
+        "index": 1
+      }
+    },
+    {
+      "text": "+:s",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":s",
+        "index": 1
+      }
+    },
+    {
+      "text": "-:s",
+      "options": {},
+      "result": {
+        "match": ":s",
+        "index": 1
+      }
+    },
+    {
+      "text": "-:s",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":s",
+        "index": 1
+      }
+    },
+    {
+      "text": "-:s",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":s",
+        "index": 1
+      }
+    },
+    {
+      "text": "x+:s",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": "x+:s",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":s",
+        "index": 2
+      }
+    },
+    {
+      "text": "x+:s",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":s",
+        "index": 2
+      }
+    },
+    {
+      "text": "word:sm",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": "word:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": "word:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": " :sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": " :sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": " :sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "(:sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "(:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "(:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "[:sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "[:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "[:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "/:sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "/:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "/:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "\\:sm",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": "\\:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": "\\:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": "` :sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 2
+      }
+    },
+    {
+      "text": "` :sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 2
+      }
+    },
+    {
+      "text": "` :sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 2
+      }
+    },
+    {
+      "text": "`:sm",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": "`:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": "`:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": "```:sm",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": "```:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": "```:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": "::sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "::sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "::sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "|sm",
+      "options": {},
+      "result": {
+        "match": "|sm",
+        "index": 0
+      }
+    },
+    {
+      "text": "|sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": "|sm",
+        "index": 0
+      }
+    },
+    {
+      "text": "|sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": "|sm",
+        "index": 0
+      }
+    },
+    {
+      "text": "https://example.com/:sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 20
+      }
+    },
+    {
+      "text": "https://example.com/:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 20
+      }
+    },
+    {
+      "text": "https://example.com/:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 20
+      }
+    },
+    {
+      "text": "https:sm",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": "https:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": "https:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": "https://:sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 8
+      }
+    },
+    {
+      "text": "https://:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 8
+      }
+    },
+    {
+      "text": "https://:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 8
+      }
+    },
+    {
+      "text": "mailto:sm",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": "mailto:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": "mailto:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": "a\n:sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 2
+      }
+    },
+    {
+      "text": "a\n:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 2
+      }
+    },
+    {
+      "text": "a\n:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 2
+      }
+    },
+    {
+      "text": "：sm",
+      "options": {},
+      "result": {
+        "match": "：sm",
+        "index": 0
+      }
+    },
+    {
+      "text": "：sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": "：sm",
+        "index": 0
+      }
+    },
+    {
+      "text": "：sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": "：sm",
+        "index": 0
+      }
+    },
+    {
+      "text": " :日本",
+      "options": {},
+      "result": {
+        "match": ":日本",
+        "index": 1
+      }
+    },
+    {
+      "text": " :日本",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":日本",
+        "index": 1
+      }
+    },
+    {
+      "text": " :日本",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":日本",
+        "index": 1
+      }
+    },
+    {
+      "text": ":D",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": ":D",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": ":D",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": ":p",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": ":p",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": ":p",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": ":P",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": ":P",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": ":P",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": ":-D",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": ":-D",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": ":-D",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    },
+    {
+      "text": ":😀",
+      "options": {},
+      "result": {
+        "match": ":😀",
+        "index": 0
+      }
+    },
+    {
+      "text": ":😀",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":😀",
+        "index": 0
+      }
+    },
+    {
+      "text": ":😀",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":😀",
+        "index": 0
+      }
+    },
+    {
+      "text": "。:sm",
+      "options": {},
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "。:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "。:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": {
+        "match": ":sm",
+        "index": 1
+      }
+    },
+    {
+      "text": "a.:sm",
+      "options": {},
+      "result": null
+    },
+    {
+      "text": "a.:sm",
+      "options": {
+        "isUserSolicited": true
+      },
+      "result": null
+    },
+    {
+      "text": "a.:sm",
+      "options": {
+        "locale": "ja-JP"
+      },
+      "result": null
+    }
+  ]
+}

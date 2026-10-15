@@ -11,6 +11,15 @@ pub(super) struct CheckDeadline {
     operation: Option<Operation>,
 }
 
+impl CheckDeadline {
+    pub(super) fn continuity_operation(&self) -> Option<&Operation> {
+        self.operation.as_ref()
+    }
+    pub(super) fn protected_until(&self) -> u64 {
+        self.until_ms
+    }
+}
+
 /// A durable receipt for ONE admitted read, not permission to replay that read.
 /// Persist `reserve_check` successfully before dispatch. A loaded ticket means
 /// completion was not durably recorded: elapsed time cannot release it.
@@ -30,7 +39,9 @@ impl CheckTicket {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum CheckBlock {
-    #[error("the immutable operation is not an uncertain send or update")]
+    #[error(
+        "the immutable operation is not a supported uncertain send, update, or known-ID schedule"
+    )]
     Ineligible,
     #[error("a previous check has no durable completion")]
     Pending,
@@ -38,10 +49,66 @@ pub enum CheckBlock {
     Cooldown(u64),
 }
 
+// Operation-only validation also accepts a historical completed ticket; current
+// consumption linkage is checked separately when admitting/completing a read.
+impl Operation {
+    /// B Id6n6810246 selects Update for a schedule with an existing server ID.
+    /// A missing ID has no proven UUID lookup. This first slice is file-free and
+    /// preserves exact destination metadata; it does not enroll or dispatch.
+    pub fn known_schedule_check(&self) -> bool {
+        if !matches!(self.kind, OperationKind::Schedule { post_at } if post_at > 0)
+            || !nonnil_uuid(&self.id)
+            || !self.consume_id.as_deref().is_some_and(nonnil_uuid)
+        {
+            return false;
+        }
+        let (Some(base), Some(snapshot)) = (&self.base, &self.snapshot) else {
+            return false;
+        };
+        if base.scope != self.scope
+            || base.client_msg_id != self.client_msg_id
+            || !base.snapshot.file_ids.is_empty()
+            || !snapshot.file_ids.is_empty()
+            || snapshot.blocks.is_empty()
+            || snapshot.destinations != base.snapshot.destinations
+            || DraftSync::adopt_remote(&self.scope, base.clone()).is_err()
+        {
+            return false;
+        }
+        let [destination] = snapshot.destinations.as_slice() else {
+            return false;
+        };
+        if destination.as_object().is_none_or(|fields| {
+            fields
+                .keys()
+                .any(|key| !matches!(key.as_str(), "channel_id" | "thread_ts" | "broadcast"))
+                || (self.scope.key.thread.is_none() && fields.contains_key("broadcast"))
+        }) {
+            return false;
+        }
+        let mut reviewed = base.clone();
+        reviewed.snapshot = snapshot.clone();
+        DraftSync::adopt_remote(&self.scope, reviewed).is_ok()
+    }
+}
+fn supported_check(operation: &Operation) -> bool {
+    matches!(operation.kind, OperationKind::Send | OperationKind::Update)
+        || operation.known_schedule_check()
+}
+
 impl DraftSync {
     fn check_operation(&self, operation: &Operation) -> bool {
         matches!(&self.workflow, Workflow::Uncertain(current) if current == operation
-            && matches!(current.kind, OperationKind::Send | OperationKind::Update))
+        && supported_check(current)
+        && (!matches!(current.kind, OperationKind::Schedule { .. })
+            || (current.scope == self.scope
+                && self.consumption.is_some()
+                && self.consumption_valid()
+                && self.acknowledged.as_ref().is_some_and(|acknowledged| {
+                    acknowledged.scope == current.scope
+                            && acknowledged.client_msg_id == current.client_msg_id
+                            && current.base.as_ref().is_some_and(|base| base.id == acknowledged.id)
+                }))))
     }
     fn check_deadline_ms(&self, operation: &Operation) -> u64 {
         self.check_deadline
@@ -133,10 +200,7 @@ impl DraftSync {
         }
         let operation = self
             .pending()
-            .filter(|op| {
-                op.id == deadline.operation_id
-                    && matches!(op.kind, OperationKind::Send | OperationKind::Update)
-            })
+            .filter(|op| op.id == deadline.operation_id && supported_check(op))
             .cloned();
         if let Some(operation) = operation {
             self.check_deadline.as_mut().unwrap().operation = Some(operation);
@@ -150,7 +214,7 @@ impl DraftSync {
         let valid = |op: &Operation| {
             op.scope == self.scope
                 && nonnil_uuid(&op.id)
-                && matches!(op.kind, OperationKind::Send | OperationKind::Update)
+                && supported_check(op)
                 && self
                     .pending()
                     .filter(|current| current.id == op.id)
@@ -174,3 +238,6 @@ impl DraftSync {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod schedule_tests;

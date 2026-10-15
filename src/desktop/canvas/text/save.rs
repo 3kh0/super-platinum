@@ -12,6 +12,22 @@ pub(super) fn submit(
     generation: u64,
     value: TextDraft,
 ) {
+    if draft
+        .peek()
+        .as_ref()
+        .is_some_and(|d| matches!(d.kind, Kind::Replacement))
+    {
+        super::replacement_save::submit(state, reader, draft, generation);
+        return;
+    }
+    if draft
+        .peek()
+        .as_ref()
+        .is_some_and(|d| d.kind.action().is_some())
+    {
+        super::structure_save::submit(state, reader, draft, generation, value);
+        return;
+    }
     let captured = {
         let mut d = draft.write();
         let Some(d) = d
@@ -25,10 +41,13 @@ pub(super) fn submit(
             d.error = Some("This canvas changed. Cancel and refresh before saving.");
             return;
         }
-        if value == *d.intent.seed() {
+        let Kind::Text(intent) = &d.kind else {
+            return;
+        };
+        if value == *intent.seed() {
             None
         } else {
-            Some((d.visit, d.read, d.section.clone(), Arc::clone(&d.intent)))
+            Some((d.visit, d.read, d.section.clone(), Arc::clone(intent)))
         }
     };
     let Some(captured) = captured else {
@@ -52,6 +71,10 @@ pub(super) fn submit(
     };
     if let Some(d) = draft.write().as_mut() {
         d.pending = Some(attempt.clone());
+    }
+    if super::continuation_fixture::enabled(&state.peek()) {
+        super::continuation_fixture::dispatch(&mut state.write(), &attempt, captured.3);
+        return;
     }
     if super::fixture::enabled(&state.peek()) {
         super::fixture::dispatch(&mut state.write(), &attempt, captured.3);

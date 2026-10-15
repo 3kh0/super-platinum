@@ -45,6 +45,21 @@ impl ShellState {
             state.load_managed_background();
             return state;
         };
+        if crate::performance::emoji_retirement::enabled() {
+            let mut state = Self::fixture(media);
+            crate::performance::emoji_retirement::install(&mut state);
+            return state;
+        }
+        if crate::performance::emoji_lifecycle::fixture(&fixture).is_some() {
+            let mut state = Self::fixture(media);
+            crate::performance::emoji_lifecycle::install(&mut state);
+            return state;
+        }
+        if let Some(total) = crate::performance::completion::size(&fixture) {
+            let mut state = Self::fixture(media);
+            crate::performance::completion::install(&mut state, total);
+            return state;
+        }
         match fixture.as_str() {
             "login" => Self::login(media),
             "opening" => Self::opening(media),
@@ -373,7 +388,8 @@ impl ShellState {
             reaction_target: None,
             composer_emoji: Default::default(),
             forward_target: None,
-            emoji_catalog_loaded: HashMap::new(),
+            emoji_catalog: Default::default(),
+            emoji_preferences: Default::default(),
             settings_section: SettingsSection::Appearance,
             notification_schedule: Default::default(),
             presentation_notifications: Default::default(),
@@ -520,7 +536,8 @@ impl ShellState {
             reaction_target: None,
             composer_emoji: Default::default(),
             forward_target: None,
-            emoji_catalog_loaded: HashMap::new(),
+            emoji_catalog: Default::default(),
+            emoji_preferences: Default::default(),
             settings_section: SettingsSection::Appearance,
             notification_schedule: Default::default(),
             presentation_notifications: Default::default(),
@@ -861,7 +878,8 @@ impl ShellState {
             reaction_target: None,
             composer_emoji: Default::default(),
             forward_target: None,
-            emoji_catalog_loaded: HashMap::new(),
+            emoji_catalog: Default::default(),
+            emoji_preferences: Default::default(),
             settings_section: SettingsSection::Appearance,
             notification_schedule: Default::default(),
             presentation_notifications: Default::default(),
@@ -994,6 +1012,23 @@ impl ShellState {
             | "thread-follow-pending"
             | "thread-follow-narrow" => crate::thread_subscription::fixture(&mut state, name),
             "thread-list-unread" => crate::thread_unread::list_fixture(&mut state),
+            "slack-list-subitem-create"
+            | "slack-list-subitem-create-narrow"
+            | "slack-list-subitem-uncertain"
+            | "slack-list-subitem-uncertain-narrow" => {
+                crate::slack_lists::subitem::fixture::install(&mut state, name)
+            }
+            "slack-list-view-create"
+            | "slack-list-view-create-narrow"
+            | "slack-list-view-rename"
+            | "slack-list-view-rename-narrow"
+            | "slack-list-column-rename"
+            | "slack-list-column-rename-narrow" => {
+                crate::slack_lists::rename::fixture::install(&mut state, name)
+            }
+            "slack-list-hydration" | "slack-list-hydration-narrow" => {
+                crate::slack_lists::fixture::hydration::install(&mut state, name)
+            }
             "slack-list-board-add" | "slack-list-board-add-narrow" => {
                 crate::slack_lists::fixture::board_creation::install(&mut state, name)
             }
@@ -1024,6 +1059,7 @@ impl ShellState {
             "upload-delivery-check" | "upload-delivery-check-narrow" => {
                 crate::messaging::delivery_check::fixture::install(&mut state)
             }
+            "emoji-native" | "emoji-native-narrow" => crate::emoji_native::install(&mut state),
             "composer-emoji" | "composer-emoji-narrow" => {
                 crate::composer_emoji::check::install(&mut state)
             }
@@ -1141,8 +1177,29 @@ impl ShellState {
             "draft-remote-review" | "draft-remote-review-narrow" => {
                 crate::drafts::remote_review_fixture::apply(&mut state)
             }
+            "draft-schedule-recovery" | "draft-schedule-recovery-narrow" => {
+                crate::drafts::recovery::schedule_fixture::apply(&mut state)
+            }
             "draft-update-recovery" | "draft-update-recovery-narrow" => {
                 crate::drafts::recovery::update_fixture::apply(&mut state)
+            }
+            "managed-draft-schedule" | "managed-draft-schedule-narrow" => {
+                crate::drafts::schedule::fixture::apply(&mut state)
+            }
+            #[cfg(feature = "protected-native-fixture")]
+            "protected-drafts" | "protected-drafts-narrow" => {
+                crate::drafts::protected::native_fixture::apply(&mut state)
+            }
+            #[cfg(feature = "protected-native-fixture")]
+            "protected-enrollment" | "protected-enrollment-narrow" => {
+                crate::drafts::protected::enrollment_fixture::apply(&mut state)
+            }
+            #[cfg(feature = "protected-native-fixture")]
+            "protected-adoption" | "protected-adoption-narrow" => {
+                crate::drafts::protected::adoption_fixture::apply(&mut state)
+            }
+            "managed-draft-send" | "managed-draft-send-narrow" => {
+                crate::drafts::send::fixture::apply(&mut state)
             }
             "scheduled-attachments" | "scheduled-attachments-narrow" => {
                 crate::scheduled::attachments::fixture::apply(&mut state)
@@ -1377,6 +1434,14 @@ impl ShellState {
             | "canvas-checklist-narrow"
             | "canvas-text"
             | "canvas-text-narrow"
+            | "canvas-structure"
+            | "canvas-structure-narrow"
+            | "canvas-replacement"
+            | "canvas-replacement-narrow"
+            | "canvas-structure-text"
+            | "canvas-structure-text-narrow"
+            | "canvas-local-review"
+            | "canvas-local-review-narrow"
             | "canvas-checklist-saving"
             | "canvas-checklist-uncertain"
             | "canvas-loading"

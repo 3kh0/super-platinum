@@ -15,6 +15,11 @@ use super_platinum_core::{
     slack::{Error, PreparedRequest, SlackClient, Transport, api},
 };
 mod acknowledgement;
+mod protected_adapter;
+mod protected_execution;
+pub(crate) use protected_adapter::BaselineRead;
+mod attempt;
+pub(super) use attempt::execute_prepared;
 mod decode;
 mod draft_review;
 pub(crate) use draft_review::RemoteProof;
@@ -50,7 +55,7 @@ pub(crate) struct Attempt {
     pub raw: Option<Value>,
 }
 impl Attempt {
-    fn blocked(block: Block) -> Self {
+    pub(super) fn blocked(block: Block) -> Self {
         Self {
             outcome: if matches!(block, Block::Cooldown { .. }) {
                 Outcome::Uncertain
@@ -80,6 +85,20 @@ pub(crate) struct Binding {
     cooldown_until_ms: Arc<Mutex<u64>>,
 }
 impl Binding {
+    /// Validate the exact immutable socket params before starting its worker.
+    /// Binding::capture already validates the session user against cached user.
+    pub(crate) fn matches_socket(
+        &self,
+        params: &super_platinum_core::slack::realtime::ConnectParams,
+    ) -> bool {
+        params.team == self.workspace.team_id
+            && params.d_cookie == self.cookie
+            && params.ws_url
+                == super_platinum_core::slack::realtime::flannel_url(
+                    &self.workspace.token,
+                    &self.workspace.team_id,
+                )
+    }
     pub fn capture(shell: &ShellState, team: &str) -> Result<Self, Block> {
         let account = shell.core.active_account.clone().ok_or(Block::Session)?;
         if !super_platinum_core::drafts::sync::valid_account_id(&account) {
@@ -182,30 +201,8 @@ impl Binding {
             Ok(prepared) => prepared,
             Err(block) => return Attempt::blocked(block),
         };
-        let started = Instant::now();
-        let result = send(prepared.request).await;
-        let received_ms =
-            now_ms.saturating_add(started.elapsed().as_millis().try_into().unwrap_or(u64::MAX));
-        let attempt = match result {
-            Ok(value) => {
-                if value.get("ok").and_then(Value::as_bool) == Some(false) {
-                    let attempt = acknowledgement::denial(value, received_ms);
-                    if let Some(deadline) = attempt.cooldown_until_ms {
-                        self.defer_until(deadline);
-                    }
-                    return attempt;
-                }
-                let (outcome, issue) = decode::response(operation, &self.workspace, &value);
-                Attempt {
-                    outcome,
-                    issue,
-                    dispatched: true,
-                    raw: Some(value),
-                    cooldown_until_ms: None,
-                }
-            }
-            Err(error) => failure(&error, received_ms),
-        };
+        let attempt =
+            execute_prepared(operation, &self.workspace, prepared.request, now_ms, send).await;
         if let Some(deadline) = attempt.cooldown_until_ms {
             self.defer_until(deadline);
         }
@@ -274,3 +271,11 @@ fn definite_rejection(code: &str) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+mod schedule_readback;
+pub(crate) use schedule_readback::check_schedule_with;
+
+#[cfg(any(test, feature = "protected-native-fixture"))]
+mod owned_attempt;
+#[cfg(any(test, feature = "protected-native-fixture"))]
+pub(crate) use owned_attempt::RegisteredMutation;

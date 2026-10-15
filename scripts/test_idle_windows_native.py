@@ -89,6 +89,7 @@ class IdleTests(unittest.TestCase):
         from visual_pointer import FixturePointer
         observer.window_identity = FixturePointer.identity
         observer.window = dict(window)
+        observer.hit_probe = lambda _window: {"ok": True, "points": []}
         # No caption/check/settle methods: passive quiet observation must never call them.
         observer.pointer = SimpleNamespace(io=SimpleNamespace(position=lambda: (400, 20)),
                                            placed=(400, 20), data={"movement_observed": False})

@@ -1,0 +1,8478 @@
+{
+  "canonical": [
+    {
+      "name": "thumbsup",
+      "tone": null,
+      "result": ":thumbsup:"
+    },
+    {
+      "name": "thumbsup",
+      "tone": "2",
+      "result": ":thumbsup::skin-tone-2:"
+    },
+    {
+      "name": "thumbsup",
+      "tone": "4",
+      "result": ":thumbsup::skin-tone-4:"
+    },
+    {
+      "name": "thumbsup",
+      "tone": "6",
+      "result": ":thumbsup::skin-tone-6:"
+    },
+    {
+      "name": "thumbsup",
+      "tone": "04",
+      "result": ":thumbsup:"
+    },
+    {
+      "name": "thumbsup",
+      "tone": "2-3",
+      "result": ":thumbsup:"
+    },
+    {
+      "name": "thumbsup",
+      "tone": 1,
+      "result": ":thumbsup:"
+    },
+    {
+      "name": "thumbsup",
+      "tone": 2,
+      "result": ":thumbsup::skin-tone-2:"
+    },
+    {
+      "name": "smile",
+      "tone": null,
+      "result": ":smile:"
+    },
+    {
+      "name": "smile",
+      "tone": "2",
+      "result": ":smile:"
+    },
+    {
+      "name": "smile",
+      "tone": "4",
+      "result": ":smile:"
+    },
+    {
+      "name": "smile",
+      "tone": "6",
+      "result": ":smile:"
+    },
+    {
+      "name": "smile",
+      "tone": "04",
+      "result": ":smile:"
+    },
+    {
+      "name": "smile",
+      "tone": "2-3",
+      "result": ":smile:"
+    },
+    {
+      "name": "smile",
+      "tone": 1,
+      "result": ":smile:"
+    },
+    {
+      "name": "smile",
+      "tone": 2,
+      "result": ":smile:"
+    },
+    {
+      "name": "poop",
+      "tone": null,
+      "result": ":poop:"
+    },
+    {
+      "name": "poop",
+      "tone": "2",
+      "result": ":poop:"
+    },
+    {
+      "name": "poop",
+      "tone": "4",
+      "result": ":poop:"
+    },
+    {
+      "name": "poop",
+      "tone": "6",
+      "result": ":poop:"
+    },
+    {
+      "name": "poop",
+      "tone": "04",
+      "result": ":poop:"
+    },
+    {
+      "name": "poop",
+      "tone": "2-3",
+      "result": ":poop:"
+    },
+    {
+      "name": "poop",
+      "tone": 1,
+      "result": ":poop:"
+    },
+    {
+      "name": "poop",
+      "tone": 2,
+      "result": ":poop:"
+    },
+    {
+      "name": "handshake",
+      "tone": null,
+      "result": ":handshake:"
+    },
+    {
+      "name": "handshake",
+      "tone": "2",
+      "result": ":handshake::skin-tone-2:"
+    },
+    {
+      "name": "handshake",
+      "tone": "4",
+      "result": ":handshake::skin-tone-4:"
+    },
+    {
+      "name": "handshake",
+      "tone": "6",
+      "result": ":handshake::skin-tone-6:"
+    },
+    {
+      "name": "handshake",
+      "tone": "04",
+      "result": ":handshake:"
+    },
+    {
+      "name": "handshake",
+      "tone": "2-3",
+      "result": ":handshake:"
+    },
+    {
+      "name": "handshake",
+      "tone": 1,
+      "result": ":handshake:"
+    },
+    {
+      "name": "handshake",
+      "tone": 2,
+      "result": ":handshake::skin-tone-2:"
+    }
+  ],
+  "sources": [
+    {
+      "file": "gantry-v2-async-gantry-v2-shared-boot-async.56e901654548b2fe.min.js",
+      "sha256": "1681ecc18bbfead52efb391b1ccfb3e15f1b4a1093a8475d847b221ce196c537"
+    },
+    {
+      "file": "gantry-v2-shared.0b81595876785d7a.min.js",
+      "sha256": "f085df09fb4f938caf425ea66fb0244c8f92a8012eea8eb298e4f629b377dbf7"
+    },
+    {
+      "file": "gantry-v2-vendors.522a064003a98b05.min.js",
+      "sha256": "819ac26a4c6cd6d2122cb6edb1731a0f99d7070c16971579f52529d1030ae7b3"
+    }
+  ],
+  "normalization": [
+    {
+      "text": "",
+      "result": ""
+    },
+    {
+      "text": " SMILE ",
+      "result": "smile"
+    },
+    {
+      "text": "Straße",
+      "result": "strasse"
+    },
+    {
+      "text": "Æsir",
+      "result": "aesir"
+    },
+    {
+      "text": "École",
+      "result": "ecole"
+    },
+    {
+      "text": "Café",
+      "result": "cafe"
+    },
+    {
+      "text": "ấ",
+      "result": "ấ"
+    },
+    {
+      "text": "Привет",
+      "result": "privet"
+    },
+    {
+      "text": "Ёж",
+      "result": "jozh"
+    },
+    {
+      "text": "ＳＭＩＬＥ",
+      "result": "smile"
+    },
+    {
+      "text": "ガギグゲゴ",
+      "result": "ｶﾞｷﾞｸﾞｹﾞｺﾞ"
+    },
+    {
+      "text": "日本",
+      "result": "日本"
+    },
+    {
+      "text": "İ",
+      "result": "i"
+    },
+    {
+      "text": "a  b\n c",
+      "result": "a b c"
+    },
+    {
+      "text": "😀",
+      "result": "😀"
+    },
+    {
+      "text": "ab",
+      "result": "ab"
+    },
+    {
+      "text": "ΟΣ",
+      "result": "ος"
+    },
+    {
+      "text": "ẞ",
+      "result": "ss"
+    }
+  ],
+  "map": [
+    {
+      "cp": 192,
+      "result": "A"
+    },
+    {
+      "cp": 193,
+      "result": "A"
+    },
+    {
+      "cp": 194,
+      "result": "A"
+    },
+    {
+      "cp": 195,
+      "result": "A"
+    },
+    {
+      "cp": 196,
+      "result": "A"
+    },
+    {
+      "cp": 197,
+      "result": "A"
+    },
+    {
+      "cp": 198,
+      "result": "Ae"
+    },
+    {
+      "cp": 199,
+      "result": "C"
+    },
+    {
+      "cp": 200,
+      "result": "E"
+    },
+    {
+      "cp": 201,
+      "result": "E"
+    },
+    {
+      "cp": 202,
+      "result": "E"
+    },
+    {
+      "cp": 203,
+      "result": "E"
+    },
+    {
+      "cp": 204,
+      "result": "I"
+    },
+    {
+      "cp": 205,
+      "result": "I"
+    },
+    {
+      "cp": 206,
+      "result": "I"
+    },
+    {
+      "cp": 207,
+      "result": "I"
+    },
+    {
+      "cp": 208,
+      "result": "D"
+    },
+    {
+      "cp": 209,
+      "result": "N"
+    },
+    {
+      "cp": 210,
+      "result": "O"
+    },
+    {
+      "cp": 211,
+      "result": "O"
+    },
+    {
+      "cp": 212,
+      "result": "O"
+    },
+    {
+      "cp": 213,
+      "result": "O"
+    },
+    {
+      "cp": 214,
+      "result": "O"
+    },
+    {
+      "cp": 216,
+      "result": "O"
+    },
+    {
+      "cp": 217,
+      "result": "U"
+    },
+    {
+      "cp": 218,
+      "result": "U"
+    },
+    {
+      "cp": 219,
+      "result": "U"
+    },
+    {
+      "cp": 220,
+      "result": "U"
+    },
+    {
+      "cp": 221,
+      "result": "Y"
+    },
+    {
+      "cp": 222,
+      "result": "Th"
+    },
+    {
+      "cp": 223,
+      "result": "ss"
+    },
+    {
+      "cp": 224,
+      "result": "a"
+    },
+    {
+      "cp": 225,
+      "result": "a"
+    },
+    {
+      "cp": 226,
+      "result": "a"
+    },
+    {
+      "cp": 227,
+      "result": "a"
+    },
+    {
+      "cp": 228,
+      "result": "a"
+    },
+    {
+      "cp": 229,
+      "result": "a"
+    },
+    {
+      "cp": 230,
+      "result": "ae"
+    },
+    {
+      "cp": 231,
+      "result": "c"
+    },
+    {
+      "cp": 232,
+      "result": "e"
+    },
+    {
+      "cp": 233,
+      "result": "e"
+    },
+    {
+      "cp": 234,
+      "result": "e"
+    },
+    {
+      "cp": 235,
+      "result": "e"
+    },
+    {
+      "cp": 236,
+      "result": "i"
+    },
+    {
+      "cp": 237,
+      "result": "i"
+    },
+    {
+      "cp": 238,
+      "result": "i"
+    },
+    {
+      "cp": 239,
+      "result": "i"
+    },
+    {
+      "cp": 240,
+      "result": "d"
+    },
+    {
+      "cp": 241,
+      "result": "n"
+    },
+    {
+      "cp": 242,
+      "result": "o"
+    },
+    {
+      "cp": 243,
+      "result": "o"
+    },
+    {
+      "cp": 244,
+      "result": "o"
+    },
+    {
+      "cp": 245,
+      "result": "o"
+    },
+    {
+      "cp": 246,
+      "result": "o"
+    },
+    {
+      "cp": 248,
+      "result": "o"
+    },
+    {
+      "cp": 249,
+      "result": "u"
+    },
+    {
+      "cp": 250,
+      "result": "u"
+    },
+    {
+      "cp": 251,
+      "result": "u"
+    },
+    {
+      "cp": 252,
+      "result": "u"
+    },
+    {
+      "cp": 253,
+      "result": "y"
+    },
+    {
+      "cp": 254,
+      "result": "th"
+    },
+    {
+      "cp": 255,
+      "result": "y"
+    },
+    {
+      "cp": 256,
+      "result": "A"
+    },
+    {
+      "cp": 257,
+      "result": "a"
+    },
+    {
+      "cp": 258,
+      "result": "A"
+    },
+    {
+      "cp": 259,
+      "result": "a"
+    },
+    {
+      "cp": 260,
+      "result": "A"
+    },
+    {
+      "cp": 261,
+      "result": "a"
+    },
+    {
+      "cp": 262,
+      "result": "C"
+    },
+    {
+      "cp": 263,
+      "result": "c"
+    },
+    {
+      "cp": 264,
+      "result": "C"
+    },
+    {
+      "cp": 265,
+      "result": "c"
+    },
+    {
+      "cp": 266,
+      "result": "C"
+    },
+    {
+      "cp": 267,
+      "result": "c"
+    },
+    {
+      "cp": 268,
+      "result": "C"
+    },
+    {
+      "cp": 269,
+      "result": "c"
+    },
+    {
+      "cp": 270,
+      "result": "D"
+    },
+    {
+      "cp": 271,
+      "result": "d"
+    },
+    {
+      "cp": 272,
+      "result": "D"
+    },
+    {
+      "cp": 273,
+      "result": "d"
+    },
+    {
+      "cp": 274,
+      "result": "E"
+    },
+    {
+      "cp": 275,
+      "result": "e"
+    },
+    {
+      "cp": 276,
+      "result": "E"
+    },
+    {
+      "cp": 277,
+      "result": "e"
+    },
+    {
+      "cp": 278,
+      "result": "E"
+    },
+    {
+      "cp": 279,
+      "result": "e"
+    },
+    {
+      "cp": 280,
+      "result": "E"
+    },
+    {
+      "cp": 281,
+      "result": "e"
+    },
+    {
+      "cp": 282,
+      "result": "E"
+    },
+    {
+      "cp": 283,
+      "result": "e"
+    },
+    {
+      "cp": 284,
+      "result": "G"
+    },
+    {
+      "cp": 285,
+      "result": "g"
+    },
+    {
+      "cp": 286,
+      "result": "G"
+    },
+    {
+      "cp": 287,
+      "result": "g"
+    },
+    {
+      "cp": 288,
+      "result": "G"
+    },
+    {
+      "cp": 289,
+      "result": "g"
+    },
+    {
+      "cp": 290,
+      "result": "G"
+    },
+    {
+      "cp": 291,
+      "result": "g"
+    },
+    {
+      "cp": 292,
+      "result": "H"
+    },
+    {
+      "cp": 293,
+      "result": "h"
+    },
+    {
+      "cp": 294,
+      "result": "H"
+    },
+    {
+      "cp": 295,
+      "result": "h"
+    },
+    {
+      "cp": 296,
+      "result": "I"
+    },
+    {
+      "cp": 297,
+      "result": "i"
+    },
+    {
+      "cp": 298,
+      "result": "I"
+    },
+    {
+      "cp": 299,
+      "result": "i"
+    },
+    {
+      "cp": 300,
+      "result": "I"
+    },
+    {
+      "cp": 301,
+      "result": "i"
+    },
+    {
+      "cp": 302,
+      "result": "I"
+    },
+    {
+      "cp": 303,
+      "result": "i"
+    },
+    {
+      "cp": 304,
+      "result": "I"
+    },
+    {
+      "cp": 305,
+      "result": "i"
+    },
+    {
+      "cp": 306,
+      "result": "IJ"
+    },
+    {
+      "cp": 307,
+      "result": "ij"
+    },
+    {
+      "cp": 308,
+      "result": "J"
+    },
+    {
+      "cp": 309,
+      "result": "j"
+    },
+    {
+      "cp": 310,
+      "result": "K"
+    },
+    {
+      "cp": 311,
+      "result": "k"
+    },
+    {
+      "cp": 312,
+      "result": "k"
+    },
+    {
+      "cp": 313,
+      "result": "L"
+    },
+    {
+      "cp": 314,
+      "result": "l"
+    },
+    {
+      "cp": 315,
+      "result": "L"
+    },
+    {
+      "cp": 316,
+      "result": "l"
+    },
+    {
+      "cp": 317,
+      "result": "L"
+    },
+    {
+      "cp": 318,
+      "result": "l"
+    },
+    {
+      "cp": 319,
+      "result": "L"
+    },
+    {
+      "cp": 320,
+      "result": "l"
+    },
+    {
+      "cp": 321,
+      "result": "L"
+    },
+    {
+      "cp": 322,
+      "result": "l"
+    },
+    {
+      "cp": 323,
+      "result": "N"
+    },
+    {
+      "cp": 324,
+      "result": "n"
+    },
+    {
+      "cp": 325,
+      "result": "N"
+    },
+    {
+      "cp": 326,
+      "result": "n"
+    },
+    {
+      "cp": 327,
+      "result": "N"
+    },
+    {
+      "cp": 328,
+      "result": "n"
+    },
+    {
+      "cp": 329,
+      "result": "'n"
+    },
+    {
+      "cp": 330,
+      "result": "N"
+    },
+    {
+      "cp": 331,
+      "result": "n"
+    },
+    {
+      "cp": 332,
+      "result": "O"
+    },
+    {
+      "cp": 333,
+      "result": "o"
+    },
+    {
+      "cp": 334,
+      "result": "O"
+    },
+    {
+      "cp": 335,
+      "result": "o"
+    },
+    {
+      "cp": 336,
+      "result": "O"
+    },
+    {
+      "cp": 337,
+      "result": "o"
+    },
+    {
+      "cp": 338,
+      "result": "Oe"
+    },
+    {
+      "cp": 339,
+      "result": "oe"
+    },
+    {
+      "cp": 340,
+      "result": "R"
+    },
+    {
+      "cp": 341,
+      "result": "r"
+    },
+    {
+      "cp": 342,
+      "result": "R"
+    },
+    {
+      "cp": 343,
+      "result": "r"
+    },
+    {
+      "cp": 344,
+      "result": "R"
+    },
+    {
+      "cp": 345,
+      "result": "r"
+    },
+    {
+      "cp": 346,
+      "result": "S"
+    },
+    {
+      "cp": 347,
+      "result": "s"
+    },
+    {
+      "cp": 348,
+      "result": "S"
+    },
+    {
+      "cp": 349,
+      "result": "s"
+    },
+    {
+      "cp": 350,
+      "result": "S"
+    },
+    {
+      "cp": 351,
+      "result": "s"
+    },
+    {
+      "cp": 352,
+      "result": "S"
+    },
+    {
+      "cp": 353,
+      "result": "s"
+    },
+    {
+      "cp": 354,
+      "result": "T"
+    },
+    {
+      "cp": 355,
+      "result": "t"
+    },
+    {
+      "cp": 356,
+      "result": "T"
+    },
+    {
+      "cp": 357,
+      "result": "t"
+    },
+    {
+      "cp": 358,
+      "result": "T"
+    },
+    {
+      "cp": 359,
+      "result": "t"
+    },
+    {
+      "cp": 360,
+      "result": "U"
+    },
+    {
+      "cp": 361,
+      "result": "u"
+    },
+    {
+      "cp": 362,
+      "result": "U"
+    },
+    {
+      "cp": 363,
+      "result": "u"
+    },
+    {
+      "cp": 364,
+      "result": "U"
+    },
+    {
+      "cp": 365,
+      "result": "u"
+    },
+    {
+      "cp": 366,
+      "result": "U"
+    },
+    {
+      "cp": 367,
+      "result": "u"
+    },
+    {
+      "cp": 368,
+      "result": "U"
+    },
+    {
+      "cp": 369,
+      "result": "u"
+    },
+    {
+      "cp": 370,
+      "result": "U"
+    },
+    {
+      "cp": 371,
+      "result": "u"
+    },
+    {
+      "cp": 372,
+      "result": "W"
+    },
+    {
+      "cp": 373,
+      "result": "w"
+    },
+    {
+      "cp": 374,
+      "result": "Y"
+    },
+    {
+      "cp": 375,
+      "result": "y"
+    },
+    {
+      "cp": 376,
+      "result": "Y"
+    },
+    {
+      "cp": 377,
+      "result": "Z"
+    },
+    {
+      "cp": 378,
+      "result": "z"
+    },
+    {
+      "cp": 379,
+      "result": "Z"
+    },
+    {
+      "cp": 380,
+      "result": "z"
+    },
+    {
+      "cp": 381,
+      "result": "Z"
+    },
+    {
+      "cp": 382,
+      "result": "z"
+    },
+    {
+      "cp": 383,
+      "result": "s"
+    },
+    {
+      "cp": 1025,
+      "result": "Jo"
+    },
+    {
+      "cp": 1040,
+      "result": "A"
+    },
+    {
+      "cp": 1041,
+      "result": "B"
+    },
+    {
+      "cp": 1042,
+      "result": "V"
+    },
+    {
+      "cp": 1043,
+      "result": "G"
+    },
+    {
+      "cp": 1044,
+      "result": "D"
+    },
+    {
+      "cp": 1045,
+      "result": "E"
+    },
+    {
+      "cp": 1046,
+      "result": "Zh"
+    },
+    {
+      "cp": 1047,
+      "result": "Z"
+    },
+    {
+      "cp": 1048,
+      "result": "I"
+    },
+    {
+      "cp": 1049,
+      "result": "J"
+    },
+    {
+      "cp": 1050,
+      "result": "K"
+    },
+    {
+      "cp": 1051,
+      "result": "L"
+    },
+    {
+      "cp": 1052,
+      "result": "M"
+    },
+    {
+      "cp": 1053,
+      "result": "N"
+    },
+    {
+      "cp": 1054,
+      "result": "O"
+    },
+    {
+      "cp": 1055,
+      "result": "P"
+    },
+    {
+      "cp": 1056,
+      "result": "R"
+    },
+    {
+      "cp": 1057,
+      "result": "S"
+    },
+    {
+      "cp": 1058,
+      "result": "T"
+    },
+    {
+      "cp": 1059,
+      "result": "U"
+    },
+    {
+      "cp": 1060,
+      "result": "F"
+    },
+    {
+      "cp": 1061,
+      "result": "H"
+    },
+    {
+      "cp": 1062,
+      "result": "C"
+    },
+    {
+      "cp": 1063,
+      "result": "Ch"
+    },
+    {
+      "cp": 1064,
+      "result": "Sh"
+    },
+    {
+      "cp": 1065,
+      "result": "Sch"
+    },
+    {
+      "cp": 1066,
+      "result": ""
+    },
+    {
+      "cp": 1067,
+      "result": "Y"
+    },
+    {
+      "cp": 1068,
+      "result": ""
+    },
+    {
+      "cp": 1069,
+      "result": "Je"
+    },
+    {
+      "cp": 1070,
+      "result": "Ju"
+    },
+    {
+      "cp": 1071,
+      "result": "Ja"
+    },
+    {
+      "cp": 1072,
+      "result": "a"
+    },
+    {
+      "cp": 1073,
+      "result": "b"
+    },
+    {
+      "cp": 1074,
+      "result": "v"
+    },
+    {
+      "cp": 1075,
+      "result": "g"
+    },
+    {
+      "cp": 1076,
+      "result": "d"
+    },
+    {
+      "cp": 1077,
+      "result": "e"
+    },
+    {
+      "cp": 1078,
+      "result": "zh"
+    },
+    {
+      "cp": 1079,
+      "result": "z"
+    },
+    {
+      "cp": 1080,
+      "result": "i"
+    },
+    {
+      "cp": 1081,
+      "result": "j"
+    },
+    {
+      "cp": 1082,
+      "result": "k"
+    },
+    {
+      "cp": 1083,
+      "result": "l"
+    },
+    {
+      "cp": 1084,
+      "result": "m"
+    },
+    {
+      "cp": 1085,
+      "result": "n"
+    },
+    {
+      "cp": 1086,
+      "result": "o"
+    },
+    {
+      "cp": 1087,
+      "result": "p"
+    },
+    {
+      "cp": 1088,
+      "result": "r"
+    },
+    {
+      "cp": 1089,
+      "result": "s"
+    },
+    {
+      "cp": 1090,
+      "result": "t"
+    },
+    {
+      "cp": 1091,
+      "result": "u"
+    },
+    {
+      "cp": 1092,
+      "result": "f"
+    },
+    {
+      "cp": 1093,
+      "result": "h"
+    },
+    {
+      "cp": 1094,
+      "result": "c"
+    },
+    {
+      "cp": 1095,
+      "result": "ch"
+    },
+    {
+      "cp": 1096,
+      "result": "sh"
+    },
+    {
+      "cp": 1097,
+      "result": "sch"
+    },
+    {
+      "cp": 1098,
+      "result": ""
+    },
+    {
+      "cp": 1099,
+      "result": "y"
+    },
+    {
+      "cp": 1100,
+      "result": ""
+    },
+    {
+      "cp": 1101,
+      "result": "je"
+    },
+    {
+      "cp": 1102,
+      "result": "ju"
+    },
+    {
+      "cp": 1103,
+      "result": "ja"
+    },
+    {
+      "cp": 1105,
+      "result": "jo"
+    },
+    {
+      "cp": 12288,
+      "result": " "
+    },
+    {
+      "cp": 12289,
+      "result": "､"
+    },
+    {
+      "cp": 12290,
+      "result": "｡"
+    },
+    {
+      "cp": 12300,
+      "result": "｢"
+    },
+    {
+      "cp": 12301,
+      "result": "｣"
+    },
+    {
+      "cp": 12449,
+      "result": "ｧ"
+    },
+    {
+      "cp": 12450,
+      "result": "ｱ"
+    },
+    {
+      "cp": 12451,
+      "result": "ｨ"
+    },
+    {
+      "cp": 12452,
+      "result": "ｲ"
+    },
+    {
+      "cp": 12453,
+      "result": "ｩ"
+    },
+    {
+      "cp": 12454,
+      "result": "ｳ"
+    },
+    {
+      "cp": 12455,
+      "result": "ｪ"
+    },
+    {
+      "cp": 12456,
+      "result": "ｴ"
+    },
+    {
+      "cp": 12457,
+      "result": "ｫ"
+    },
+    {
+      "cp": 12458,
+      "result": "ｵ"
+    },
+    {
+      "cp": 12459,
+      "result": "ｶ"
+    },
+    {
+      "cp": 12460,
+      "result": "ｶﾞ"
+    },
+    {
+      "cp": 12461,
+      "result": "ｷ"
+    },
+    {
+      "cp": 12462,
+      "result": "ｷﾞ"
+    },
+    {
+      "cp": 12463,
+      "result": "ｸ"
+    },
+    {
+      "cp": 12464,
+      "result": "ｸﾞ"
+    },
+    {
+      "cp": 12465,
+      "result": "ｹ"
+    },
+    {
+      "cp": 12466,
+      "result": "ｹﾞ"
+    },
+    {
+      "cp": 12467,
+      "result": "ｺ"
+    },
+    {
+      "cp": 12468,
+      "result": "ｺﾞ"
+    },
+    {
+      "cp": 12469,
+      "result": "ｻ"
+    },
+    {
+      "cp": 12470,
+      "result": "ｻﾞ"
+    },
+    {
+      "cp": 12471,
+      "result": "ｼ"
+    },
+    {
+      "cp": 12472,
+      "result": "ｼﾞ"
+    },
+    {
+      "cp": 12473,
+      "result": "ｽ"
+    },
+    {
+      "cp": 12474,
+      "result": "ｽﾞ"
+    },
+    {
+      "cp": 12475,
+      "result": "ｾ"
+    },
+    {
+      "cp": 12476,
+      "result": "ｾﾞ"
+    },
+    {
+      "cp": 12477,
+      "result": "ｿ"
+    },
+    {
+      "cp": 12478,
+      "result": "ｿﾞ"
+    },
+    {
+      "cp": 12479,
+      "result": "ﾀ"
+    },
+    {
+      "cp": 12480,
+      "result": "ﾀﾞ"
+    },
+    {
+      "cp": 12481,
+      "result": "ﾁ"
+    },
+    {
+      "cp": 12482,
+      "result": "ﾁﾞ"
+    },
+    {
+      "cp": 12483,
+      "result": "ｯ"
+    },
+    {
+      "cp": 12484,
+      "result": "ﾂ"
+    },
+    {
+      "cp": 12485,
+      "result": "ﾂﾞ"
+    },
+    {
+      "cp": 12486,
+      "result": "ﾃ"
+    },
+    {
+      "cp": 12487,
+      "result": "ﾃﾞ"
+    },
+    {
+      "cp": 12488,
+      "result": "ﾄ"
+    },
+    {
+      "cp": 12489,
+      "result": "ﾄﾞ"
+    },
+    {
+      "cp": 12490,
+      "result": "ﾅ"
+    },
+    {
+      "cp": 12491,
+      "result": "ﾆ"
+    },
+    {
+      "cp": 12492,
+      "result": "ﾇ"
+    },
+    {
+      "cp": 12493,
+      "result": "ﾈ"
+    },
+    {
+      "cp": 12494,
+      "result": "ﾉ"
+    },
+    {
+      "cp": 12495,
+      "result": "ﾊ"
+    },
+    {
+      "cp": 12496,
+      "result": "ﾊﾞ"
+    },
+    {
+      "cp": 12497,
+      "result": "ﾊﾟ"
+    },
+    {
+      "cp": 12498,
+      "result": "ﾋ"
+    },
+    {
+      "cp": 12499,
+      "result": "ﾋﾞ"
+    },
+    {
+      "cp": 12500,
+      "result": "ﾋﾟ"
+    },
+    {
+      "cp": 12501,
+      "result": "ﾌ"
+    },
+    {
+      "cp": 12502,
+      "result": "ﾌﾞ"
+    },
+    {
+      "cp": 12503,
+      "result": "ﾌﾟ"
+    },
+    {
+      "cp": 12504,
+      "result": "ﾍ"
+    },
+    {
+      "cp": 12505,
+      "result": "ﾍﾞ"
+    },
+    {
+      "cp": 12506,
+      "result": "ﾍﾟ"
+    },
+    {
+      "cp": 12507,
+      "result": "ﾎ"
+    },
+    {
+      "cp": 12508,
+      "result": "ﾎﾞ"
+    },
+    {
+      "cp": 12509,
+      "result": "ﾎﾟ"
+    },
+    {
+      "cp": 12510,
+      "result": "ﾏ"
+    },
+    {
+      "cp": 12511,
+      "result": "ﾐ"
+    },
+    {
+      "cp": 12512,
+      "result": "ﾑ"
+    },
+    {
+      "cp": 12513,
+      "result": "ﾒ"
+    },
+    {
+      "cp": 12514,
+      "result": "ﾓ"
+    },
+    {
+      "cp": 12515,
+      "result": "ｬ"
+    },
+    {
+      "cp": 12516,
+      "result": "ﾔ"
+    },
+    {
+      "cp": 12517,
+      "result": "ｭ"
+    },
+    {
+      "cp": 12518,
+      "result": "ﾕ"
+    },
+    {
+      "cp": 12519,
+      "result": "ｮ"
+    },
+    {
+      "cp": 12520,
+      "result": "ﾖ"
+    },
+    {
+      "cp": 12521,
+      "result": "ﾗ"
+    },
+    {
+      "cp": 12522,
+      "result": "ﾘ"
+    },
+    {
+      "cp": 12523,
+      "result": "ﾙ"
+    },
+    {
+      "cp": 12524,
+      "result": "ﾚ"
+    },
+    {
+      "cp": 12525,
+      "result": "ﾛ"
+    },
+    {
+      "cp": 12527,
+      "result": "ﾜ"
+    },
+    {
+      "cp": 12530,
+      "result": "ｦ"
+    },
+    {
+      "cp": 12531,
+      "result": "ﾝ"
+    },
+    {
+      "cp": 12532,
+      "result": "ｳﾞ"
+    },
+    {
+      "cp": 12539,
+      "result": "･"
+    },
+    {
+      "cp": 12540,
+      "result": "ｰ"
+    },
+    {
+      "cp": 65280,
+      "result": " "
+    },
+    {
+      "cp": 65281,
+      "result": "!"
+    },
+    {
+      "cp": 65282,
+      "result": "\""
+    },
+    {
+      "cp": 65283,
+      "result": "#"
+    },
+    {
+      "cp": 65284,
+      "result": "$"
+    },
+    {
+      "cp": 65285,
+      "result": "%"
+    },
+    {
+      "cp": 65286,
+      "result": "&"
+    },
+    {
+      "cp": 65287,
+      "result": "'"
+    },
+    {
+      "cp": 65288,
+      "result": "("
+    },
+    {
+      "cp": 65289,
+      "result": ")"
+    },
+    {
+      "cp": 65290,
+      "result": "*"
+    },
+    {
+      "cp": 65291,
+      "result": "+"
+    },
+    {
+      "cp": 65292,
+      "result": ","
+    },
+    {
+      "cp": 65293,
+      "result": "-"
+    },
+    {
+      "cp": 65294,
+      "result": "."
+    },
+    {
+      "cp": 65295,
+      "result": "/"
+    },
+    {
+      "cp": 65296,
+      "result": "0"
+    },
+    {
+      "cp": 65297,
+      "result": "1"
+    },
+    {
+      "cp": 65298,
+      "result": "2"
+    },
+    {
+      "cp": 65299,
+      "result": "3"
+    },
+    {
+      "cp": 65300,
+      "result": "4"
+    },
+    {
+      "cp": 65301,
+      "result": "5"
+    },
+    {
+      "cp": 65302,
+      "result": "6"
+    },
+    {
+      "cp": 65303,
+      "result": "7"
+    },
+    {
+      "cp": 65304,
+      "result": "8"
+    },
+    {
+      "cp": 65305,
+      "result": "9"
+    },
+    {
+      "cp": 65306,
+      "result": ":"
+    },
+    {
+      "cp": 65307,
+      "result": ";"
+    },
+    {
+      "cp": 65308,
+      "result": "<"
+    },
+    {
+      "cp": 65309,
+      "result": "="
+    },
+    {
+      "cp": 65310,
+      "result": ">"
+    },
+    {
+      "cp": 65311,
+      "result": "?"
+    },
+    {
+      "cp": 65312,
+      "result": "@"
+    },
+    {
+      "cp": 65313,
+      "result": "A"
+    },
+    {
+      "cp": 65314,
+      "result": "B"
+    },
+    {
+      "cp": 65315,
+      "result": "C"
+    },
+    {
+      "cp": 65316,
+      "result": "D"
+    },
+    {
+      "cp": 65317,
+      "result": "E"
+    },
+    {
+      "cp": 65318,
+      "result": "F"
+    },
+    {
+      "cp": 65319,
+      "result": "G"
+    },
+    {
+      "cp": 65320,
+      "result": "H"
+    },
+    {
+      "cp": 65321,
+      "result": "I"
+    },
+    {
+      "cp": 65322,
+      "result": "J"
+    },
+    {
+      "cp": 65323,
+      "result": "K"
+    },
+    {
+      "cp": 65324,
+      "result": "L"
+    },
+    {
+      "cp": 65325,
+      "result": "M"
+    },
+    {
+      "cp": 65326,
+      "result": "N"
+    },
+    {
+      "cp": 65327,
+      "result": "O"
+    },
+    {
+      "cp": 65328,
+      "result": "P"
+    },
+    {
+      "cp": 65329,
+      "result": "Q"
+    },
+    {
+      "cp": 65330,
+      "result": "R"
+    },
+    {
+      "cp": 65331,
+      "result": "S"
+    },
+    {
+      "cp": 65332,
+      "result": "T"
+    },
+    {
+      "cp": 65333,
+      "result": "U"
+    },
+    {
+      "cp": 65334,
+      "result": "V"
+    },
+    {
+      "cp": 65335,
+      "result": "W"
+    },
+    {
+      "cp": 65336,
+      "result": "X"
+    },
+    {
+      "cp": 65337,
+      "result": "Y"
+    },
+    {
+      "cp": 65338,
+      "result": "Z"
+    },
+    {
+      "cp": 65339,
+      "result": "["
+    },
+    {
+      "cp": 65340,
+      "result": "\\"
+    },
+    {
+      "cp": 65341,
+      "result": "]"
+    },
+    {
+      "cp": 65342,
+      "result": "^"
+    },
+    {
+      "cp": 65343,
+      "result": "_"
+    },
+    {
+      "cp": 65344,
+      "result": "`"
+    },
+    {
+      "cp": 65345,
+      "result": "a"
+    },
+    {
+      "cp": 65346,
+      "result": "b"
+    },
+    {
+      "cp": 65347,
+      "result": "c"
+    },
+    {
+      "cp": 65348,
+      "result": "d"
+    },
+    {
+      "cp": 65349,
+      "result": "e"
+    },
+    {
+      "cp": 65350,
+      "result": "f"
+    },
+    {
+      "cp": 65351,
+      "result": "g"
+    },
+    {
+      "cp": 65352,
+      "result": "h"
+    },
+    {
+      "cp": 65353,
+      "result": "i"
+    },
+    {
+      "cp": 65354,
+      "result": "j"
+    },
+    {
+      "cp": 65355,
+      "result": "k"
+    },
+    {
+      "cp": 65356,
+      "result": "l"
+    },
+    {
+      "cp": 65357,
+      "result": "m"
+    },
+    {
+      "cp": 65358,
+      "result": "n"
+    },
+    {
+      "cp": 65359,
+      "result": "o"
+    },
+    {
+      "cp": 65360,
+      "result": "p"
+    },
+    {
+      "cp": 65361,
+      "result": "q"
+    },
+    {
+      "cp": 65362,
+      "result": "r"
+    },
+    {
+      "cp": 65363,
+      "result": "s"
+    },
+    {
+      "cp": 65364,
+      "result": "t"
+    },
+    {
+      "cp": 65365,
+      "result": "u"
+    },
+    {
+      "cp": 65366,
+      "result": "v"
+    },
+    {
+      "cp": 65367,
+      "result": "w"
+    },
+    {
+      "cp": 65368,
+      "result": "x"
+    },
+    {
+      "cp": 65369,
+      "result": "y"
+    },
+    {
+      "cp": 65370,
+      "result": "z"
+    },
+    {
+      "cp": 65371,
+      "result": "{"
+    },
+    {
+      "cp": 65372,
+      "result": "|"
+    },
+    {
+      "cp": 65373,
+      "result": "}"
+    },
+    {
+      "cp": 65374,
+      "result": "~"
+    },
+    {
+      "cp": 65504,
+      "result": "¢"
+    },
+    {
+      "cp": 65505,
+      "result": "£"
+    },
+    {
+      "cp": 65506,
+      "result": "¬"
+    },
+    {
+      "cp": 65507,
+      "result": "¯"
+    },
+    {
+      "cp": 65508,
+      "result": "¦"
+    },
+    {
+      "cp": 65509,
+      "result": "¥"
+    },
+    {
+      "cp": 65510,
+      "result": "₩"
+    }
+  ],
+  "keyword": [
+    {
+      "query": "sm",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "sm",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "sm",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "sm",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "smi",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "smi",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "smi",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "some face",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "some face",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "some face",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "some face",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "some face",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "s f",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "s f",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "s f",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "s f",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "s f",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "whitecheck",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "whitecheck",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "whitecheck",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "whitecheck",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "whitecheck",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "white check",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "white check",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "white check",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "white check",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "white check",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "check",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "check",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "check",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "check",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "check",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "check",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "check",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "heart",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "heart",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "heart",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "heart",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "heart",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "party-parrot",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "party-parrot",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 2
+    },
+    {
+      "query": "party-parrot",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 2
+    },
+    {
+      "query": "party-parrot",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "party-parrot",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "a b",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "a b",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "a b",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "ab",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "ab",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "ab",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "ab",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "ab",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "foo",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "foo",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "foo",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "foo",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "foo",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "bar",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "bar",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "bar",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "bar",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "bar",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 1
+    },
+    {
+      "query": "star",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 1
+    },
+    {
+      "query": "star",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 2
+    },
+    {
+      "query": "star",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "star",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "日本",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    },
+    {
+      "query": "日本",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "日本",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "smile",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "some_face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "some funny face",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "white_check_mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "white-check-mark",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "checkered_flag",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "red_heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "heart",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "party_parrot",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "parrot_party",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "a_b",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "ab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "cab",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "foo_bar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "bar_foo",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "shooting_star",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "superstar",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "日本語",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": null
+    },
+    {
+      "query": "😀a",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true
+      },
+      "result": 0
+    },
+    {
+      "query": "😀a",
+      "name": "😀abc",
+      "options": {
+        "fuzzyLimit": 3,
+        "fuzzyJumpLimit": 20,
+        "fuzzyCJK": true,
+        "matchBeyondWordBoundaries": true
+      },
+      "result": 0
+    }
+  ],
+  "code": [
+    {
+      "text": "",
+      "result": false
+    },
+    {
+      "text": "`",
+      "result": true
+    },
+    {
+      "text": "``",
+      "result": false
+    },
+    {
+      "text": "```",
+      "result": true
+    },
+    {
+      "text": "````",
+      "result": true
+    },
+    {
+      "text": "```a```",
+      "result": false
+    },
+    {
+      "text": "`a`",
+      "result": false
+    },
+    {
+      "text": "a ` b",
+      "result": true
+    },
+    {
+      "text": "\\`",
+      "result": true
+    },
+    {
+      "text": "```a``` `",
+      "result": true
+    },
+    {
+      "text": "```a````",
+      "result": true
+    },
+    {
+      "text": "```a\n```",
+      "result": false
+    },
+    {
+      "text": "``a``",
+      "result": false
+    }
+  ]
+}

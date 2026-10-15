@@ -73,6 +73,8 @@ fn deletion_clears_matching_created_notice_but_preserves_unrelated_notice() {
 fn shell() -> ShellState {
     let mut shell =
         ShellState::fixture_variant(crate::media::MediaRegistry::default(), "slack-list");
+    shell.core.active_account = Some(format!("creation-test-{}", next_id()));
+    shell.slack_lists.scope = Scope::capture(&shell);
     let loaded = shell
         .slack_lists
         .view
@@ -372,4 +374,55 @@ fn confirmed_but_missing_item_can_be_dismissed_without_replaying_creation() {
         &attempt,
         Ok(json!({"ok":true,"record":created()}))
     ));
+}
+
+#[test]
+fn full_shell_replacement_retains_exclusion_and_late_completion_without_replay() {
+    let mut original = shell();
+    let account = original.core.active_account.clone();
+    let attempt = begin_current(&mut original);
+    let data = loaded(&original);
+    validate(&mut original, &attempt, &data).unwrap();
+    let mut replacement = shell();
+    replacement.core.active_account = account;
+    replacement.slack_lists.scope = Scope::capture(&replacement);
+    let _old = std::mem::replace(&mut original, replacement);
+    assert!(blocks_mutation(&original));
+    assert!(!presentation(&original).enabled);
+    assert!(!retire(&mut original, attempt.serial));
+    assert!(!finish(
+        &mut original,
+        &attempt,
+        Err(Error::Transport("lost old reply".into()))
+    ));
+    assert!(blocks_mutation(&original));
+    assert!(presentation(&original).operation.unwrap().can_retire);
+    assert!(!validate(&mut original, &attempt, &data).is_ok());
+    assert!(retire(&mut original, attempt.serial));
+    assert!(!blocks_mutation(&original));
+}
+
+#[test]
+fn owner_rotation_cannot_retire_still_running_creation_barrier() {
+    let mut s = shell();
+    let a = begin_current(&mut s);
+    let data = loaded(&s);
+    validate(&mut s, &a, &data).unwrap();
+    s.core.account_epoch += 1;
+    assert!(poll(&mut s));
+    s.slack_lists.scope = Scope::capture(&s);
+    assert!(receipt(&s).unwrap().stage == Stage::Uncertain);
+    assert!(blocks_mutation(&s));
+    let p = presentation(&s).operation.unwrap();
+    assert!(p.pending);
+    assert!(!p.can_retire);
+    assert!(!retire(&mut s, a.serial));
+    assert!(!finish(
+        &mut s,
+        &a,
+        Err(Error::Transport("late unknown".into()))
+    ));
+    assert!(!presentation(&s).operation.unwrap().pending);
+    assert!(retire(&mut s, a.serial));
+    assert!(!blocks_mutation(&s));
 }

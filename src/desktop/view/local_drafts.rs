@@ -16,7 +16,7 @@ pub(super) fn LocalDraftRows(mut state: Signal<ShellState>) -> Element {
         return rsx! {};
     };
     rsx! {
-        recovery::RecoveryRows {state}
+        recovery::RecoveryRows {key:"{shell.core.active_account:?}:{shell.core.account_epoch}:{shell.draft_writes.view_id}:{team}",state}
         for (key,draft) in shell.core.drafts.items.iter().filter(|(key,_)|&key.team==team) {
             {
                 let identity=serde_json::to_string(key).unwrap();

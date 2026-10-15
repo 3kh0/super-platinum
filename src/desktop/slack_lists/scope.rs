@@ -4,6 +4,9 @@ use super_platinum_core::{config::WorkspaceSession, slack::Transport};
 
 #[derive(Clone)]
 pub(super) struct Scope {
+    pub(super) identity: Arc<()>,
+    cookie: Option<String>,
+    enterprise: Option<String>,
     account: Option<String>,
     epoch: u64,
     pub team: String,
@@ -20,6 +23,8 @@ impl Scope {
     /// Receipt reconciliation needs identities, never retained credentials or a client.
     pub(super) fn receipt_only(&self) -> Self {
         Self {
+            cookie: None,
+            enterprise: None,
             transport: None,
             session: None,
             ..self.clone()
@@ -57,6 +62,9 @@ impl Scope {
             return None;
         }
         Some(Self {
+            identity: Arc::new(()),
+            cookie: shell.core.session.as_ref().map(|s| s.d_cookie.clone()),
+            enterprise: session.as_ref().and_then(|s| s.enterprise_id.clone()),
             account: shell.core.active_account.clone(),
             epoch: shell.core.account_epoch,
             team: team.clone(),
@@ -79,6 +87,8 @@ impl Scope {
             .as_ref()
             .and_then(|s| s.workspaces.get(&self.team));
         self.account == shell.core.active_account
+            && self.cookie.as_deref() == shell.core.session.as_ref().map(|s| s.d_cookie.as_str())
+            && self.enterprise.as_deref() == session.and_then(|s| s.enterprise_id.as_deref())
             && self.epoch == shell.core.account_epoch
             && shell
                 .core

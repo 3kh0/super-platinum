@@ -2,52 +2,11 @@
 
 use crate::media::MediaUri;
 use dioxus::prelude::*;
-use std::collections::HashMap;
 use std::sync::Arc;
-use super_platinum_core::slack::{Transport, models::Emoji};
-use super_platinum_core::state::{EmojiSource, custom_emoji_source};
 
 use crate::state::{Overlay, ReactionTarget, ShellState};
 
-#[derive(Clone)]
-struct Choice {
-    name: String,
-    glyph: String,
-    url: Option<String>,
-    aliases: String,
-}
-
-pub struct CatalogCache {
-    transport: std::sync::Weak<Transport>,
-    choices: Arc<Vec<Choice>>,
-    loaded: std::time::Instant,
-}
-
-fn cached(
-    shell: &ShellState,
-    team: &str,
-    transport: &Arc<Transport>,
-    require_fresh: bool,
-) -> Option<Arc<Vec<Choice>>> {
-    let cache = shell.emoji_catalog_loaded.get(team)?;
-    ((!require_fresh || cache.loaded.elapsed() < std::time::Duration::from_secs(300))
-        && cache
-            .transport
-            .upgrade()
-            .is_some_and(|loaded| Arc::ptr_eq(&loaded, transport)))
-    .then(|| cache.choices.clone())
-}
-
-const COMMON: &[&str] = &[
-    "+1",
-    "heart",
-    "eyes",
-    "joy",
-    "tada",
-    "fire",
-    "rocket",
-    "white_check_mark",
-];
+type Choice = crate::emoji_catalog::PickerChoice;
 
 pub fn open(mut state: Signal<ShellState>, channel: String, ts: String) {
     let mut shell = state.write();
@@ -56,56 +15,6 @@ pub fn open(mut state: Signal<ShellState>, channel: String, ts: String) {
     };
     shell.reaction_target = Some(ReactionTarget { team, channel, ts });
     shell.overlay = Some(Overlay::ReactionPicker);
-}
-
-fn choices(shell: &ShellState) -> Vec<Choice> {
-    let workspace = shell
-        .core
-        .active_team
-        .as_ref()
-        .and_then(|team| shell.core.workspaces.get(team));
-    build_choices(
-        workspace
-            .map(|workspace| &workspace.custom_emoji)
-            .unwrap_or(&HashMap::new()),
-    )
-}
-
-fn build_choices(custom: &HashMap<String, Emoji>) -> Vec<Choice> {
-    let mut result: Vec<_> = super_platinum_core::state::standard_emoji_catalog()
-        .iter()
-        .filter(|emoji| !custom.contains_key(emoji.name))
-        .map(|emoji| Choice {
-            name: emoji.name.into(),
-            glyph: emoji.glyph.into(),
-            url: None,
-            aliases: emoji.aliases.clone(),
-        })
-        .collect();
-    result.extend(custom.keys().filter_map(|name| {
-        let (glyph, url) = match custom_emoji_source(custom, name)? {
-            EmojiSource::Url(url) => (String::new(), Some(url.to_owned())),
-            EmojiSource::Unicode(glyph) => (glyph.to_owned(), None),
-        };
-        Some(Choice {
-            name: name.clone(),
-            glyph,
-            url,
-            aliases: name.to_lowercase(),
-        })
-    }));
-    result.sort_by(|a, b| {
-        let rank = |name: &str| {
-            COMMON
-                .iter()
-                .position(|common| *common == name)
-                .unwrap_or(COMMON.len())
-        };
-        rank(&a.name)
-            .cmp(&rank(&b.name))
-            .then_with(|| a.name.cmp(&b.name))
-    });
-    result
 }
 
 fn matching(choices: &[Choice], query: &str) -> Vec<usize> {
@@ -199,7 +108,7 @@ fn owns_reaction(shell: &ShellState, target: &ReactionTarget, name: &str) -> boo
 pub fn ReactionPicker(mut state: Signal<ShellState>) -> Element {
     rsx! {EmojiPicker {
         state,title:"Add a reaction".to_owned(),
-        onchoose:move |name|choose(state,name),
+        onchoose:move |selection:crate::emoji_catalog::Selection|choose(state,selection.name),
         onclose:move |_|state.write().overlay=None,
     }}
 }
@@ -210,90 +119,57 @@ pub fn ReactionPicker(mut state: Signal<ShellState>) -> Element {
 pub(crate) fn EmojiPicker(
     mut state: Signal<ShellState>,
     title: String,
-    onchoose: EventHandler<String>,
+    #[props(default)] composer_visit: Option<u64>,
+    onchoose: EventHandler<crate::emoji_catalog::Selection>,
     onclose: EventHandler,
 ) -> Element {
-    // Rebuild only on opening/catalog arrival, never on ordinary media paints.
+    let _render_release = crate::performance::emoji_retirement::scope(12, 0, 0);
     let mut catalog = use_signal(|| {
-        let shell = state.peek();
-        if let (Some(team), Some(transport)) = (&shell.core.active_team, &shell.core.transport) {
-            if let Some(catalog) = cached(&shell, team, transport, false) {
-                return catalog;
-            }
-        }
-        Arc::new(choices(&shell))
+        Arc::new(crate::performance::emoji_retirement::payload(
+            Vec::<Choice>::new(),
+            2,
+        ))
     });
-    let mut catalog_status = use_signal(String::new);
+    let mut catalog_status = use_signal(|| "Loading emoji?".to_owned());
+    let requested = use_hook(|| std::rc::Rc::new(std::cell::RefCell::new(None::<String>)));
     use_future(move || async move {
-        let Some((transport, client, sessions)) = crate::bootstrap::credentials(&state) else {
-            return;
-        };
-        let Some(team) = state.peek().core.active_team.clone() else {
-            return;
-        };
-        let Some(session) = sessions.iter().find(|session| session.team_id == team) else {
-            return;
-        };
-        if let Some(loaded) = cached(&state.peek(), &team, &transport, true) {
-            catalog.set(loaded);
-            return;
-        }
-        catalog_status.set("Loading workspace emoji…".into());
-        let result =
-            super_platinum_core::slack::api::fetch_emoji_catalog(&transport, &client, session)
-                .await;
-        if state
-            .peek()
-            .core
-            .transport
-            .as_ref()
-            .is_none_or(|current| !Arc::ptr_eq(current, &transport))
-        {
-            return;
-        }
-        match result {
-            Ok(emojis) => {
-                let built = tokio::task::spawn_blocking(move || {
-                    let map: HashMap<_, _> = emojis
-                        .into_iter()
-                        .map(|emoji| (emoji.name.clone(), emoji))
-                        .collect();
-                    let choices = Arc::new(build_choices(&map));
-                    (map, choices)
-                })
-                .await;
-                let Ok((emojis, loaded_choices)) = built else {
-                    catalog_status.set("Workspace emoji unavailable. Reopen to retry.".into());
-                    return;
-                };
-                let mut shell = state.write();
-                if shell
-                    .core
-                    .transport
-                    .as_ref()
-                    .is_none_or(|current| !Arc::ptr_eq(current, &transport))
-                {
-                    return;
-                }
-                if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-                    workspace.custom_emoji = emojis;
-                }
-                shell.emoji_catalog_loaded.insert(
-                    team.clone(),
-                    CatalogCache {
-                        transport: Arc::downgrade(&transport),
-                        choices: loaded_choices.clone(),
-                        loaded: std::time::Instant::now(),
-                    },
-                );
-                if shell.core.active_team.as_ref() == Some(&team) {
-                    catalog.set(loaded_choices);
-                    shell.refresh_from_core();
-                }
+        crate::emoji_preferences::ensure(state);
+        crate::emoji_catalog::ensure(state);
+    });
+    use_effect(move || {
+        let _effect_release = crate::performance::emoji_retirement::scope(11, 0, 0);
+        let shell = state.read();
+        let loaded = crate::emoji_catalog::current(&shell);
+        let revision = serde_json::to_string(&(
+            shell.core.active_account.clone(),
+            shell.core.account_epoch,
+            shell.core.active_team.clone(),
+            shell
+                .core
+                .active_team
+                .as_ref()
+                .and_then(|t| shell.core.workspaces.get(t))
+                .map(|w| (w.custom_emoji_revision, w.locale.clone())),
+        ))
+        .unwrap();
+        drop(shell);
+        if let Some(loaded) = loaded {
+            if !Arc::ptr_eq(&catalog.peek(), &loaded.picker) {
+                catalog.set(loaded.picker.clone());
+            }
+            if !catalog_status.peek().is_empty() {
                 catalog_status.set(String::new());
             }
-            Err(_error) => {
-                catalog_status.set("Workspace emoji unavailable. Reopen to retry.".into());
+        } else {
+            if requested.borrow().as_ref() != Some(&revision) {
+                *requested.borrow_mut() = Some(revision);
+                crate::emoji_catalog::ensure(state);
+            }
+            if !catalog.peek().is_empty() {
+                catalog.set(Arc::new(crate::performance::emoji_retirement::payload(
+                    vec![],
+                    2,
+                )));
             }
         }
     });
@@ -308,10 +184,25 @@ pub(crate) fn EmojiPicker(
     let keyboard_catalog = catalog.clone();
     let keyboard_matches = matches.clone();
     let snapshot = state.read();
+    // An effect publishes rows after the shell's new Loaded allocation arrives.
+    // During that frame gap, never bind old visible rows to the new identity.
+    let displayed = crate::emoji_catalog::current(&snapshot)
+        .filter(|loaded| Arc::ptr_eq(&catalog, &loaded.picker));
+    let choices_ready = displayed.is_some()
+        && (composer_visit.is_none()
+            || snapshot
+                .core
+                .active_team
+                .as_ref()
+                .and_then(|team| snapshot.core.workspaces.get(team))
+                .is_some_and(|workspace| workspace.emoji_preferences.loaded()));
+    let keyboard_displayed = displayed.clone();
     rsx! {
         div { class: "scrim", onclick: move |_| onclose.call(()) }
         section { id:"shell-overlay-dialog", class: "modal emoji-picker", role: "dialog", "aria-modal": "true", "aria-labelledby": "emoji-picker-title",
             tabindex:"-1","data-keyboard-dialog":"true","data-dialog-kind":"other",
+            "data-emoji-choice-ready":if choices_ready {"true"} else {"false"},
+            "data-emoji-lifecycle-catalog":if crate::performance::emoji_lifecycle::enabled() || crate::performance::emoji_retirement::enabled() { displayed.as_ref().map(|c|c.token.clone()) } else {None},
             onkeydown:move |event|if event.key()==Key::Escape {event.prevent_default();event.stop_propagation();onclose.call(());},
             header {
                 h2 { id: "emoji-picker-title", "{title}" }
@@ -336,7 +227,11 @@ pub(crate) fn EmojiPicker(
                         Key::ArrowUp => Some(active.saturating_sub(8)),
                         Key::Enter if visible > 0 => {
                             event.prevent_default();
-                            onchoose.call(keyboard_catalog[keyboard_matches[active]].name.clone());
+                            if choices_ready && keyboard_displayed.as_ref().is_some_and(|shown|crate::emoji_catalog::current(&state.peek()).is_some_and(|current|Arc::ptr_eq(shown,&current))) {
+                                onchoose.call(crate::emoji_catalog::Selection {name:keyboard_catalog[keyboard_matches[active]].name.clone(),query:query(),loaded:keyboard_displayed.as_ref().unwrap().clone()});
+                            } else if let Some(serial) = composer_visit {
+                                crate::composer_emoji::release_choice(serial);
+                            }
                             None
                         }
                         _ => None,
@@ -353,6 +248,7 @@ pub(crate) fn EmojiPicker(
                     {
                         let choice = &catalog[*choice_index];
                         let name = choice.name.clone();
+                        let displayed = displayed.clone();
                         let image = choice.url.as_ref().map(|url| snapshot.media.register_emoji(&choice.name, url));
                         rsx! {
                             button {
@@ -362,7 +258,8 @@ pub(crate) fn EmojiPicker(
                                 "aria-selected": if index == active { "true" } else { "false" },
                                 "aria-label": "{choice.name}",
                                 title: ":{choice.name}:",
-                                onclick: move |_| onchoose.call(name.clone()),
+                                disabled:!choices_ready,
+                                onclick: move |_| {if choices_ready && displayed.as_ref().is_some_and(|shown|crate::emoji_catalog::current(&state.peek()).is_some_and(|current|Arc::ptr_eq(shown,&current))) {onchoose.call(crate::emoji_catalog::Selection {name:name.clone(),query:query(),loaded:displayed.as_ref().unwrap().clone()});} else if let Some(serial) = composer_visit {crate::composer_emoji::release_choice(serial);}},
                                 if let Some(image) = image {
                                     img { src: "{image.webview_uri_at(snapshot.media_epoch)}", alt: "" }
                                 } else { "{choice.glyph}" }

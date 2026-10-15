@@ -425,7 +425,17 @@ fn workflow_status(view: &View) -> &'static str {
     let Some(stored) = &view.stored else {
         return "On this device";
     };
+    let schedule = stored.state.consumption().is_some_and(|intent| {
+        matches!(
+            intent.kind,
+            super_platinum_core::drafts::sync::ConsumeKind::Schedule { .. }
+        )
+    });
     match stored.state.workflow() {
+        Workflow::Uncertain(_) if schedule => "Schedule unconfirmed",
+        Workflow::Rejected(_) if schedule => "Schedule rejected",
+        Workflow::InFlight(_) if schedule => "Waiting for schedule confirmation",
+        Workflow::Idle if schedule => "Saved schedule waiting",
         Workflow::Uncertain(_) if stored.state.consumption().is_some() => "Delivery unconfirmed",
         Workflow::Uncertain(_) => "Draft change unconfirmed",
         Workflow::Rejected(_) => "Not sent",
@@ -530,7 +540,19 @@ pub(crate) fn recovery_rows(shell: &ShellState) -> Vec<RecoveryRow> {
                 .flatten()
         });
         if let Some(snapshot) = detached {
-            let explanation = if super::recovery::rejected(view).is_some() {
+            let schedule = stored.state.consumption().is_some_and(|intent| {
+                matches!(
+                    intent.kind,
+                    super_platinum_core::drafts::sync::ConsumeKind::Schedule { .. }
+                )
+            });
+            let explanation = if schedule && stored.state.rejected_schedule().is_some() {
+                "This message was not scheduled. Review the exact saved message to retry the same schedule or choose a new time. Your separate composer draft will be kept."
+            } else if schedule && super::recovery::operation(view).is_some() {
+                "Check the saved schedule in Slack. This reads only the existing draft; your current text will be kept and nothing will be scheduled again."
+            } else if schedule {
+                "This saved schedule is separate from your current draft. Its result cannot be checked here yet. Keep this content while reviewing the schedule in Slack."
+            } else if super::recovery::rejected(view).is_some() {
                 "Slack did not send this message. Return it to a draft to edit it; nothing will be sent automatically."
             } else {
                 "This saved content is separate from your current draft. Check the conversation before sending it again."
@@ -538,7 +560,7 @@ pub(crate) fn recovery_rows(shell: &ShellState) -> Vec<RecoveryRow> {
             rows.push(RecoveryRow {
                 writer_id: None,
                 key: key.clone(),
-                kind: "delivery",
+                kind: if schedule { "schedule" } else { "delivery" },
                 status: workflow_status(view),
                 explanation,
                 snapshot: Some(snapshot),
@@ -563,3 +585,7 @@ mod tests;
 #[path = "session_fixture.rs"]
 mod fixture;
 pub(crate) use fixture::apply as fixture;
+
+#[cfg(test)]
+#[path = "session_schedule_tests.rs"]
+mod schedule_tests;

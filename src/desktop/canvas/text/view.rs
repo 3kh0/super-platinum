@@ -26,6 +26,21 @@ pub(in crate::canvas) fn Editor(
         "{MOUNT}\nmountCanvasText({generation},{visit},{});",
         serde_json::to_string(&section).unwrap()
     );
+    let label = d.kind.label();
+    let replacement = matches!(d.kind, Kind::Replacement);
+    let deletion = replacement || d.kind.action() == Some(Action::Delete);
+    let insertion = matches!(d.kind.action(), Some(Action::Before | Action::After));
+    let field_label = if insertion || deletion {
+        label
+    } else {
+        "Paragraph"
+    }
+    .to_owned();
+    let replacement_target = d
+        .pending
+        .as_ref()
+        .and_then(checklist::replacement_ops::replacement)
+        .unwrap_or("");
     let pending = d.pending.is_some();
     let busy = d.reading || pending;
     let stale = !pending && !current(&state.read(), d);
@@ -44,19 +59,21 @@ pub(in crate::canvas) fn Editor(
         Some(checklist::Stage::Uncertain) => "Unconfirmed",
         Some(checklist::Stage::AwaitingRead) => "Checking…",
         _ if busy => "Saving…",
+        _ if deletion => "Delete paragraph",
+        _ if insertion => "Add paragraph",
         _ => "Save",
     };
     rsx! {
-        section { id:"canvas-text-editor",class:"canvas-text-editor","data-editor-generation":generation,"data-canvas-visit":visit,
-            "aria-label":"Edit paragraph",
-            onmounted:move |_|{dioxus::document::eval(&mount);},
+        section { id:"canvas-text-editor",class:"canvas-text-editor","data-editor-generation":generation,"data-canvas-visit":visit,"data-replacement-target":replacement_target,
+            "aria-label":label,
+            onmounted:move |_|{dioxus::document::eval(&mount);if deletion {dioxus::document::eval(&format!("queueMicrotask(()=>{{const root=document.getElementById('canvas-text-editor');if(root?.dataset.editorGeneration==='{generation}')root.querySelector('#canvas-text-cancel')?.focus();}});"));}},
             onkeydown:move |event| {
                 if event.key()==Key::Escape {
                     event.prevent_default();event.stop_propagation();if cancellable {cancel(state,draft,generation);}
                 }
             },
-            crate::view::rich_editor::RichEditor {id:"canvas-text-draft",label:"Paragraph".to_owned(),blocks,disabled,expected_generation:Some(generation)},
-            p {class:"canvas-text-hint","Edit this paragraph. Use Shift+Enter for a line break."}
+            crate::view::rich_editor::RichEditor {id:"canvas-text-draft",label:field_label,blocks,disabled:disabled||deletion,autofocus:!deletion,expected_generation:Some(generation)},
+            p {class:"canvas-text-hint",if replacement {"Delete this paragraph and leave an empty paragraph in its place? Its text and formatting will be removed. If the result cannot be confirmed, both changes stay locked for review."} else if deletion {"Delete this paragraph? Its text and formatting will be removed from this canvas."} else if insertion {"Add one paragraph here. Use Shift+Enter for a line break."} else {"Edit this paragraph. Use Shift+Enter for a line break."}}
             if stale {p {role:"status","This canvas changed. Cancel and refresh before saving this paragraph."}}
             if let Some(error)=error {p {role:"alert","{error}"}}
             div {class:"canvas-text-actions",
@@ -69,6 +86,7 @@ pub(in crate::canvas) fn Editor(
                             let Some(d)=d.as_mut().filter(|d|d.generation==generation&&!d.reading&&d.pending.is_none()) else {return;};
                             d.reading=true;d.error=None;
                         }
+                        if deletion { super::save::submit(state,reader,draft,generation,TextDraft::default()); return; }
                         spawn(async move {
                             // Snapshot and disable in the same JS task: no keystroke may
                             // change a draft after the value authorized for dispatch.
@@ -100,8 +118,10 @@ const MOUNT: &str = r#"function mountCanvasText(generation,visit,section){
   if(!dialog?.isConnected||dialog.dataset.dialogGeneration!==String(visit)||dialog.querySelector('#canvas-text-editor'))return;
   const active=document.activeElement;
   if(active&&active!==document.body&&!editor.contains(active))return;
-  const paragraph=[...dialog.querySelectorAll('[data-canvas-text-section]')].find(e=>e.dataset.canvasTextSection===section);
-  const target=paragraph?.querySelector('.canvas-text-open');
+  const original=[...dialog.querySelectorAll('[data-canvas-text-section]')].find(e=>e.dataset.canvasTextSection===section);
+  const wanted=original?section:(editor.dataset.replacementTarget||section);
+  const paragraph=[...dialog.querySelectorAll('[data-canvas-text-section]')].find(e=>e.dataset.canvasTextSection===wanted);
+  const target=paragraph?.querySelector('.canvas-text-open:not(:disabled)')||(!editor.dataset.replacementTarget&&dialog.querySelector('.canvas-paragraph-actions button:not(:disabled)'));
   if(target&&!target.disabled){target.focus({preventScroll:true});target.scrollIntoView({block:'nearest'});}
  });observer.observe(dialog,{childList:true,subtree:true});
 }"#;

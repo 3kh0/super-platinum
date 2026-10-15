@@ -173,3 +173,102 @@ fn canonical_snapshot_rejects_cross_document_missing_index_objects_and_followups
         );
     }
 }
+
+fn preserialized_snapshot_load(
+    original: &CanvasCollabSnapshot,
+    row: &RawMessage,
+    history: Option<&RawMessage>,
+) -> LoadDataResponse {
+    let payload = original.load.payload().unwrap().unwrap().remove(7).unwrap();
+    let response = original
+        .load
+        .response()
+        .unwrap()
+        .replace_fields(2, &[nested(2, &payload)])
+        .unwrap();
+    let record = message(vec![uint(1, 2), nested(2, row)]);
+    let mut items = vec![nested(1, &record)];
+    if let Some(history) = history {
+        items.push(nested(2, history));
+    }
+    LoadDataResponse::decode(message(vec![nested(2, &response), nested(3, &message(items))]).raw())
+        .unwrap()
+}
+#[test]
+fn preserialized_snapshot_keeps_canonical_ownership_and_opaque_history() {
+    let original = snapshot();
+    let history = message(vec![
+        text(1, original.sections[0].id()),
+        uint(2, 0),
+        uint(3, 100),
+        text(5, "synthetic opaque history"),
+        text(90, "unknown"),
+    ]);
+    let load = preserialized_snapshot_load(&original, original.sections[0].raw(), Some(&history));
+    let wire = load.raw().raw().to_vec();
+    let result =
+        CanvasCollabSnapshot::from_responses(original.file.clone(), original.init.clone(), load)
+            .unwrap();
+    assert_eq!(result.file_id(), original.file_id());
+    assert_eq!(result.thread, original.thread);
+    assert_eq!(result.document, original.document);
+    assert_eq!(result.sections[0].crdt().unwrap().unwrap(), history);
+    assert_eq!(
+        result.sections[0].raw().string(80).unwrap(),
+        Some("retained-unknown")
+    );
+    assert_eq!(result.load.raw().raw(), wire);
+    // Loading is not history acceptance: no sidecar does not invent a session.
+    let load = preserialized_snapshot_load(&original, original.sections[0].raw(), None);
+    let result = CanvasCollabSnapshot::from_responses(original.file, original.init, load).unwrap();
+    assert!(result.sections[0].crdt().unwrap().is_none());
+}
+#[test]
+fn preserialized_snapshot_still_refuses_cross_owner_or_incomplete_inventory() {
+    let original = snapshot();
+    for tag in [6, 7] {
+        let wrong = original.sections[0]
+            .raw()
+            .replace_fields(tag, &[text(tag, "Other")])
+            .unwrap();
+        let load = preserialized_snapshot_load(&original, &wrong, None);
+        assert!(
+            CanvasCollabSnapshot::from_responses(
+                original.file.clone(),
+                original.init.clone(),
+                load
+            )
+            .is_err()
+        );
+    }
+    let load = preserialized_snapshot_load(&original, original.sections[0].raw(), None);
+    let response = load.response().unwrap();
+    let empty_index = message(vec![text(1, "Section/Dtest"), uint(6, 1)]);
+    for response in [
+        response.remove(3).unwrap(),
+        response
+            .replace_fields(3, &[nested(3, &empty_index)])
+            .unwrap(),
+        response
+            .replace_fields(4, &[nested(4, &message(vec![]))])
+            .unwrap(),
+    ] {
+        let raw = load
+            .raw()
+            .replace_fields(2, &[nested(2, &response)])
+            .unwrap();
+        assert!(
+            CanvasCollabSnapshot::from_responses(
+                original.file.clone(),
+                original.init.clone(),
+                LoadDataResponse::decode(raw.raw()).unwrap()
+            )
+            .is_err()
+        );
+    }
+    let mut wrong_file = original.file.clone();
+    wrong_file
+        .extra
+        .insert("quip_thread_id".into(), serde_json::json!("OtherThread"));
+    assert!(CanvasCollabSnapshot::from_responses(wrong_file, original.init, load).is_err());
+}

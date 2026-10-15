@@ -1,0 +1,4828 @@
+{
+  "schema": 1,
+  "processes": [
+    {
+      "process": "W1",
+      "cycles": [
+        {
+          "cycle": 1,
+          "account_ordinal": 0,
+          "subcases": [
+            {
+              "id": "W1/c1/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c1/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "W1/c1/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c1/refresh.picker/open",
+                "W1/c1/refresh.picker/refresh",
+                "W1/c1/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "W1/c1/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c1/completion.channel/query",
+                "W1/c1/completion.channel/dismiss",
+                "W1/c1/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "W1/c1/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c1/completion.thread/query",
+                "W1/c1/completion.thread/dismiss",
+                "W1/c1/completion.thread/close"
+              ]
+            },
+            {
+              "id": "W1/c1/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "W1/c1/reject.local/start",
+                "W1/c1/reject.local/invalidate",
+                "W1/c1/reject.local/release"
+              ]
+            },
+            {
+              "id": "W1/c1/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "W1/c1/reject.remote/start",
+                "W1/c1/reject.remote/invalidate",
+                "W1/c1/reject.remote/release"
+              ]
+            },
+            {
+              "id": "W1/c1/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c1/account.reset/query",
+                "W1/c1/account.reset/open",
+                "W1/c1/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 2,
+          "account_ordinal": 1,
+          "subcases": [
+            {
+              "id": "W1/c2/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c2/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "W1/c2/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c2/refresh.picker/open",
+                "W1/c2/refresh.picker/refresh",
+                "W1/c2/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "W1/c2/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c2/completion.channel/query",
+                "W1/c2/completion.channel/dismiss",
+                "W1/c2/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "W1/c2/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c2/completion.thread/query",
+                "W1/c2/completion.thread/dismiss",
+                "W1/c2/completion.thread/close"
+              ]
+            },
+            {
+              "id": "W1/c2/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "W1/c2/reject.local/start",
+                "W1/c2/reject.local/invalidate",
+                "W1/c2/reject.local/release"
+              ]
+            },
+            {
+              "id": "W1/c2/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "W1/c2/reject.remote/start",
+                "W1/c2/reject.remote/invalidate",
+                "W1/c2/reject.remote/release"
+              ]
+            },
+            {
+              "id": "W1/c2/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c2/account.reset/query",
+                "W1/c2/account.reset/open",
+                "W1/c2/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 3,
+          "account_ordinal": 2,
+          "subcases": [
+            {
+              "id": "W1/c3/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c3/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "W1/c3/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c3/refresh.picker/open",
+                "W1/c3/refresh.picker/refresh",
+                "W1/c3/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "W1/c3/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c3/completion.channel/query",
+                "W1/c3/completion.channel/dismiss",
+                "W1/c3/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "W1/c3/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c3/completion.thread/query",
+                "W1/c3/completion.thread/dismiss",
+                "W1/c3/completion.thread/close"
+              ]
+            },
+            {
+              "id": "W1/c3/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "W1/c3/reject.local/start",
+                "W1/c3/reject.local/invalidate",
+                "W1/c3/reject.local/release"
+              ]
+            },
+            {
+              "id": "W1/c3/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "W1/c3/reject.remote/start",
+                "W1/c3/reject.remote/invalidate",
+                "W1/c3/reject.remote/release"
+              ]
+            },
+            {
+              "id": "W1/c3/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "W1/c3/account.reset/query",
+                "W1/c3/account.reset/open",
+                "W1/c3/account.reset/replace"
+              ]
+            }
+          ]
+        }
+      ],
+      "shutdown": {
+        "id": "W1/shutdown",
+        "subcase": "shutdown.waiting",
+        "account_ordinal": 3,
+        "close_id": "W1/shutdown/close"
+      },
+      "ordered_actions": [
+        {
+          "id": "W1/setup/boot-ready",
+          "kind": "setup",
+          "operation": "probe install and empty query handshake"
+        },
+        {
+          "id": "W1/c1/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "W1/c1/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "W1/c1/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "W1/c1/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c1/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W1/c1/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W1/c1/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "W1/c1/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c1/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W1/c1/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W1/c1/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "W1/c1/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c1/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "W1/c1/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "W1/c1/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W1/c1/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W1/c1/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "W1/c1/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c1/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W1/c1/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W1/c1/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "W1/c1/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c1/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W1/c1/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W1/c1/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W1/c1/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "W1/c1/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c1/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W1/c1/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "W1/c1/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "W1/c1/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W1/c1/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W1/c1/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "W1/c1/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c2/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "W1/c2/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "W1/c2/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "W1/c2/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c2/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W1/c2/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W1/c2/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "W1/c2/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c2/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W1/c2/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W1/c2/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "W1/c2/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c2/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "W1/c2/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "W1/c2/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W1/c2/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W1/c2/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "W1/c2/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c2/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W1/c2/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W1/c2/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "W1/c2/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c2/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W1/c2/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W1/c2/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W1/c2/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "W1/c2/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c2/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W1/c2/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "W1/c2/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "W1/c2/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W1/c2/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W1/c2/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "W1/c2/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c3/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "W1/c3/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "W1/c3/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "W1/c3/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c3/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W1/c3/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W1/c3/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "W1/c3/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c3/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W1/c3/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W1/c3/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "W1/c3/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c3/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "W1/c3/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "W1/c3/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W1/c3/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W1/c3/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "W1/c3/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c3/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W1/c3/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W1/c3/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "W1/c3/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c3/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W1/c3/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W1/c3/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W1/c3/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "W1/c3/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/c3/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W1/c3/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "W1/c3/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "W1/c3/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W1/c3/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W1/c3/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "W1/c3/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "W1/setup/shutdown/seed-picker-open",
+          "kind": "setup",
+          "operation": "seed-picker-open"
+        },
+        {
+          "id": "W1/setup/shutdown/seed-picker-close",
+          "kind": "setup",
+          "operation": "seed-picker-close"
+        },
+        {
+          "id": "W1/setup/shutdown/query",
+          "kind": "setup",
+          "operation": "query"
+        },
+        {
+          "id": "W1/setup/shutdown/dismiss",
+          "kind": "setup",
+          "operation": "dismiss"
+        },
+        {
+          "id": "W1/shutdown/close",
+          "kind": "shutdown",
+          "subcase": "shutdown.waiting"
+        }
+      ],
+      "action_count": 87
+    },
+    {
+      "process": "B1",
+      "cycles": [
+        {
+          "cycle": 1,
+          "account_ordinal": 0,
+          "subcases": [
+            {
+              "id": "B1/c1/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c1/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "B1/c1/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c1/refresh.picker/open",
+                "B1/c1/refresh.picker/refresh",
+                "B1/c1/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "B1/c1/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c1/completion.channel/query",
+                "B1/c1/completion.channel/dismiss",
+                "B1/c1/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "B1/c1/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c1/completion.thread/query",
+                "B1/c1/completion.thread/dismiss",
+                "B1/c1/completion.thread/close"
+              ]
+            },
+            {
+              "id": "B1/c1/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "B1/c1/reject.local/start",
+                "B1/c1/reject.local/invalidate",
+                "B1/c1/reject.local/release"
+              ]
+            },
+            {
+              "id": "B1/c1/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "B1/c1/reject.remote/start",
+                "B1/c1/reject.remote/invalidate",
+                "B1/c1/reject.remote/release"
+              ]
+            },
+            {
+              "id": "B1/c1/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c1/account.reset/query",
+                "B1/c1/account.reset/open",
+                "B1/c1/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 2,
+          "account_ordinal": 1,
+          "subcases": [
+            {
+              "id": "B1/c2/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c2/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "B1/c2/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c2/refresh.picker/open",
+                "B1/c2/refresh.picker/refresh",
+                "B1/c2/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "B1/c2/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c2/completion.channel/query",
+                "B1/c2/completion.channel/dismiss",
+                "B1/c2/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "B1/c2/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c2/completion.thread/query",
+                "B1/c2/completion.thread/dismiss",
+                "B1/c2/completion.thread/close"
+              ]
+            },
+            {
+              "id": "B1/c2/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "B1/c2/reject.local/start",
+                "B1/c2/reject.local/invalidate",
+                "B1/c2/reject.local/release"
+              ]
+            },
+            {
+              "id": "B1/c2/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "B1/c2/reject.remote/start",
+                "B1/c2/reject.remote/invalidate",
+                "B1/c2/reject.remote/release"
+              ]
+            },
+            {
+              "id": "B1/c2/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c2/account.reset/query",
+                "B1/c2/account.reset/open",
+                "B1/c2/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 3,
+          "account_ordinal": 2,
+          "subcases": [
+            {
+              "id": "B1/c3/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c3/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "B1/c3/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c3/refresh.picker/open",
+                "B1/c3/refresh.picker/refresh",
+                "B1/c3/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "B1/c3/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c3/completion.channel/query",
+                "B1/c3/completion.channel/dismiss",
+                "B1/c3/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "B1/c3/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c3/completion.thread/query",
+                "B1/c3/completion.thread/dismiss",
+                "B1/c3/completion.thread/close"
+              ]
+            },
+            {
+              "id": "B1/c3/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "B1/c3/reject.local/start",
+                "B1/c3/reject.local/invalidate",
+                "B1/c3/reject.local/release"
+              ]
+            },
+            {
+              "id": "B1/c3/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "B1/c3/reject.remote/start",
+                "B1/c3/reject.remote/invalidate",
+                "B1/c3/reject.remote/release"
+              ]
+            },
+            {
+              "id": "B1/c3/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "B1/c3/account.reset/query",
+                "B1/c3/account.reset/open",
+                "B1/c3/account.reset/replace"
+              ]
+            }
+          ]
+        }
+      ],
+      "shutdown": {
+        "id": "B1/shutdown",
+        "subcase": "shutdown.building",
+        "account_ordinal": 3,
+        "close_id": "B1/shutdown/close"
+      },
+      "ordered_actions": [
+        {
+          "id": "B1/setup/boot-ready",
+          "kind": "setup",
+          "operation": "probe install and empty query handshake"
+        },
+        {
+          "id": "B1/c1/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "B1/c1/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "B1/c1/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "B1/c1/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c1/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B1/c1/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B1/c1/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "B1/c1/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c1/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B1/c1/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B1/c1/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "B1/c1/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c1/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "B1/c1/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "B1/c1/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B1/c1/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B1/c1/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "B1/c1/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c1/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B1/c1/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B1/c1/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "B1/c1/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c1/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B1/c1/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B1/c1/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B1/c1/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "B1/c1/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c1/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B1/c1/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "B1/c1/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "B1/c1/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B1/c1/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B1/c1/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "B1/c1/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c2/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "B1/c2/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "B1/c2/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "B1/c2/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c2/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B1/c2/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B1/c2/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "B1/c2/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c2/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B1/c2/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B1/c2/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "B1/c2/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c2/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "B1/c2/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "B1/c2/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B1/c2/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B1/c2/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "B1/c2/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c2/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B1/c2/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B1/c2/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "B1/c2/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c2/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B1/c2/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B1/c2/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B1/c2/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "B1/c2/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c2/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B1/c2/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "B1/c2/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "B1/c2/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B1/c2/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B1/c2/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "B1/c2/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c3/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "B1/c3/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "B1/c3/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "B1/c3/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c3/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B1/c3/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B1/c3/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "B1/c3/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c3/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B1/c3/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B1/c3/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "B1/c3/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c3/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "B1/c3/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "B1/c3/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B1/c3/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B1/c3/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "B1/c3/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c3/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B1/c3/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B1/c3/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "B1/c3/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c3/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B1/c3/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B1/c3/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B1/c3/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "B1/c3/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/c3/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B1/c3/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "B1/c3/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "B1/c3/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B1/c3/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B1/c3/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "B1/c3/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "B1/setup/shutdown/seed-picker-open",
+          "kind": "setup",
+          "operation": "seed-picker-open"
+        },
+        {
+          "id": "B1/setup/shutdown/seed-picker-close",
+          "kind": "setup",
+          "operation": "seed-picker-close"
+        },
+        {
+          "id": "B1/setup/shutdown/query",
+          "kind": "setup",
+          "operation": "query"
+        },
+        {
+          "id": "B1/setup/shutdown/dismiss",
+          "kind": "setup",
+          "operation": "dismiss"
+        },
+        {
+          "id": "B1/setup/shutdown/catalog-start",
+          "kind": "setup",
+          "operation": "revision2 ensure; actual build output hold reached"
+        },
+        {
+          "id": "B1/shutdown/close",
+          "kind": "shutdown",
+          "subcase": "shutdown.building"
+        }
+      ],
+      "action_count": 88
+    },
+    {
+      "process": "W2",
+      "cycles": [
+        {
+          "cycle": 1,
+          "account_ordinal": 0,
+          "subcases": [
+            {
+              "id": "W2/c1/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c1/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "W2/c1/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c1/refresh.picker/open",
+                "W2/c1/refresh.picker/refresh",
+                "W2/c1/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "W2/c1/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c1/completion.channel/query",
+                "W2/c1/completion.channel/dismiss",
+                "W2/c1/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "W2/c1/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c1/completion.thread/query",
+                "W2/c1/completion.thread/dismiss",
+                "W2/c1/completion.thread/close"
+              ]
+            },
+            {
+              "id": "W2/c1/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "W2/c1/reject.local/start",
+                "W2/c1/reject.local/invalidate",
+                "W2/c1/reject.local/release"
+              ]
+            },
+            {
+              "id": "W2/c1/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "W2/c1/reject.remote/start",
+                "W2/c1/reject.remote/invalidate",
+                "W2/c1/reject.remote/release"
+              ]
+            },
+            {
+              "id": "W2/c1/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c1/account.reset/query",
+                "W2/c1/account.reset/open",
+                "W2/c1/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 2,
+          "account_ordinal": 1,
+          "subcases": [
+            {
+              "id": "W2/c2/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c2/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "W2/c2/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c2/refresh.picker/open",
+                "W2/c2/refresh.picker/refresh",
+                "W2/c2/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "W2/c2/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c2/completion.channel/query",
+                "W2/c2/completion.channel/dismiss",
+                "W2/c2/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "W2/c2/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c2/completion.thread/query",
+                "W2/c2/completion.thread/dismiss",
+                "W2/c2/completion.thread/close"
+              ]
+            },
+            {
+              "id": "W2/c2/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "W2/c2/reject.local/start",
+                "W2/c2/reject.local/invalidate",
+                "W2/c2/reject.local/release"
+              ]
+            },
+            {
+              "id": "W2/c2/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "W2/c2/reject.remote/start",
+                "W2/c2/reject.remote/invalidate",
+                "W2/c2/reject.remote/release"
+              ]
+            },
+            {
+              "id": "W2/c2/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c2/account.reset/query",
+                "W2/c2/account.reset/open",
+                "W2/c2/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 3,
+          "account_ordinal": 2,
+          "subcases": [
+            {
+              "id": "W2/c3/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c3/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "W2/c3/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c3/refresh.picker/open",
+                "W2/c3/refresh.picker/refresh",
+                "W2/c3/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "W2/c3/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c3/completion.channel/query",
+                "W2/c3/completion.channel/dismiss",
+                "W2/c3/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "W2/c3/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c3/completion.thread/query",
+                "W2/c3/completion.thread/dismiss",
+                "W2/c3/completion.thread/close"
+              ]
+            },
+            {
+              "id": "W2/c3/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "W2/c3/reject.local/start",
+                "W2/c3/reject.local/invalidate",
+                "W2/c3/reject.local/release"
+              ]
+            },
+            {
+              "id": "W2/c3/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "W2/c3/reject.remote/start",
+                "W2/c3/reject.remote/invalidate",
+                "W2/c3/reject.remote/release"
+              ]
+            },
+            {
+              "id": "W2/c3/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "W2/c3/account.reset/query",
+                "W2/c3/account.reset/open",
+                "W2/c3/account.reset/replace"
+              ]
+            }
+          ]
+        }
+      ],
+      "shutdown": {
+        "id": "W2/shutdown",
+        "subcase": "shutdown.waiting",
+        "account_ordinal": 3,
+        "close_id": "W2/shutdown/close"
+      },
+      "ordered_actions": [
+        {
+          "id": "W2/setup/boot-ready",
+          "kind": "setup",
+          "operation": "probe install and empty query handshake"
+        },
+        {
+          "id": "W2/c1/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "W2/c1/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "W2/c1/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "W2/c1/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c1/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W2/c1/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W2/c1/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "W2/c1/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c1/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W2/c1/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W2/c1/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "W2/c1/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c1/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "W2/c1/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "W2/c1/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W2/c1/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W2/c1/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "W2/c1/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c1/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W2/c1/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W2/c1/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "W2/c1/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c1/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W2/c1/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W2/c1/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W2/c1/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "W2/c1/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c1/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W2/c1/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "W2/c1/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "W2/c1/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W2/c1/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W2/c1/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "W2/c1/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c2/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "W2/c2/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "W2/c2/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "W2/c2/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c2/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W2/c2/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W2/c2/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "W2/c2/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c2/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W2/c2/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W2/c2/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "W2/c2/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c2/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "W2/c2/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "W2/c2/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W2/c2/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W2/c2/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "W2/c2/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c2/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W2/c2/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W2/c2/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "W2/c2/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c2/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W2/c2/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W2/c2/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W2/c2/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "W2/c2/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c2/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W2/c2/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "W2/c2/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "W2/c2/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W2/c2/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W2/c2/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "W2/c2/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c3/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "W2/c3/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "W2/c3/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "W2/c3/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c3/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W2/c3/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W2/c3/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "W2/c3/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c3/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W2/c3/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W2/c3/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "W2/c3/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c3/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "W2/c3/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "W2/c3/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W2/c3/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W2/c3/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "W2/c3/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c3/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W2/c3/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W2/c3/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "W2/c3/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c3/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W2/c3/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W2/c3/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W2/c3/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "W2/c3/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/c3/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W2/c3/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "W2/c3/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "W2/c3/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W2/c3/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W2/c3/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "W2/c3/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "W2/setup/shutdown/seed-picker-open",
+          "kind": "setup",
+          "operation": "seed-picker-open"
+        },
+        {
+          "id": "W2/setup/shutdown/seed-picker-close",
+          "kind": "setup",
+          "operation": "seed-picker-close"
+        },
+        {
+          "id": "W2/setup/shutdown/query",
+          "kind": "setup",
+          "operation": "query"
+        },
+        {
+          "id": "W2/setup/shutdown/dismiss",
+          "kind": "setup",
+          "operation": "dismiss"
+        },
+        {
+          "id": "W2/shutdown/close",
+          "kind": "shutdown",
+          "subcase": "shutdown.waiting"
+        }
+      ],
+      "action_count": 87
+    },
+    {
+      "process": "B2",
+      "cycles": [
+        {
+          "cycle": 1,
+          "account_ordinal": 0,
+          "subcases": [
+            {
+              "id": "B2/c1/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c1/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "B2/c1/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c1/refresh.picker/open",
+                "B2/c1/refresh.picker/refresh",
+                "B2/c1/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "B2/c1/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c1/completion.channel/query",
+                "B2/c1/completion.channel/dismiss",
+                "B2/c1/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "B2/c1/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c1/completion.thread/query",
+                "B2/c1/completion.thread/dismiss",
+                "B2/c1/completion.thread/close"
+              ]
+            },
+            {
+              "id": "B2/c1/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "B2/c1/reject.local/start",
+                "B2/c1/reject.local/invalidate",
+                "B2/c1/reject.local/release"
+              ]
+            },
+            {
+              "id": "B2/c1/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "B2/c1/reject.remote/start",
+                "B2/c1/reject.remote/invalidate",
+                "B2/c1/reject.remote/release"
+              ]
+            },
+            {
+              "id": "B2/c1/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c1/account.reset/query",
+                "B2/c1/account.reset/open",
+                "B2/c1/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 2,
+          "account_ordinal": 1,
+          "subcases": [
+            {
+              "id": "B2/c2/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c2/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "B2/c2/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c2/refresh.picker/open",
+                "B2/c2/refresh.picker/refresh",
+                "B2/c2/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "B2/c2/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c2/completion.channel/query",
+                "B2/c2/completion.channel/dismiss",
+                "B2/c2/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "B2/c2/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c2/completion.thread/query",
+                "B2/c2/completion.thread/dismiss",
+                "B2/c2/completion.thread/close"
+              ]
+            },
+            {
+              "id": "B2/c2/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "B2/c2/reject.local/start",
+                "B2/c2/reject.local/invalidate",
+                "B2/c2/reject.local/release"
+              ]
+            },
+            {
+              "id": "B2/c2/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "B2/c2/reject.remote/start",
+                "B2/c2/reject.remote/invalidate",
+                "B2/c2/reject.remote/release"
+              ]
+            },
+            {
+              "id": "B2/c2/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c2/account.reset/query",
+                "B2/c2/account.reset/open",
+                "B2/c2/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 3,
+          "account_ordinal": 2,
+          "subcases": [
+            {
+              "id": "B2/c3/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c3/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "B2/c3/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c3/refresh.picker/open",
+                "B2/c3/refresh.picker/refresh",
+                "B2/c3/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "B2/c3/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c3/completion.channel/query",
+                "B2/c3/completion.channel/dismiss",
+                "B2/c3/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "B2/c3/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c3/completion.thread/query",
+                "B2/c3/completion.thread/dismiss",
+                "B2/c3/completion.thread/close"
+              ]
+            },
+            {
+              "id": "B2/c3/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "B2/c3/reject.local/start",
+                "B2/c3/reject.local/invalidate",
+                "B2/c3/reject.local/release"
+              ]
+            },
+            {
+              "id": "B2/c3/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "B2/c3/reject.remote/start",
+                "B2/c3/reject.remote/invalidate",
+                "B2/c3/reject.remote/release"
+              ]
+            },
+            {
+              "id": "B2/c3/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "B2/c3/account.reset/query",
+                "B2/c3/account.reset/open",
+                "B2/c3/account.reset/replace"
+              ]
+            }
+          ]
+        }
+      ],
+      "shutdown": {
+        "id": "B2/shutdown",
+        "subcase": "shutdown.building",
+        "account_ordinal": 3,
+        "close_id": "B2/shutdown/close"
+      },
+      "ordered_actions": [
+        {
+          "id": "B2/setup/boot-ready",
+          "kind": "setup",
+          "operation": "probe install and empty query handshake"
+        },
+        {
+          "id": "B2/c1/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "B2/c1/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "B2/c1/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "B2/c1/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c1/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B2/c1/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B2/c1/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "B2/c1/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c1/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B2/c1/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B2/c1/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "B2/c1/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c1/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "B2/c1/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "B2/c1/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B2/c1/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B2/c1/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "B2/c1/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c1/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B2/c1/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B2/c1/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "B2/c1/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c1/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B2/c1/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B2/c1/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B2/c1/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "B2/c1/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c1/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B2/c1/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "B2/c1/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "B2/c1/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B2/c1/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B2/c1/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "B2/c1/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c2/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "B2/c2/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "B2/c2/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "B2/c2/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c2/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B2/c2/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B2/c2/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "B2/c2/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c2/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B2/c2/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B2/c2/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "B2/c2/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c2/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "B2/c2/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "B2/c2/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B2/c2/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B2/c2/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "B2/c2/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c2/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B2/c2/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B2/c2/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "B2/c2/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c2/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B2/c2/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B2/c2/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B2/c2/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "B2/c2/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c2/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B2/c2/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "B2/c2/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "B2/c2/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B2/c2/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B2/c2/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "B2/c2/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c3/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "B2/c3/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "B2/c3/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "B2/c3/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c3/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B2/c3/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B2/c3/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "B2/c3/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c3/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B2/c3/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B2/c3/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "B2/c3/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c3/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "B2/c3/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "B2/c3/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B2/c3/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B2/c3/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "B2/c3/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c3/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B2/c3/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B2/c3/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "B2/c3/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c3/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B2/c3/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B2/c3/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B2/c3/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "B2/c3/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/c3/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B2/c3/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "B2/c3/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "B2/c3/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B2/c3/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B2/c3/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "B2/c3/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "B2/setup/shutdown/seed-picker-open",
+          "kind": "setup",
+          "operation": "seed-picker-open"
+        },
+        {
+          "id": "B2/setup/shutdown/seed-picker-close",
+          "kind": "setup",
+          "operation": "seed-picker-close"
+        },
+        {
+          "id": "B2/setup/shutdown/query",
+          "kind": "setup",
+          "operation": "query"
+        },
+        {
+          "id": "B2/setup/shutdown/dismiss",
+          "kind": "setup",
+          "operation": "dismiss"
+        },
+        {
+          "id": "B2/setup/shutdown/catalog-start",
+          "kind": "setup",
+          "operation": "revision2 ensure; actual build output hold reached"
+        },
+        {
+          "id": "B2/shutdown/close",
+          "kind": "shutdown",
+          "subcase": "shutdown.building"
+        }
+      ],
+      "action_count": 88
+    },
+    {
+      "process": "W3",
+      "cycles": [
+        {
+          "cycle": 1,
+          "account_ordinal": 0,
+          "subcases": [
+            {
+              "id": "W3/c1/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c1/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "W3/c1/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c1/refresh.picker/open",
+                "W3/c1/refresh.picker/refresh",
+                "W3/c1/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "W3/c1/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c1/completion.channel/query",
+                "W3/c1/completion.channel/dismiss",
+                "W3/c1/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "W3/c1/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c1/completion.thread/query",
+                "W3/c1/completion.thread/dismiss",
+                "W3/c1/completion.thread/close"
+              ]
+            },
+            {
+              "id": "W3/c1/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "W3/c1/reject.local/start",
+                "W3/c1/reject.local/invalidate",
+                "W3/c1/reject.local/release"
+              ]
+            },
+            {
+              "id": "W3/c1/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "W3/c1/reject.remote/start",
+                "W3/c1/reject.remote/invalidate",
+                "W3/c1/reject.remote/release"
+              ]
+            },
+            {
+              "id": "W3/c1/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c1/account.reset/query",
+                "W3/c1/account.reset/open",
+                "W3/c1/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 2,
+          "account_ordinal": 1,
+          "subcases": [
+            {
+              "id": "W3/c2/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c2/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "W3/c2/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c2/refresh.picker/open",
+                "W3/c2/refresh.picker/refresh",
+                "W3/c2/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "W3/c2/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c2/completion.channel/query",
+                "W3/c2/completion.channel/dismiss",
+                "W3/c2/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "W3/c2/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c2/completion.thread/query",
+                "W3/c2/completion.thread/dismiss",
+                "W3/c2/completion.thread/close"
+              ]
+            },
+            {
+              "id": "W3/c2/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "W3/c2/reject.local/start",
+                "W3/c2/reject.local/invalidate",
+                "W3/c2/reject.local/release"
+              ]
+            },
+            {
+              "id": "W3/c2/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "W3/c2/reject.remote/start",
+                "W3/c2/reject.remote/invalidate",
+                "W3/c2/reject.remote/release"
+              ]
+            },
+            {
+              "id": "W3/c2/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c2/account.reset/query",
+                "W3/c2/account.reset/open",
+                "W3/c2/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 3,
+          "account_ordinal": 2,
+          "subcases": [
+            {
+              "id": "W3/c3/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c3/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "W3/c3/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c3/refresh.picker/open",
+                "W3/c3/refresh.picker/refresh",
+                "W3/c3/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "W3/c3/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c3/completion.channel/query",
+                "W3/c3/completion.channel/dismiss",
+                "W3/c3/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "W3/c3/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c3/completion.thread/query",
+                "W3/c3/completion.thread/dismiss",
+                "W3/c3/completion.thread/close"
+              ]
+            },
+            {
+              "id": "W3/c3/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "W3/c3/reject.local/start",
+                "W3/c3/reject.local/invalidate",
+                "W3/c3/reject.local/release"
+              ]
+            },
+            {
+              "id": "W3/c3/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "W3/c3/reject.remote/start",
+                "W3/c3/reject.remote/invalidate",
+                "W3/c3/reject.remote/release"
+              ]
+            },
+            {
+              "id": "W3/c3/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "W3/c3/account.reset/query",
+                "W3/c3/account.reset/open",
+                "W3/c3/account.reset/replace"
+              ]
+            }
+          ]
+        }
+      ],
+      "shutdown": {
+        "id": "W3/shutdown",
+        "subcase": "shutdown.waiting",
+        "account_ordinal": 3,
+        "close_id": "W3/shutdown/close"
+      },
+      "ordered_actions": [
+        {
+          "id": "W3/setup/boot-ready",
+          "kind": "setup",
+          "operation": "probe install and empty query handshake"
+        },
+        {
+          "id": "W3/c1/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "W3/c1/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "W3/c1/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "W3/c1/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c1/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W3/c1/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W3/c1/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "W3/c1/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c1/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W3/c1/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W3/c1/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "W3/c1/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c1/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "W3/c1/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "W3/c1/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W3/c1/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W3/c1/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "W3/c1/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c1/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W3/c1/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W3/c1/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "W3/c1/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c1/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W3/c1/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W3/c1/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W3/c1/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "W3/c1/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c1/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W3/c1/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "W3/c1/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "W3/c1/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W3/c1/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W3/c1/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "W3/c1/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c2/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "W3/c2/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "W3/c2/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "W3/c2/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c2/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W3/c2/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W3/c2/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "W3/c2/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c2/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W3/c2/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W3/c2/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "W3/c2/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c2/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "W3/c2/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "W3/c2/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W3/c2/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W3/c2/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "W3/c2/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c2/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W3/c2/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W3/c2/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "W3/c2/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c2/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W3/c2/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W3/c2/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W3/c2/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "W3/c2/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c2/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W3/c2/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "W3/c2/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "W3/c2/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W3/c2/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W3/c2/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "W3/c2/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c3/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "W3/c3/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "W3/c3/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "W3/c3/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c3/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W3/c3/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "W3/c3/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "W3/c3/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c3/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W3/c3/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "W3/c3/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "W3/c3/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c3/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "W3/c3/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "W3/c3/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W3/c3/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "W3/c3/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "W3/c3/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c3/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W3/c3/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "W3/c3/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "W3/c3/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c3/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W3/c3/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W3/c3/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "W3/c3/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "W3/c3/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/c3/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "W3/c3/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "W3/c3/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "W3/c3/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W3/c3/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "W3/c3/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "W3/c3/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "W3/setup/shutdown/seed-picker-open",
+          "kind": "setup",
+          "operation": "seed-picker-open"
+        },
+        {
+          "id": "W3/setup/shutdown/seed-picker-close",
+          "kind": "setup",
+          "operation": "seed-picker-close"
+        },
+        {
+          "id": "W3/setup/shutdown/query",
+          "kind": "setup",
+          "operation": "query"
+        },
+        {
+          "id": "W3/setup/shutdown/dismiss",
+          "kind": "setup",
+          "operation": "dismiss"
+        },
+        {
+          "id": "W3/shutdown/close",
+          "kind": "shutdown",
+          "subcase": "shutdown.waiting"
+        }
+      ],
+      "action_count": 87
+    },
+    {
+      "process": "B3",
+      "cycles": [
+        {
+          "cycle": 1,
+          "account_ordinal": 0,
+          "subcases": [
+            {
+              "id": "B3/c1/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c1/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "B3/c1/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c1/refresh.picker/open",
+                "B3/c1/refresh.picker/refresh",
+                "B3/c1/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "B3/c1/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c1/completion.channel/query",
+                "B3/c1/completion.channel/dismiss",
+                "B3/c1/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "B3/c1/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c1/completion.thread/query",
+                "B3/c1/completion.thread/dismiss",
+                "B3/c1/completion.thread/close"
+              ]
+            },
+            {
+              "id": "B3/c1/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "B3/c1/reject.local/start",
+                "B3/c1/reject.local/invalidate",
+                "B3/c1/reject.local/release"
+              ]
+            },
+            {
+              "id": "B3/c1/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "B3/c1/reject.remote/start",
+                "B3/c1/reject.remote/invalidate",
+                "B3/c1/reject.remote/release"
+              ]
+            },
+            {
+              "id": "B3/c1/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c1/account.reset/query",
+                "B3/c1/account.reset/open",
+                "B3/c1/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 2,
+          "account_ordinal": 1,
+          "subcases": [
+            {
+              "id": "B3/c2/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c2/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "B3/c2/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c2/refresh.picker/open",
+                "B3/c2/refresh.picker/refresh",
+                "B3/c2/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "B3/c2/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c2/completion.channel/query",
+                "B3/c2/completion.channel/dismiss",
+                "B3/c2/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "B3/c2/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c2/completion.thread/query",
+                "B3/c2/completion.thread/dismiss",
+                "B3/c2/completion.thread/close"
+              ]
+            },
+            {
+              "id": "B3/c2/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "B3/c2/reject.local/start",
+                "B3/c2/reject.local/invalidate",
+                "B3/c2/reject.local/release"
+              ]
+            },
+            {
+              "id": "B3/c2/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "B3/c2/reject.remote/start",
+                "B3/c2/reject.remote/invalidate",
+                "B3/c2/reject.remote/release"
+              ]
+            },
+            {
+              "id": "B3/c2/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c2/account.reset/query",
+                "B3/c2/account.reset/open",
+                "B3/c2/account.reset/replace"
+              ]
+            }
+          ]
+        },
+        {
+          "cycle": 3,
+          "account_ordinal": 2,
+          "subcases": [
+            {
+              "id": "B3/c3/refresh.closed",
+              "subcase": "refresh.closed",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c3/refresh.closed/refresh"
+              ]
+            },
+            {
+              "id": "B3/c3/refresh.picker",
+              "subcase": "refresh.picker",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c3/refresh.picker/open",
+                "B3/c3/refresh.picker/refresh",
+                "B3/c3/refresh.picker/close"
+              ]
+            },
+            {
+              "id": "B3/c3/completion.channel",
+              "subcase": "completion.channel",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c3/completion.channel/query",
+                "B3/c3/completion.channel/dismiss",
+                "B3/c3/completion.channel/navigate"
+              ]
+            },
+            {
+              "id": "B3/c3/completion.thread",
+              "subcase": "completion.thread",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c3/completion.thread/query",
+                "B3/c3/completion.thread/dismiss",
+                "B3/c3/completion.thread/close"
+              ]
+            },
+            {
+              "id": "B3/c3/reject.local",
+              "subcase": "reject.local",
+              "classification": "fault",
+              "actions": [
+                "B3/c3/reject.local/start",
+                "B3/c3/reject.local/invalidate",
+                "B3/c3/reject.local/release"
+              ]
+            },
+            {
+              "id": "B3/c3/reject.remote",
+              "subcase": "reject.remote",
+              "classification": "fault",
+              "actions": [
+                "B3/c3/reject.remote/start",
+                "B3/c3/reject.remote/invalidate",
+                "B3/c3/reject.remote/release"
+              ]
+            },
+            {
+              "id": "B3/c3/account.reset",
+              "subcase": "account.reset",
+              "classification": "ordinary",
+              "actions": [
+                "B3/c3/account.reset/query",
+                "B3/c3/account.reset/open",
+                "B3/c3/account.reset/replace"
+              ]
+            }
+          ]
+        }
+      ],
+      "shutdown": {
+        "id": "B3/shutdown",
+        "subcase": "shutdown.building",
+        "account_ordinal": 3,
+        "close_id": "B3/shutdown/close"
+      },
+      "ordered_actions": [
+        {
+          "id": "B3/setup/boot-ready",
+          "kind": "setup",
+          "operation": "probe install and empty query handshake"
+        },
+        {
+          "id": "B3/c1/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "B3/c1/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "B3/c1/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "B3/c1/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c1/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B3/c1/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B3/c1/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "B3/c1/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c1/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B3/c1/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B3/c1/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "B3/c1/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c1/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "B3/c1/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "B3/c1/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B3/c1/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B3/c1/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "B3/c1/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c1/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B3/c1/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B3/c1/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "B3/c1/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c1/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B3/c1/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B3/c1/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B3/c1/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "B3/c1/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c1/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B3/c1/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "B3/c1/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "B3/c1/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B3/c1/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B3/c1/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "B3/c1/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c2/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "B3/c2/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "B3/c2/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "B3/c2/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c2/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B3/c2/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B3/c2/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "B3/c2/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c2/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B3/c2/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B3/c2/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "B3/c2/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c2/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "B3/c2/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "B3/c2/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B3/c2/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B3/c2/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "B3/c2/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c2/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B3/c2/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B3/c2/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "B3/c2/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c2/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B3/c2/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B3/c2/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B3/c2/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "B3/c2/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c2/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B3/c2/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "B3/c2/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "B3/c2/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B3/c2/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B3/c2/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "B3/c2/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c3/setup/seed-picker-open",
+          "kind": "setup",
+          "operation": "ordinary picker open"
+        },
+        {
+          "id": "B3/c3/setup/seed-picker-close",
+          "kind": "setup",
+          "operation": "ordinary picker Escape"
+        },
+        {
+          "id": "B3/c3/refresh.closed/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.closed"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.closed",
+          "native_final_action": "B3/c3/refresh.closed/refresh",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c3/refresh.picker/open",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B3/c3/refresh.picker/refresh",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "id": "B3/c3/refresh.picker/close",
+          "kind": "ordinary",
+          "subcase": "refresh.picker"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "refresh.picker",
+          "native_final_action": "B3/c3/refresh.picker/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c3/completion.channel/query",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B3/c3/completion.channel/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "id": "B3/c3/completion.channel/navigate",
+          "kind": "ordinary",
+          "subcase": "completion.channel"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.channel",
+          "native_final_action": "B3/c3/completion.channel/navigate",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c3/setup/thread-channel",
+          "kind": "setup",
+          "operation": "select_channel C2 Global"
+        },
+        {
+          "id": "B3/c3/setup/thread-open",
+          "kind": "setup",
+          "operation": "bootstrap::open_thread C2 1719800000.000100"
+        },
+        {
+          "id": "B3/c3/completion.thread/query",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B3/c3/completion.thread/dismiss",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "id": "B3/c3/completion.thread/close",
+          "kind": "ordinary",
+          "subcase": "completion.thread"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "completion.thread",
+          "native_final_action": "B3/c3/completion.thread/close",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c3/reject.local/start",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B3/c3/reject.local/invalidate",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "id": "B3/c3/reject.local/release",
+          "kind": "fault",
+          "subcase": "reject.local"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.local",
+          "native_final_action": "B3/c3/reject.local/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c3/setup/recover-local",
+          "kind": "setup",
+          "operation": "ensure revision5; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B3/c3/reject.remote/start",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B3/c3/reject.remote/invalidate",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "id": "B3/c3/reject.remote/release",
+          "kind": "fault",
+          "subcase": "reject.remote"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "reject.remote",
+          "native_final_action": "B3/c3/reject.remote/release",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/c3/setup/recover-remote",
+          "kind": "setup",
+          "operation": "ensure revision6; accept existing current result if already published by real effect"
+        },
+        {
+          "id": "B3/c3/setup/account-clear",
+          "kind": "setup",
+          "operation": "empty InputEvent and actual empty response"
+        },
+        {
+          "id": "B3/c3/setup/replacement-ready",
+          "kind": "setup",
+          "operation": "await worker-built next independent shell"
+        },
+        {
+          "id": "B3/c3/account.reset/query",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B3/c3/account.reset/open",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "id": "B3/c3/account.reset/replace",
+          "kind": "ordinary",
+          "subcase": "account.reset"
+        },
+        {
+          "kind": "cutoff",
+          "subcase": "account.reset",
+          "native_final_action": "B3/c3/account.reset/replace",
+          "after_ms": 5000
+        },
+        {
+          "id": "B3/setup/shutdown/seed-picker-open",
+          "kind": "setup",
+          "operation": "seed-picker-open"
+        },
+        {
+          "id": "B3/setup/shutdown/seed-picker-close",
+          "kind": "setup",
+          "operation": "seed-picker-close"
+        },
+        {
+          "id": "B3/setup/shutdown/query",
+          "kind": "setup",
+          "operation": "query"
+        },
+        {
+          "id": "B3/setup/shutdown/dismiss",
+          "kind": "setup",
+          "operation": "dismiss"
+        },
+        {
+          "id": "B3/setup/shutdown/catalog-start",
+          "kind": "setup",
+          "operation": "revision2 ensure; actual build output hold reached"
+        },
+        {
+          "id": "B3/shutdown/close",
+          "kind": "shutdown",
+          "subcase": "shutdown.building"
+        }
+      ],
+      "action_count": 88
+    }
+  ],
+  "counts": {
+    "processes": 6,
+    "cycles": 18,
+    "top_level_cases_1_to_5": 90,
+    "ordinary_subcases": 90,
+    "fault_subcases": 36,
+    "shutdown_subcases": 6,
+    "total_subcases": 132,
+    "ordinary_actions": 234,
+    "fault_actions": 108,
+    "cycle_actions": 342,
+    "isolated_remote_responses": 18,
+    "setup_actions": 177,
+    "shutdown_close_actions": 6,
+    "all_actions": 525,
+    "shutdown_release_controls": 3
+  },
+  "action_deadline_ms": 5000,
+  "retirement_cutoff_after_final_native_start_ms": 5000,
+  "shutdown_close_limit_ms": 5000,
+  "building_hold_release_after_close_ms": 100,
+  "startup_readiness_limit_ms": 25000,
+  "process_limit_ms": 600000,
+  "post_exit_export_limit_ms": 10000,
+  "final_cleanup_limit_ms": 5000,
+  "building_signal_latest_after_close_ms": 250
+}

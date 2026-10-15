@@ -16,8 +16,11 @@ pub(crate) use projection::{PreservedAlternate, ProjectionTicket};
 #[path = "checkpoint_remote.rs"]
 mod remote;
 pub(crate) use remote::RemoteLease;
+#[path = "checkpoint_schedule.rs"]
+mod schedule;
 #[cfg(test)]
 pub(crate) use remote::tests::Fixture as RemoteReviewFixture;
+pub(crate) use schedule::{ScheduleLease, ScheduleVisit};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Snapshot {

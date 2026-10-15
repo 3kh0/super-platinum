@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run the disconnected bookmark DOM workflow at both sizes; never builds.
 
-The existing Rust check emits a text marker, not per-step JSON. This runner
-validates that exact marker and records capture/cleanup evidence separately.
+The Rust check retains the existing exact completion marker and additionally
+attests every picker stage against canonical Movement, with paused native captures.
 PNG inspection is still required; synthetic DOM events do not prove OS input.
 """
 import argparse
@@ -54,6 +54,67 @@ def read_marker(path, *, final=False):
     return validate_marker(raw.decode("utf-8", errors="strict"), final=final)
 
 
+PICKER_PREFIX = "bookmarks-picker-stage: "
+PICKER_STAGES = (
+    ("prepopulated", "Bk1", "Bk2", "Bk3"),
+    ("child-initial", "Bk3", "Bk2", ""),
+    ("child-reopened", "Bk3", "Bk2", ""),
+    ("child-before", "Bk3", "", "Bk1"),
+    ("child-reset", "Bk3", "Bk2", ""),
+    ("changed", "Bk1", "Bk2", "Bk3"),
+    ("offline-retained", "Bk1", "Bk2", "Bk3"),
+    ("reset", "Bk1", "", ""),
+)
+LABELS = {"": "At the end", "Bk1": "Before Design system",
+          "Bk3": "Before Release checklist \u00b7 \u65e5\u672c\u8a9e"}
+
+
+def validate_pickers(records):
+    if not isinstance(records, list) or len(records) != len(PICKER_STAGES):
+        raise RuntimeError("Missing or extra picker stages")
+    for record, (stage, base, parent, before) in zip(records, PICKER_STAGES):
+        if not isinstance(record, dict):
+            raise RuntimeError("Malformed picker record")
+        dom = record.get("dom")
+        if (not isinstance(dom, dict) or dom.get("stage") != stage
+                or record.get("canonical") != {"base": base, "parent": parent, "before": before}):
+            raise RuntimeError("Picker stage/canonical movement mismatch")
+        for key, value, label in (("parent", parent, "Launch references" if parent else "Top level"),
+                                  ("before", before, LABELS[before])):
+            pick = dom.get(key)
+            if (not isinstance(pick, dict) or pick.get("id") != value or pick.get("label") != label
+                    or type(pick.get("selectedCount")) is not int or pick["selectedCount"] != 1
+                    or pick.get("visible") is not True or pick.get("disabled") is not False):
+                raise RuntimeError("Picker visible label/ID/selection/availability mismatch")
+    return records
+
+
+def read_pickers(path):
+    with path.open("rb") as source:
+        raw = source.read(MAX_LOG_BYTES + 1)
+    if len(raw) > MAX_LOG_BYTES:
+        raise RuntimeError("Bookmark fixture log exceeds bounded evidence size")
+    records = []
+    for line in raw.decode("utf-8", errors="strict").splitlines(keepends=True):
+        if PICKER_PREFIX not in line:
+            continue
+        if not line.startswith(PICKER_PREFIX) or not line.endswith("\n"):
+            raise RuntimeError("Malformed or truncated picker receipt")
+        records.append(json.loads(line[len(PICKER_PREFIX):]))
+    return validate_pickers(records)
+
+
+def validate_picker_captures(records, fixture, captures):
+    for record, (stage, *_rest) in zip(records, PICKER_STAGES):
+        path = captures / f"{fixture}-{stage}.png"
+        with path.open("rb") as source:
+            header = source.read(24)
+        if len(header) != 24 or header[:8] != b"\x89PNG\r\n\x1a\n":
+            raise RuntimeError("Picker capture is not a PNG")
+        dimensions = struct.unpack(">II", header[16:24])
+        validate_capture({"ok": True, "data": record.get("capture")}, path, dimensions)
+
+
 def validate_state(response):
     data = response.get("data") if isinstance(response, dict) else None
     if not isinstance(response, dict) or response.get("ok") is not True:
@@ -94,16 +155,17 @@ def run(fixture, binary, captures, timeout=45):
     log = captures / f"{fixture}.log"
     receipt_path = captures / f"{fixture}.json"
     screenshot = captures / f"{fixture}.png"
-    native = NativeFixture(fixture, log, binary, {"SUPER_PLATINUM_BOOKMARKS_CHECK": "1"})
+    native = NativeFixture(fixture, log, binary, {"SUPER_PLATINUM_BOOKMARKS_CHECK": "1",
+                    "SUPER_PLATINUM_BOOKMARKS_CAPTURE_DIR": str(captures.resolve())})
     evidence = {
         "fixture": fixture, "platform": sys.platform, "binary": str(binary), "ok": False,
         "scope": "disconnected synthetic DOM bookmark workflow",
-        "nativeEvidenceKind": "exact text marker, not structured per-step receipt",
+        "nativeEvidenceKind": "exact text marker and eight canonical picker receipts/captures",
         "fixtureConnectionGuard": "bookmarks_check::run rejects session or Transport before DOM evaluation",
         "visuallyInspected": False,
         "limitations": ["No trusted keyboard, clipboard, Slack delivery or successful remote mutation proof.",
-                        "Final PNG only; intermediate DOM assertions are attested by the native marker.",
-                        "PNG includes native chrome; DOM viewport and occlusion are not measured.",
+                        "Eight paused picker PNGs and final PNG; remaining legacy steps use native assertions.",
+                        "Picker DOM containment is checked; occlusion and trusted OS input are not measured.",
                         "Cleanup covers the owned process and NativeFixture scratch, not independently enumerated descendants."],
     }
     temporary = None
@@ -131,6 +193,8 @@ def run(fixture, binary, captures, timeout=45):
                             next_focus = time.monotonic() + 2
                         time.sleep(min(.1, remaining))
                     evidence["nativeMarker"] = read_marker(log, final=True)
+                    evidence["pickers"] = read_pickers(log)
+                    validate_picker_captures(evidence["pickers"], fixture, captures)
                     time.sleep(.25)
                     state = native.control("state", timeout=5)
                     evidence["finalState"] = validate_state(state)
@@ -154,6 +218,9 @@ def run(fixture, binary, captures, timeout=45):
                         evidence["failureCaptureError"] = str(error)
                     raise
         evidence["nativeMarker"] = read_marker(log, final=True)
+        if read_pickers(log) != evidence["pickers"]:
+            raise RuntimeError("Picker receipts changed after owned process closed")
+        validate_picker_captures(evidence["pickers"], fixture, captures)
         if native.process.poll() is None or temporary.exists():
             raise RuntimeError("Owned bookmark process or private scratch did not clean up")
         evidence["binarySha256After"] = sha256(binary)
@@ -166,13 +233,47 @@ def run(fixture, binary, captures, timeout=45):
         evidence["error"] = str(error)
         raise
     finally:
-        if native.process is not None:
-            evidence.update(pid=native.process.pid, ownedProcessExited=native.process.poll() is not None,
-                            exitCode=native.process.poll())
-        evidence["privateTemporaryRemoved"] = temporary is not None and not temporary.exists()
+        primary = sys.exc_info()[1]
+        evidence["cleanupErrors"] = list(native.cleanup_errors)
+
+        def cleanup_error(stage, error):
+            detail = f"{stage}: {type(error).__name__}: {error}"
+            evidence["cleanupErrors"].append(detail)
+            evidence["ok"] = False
+            evidence.setdefault("error", detail)
+            if primary is not None and hasattr(primary, "add_note"):
+                primary.add_note(detail)
+
+        evidence["ownedProcessExited"], evidence["exitCode"] = False, None
+        try:
+            if native.process is not None:
+                evidence["pid"] = native.process.pid
+                evidence["exitCode"] = native.process.poll()
+                evidence["ownedProcessExited"] = evidence["exitCode"] is not None
+            if not evidence["ownedProcessExited"]:
+                raise RuntimeError("Owned bookmark process exit was not observed")
+        except BaseException as cleanup:
+            cleanup_error("process poll cleanup", cleanup)
+        evidence["privateTemporaryRemoved"] = False
+        try:
+            evidence["privateTemporaryRemoved"] = temporary is not None and not temporary.exists()
+            if temporary is not None and not evidence["privateTemporaryRemoved"]:
+                raise RuntimeError("Owned bookmark temporary directory remains")
+        except BaseException as cleanup:
+            cleanup_error("temporary cleanup", cleanup)
         evidence["warnings"] = [str(w.message) for w in caught]
-        receipt_path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
-        print(json.dumps({"receipt": str(receipt_path), "ok": evidence["ok"]}), flush=True)
+        if evidence["cleanupErrors"] or evidence["warnings"]:
+            evidence["ok"] = False
+            evidence.setdefault("error", "Native cleanup/runtime errors were reported")
+        try:
+            receipt_path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+            print(json.dumps({"receipt": str(receipt_path), "ok": evidence["ok"]}), flush=True)
+        except BaseException as cleanup:
+            cleanup_error("receipt finalization", cleanup)
+            if primary is None:
+                raise
+    if not evidence["ok"]:
+        raise RuntimeError(evidence.get("error", "Bookmark phase did not complete"))
     return evidence
 
 

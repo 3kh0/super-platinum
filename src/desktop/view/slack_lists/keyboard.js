@@ -41,7 +41,7 @@ requestAnimationFrame(()=>{
    if(cell)retainedIdentity={row:cell.parentElement.dataset.instanceId,column:cell.dataset.columnId};
    // The cell editor owns its focus while saving and restores canonical cell
    // identity on close. A disabled Save button must not trigger grid recovery.
-   const editorOwnedFocus=lastFocus?.closest?.('#slack-list-cell-editor');
+   const editorOwnedFocus=lastFocus?.closest?.('#slack-list-cell-editor,#slack-list-rename');
    if(!editorOwnedFocus&&focusUnclaimed&&(lostGridFocus||lostButtonFocus)){
      const target=cell||dialog.querySelector('#slack-list-close');
      target?.focus({preventScroll:true});

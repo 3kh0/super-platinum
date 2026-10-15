@@ -58,10 +58,15 @@ struct Reader {
     generation: u64,
     title: Option<String>,
     editable: bool,
+    canonical_loading: bool,
     checklist: checklist::reader::Mapping,
     text: text::Mapping,
 }
 impl Reader {
+    fn mapping_needed(&self, owner: Option<(u64, u64)>, loading: bool) -> bool {
+        self.checklist.owner != owner || (self.canonical_loading && !loading)
+    }
+
     fn finish_export(&mut self, generation: u64, canonical_current: bool) -> bool {
         if self.generation != generation {
             return false;
@@ -81,7 +86,9 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
                 document: (!matches!(fixture.as_str(), "canvas-loading" | "canvas-error")).then(
                     || {
                         Arc::new(
-                            CanvasDocument::parse(if text::fixture::requested() {
+                            CanvasDocument::parse(if text::structure_fixture::requested() {
+                                text::structure_fixture::HTML
+                            } else if text::fixture::requested() {
                                 text::fixture::HTML
                             } else if checklist::fixture::requested() {
                                 checklist::fixture::HTML
@@ -98,6 +105,7 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
                 generation: 0,
                 title: Some(original.title.clone()),
                 editable: fixture != "canvas-readonly",
+                canonical_loading: false,
                 checklist: Default::default(),
                 text: Default::default(),
             }
@@ -110,8 +118,10 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
     // The owner token makes ordinary shell ticks an O(1) check, not a reproject.
     use_effect(move || {
         let shell = state.read();
-        let owner = checklist::presentation(&shell).map(|view| (view.visit, view.read));
-        if reader.peek().checklist.owner != owner {
+        let view = checklist::presentation(&shell);
+        let owner = view.as_ref().map(|view| (view.visit, view.read));
+        let loading = view.as_ref().is_some_and(|view| view.loading);
+        if reader.peek().mapping_needed(owner, loading) {
             checklist::reader::update_mapping(&shell, &mut reader.write());
         }
     });
@@ -124,7 +134,11 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
     use_future(move || {
         let initial = initial.clone();
         async move {
-            if text::fixture::requested() {
+            if text::structure_fixture::requested() {
+                let mut shell = state.write();
+                text::structure_fixture::install(&mut shell);
+                checklist::reader::update_mapping(&shell, &mut reader.write());
+            } else if text::fixture::requested() {
                 let mut shell = state.write();
                 text::fixture::install(&mut shell);
                 checklist::reader::update_mapping(&shell, &mut reader.write());
@@ -152,6 +166,7 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
         },
     );
     let mut text_draft = use_signal(|| None::<text::Draft>);
+    let local_review = use_signal(|| None::<checklist::recovery::review::Draft>);
     use_effect(move || {
         let shell = state.read();
         if text::should_close(&shell, text_draft.peek().as_ref()) {
@@ -226,8 +241,10 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
         .clone()
         .unwrap_or_else(|| target.title.clone());
     let rename_title = title.clone();
-    let editing = rename.read().is_some() || text_draft.read().is_some();
-    let block_refresh = rename.read().is_some()
+    let editing =
+        rename.read().is_some() || text_draft.read().is_some() || local_review.read().is_some();
+    let block_refresh = local_review.read().is_some()
+        || rename.read().is_some()
         || text_draft
             .read()
             .as_ref()
@@ -240,6 +257,8 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
             .as_ref()
             .is_some_and(|(_, _, stage)| stage.blocks_refresh())
     });
+    let review_target = original.clone();
+    let local_review_available = checklist::recovery::review::available(&state.read());
     let rename_target = original.clone();
     let retry = original.clone();
     let refresh = original.clone();
@@ -256,12 +275,14 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
                 span {class:"canvas-status",if text_draft.read().is_some() {"Editing paragraph"} else if loading {"Loading…"} else {"Read view"}}
                 span {class:"spacer"}
                 if snapshot.editable {button {disabled:refreshing||editing||checklist_pending||canonical.as_ref().is_some_and(|view|view.stale),onclick:move |_|{if text_draft.peek().is_none() && checklist::presentation(&state.peek()).is_none_or(|view|view.operation.is_none()&&!view.loading&&!view.stale) && !reader.peek().loading {rename.set(Some(RenameDraft{base:rename_title.clone(),input:rename_title.clone(),busy:false,error:None}));}},"Rename"}}
+                if local_review_available {button {disabled:refreshing||editing,onclick:move |_|checklist::recovery::review::open(state,reader,review_target.clone(),local_review),"Review saved change"}}
                 button {disabled:refreshing||block_refresh||writing,onclick:move |_|{spawn(load(state,reader,refresh.clone()));},"Refresh"}
                 if let Some(url)=permalink {button {onclick:move |_|{if crate::media::open_external(&url).is_err(){state.write().show_toast("This canvas link could not be opened.");}},"Open in Slack"}}
             }
             if let Some(notice) = notice {p {class:"canvas-status",role:"status", "{notice}"}}
             if rename.read().is_some() {RenameForm {state,reader,draft:rename,target:rename_target}}
             div {class:"canvas-scroll","aria-busy":loading,
+                if local_review.read().is_some() {checklist::recovery::review::Panel {state,draft:local_review}}
                 if let Some(error)=snapshot.error.as_ref() {div {class:"canvas-error",role:"alert",p {"{error}"}button {disabled:refreshing||block_refresh||writing,onclick:move |_|{spawn(load(state,reader,retry.clone()));},"Retry"}}}
                 if let Some(generation)=text_draft.read().as_ref().map(|draft|draft.generation) {
                     text::Editor {key:"canvas-text-{generation}",state,reader,draft:text_draft}
@@ -572,5 +593,26 @@ async fn save_name(
             }.into());
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod mapping_completion_tests {
+    use super::*;
+
+    #[test]
+    fn same_owner_canonical_completion_reprojects_once() {
+        let owner = Some((4, 9));
+        let mut reader = Reader::default();
+        assert!(reader.mapping_needed(owner, true));
+        reader.checklist.owner = owner;
+        reader.canonical_loading = true;
+        assert!(!reader.mapping_needed(owner, true));
+        assert!(reader.mapping_needed(owner, false));
+        // Both the effect and a Reader-owned loader record the completed state.
+        reader.canonical_loading = false;
+        assert!(!reader.mapping_needed(owner, false));
+        assert!(reader.mapping_needed(Some((4, 10)), true));
+        assert!(reader.mapping_needed(None, false));
     }
 }

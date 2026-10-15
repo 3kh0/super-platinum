@@ -8,14 +8,18 @@ use super_platinum_core::{
 pub(crate) mod board_creation;
 mod board_views;
 mod channel_edit;
+pub(crate) mod column_rename;
 mod creation;
 mod date_edit;
 mod date_views;
 mod duplicate;
+pub(crate) mod hydration;
 mod link_edit;
 mod record_detail;
 mod record_open;
 mod user_edit;
+pub(crate) mod view_create;
+pub(crate) mod view_rename;
 pub(crate) use board_views::{add_board_views, enable_board_tasks, restore_board_views};
 pub(crate) use channel_edit::{add_channel_edits, channel_edit_value, restore_channel_edits};
 pub(super) use creation::dispatch_creation;
@@ -487,3 +491,5 @@ pub(super) fn deletion_restore(shell: &mut ShellState, restored: &[Value]) {
         }
     }
 }
+
+pub(crate) mod subitem;

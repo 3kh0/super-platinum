@@ -18,6 +18,10 @@ mod versions;
 
 #[component]
 pub(super) fn RecoveryRows(state: Signal<ShellState>) -> Element {
+    // A row loses rejection eligibility as soon as its reviewed Retry/Change is
+    // durable, and disappears after a successful ACK. Neither transition owns
+    // the open dialog's lifetime. The surrounding account/view key does.
+    let mut schedule_review = use_signal(|| None::<crate::drafts::schedule::Request>);
     let shell = state.read();
     let rows = session::recovery_rows(&shell);
     let mut review_rows = std::collections::BTreeMap::new();
@@ -38,7 +42,7 @@ pub(super) fn RecoveryRows(state: Signal<ShellState>) -> Element {
         managed.account == shell.core.active_account && managed.epoch == shell.core.account_epoch;
     let loading = scoped && managed.loading;
     let error = scoped.then_some(managed.error).flatten();
-    if rows.is_empty() && error.is_none() && !loading {
+    if rows.is_empty() && error.is_none() && !loading && schedule_review.read().is_none() {
         return rsx! {};
     }
     rsx! {
@@ -60,7 +64,10 @@ pub(super) fn RecoveryRows(state: Signal<ShellState>) -> Element {
                             crate::blocks::mrkdwn_blocks(ctx,&local.composer.text)
                         } else {vec![]}
                     }).unwrap_or_default();
-                    let pending = matches!(row.kind,"delivery"|"update").then(|| shell.core.active_account.as_ref().and_then(|account| shell.managed_drafts.entry(account, &row.key)).and_then(recovery::operation)).flatten().filter(|op| matches!((row.kind,op.kind),("update",super_platinum_core::drafts::sync::OperationKind::Update)|("delivery",super_platinum_core::drafts::sync::OperationKind::Send)));
+                    let pending = shell.core.active_account.as_ref()
+                        .and_then(|account| shell.managed_drafts.entry(account, &row.key))
+                        .and_then(recovery::operation)
+                        .filter(|op| recovery::CheckKind::for_operation(op).is_some_and(|kind| kind.row() == row.kind));
                     let rejected = (row.kind == "delivery").then(|| shell.core.active_account.as_ref().and_then(|account| shell.managed_drafts.entry(account, &row.key)).and_then(|view| recovery::rejected(view).zip(view.stored.as_ref().map(|stored| stored.revision)))).flatten();
                     let local_revision = (row.kind == "local").then(|| shell.core.active_account.as_ref().and_then(|account| shell.managed_drafts.entry(account, &row.key)).and_then(|view| view.stored.as_ref()).map(|stored| stored.revision)).flatten();
                     let files=row.snapshot.as_ref().map(|snapshot|snapshot.file_ids.len()).or_else(||row.local.as_ref().map(|local|local.attachments.len())).unwrap_or(0);
@@ -80,6 +87,13 @@ pub(super) fn RecoveryRows(state: Signal<ShellState>) -> Element {
                             if let Some((intent,revision)) = rejected {
                                 return_draft::ReturnDraft {key:"{shell.draft_writes.view_id}:{shell.core.active_account:?}:{shell.core.account_epoch}:{intent.id}:{revision}",state,account:shell.core.active_account.clone().unwrap_or_default(),epoch:shell.core.account_epoch,draft_key:row.key.clone(),revision,intent}
                             }
+                            if row.kind == "schedule" && crate::drafts::schedule::Request::rejected(&shell,&row.key).is_some() {
+                                super::super::managed_schedule::RejectedSchedule {key:"{shell.draft_writes.view_id}:{shell.core.account_epoch}:{identity}",state,draft_key:row.key.clone(),onreview: move |request| {
+                                if schedule_review.peek().is_none() {
+                                    schedule_review.set(Some(request));
+                                }
+                            }}
+                            }
                             if let Some(revision) = local_revision {
                                 ContinueLocal { state, account:shell.core.active_account.clone().unwrap_or_default(), epoch:shell.core.account_epoch, draft_key:row.key.clone(), revision }
                             }
@@ -88,6 +102,9 @@ pub(super) fn RecoveryRows(state: Signal<ShellState>) -> Element {
                 }
             }
         }
+        if let Some(request)=schedule_review() {
+            super::super::managed_schedule::ManagedScheduleDialog {state,request,onclose:move |_|schedule_review.set(None)}
+        }
     }
 }
 
@@ -95,10 +112,12 @@ pub(super) fn RecoveryRows(state: Signal<ShellState>) -> Element {
 fn DeliveryCheck(state: Signal<ShellState>, operation: Operation) -> Element {
     let mut busy = use_signal(|| false);
     let mut feedback = use_signal(|| None::<&'static str>);
-    let update = operation.kind == super_platinum_core::drafts::sync::OperationKind::Update;
+    let Some(kind) = recovery::CheckKind::for_operation(&operation) else {
+        return rsx! {};
+    };
     let operation_id = operation.id.clone();
     rsx! {
-        div { class:"scheduled-actions","data-draft-operation":operation_id,"data-draft-operation-kind":if update{"update"}else{"send"},
+        div { class:"scheduled-actions","data-draft-operation":operation_id,"data-draft-operation-kind":kind.attribute(),
             button { disabled:busy(), onclick:move |_| {
                 if busy() { return; }
                 busy.set(true);
@@ -114,18 +133,12 @@ fn DeliveryCheck(state: Signal<ShellState>, operation: Operation) -> Element {
                         }
                     }).await {
                         Ok(message) => message,
-                        Err(recovery::CheckError::Pending)=>"A previous status check is unresolved. It will not be repeated; the saved draft and current text are retained.",
-                        Err(recovery::CheckError::Cooldown(_)) if update=>"Please wait before checking the update again. The saved cooldown is still active.",
-                        Err(_) if update=>"Update status could not be saved. Check update is paused until storage is available; nothing was written again.",
-                        Err(recovery::CheckError::Cooldown(_)) => "Please wait before checking delivery again. The saved cooldown is still active.",
-                        Err(recovery::CheckError::Fault(crate::drafts::Fault::Unsupported)) => "Connect to Slack before checking delivery.",
-                        Err(recovery::CheckError::Fault(crate::drafts::Fault::Stale)) => "Saved delivery state changed. Refresh Drafts to review it.",
-                        Err(_) => "Delivery status could not be saved. Check delivery is paused until storage is available; nothing was sent again.",
+                        Err(error) => kind.error(error),
                     };
                     if let Ok(mut value) = feedback.try_write() { *value = Some(message); }
                     if let Ok(mut value) = busy.try_write() { *value = false; }
                 });
-            }, if busy() { "Checking…" } else if update {"Check update"} else { "Check delivery" } }
+            }, if busy() { "Checking…" } else { {kind.label()} } }
         }
         if let Some(message) = feedback() { p {class:"scheduled-hint",role:"status","{message}"} }
     }

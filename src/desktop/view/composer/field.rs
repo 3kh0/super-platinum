@@ -101,9 +101,26 @@ pub(super) fn ComposerField(
     let keydown = lease.clone();
     let destination = state.peek().composer_key(target);
     let account = state.peek().core.active_account.clone();
+    let emoji_stamps = use_memo(move || {
+        let shell = state.read();
+        (
+            crate::emoji_catalog::current(&shell)
+                .map(|c| c.token.clone())
+                .unwrap_or_default(),
+            shell
+                .core
+                .active_team
+                .as_ref()
+                .and_then(|t| shell.core.workspaces.get(t))
+                .map(|w| w.emoji_preferences.revision().to_string())
+                .unwrap_or_default(),
+        )
+    });
+    let (emoji_catalog, emoji_preferences) = emoji_stamps.read().clone();
     rsx! {
         textarea {
             id, "data-draft-scope": "{scope}", "data-projection-visit": "{lease.token}",
+            "data-emoji-catalog": "{emoji_catalog}", "data-emoji-preferences": "{emoji_preferences}",
             initial_value: "{text}", placeholder: "{placeholder}",
             onmounted: move |_| {
                 mounted.mounted.set(true);

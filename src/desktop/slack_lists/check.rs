@@ -5,6 +5,7 @@ use serde_json::{Value, json};
 mod board_creation;
 mod board_views;
 mod channel_edit;
+mod column_rename;
 mod creation;
 mod date_edit;
 mod date_views;
@@ -13,13 +14,22 @@ mod duplicate;
 mod editor;
 mod entity_edit;
 mod horizontal;
+mod hydration;
 mod keyboard_help;
 mod link_edit;
 mod record_detail;
 mod saved_views;
+mod subitem;
 mod user_edit;
+mod view_create;
+mod view_rename;
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    hydration::start(state, desktop.clone());
+    column_rename::start(state, desktop.clone());
+    view_rename::start(state, desktop.clone());
+    view_create::start(state, desktop.clone());
+    subitem::start(state, desktop.clone());
     board_creation::start(state, desktop.clone());
     if std::env::var("SUPER_PLATINUM_SLACK_LIST_CHECK").as_deref() != Ok("1")
         || !matches!(

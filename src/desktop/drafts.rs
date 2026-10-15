@@ -13,6 +13,7 @@ use super_platinum_core::drafts::{
     store::sync::{BlockedLocal, Commit, LoadMode, Loaded, Prepare, Stored},
     sync::{DraftSync, Operation, RemoteDraft, Scope, Snapshot},
 };
+pub(crate) mod protected;
 mod remote_review;
 pub(crate) mod remote_review_check;
 pub(crate) mod remote_review_fixture;
@@ -277,6 +278,8 @@ impl Owner {
 pub(crate) mod checkpoint;
 mod control;
 mod dispatch;
+mod dispatch_rejected_schedule;
+mod dispatch_schedule;
 pub(crate) mod integration;
 pub(crate) mod network;
 pub(crate) mod observation;
@@ -286,6 +289,7 @@ pub(crate) mod recovery;
 pub(crate) mod rejected_fixture;
 pub(crate) mod rejected_thread_fixture;
 mod release;
+pub(crate) mod schedule;
 pub(crate) mod send;
 pub(crate) mod session;
 pub(crate) mod settlement;

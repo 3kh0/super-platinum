@@ -14,6 +14,9 @@ MANIFEST="Cargo.toml"
 BINARY="${SUPER_PLATINUM_BINARY:-target/debug/super-platinum}"
 FIXTURES=(
   login opening loading channel main-general-new-message-motion unreads threads
+  completion-directory-2000 completion-directory-2000-narrow
+  completion-directory-10000 completion-directory-10000-narrow
+  completion-directory-64000 completion-directory-64000-narrow
   threads-keyboard-narrow
   threads-file-paste threads-file-paste-narrow
   rail-account-snoozed
@@ -23,6 +26,10 @@ FIXTURES=(
   canvas canvas-narrow canvas-loading canvas-error canvas-rename canvas-rename-error canvas-readonly
   canvas-checklist canvas-checklist-narrow canvas-checklist-saving canvas-checklist-uncertain
   canvas-text canvas-text-narrow
+  canvas-structure canvas-structure-narrow
+  canvas-replacement canvas-replacement-narrow
+  canvas-structure-text canvas-structure-text-narrow
+  canvas-local-review canvas-local-review-narrow
   files files-narrow files-empty files-error files-density files-density-narrow
   channel-files channel-files-narrow channel-links channel-links-narrow channel-links-empty channel-links-error
   pins pins-narrow pins-empty pins-error channel-pinned-message
@@ -67,6 +74,11 @@ FIXTURES=(
   message-multi-channels-select message-multi-channels-select-narrow
   slack-list slack-list-narrow slack-list-readonly slack-list-incomplete slack-list-error slack-list-loading
   slack-list-board-add slack-list-board-add-narrow
+  slack-list-hydration slack-list-hydration-narrow
+  slack-list-column-rename slack-list-column-rename-narrow
+  slack-list-view-rename slack-list-view-rename-narrow
+  slack-list-view-create slack-list-view-create-narrow
+  slack-list-subitem-create slack-list-subitem-create-narrow slack-list-subitem-uncertain slack-list-subitem-uncertain-narrow
   self-status-editor self-status-editor-narrow
   profile-edit profile-edit-narrow
   profile-title profile-title-narrow
@@ -78,6 +90,7 @@ FIXTURES=(
   message-channels-select message-channels-select-narrow
   message-conversations-select message-conversations-select-narrow
   composer-emoji composer-emoji-narrow
+  emoji-native emoji-native-narrow
   channel-mute channel-mute-narrow
   channel-notifications channel-notifications-narrow
   notification-schedule notification-schedule-narrow
@@ -100,6 +113,9 @@ FIXTURES=(
   draft-native-projection draft-native-projection-narrow
   draft-remote-review draft-remote-review-narrow
   draft-update-recovery draft-update-recovery-narrow
+  draft-schedule-recovery draft-schedule-recovery-narrow
+  managed-draft-send managed-draft-send-narrow
+  managed-draft-schedule managed-draft-schedule-narrow
   scheduled-attachments scheduled-attachments-narrow
   user-links user-links-narrow
   read-preferences read-preferences-narrow
@@ -113,6 +129,28 @@ FIXTURES=(
 
 # Optional fixture names allow a focused recheck after the full sweep.
 if [[ "$#" -gt 0 ]]; then FIXTURES=("$@"); fi
+
+# These named fixtures require explicit isolated worker ownership/readiness.
+# The dedicated runner handles both protected-drafts and protected-drafts-narrow;
+# they are intentionally not part of the default-feature sweep.
+for fixture in "${FIXTURES[@]}"; do
+  case "$fixture" in
+    slack-list-subitem-create|slack-list-subitem-create-narrow|slack-list-subitem-uncertain|slack-list-subitem-uncertain-narrow)
+      echo "Use scripts/check-slack-list-subitem-native.py for the owned subitem workflow." >&2
+      exit 2 ;;
+    protected-adoption|protected-adoption-narrow)
+      echo "Use scripts/check-protected-adoption-native.py with an explicitly feature-built binary." >&2
+      exit 2
+      ;;
+    protected-enrollment|protected-enrollment-narrow)
+      echo "Use scripts/check-protected-enrollment-native.py with an explicitly feature-built binary." >&2
+      exit 2
+      ;;
+    protected-drafts|protected-drafts-narrow)
+      echo "Use scripts/check-protected-drafts-native.py with an explicitly feature-built binary." >&2
+      exit 2 ;;
+  esac
+done
 
 echo "agent-ui-check: building the locked Dioxus desktop shell…"
 cargo build --manifest-path "$MANIFEST" --locked

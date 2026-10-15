@@ -61,8 +61,11 @@ impl RemoteReview {
             "date_created",
             "attachments",
             "is_from_composer",
+            "date_stashed",
+            "file_permissions",
         ];
-        if user.is_empty()
+        if !crate::drafts::sync::supports_neutral_metadata(raw)
+            || user.is_empty()
             || user.chars().any(|c| c.is_whitespace() || c.is_control())
             || raw_info.get("ok").and_then(Value::as_bool) != Some(true)
             || raw_info.get("error").is_some_and(|error| !error.is_null())

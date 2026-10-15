@@ -258,3 +258,54 @@ fn review_independently_rejects_non_null_error_and_preserves_warning_metadata() 
         "local"
     );
 }
+
+#[test]
+fn neutral_metadata_review_preserves_raw_and_all_existing_guards() {
+    let (mut store, scope, raw) = setup();
+    let inventory = store.read_local_review(&scope).unwrap();
+    for fields in [
+        json!({"date_stashed":0}),
+        json!({"file_permissions":[]}),
+        json!({"date_stashed":0,"file_permissions":[]}),
+    ] {
+        let mut raw = raw.clone();
+        raw["draft"]
+            .as_object_mut()
+            .unwrap()
+            .extend(fields.as_object().unwrap().clone());
+        let review = RemoteReview::prepare(inventory.clone(), raw.clone(), "U1").unwrap();
+        assert_eq!(review.raw_info(), &raw);
+        assert_eq!(
+            review.remote().snapshot.blocks,
+            raw["draft"]["blocks"].as_array().unwrap().clone()
+        );
+    }
+    for (field, value) in [
+        ("date_stashed", json!("0")),
+        ("date_stashed", json!(1)),
+        ("date_stashed", Value::Null),
+        ("file_permissions", json!({})),
+        ("file_permissions", json!([{"file_id":"F1","grant":false}])),
+        ("mpdm_name", json!("")),
+        ("id", json!("Other")),
+        ("team_id", json!("T2")),
+        ("user_id", json!("U2")),
+        ("is_from_composer", json!(true)),
+        ("is_from_composer", Value::Null),
+        ("is_from_composer", json!("false")),
+        ("is_sent", json!(true)),
+        ("is_deleted", json!(true)),
+        ("date_scheduled", json!(100)),
+        ("future_field", json!(false)),
+    ] {
+        let mut bad = raw.clone();
+        bad["draft"]["date_stashed"] = json!(0);
+        bad["draft"]["file_permissions"] = json!([]);
+        bad["draft"][field] = value;
+        assert!(
+            RemoteReview::prepare(inventory.clone(), bad, "U1").is_err(),
+            "{field}"
+        );
+    }
+    assert!(inventory.matches(&store.read_local_review(&scope).unwrap()));
+}

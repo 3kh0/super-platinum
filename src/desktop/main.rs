@@ -25,6 +25,9 @@ mod composer_emoji;
 mod connection;
 mod download;
 mod drafts;
+mod emoji_catalog;
+mod emoji_native;
+mod emoji_preferences;
 mod file_actions;
 mod file_actions_check;
 mod file_events;
@@ -87,6 +90,51 @@ use state::ShellState;
 pub(crate) use super_platinum_core::{config, slack};
 
 fn main() {
+    if fixture::protected_adoption_requested() {
+        #[cfg(not(feature = "protected-native-fixture"))]
+        {
+            eprintln!("protected-adoption: binary lacks protected-native-fixture");
+            std::process::exit(2);
+        }
+        #[cfg(feature = "protected-native-fixture")]
+        if !drafts::protected::adoption_fixture::enabled()
+            || fixture::protected_requested()
+            || fixture::protected_enrollment_requested()
+        {
+            eprintln!("protected-adoption: exact exclusive fixture alias and CHECK=1 required");
+            std::process::exit(2);
+        }
+        #[cfg(feature = "protected-native-fixture")]
+        if let Err(error) = drafts::protected::adoption_fixture::preflight() {
+            eprintln!("protected-adoption: {error}");
+            std::process::exit(2);
+        }
+    }
+    if fixture::protected_enrollment_requested() {
+        #[cfg(not(feature = "protected-native-fixture"))]
+        {
+            eprintln!("protected-enrollment: binary lacks protected-native-fixture");
+            std::process::exit(2);
+        }
+        #[cfg(feature = "protected-native-fixture")]
+        if !drafts::protected::enrollment_fixture::enabled() || fixture::protected_requested() {
+            eprintln!("protected-enrollment: exact exclusive fixture alias and CHECK=1 required");
+            std::process::exit(2);
+        }
+    }
+    // A feature-off or malformed fixture request must never reach ordinary boot.
+    if fixture::protected_requested() {
+        #[cfg(not(feature = "protected-native-fixture"))]
+        {
+            eprintln!("protected-drafts: binary lacks protected-native-fixture");
+            std::process::exit(2);
+        }
+        #[cfg(feature = "protected-native-fixture")]
+        if !drafts::protected::native_fixture::enabled() {
+            eprintln!("protected-drafts: exact fixture alias and CHECK=1 required");
+            std::process::exit(2);
+        }
+    }
     #[cfg(target_os = "windows")]
     notification::windows::prepare_startup();
     #[cfg(target_os = "windows")]
@@ -143,6 +191,10 @@ fn run_auth_mode() -> Option<i32> {
 }
 
 fn app() -> Element {
+    #[cfg(feature = "protected-native-fixture")]
+    use_context_provider(
+        || std::rc::Rc::new(view::composer::protected_operations::Root::default()),
+    );
     let media = consume_context::<media::MediaRegistry>();
     let mut state = use_signal(move || {
         if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
@@ -152,6 +204,8 @@ fn app() -> Element {
         }
     });
     let desktop = dioxus::desktop::window();
+    #[cfg(feature = "emoji-retirement-observation")]
+    performance::emoji_retirement::use_close_observer();
     use_context_provider(|| state);
     let attachment_operations = use_signal(scheduled::attachments::Operations::default);
     use_context_provider(|| attachment_operations);
@@ -296,6 +350,7 @@ fn app() -> Element {
     use_future(move || trusted_keyboard_check::run(state));
     use_future(move || view::scheduled::clear_check::run(state));
     use_future(move || completion_check::run(state));
+    use_future(move || performance::completion::run(state));
     use_future(move || clipboard_check::run(state));
     use_future(move || canvas_check::run(state));
     use_future(move || bookmarks_check::run(state));

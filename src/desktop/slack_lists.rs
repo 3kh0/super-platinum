@@ -25,6 +25,8 @@ mod layout;
 pub(crate) mod lifecycle;
 mod mutations;
 mod network;
+pub(crate) mod rename;
+pub(crate) mod subitem;
 use mutations::{
     begin_edit, begin_edit_with_authority, cancel_preflight, checkbox_visit_current, finish_edit,
     validate_edit,
@@ -39,7 +41,7 @@ pub(crate) use layout::{TableEntry, select_view, toggle_group};
 use record_detail::EditAuthority;
 pub(crate) use record_detail::{
     RecordDetailView, begin_detail_cell_editor, close_record_detail, open_record_detail,
-    toggle_detail_checkbox, track_open,
+    open_subitem, toggle_detail_checkbox, track_open,
 };
 pub(crate) use super_platinum_core::slack_lists::{CellEditValue, saved_views::ProjectionLayout};
 #[cfg(test)]
@@ -56,6 +58,7 @@ use scope::Scope;
 #[derive(Clone, Default)]
 pub(crate) struct State {
     scope: Option<Scope>,
+    rename_cooldown_visible: bool,
     view: Option<View>,
     operations: BTreeMap<String, Mutation>,
     retained_cells: cell_receipts::Retained,
@@ -189,7 +192,8 @@ pub(crate) fn close_shell(shell: &mut ShellState) {
     }
 }
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
-    let creation_changed = create::poll(shell);
+    let rename_changed = rename::poll(shell);
+    let creation_changed = create::poll(shell) | subitem::poll(shell);
     let deletion_changed = delete::poll(shell);
     if shell
         .slack_lists
@@ -228,7 +232,7 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
         shell.slack_lists.view.as_mut().unwrap().retry_at = 0;
     }
     let calendar_changed = date_context::poll(shell);
-    creation_changed || deletion_changed || deleted || expired || calendar_changed
+    rename_changed || creation_changed || deletion_changed || deleted || expired || calendar_changed
 }
 /// A verified realtime event names the file/list. Its payload is not trusted as
 /// a complete document or cell response: invalidate and require a fresh read.
@@ -278,6 +282,7 @@ pub(super) fn begin_read(shell: &mut ShellState) -> Option<ReadAttempt> {
         || view.unavailable
         || view.retry_at > now()
         || delete::blocks_read(shell)
+        || rename::blocks_read(shell)
         || shell
             .slack_lists
             .operations
