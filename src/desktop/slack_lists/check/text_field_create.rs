@@ -20,7 +20,7 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
                     receipt["failedCellLedger"] = checkbox::failed_snapshot(&state.peek());
                 } else if mode == FieldCreateMode::Date {
                     receipt["failedCellLedger"] = date::failed_snapshot(&state.peek());
-                } else if mode == FieldCreateMode::Select {
+                } else if mode.is_select() {
                     receipt["failedCellLedger"] = select::failed_snapshot(&state.peek());
                 }
                 receipt
@@ -294,11 +294,7 @@ impl Proof {
     ) -> Result<(), String> {
         let actual_ordinal = self.stages.len();
         let ordinal = actual_ordinal
-            .checked_sub(if self.mode == FieldCreateMode::Select {
-                4
-            } else {
-                0
-            })
+            .checked_sub(if self.mode.is_select() { 4 } else { 0 })
             .ok_or("Missing Select prelude")?;
         if oracle::STAGES.get(ordinal) != Some(&name) {
             return Err("Wrong Text creation stage order".into());
@@ -464,7 +460,7 @@ async fn run(
     }
     let mut proof = Proof {
         mode,
-        docs: if mode == FieldCreateMode::Select {
+        docs: if mode.is_select() {
             [before.clone(), before.clone()]
         } else {
             oracle::documents(&before, mode)
@@ -478,7 +474,7 @@ async fn run(
     };
     proof.stable(state, 0)?;
     let canceled = open_name(state, d, mode).await?;
-    let select_prelude = if mode == FieldCreateMode::Select {
+    let select_prelude = if mode.is_select() {
         Some(select::options::prelude(state, d, &mut proof).await?)
     } else {
         None
@@ -500,10 +496,12 @@ async fn run(
     }
     proof.stable(state, 0)?;
     let created_choice = open_name(state, d, mode).await?;
-    if mode == FieldCreateMode::Select {
+    let mut select_configuration = Value::Null;
+    let mut admitted_choice = created_choice["model"].clone();
+    if mode.is_select() {
         let configured = select::options::fill(state, d).await?;
         let expected = configured["options"].clone();
-        rename_fixture::select_create::validate(&expected)?;
+        rename_fixture::select_create::validate_mode(mode, &expected)?;
         rename_fixture::select_create::bind(
             &state.peek(),
             created_choice["model"]["serial"]
@@ -514,6 +512,13 @@ async fn run(
         proof.docs = oracle::documents_with_options(&before, mode, Some(&expected));
         proof.select_options = Some(expected);
         select::options::top(state, d).await?;
+        admitted_choice = select::configuration::admission(
+            &created_choice["model"],
+            &configured,
+            draft(state)?,
+            mode,
+        )?;
+        select_configuration = json!({"fill":configured,"admitted":admitted_choice});
     }
     proof.id = created_choice["model"]["serial"]
         .as_u64()
@@ -608,10 +613,7 @@ async fn run(
     phase(state, Stage::Uncertain).await?;
     proof.stable(state, 0)?;
     let retained = draft(state)?;
-    let mut expected_retained = created_choice["model"].clone();
-    expected_retained["visit"] = json!(new_visit);
-    expected_retained["selection"] = json!(new_selection);
-    if retained != expected_retained {
+    if !select::configuration::retained(&admitted_choice, &retained, new_visit, new_selection) {
         return Err("Retired check replaced original intent or choice".into());
     }
     let retired = json!({"oldVisit":old_visit,"newVisit":new_visit,"oldSelection":old_selection,"newSelection":new_selection,"oldEpoch":old_epoch,"newEpoch":state.peek().core.account_epoch,"held":held,"setup":setup,"completed":obsolete,"document":document(state)?,"population":self::population(state)?,"find":find(state)?,"reboundFind":rebound_find,"retained":retained});
@@ -662,7 +664,7 @@ async fn run(
         Some(checkbox::run(state, d, &mut proof).await?)
     } else if mode == FieldCreateMode::Date {
         Some(date::run(state, d, &mut proof).await?)
-    } else if mode == FieldCreateMode::Select {
+    } else if mode.is_select() {
         Some(select::run(state, d, &mut proof).await?)
     } else {
         None
@@ -675,6 +677,8 @@ async fn run(
     }
     let mut terminal = json!({"ok":true,"mode":mode.kind().as_str(),"fixture":std::env::var("SUPER_PLATINUM_FIXTURE").unwrap(),"owner":owner,"noSession":true,"noTransport":true,"before":proof.docs[0],"after":proof.docs[1],"population":proof.population,"find":proof.find,"firstFind":first_find,"attempt":proof.id,"cancel":{"draft":canceled,"focus":cancel_focus,"registry":cancel_registry,"ledger":canceled_ledger},"create":created_choice,"retiredCheck":retired,"observed":observed,"doneFocus":done_focus,"doneRegistry":done_registry,"stages":proof.stages,"captures":proof.captures,"ledger":ledger,"viewport":viewport["viewport"]});
     if let Some(prelude) = select_prelude {
+        terminal["selectFormat"] = json!(mode.select_format());
+        terminal["selectConfiguration"] = select_configuration;
         terminal["selectPrelude"] = prelude;
         terminal["expectedOptions"] = proof.select_options.clone().unwrap();
     }

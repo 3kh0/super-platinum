@@ -8,15 +8,26 @@ pub(crate) enum FieldCreateMode {
     Checkbox,
     Date,
     Select,
+    MultiSelect,
 }
 impl FieldCreateMode {
+    pub(crate) fn is_select(self) -> bool {
+        matches!(self, Self::Select | Self::MultiSelect)
+    }
+    pub(crate) fn select_format(self) -> &'static str {
+        if self == Self::MultiSelect {
+            "multi_select"
+        } else {
+            "single_select"
+        }
+    }
     pub(crate) fn kind(self) -> ColumnCreateKind {
         match self {
             Self::Text => ColumnCreateKind::Text,
             Self::Number => ColumnCreateKind::NumberDefault0,
             Self::Checkbox => ColumnCreateKind::Checkbox,
             Self::Date => ColumnCreateKind::DateSingleDefault,
-            Self::Select => ColumnCreateKind::Select,
+            Self::Select | Self::MultiSelect => ColumnCreateKind::Select,
         }
     }
     pub(crate) fn name(self) -> &'static str {
@@ -25,7 +36,7 @@ impl FieldCreateMode {
             Self::Number => "Release count",
             Self::Checkbox => "Verified",
             Self::Date => "Target date",
-            Self::Select => "Release phase",
+            Self::Select | Self::MultiSelect => "Release phase",
         }
     }
     pub(crate) fn observed(self) -> (&'static str, &'static str) {
@@ -34,7 +45,7 @@ impl FieldCreateMode {
             Self::Number => ("C_NUMBER_OBSERVED", "number_observed"),
             Self::Checkbox => ("C_CHECKBOX_OBSERVED", "checkbox_observed"),
             Self::Date => ("C_DATE_OBSERVED", "date_observed"),
-            Self::Select => ("C_SELECT_OBSERVED", "select_observed"),
+            Self::Select | Self::MultiSelect => ("C_SELECT_OBSERVED", "select_observed"),
         }
     }
     pub(crate) fn prefix(self) -> &'static str {
@@ -44,6 +55,7 @@ impl FieldCreateMode {
             Self::Checkbox => "slack-list-checkbox-field-create",
             Self::Date => "slack-list-date-field-create",
             Self::Select => "slack-list-select-field-create",
+            Self::MultiSelect => "slack-list-multi-select-field-create",
         }
     }
     pub(crate) fn env_prefix(self) -> &'static str {
@@ -53,6 +65,7 @@ impl FieldCreateMode {
             Self::Checkbox => "SUPER_PLATINUM_LIST_CHECKBOX_FIELD_CREATE",
             Self::Date => "SUPER_PLATINUM_LIST_DATE_FIELD_CREATE",
             Self::Select => "SUPER_PLATINUM_LIST_SELECT_FIELD_CREATE",
+            Self::MultiSelect => "SUPER_PLATINUM_LIST_MULTI_SELECT_FIELD_CREATE",
         }
     }
 }
@@ -64,6 +77,30 @@ fn mode_gate_all(
     select: Option<&str>,
     alias: Option<&str>,
 ) -> Option<FieldCreateMode> {
+    mode_gate_multi(text, number, checkbox, date, select, None, alias)
+}
+fn mode_gate_multi(
+    text: Option<&str>,
+    number: Option<&str>,
+    checkbox: Option<&str>,
+    date: Option<&str>,
+    select: Option<&str>,
+    multi: Option<&str>,
+    alias: Option<&str>,
+) -> Option<FieldCreateMode> {
+    if let Some(multi) = multi {
+        if multi != "1"
+            || [text, number, checkbox, date, select]
+                .iter()
+                .any(Option::is_some)
+        {
+            return None;
+        }
+        let mode = FieldCreateMode::MultiSelect;
+        return (alias == Some(mode.prefix())
+            || alias == Some("slack-list-multi-select-field-create-narrow"))
+        .then_some(mode);
+    }
     let mode = match (text, number, checkbox, date, select) {
         (Some("1"), None, None, None, None) => FieldCreateMode::Text,
         (None, Some("1"), None, None, None) => FieldCreateMode::Number,
@@ -86,7 +123,7 @@ fn mode_gate(
     mode_gate_all(t, n, c, d, None, a)
 }
 pub(crate) fn field_create_mode() -> Option<FieldCreateMode> {
-    mode_gate_all(
+    mode_gate_multi(
         std::env::var("SUPER_PLATINUM_LIST_TEXT_FIELD_CREATE_CHECK")
             .ok()
             .as_deref(),
@@ -100,6 +137,9 @@ pub(crate) fn field_create_mode() -> Option<FieldCreateMode> {
             .ok()
             .as_deref(),
         std::env::var("SUPER_PLATINUM_LIST_SELECT_FIELD_CREATE_CHECK")
+            .ok()
+            .as_deref(),
+        std::env::var("SUPER_PLATINUM_LIST_MULTI_SELECT_FIELD_CREATE_CHECK")
             .ok()
             .as_deref(),
         std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
@@ -198,7 +238,7 @@ fn seed_reopened(
 
 // Fixture data only: the production observer discovers these returned identities.
 fn add_field(server: &mut Value, mode: FieldCreateMode) -> Result<(), Error> {
-    if mode == FieldCreateMode::Select {
+    if mode.is_select() {
         return Err(Error::Api("fixture_select_needs_owned_options".into()));
     }
     let (id, key) = mode.observed();
@@ -282,7 +322,7 @@ pub(super) async fn write(
             )));
         }
     }
-    let select = if mode == FieldCreateMode::Select {
+    let select = if mode.is_select() {
         Some(
             select::bound_options(
                 &state.peek(),
@@ -312,7 +352,7 @@ pub(super) async fn write(
         FieldCreateMode::Text => Some("{\"format\":\"text\"}"),
         FieldCreateMode::Number => Some("{\"precision\":0}"),
         FieldCreateMode::Checkbox => None,
-        FieldCreateMode::Select => select_wire.as_deref(),
+        FieldCreateMode::Select | FieldCreateMode::MultiSelect => select_wire.as_deref(),
         FieldCreateMode::Date => Some("{\"date_format\":\"default\",\"format\":\"single\"}"),
     };
     if let Some(options) = options {
@@ -348,8 +388,9 @@ pub(super) async fn write(
         })?;
     {
         let mut l = ledger().lock().unwrap();
-        if mode == FieldCreateMode::Select {
-            select::add_field(
+        if mode.is_select() {
+            select::add_field_mode(
+                mode,
                 l.server.as_mut().unwrap(),
                 select
                     .as_ref()

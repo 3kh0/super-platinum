@@ -970,6 +970,7 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "slack-list-checkbox-field-create-narrow"
                 | "slack-list-date-field-create-narrow"
                 | "slack-list-select-field-create-narrow"
+                | "slack-list-multi-select-field-create-narrow"
                 | "slack-list-view-sort-narrow"
                 | "slack-list-view-grouping-narrow"
                 | "slack-list-board-grouping-narrow"

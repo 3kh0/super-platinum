@@ -16,6 +16,8 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
             | "slack-list-date-field-create-narrow"
             | "slack-list-select-field-create"
             | "slack-list-select-field-create-narrow"
+            | "slack-list-multi-select-field-create"
+            | "slack-list-multi-select-field-create-narrow"
     ));
     let server = seed(shell, name);
     if super::super::rename::fixture::field_create_check_enabled() {
@@ -31,7 +33,8 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     if name.starts_with("slack-list-number-field-create")
         || name.starts_with("slack-list-checkbox-field-create")
         || name.starts_with("slack-list-date-field-create")
-        || name.starts_with("slack-list-select-field-create")
+        || (name.starts_with("slack-list-select-field-create")
+            || name.starts_with("slack-list-multi-select-field-create"))
     {
         let choice = super::super::rename::text_create::choice(shell).unwrap();
         assert!(super::super::rename::text_create::kind_shell(
@@ -40,7 +43,9 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
             visit,
             selection,
             choice,
-            if name.starts_with("slack-list-select-field-create") {
+            if name.starts_with("slack-list-select-field-create")
+                || name.starts_with("slack-list-multi-select-field-create")
+            {
                 "select"
             } else if name.starts_with("slack-list-checkbox-field-create") {
                 "checkbox"
@@ -58,7 +63,9 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
         visit,
         selection,
         choice,
-        if name.starts_with("slack-list-select-field-create") {
+        if name.starts_with("slack-list-select-field-create")
+            || name.starts_with("slack-list-multi-select-field-create")
+        {
             "Release phase".into()
         } else if name.starts_with("slack-list-number-field-create") {
             "Release count".into()
@@ -70,7 +77,9 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
             "Release notes".into()
         }
     ));
-    if name.starts_with("slack-list-select-field-create") {
+    if name.starts_with("slack-list-select-field-create")
+        || name.starts_with("slack-list-multi-select-field-create")
+    {
         use super::super::rename::text_create::select::{Edit, edit_shell};
         for label in [
             "Ready",
@@ -107,6 +116,18 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
                 Edit::Add { epoch }
             ));
         }
+    }
+    if name.starts_with("slack-list-multi-select-field-create") {
+        assert!(super::super::rename::text_create::select::edit_shell(
+            shell,
+            serial,
+            visit,
+            selection,
+            choice,
+            super::super::rename::text_create::select::Edit::Format(
+                super_platinum_core::slack_lists::SelectCreateFormat::Multiple
+            ),
+        ));
     }
 }
 pub(super) fn seed(shell: &mut ShellState, name: &str) -> Value {

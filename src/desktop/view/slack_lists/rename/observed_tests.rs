@@ -184,3 +184,53 @@ fn exact_observed_summary_is_outside_body_only_for_select_and_options_remain_loc
         }
     }
 }
+
+#[test]
+fn multi_cardinality_remains_checked_and_locked_in_observed_panel_with_same_summary_placement() {
+    let result = Rc::new(RefCell::new(None));
+    let mut dom = VirtualDom::new_with_props(
+        |result: Rc<RefCell<Option<Node>>>| {
+            let state = use_signal(|| {
+                ShellState::fixture_variant(
+                    crate::media::MediaRegistry::default(),
+                    "slack-list-multi-select-field-create",
+                )
+            });
+            let mut view = rename::presentation(&state.peek()).unwrap();
+            assert_eq!(
+                view.select_draft.as_ref().unwrap().format,
+                super_platinum_core::slack_lists::SelectCreateFormat::Multiple
+            );
+            view.stage = Stage::Observed;
+            view.can_confirm = false;
+            view.current_review = true;
+            view.observed_field = Some(rename::text_create::Observed {
+                id: "OBSERVED".into(),
+                key: "actual_key".into(),
+                name: "Release phase".into(),
+            });
+            let rendered = render_panel(state, view);
+            *result.borrow_mut() = Some(Node {
+                children: expand(rendered.as_ref().unwrap()),
+                ..Default::default()
+            });
+            assert!(rename::text_create::select::close_fixture(&state.peek()));
+            rendered
+        },
+        result.clone(),
+    );
+    dom.rebuild_to_vec();
+    let tree = result.borrow_mut().take().unwrap();
+    let panel = tree.all("id", "slack-list-rename")[0];
+    let checkbox = panel.all("id", "slack-list-select-multiple")[0];
+    assert_eq!(checkbox.attr("type"), "checkbox");
+    assert_eq!(checkbox.attr("checked"), "true");
+    assert_eq!(checkbox.attr("disabled"), "true");
+    assert!(panel.text().contains("Allow multiple selections"));
+    let body = panel.all("class", "slack-list-editor-body")[0];
+    assert!(body.all("id", "slack-list-text-field-observed").is_empty());
+    assert_eq!(
+        panel.all("id", "slack-list-text-field-observed")[0].text(),
+        "Observed Select field: Release phase"
+    );
+}

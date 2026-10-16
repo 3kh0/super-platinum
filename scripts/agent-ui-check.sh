@@ -96,6 +96,7 @@ FIXTURES=(
   slack-list-checkbox-field-create slack-list-checkbox-field-create-narrow
   slack-list-date-field-create slack-list-date-field-create-narrow
   slack-list-select-field-create slack-list-select-field-create-narrow
+  slack-list-multi-select-field-create slack-list-multi-select-field-create-narrow
   slack-list-view-sort slack-list-view-sort-narrow
   slack-list-view-grouping slack-list-view-grouping-narrow
   slack-list-board-grouping slack-list-board-grouping-narrow

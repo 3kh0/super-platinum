@@ -1066,7 +1066,9 @@ impl ShellState {
             | "slack-list-date-field-create"
             | "slack-list-date-field-create-narrow"
             | "slack-list-select-field-create"
-            | "slack-list-select-field-create-narrow" => {
+            | "slack-list-select-field-create-narrow"
+            | "slack-list-multi-select-field-create"
+            | "slack-list-multi-select-field-create-narrow" => {
                 crate::slack_lists::fixture::text_field_create::install(&mut state, name);
             }
             "slack-list-compound-filter" | "slack-list-compound-filter-narrow" => {

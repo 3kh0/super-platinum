@@ -132,8 +132,12 @@ pub(crate) async fn capture(
             && checkbox::STAGES.contains(&stage))
         && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::Date)
             && date::STAGES.contains(&stage))
-        && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::Select)
-            && (select::STAGES.contains(&stage) || select::options::STAGES.contains(&stage)))
+        && !(rename_fixture::field_create_mode().is_some_and(FieldCreateMode::is_select)
+            && ((if rename_fixture::field_create_mode() == Some(FieldCreateMode::MultiSelect) {
+                select::MULTI_STAGES.contains(&stage)
+            } else {
+                select::STAGES.contains(&stage)
+            }) || select::options::STAGES.contains(&stage)))
     {
         return Err("Invalid capture stage".into());
     }
@@ -286,7 +290,7 @@ pub(super) fn creation_stage(
     if !legacy.is_object() || legacy.get("options").is_some() {
         return Err("Historical stage shape already contains options".into());
     }
-    if mode == FieldCreateMode::Select {
+    if mode.is_select() {
         legacy["options"] = options.unwrap_or(Value::Null);
     }
     Ok(legacy)

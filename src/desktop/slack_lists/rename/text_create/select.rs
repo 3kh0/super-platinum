@@ -1,6 +1,8 @@
 //! Small owned draft. Row generations, not reusable option strings, own callbacks.
 use super::*;
-use super_platinum_core::slack_lists::{SelectCreateOption, SelectCreateOptions};
+use super_platinum_core::slack_lists::{
+    SelectCreateFormat, SelectCreateOption, SelectCreateOptions,
+};
 #[derive(Clone, Debug)]
 pub(crate) struct Row {
     pub generation: u64,
@@ -8,6 +10,7 @@ pub(crate) struct Row {
 }
 #[derive(Clone, Debug)]
 pub(crate) struct Draft {
+    pub format: SelectCreateFormat,
     pub rows: Vec<Row>,
     pub pending: String,
     pub add_epoch: u64,
@@ -16,6 +19,7 @@ pub(crate) struct Draft {
 impl Default for Draft {
     fn default() -> Self {
         Self {
+            format: SelectCreateFormat::Single,
             rows: Vec::new(),
             pending: String::new(),
             add_epoch: next_id(),
@@ -42,7 +46,10 @@ impl Draft {
                 "Add the pending option, or clear its text before creating the field.",
             ));
         }
-        SelectCreateOptions::capture(self.rows.iter().map(|r| r.option.clone()).collect())
+        SelectCreateOptions::capture_format(
+            self.format,
+            self.rows.iter().map(|r| r.option.clone()).collect(),
+        )
     }
     pub(crate) fn can_add(&self) -> bool {
         self.rows.len() < SelectCreateOptions::MAX_CHOICES
@@ -50,6 +57,7 @@ impl Draft {
     }
 }
 pub(crate) enum Edit {
+    Format(SelectCreateFormat),
     Pending { epoch: u64, value: String },
     Add { epoch: u64 },
     Remove { row: u64 },
@@ -91,6 +99,16 @@ pub(crate) fn edit_shell(
     with_edit(shell, serial, visit, selection, rendered, |entry| {
         let draft = &mut entry.select_draft;
         match edit {
+            Edit::Format(format) => {
+                if draft.format == format {
+                    return false;
+                }
+                draft.format = format;
+                // Preserve every option identity and unsubmitted text. Retire all
+                // old format/name/row callbacks, including a single/multi/single ABA.
+                draft.add_epoch = next_id();
+                entry.field_choice.revision = next_id();
+            }
             Edit::Pending { epoch, value } => {
                 if epoch != draft.add_epoch || value.len() > 4096 || draft.pending == value {
                     return false;

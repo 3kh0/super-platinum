@@ -12,6 +12,7 @@ fn dom_matches(dom: &Value, m: &Value) -> bool {
     ["serial", "visit", "selection", "choice", "epoch"]
         .iter()
         .all(|k| dom[k].as_str() == m[k].as_u64().map(|n| n.to_string()).as_deref())
+        && dom["format"] == m["format"]
         && dom["pending"] == m["pending"]
         && dom["rows"].as_array().is_some_and(|rows| {
             m["rows"].as_array().is_some_and(|model| {
@@ -126,6 +127,59 @@ pub(in super::super) async fn top(
     )
     .await
 }
+async fn format(
+    state: Signal<ShellState>,
+    d: &dioxus::desktop::DesktopContext,
+    checked_value: bool,
+) -> Result<Value, String> {
+    let before = model(state)?;
+    let wanted = if checked_value {
+        "multi_select"
+    } else {
+        "single_select"
+    };
+    let changed = before["format"] != wanted;
+    let action = checked(
+        d,
+        &format!(
+            "window.__listSelectOptions.format({checked_value},{})",
+            proof(&before)
+        ),
+    )
+    .await?;
+    for _ in 0..150 {
+        let after = model(state)?;
+        if after["format"] == wanted
+            && (after["choice"] != before["choice"]) == changed
+            && (after["epoch"] != before["epoch"]) == changed
+        {
+            if after["rows"] != before["rows"]
+                || after["pending"] != before["pending"]
+                || after["serial"] != before["serial"]
+                || after["visit"] != before["visit"]
+                || after["selection"] != before["selection"]
+            {
+                return Err("Format changed owned option input".into());
+            }
+            let dom = wait_dom(
+                d,
+                &format!(
+                    "window.__listSelectOptions.formatSettled({})",
+                    proof(&after)
+                ),
+            )
+            .await?;
+            if !dom_matches(&dom["after"], &after) || model(state)? != after {
+                return Err("Format DOM/model changed".into());
+            }
+            return Ok(
+                json!({"before":before,"after":after,"changed":changed,"action":action,"dom":dom}),
+            );
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(40)).await;
+    }
+    Err("Cardinality event did not settle".into())
+}
 pub(in super::super) async fn fill(
     state: Signal<ShellState>,
     d: &dioxus::desktop::DesktopContext,
@@ -133,6 +187,12 @@ pub(in super::super) async fn fill(
     if model(state)?["rows"] != json!([]) {
         return Err("Expected empty fresh option draft".into());
     }
+    let mode = rename_fixture::field_create_mode().ok_or("Missing mode")?;
+    let cardinality = if mode == FieldCreateMode::MultiSelect {
+        Some(format(state, d, true).await?)
+    } else {
+        None
+    };
     let mut adds = vec![];
     for label in rename_fixture::select_create::LABELS {
         let value = if label == rename_fixture::select_create::LABELS[1] {
@@ -151,9 +211,9 @@ pub(in super::super) async fn fill(
         .iter()
         .map(|r| json!({"label":r["label"],"value":r["value"],"color":r["color"]}))
         .collect::<Vec<_>>();
-    let options = json!({"format":"single_select","choices":choices});
-    rename_fixture::select_create::validate(&options)?;
-    Ok(json!({"options":options,"state":final_state,"adds":adds}))
+    let options = json!({"format":dom["format"],"choices":choices});
+    rename_fixture::select_create::validate_mode(mode, &options)?;
+    Ok(json!({"options":options,"state":final_state,"adds":adds,"cardinality":cardinality}))
 }
 async fn within_keyboard_deadline(
     deadline: tokio::time::Instant,
@@ -187,8 +247,9 @@ async fn keyboard(
     let before = model(state)?;
     let started = tokio::time::Instant::now();
     let deadline = started + std::time::Duration::from_secs(15);
-    let nonce = std::env::var("SUPER_PLATINUM_LIST_SELECT_FIELD_CREATE_NONCE")
-        .map_err(|_| "Missing owned nonce")?;
+    let mode = rename_fixture::field_create_mode().ok_or("Missing mode")?;
+    let nonce =
+        std::env::var(format!("{}_NONCE", mode.env_prefix())).map_err(|_| "Missing owned nonce")?;
     let fixture = std::env::var("SUPER_PLATINUM_FIXTURE").map_err(|_| "Missing fixture")?;
     let identity = json!({"version":1,"fixture":fixture,"nonce":nonce,"pid":std::process::id(),"owner":proof(&before)});
     let run = within_keyboard_deadline(deadline, async {
@@ -204,9 +265,9 @@ async fn keyboard(
             request["expected"] = arm["expected"].clone();
             tokio::task::spawn_blocking(move || {
                 use std::io::Write;
-                std::io::stderr().lock().write_all(
-                    format!("slack-list-select-field-create-keyboard: {request}\n").as_bytes(),
-                )
+                std::io::stderr()
+                    .lock()
+                    .write_all(format!("{}-keyboard: {request}\n", mode.prefix()).as_bytes())
             })
             .await
             .map_err(|_| "Keyboard receipt writer panicked")?
@@ -256,9 +317,9 @@ async fn keyboard(
         cleanup_deadline,
         tokio::task::spawn_blocking(move || {
             use std::io::Write;
-            std::io::stderr().lock().write_all(
-                format!("slack-list-select-field-create-keyboard-complete: {receipt}\n").as_bytes(),
-            )
+            std::io::stderr()
+                .lock()
+                .write_all(format!("{}-keyboard-complete: {receipt}\n", mode.prefix()).as_bytes())
         }),
     )
     .await
@@ -329,13 +390,27 @@ pub(in super::super) async fn prelude(
 ) -> Result<Value, String> {
     checked(d, include_str!("options.js")).await?;
     let initial = model(state)?;
-    if initial["rows"] != json!([]) || initial["pending"] != "" {
+    if initial["format"] != "single_select"
+        || initial["rows"] != json!([])
+        || initial["pending"] != ""
+    {
         return Err("Select prelude did not start empty".into());
     }
     // Both input events are dispatched in one evaluation task before a DOM patch.
     let consecutive = checked(d, &format!("(()=>{{const first=window.__listSelectOptions.input('R',{});const second=window.__listSelectOptions.input('Ready',{});return{{ok:first.ok&&second.ok,first,second}};}})()",proof(&initial),proof(&initial))).await?;
     settled(state, d, 0, "Ready").await?;
     let first = add(state, d, "Ready", true).await?;
+    let cardinality = if p.mode == FieldCreateMode::MultiSelect {
+        input(state, d, &"x".repeat(257)).await?;
+        let mut events = vec![];
+        for checked in [true, false, true, true] {
+            events.push(format(state, d, checked).await?);
+        }
+        input(state, d, "").await?;
+        Some(events)
+    } else {
+        None
+    };
     let temp = add(state, d, "Temporary", false).await?;
     let old = temp["after"]["model"]["rows"][1]["generation"]
         .as_u64()
@@ -355,7 +430,8 @@ pub(in super::super) async fn prelude(
     wait_dom(d,"({ok:document.getElementById('slack-list-new-field-kind')?.value==='text'&&!document.getElementById('slack-list-select-options')})").await?;
     checked(d, "window.__listTextCreate.selectKind('select')").await?;
     let reset = settled(state, d, 0, "").await?;
-    if reset["model"]["choice"] == initial["choice"] {
+    if reset["model"]["format"] != "single_select" || reset["model"]["choice"] == initial["choice"]
+    {
         return Err("Type ABA reused epoch".into());
     }
     let mut invalid = vec![];
@@ -421,7 +497,7 @@ pub(in super::super) async fn prelude(
     let tabs = keyboard(state, d).await?;
     top(state, d).await?;
     Ok(
-        json!({"initial":initial,"consecutiveInputs":consecutive,"first":first,"temporary":temp,"removed":removed,"again":again,"removedAgain":removed_again,"typeReset":reset,"invalid":invalid,"configuration":config,"capacity":capacity,"keyboard":tabs}),
+        json!({"initial":initial,"consecutiveInputs":consecutive,"first":first,"temporary":temp,"removed":removed,"again":again,"removedAgain":removed_again,"typeReset":reset,"cardinality":cardinality,"invalid":invalid,"configuration":config,"capacity":capacity,"keyboard":tabs}),
     )
 }
 
@@ -436,7 +512,7 @@ pub(in super::super) async fn verify(
         return Err("Captured Select options no longer match owned DOM".into());
     }
     let rows = dom["rows"].as_array().ok_or("Missing captured rows")?;
-    let actual = json!({"format":"single_select","choices":rows.iter().map(|r|json!({"label":r["label"],"value":r["value"],"color":r["color"]})).collect::<Vec<_>>()});
+    let actual = json!({"format":dom["format"],"choices":rows.iter().map(|r|json!({"label":r["label"],"value":r["value"],"color":r["color"]})).collect::<Vec<_>>()});
     if actual != *expected {
         return Err("Captured Select options changed".into());
     }

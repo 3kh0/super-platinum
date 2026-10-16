@@ -126,3 +126,5 @@ fn actual_input_events_keep_consecutive_values_and_double_add_cannot_replay_cons
         assert!(rename::presentation(&state.peek()).is_none());
     });
 }
+
+mod multi;

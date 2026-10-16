@@ -218,3 +218,5 @@ fn missing_select_is_known_empty_and_uses_existing_first_selection_clear_noop() 
     .unwrap();
     assert!(clear.readback_matches(&fresh, &p));
 }
+
+mod multi;

@@ -4,7 +4,7 @@
 use super::{Column, Document, ListError, PersonalTaskLists, RecordsPage, ViewRename};
 use serde_json::{Value, json};
 mod select;
-pub use select::{SelectCreateOption, SelectCreateOptions};
+pub use select::{SelectCreateFormat, SelectCreateOption, SelectCreateOptions};
 
 /// Closed creation shapes. This is not a type conversion or arbitrary options API.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

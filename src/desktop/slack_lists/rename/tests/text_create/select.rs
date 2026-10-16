@@ -380,3 +380,5 @@ fn borrowed_render_hint_refuses_pending_empty_duplicate_and_excess_rows() {
     draft.rows.clear();
     assert!(!draft.ready());
 }
+
+mod multi;

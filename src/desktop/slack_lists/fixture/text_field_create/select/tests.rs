@@ -6,13 +6,20 @@ mod oracle;
 // The production arm requires the native creation ledger. This test-only arm
 // starts at that continuation boundary; it never fabricates worker observations.
 fn setup() -> ShellState {
+    setup_kind(false)
+}
+fn setup_kind(multi: bool) -> ShellState {
     let mut shell = ShellState::fixture_variant(
         crate::media::MediaRegistry::default(),
         "slack-list-select-field-create",
     );
     assert!(crate::slack_lists::rename::text_create::select::close_fixture(&shell));
+    let mut opts = options();
+    if multi {
+        opts["format"] = json!("multi_select");
+    }
     let f = shell.slack_lists.fixture.as_mut().unwrap();
-    f.document["list_metadata"]["schema"].as_array_mut().unwrap().insert(1,json!({"id":COLUMN,"key":KEY,"name":"Release phase","type":"select","options":options(),"opaque":{"fixture":"retained"}}));
+    f.document["list_metadata"]["schema"].as_array_mut().unwrap().insert(1,json!({"id":COLUMN,"key":KEY,"name":"Release phase","type":"select","options":opts,"opaque":{"fixture":"retained"}}));
     f.document["list_metadata"]["views"][0]["columns"]
         .as_array_mut()
         .unwrap()
@@ -23,14 +30,23 @@ fn setup() -> ShellState {
     let selection = rename::selection(&shell).unwrap();
     let f = shell.slack_lists.fixture.as_mut().unwrap();
     let document = f.document.clone();
-    let pages = pages(&f.records, SELECTED).unwrap();
+    let values = if multi {
+        vec![
+            vec![SELECTED.into(), "OptAAAAAAA0".into()],
+            vec![SELECTED.into()],
+            vec![],
+        ]
+    } else {
+        vec![vec![SELECTED.into()], vec![]]
+    };
+    let pages = pages_for(&f.records, &values).unwrap();
     f.select_create = Some(State {
         scope: scope.clone(),
         visit,
         selection,
         document: document.clone(),
         pages: pages.clone(),
-        selected: SELECTED.into(),
+        values,
         sync: json!({"visit":visit,"selection":selection,"owner":scope.stable_owner(),"after":document,"population":pages[0]}),
         preflights: vec![],
         requests: vec![],
@@ -231,3 +247,5 @@ const SELECTED: &str = "OptAAAAAAA1";
 fn options() -> Value {
     json!({"format":"single_select","choices":create::select_create::LABELS.iter().enumerate().map(|(i,label)|json!({"label":label,"value":format!("OptAAAAAAA{i}"),"color":"blue"})).collect::<Vec<_>>()})
 }
+
+mod multi;

@@ -12,8 +12,8 @@ pub(crate) struct State {
     visit: u64,
     selection: u64,
     document: Value,
-    pages: [Value; 3],
-    selected: String,
+    pages: Vec<Value>,
+    values: Vec<Vec<String>>,
     sync: Value,
     preflights: Vec<Value>,
     requests: Vec<Value>,
@@ -36,7 +36,7 @@ fn enabled(shell: &ShellState) -> bool {
         return true;
     }
     super::super::enabled(shell)
-        && create::field_create_mode() == Some(create::FieldCreateMode::Select)
+        && create::field_create_mode().is_some_and(create::FieldCreateMode::is_select)
 }
 fn state(shell: &ShellState) -> Result<&State, String> {
     let s = shell
@@ -87,7 +87,10 @@ pub(crate) fn fail(shell: &mut ShellState, error: String) {
     }
 }
 /// Independent literal expected raw pages, preserving every unrelated record byte.
-pub(crate) fn pages(original: &Value, selected: &str) -> Result<[Value; 3], String> {
+pub(crate) fn pages(original: &Value, selected: &str) -> Result<Vec<Value>, String> {
+    pages_for(original, &[vec![selected.into()], vec![]])
+}
+fn pages_for(original: &Value, values: &[Vec<String>]) -> Result<Vec<Value>, String> {
     let records = original["records"]
         .as_array()
         .ok_or("Missing fixture records")?;
@@ -116,11 +119,9 @@ pub(crate) fn pages(original: &Value, selected: &str) -> Result<[Value; 3], Stri
             .push(json!({"key":KEY,"select":value}));
         page
     };
-    Ok([
-        original.clone(),
-        changed(json!([selected])),
-        changed(json!([])),
-    ])
+    Ok(std::iter::once(original.clone())
+        .chain(values.iter().map(|v| changed(json!(v))))
+        .collect())
 }
 pub(crate) fn arm(
     shell: &mut ShellState,
@@ -177,12 +178,22 @@ pub(crate) fn arm(
     let scope = shell.slack_lists.scope.clone().ok_or("Missing scope")?;
     let visit = generation(shell).ok_or("Missing visit")?;
     let selection = rename::selection(shell).ok_or("Missing selection")?;
-    create::select_create::validate(options)?;
+    let mode = create::field_create_mode().ok_or("Missing exact Select mode")?;
+    create::select_create::validate_mode(mode, options)?;
     let selected = options["choices"][1]["value"]
         .as_str()
         .ok_or("Missing Unicode choice")?
         .to_owned();
-    let pages = pages(original, &selected)?;
+    let values = if mode == create::FieldCreateMode::MultiSelect {
+        let first = options["choices"][0]["value"]
+            .as_str()
+            .ok_or("Missing first choice")?
+            .to_owned();
+        vec![vec![selected.clone(), first], vec![selected], vec![]]
+    } else {
+        vec![vec![selected], vec![]]
+    };
+    let pages = pages_for(original, &values)?;
     let sync = json!({"creationSerial":serial,"before":before,"after":after,"population":original,"visit":visit,"selection":selection,"owner":scope.stable_owner(),"epoch":shell.core.account_epoch});
     let f = shell.slack_lists.fixture.as_mut().unwrap();
     f.document = after.clone();
@@ -192,7 +203,7 @@ pub(crate) fn arm(
         selection,
         document: after.clone(),
         pages,
-        selected,
+        values,
         sync: sync.clone(),
         preflights: vec![],
         requests: vec![],
@@ -244,7 +255,7 @@ pub(crate) fn preflight(
     }
     let s = state(shell)?;
     let index = s.preflights.len();
-    if index > 1
+    if index >= s.values.len()
         || s.requests.len() != index
         || s.completed.len() != index
         || s.reads.len() != index
@@ -263,11 +274,7 @@ pub(crate) fn preflight(
         COLUMN,
         canonical.allow_lists.as_deref(),
         canonical.personal_task_lists.as_ref(),
-        CellEditValue::Select(if index == 0 {
-            vec![s.selected.clone()]
-        } else {
-            vec![]
-        }),
+        CellEditValue::Select(s.values[index].clone()),
     )
     .map_err(|e| e.to_string())?;
     if attempt.edit != expected
@@ -295,7 +302,7 @@ pub(crate) fn request(
         return Ok(());
     }
     let s = state(shell)?;
-    if s.requests.len() >= 2
+    if s.requests.len() >= s.values.len()
         || s.preflights.len() != s.requests.len() + 1
         || s.preflights.last().unwrap()["attempt"] != attempt_json(attempt)
     {
@@ -322,7 +329,7 @@ pub(crate) fn completion(
     }
     let s = state(shell)?;
     let index = s.completed.len();
-    if index >= 2
+    if index >= s.values.len()
         || s.requests.len() != index + 1
         || s.requests[index]["attempt"] != attempt_json(attempt)
         || uncertain
@@ -347,7 +354,7 @@ pub(crate) fn read_input(
     }
     let s = state(shell)?;
     let index = s.reads.len();
-    if index >= 2
+    if index >= s.values.len()
         || s.completed.len() != index + 1
         || attempt.generation != s.visit
         || !attempt.scope.current(shell)

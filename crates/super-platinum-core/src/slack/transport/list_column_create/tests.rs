@@ -42,6 +42,13 @@ async fn actual_capture_permit_builder_and_transport_preserve_exact_typed_forms_
             ),
         ),
         (
+            ColumnCreateKind::Select,
+            "select",
+            Some(
+                r#"{"choices":[{"color":"green","label":"Second","value":"Opt12345678"},{"color":"cyan","label":"Ready","value":"OptABCDEFGH"}],"format":"multi_select"}"#,
+            ),
+        ),
+        (
             ColumnCreateKind::DateSingleDefault,
             "date",
             Some(r#"{"date_format":"default","format":"single"}"#),

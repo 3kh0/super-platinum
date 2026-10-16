@@ -1,9 +1,11 @@
 //! Select-only continuation of the unchanged seven creation checkpoints.
 use super::*;
 use crate::slack_lists::{fixture, fixture::text_field_create::select as cells};
+pub(super) mod configuration;
+mod multi;
 pub(super) mod options;
 mod oracle;
-pub(super) use oracle::STAGES;
+pub(super) use oracle::{MULTI_STAGES, STAGES};
 pub(super) fn failed_snapshot(shell: &ShellState) -> Value {
     match cells::snapshot(shell) {
         Ok(v) if serde_json::to_vec(&v).is_ok_and(|b| b.len() <= 512 * 1024) => {
@@ -20,7 +22,12 @@ fn editor(shell: &ShellState) -> Result<Value, String> {
     let crate::slack_lists::CellEditValue::Select(original) = e.original.as_ref() else {
         return Err("Nonselection editor".into());
     };
-    if e.kind != crate::slack_lists::editor::EditorKind::Select
+    if e.kind
+        != if rename_fixture::field_create_mode() == Some(FieldCreateMode::MultiSelect) {
+            crate::slack_lists::editor::EditorKind::MultiSelect
+        } else {
+            crate::slack_lists::editor::EditorKind::Select
+        }
         || e.row_id != cells::ROW
         || e.column_id != cells::COLUMN
     {
@@ -33,21 +40,33 @@ fn editor(shell: &ShellState) -> Result<Value, String> {
 fn stable(
     state: Signal<ShellState>,
     proof: &Proof,
-    pages: &[Value; 3],
+    pages: &[Value],
     sync: &Value,
     index: usize,
     creation: &Value,
 ) -> Result<Value, String> {
     let shell = state.peek();
     let ledger = cells::snapshot(&shell)?;
-    oracle::exact(
-        &ledger,
-        index,
-        &proof.docs[1],
-        pages,
-        sync,
-        selected(proof)?,
-    )?;
+    let multiple = proof.mode == FieldCreateMode::MultiSelect;
+    if multiple {
+        oracle::exact_multi(
+            &ledger,
+            index,
+            &proof.docs[1],
+            pages,
+            sync,
+            proof.select_options.as_ref().ok_or("Missing options")?,
+        )?;
+    } else {
+        oracle::exact(
+            &ledger,
+            index,
+            &proof.docs[1],
+            pages,
+            sync,
+            selected(proof)?,
+        )?;
+    }
     let p = crate::slack_lists::presentation(&shell).ok_or("Missing Select Table")?;
     let ids = p
         .entries
@@ -81,7 +100,7 @@ fn stable(
         return Err("Select projection/creation isolation drift".into());
     }
     let model = editor(&shell)?;
-    if matches!(index, 3 | 6) {
+    if index > 0 && index % 3 == 0 {
         if !model.is_null() {
             return Err("Resolved Select editor retained".into());
         }
@@ -89,13 +108,20 @@ fn stable(
         if model.is_null()
             || model["original"]
                 != if index >= 4 {
-                    json!([selected(proof)?])
+                    if multiple {
+                        json!(
+                            oracle::values(proof.select_options.as_ref().unwrap())?
+                                [(index - 1) / 3 - 1]
+                        )
+                    } else {
+                        json!([selected(proof)?])
+                    }
                 } else {
                     json!([])
                 }
             || model["disabled"] != json!(index != 0)
-            || model["saving"] != json!(matches!(index, 1 | 4))
-            || model["stale"] != json!(matches!(index, 2 | 5))
+            || model["saving"] != json!(index % 3 == 1)
+            || model["stale"] != json!(index % 3 == 2)
         {
             return Err("Select model phase/original changed".into());
         }
@@ -107,7 +133,12 @@ fn stable(
     }
     drop(shell);
     if document(state)? != proof.docs[1]
-        || population(state)? != pages[oracle::LOADED[index]]
+        || population(state)?
+            != pages[if multiple {
+                oracle::MULTI_LOADED[index]
+            } else {
+                oracle::LOADED[index]
+            }]
         || find(state)? != proof.find
     {
         return Err("Select raw data/Find changed".into());
@@ -118,7 +149,7 @@ async fn stage(
     state: Signal<ShellState>,
     d: &dioxus::desktop::DesktopContext,
     proof: &mut Proof,
-    pages: &[Value; 3],
+    pages: &[Value],
     sync: &Value,
     index: usize,
     creation: &Value,
@@ -136,7 +167,11 @@ async fn stage(
         tokio::time::sleep(std::time::Duration::from_millis(40)).await;
     }
     let snapshot = snapshot.ok_or("Select controller did not settle")?;
-    let name = oracle::STAGES[index];
+    let name = if proof.mode == FieldCreateMode::MultiSelect {
+        oracle::MULTI_STAGES[index]
+    } else {
+        oracle::STAGES[index]
+    };
     let geometry = wait_dom(
         d,
         &format!(
@@ -208,7 +243,9 @@ async fn noop(
     g: u64,
 ) -> Result<Value, String> {
     let before = cells::snapshot(&state.peek())?;
-    checked(d, &format!("window.__listSelectCreate.choose(null,{g})")).await?;
+    if rename_fixture::field_create_mode() != Some(FieldCreateMode::MultiSelect) {
+        checked(d, &format!("window.__listSelectCreate.choose(null,{g})")).await?;
+    }
     wait_dom(d, &format!("window.__listSelectCreate.empty({g})")).await?;
     click(d, "slack-list-editor-save", g).await?;
     let dom = wait_dom(d, &format!("window.__listSelectCreate.noop({g})")).await?;
@@ -228,6 +265,9 @@ pub(super) async fn run(
     d: &dioxus::desktop::DesktopContext,
     proof: &mut Proof,
 ) -> Result<Value, String> {
+    if proof.mode == FieldCreateMode::MultiSelect {
+        return multi::run(state, d, proof).await;
+    }
     proof.stable(state, 1)?;
     let creation = rename_fixture::snapshot(&state.peek())?;
     let sync = cells::arm(

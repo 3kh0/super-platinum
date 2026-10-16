@@ -20,7 +20,28 @@ pub(super) const COUNTS: [(usize, usize, usize); 7] = [
 ];
 pub(super) const LOADED: [usize; 7] = [0, 0, 0, 1, 1, 1, 2];
 pub(super) const SERVER: [usize; 7] = [0, 0, 1, 1, 1, 2, 2];
-pub(super) fn pages(original: &Value, selected: &str) -> Result<[Value; 3], String> {
+pub(super) fn pages(original: &Value, selected: &str) -> Result<Vec<Value>, String> {
+    pages_for(original, &[vec![selected.into()], vec![]])
+}
+pub(super) fn values(options: &Value) -> Result<Vec<Vec<String>>, String> {
+    if options["format"] != "multi_select" || options["choices"].as_array().map(Vec::len) != Some(8)
+    {
+        return Err("Wrong Multi options inventory".into());
+    }
+    let first = options["choices"][0]["value"]
+        .as_str()
+        .ok_or("Missing first option")?
+        .to_owned();
+    let second = options["choices"][1]["value"]
+        .as_str()
+        .ok_or("Missing second option")?
+        .to_owned();
+    if first == second {
+        return Err("Duplicate choice".into());
+    }
+    Ok(vec![vec![second.clone(), first], vec![second], vec![]])
+}
+pub(super) fn pages_for(original: &Value, values: &[Vec<String>]) -> Result<Vec<Value>, String> {
     let raw = original["records"]
         .as_array()
         .ok_or("Missing raw records")?;
@@ -35,36 +56,99 @@ pub(super) fn pages(original: &Value, selected: &str) -> Result<[Value; 3], Stri
     {
         return Err("Original Select data not wholly absent".into());
     }
-    let mut yes = original.clone();
-    let row = yes["records"]
-        .as_array_mut()
-        .unwrap()
-        .iter_mut()
-        .find(|r| r["id"] == "R_LIST_003")
-        .unwrap();
-    row["fields"]
-        .as_array_mut()
-        .unwrap()
-        .push(json!({"key":"select_observed","select":[selected]}));
-    let mut no = yes.clone();
-    let row = no["records"]
-        .as_array_mut()
-        .unwrap()
-        .iter_mut()
-        .find(|r| r["id"] == "R_LIST_003")
-        .unwrap();
-    row["fields"].as_array_mut().unwrap().last_mut().unwrap()["select"] = json!([]);
-    Ok([original.clone(), yes, no])
+    let mut pages = vec![original.clone()];
+    for value in values {
+        let mut page = original.clone();
+        let row = page["records"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|r| r["id"] == "R_LIST_003")
+            .unwrap();
+        row["fields"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"key":"select_observed","select":value}));
+        pages.push(page);
+    }
+    Ok(pages)
 }
+pub(crate) const MULTI_STAGES: [&str; 10] = [
+    "multi-edit",
+    "multi-saving",
+    "multi-acknowledged",
+    "multi-observed",
+    "remove-saving",
+    "remove-acknowledged",
+    "single-observed",
+    "clear-saving",
+    "clear-acknowledged",
+    "cleared",
+];
+pub(super) const MULTI_COUNTS: [(usize, usize, usize); 10] = [
+    (0, 0, 0),
+    (1, 0, 0),
+    (1, 1, 0),
+    (1, 1, 1),
+    (2, 1, 1),
+    (2, 2, 1),
+    (2, 2, 2),
+    (3, 2, 2),
+    (3, 3, 2),
+    (3, 3, 3),
+];
+pub(super) const MULTI_LOADED: [usize; 10] = [0, 0, 0, 1, 1, 1, 2, 2, 2, 3];
+const MULTI_SERVER: [usize; 10] = [0, 0, 1, 1, 1, 2, 2, 2, 3, 3];
+pub(super) fn exact_multi(
+    l: &Value,
+    stage: usize,
+    document: &Value,
+    pages: &[Value],
+    sync: &Value,
+    options: &Value,
+) -> Result<(), String> {
+    exact_for(
+        l,
+        stage,
+        document,
+        pages,
+        sync,
+        &values(options)?,
+        &MULTI_COUNTS,
+        &MULTI_SERVER,
+    )
+}
+
 pub(super) fn exact(
     l: &Value,
     stage: usize,
     document: &Value,
-    pages: &[Value; 3],
+    pages: &[Value],
     sync: &Value,
     selected: &str,
 ) -> Result<(), String> {
-    let &(writes, done, reads) = COUNTS.get(stage).ok_or("Unknown cell stage")?;
+    exact_for(
+        l,
+        stage,
+        document,
+        pages,
+        sync,
+        &[vec![selected.into()], vec![]],
+        &COUNTS,
+        &SERVER,
+    )
+}
+fn exact_for(
+    l: &Value,
+    stage: usize,
+    document: &Value,
+    pages: &[Value],
+    sync: &Value,
+    values: &[Vec<String>],
+    counts: &[(usize, usize, usize)],
+    server: &[usize],
+) -> Result<(), String> {
+    let &(writes, done, reads) = counts.get(stage).ok_or("Unknown cell stage")?;
     let pre = l["preflights"]
         .as_array()
         .ok_or("Missing local preflights")?;
@@ -82,7 +166,7 @@ pub(super) fn exact(
         || l["sync"] != *sync
         || l["attemptCount"] != writes
         || l["preparedValid"] != true
-        || l["server"] != pages[SERVER[stage]]
+        || l["server"] != pages[server[stage]]
     {
         return Err("Cell ledger count/server/sync drift".into());
     }
@@ -97,19 +181,19 @@ pub(super) fn exact(
             || a["column"] != "C_SELECT_OBSERVED"
             || a["key"] != "select_observed"
             || a["cells"]
-                != json!([{"row_id":"R_LIST_003","column_id":"C_SELECT_OBSERVED","select":if i==0 {json!([selected])} else {json!([])}}])
+                != json!([{"row_id":"R_LIST_003","column_id":"C_SELECT_OBSERVED","select":values[i]}])
             || a["owner"] != sync["owner"]
             || a["owner"].as_array().map(Vec::len) != Some(3)
-            || (i == 1
-                && (a["serial"] == pre[0]["attempt"]["serial"]
-                    || a["owner"] != pre[0]["attempt"]["owner"]))
+            || (pre[..i]
+                .iter()
+                .any(|p| p["attempt"]["serial"] == a["serial"]))
             || *p
                 != json!({"attempt":a,"document":document,"population":pages[i],"allow":"full","phase":"Saving"})
         {
             return Err("Actual typed cell custody differs".into());
         }
         let cells =
-            json!([{"row_id":"R_LIST_003","column_id":"C_SELECT_OBSERVED","select":if i==0 {json!([selected])} else {json!([])}}])
+            json!([{"row_id":"R_LIST_003","column_id":"C_SELECT_OBSERVED","select":values[i]}])
                 .to_string();
         let expected = json!({"method":"POST","path":"/api/lists.cells.update","fields":[["token","fixture-not-a-token"],["list_id","F_LIST_FIXTURE"],["cells",cells],["_x_reason","bulk-update-cells"]],"retrySafe":false,"attempt":a});
         if requests[i] != expected {
@@ -122,12 +206,8 @@ pub(super) fn exact(
             return Err("Cell completion mismatch".into());
         }
     }
-    let unresolved = !matches!(stage, 0 | 3 | 6);
-    let phase = if matches!(stage, 1 | 4) {
-        "Saving"
-    } else {
-        "Uncertain"
-    };
+    let unresolved = writes != reads;
+    let phase = if writes > done { "Saving" } else { "Uncertain" };
     let a = pre.last().map(|p| &p["attempt"]).unwrap_or(&Value::Null);
     let expected_op = if unresolved {
         json!({"attempt":a,"phase":phase})
@@ -146,7 +226,7 @@ pub(super) fn exact(
         let a = &pre[i]["attempt"];
         let before = json!({"attempt":a,"phase":"Uncertain"});
         let after = Value::Null;
-        if r["readback"] != json!({"known":true,"value":if i==0 {vec![selected]}else{vec![]}})
+        if r["readback"] != json!({"known":true,"value":values[i]})
             || r["visit"] != sync["visit"]
             || r["before"] != before
             || r["document"] != *document

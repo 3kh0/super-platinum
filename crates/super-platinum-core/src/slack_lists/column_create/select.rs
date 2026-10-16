@@ -1,4 +1,4 @@
-//! Closed ordinary single-Select creation options; no defaults or arbitrary metadata.
+//! Closed ordinary Select creation options; no defaults or arbitrary metadata.
 use super::{ListError, Value, json};
 use std::collections::HashSet;
 const COLORS: [&str; 9] = [
@@ -83,13 +83,35 @@ impl SelectCreateOption {
         json!({"label":self.label,"value":self.value,"color":self.color})
     }
 }
+/// Ordinary Select cardinality; neither variant introduces defaults or a new schema type.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SelectCreateFormat {
+    #[default]
+    Single,
+    Multiple,
+}
+impl SelectCreateFormat {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Single => "single_select",
+            Self::Multiple => "multi_select",
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SelectCreateOptions {
+    format: SelectCreateFormat,
     choices: Vec<SelectCreateOption>,
 }
 impl SelectCreateOptions {
     pub const MAX_CHOICES: usize = 8;
     pub fn capture(choices: Vec<SelectCreateOption>) -> Result<Self, ListError> {
+        Self::capture_format(SelectCreateFormat::Single, choices)
+    }
+    pub fn capture_format(
+        format: SelectCreateFormat,
+        choices: Vec<SelectCreateOption>,
+    ) -> Result<Self, ListError> {
         let mut seen = HashSet::new();
         if choices.is_empty()
             || choices.len() > Self::MAX_CHOICES
@@ -99,7 +121,7 @@ impl SelectCreateOptions {
                 "Add between one and eight options with distinct identities.",
             ));
         }
-        let result = Self { choices };
+        let result = Self { format, choices };
         if result.wire().to_string().len() > 8192 {
             return Err(ListError(
                 "These Select options exceed the supported request size.",
@@ -111,9 +133,14 @@ impl SelectCreateOptions {
     pub fn from_wire(raw: &Value) -> Result<Self, ListError> {
         let error = || ListError("Unsupported Select creation options.");
         let map = raw.as_object().ok_or_else(error)?;
-        if map.len() != 2 || raw["format"] != "single_select" {
+        if map.len() != 2 {
             return Err(error());
         }
+        let format = match raw["format"].as_str() {
+            Some("single_select") => SelectCreateFormat::Single,
+            Some("multi_select") => SelectCreateFormat::Multiple,
+            _ => return Err(error()),
+        };
         let values = raw["choices"].as_array().ok_or_else(error)?;
         if values.is_empty() || values.len() > Self::MAX_CHOICES {
             return Err(error());
@@ -130,16 +157,19 @@ impl SelectCreateOptions {
                 value["color"].as_str().ok_or_else(error)?,
             )?);
         }
-        let result = Self::capture(choices)?;
+        let result = Self::capture_format(format, choices)?;
         if result.wire() != *raw {
             return Err(error());
         }
         Ok(result)
     }
+    pub fn format(&self) -> SelectCreateFormat {
+        self.format
+    }
     pub fn choices(&self) -> &[SelectCreateOption] {
         &self.choices
     }
     pub fn wire(&self) -> Value {
-        json!({"format":"single_select","choices":self.choices.iter().map(SelectCreateOption::wire).collect::<Vec<_>>()})
+        json!({"format":self.format.as_str(),"choices":self.choices.iter().map(SelectCreateOption::wire).collect::<Vec<_>>()})
     }
 }

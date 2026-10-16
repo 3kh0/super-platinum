@@ -3,6 +3,7 @@ use crate::slack_lists::rename::text_create::{
     Choice,
     select::{self as draft, Draft, Edit},
 };
+use super_platinum_core::slack_lists::SelectCreateFormat;
 pub(super) fn fields(
     state: Signal<ShellState>,
     serial: u64,
@@ -17,6 +18,11 @@ pub(super) fn fields(
     rsx! {
         fieldset { class:"slack-list-select-create", id:"slack-list-select-options", disabled:!enabled,
             legend {"Options"}
+            label {class:"slack-list-choice",
+                input {id:"slack-list-select-multiple",r#type:"checkbox",checked:draft.format==SelectCreateFormat::Multiple,disabled:!enabled,
+                    onchange:move |event|draft::edit(state,serial,visit,selection,choice,Edit::Format(if event.checked(){SelectCreateFormat::Multiple}else{SelectCreateFormat::Single}))}
+                span {"Allow multiple selections"}
+            }
             p {class:"slack-list-editor-hint","Add 1-8 options with short labels. Items stay empty until you choose an option."}
             for row in draft.rows {
                 div {key:"{row.generation}",class:"slack-list-select-option", "data-option-id":"{row.option.value()}","data-option-generation":"{row.generation}","data-option-color":"{row.option.color()}",
