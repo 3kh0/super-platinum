@@ -107,6 +107,8 @@ pub(crate) fn changed_since(shell: &ShellState, team: &str, id: &str, revision: 
 /// A local verification may itself have begun before a newer remote event.
 /// Keep pending work, but require a fresh read after this local snapshot lands.
 pub(crate) fn invalidate(shell: &mut ShellState, team: &str, id: &str) {
+    // Local confirmed metadata also retires content reads begun before it.
+    crate::file_preview::refresh::changed(shell, team, id);
     let tracker = &mut shell.file_events;
     if let Some(pending) = tracker.pending.get_mut(&(team.into(), id.into())) {
         tracker.serial = tracker.serial.wrapping_add(1);
@@ -130,6 +132,7 @@ pub(crate) fn prepare(
         _ => None,
     };
     let id = deleted_id.or_else(|| changed_id(event))?;
+    crate::file_preview::refresh::changed(shell, team, id);
     // Retire canonical/preflight reads before applying this validated event.
     crate::canvas::checklist::invalidate(shell, team, id);
     let tracker = &mut shell.file_events;

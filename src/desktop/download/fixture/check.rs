@@ -141,7 +141,11 @@ async fn stage(
     // A prior success toast is cleared after its captured stage; canceled attempts
     // must never publish their own success. This is observation, not result injection.
     let toast = shell.toast.as_ref().map(|toast| toast.text.clone());
-    if name == "saved" && toast.as_deref() != Some("Saved original-fixture.bin") {
+    if name == "saved"
+        && (toast.as_deref() != Some("Saved original-fixture.bin")
+            || dom["toast"]["ok"] != true
+            || dom["toast"]["text"] != "Saved original-fixture.bin")
+    {
         return Err("success publication absent".into());
     }
     if matches!(name, "canceled" | "closed")
@@ -158,7 +162,11 @@ async fn exercise(mut state: Signal<ShellState>) -> Result<Value, String> {
     let ready = json!({"version":1,"nonce":run.nonce,"pid":std::process::id(),"fixture":run.alias});
     eprintln!("original-download-waiting: {ready}");
     wait_ack(&run, "ready").await?;
-    let mut eval = document::eval(include_str!("check.js"));
+    let mut eval = document::eval(&format!(
+        "{}\n{}",
+        include_str!("toast_check.js"),
+        include_str!("check.js")
+    ));
     let mut stages = Vec::new();
     for name in STAGES {
         let dom: Value = eval.recv().await.map_err(|_| "native evaluation ended")?;

@@ -1,4 +1,5 @@
 use super::*;
+mod checkbox_missing;
 use serde_json::json;
 use std::sync::Arc;
 use super_platinum_core::{

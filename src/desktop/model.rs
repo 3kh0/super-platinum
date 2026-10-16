@@ -719,6 +719,7 @@ pub enum Overlay {
     ReactionPicker,
     ComposerEmoji,
     Forward,
+    FileShare,
     NewDm,
 }
 

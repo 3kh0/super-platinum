@@ -2,14 +2,32 @@
 function toastPlacement(viewport, obstacles, margin, gap, minimumHeight) {
   if (!(viewport.width > 0 && viewport.height > 0)) return null;
   let ceiling = viewport.height;
+  const occupied = [];
   for (const rect of obstacles) {
     if (!(rect.width > 0 && rect.height > 0) || rect.bottom <= 0 || rect.top >= viewport.height
         || rect.right <= 0 || rect.left >= viewport.width) continue;
     ceiling = Math.min(ceiling, Math.max(0, rect.top - gap));
+    occupied.push([Math.max(margin, rect.top - gap), Math.min(viewport.height - margin, rect.bottom + gap)]);
   }
   const bottom = Math.max(margin, Math.ceil(viewport.height - ceiling));
   const maxHeight = Math.max(0, Math.floor(viewport.height - bottom - margin));
-  return minimumHeight > 0 && maxHeight >= minimumHeight ? {bottom, maxHeight} : null;
+  if (!(minimumHeight > 0)) return null;
+  // Keep the established above-all-surfaces placement whenever it fits. A
+  // high viewer can leave too little space above but ample room below it.
+  if (maxHeight >= minimumHeight) return {bottom, maxHeight};
+  const free = [];
+  let start = margin;
+  for (const [top, end] of occupied.sort((a, b) => a[0] - b[0])) {
+    if (top > start) free.push([start, top]);
+    start = Math.max(start, end);
+  }
+  if (start < viewport.height - margin) free.push([start, viewport.height - margin]);
+  for (const [top, end] of free.reverse()) {
+    const bottom = Math.max(margin, Math.ceil(viewport.height - end));
+    const maxHeight = Math.floor(viewport.height - bottom - top);
+    if (maxHeight >= minimumHeight) return {bottom, maxHeight};
+  }
+  return null;
 }
 
 function toastFocusedPlacement(base, viewport, toastSize, focus, margin, gap, minimumHeight) {
@@ -18,7 +36,10 @@ function toastFocusedPlacement(base, viewport, toastSize, focus, margin, gap, mi
   const bottom = viewport.height - base.bottom;
   const top = bottom - Math.min(toastSize.height, base.maxHeight);
   if (focus.right <= left || focus.left >= right || focus.bottom <= top || focus.top >= bottom) return base;
-  const above = Math.floor(focus.top - gap - margin);
+  // A fallback band may have a protected dialog above it. Never escape that
+  // band while avoiding a focused control (the old band began at margin).
+  const bandTop = viewport.height - base.bottom - base.maxHeight;
+  const above = Math.floor(focus.top - gap - bandTop);
   if (above >= minimumHeight) return {bottom:Math.ceil(viewport.height - focus.top + gap), maxHeight:above};
   const below = Math.floor(bottom - focus.bottom - gap);
   if (below >= minimumHeight) return {bottom:base.bottom, maxHeight:below};
@@ -29,7 +50,7 @@ function toastFocusedPlacement(base, viewport, toastSize, focus, margin, gap, mi
   const toast = document.getElementById('status-toast');
   if (!toast) return;
   toast.__disposePosition?.();
-  const protectedSelector = '.composer-wrap, .thread-composer, .composer-completion, [role="dialog"][aria-modal="true"]';
+  const protectedSelector = '.composer-wrap, .thread-composer, .composer-completion, .file-action-panel, [role="dialog"][aria-modal="true"]';
   let targets = new Set(), focused = null, frame = null, disposed = false, rescan = true;
   const styles = getComputedStyle(toast);
   const margin = parseFloat(styles.right) || 18;

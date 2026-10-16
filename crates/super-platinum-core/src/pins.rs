@@ -1,4 +1,6 @@
 //! Pinned channel resources, scoped to the current authenticated account.
+mod file_reconciliation;
+
 use crate::slack::{
     events::RawEvent,
     models::{File, Message},

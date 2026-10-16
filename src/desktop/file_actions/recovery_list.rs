@@ -48,6 +48,7 @@ impl Scope {
             link: None,
             owned: true,
             renameable: matches!(receipt.operation, Operation::Rename { .. }),
+            attachment: None,
             epoch: self.epoch,
             team: self.team.clone(),
         })

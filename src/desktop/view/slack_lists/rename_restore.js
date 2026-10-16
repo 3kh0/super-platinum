@@ -3,9 +3,13 @@
 function armListRenameReturn(root) {
   const dialog=root.closest('.slack-list-dialog');
   if(!dialog||!root.isConnected)return;
-  const visit=dialog.dataset.dialogGeneration,serial=root.dataset.renameSerial,column=root.dataset.renameColumn,view=root.dataset.renameView;
+  const visit=dialog.dataset.dialogGeneration,serial=root.dataset.renameSerial,column=root.dataset.renameColumn,view=root.dataset.renameView,precision=root.dataset.precisionColumn,visibility=root.dataset.visibilityView,sort=root.dataset.sortView,filter=root.dataset.filterView,grouping=root.dataset.groupingView,textCreate=root.dataset.newTextFieldView;
   const selection=dialog.dataset.viewSelection;
   if(!visit||!serial||(!column&&!view)||(view&&!selection))return;
+  const groupingOpener=grouping?root.__groupingOpener:null;
+  if(grouping&&(!groupingOpener||groupingOpener.dataset.groupingView!==view))return;
+  const textOpener=textCreate?dialog.querySelector('#slack-list-new-text-field'):null;
+  if(textCreate&&(!textOpener||textOpener.dataset.newTextFieldView!==view))return;
   dialog.__renameReturn?.();
   let ended=false,queued=false,frame=0;
   const stop=()=>{
@@ -41,8 +45,11 @@ function armListRenameReturn(root) {
     if(view){
       const picker=dialog.querySelector('#slack-list-view-select');
       if(!picker||picker.value!==view||dialog.dataset.viewSelection!==selection){stop();return;}
-      header=[...dialog.querySelectorAll('[data-rename-view]')].find(e=>e.dataset.renameView===view);
-    }else header=[...dialog.querySelectorAll('[data-rename-column]')].find(e=>e.dataset.renameColumn===column);
+      header=grouping?dialog.querySelector('#slack-list-grouping'):textCreate?dialog.querySelector('#slack-list-new-text-field'):filter?dialog.querySelector('#slack-list-filter'):sort?dialog.querySelector('#slack-list-sort'):visibility?dialog.querySelector('#slack-list-fields'):[...dialog.querySelectorAll('[data-rename-view]')].find(e=>e.dataset.renameView===view);
+    }else if(precision)header=[...dialog.querySelectorAll('button[data-precision-column]')].find(e=>e.dataset.precisionColumn===precision);
+    else header=[...dialog.querySelectorAll('button[data-rename-column]')].find(e=>e.dataset.renameColumn===column);
+    if(grouping&&header!==groupingOpener){stop();return;}
+    if(textCreate&&header!==textOpener){stop();return;}
     const target=header&&!header.disabled&&visible(header)?header:dialog.querySelector('#slack-list-close');
     stop();
     if(target&&!target.disabled&&visible(target))target.focus({preventScroll:true});

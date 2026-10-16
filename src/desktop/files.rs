@@ -173,4 +173,5 @@ pub fn open(mut state: Signal<ShellState>, file: File) {
         mime,
     });
     shell.overlay = Some(Overlay::Viewer);
+    crate::file_preview::refresh::opened(&mut shell);
 }

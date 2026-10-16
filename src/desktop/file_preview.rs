@@ -3,6 +3,7 @@ use crate::media::MediaUri;
 use crate::state::{ShellState, ViewerVm};
 use dioxus::prelude::*;
 use super_platinum_core::{MediaAssetId, file_preview};
+pub(crate) mod refresh;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum PreviewState {
@@ -46,7 +47,7 @@ pub fn FileViewer(state: Signal<ShellState>, viewer: ViewerVm, media_epoch: u64)
     let (ready, failed) = {
         let shell = state.peek();
         (
-            shell.media.is_ready(&viewer.id),
+            shell.media.is_ready(&viewer.id) || refresh::retained_preview(&shell, &viewer.id),
             shell.media.image_state(&viewer.id).1,
         )
     };
@@ -56,6 +57,11 @@ pub fn FileViewer(state: Signal<ShellState>, viewer: ViewerVm, media_epoch: u64)
     let actions = crate::file_actions::Target::for_viewer(&state.read(), &viewer);
     let has_actions = actions.is_some();
     let preview = preview_state(&viewer.mime, ready, failed);
+    let refresh_lease = refresh::lease(&state.read(), &viewer.id);
+    let download_key = refresh_lease
+        .as_ref()
+        .map(|l| l.key())
+        .unwrap_or_else(|| viewer.id.uri());
     rsx! {
         div {class:"viewer",
             if preview == PreviewState::Unsupported {
@@ -75,8 +81,13 @@ pub fn FileViewer(state: Signal<ShellState>, viewer: ViewerVm, media_epoch: u64)
             } else if preview == PreviewState::Text {
                 TextContent {key:"{viewer.id.uri()}",state,id:viewer.id.clone()}
             }
+            if let Some(lease)=refresh_lease.clone() {refresh::Controls {state,lease}}
             div {class:if has_actions{"viewer-footer has-actions"}else{"viewer-footer"},
-                crate::download::DownloadButton {key:"{viewer.id.uri()}",state,id:viewer.id.clone(),name:viewer.download_name.clone(),ready}
+                // The key must belong to its own dynamic template root, so a
+                // new viewer lease retires the old button's saving hooks.
+                for download_key in [download_key] {
+                    crate::download::DownloadButton {key:"{download_key}",state,id:viewer.id.clone(),name:viewer.download_name.clone(),ready,viewer_lease:refresh_lease.clone()}
+                }
                 if let Some(target)=actions {
                     crate::file_actions::Actions {key:"{target.epoch}-{target.team}-{target.id}",state,target,in_viewer:true}
                 }
@@ -219,6 +230,13 @@ fn renamed_fixture(shell: &mut ShellState, name: &str) {
 }
 
 pub async fn native_check(mut state: Signal<ShellState>) {
+    if std::env::var("SUPER_PLATINUM_FIXTURE").as_deref() == Ok("original-download-save-workflow") {
+        #[cfg(feature = "original-download-native-fixture")]
+        crate::download::fixture::workflow::run(state).await;
+        #[cfg(not(feature = "original-download-native-fixture"))]
+        eprintln!("workflow-check: {{\"ok\":false,\"error\":\"feature unavailable\"}}");
+        return;
+    }
     if std::env::var("SUPER_PLATINUM_FIXTURE").as_deref() == Ok("original-download-save-dialog") {
         #[cfg(feature = "original-download-native-fixture")]
         crate::download::fixture::dialog::run(state).await;

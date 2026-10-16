@@ -253,10 +253,10 @@ pub(crate) fn message_row(
     surface: RowSurface,
     action_bag: Option<crate::message_buttons::source::Bag>,
 ) -> Element {
-    // Ordinary rows never need canonical bag scans or action revision clones.
-    // This allocation-free walk short-circuits at the first supported app control.
+    // Text-only rows never need canonical bag scans or action revision clones.
+    // This allocation-free walk short-circuits at the first supported app control or identified file.
     let action_source = action_bag
-        .filter(|_| !message.pending && body_has_app_control(&message.body))
+        .filter(|_| !message.pending && body_has_owned_control(&message.body))
         .and_then(|bag| {
             crate::message_buttons::source::Source::capture(snapshot, message, channel_id, bag).ok()
         });
@@ -450,12 +450,13 @@ fn broadcast_context(
     }
 }
 
-fn body_has_app_control(nodes: &[RichNode]) -> bool {
-    nodes.iter().any(node_has_app_control)
+fn body_has_owned_control(nodes: &[RichNode]) -> bool {
+    nodes.iter().any(node_has_owned_control)
 }
 
-fn node_has_app_control(node: &RichNode) -> bool {
+fn node_has_owned_control(node: &RichNode) -> bool {
     match node {
+        RichNode::Media { file: Some(_), .. } => true,
         RichNode::Button { metadata, .. } => match &metadata.source {
             super_platinum_core::block_actions::BlockElementSource::Button => true,
             super_platinum_core::block_actions::BlockElementSource::UnsupportedControl { kind } => {
@@ -466,17 +467,17 @@ fn node_has_app_control(node: &RichNode) -> bool {
         | RichNode::Quote(nodes)
         | RichNode::Header(nodes)
         | RichNode::Context(nodes)
-        | RichNode::Actions(nodes) => body_has_app_control(nodes),
+        | RichNode::Actions(nodes) => body_has_owned_control(nodes),
         RichNode::Section {
             text,
             fields,
             accessory,
         } => {
-            body_has_app_control(text)
-                || fields.iter().any(|field| body_has_app_control(field))
-                || accessory.as_deref().is_some_and(node_has_app_control)
+            body_has_owned_control(text)
+                || fields.iter().any(|field| body_has_owned_control(field))
+                || accessory.as_deref().is_some_and(node_has_owned_control)
         }
-        RichNode::List { items, .. } => items.iter().any(|item| body_has_app_control(item)),
+        RichNode::List { items, .. } => items.iter().any(|item| body_has_owned_control(item)),
         _ => false,
     }
 }
@@ -519,12 +520,12 @@ mod button_presence_tests {
                 kind: "multi_static_select".into(),
             })]),
         ];
-        assert!(!body_has_app_control(&body));
+        assert!(!body_has_owned_control(&body));
     }
 
     #[test]
     fn supported_static_select_keeps_ownership_even_without_a_button() {
-        assert!(body_has_app_control(&[RichNode::Actions(vec![button(
+        assert!(body_has_owned_control(&[RichNode::Actions(vec![button(
             BlockElementSource::UnsupportedControl {
                 kind: "static_select".into()
             }
@@ -533,7 +534,7 @@ mod button_presence_tests {
 
     #[test]
     fn supported_radio_group_keeps_ownership_without_a_button() {
-        assert!(body_has_app_control(&[RichNode::Actions(vec![button(
+        assert!(body_has_owned_control(&[RichNode::Actions(vec![button(
             BlockElementSource::UnsupportedControl {
                 kind: "radio_buttons".into()
             }
@@ -572,7 +573,7 @@ mod button_presence_tests {
             },
         ];
         for container in containers {
-            assert!(body_has_app_control(&[container]));
+            assert!(body_has_owned_control(&[container]));
         }
     }
 }

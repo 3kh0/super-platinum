@@ -50,38 +50,12 @@ impl CheckboxEdit {
         let record = page
             .record(record_id)
             .ok_or(ListError("This List item is no longer available."))?;
-        // Ordinary completion uses the same boolean update; personal To-dos may
-        // also update a referenced List and must not enter this single-cell path.
-        if !column.editable_checkbox_with_policy(record, &document.id, personal_tasks) {
-            return Err(ListError(
-                "This field is not an editable existing checkbox.",
-            ));
-        }
-        if record
-            .raw
-            .get("archived")
-            .is_some_and(|v| !v.is_null() && v != &Value::Bool(false))
-            || record
-                .raw
-                .get("is_deleted")
-                .is_some_and(|v| !v.is_null() && v != &Value::Bool(false))
-        {
-            return Err(ListError("This List item is archived or unavailable."));
-        }
-        let field = &record.fields[&column.key];
-        if field
-            .get("column_id")
-            .is_some_and(|id| id.as_str() != Some(&column.id))
-        {
-            return Err(ListError("This checkbox has an ambiguous column identity."));
-        }
-        if field
-            .get("row_id")
-            .is_some_and(|id| id.as_str() != Some(&record.id))
-        {
-            return Err(ListError("This checkbox has an ambiguous row identity."));
-        }
-        if column.cell(record) == CellValue::Boolean(checked) {
+        // Existing completion semantics remain; the only new default is a
+        // genuinely missing ordinary no-option Checkbox's first explicit true.
+        let initial = column
+            .checkbox_input_value_with_policy(record, &document.id, personal_tasks)
+            .ok_or(ListError("This field is not an editable checkbox."))?;
+        if initial == checked {
             return Err(ListError("This checkbox is already set to that value."));
         }
         Ok(Self {
@@ -215,3 +189,6 @@ impl CheckboxEdit {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;

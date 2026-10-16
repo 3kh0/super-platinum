@@ -41,6 +41,7 @@ mod drafts_info;
 mod execute;
 mod execute_readbacks;
 mod experiments;
+pub mod file_share;
 mod files;
 mod forward;
 mod lists;

@@ -1,0 +1,175 @@
+//! Literal cell request and readback oracle independent of the fixture hooks.
+use serde_json::{Value, json};
+#[cfg(test)]
+mod tests;
+pub(crate) const STAGES: [&str; 7] = [
+    "check-saving",
+    "check-uncertain",
+    "check-missing",
+    "checked",
+    "uncheck-saving",
+    "uncheck-acknowledged",
+    "unchecked",
+];
+pub(super) const COUNTS: [(usize, usize, usize); 7] = [
+    (1, 0, 0),
+    (1, 1, 0),
+    (1, 1, 1),
+    (1, 1, 2),
+    (2, 1, 2),
+    (2, 2, 2),
+    (2, 2, 3),
+];
+pub(super) const LOADED: [usize; 7] = [0, 0, 0, 1, 1, 1, 2];
+pub(super) const SERVER: [usize; 7] = [0, 1, 1, 1, 1, 2, 2];
+pub(super) fn pages(original: &Value) -> Result<[Value; 3], String> {
+    let raw = original["records"]
+        .as_array()
+        .ok_or("Missing raw records")?;
+    if raw.len() != 73
+        || raw.iter().filter(|r| r["id"] == "R_LIST_003").count() != 1
+        || raw.iter().any(|r| {
+            r["fields"].as_array().is_none_or(|f| {
+                f.iter().any(|v| {
+                    v["key"] == "checkbox_observed" || v["column_id"] == "C_CHECKBOX_OBSERVED"
+                })
+            })
+        })
+    {
+        return Err("Original checkbox data not wholly absent".into());
+    }
+    let mut yes = original.clone();
+    let row = yes["records"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|r| r["id"] == "R_LIST_003")
+        .unwrap();
+    row["fields"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"key":"checkbox_observed","checkbox":true}));
+    let mut no = yes.clone();
+    let row = no["records"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|r| r["id"] == "R_LIST_003")
+        .unwrap();
+    row["fields"].as_array_mut().unwrap().last_mut().unwrap()["checkbox"] = json!(false);
+    Ok([original.clone(), yes, no])
+}
+pub(super) fn exact(
+    l: &Value,
+    stage: usize,
+    document: &Value,
+    pages: &[Value; 3],
+    sync: &Value,
+) -> Result<(), String> {
+    let &(writes, done, reads) = COUNTS.get(stage).ok_or("Unknown cell stage")?;
+    let pre = l["preflights"]
+        .as_array()
+        .ok_or("Missing local preflights")?;
+    let requests = l["requests"]
+        .as_array()
+        .ok_or("Missing actual cell requests")?;
+    let finished = l["completed"]
+        .as_array()
+        .ok_or("Missing cell completions")?;
+    let local = l["reads"].as_array().ok_or("Missing local reads")?;
+    if pre.len() != writes
+        || requests.len() != writes
+        || finished.len() != done
+        || local.len() != reads
+        || l["sync"] != *sync
+        || l["missingQueued"] != false
+        || l["attemptCount"] != writes
+        || l["preparedValid"] != true
+        || l["server"] != pages[SERVER[stage]]
+    {
+        return Err("Cell ledger count/server/sync drift".into());
+    }
+    for (i, p) in pre.iter().enumerate() {
+        let a = &p["attempt"];
+        if !a["serial"].as_u64().is_some_and(|n| n > 0)
+            || !a["revision"].as_u64().is_some_and(|n| n > 0)
+            || a["visit"] != sync["visit"]
+            || a["selection"] != sync["selection"]
+            || a["list"] != "F_LIST_FIXTURE"
+            || a["row"] != "R_LIST_003"
+            || a["column"] != "C_CHECKBOX_OBSERVED"
+            || a["key"] != "checkbox_observed"
+            || a["cells"]
+                != json!([{"row_id":"R_LIST_003","column_id":"C_CHECKBOX_OBSERVED","checkbox":i==0}])
+            || a["owner"] != sync["owner"]
+            || a["owner"].as_array().map(Vec::len) != Some(3)
+            || (i == 1
+                && (a["serial"] == pre[0]["attempt"]["serial"]
+                    || a["owner"] != pre[0]["attempt"]["owner"]))
+            || *p
+                != json!({"attempt":a,"document":document,"population":pages[i],"allow":"full","phase":"Saving"})
+        {
+            return Err("Actual typed cell custody differs".into());
+        }
+        let cells =
+            json!([{"row_id":"R_LIST_003","column_id":"C_CHECKBOX_OBSERVED","checkbox":i==0}])
+                .to_string();
+        let expected = json!({"method":"POST","path":"/api/lists.cells.update","fields":[["token","fixture-not-a-token"],["list_id","F_LIST_FIXTURE"],["cells",cells],["_x_reason","bulk-update-cells"]],"retrySafe":false,"attempt":a});
+        if requests[i] != expected {
+            return Err("Actual cell form/retry policy differs".into());
+        }
+        if i < done
+            && finished[i]
+                != json!({"attempt":a,"result":if i==0 {"response_lost"} else {"positive_ack"},"operation":{"attempt":a,"phase":"Uncertain"}})
+        {
+            return Err("Cell completion mismatch".into());
+        }
+    }
+    let unresolved = !matches!(stage, 3 | 6);
+    let phase = if matches!(stage, 0 | 4) {
+        "Saving"
+    } else {
+        "Uncertain"
+    };
+    let a = &pre[writes - 1]["attempt"];
+    let expected_op = if unresolved {
+        json!({"attempt":a,"phase":phase})
+    } else {
+        Value::Null
+    };
+    let pending = if writes > done {
+        a.clone()
+    } else {
+        Value::Null
+    };
+    if l["operation"] != expected_op || l["pending"] != pending {
+        return Err("Actual pending/retained operation differs".into());
+    }
+    for (i, r) in local.iter().enumerate() {
+        let a = &pre[usize::from(i == 2)]["attempt"];
+        let before = json!({"attempt":a,"phase":"Uncertain"});
+        let after = if i == 0 { before.clone() } else { Value::Null };
+        if r["readback"] != [Value::Null, json!(true), json!(false)][i]
+            || r["visit"] != sync["visit"]
+            || r["before"] != before
+            || r["document"] != *document
+            || r["population"] != pages[i]
+            || !r["read"].as_u64().is_some_and(|n| n > 0)
+            || !r["revision"].as_u64().is_some_and(|n| n > 0)
+            || r["after"]["read"] != 0
+            || r["after"]["operation"] != after
+            || !r["after"]["revision"]
+                .as_u64()
+                .zip(r["revision"].as_u64())
+                .is_some_and(|(after, before)| after > before)
+            || (i > 0
+                && !r["read"]
+                    .as_u64()
+                    .zip(local[i - 1]["read"].as_u64())
+                    .is_some_and(|(n, p)| n > p))
+        {
+            return Err("Local guarded read custody/application differs".into());
+        }
+    }
+    Ok(())
+}

@@ -1,4 +1,4 @@
-//! Captured TC0j update-column request, narrowed to a lossless Text-name edit.
+//! Captured TC0j update-column request, narrowed to a lossless Text/Number name edit.
 use super::*;
 use crate::slack_lists::ColumnRenamePermit;
 
@@ -15,7 +15,7 @@ pub fn list_column_rename(
             ("list_id", intent.list_id().into()),
             ("key", intent.column_key().into()),
             ("name", intent.desired_name().into()),
-            ("options", "{\"format\":\"text\"}".into()),
+            ("options", intent.unchanged_options().to_string()),
             ("backfill_missing_cells_with_default", "true".into()),
             ("_x_reason", "update-column".into()),
         ],

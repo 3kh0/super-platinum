@@ -112,6 +112,17 @@ impl CellEdit {
         desired: CellEditValue,
     ) -> Result<Self, ListError> {
         if let CellEditValue::Boolean(checked) = desired {
+            // The generic editor still requires a stored boolean. Only the
+            // dedicated checkbox input admits the first toggle from absence.
+            if !document
+                .column(column_id)
+                .zip(page.record(record_id))
+                .is_some_and(|(column, record)| {
+                    column.editable_checkbox_with_policy(record, &document.id, personal_tasks)
+                })
+            {
+                return Err(ListError("This checkbox is not editable."));
+            }
             return CheckboxEdit::capture_with_policy(
                 document,
                 page,

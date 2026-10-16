@@ -22,11 +22,19 @@ pub fn DownloadButton(
     id: MediaAssetId,
     name: String,
     ready: bool,
+    #[props(default)] viewer_lease: Option<crate::file_preview::refresh::Lease>,
 ) -> Element {
     let mut saving = use_signal(|| false);
-    let canceled = use_hook(|| Arc::new(AtomicBool::new(false)));
+    let canceled = use_hook(|| {
+        viewer_lease
+            .as_ref()
+            .map(|v| v.cancellation())
+            .unwrap_or_else(|| Arc::new(AtomicBool::new(false)))
+    });
     let on_drop = canceled.clone();
     use_drop(move || on_drop.store(true, Ordering::Release));
+    #[cfg(test)]
+    lifetime_tests::observe(saving, &canceled);
     let available = {
         let shell = state.read();
         (ready && shell.media.ready_download_bytes(&id).is_some())
@@ -39,6 +47,7 @@ pub fn DownloadButton(
     rsx! {
         button {class:"primary",style:"min-width:96px;",disabled:!available&&!saving(),"aria-label":if saving(){format!("Cancel download {name}")}else{format!("Download {name}")},
             onclick:move |_| {
+                if viewer_lease.as_ref().is_some_and(|v|!v.current(&state.peek())) {return;}
                 if saving() {canceled.store(true,Ordering::Release);return;}
                 let captured={let shell=state.peek();owner::Owner::capture(&shell,id.clone())};
                 let Some((owner,bytes))=captured else {return;};
@@ -63,6 +72,14 @@ async fn save(
     bytes: Option<Arc<[u8]>>,
     canceled: Arc<AtomicBool>,
 ) {
+    #[cfg(all(
+        feature = "original-download-native-fixture",
+        feature = "protected-native-fixture"
+    ))]
+    let cached = match fixture::cached::capture(&state.peek(), &owner, bytes.as_ref(), &canceled) {
+        Ok(value) => value,
+        Err(_) => return,
+    };
     let owner_state = state;
     let current = || {
         let valid = !canceled.load(Ordering::Acquire)
@@ -87,33 +104,98 @@ async fn save(
         "Save original file - choose a new filename"
     };
     #[cfg(feature = "original-download-native-fixture")]
-    let destination = if let Some(input) = &owner.fixture {
-        if input.dialog_diagnostic() {
-            if input.begin_dialog() {
-                let result =
-                    choose_destination_in(title, &filename, Some(input.dialog_directory())).await;
-                input.dialog_returned(result.is_none());
+    let destination = {
+        let original = async {
+            if let Some(input) = &owner.fixture {
+                if input.dialog_diagnostic() {
+                    if input.begin_dialog() {
+                        let result =
+                            choose_destination_in(title, &filename, Some(input.dialog_directory()))
+                                .await;
+                        input.dialog_returned(result.is_none());
+                    }
+                    // Diagnostic cancellation only: even an unexpected real selection
+                    // never enters transfer. No returned path is substituted or saved.
+                    return None;
+                }
+                if input.native_workflow() {
+                    if !input.begin_workflow() {
+                        return None;
+                    }
+                    let result =
+                        choose_destination_in(title, &filename, Some(input.dialog_directory()))
+                            .await;
+                    input.workflow_returned(result).await
+                } else {
+                    input.destination()
+                }
+            } else {
+                choose_destination(title, &filename).await
             }
-            // Diagnostic cancellation only: even an unexpected real selection
-            // never enters transfer. No returned path is substituted or saved.
-            return;
+        };
+        #[cfg(feature = "protected-native-fixture")]
+        {
+            if let Some(input) = &cached {
+                input.requested().await;
+                let selected =
+                    choose_destination_in(title, &filename, Some(input.directory())).await;
+                match input.returned(selected).await {
+                    Ok(path) => path,
+                    Err(_) => return,
+                }
+            } else {
+                original.await
+            }
         }
-        input.destination()
-    } else {
-        choose_destination(title, &filename).await
+        #[cfg(not(feature = "protected-native-fixture"))]
+        {
+            original.await
+        }
     };
     #[cfg(not(feature = "original-download-native-fixture"))]
     let destination = choose_destination(title, &filename).await;
     let Some(destination) = destination else {
         return;
     };
+    #[cfg(all(
+        feature = "original-download-native-fixture",
+        feature = "protected-native-fixture"
+    ))]
+    if let Some(input) = &cached {
+        if input.before_current().await.is_err() {
+            return;
+        }
+    }
     if !current() {
+        #[cfg(all(
+            feature = "original-download-native-fixture",
+            feature = "protected-native-fixture"
+        ))]
+        if let Some(input) = &cached {
+            input.retired(canceled.load(Ordering::Acquire)).await;
+        }
         return;
+    }
+    #[cfg(all(
+        feature = "original-download-native-fixture",
+        feature = "protected-native-fixture"
+    ))]
+    if let Some(input) = &cached {
+        if input.transfer().await.is_err() {
+            return;
+        }
     }
     let result = transfer(&owner, bytes, destination, &current, canceled.clone()).await;
     #[cfg(feature = "original-download-native-fixture")]
     if let Some(input) = &owner.fixture {
         input.completed(&result);
+    }
+    #[cfg(all(
+        feature = "original-download-native-fixture",
+        feature = "protected-native-fixture"
+    ))]
+    if let Some(input) = &cached {
+        input.completed(&result).await;
     }
     // A late known limit belongs to its captured owner even after account retirement.
     cooldown::record(&owner.key, &result);
@@ -225,3 +307,9 @@ async fn transfer(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod refresh_tests;
+
+#[cfg(test)]
+mod lifetime_tests;

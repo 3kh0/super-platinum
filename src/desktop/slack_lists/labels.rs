@@ -26,6 +26,13 @@ impl Reference {
             _ => None,
         }
     }
+    fn find_label(&self, workspace: &Workspace) -> Option<String> {
+        match self {
+            Self::User(id) => workspace.users.get(id).map(find::user_name),
+            Self::Channel(id) => workspace.channels.get(id).and_then(|c| c.name.clone()),
+            Self::Group(_) => None,
+        }
+    }
     fn label(&self, workspace: &Workspace) -> Option<String> {
         match self {
             Self::User(id) => workspace
@@ -177,6 +184,7 @@ pub(crate) struct Change {
     visit: u64,
     reference: Reference,
     before: Option<String>,
+    find_before: Option<Option<String>>,
     dm_user: Option<String>,
 }
 fn event_reference(event: &RtEvent) -> Option<Reference> {
@@ -234,6 +242,8 @@ pub(crate) fn prepare(
         rt_generation,
         visit: view.generation,
         before: reference.label(workspace),
+        find_before: (!view.layout.find.applied.is_empty())
+            .then(|| reference.find_label(workspace)),
         dm_user: reference.dm_user(workspace),
         reference,
     })
@@ -258,7 +268,11 @@ impl Change {
         else {
             return false;
         };
-        if self.before == self.reference.label(workspace)
+        if self
+            .find_before
+            .as_ref()
+            .is_none_or(|before| *before == self.reference.find_label(workspace))
+            && self.before == self.reference.label(workspace)
             && self.dm_user == self.reference.dm_user(workspace)
         {
             return false;

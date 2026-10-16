@@ -13,6 +13,7 @@ pub(super) struct Guard {
     revision: u64,
     selection: u64,
     document: Document,
+    records: Option<std::sync::Arc<RecordsPage>>,
 }
 fn enterprise(shell: &ShellState, team: &str) -> Option<String> {
     shell
@@ -49,7 +50,13 @@ pub(super) fn readable(shell: &ShellState) -> bool {
 }
 impl Guard {
     pub fn capture(shell: &ShellState, key: Key, serial: u64) -> Option<Self> {
-        if !available(shell) {
+        if !available(shell)
+            || with_registry(|r| {
+                r.entries
+                    .get(&key)
+                    .is_some_and(|e| !text_create::population_current(shell, e))
+            })
+        {
             return None;
         }
         Self::capture_read(shell, key, serial)
@@ -72,6 +79,17 @@ impl Guard {
             revision: view.revision,
             selection: view.layout.selection_generation,
             document: view.loaded.as_ref()?.document.clone(),
+            records: if with_registry(|r| {
+                r.entries
+                    .get(&Key::current(shell)?)
+                    .map(|e| e.original_records.is_some())
+            })
+            .unwrap_or(false)
+            {
+                Some(text_create::bounded_population(shell)?)
+            } else {
+                None
+            },
         })
     }
     pub fn current(&self, shell: &ShellState, stage: Stage) -> bool {
@@ -88,9 +106,10 @@ impl Guard {
                     && v.read == self.read
                     && v.revision == self.revision
                     && v.layout.selection_generation == self.selection
-                    && v.loaded
-                        .as_ref()
-                        .is_some_and(|l| l.document == self.document)
+                    && v.loaded.as_ref().is_some_and(|l| {
+                        l.document == self.document
+                            && self.records.as_ref().is_none_or(|r| l.records == **r)
+                    })
             })
             && with_registry(|r| {
                 r.entries.get(&self.key).is_some_and(|e| {
@@ -110,6 +129,7 @@ pub(super) struct Review {
     read: u64,
     revision: u64,
     document: Document,
+    records: Option<std::sync::Arc<RecordsPage>>,
 }
 impl Review {
     pub fn navigation_current(&self, shell: &ShellState) -> bool {
@@ -136,6 +156,17 @@ impl Review {
             read: v.read,
             revision: v.revision,
             document: v.loaded.as_ref()?.document.clone(),
+            records: if with_registry(|r| {
+                r.entries
+                    .get(&Key::current(shell)?)
+                    .map(|e| e.original_records.is_some())
+            })
+            .unwrap_or(false)
+            {
+                Some(text_create::bounded_population(shell)?)
+            } else {
+                None
+            },
         })
     }
     pub fn current(&self, shell: &ShellState) -> bool {
@@ -146,9 +177,10 @@ impl Review {
                 v.generation == self.visit
                     && v.read == self.read
                     && v.revision == self.revision
-                    && v.loaded
-                        .as_ref()
-                        .is_some_and(|l| l.document == self.document)
+                    && v.loaded.as_ref().is_some_and(|l| {
+                        l.document == self.document
+                            && self.records.as_ref().is_none_or(|r| l.records == **r)
+                    })
             })
     }
 }

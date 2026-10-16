@@ -1,13 +1,15 @@
 //! Existing-cell mutation ownership, preflight and one-attempt receipts.
 use super::*;
 
-fn observed_checkbox(loaded: &Loaded, row: &str, column: &str) -> Option<bool> {
+fn checkbox_input(loaded: &Loaded, row: &str, column: &str) -> Option<bool> {
     let column = loaded.document.columns.iter().find(|c| c.id == column)?;
     let row = loaded.records.records.iter().find(|r| r.id == row)?;
-    match column.cell(row) {
-        super_platinum_core::slack_lists::CellValue::Boolean(value) => Some(value),
-        _ => None,
-    }
+    // An input default is not a stored value or readback confirmation.
+    column.checkbox_input_value_with_policy(
+        row,
+        &loaded.document.id,
+        loaded.personal_task_lists.as_ref(),
+    )
 }
 // UI gestures carry their rendered visit. Never adopt a delayed event into a
 // reopened list merely because the new list also contains the same row IDs.
@@ -68,7 +70,7 @@ pub(super) fn begin_edit_with_authority(
         return Err("This cell is no longer visible.");
     }
     let checked =
-        observed_checkbox(loaded, row, column).ok_or("This checkbox is no longer available.")?;
+        checkbox_input(loaded, row, column).ok_or("This checkbox is no longer available.")?;
     let edit = CheckboxEdit::capture_with_policy(
         &loaded.document,
         &loaded.records,

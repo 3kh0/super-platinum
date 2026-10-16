@@ -14,7 +14,7 @@
     if (!root || editors.has(root)) return;
     const originals = new WeakMap();
     const initial = clone(blocks);
-    const model = { originals, initial, dirty: false, previousFocus: document.activeElement };
+    const model = { originals, initial, dirty: false, revision: 0, composing: false, expectedGeneration, previousFocus: document.activeElement };
     editors.set(root, model);
     const remember = (element, value) => { originals.set(element, clone(value)); return element; };
     function inline(value) {
@@ -23,7 +23,7 @@
         if (value.type === 'link' && /^(https?:|mailto:|slack:)/i.test(value.url || '')) element.href = value.url;
         let leaf = element;
         for (const [flag, tag] of [['bold', 'strong'], ['italic', 'em'], ['strike', 's'], ['code', 'code']]) {
-          if (value.style?.[flag]) { const child = document.createElement(tag); leaf.append(child); leaf = child; }
+          if (value.style?.[flag]) { const child = document.createElement(tag === 'code' ? 'font' : tag); if (tag === 'code') child.setAttribute('face','monospace'); leaf.append(child); leaf = child; }
         }
         leaf.textContent = value.text ?? value.url ?? '';
         return element;
@@ -65,7 +65,10 @@
     }
     root.replaceChildren(...blocks.map(block));
     if (!root.childNodes.length) root.append(block({type: 'rich_text', elements: [{type: 'rich_text_section', elements: []}]}));
-    root.addEventListener('input', () => { model.dirty = true; });
+    const changed = () => {model.dirty = true;model.revision = model.revision === Number.MAX_SAFE_INTEGER ? null : model.revision === null ? null : model.revision + 1;};
+    root.addEventListener('input', changed);
+    root.addEventListener('compositionstart', () => {model.composing=true;changed();});
+    root.addEventListener('compositionend', () => {model.composing=false;changed();});
     root.addEventListener('paste', event => {
       event.preventDefault();
       document.execCommand('insertText', false, event.clipboardData?.getData('text/plain') || '');
@@ -83,6 +86,8 @@
         event.preventDefault(); first?.focus();
       }
     });
+    mountLinks(root, model);
+    root.closest('.rich-editor')?.querySelector('.rich-code-toggle')?.addEventListener('click',()=>inlineCode(root,model));
     if (autofocus) root.focus();
   }
   function read(id) {
@@ -95,7 +100,8 @@
       if (['B', 'STRONG'].includes(element.tagName) || Number(element.style.fontWeight) >= 600 || element.style.fontWeight === 'bold') style.bold = true;
       if (['I', 'EM'].includes(element.tagName) || element.style.fontStyle === 'italic') style.italic = true;
       if (['S', 'STRIKE', 'DEL'].includes(element.tagName) || element.style.textDecoration.includes('line-through')) style.strike = true;
-      if (element.tagName === 'CODE') style.code = true;
+      if (element.tagName === 'CODE' || element.getAttribute('face') === 'monospace' || element.style.fontFamily === 'monospace') style.code = true;
+      if (element.getAttribute('face') === 'inherit' || element.style.fontFamily === 'inherit') delete style.code;
       if (element.style.fontWeight === 'normal' || element.style.fontWeight === '400') delete style.bold;
       if (element.style.fontStyle === 'normal') delete style.italic;
       return style;
@@ -105,9 +111,12 @@
       for (const node of parent.childNodes) {
         if (node.nodeType === Node.TEXT_NODE) {
           if (!node.textContent) continue;
-          const value = {...source, type: 'text', text: node.textContent};
+          const value = {...source, ...originals.get(node), type: 'text', text: node.textContent};
           delete value.url;
-          if (Object.keys(inherited).length) value.style = {...inherited}; else delete value.style;
+          const retainedStyle = {...originals.get(node)?.style};
+          for (const key of knownStyles) delete retainedStyle[key];
+          const textStyle = {...retainedStyle,...inherited};
+          if (Object.keys(textStyle).length) value.style = textStyle; else delete value.style;
           result.push(value); continue;
         }
         if (node.nodeType !== Node.ELEMENT_NODE) continue;
@@ -173,8 +182,146 @@
     }
     flush(); return result;
   }
+  // DOM selection belongs to this mounted editor, not a later element with the
+  // same id. Link UI is typed markup; this listener owns only editing/focus.
+  function mountLinks(root, model) {
+    const owner=root.closest('.rich-editor'), trigger=owner?.querySelector('.rich-link-open');
+    const panel=owner?.querySelector('.rich-link-controls'), input=panel?.querySelector('.rich-link-url');
+    if (!trigger || !panel || !input) return;
+    const apply=panel.querySelector('.rich-link-apply'), remove=panel.querySelector('.rich-link-remove');
+    const cancel=panel.querySelector('.rich-link-cancel'), error=panel.querySelector('.rich-link-error');
+    let pending=null;
+    const current=()=>root.isConnected && document.getElementById(root.id)===root && editors.get(root)===model
+      && root.contentEditable==='true' && !model.composing && model.revision!==null
+      && (model.expectedGeneration===null || root.closest('[data-editor-generation]')?.dataset.editorGeneration===String(model.expectedGeneration));
+    const complain=message=>{error.textContent=message;error.hidden=false;};
+    const element=node=>node?.nodeType===Node.ELEMENT_NODE?node:node?.parentElement;
+    const anchor=node=>{const a=element(node)?.closest('a');return a&&root.contains(a)?a:null;};
+    const nearestOriginal=node=>{if(model.originals.has(node))return model.originals.get(node);for(let n=element(node);n&&n!==root;n=n.parentElement){const v=model.originals.get(n);if(v?.type==='text'||v?.type==='link')return v;}return null;};
+    const snapshot=()=>{
+      if(!current())return null;
+      const selection=getSelection();if(!selection?.rangeCount)return null;
+      const range=selection.getRangeAt(0);
+      if(!root.contains(range.startContainer)||!root.contains(range.endContainer))return null;
+      const first=anchor(range.startContainer),last=anchor(range.endContainer);
+      if(first!==last)return null;
+      const saved=range.cloneRange();
+      if(first) {
+        if(first.querySelector('[contenteditable=false],br')||!first.textContent)return null;
+        saved.selectNodeContents(first);
+      } else if(range.collapsed || range.startContainer!==range.endContainer || range.startContainer.nodeType!==Node.TEXT_NODE
+        || element(range.startContainer)?.closest('[contenteditable=false]') || !range.toString().trim())return null;
+      const text=saved.toString();if(/[\r\n]/.test(text))return null;
+      return {range:saved,selection:range.cloneRange(),anchor:first,text,html:root.innerHTML,revision:model.revision,
+        anchorNode:selection.anchorNode,anchorOffset:selection.anchorOffset,focusNode:selection.focusNode,focusOffset:selection.focusOffset,
+        original:clone((first?model.originals.get(first):nearestOriginal(range.startContainer))||{})};
+    };
+    const valid=()=>pending && current() && pending.revision===model.revision && pending.html===root.innerHTML
+      && root.contains(pending.range.startContainer)&&root.contains(pending.range.endContainer)&&pending.range.toString()===pending.text
+      && (!pending.anchor||root.contains(pending.anchor));
+    const restore=range=>{root.focus({preventScroll:true});const selection=getSelection();selection.removeAllRanges();selection.addRange(range);};
+    const close=(focus=true)=>{
+      const previous=pending;pending=null;panel.hidden=true;trigger.setAttribute('aria-expanded','false');
+      if(focus&&current()) {
+        if(previous&&previous.revision===model.revision&&previous.html===root.innerHTML) {
+          restore(previous.selection);getSelection().setBaseAndExtent(previous.anchorNode,previous.anchorOffset,previous.focusNode,previous.focusOffset);
+        }
+        else root.focus({preventScroll:true});
+      }
+    };
+    trigger.addEventListener('click',()=>{
+      if(!current())return;
+      if(!panel.hidden){close();return;}
+      pending=snapshot();panel.hidden=false;trigger.setAttribute('aria-expanded','true');error.hidden=true;
+      input.value=pending?.anchor?(pending.anchor.getAttribute('href')||pending.original.url||''):'';
+      input.disabled=!pending;apply.disabled=!pending;remove.hidden=!pending?.anchor;remove.disabled=!pending;
+      if(!pending) {complain('Select text or place the cursor inside one link.');cancel.focus({preventScroll:true});}
+      else {input.focus({preventScroll:true});input.select();}
+    });
+    const destination=value=>{
+      const url=value.trim();if(!url||/[\u0000-\u0020\u007f]/.test(url)||! /^(https?:|mailto:|slack:)/i.test(url))return null;
+      try {const parsed=new URL(url);if(['http:','https:'].includes(parsed.protocol)&&!parsed.hostname)return null;}catch{return null;}
+      return url;
+    };
+    const execute=unlink=>{
+      if(!valid()){complain('The editor changed. Cancel and select the text again.');return;}
+      const url=unlink?null:destination(input.value);
+      if(!unlink&&!url){complain('Enter an http, https, mailto or slack link without spaces or control characters.');input.focus({preventScroll:true});return;}
+      if(unlink&&!pending.anchor)return;
+      const operation=pending;
+      // Retain actual text nodes across native unlink for unknown inline fields.
+      // WeakMap metadata never enters HTML; undo keeps browser-owned nodes/history.
+      const texts=[];const walker=document.createTreeWalker(operation.anchor||root,NodeFilter.SHOW_TEXT);
+      if(operation.anchor)while(walker.nextNode())texts.push(walker.currentNode);
+      restore(operation.range);
+      const changed=document.execCommand(unlink?'unlink':'createLink',false,url);
+      if(!changed){complain('This selection could not be changed. Cancel and select the text again.');return;}
+      if(unlink) {
+        for(const node of texts)if(root.contains(node))model.originals.set(node,clone(operation.original));
+      } else {
+        const selection=getSelection(),a=anchor(selection?.anchorNode)||anchor(operation.range.startContainer);
+        if(a)model.originals.set(a,{...operation.original,type:'link'});
+      }
+      // Engine commands normally emit input. Mark dirty also on engines whose
+      // command succeeds without that event; never reset the native undo stack.
+      model.dirty=true;
+      close(false);root.focus({preventScroll:true});
+    };
+    apply.addEventListener('click',()=>execute(false));remove.addEventListener('click',()=>execute(true));
+    cancel.addEventListener('click',()=>close());
+    panel.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close();}
+      else if(event.key==='Enter'&&event.target===input){event.preventDefault();event.stopPropagation();execute(false);}
+      else if(event.key==='Tab') {
+        const fields=[input,apply,remove,cancel].filter(e=>!e.hidden&&!e.disabled);
+        if(event.shiftKey&&document.activeElement===fields[0]){event.preventDefault();event.stopPropagation();fields.at(-1).focus();}
+        else if(!event.shiftKey&&document.activeElement===fields.at(-1)){event.preventDefault();event.stopPropagation();fields[0].focus();}
+      }
+    });
+    // A new editing gesture abandons the old selection without moving the caret.
+    root.addEventListener('pointerdown',()=>{if(!panel.hidden)close(false);});
+    root.addEventListener('keydown',()=>{if(!panel.hidden)close(false);});
+  }
+  // A native font command owns the undo transaction. The two exact face values
+  // are an internal presentation for typed style.code, not arbitrary font UI.
+  function inlineCode(root,model) {
+    const owner=root.closest('.rich-editor'),status=owner?.querySelector('.rich-code-status');
+    const refuse=()=>{if(status){status.hidden=false;status.textContent='Select text within one formatting run to change inline code.';}return false;};
+    if (!root.isConnected || document.getElementById(root.id)!==root || editors.get(root)!==model
+      || root.contentEditable!=='true' || model.composing || model.revision===null
+      || (model.expectedGeneration!==null&&root.closest('[data-editor-generation]')?.dataset.editorGeneration!==String(model.expectedGeneration))) return false;
+    const selection=getSelection();if(!selection?.rangeCount)return refuse();
+    const range=selection.getRangeAt(0),node=range.startContainer;
+    if(range.collapsed||node!==range.endContainer||node.nodeType!==Node.TEXT_NODE||!root.contains(node)
+      ||node.parentElement.closest('a,[contenteditable=false],pre')||/[\r\n]/.test(range.toString()))return refuse();
+    let original=model.originals.get(node),coded=false;
+    for(let element=node.parentElement;element&&element!==root;element=element.parentElement) {
+      if(!original&&model.originals.get(element)?.type==='text')original=model.originals.get(element);
+    }
+    // The nearest explicit marker wins over an inherited loaded code wrapper.
+    for(let element=node.parentElement;element&&element!==root;element=element.parentElement) {
+      const face=element.getAttribute('face')||element.style.fontFamily;
+      if(face==='inherit')break;
+      if(face==='monospace'||element.tagName==='CODE'){coded=true;break;}
+    }
+    // Unlink may leave metadata on an actual text node rather than its wrapper.
+    // Preserve that provenance over native splits without putting it in HTML.
+    let offset=0,start=0;const before=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+    while(before.nextNode()){if(before.currentNode===node){start=offset;break;}offset+=before.currentNode.length;}
+    const end=start+node.length;
+    root.focus({preventScroll:true});
+    const previousCSS=document.queryCommandState('styleWithCSS');
+    let changed=false;
+    try {document.execCommand('styleWithCSS',false,false);changed=document.execCommand('fontName',false,coded?'inherit':'monospace');}
+    finally {document.execCommand('styleWithCSS',false,previousCSS);}
+    if(!changed)return refuse();
+    if(original){offset=0;const after=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(after.nextNode()){const text=after.currentNode,next=offset+text.length;if(offset>=start&&next<=end)model.originals.set(text,clone(original));offset=next;}}
+    model.dirty=true;if(status)status.hidden=true;
+    return true;
+  }
   function format(id, command) {
     const root = document.getElementById(id);
+    if(command==='inlineCode')return root&&editors.has(root)?inlineCode(root,editors.get(root)):false;
     const selection = window.getSelection();
     if (!root || !selection?.rangeCount || !root.contains(selection.anchorNode) || !root.contains(selection.focusNode)) return;
     root.focus();

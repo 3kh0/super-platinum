@@ -27,7 +27,7 @@ fn begin_create(s: &mut ShellState) -> (Guard, Intent) {
     let selection = super::super::selection(s).unwrap();
     assert!(view_create::open_shell(s, visit, selection));
     let key = Key::current(s).unwrap();
-    with_registry(|r| r.entries.get_mut(&key).unwrap().name = "Fresh view".into());
+    with_registry(|r| r.entries.get_mut(&key).unwrap().input = Input::Name("Fresh view".into()));
     prepare(s, entry(s).unwrap().serial).unwrap()
 }
 fn added(s: &ShellState) -> network::Metadata {
@@ -261,7 +261,8 @@ fn grouped_draft(s: &mut ShellState) -> (u64, u64) {
     assert_eq!(entry(s).unwrap().target.grouping(), None);
     assert!(view_create::grouping_shell(s, serial, visit, "done"));
     with_registry(|r| {
-        r.entries.get_mut(&Key::current(s).unwrap()).unwrap().name = "Fresh view".into()
+        r.entries.get_mut(&Key::current(s).unwrap()).unwrap().input =
+            Input::Name("Fresh view".into())
     });
     (serial, visit)
 }

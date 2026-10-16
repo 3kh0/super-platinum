@@ -102,3 +102,12 @@
     .files-panel:has(.file-recovery-controls [aria-expanded="true"]) .file-recovery {max-height:none;}
     .files-panel:has(.file-recovery-controls [aria-expanded="true"]) .file-recovery-list {overflow:visible;}
 }
+
+/* Canonical message attachments keep preview and actions as sibling controls. */
+.message-file { display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:4px;max-width:100%;min-width:0;white-space:normal; }
+.message-file > .file-row-actions { padding-top:0;align-self:start; }
+.message-file > .file-link { min-width:0;max-width:100%;overflow-wrap:anywhere; }
+.message-file > .media-button { min-width:0;max-width:100%;justify-self:start; }
+.message-file .file-action-panel { white-space:normal; }
+.message-content .message-file-paragraph { margin:0 0 4px; }
+.message-content .message-file-paragraph:last-child { margin-bottom:0; }

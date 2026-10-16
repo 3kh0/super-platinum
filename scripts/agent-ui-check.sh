@@ -22,6 +22,7 @@ FIXTURES=(
   rail-account-snoozed
   animated-reaction reaction-picker later later-files later-files-narrow later-empty later-error later-reminder later-new-reminder
   bookmarks bookmarks-narrow bookmarks-edit bookmarks-remove bookmarks-error bookmarks-folder bookmarks-folder-remove bookmarks-move
+  bookmarks-emoji bookmarks-emoji-narrow
   canvas-create canvas-create-narrow canvas-create-error
   canvas canvas-narrow canvas-loading canvas-error canvas-rename canvas-rename-error canvas-readonly
   canvas-checklist canvas-checklist-narrow canvas-checklist-saving canvas-checklist-uncertain
@@ -33,6 +34,8 @@ FIXTURES=(
   files files-narrow files-empty files-error files-density files-density-narrow
   channel-files channel-files-narrow channel-links channel-links-narrow channel-links-empty channel-links-error
   pins pins-narrow pins-empty pins-error channel-pinned-message
+  pins-files pins-files-narrow
+  forward-links forward-links-narrow
   forward forward-narrow forward-error forward-partial forward-partial-narrow forward-people forward-people-narrow
   forward-recovery forward-recovery-narrow
   scheduled scheduled-empty scheduled-error scheduled-edit scheduled-send-confirm
@@ -53,9 +56,13 @@ FIXTURES=(
   appearance-blue-steel appearance-paper-bag appearance-custom-background
   image-viewer-upload image-viewer-embed-compact gif-picker-attachment
   pdf-preview pdf-preview-narrow pdf-preview-error pdf-preview-search-long
+  file-share file-share-narrow file-share-pressure file-share-pressure-narrow file-share-draft-reopen
+  message-file-actions message-file-actions-narrow
   viewer-actions-files viewer-actions-message viewer-actions-narrow viewer-actions-pdf
   file-actions file-actions-narrow file-actions-channel-narrow file-rename file-rename-narrow file-rename-channel-narrow file-recovery file-recovery-narrow file-preview-renamed-files file-preview-renamed-message
-  original-download original-download-narrow original-download-save-dialog
+  original-download original-download-narrow original-download-save-dialog original-download-save-workflow
+  file-preview-refresh-check file-preview-refresh-check-narrow cached-viewer-save-check
+  file-preview-refresh file-preview-refresh-narrow file-preview-refresh-error file-preview-refresh-error-narrow
   file-preview-text file-preview-narrow file-preview-large file-preview-utf16 file-preview-empty file-preview-binary file-preview-audio
   video-viewer search search-opening search-loading search-empty search-error search-more-error search-narrow search-filters search-filters-narrow search-has-filters search-has-filters-narrow palette palette-people activity-unread activity-channel-post
   activity-thread-tools activity-paging activity-loading activity-error activity-more-error activity-empty activity-narrow activity-navigation activity-navigation-narrow dms
@@ -75,8 +82,21 @@ FIXTURES=(
   message-multi-channels-select message-multi-channels-select-narrow
   slack-list slack-list-narrow slack-list-readonly slack-list-incomplete slack-list-error slack-list-loading
   slack-list-board-add slack-list-board-add-narrow
+  slack-list-board-heading slack-list-board-heading-narrow slack-list-board-heading-checked-narrow
   slack-list-hydration slack-list-hydration-narrow
   slack-list-column-rename slack-list-column-rename-narrow
+  slack-list-number-precision slack-list-number-precision-narrow
+  slack-list-number-rename slack-list-number-rename-narrow
+  slack-list-field-visibility slack-list-field-visibility-narrow
+  slack-list-view-filter slack-list-view-filter-narrow
+  slack-list-number-filter slack-list-number-filter-narrow
+  slack-list-text-field-create slack-list-text-field-create-narrow
+  slack-list-number-field-create slack-list-number-field-create-narrow
+  slack-list-checkbox-field-create slack-list-checkbox-field-create-narrow
+  slack-list-view-sort slack-list-view-sort-narrow
+  slack-list-view-grouping slack-list-view-grouping-narrow
+  slack-list-board-grouping slack-list-board-grouping-narrow
+  slack-list-find slack-list-find-narrow slack-list-find-board slack-list-find-board-narrow slack-list-find-empty slack-list-find-empty-narrow
   slack-list-view-rename slack-list-view-rename-narrow
   slack-list-view-create slack-list-view-create-narrow
   slack-list-subitem-create slack-list-subitem-create-narrow slack-list-subitem-uncertain slack-list-subitem-uncertain-narrow
@@ -128,39 +148,77 @@ FIXTURES=(
   usergroup-members usergroup-channels system-messages send-outcomes send-outcomes-narrow send-outcomes-thread managed-draft-recovery managed-draft-recovery-narrow message-marked-unread message-marked-unread-narrow member-live-refresh channel-members member-add member-add-error member-remove member-add-narrow member-remove-narrow
 )
 
-# Optional fixture names allow a focused recheck after the full sweep.
-if [[ "$#" -gt 0 ]]; then FIXTURES=("$@"); fi
-
-# These named fixtures require explicit isolated worker ownership/readiness.
-# The dedicated runner handles both protected-drafts and protected-drafts-narrow;
-# they are intentionally not part of the default-feature sweep.
-for fixture in "${FIXTURES[@]}"; do
-  case "$fixture" in
+# Owned workflows require their dedicated runner and explicit ownership/readiness.
+# Keep this one classifier authoritative for both default selection and refusal.
+owned_fixture_route() {
+  owned_route=""
+  case "$1" in
+    slack-list-view-grouping|slack-list-view-grouping-narrow|slack-list-board-grouping|slack-list-board-grouping-narrow)
+      owned_route="Use the sealed existing-view Group by runner with owned captures and readiness."
+      return 0 ;;
+    cached-viewer-save-check)
+      owned_route="Use the sealed cached-viewer Save runner with exact private destinations and UIA reviews."
+      return 0 ;;
+    file-preview-refresh-check|file-preview-refresh-check-narrow)
+      owned_route="Use the sealed file-preview refresh runner with its owned marker and Save sentinel."
+      return 0 ;;
+    file-share|file-share-narrow|file-share-draft-reopen|file-share-pressure|file-share-pressure-narrow)
+      owned_route="Use the sealed Share native runner with an owned capability marker and private journals."
+      return 0 ;;
+    original-download-save-workflow)
+      owned_route="Use scripts/check-save-workflow-windows.py for the owned actual Save workflow."
+      return 0
+      ;;
     original-download-save-dialog)
-      echo "Use scripts/check-save-dialog-discovery-windows.py for the owned native Save dialog diagnostic." >&2
-      exit 2
+      owned_route="Use scripts/check-save-dialog-discovery-windows.py for the owned native Save dialog diagnostic."
+      return 0
       ;;
     original-download|original-download-narrow)
-      echo "Use scripts/check-original-download-native.py for the owned local streaming workflow." >&2
-      exit 2 ;;
+      owned_route="Use scripts/check-original-download-native.py for the owned local streaming workflow."
+      return 0 ;;
     slack-list-subitem-create|slack-list-subitem-create-narrow|slack-list-subitem-uncertain|slack-list-subitem-uncertain-narrow)
-      echo "Use scripts/check-slack-list-subitem-native.py for the owned subitem workflow." >&2
-      exit 2 ;;
+      owned_route="Use scripts/check-slack-list-subitem-native.py for the owned subitem workflow."
+      return 0 ;;
     protected-adoption|protected-adoption-narrow)
-      echo "Use scripts/check-protected-adoption-native.py with an explicitly feature-built binary." >&2
-      exit 2
+      owned_route="Use scripts/check-protected-adoption-native.py with an explicitly feature-built binary."
+      return 0
       ;;
     protected-enrollment|protected-enrollment-narrow)
-      echo "Use scripts/check-protected-enrollment-native.py with an explicitly feature-built binary." >&2
-      exit 2
+      owned_route="Use scripts/check-protected-enrollment-native.py with an explicitly feature-built binary."
+      return 0
       ;;
     protected-owned-send|protected-owned-send-narrow)
-      echo "Use scripts/check-protected-owned-send-native.py with an explicitly feature-built binary." >&2
-      exit 2 ;;
+      owned_route="Use scripts/check-protected-owned-send-native.py with an explicitly feature-built binary."
+      return 0 ;;
     protected-drafts|protected-drafts-narrow)
-      echo "Use scripts/check-protected-drafts-native.py with an explicitly feature-built binary." >&2
-      exit 2 ;;
+      owned_route="Use scripts/check-protected-drafts-native.py with an explicitly feature-built binary."
+      return 0 ;;
+    *) return 1 ;;
   esac
+}
+
+if [[ "$#" -gt 0 ]]; then
+  FIXTURES=("$@")
+else
+  # Preserve the complete catalog above, but run only ordinary static fixtures.
+  static_fixtures=()
+  for fixture in "${FIXTURES[@]}"; do
+    if owned_fixture_route "$fixture"; then
+      printf 'agent-ui-check: excluded from static sweep: %s. %s\n' "$fixture" "$owned_route" >&2
+    else
+      static_fixtures+=("$fixture")
+    fi
+  done
+  FIXTURES=("${static_fixtures[@]}")
+  printf 'agent-ui-check: static fixture sweep (%s fixtures); owned workflows are routed separately.\n' "${#FIXTURES[@]}"
+fi
+
+# Preflight the whole explicit selection before building or launching anything.
+for fixture in "${FIXTURES[@]}"; do
+  if owned_fixture_route "$fixture"; then
+    printf '%s\n' "$owned_route" >&2
+    exit 2
+  fi
 done
 
 echo "agent-ui-check: building the locked Dioxus desktop shell…"

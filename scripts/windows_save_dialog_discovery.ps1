@@ -3,7 +3,18 @@
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
 [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
-Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes,WindowsBase
+Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes,UIAutomationClientsideProviders,WindowsBase
+Add-Type -ReferencedAssemblies ([System.Windows.Automation.ClientSettings].Assembly.Location) -TypeDefinition @'
+using System.Reflection;
+public static class SaveDialogProxyBootstrap {
+ // The Framework default proxy loader inspects its first external stack frame.
+ // Preserve this typed frame: a PowerShell dynamic frame can have no ReflectedType.
+ [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+ public static void Register(AssemblyName provider) {
+  System.Windows.Automation.ClientSettings.RegisterClientSideProviderAssembly(provider);
+ }
+}
+'@
 Add-Type @'
 using System;
 using System.Text;
@@ -29,6 +40,25 @@ public static class SaveDialogNative {
 '@
 $request=$env:SP_SAVE_DIALOG_JSON | ConvertFrom-Json
 if ($request.mode -cnotin @('probe','cancel') -or $request.nonce -cnotmatch '^[0-9a-f]{32}$' -or $request.pid -le 0 -or $request.creation -le 0) {throw 'Invalid diagnostic owner'}
+$providerStatus=[ordered]@{ok=$false;nonce=$request.nonce;pid=[int]$request.pid;scope='helper-process';uiAccessed=$false}
+try {
+ $provider=[UIAutomationClientsideProviders.UIAutomationClientSideProviders].Assembly
+ $client=[System.Windows.Automation.ClientSettings].Assembly
+ $providerName=$provider.GetName()
+ $providerStatus.client=$client.FullName;$providerStatus.provider=$provider.FullName;$providerStatus.providerPath=$provider.Location
+ if($providerName.Name -cne 'UIAutomationClientsideProviders' -or
+    ([BitConverter]::ToString($providerName.GetPublicKeyToken()).Replace('-','').ToLowerInvariant()) -cne '31bf3856ad364e35' -or
+    $providerName.Version -ne $client.GetName().Version){throw 'Unexpected built-in proxy assembly identity'}
+ [SaveDialogProxyBootstrap]::Register($providerName)
+ $providerStatus.tableCount=[UIAutomationClientsideProviders.UIAutomationClientSideProviders]::ClientSideProviderDescriptionTable.Count
+ if($providerStatus.tableCount -le 0){throw 'Empty built-in proxy table'}
+ $providerStatus.ok=$true
+} catch {
+ $providerStatus.error=$_.Exception.ToString()
+ Write-Output ('save-dialog-provider: '+($providerStatus|ConvertTo-Json -Compress -Depth 5))
+ throw
+}
+Write-Output ('save-dialog-provider: '+($providerStatus|ConvertTo-Json -Compress -Depth 5))
 function Check-Process {
  $process=Get-Process -Id $request.pid -ErrorAction Stop
  if ($process.StartTime.ToUniversalTime().ToFileTimeUtc() -ne $request.creation) {throw 'Process identity changed'}

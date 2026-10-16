@@ -39,6 +39,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 generation,
                 connection,
             } => {
+                crate::file_share::connection(&mut shell, &team, generation);
                 if shell.core.active_team.as_ref() == Some(&team) {
                     crate::performance::record(crate::performance::StartupStage::RealtimeConnected);
                 }
@@ -100,6 +101,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
             }
             RtUpdate::Event { generation, event } => {
+                crate::file_share::event(&mut shell, &team, generation, &event);
                 let presence_only = matches!(event.as_ref(), RtEvent::PresenceChange { .. });
                 let reaction_channel = reactions::channel(&event).map(str::to_owned);
                 let list_refresh =
@@ -356,6 +358,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
             }
             RtUpdate::Disconnected { generation } => {
+                crate::file_share::connection(&mut shell, &team, generation);
                 if let Some(workspace) = shell.core.workspaces.get_mut(&team)
                     && generation >= workspace.rt_generation
                 {
@@ -555,9 +558,6 @@ pub(crate) fn apply_in_view(
                 .merge_update(super_platinum_core::state::visible_message(message));
         }
         RtEvent::MessageChanged { channel, message } => {
-            if core.pins.matches_scope(core.account_epoch, team) {
-                core.pins.update_message(&channel, &message);
-            }
             if core.later.matches_scope(core.account_epoch, team) {
                 core.later.update_message(&channel, &message);
             }
@@ -571,6 +571,7 @@ pub(crate) fn apply_in_view(
                     messages.merge_update(message.clone());
                 }
             }
+            core.update_pinned_message(team, &channel, &message);
         }
         RtEvent::MessageDeleted {
             channel,
@@ -718,7 +719,7 @@ pub(crate) fn apply_in_view(
             if let Some(update) = super_platinum_core::pins::PinUpdate::from_event(&raw) {
                 if core.active_team.as_deref() == Some(team) {
                     core.pins.ensure_scope(core.account_epoch, team);
-                    if core.pins.apply_event(&update) {
+                    if core.apply_pin_event(team, &update) {
                         if let Some(ts) = update.item.message.as_ref().and_then(|m| m.ts.as_ref()) {
                             core.update_pin_copies(team, &update.channel, ts, update.pinned);
                         }
@@ -783,3 +784,6 @@ pub(crate) fn apply_reaction(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod pin_file_ingress_tests;

@@ -6,9 +6,10 @@
 .pin-meta > span:not(.spacer) {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pin-meta .spacer {flex:1;}
 .pin-meta button,.pin-open,.pin-more {height:32px;padding:0 12px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:inherit;font-size:var(--text-sm);cursor:pointer;}
-.pin-meta button:hover,.pin-open:hover,.pin-more:hover {background:var(--hover-overlay);color:var(--text);}
+.pin-meta button:hover,.pin-open:enabled:hover,.pin-more:hover {background:var(--hover-overlay);color:var(--text);}
 .pin-meta button:disabled {opacity:.45;cursor:default;}
 .pin-open {margin-left:52px;color:var(--link);}
+.pin-open:disabled {color:var(--muted);cursor:default;}
 .pin-more {display:block;margin:16px auto;background:var(--surface-raised);}
 .message-pin-label {display:flex;gap:4px;align-items:center;font-size:var(--text-xs);color:var(--muted);margin-bottom:4px;}
 .pins-panel .message-pin-label {display:none;}

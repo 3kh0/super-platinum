@@ -83,6 +83,7 @@ pub(super) async fn run(
     lanes(desktop, &[("OPT_ENGINEERING", 2)]).await?;
     choose(desktop, "V_BOARD_CHECK").await?;
     lanes(desktop, &[("true", 2), ("", 68)]).await?;
+    checked(desktop, include_str!("board_headings.js")).await?;
     checked(desktop,r#"({ok:!document.querySelector('.slack-list-card [data-column-id="C_CHECK"]')&&[...document.querySelector('.slack-list-card').querySelectorAll('.slack-list-card-field')].map(c=>c.dataset.columnId).join(',')==='C_NAME,C_NUMBER,C_MULTI'})"#).await?;
 
     choose(desktop, "V_BOARD_UNGROUPED").await?;

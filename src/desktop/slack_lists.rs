@@ -19,6 +19,7 @@ pub(crate) mod delete;
 mod edit_trace;
 mod editor;
 pub(crate) mod events;
+pub(crate) mod find;
 pub(crate) mod fixture;
 pub(crate) mod labels;
 mod layout;

@@ -1,5 +1,19 @@
 //! Exact named synthetic HTTP boundary. Same builders, positive decoder and reducers.
 use super::*;
+mod filter;
+pub(crate) mod grouping;
+mod text_create;
+pub(crate) use text_create::{
+    FieldCreateMode, field_create_check_enabled, field_create_mode, seed_text_create,
+    seed_text_create_reopen, stale_text_create_file, text_create_custody, text_create_registry,
+};
+mod sort;
+pub(crate) use filter::{
+    filter_check_enabled, filter_registry_empty, number_filter_check_enabled, seed_filter,
+    seed_filter_reopen, stale_filter_file,
+};
+mod visibility;
+pub(crate) use sort::{seed_sort, seed_sort_reopen, sort_check_enabled, stale_sort_file};
 use std::sync::{Mutex, OnceLock};
 use super_platinum_core::{
     config::WorkspaceSession,
@@ -8,6 +22,9 @@ use super_platinum_core::{
         transport::ListColumnRenameFailure,
     },
 };
+pub(crate) use visibility::{
+    seed_visibility, seed_visibility_reopen, stale_visibility_file, visibility_check_enabled,
+};
 #[derive(Default)]
 struct Ledger {
     requests: Vec<Value>,
@@ -15,6 +32,7 @@ struct Ledger {
     pending: Option<tokio::sync::oneshot::Sender<()>>,
     held_read: Option<tokio::sync::oneshot::Sender<()>>,
     hold_next_read: bool,
+    precision_file_once: Option<Value>,
     finished: Vec<Value>,
     server: Option<Value>,
 }
@@ -43,8 +61,77 @@ pub(crate) fn create_check_enabled() -> bool {
             Ok("slack-list-view-create" | "slack-list-view-create-narrow")
         )
 }
+pub(crate) fn precision_check_enabled() -> bool {
+    precision_gate(
+        std::env::var("SUPER_PLATINUM_LIST_PRECISION_CHECK")
+            .ok()
+            .as_deref(),
+        std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
+    )
+}
+fn precision_gate(flag: Option<&str>, alias: Option<&str>) -> bool {
+    flag == Some("1")
+        && matches!(
+            alias,
+            Some("slack-list-number-precision" | "slack-list-number-precision-narrow")
+        )
+}
+pub(crate) fn number_rename_check_enabled() -> bool {
+    number_rename_gate(
+        std::env::var("SUPER_PLATINUM_LIST_NUMBER_RENAME_CHECK")
+            .ok()
+            .as_deref(),
+        std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
+    )
+}
+fn number_rename_gate(flag: Option<&str>, alias: Option<&str>) -> bool {
+    flag == Some("1")
+        && matches!(
+            alias,
+            Some("slack-list-number-rename" | "slack-list-number-rename-narrow")
+        )
+}
+pub(crate) fn seed_number_rename(shell: &ShellState, server: Value) {
+    assert!(number_rename_check_enabled() && enabled(shell));
+    *ledger().lock().unwrap() = Ledger {
+        server: Some(server),
+        ..Default::default()
+    };
+}
+pub(crate) fn stale_number_rename_file(shell: &ShellState) -> Result<(), String> {
+    if !number_rename_check_enabled() || !enabled(shell) {
+        return Err("Exact disconnected Number name checker required".into());
+    }
+    let e = entry(shell)
+        .filter(|e| {
+            e.stage == Stage::Uncertain
+                && e.target == Target::Column("C_NUMBER".into())
+                && matches!(e.intent, Some(Intent::Column(_)))
+        })
+        .ok_or("No uncertain Number name intent")?;
+    ledger()
+        .lock()
+        .unwrap()
+        .queue_precision_file(e.original.raw)
+}
+pub(crate) fn seed_precision(shell: &ShellState, server: Value) {
+    assert!(precision_check_enabled() && enabled(shell));
+    *ledger().lock().unwrap() = Ledger {
+        server: Some(server),
+        ..Default::default()
+    };
+}
 pub(super) fn enabled(shell: &ShellState) -> bool {
-    (check_enabled() || view_check_enabled() || create_check_enabled())
+    (check_enabled()
+        || view_check_enabled()
+        || create_check_enabled()
+        || precision_check_enabled()
+        || number_rename_check_enabled()
+        || visibility_check_enabled()
+        || sort_check_enabled()
+        || filter_check_enabled()
+        || grouping::check_enabled()
+        || field_create_check_enabled())
         && super::super::fixture::enabled(shell)
         && shell.core.session.is_none()
         && shell.core.transport.is_none()
@@ -105,7 +192,10 @@ pub(super) async fn read(
     let (raw, held) = {
         let mut l = ledger().lock().unwrap();
         let raw = match path.as_str() {
-            "/api/files.info" => json!({"ok":true,"file":l.server.clone().unwrap()}),
+            "/api/files.info" => {
+                json!({"ok":true,"file":l.file_response(stage, precision_check_enabled() || number_rename_check_enabled() || visibility_check_enabled() || sort_check_enabled() || filter_check_enabled()
+        || grouping::check_enabled() || field_create_check_enabled())})
+            }
             "/api/team.prefs.get" => json!({"ok":true,"prefs":{"allow_lists":"full"}}),
             "/api/users.prefs.get" => {
                 json!({"ok":true,"prefs":{"task_lists":"[]","assigned_to_list":""}})
@@ -149,15 +239,25 @@ pub(super) async fn write(
             Error::TransportNotConfigured,
         ));
     }
+    // Exact owned Grouping adapter; static fixtures cannot dispatch.
+    if permit.is_grouping() {
+        return grouping::write(state, guard, permit).await;
+    }
+    if field_create_check_enabled() {
+        return text_create::write(state, guard, permit).await;
+    }
+    if filter_check_enabled() {
+        return filter::write(state, guard, permit).await;
+    }
+    if sort_check_enabled() {
+        return sort::write(state, guard, permit).await;
+    }
+    if visibility_check_enabled() {
+        return visibility::write(state, guard, permit).await;
+    }
     let request = permit.request(&state.peek().core.client, &session());
-    let desired = with_registry(|r| {
-        r.entries[&guard.key]
-            .intent
-            .as_ref()
-            .unwrap()
-            .desired_name()
-            .to_owned()
-    });
+    let desired = with_registry(|r| r.entries[&guard.key].intent.as_ref().unwrap().input());
+    let name = desired.name().unwrap_or_default();
     let target = with_registry(|r| r.entries[&guard.key].target.clone());
     record(request).map_err(ListColumnRenameFailure::NotRequested)?;
     let (tx, rx) = tokio::sync::oneshot::channel();
@@ -169,7 +269,7 @@ pub(super) async fn write(
             let mut server = l.server.clone().unwrap();
             super::super::fixture::view_create::add(
                 &mut server,
-                &desired,
+                name,
                 target.creation().unwrap(),
                 target.grouping(),
             );
@@ -199,13 +299,21 @@ pub(super) async fn write(
         if let Some(layout) = target.creation() {
             super::super::fixture::view_create::add(
                 l.server.as_mut().unwrap(),
-                &desired,
+                name,
                 layout,
                 target.grouping(),
             );
             if std::env::var("SUPER_PLATINUM_FIXTURE").as_deref() == Ok("slack-list-view-create") {
                 return Ok(l.responses.last().unwrap().clone());
             }
+        } else if let Input::Precision(value) = &desired {
+            let column = l.server.as_mut().unwrap()["list_metadata"]["schema"]
+                .as_array_mut()
+                .unwrap()
+                .iter_mut()
+                .find(|c| c["id"].as_str() == target.id())
+                .unwrap();
+            column["options"]["precision"] = json!(value);
         } else {
             let schema = l.server.as_mut().unwrap()["list_metadata"]
                 [if target.is_view() { "views" } else { "schema" }]
@@ -214,7 +322,7 @@ pub(super) async fn write(
             schema
                 .iter_mut()
                 .find(|c| c["id"].as_str() == target.id())
-                .unwrap()["name"] = json!(desired);
+                .unwrap()["name"] = json!(name);
         }
     }
     Err(ListColumnRenameFailure::Unconfirmed(Error::Transport(
@@ -222,7 +330,17 @@ pub(super) async fn write(
     )))
 }
 pub(super) fn finished(guard: &Guard, kind: &str, applied: bool) {
-    if check_enabled() || view_check_enabled() || create_check_enabled() {
+    if check_enabled()
+        || view_check_enabled()
+        || create_check_enabled()
+        || precision_check_enabled()
+        || number_rename_check_enabled()
+        || visibility_check_enabled()
+        || sort_check_enabled()
+        || filter_check_enabled()
+        || grouping::check_enabled()
+        || field_create_check_enabled()
+    {
         ledger()
             .lock()
             .unwrap()
@@ -313,4 +431,134 @@ pub(crate) fn grouping_schema(shell: &ShellState, key: &str, changed: bool) -> R
         column["type"] = json!("text");
     }
     Ok(())
+}
+
+// One response override only, never a canonical document mutation or future freshness policy.
+impl Ledger {
+    fn queue_precision_file(&mut self, original: Value) -> Result<(), String> {
+        if self.server.is_none()
+            || self.pending.is_some()
+            || self.held_read.is_some()
+            || self.hold_next_read
+            || self.precision_file_once.is_some()
+        {
+            return Err("Precision response already pending or unseeded".into());
+        }
+        self.precision_file_once = Some(original);
+        Ok(())
+    }
+    fn file_response(&mut self, stage: Stage, precision: bool) -> Value {
+        if precision && stage == Stage::Checking {
+            if let Some(value) = self.precision_file_once.take() {
+                return value;
+            }
+        }
+        self.server.clone().unwrap()
+    }
+}
+pub(crate) fn stale_precision_file(shell: &ShellState) -> Result<(), String> {
+    if !precision_check_enabled() || !enabled(shell) {
+        return Err("Exact disconnected precision checker required".into());
+    }
+    let e = entry(shell)
+        .filter(|e| e.stage == Stage::Uncertain && e.target.is_precision() && e.intent.is_some())
+        .ok_or("No uncertain precision intent")?;
+    ledger()
+        .lock()
+        .unwrap()
+        .queue_precision_file(e.original.raw)
+}
+
+#[cfg(test)]
+mod precision_tests {
+    use super::*;
+    #[test]
+    fn exact_precision_flag_and_alias_are_both_required() {
+        for alias in [
+            "slack-list-number-precision",
+            "slack-list-number-precision-narrow",
+        ] {
+            assert!(precision_gate(Some("1"), Some(alias)));
+            for flag in [None, Some(""), Some("true"), Some("0")] {
+                assert!(!precision_gate(flag, Some(alias)));
+            }
+        }
+        for alias in [
+            None,
+            Some("slack-list"),
+            Some("slack-list-number-precision-extra"),
+        ] {
+            assert!(!precision_gate(Some("1"), alias));
+        }
+    }
+    #[test]
+    fn stale_precision_snapshot_is_single_check_only_and_does_not_change_server() {
+        let mut l = Ledger {
+            server: Some(json!({"precision":2})),
+            ..Default::default()
+        };
+        l.queue_precision_file(json!({"precision":0})).unwrap();
+        assert!(l.queue_precision_file(json!({"precision":1})).is_err());
+        assert_eq!(
+            l.file_response(Stage::Preparing, true),
+            json!({"precision":2})
+        );
+        assert_eq!(
+            l.file_response(Stage::Checking, false),
+            json!({"precision":2})
+        );
+        assert_eq!(
+            l.file_response(Stage::Checking, true),
+            json!({"precision":0})
+        );
+        assert_eq!(
+            l.file_response(Stage::Checking, true),
+            json!({"precision":2})
+        );
+        assert_eq!(l.server, Some(json!({"precision":2})));
+    }
+    #[test]
+    fn stale_precision_override_refuses_unseeded_and_every_held_response() {
+        assert!(Ledger::default().queue_precision_file(json!({})).is_err());
+        for kind in 0..3 {
+            let mut l = Ledger {
+                server: Some(json!({})),
+                ..Default::default()
+            };
+            let (tx, _rx) = tokio::sync::oneshot::channel();
+            match kind {
+                0 => l.pending = Some(tx),
+                1 => l.held_read = Some(tx),
+                _ => l.hold_next_read = true,
+            }
+            assert!(l.queue_precision_file(json!({})).is_err());
+            assert!(l.precision_file_once.is_none());
+        }
+    }
+}
+
+#[cfg(test)]
+mod number_rename_tests {
+    use super::*;
+    #[test]
+    fn number_name_gate_never_borrows_precision_or_generic_rename_opt_in() {
+        for alias in [
+            "slack-list-number-rename",
+            "slack-list-number-rename-narrow",
+        ] {
+            assert!(number_rename_gate(Some("1"), Some(alias)));
+            for flag in [None, Some("0"), Some("true"), Some("")] {
+                assert!(!number_rename_gate(flag, Some(alias)));
+            }
+        }
+        for alias in [
+            None,
+            Some("slack-list-number-precision"),
+            Some("slack-list-column-rename"),
+            Some("slack-list"),
+            Some("slack-list-number-rename-extra"),
+        ] {
+            assert!(!number_rename_gate(Some("1"), alias));
+        }
+    }
 }

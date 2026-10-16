@@ -32,6 +32,17 @@ pub async fn serve(
     // bind/accept errors, and normal return all release the native activity.
     let _background_activity = background::begin_if(enabled);
     crate::blocks::check_button_metadata_native(desktop.clone());
+    #[cfg(all(
+        feature = "original-download-native-fixture",
+        feature = "protected-native-fixture"
+    ))]
+    crate::file_preview::refresh::check::start(state);
+    #[cfg(all(
+        feature = "original-download-native-fixture",
+        feature = "protected-native-fixture"
+    ))]
+    crate::download::fixture::cached::start(state);
+    crate::file_share::check::start(state);
     crate::app_modal::check::start(state, desktop.clone());
     crate::self_status::check::start(state, desktop.clone());
     crate::profile_edit::check::start(state, desktop.clone());
@@ -75,6 +86,7 @@ pub async fn serve(
     crate::message_buttons::time_check::start(state, desktop.clone());
     crate::message_buttons::multi_check::start(state, desktop.clone());
     crate::canvas::checklist::check::start(state, desktop.clone());
+    crate::file_actions::attachment::check::start(state, desktop.clone());
     crate::canvas::text::check::start(state, desktop.clone());
     crate::canvas::text::structure_check::start(state, desktop.clone());
     crate::canvas::text::continuation_check::start(state, desktop.clone());

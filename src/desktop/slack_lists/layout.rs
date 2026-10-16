@@ -1,6 +1,8 @@
 //! Cached saved-table layouts. Instance identity belongs to the grid; writes
 //! always retain the canonical record/column identity from the loaded snapshot.
 use super::*;
+mod board_heading;
+mod grouping;
 use std::{
     collections::{BTreeSet, HashMap},
     sync::Arc,
@@ -21,6 +23,7 @@ pub(crate) struct GroupView {
 }
 #[derive(Clone)]
 pub(crate) struct BoardLane {
+    pub checkbox_heading: Option<board_heading::CheckboxHeading>,
     pub key: String,
     pub label: String,
     pub count: usize,
@@ -34,6 +37,9 @@ pub(crate) enum TableEntry {
 #[derive(Clone)]
 pub(super) struct Layout {
     pub generation: u64,
+    pub grouping_revision: u64,
+    grouping: grouping::State,
+    pub find: find::State,
     pub selection_generation: u64,
     pub selected: Option<String>,
     pub manual: bool,
@@ -57,6 +63,9 @@ impl Default for Layout {
     fn default() -> Self {
         Self {
             generation: next_id(),
+            grouping_revision: 0,
+            grouping: Default::default(),
+            find: Default::default(),
             selection_generation: next_id(),
             selected: None,
             manual: false,
@@ -102,6 +111,7 @@ fn columns(
     )
 }
 pub(super) fn rebuild(view: &mut View, workspace: Option<&Workspace>) {
+    let grouping_changed = grouping::reconcile(view);
     let old_kind = view.layout.kind;
     let old_completion = view.layout.completion_column.clone();
     let old_entries = view.layout.entries.clone();
@@ -124,7 +134,8 @@ pub(super) fn rebuild(view: &mut View, workspace: Option<&Workspace>) {
             .iter()
             .zip(view.layout.columns.iter())
             .all(|(old, new)| old.id == new.id);
-    if old_kind != view.layout.kind
+    if grouping_changed
+        || old_kind != view.layout.kind
         || old_completion != view.layout.completion_column
         || !same_rows
         || !same_columns
@@ -226,6 +237,7 @@ fn rebuild_inner(view: &mut View, workspace: Option<&Workspace>) {
             }
         };
         let mut context = context(loaded, workspace, view.layout.collapsed.get(id));
+        context.find = find::query(loaded, workspace, &view.layout.find.applied)?;
         context.date = view.layout.dates.context.clone();
         context.date_uses_timestamps = date_context::uses_timestamps(loaded);
         let policy = saved_views::CompletionPolicy::resolve(
@@ -271,6 +283,15 @@ fn rebuild_inner(view: &mut View, workspace: Option<&Workspace>) {
             let mut lanes = Vec::new();
             for group in projected.groups {
                 let mut lane = BoardLane {
+                    checkbox_heading: (projected.layout == saved_views::ProjectionLayout::Board)
+                        .then(|| {
+                            board_heading::for_lane(
+                                &loaded.document,
+                                projected.view_id.as_deref(),
+                                group.key.as_deref(),
+                            )
+                        })
+                        .flatten(),
                     key: group.key.clone().unwrap_or_default(),
                     label: group.label.clone(),
                     count: group.count,
@@ -488,6 +509,7 @@ pub(super) fn select_shell(
     delete::close_visit(shell);
     record_detail::dismiss_shell(shell);
     let view = shell.slack_lists.view.as_mut().unwrap();
+    view.layout.find = Default::default();
     view.layout.selected = id;
     view.layout.selection_generation = next_id();
     view.layout.manual = true;

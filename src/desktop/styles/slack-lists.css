@@ -15,6 +15,12 @@
 }
 .slack-list-dialog button:disabled { opacity: .55; cursor: default; }
 .slack-list-dialog button:not(:disabled):hover { background: var(--surface-raised); }
+.slack-list-find { display: flex; align-items: center; gap: 8px; padding: 0 16px 8px; flex-shrink: 0; }
+.slack-list-find label { font-size: var(--text-sm); color: var(--muted); }
+.slack-list-find .list-find { flex: 1; min-width: 0; margin: 0; }
+.slack-list-find button { flex-shrink: 0; }
+/* The explicit Material Close control owns Find clearing. */
+.slack-list-find input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
 .slack-list-notices { padding: 0 16px; flex-shrink: 0; max-height: 28%; overflow: auto; }
 .slack-list-notices p { margin: 0 0 8px; font-size: var(--text-sm); overflow-wrap: anywhere; }
 .slack-list-view-note, .slack-list-read-only { color: var(--muted); }
@@ -133,6 +139,7 @@
 .slack-list-board { display: flex; align-items: stretch; gap: 12px; flex: 1; min-height: 0; overflow-x: auto; padding: 12px 16px; border-top: 1px solid var(--border); overscroll-behavior: contain; }
 .slack-list-lane { display: flex; flex-direction: column; flex: 0 0 264px; min-width: 0; max-width: calc(100vw - 64px); min-height: 0; }
 .slack-list-lane-title { display: flex; align-items: center; gap: 8px; padding: 0 4px 12px; flex-shrink: 0; }
+.slack-list-lane-checkbox { width: 20px; height: 20px; opacity: 1; }
 .slack-list-lane-title h3 { margin: 0; font-size: var(--text-sm); font-weight: 600; overflow-wrap: anywhere; }
 .slack-list-lane-cards { overflow-y: auto; min-height: 0; padding: 2px; display: flex; flex-direction: column; gap: 8px; }
 .slack-list-card { padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); flex-shrink: 0; min-width: 0; }
@@ -215,8 +222,11 @@
 .slack-list-rename-header > .icon { width: 16px; height: 16px; flex-shrink: 0; }
 
 /* The shared schema editor's creation-only layout and wrapped footer. */
-#slack-list-new-view-layout, #slack-list-new-view-grouping { width: 100%; min-height: var(--control-height); padding: 0 8px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
-#slack-list-rename[data-view-create]:not([data-view-create=""]) .slack-list-editor-actions { flex-wrap: wrap; }
+#slack-list-new-view-layout, #slack-list-new-view-grouping, #slack-list-precision, .slack-list-editor-body > :is(#slack-list-field-choice, #slack-list-field-visible, #slack-list-sort-field, #slack-list-sort-direction, #slack-list-grouping-field, #slack-list-filter-condition, #slack-list-filter-operator, #slack-list-new-field-kind) { width: 100%; min-height: var(--control-height); padding: 0 8px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
+.slack-list-editor-body > :is(#slack-list-field-choice, #slack-list-field-visible, #slack-list-sort-field, #slack-list-sort-direction, #slack-list-grouping-field, #slack-list-filter-condition, #slack-list-filter-operator, #slack-list-new-field-kind):disabled { opacity: .55; cursor: default; }
+#slack-list-rename[data-view-create]:not([data-view-create=""]) .slack-list-editor-actions,
+#slack-list-rename[data-precision-column]:not([data-precision-column=""]) .slack-list-editor-actions { flex-wrap: wrap; }
+#slack-list-rename[data-precision-column]:not([data-precision-column=""]) #slack-list-rename-confirm { min-width: 80px; }
 
 /* Direct subitems reuse detail controls; wrapping does not resize on hover. */
 .slack-list-subitems { padding: var(--space-3); border-top: 1px solid var(--border); }
@@ -228,3 +238,71 @@
 .slack-list-subitem-label { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .slack-list-subitem-status { padding:var(--space-2);background:var(--surface);border-radius:var(--radius-md); }
 .slack-list-subitem-status:focus-visible { outline:2px solid var(--accent);outline-offset:2px; }
+
+/* Keep the disclosure in its established normal-height position. Its DOM stays
+   after the Board so a short window can scroll content and auxiliary controls. */
+.slack-list-board-shortcuts { order: -1; }
+@media (max-height: 500px) and (max-width: 800px) {
+  .slack-list-dialog:has(.slack-list-board) .slack-list-header { flex-wrap: wrap; gap: 4px 8px; }
+  .slack-list-dialog:has(.slack-list-board) .slack-list-heading { display: contents; }
+  .slack-list-dialog:has(.slack-list-board) .slack-list-heading h2 { flex: 1 1 calc(100% - 40px); order: 0; }
+  .slack-list-dialog:has(.slack-list-board) #slack-list-close { order: 1; }
+  .slack-list-dialog:has(.slack-list-board) .slack-list-heading > :not(h2),
+  .slack-list-dialog:has(.slack-list-board) .slack-list-header > button:not(#slack-list-close) { order: 2; }
+  .slack-list-dialog:has(.slack-list-board) .slack-list-header button.slack-list-action { padding-inline: 8px; }
+  .slack-list-dialog:has(.slack-list-board) .slack-list-view-picker select { max-width: 160px; }
+}
+@media (max-height: 500px) {
+  .slack-list-layout:has(> .slack-list-board) { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+  .slack-list-layout > .slack-list-board { flex: 0 0 300px; min-height: 300px; padding: 8px 12px; }
+  .slack-list-dialog .slack-list-board .slack-list-lane-title { min-height: 0; padding-bottom: 8px; }
+  .slack-list-dialog .slack-list-board .slack-list-card { padding: var(--space-1); }
+  .slack-list-dialog .slack-list-board .slack-list-card-field { padding-block: 2px; }
+  .slack-list-board-shortcuts { order: 0; max-height: none; overflow: visible; }
+}
+
+/* Keep the existing Number format opener distinct from its name-only action. */
+.slack-list-number-header-actions { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.slack-list-number-header-actions > .slack-list-rename-header { flex: 1; }
+.slack-list-dialog button.slack-list-number-rename { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 var(--control-height); width: var(--control-height); min-height: var(--control-height); padding: 0; }
+.slack-list-number-rename .icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* Shared sort uses the same compact schema controls and bounded footer. */
+#slack-list-rename[data-sort-view]:not([data-sort-view=""]) .slack-list-editor-actions { flex-wrap: wrap; }
+#slack-list-rename[data-sort-view]:not([data-sort-view=""]) #slack-list-rename-confirm { min-width: 144px; }
+
+/* Shared filter uses the same compact schema controls and bounded footer. */
+#slack-list-rename[data-filter-view]:not([data-filter-view=""]) .slack-list-editor-actions { flex-wrap: wrap; }
+#slack-list-rename[data-filter-view]:not([data-filter-view=""]) #slack-list-rename-confirm { min-width: 144px; }
+
+/* Short Table windows reserve body space; extra header actions remain scrollable. */
+@media (max-height: 500px) and (max-width: 800px) {
+  .slack-list-dialog:not(:has(.slack-list-board)) .slack-list-header { flex-wrap: wrap; gap: var(--space-1); max-height: calc(2 * var(--control-height) + 2 * var(--space-2) + var(--space-1)); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+  .slack-list-dialog:not(:has(.slack-list-board)) .slack-list-heading { display: contents; }
+  .slack-list-dialog:not(:has(.slack-list-board)) .slack-list-heading h2 { flex: 1 1 calc(100% - 40px); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; order: 0; }
+  .slack-list-dialog:not(:has(.slack-list-board)) #slack-list-close { order: 1; }
+  .slack-list-dialog:not(:has(.slack-list-board)) .slack-list-heading > :not(h2),
+  .slack-list-dialog:not(:has(.slack-list-board)) .slack-list-header > button:not(#slack-list-close) { order: 2; }
+  .slack-list-dialog:not(:has(.slack-list-board)) .slack-list-header button.slack-list-action { padding-inline: var(--space-2); }
+  .slack-list-dialog:not(:has(.slack-list-board)) .slack-list-view-picker select { max-width: 160px; }
+  .slack-list-dialog:not(:has(.slack-list-board)) .slack-list-header :is(button, select):focus-visible { outline-offset: -2px; }
+}
+
+/* Fixed Text creation uses the existing compact schema modal. */
+#slack-list-rename[data-new-text-field-view]:not([data-new-text-field-view=""]) .slack-list-editor-actions { flex-wrap: wrap; }
+#slack-list-rename[data-new-text-field-view]:not([data-new-text-field-view=""]) #slack-list-rename-confirm { min-width: 112px; }
+
+/* Native Number validity with the same dense form tokens; no other number controls change. */
+.slack-list-editor-body > #slack-list-filter-number { width:100%; min-height:var(--control-height); padding:6px 8px; margin-bottom:8px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); color:var(--text); font:inherit; }
+.slack-list-editor-body > #slack-list-filter-number:disabled { opacity:.55; cursor:default; }
+
+/* Short Table windows keep status-bearing rows above auxiliary controls. */
+@media (max-height: 500px) and (max-width: 800px) {
+  .slack-list-dialog:has(.slack-list-layout > .slack-list-scroll) .slack-list-header { padding-block: var(--space-1); max-height: calc(2 * var(--control-height) + 3 * var(--space-1)); }
+  .slack-list-dialog:has(.slack-list-layout > .slack-list-scroll) .slack-list-notices p:last-child { margin-bottom: 0; }
+  .slack-list-layout:has(> .slack-list-scroll) { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+  .slack-list-layout > .slack-list-scroll .slack-list-grid :is(th, td) { padding-block: var(--space-1); }
+  .slack-list-layout > .slack-list-scroll { flex: 1 0 180px; min-height: 180px; }
+  .slack-list-layout:has(> .slack-list-scroll) > .slack-list-keyboard-disclosure { order: 1; max-height: none; overflow: visible; }
+  .slack-list-layout:has(> .slack-list-scroll) > .slack-list-pagination { order: 2; }
+}

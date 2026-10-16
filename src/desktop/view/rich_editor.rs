@@ -47,10 +47,12 @@ pub(crate) fn RichEditor(
     #[props(default = "[]".into())] blocks: String,
     #[props(default = "{}".into())] labels: String,
     #[props(default)] disabled: bool,
+    #[props(default = true)] allow_lists: bool,
     #[props(default = true)] autofocus: bool,
     #[props(default)] expected_generation: Option<u64>,
 ) -> Element {
     let label_id = format!("{id}-label");
+    let link_id = format!("{id}-link-url");
     let generation =
         serde_json::to_string(&expected_generation.map(|value| value.to_string())).unwrap();
     rsx! {
@@ -61,7 +63,7 @@ pub(crate) fn RichEditor(
             },
             label {id: "{label_id}", "{label}"}
             div {class: "format-toolbar", role: "toolbar", "aria-label": "Text formatting",
-                for (name, command, symbol) in [("Bold", "bold", Icon::FormatBold), ("Italic", "italic", Icon::FormatItalic), ("Strikethrough", "strikeThrough", Icon::FormatStrike)] {
+                for (name, command, symbol) in [("Bold", "bold", Icon::FormatBold), ("Italic", "italic", Icon::FormatItalic), ("Strikethrough", "strikeThrough", Icon::FormatStrike), ("Bulleted list", "insertUnorderedList", Icon::FormatListBulleted), ("Numbered list", "insertOrderedList", Icon::FormatListNumbered)].into_iter().filter(|(_, command, _)| allow_lists || !matches!(*command, "insertUnorderedList" | "insertOrderedList")) {
                     button {r#type: "button", class: "composer-icon-btn", title: name, "aria-label": name, disabled,
                         onmousedown: move |event| event.prevent_default(),
                         onclick: move |_| {
@@ -71,8 +73,28 @@ pub(crate) fn RichEditor(
                         {icon(symbol, "icon")}
                     }
                 }
+                button {r#type:"button",class:"composer-icon-btn rich-code-toggle",title:"Inline code","aria-label":"Inline code",disabled,
+                    onmousedown:move |event|event.prevent_default(),
+                    {icon(Icon::Code,"icon")}
+                }
+                button {r#type:"button",class:"composer-icon-btn rich-link-open",title:"Edit link","aria-label":"Edit link","aria-expanded":"false",disabled,
+                    onmousedown:move |event|event.prevent_default(),
+                    {icon(Icon::Link,"icon")}
+                }
             }
-            div {id, class: "rich-reminder-editor", contenteditable: if disabled {"false"} else {"true"}, role: "textbox", "aria-multiline": "true", "aria-labelledby": "{label_id}"}
+            p {class:"rich-code-status",role:"status",hidden:true}
+            div {class:"rich-link-controls",hidden:true,role:"group","aria-label":"Edit link",
+                label {r#for:link_id.clone(),"Link URL"}
+                input {id:link_id,r#type:"text",class:"rich-link-url",autocomplete:"off",spellcheck:"false",placeholder:"https://example.com",disabled}
+                p {class:"rich-link-error",role:"alert",hidden:true}
+                div {class:"rich-link-actions",
+                    button {r#type:"button",class:"rich-link-apply",disabled,"Apply link"}
+                    button {r#type:"button",class:"rich-link-remove",hidden:true,disabled,"Remove link"}
+                    button {r#type:"button",class:"rich-link-cancel","Cancel"}
+                }
+            }
+            // Remain a focusable read-only textbox while the same draft is protected.
+            div {id, class: "rich-reminder-editor", tabindex:"0", "aria-readonly":disabled, contenteditable: if disabled {"false"} else {"true"}, role: "textbox", "aria-multiline": "true", "aria-labelledby": "{label_id}"}
         }
     }
 }

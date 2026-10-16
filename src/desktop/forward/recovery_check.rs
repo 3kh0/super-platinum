@@ -95,7 +95,7 @@ pub(crate) async fn run(state: Signal<ShellState>) {
         const assert=(ok,label)=>{if(!ok)throw Error(label);};
         const wait=async(fn,label)=>{for(let i=0;i<150;i++){if(fn())return;await pause();}throw Error(label);};
         const root=()=>document.getElementById('forward-dialog');
-        const button=(label,host=root())=>host&&[...host.querySelectorAll('button')].find(b=>b.textContent.trim()===label);
+        const button=(label,host=root())=>host&&[...host.querySelectorAll('button')].find(b=>b.getClientRects().length>0&&b.textContent.trim()===label);
         const row=()=>root()?.querySelector(`[data-delivery][data-destination="${args.destination}"]`);
         const visible=element=>{
             if(!element)return false;
@@ -130,9 +130,9 @@ pub(crate) async fn run(state: Signal<ShellState>) {
             button('Cancel').click();
             await wait(()=>button('Resend…')===document.activeElement,'resend cancel restores focus');
             button('Check delivery').click();
-            await wait(()=>root().querySelector('[role=alert]')?.textContent.includes('Connect to Slack'),'offline check feedback');
+            await wait(()=>root().querySelector('.forward-error[role=alert]')?.textContent.includes('Connect to Slack'),'offline check feedback');
             assert(row().dataset.delivery==='uncertain','offline cannot claim delivery');
-            await wait(()=>visible(root().querySelector('[role=alert]')),'offline feedback visible');
+            await wait(()=>visible(root().querySelector('.forward-error[role=alert]')),'offline feedback visible');
             button('Resend…').click();await wait(()=>button('Resend original'),'explicit resend confirmation');
             button('Resend original').click();
             await wait(()=>button('Check delivery')&&!button('Check delivery').disabled,'offline resend completes');

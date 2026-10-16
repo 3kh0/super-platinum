@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import threading
 from native_check import expected_viewport
+from toast_geometry import validate_toast
 
 BYTES = 65 * 1024 * 1024 + 7
 CHUNK = b"Z" * 65536
@@ -78,6 +79,7 @@ def validate_stage(record, index, width=None, fixture="original-download"):
         require(files == final, "Canceled/complete destination inventory")
     if stage == "saved":
         require(record.get("toast") == "Saved original-fixture.bin", "Actual success publication")
+        validate_toast(dom.get("toast"), dom["viewport"], record["toast"])
     if stage in ("canceled", "closed"):
         require(not str(record.get("toast") or "").startswith("Saved "), "Stale success after cancellation")
     return width

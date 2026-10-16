@@ -8,12 +8,18 @@ mod board;
 mod create;
 mod delete;
 mod editor;
+mod filter;
+mod find;
+mod grouping;
 #[cfg(test)]
 mod picker_tests;
+mod precision;
 mod record;
 mod rename;
 mod row;
+mod sort;
 mod subitem;
+mod visibility;
 const PAGE_SIZE: usize = 50;
 const KEYBOARD_HELP: &str = "Arrow keys move between cells; Right and Left expand or collapse items and groups. Space changes a checkbox. Alt+Enter opens item details. F2 edits a cell. Enter opens cell controls; Escape returns to the cell.";
 pub(crate) fn dialog(state: Signal<ShellState>) -> Element {
@@ -25,7 +31,7 @@ pub(crate) fn dialog(state: Signal<ShellState>) -> Element {
 #[component]
 fn ListDialog(mut state: Signal<ShellState>) -> Element {
     // Page state is scoped to a selected layout, without remounting the editor.
-    let mut page = use_signal(|| (None::<String>, 0usize));
+    let mut page = use_signal(|| ((None::<String>, 0u64, 0u64), 0usize));
     let Some(view) = crate::slack_lists::presentation(&state.read()) else {
         return rsx! {};
     };
@@ -37,7 +43,12 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
     let is_board = view.layout_kind == crate::slack_lists::ProjectionLayout::Board;
     let count = view.entries.len();
     let page_count = count.div_ceil(PAGE_SIZE).max(1);
-    let current_page = if page.read().0 == view.selected_view {
+    let page_key = (
+        view.selected_view.clone(),
+        view.find_revision,
+        view.grouping_revision,
+    );
+    let current_page = if page.read().0 == page_key {
         page.read().1.min(page_count - 1)
     } else {
         0
@@ -54,8 +65,8 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
     let selection_generation =
         crate::slack_lists::rename::selection(&state.read()).unwrap_or_default();
     let selected = view.selected_view.clone().unwrap_or_default();
-    let page_previous = view.selected_view.clone();
-    let page_next = view.selected_view.clone();
+    let page_previous = page_key.clone();
+    let page_next = page_key;
     let shown = view.rows.len();
     let item_label = if view.matched_rows == 1 {
         "item"
@@ -111,7 +122,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                     label{class:"slack-list-view-picker",r#for:"slack-list-view-select",
                         span{"View"}
                         select{id:"slack-list-view-select",value:"{selected}",
-                            onchange:move |event|{let id=event.value();crate::slack_lists::select_view(state,(!id.is_empty()).then_some(id),generation,layout);page.set((None,0));reset_scroll();},
+                            onchange:move |event|{let id=event.value();crate::slack_lists::select_view(state,(!id.is_empty()).then_some(id),generation,layout);page.set(((None,0,0),0));reset_scroll();},
                             option{value:"",selected:selected.is_empty(),"All loaded items"}
                             for choice in view.view_choices.iter(){option{key:"{choice.id}",value:"{choice.id}",selected:choice.id==selected,"{choice.name}"}}
                             if view.selected_view.as_ref().is_some_and(|id|!view.view_choices.iter().any(|choice|&choice.id==id)) {
@@ -119,6 +130,10 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                             }
                         }
                     }
+                    {visibility::action(state,generation)}
+                    {filter::action(state,generation)}
+                    {sort::action(state,generation)}
+                    {grouping::action(state,generation)}
                     {rename::view_action(state,generation)}
                     {rename::create_action(state,generation)}
                 }
@@ -126,6 +141,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                 button{id:"slack-list-refresh",r#type:"button",class:"slack-list-action",disabled:view.loading||deleting,onclick:move |_|crate::slack_lists::refresh(state),"Refresh"}
                 button{id:"slack-list-close",r#type:"button",class:"icon-btn","aria-label":"Close list",onclick:move |_|crate::slack_lists::close_shell(&mut state.write()),{icon(Icon::Close,"icon")}}
             }
+            if detail_generation.is_none()&&view.find_available {{find::bar(state,&view)}}
             div{class:"slack-list-notices","aria-live":"polite",
                 {create::status(state,generation)}
                 {delete::status(state)}
@@ -139,7 +155,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
             }
             div{class:"slack-list-layout",hidden:detail_generation.map(|_|true),inert:detail_generation.map(|_|true),
             if count==0&&!view.loading&&view.error.is_none()&&view.view_notice.is_none(){
-                div{class:"slack-list-empty",role:"status",if view.incomplete{"No items are available in this part of the list."}else if view.selected_view.is_some(){"No loaded items match this view."}else{"This list has no items."}}
+                div{class:"slack-list-empty",role:"status",if !view.find_applied.is_empty(){"No loaded items match this view and Find."}else if view.incomplete{"No items are available in this part of the list."}else if view.selected_view.is_some(){"No loaded items match this view."}else{"This list has no items."}}
             }
             if is_board {
                 board::Board{key:"board-{selected}",state}
@@ -178,7 +194,7 @@ fn KeyboardHelp(id: &'static str, label: &'static str, help: &'static str) -> El
 }
 fn reset_scroll() {
     dioxus::document::eval(
-        "requestAnimationFrame(()=>{const s=document.querySelector('.slack-list-scroll');if(s)s.scrollTop=0;});",
+        "requestAnimationFrame(()=>{for(const s of document.querySelectorAll('.slack-list-dialog .slack-list-scroll,.slack-list-dialog .slack-list-board,.slack-list-dialog .slack-list-layout'))s.scrollTop=0;});",
     );
 }
 const INSTALL_KEYBOARD: &str = include_str!("slack_lists/keyboard.js");

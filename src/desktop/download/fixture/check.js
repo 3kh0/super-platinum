@@ -34,7 +34,8 @@ await (async () => {
         const busy = ['busy','retry-busy','close-busy'].includes(stage);
         if (!closed) assert(control.label === (busy ? 'Cancel' : 'Download'), 'exact action label');
         if (closed) assert(!document.querySelector('.viewer'), 'viewer remained mounted');
-        dioxus.send({stage,control,closed,viewport:[innerWidth,innerHeight]});
+        const toast = stage === 'saved' ? await downloadToastGeometry('Saved original-fixture.bin') : null;
+        dioxus.send({stage,control,closed,toast,viewport:[innerWidth,innerHeight]});
         const ack = await dioxus.recv();
         assert(ack === stage, 'exact stage acknowledgement');
     };

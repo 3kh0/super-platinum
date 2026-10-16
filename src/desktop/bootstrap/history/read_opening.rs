@@ -224,6 +224,7 @@ pub(super) async fn refresh(
             limit: Some(100),
             inclusive: false,
         };
+        let file_read = state.write().core.begin_file_display_read(&session.team_id);
         let result = tokio::time::timeout_at(
             deadline,
             api::fetch_history(transport, client, session, request),
@@ -242,12 +243,18 @@ pub(super) async fn refresh(
             );
             return;
         }
-        let (page, more, next) = match result.and_then(|page| {
+        let (page, more, next, files) = match result.and_then(|page| {
+            let files = state
+                .read()
+                .core
+                .finish_file_display_read(&session.team_id, file_read)
+                .map_err(|reason| Error::Api(reason.into()))?;
             if page.messages.len() > 100 {
                 return Err(Error::Api("history_opening_page_too_large".into()));
             }
             let mut next = pages.clone();
-            next.advance(&page, boundary).map(|more| (page, more, next))
+            next.advance(&page, boundary)
+                .map(|more| (page, more, next, files))
         }) {
             Ok(value) => value,
             Err(error) => {
@@ -284,7 +291,7 @@ pub(super) async fn refresh(
         if let Some(w) = s.core.workspaces.get_mut(&session.team_id) {
             let bag = w.messages.entry(channel.into()).or_default();
             for message in page.messages {
-                let message = super_platinum_core::state::visible_message(message);
+                let message = files.message(message);
                 if super_platinum_core::state::is_channel_timeline_visible(&message) {
                     if message.ts.as_deref().is_some_and(|ts| {
                         bag.latest

@@ -8,6 +8,8 @@ sys.path.append(str(next(parent / "scripts" for parent in Path(__file__).resolve
                          if (parent / "scripts/native_check.py").is_file())))
 from original_download_native import (BYTES, STAGES, LocalOriginal, validate_stage, validate_terminal)
 
+from test_toast_geometry import sample_toast
+
 OWNER = {"version":1,"nonce":"0"*32,"pid":123,"fixture":"original-download"}
 
 
@@ -20,7 +22,7 @@ def stage(index):
     files = [["attempt-2.bin",BYTES]] if index >= 4 else []
     if busy:
         files.insert(0,[".super-platinum-download-01234567-89ab-cdef-0123-456789abcdef.part",65536])
-    return {"dom":{"stage":name,"closed":closed,"viewport":__import__("native_check").expected_viewport("original-download"),"control":None if closed else {
+    return {"dom":{"toast":sample_toast("Saved original-fixture.bin") if name == "saved" else None,"stage":name,"closed":closed,"viewport":__import__("native_check").expected_viewport("original-download"),"control":None if closed else {
         "label":"Cancel" if busy else "Download", "aria":"Cancel download original-fixture.bin" if busy else "Download original-fixture.bin",
         "disabled":False,"inside":True,"hit":True,"x":200,"y":400,"width":96,"height":32}},
         "files":files,"issued":[0,1,1,2,2,3,3][index],"outcomes":outcomes,"noSession":True,"noTransport":True,
@@ -34,6 +36,17 @@ def terminal(rows):
 
 
 class Oracle(unittest.TestCase):
+    def test_saved_requires_visible_toast_in_normal_and_narrow(self):
+        from native_check import expected_viewport
+        for fixture in ('original-download','original-download-narrow'):
+            row=stage(4);row['dom']['viewport']=expected_viewport(fixture)
+            row['dom']['control']['y']=100
+            row['dom']['toast']=sample_toast('Saved original-fixture.bin',fixture.endswith('-narrow'))
+            validate_stage(row,4,96,fixture)
+            for value in (None,dict(row['dom']['toast'],visible=False)):
+                bad=copy.deepcopy(row);bad['dom']['toast']=value
+                with self.assertRaises(RuntimeError):validate_stage(bad,4,96,fixture)
+
     def test_thread_start_failure_preserves_primary_when_socket_close_fails(self):
         import original_download_native as module
         from unittest.mock import Mock, patch

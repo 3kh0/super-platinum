@@ -8,6 +8,8 @@ use crate::{
 };
 
 pub(crate) mod display_metadata;
+pub(crate) mod display_reads;
+pub use display_reads::{FileDisplayOverlay, FileDisplayRead};
 
 /// The small, non-secret subset a rendered attachment needs for file actions.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -172,6 +174,16 @@ impl CoreAppState {
         {
             return;
         }
+        self.file_display_reads.record(
+            self.account_epoch,
+            team,
+            id,
+            display_metadata::DisplayPatch {
+                title: Some(title),
+                name: download_name,
+                ..Default::default()
+            },
+        );
         self.visit_files(team, |file| {
             if file.id.as_deref() == Some(id) && !deleted(file) {
                 file.title = Some(title.into());
@@ -224,11 +236,7 @@ impl CoreAppState {
             }
         }
         if self.pins.matches_scope(self.account_epoch, team) {
-            for item in self.pins.items.values_mut() {
-                if let Some(message) = &mut item.message {
-                    visit_message(message, &mut update);
-                }
-            }
+            self.pins.visit_files(&mut update);
         }
         if self.threads_view.matches_scope(self.account_epoch, team) {
             for item in &mut self.threads_view.items {
@@ -554,3 +562,6 @@ mod tests {
         assert!(core.files.deleted.is_empty());
     }
 }
+
+#[cfg(test)]
+mod pinned_files_tests;

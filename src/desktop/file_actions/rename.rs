@@ -357,6 +357,13 @@ async fn save(
 mod tests {
     use super::*;
     #[test]
+    fn confirmed_local_rename_retires_older_preview_refresh() {
+        crate::file_preview::refresh::tests::local_rename_interleaving(|shell, file| {
+            let target = Target::for_viewer(shell, shell.viewer.as_ref().unwrap()).unwrap();
+            reconcile(shell, &target, file);
+        });
+    }
+    #[test]
     fn lost_responses_do_not_allow_blind_retries() {
         for error in [
             Error::Offline("timeout".into()),

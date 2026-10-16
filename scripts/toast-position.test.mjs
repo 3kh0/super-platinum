@@ -43,7 +43,7 @@ test('focused action can leave safe space below or temporarily require hiding',(
 function mounted() {
   const callbacks={}, queued=new Map(), style=new Map(), observed=new Set();
   let next=0,reads=0,disconnected=0;
-  const composer={top:220,getBoundingClientRect:()=>{reads++;return rect(composer.top);}};
+  const composer={top:220,getBoundingClientRect:()=>{reads++;return rect(composer.top,380-composer.top);}};
   const dismiss={height:24,getBoundingClientRect(){return {height:this.height};}};
   const toast={isConnected:true,dataset:{},scrollHeight:58,contains:node=>node===dismiss,
     getBoundingClientRect:()=>rect(0,60,230,420),querySelector:()=>dismiss,
@@ -143,4 +143,86 @@ test('focus and relevant scroll coalesce; own dismiss and unrelated scroll remai
   m.context.document.activeElement=m.dismiss;m.events.get('focusin')();m.flush();
   assert.equal(m.observed.has(button),false);assert.equal(m.toast.dataset.positioned,'true');
   m.toast.isConnected=false;m.callbacks.mutation([]);assert.equal(m.events.size,0);
+});
+
+test('short viewer near top uses the safe viewer-to-composer band at both widths',()=>{
+  assert.deepEqual(place(780,[rect(62.4,164),rect(700,80)]),{bottom:88,maxHeight:457});
+  assert.deepEqual(place(380,[rect(30.4,164),rect(280,100)]),{bottom:108,maxHeight:69});
+  // Order, overlap and contained completion surfaces do not invent a gap.
+  assert.deepEqual(place(380,[rect(280,100),rect(30.4,164),rect(50,100)]),{bottom:108,maxHeight:69});
+  assert.equal(place(380,[rect(30.4,164),rect(200,180)]),null);
+});
+test('fallback focus adjustment cannot cross the protected upper boundary',()=>{
+  const band={bottom:100,maxHeight:60}; // 220..280, protected dialog ends at212
+  assert.equal(focusPlace(rect(230,40,300,100),band,60),null);
+  assert.equal(focusPlace(rect(265,10,300,100),band,60),null);
+  assert.deepEqual(focusPlace(rect(272,10,300,100),band,60),{bottom:116,maxHeight:44});
+});
+test('fallback band keeps dismiss chrome and fractional boundaries inside the gap',()=>{
+  const obstacles=[rect(20,160.5),rect(240.25,139.75)];
+  assert.equal(place(380,obstacles),null);
+  assert.deepEqual(place(380,obstacles,43),{bottom:148,maxHeight:43});
+});
+test('mounted viewer fallback reveals notice without new idle work and restores on removal',()=>{
+  const m=mounted();m.composer.top=280;
+  const dialog={nodeType:1,matches:()=>true,getBoundingClientRect:()=>rect(30.4,164,114,440)};
+  m.context.document.querySelectorAll=()=>[m.composer,dialog];
+  m.callbacks.mutation([{type:'childList',addedNodes:[dialog],removedNodes:[]}]);m.flush();
+  assert.equal(m.toast.dataset.positioned,'true');assert.equal(m.toast.style.getPropertyValue('--toast-bottom'),'108px');
+  assert.equal(m.toast.style.getPropertyValue('--toast-max-height'),'69px');assert.equal(m.queued.size,0);
+  const reads=m.reads();m.callbacks.mutation([{type:'childList',addedNodes:[{nodeType:1,matches:()=>false,querySelector:()=>null}],removedNodes:[]}]);
+  assert.equal(m.reads(),reads);assert.equal(m.queued.size,0);
+  m.context.document.querySelectorAll=()=>[m.composer];
+  m.callbacks.mutation([{type:'childList',addedNodes:[],removedNodes:[dialog]}]);m.flush();
+  assert.equal(m.toast.style.getPropertyValue('--toast-bottom'),'108px');
+  assert.equal(m.toast.style.getPropertyValue('--toast-max-height'),'254px');
+});
+
+test('unfocused attachment menu remains clear while the same toast stays visible',()=>{
+  const m=mounted();m.composer.top=264;
+  // Native3 narrow thread-menu measured bounds, not the focused Save control.
+  const menu={nodeType:1,top:115.83333587646484,
+    matches:selector=>selector.split(',').some(part=>part.trim()==='.file-action-panel'),
+    querySelector:()=>null,
+    getBoundingClientRect(){return rect(this.top,124,356.66668701171875,285.3333435058594);}};
+  let present=true;
+  m.context.document.querySelectorAll=selector=>[m.composer,...(present&&menu.matches(selector)?[menu]:[])];
+  m.callbacks.mutation([{type:'childList',addedNodes:[menu],removedNodes:[]}]);
+  assert.equal(m.queued.size,1);m.flush();
+  assert.equal(m.observed.has(menu),true);
+  assert.equal(m.context.document.activeElement,undefined);
+  assert.equal(m.toast.dataset.positioned,'true');
+  assert.equal(m.toast.style.getPropertyValue('--toast-bottom'),'273px');
+  assert.equal(m.toast.style.getPropertyValue('--toast-max-height'),'89px');
+  const bottom=380-parseFloat(m.toast.style.getPropertyValue('--toast-bottom'));
+  assert.ok(bottom+8<=menu.top,'entire panel, including nonfocused Delete, has clearance');
+  assert.equal(m.queued.size,0);
+  menu.top=100;m.callbacks.resize();m.callbacks.resize();
+  assert.equal(m.queued.size,1);m.flush();
+  assert.equal(m.toast.style.getPropertyValue('--toast-bottom'),'288px');
+  assert.equal(m.toast.dataset.positioned,'true');
+  present=false;
+  m.callbacks.mutation([{type:'childList',addedNodes:[],removedNodes:[menu]}]);m.flush();
+  assert.equal(m.observed.has(menu),false);
+  assert.equal(m.toast.style.getPropertyValue('--toast-bottom'),'124px');
+  assert.equal(m.toast.dataset.positioned,'true');
+});
+
+test('file menu ancestor scrolling repositions the toast and teardown releases observation',()=>{
+  const m=mounted();m.composer.top=264;
+  const menu={nodeType:1,top:115.83333587646484,
+    matches:selector=>selector.split(',').some(part=>part.trim()==='.file-action-panel'),
+    querySelector:()=>null,
+    getBoundingClientRect(){return rect(this.top,124,356.66668701171875,285.3333435058594);}};
+  m.context.document.querySelectorAll=selector=>[m.composer,...(menu.matches(selector)?[menu]:[])];
+  m.callbacks.mutation([{type:'childList',addedNodes:[menu],removedNodes:[]}]);m.flush();
+  menu.top=85;
+  m.events.get('scroll')({target:{contains:node=>node===menu}});
+  assert.equal(m.queued.size,1);m.flush();
+  assert.equal(m.toast.style.getPropertyValue('--toast-bottom'),'303px');
+  assert.equal(m.toast.style.getPropertyValue('--toast-max-height'),'59px');
+  assert.equal(m.toast.dataset.positioned,'true');
+  m.toast.isConnected=false;m.callbacks.mutation([]);
+  assert.equal(m.observed.size,0);assert.equal(m.events.size,0);
+  assert.equal(m.queued.size,0);assert.equal(m.disconnected(),2);
 });

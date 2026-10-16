@@ -1,3 +1,5 @@
+mod pinned_files;
+
 use crate::media::MediaUri;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -377,6 +379,8 @@ impl ShellState {
             selection_pinned: false,
             upload_ui_epoch: 0,
             file_events: Default::default(),
+            file_share: Default::default(),
+            file_share_fixture: None,
             stick_to_bottom: true,
             loading_older: false,
             chat_paused: false,
@@ -451,6 +455,7 @@ impl ShellState {
             self_menu_mutations: Default::default(),
             profile_vip_pending: Default::default(),
             viewer: None,
+            file_refresh: Default::default(),
             canvas: None,
             canvas_checklist: Default::default(),
             canvas_create: None,
@@ -525,6 +530,8 @@ impl ShellState {
             selection_pinned: false,
             upload_ui_epoch: 0,
             file_events: Default::default(),
+            file_share: Default::default(),
+            file_share_fixture: None,
             stick_to_bottom: true,
             loading_older: false,
             chat_paused: false,
@@ -599,6 +606,7 @@ impl ShellState {
             self_menu_mutations: Default::default(),
             profile_vip_pending: Default::default(),
             viewer: None,
+            file_refresh: Default::default(),
             canvas: None,
             canvas_checklist: Default::default(),
             canvas_create: None,
@@ -867,6 +875,8 @@ impl ShellState {
             selection_pinned: false,
             upload_ui_epoch: 0,
             file_events: Default::default(),
+            file_share: Default::default(),
+            file_share_fixture: None,
             stick_to_bottom: true,
             loading_older: false,
             chat_paused: false,
@@ -941,6 +951,7 @@ impl ShellState {
             self_menu_mutations: Default::default(),
             profile_vip_pending: Default::default(),
             viewer: None,
+            file_refresh: Default::default(),
             canvas: None,
             canvas_checklist: Default::default(),
             canvas_create: None,
@@ -1031,8 +1042,53 @@ impl ShellState {
             | "slack-list-column-rename-narrow" => {
                 crate::slack_lists::rename::fixture::install(&mut state, name)
             }
+            "slack-list-view-grouping"
+            | "slack-list-view-grouping-narrow"
+            | "slack-list-board-grouping"
+            | "slack-list-board-grouping-narrow" => {
+                crate::slack_lists::fixture::view_grouping::install(&mut state, name);
+            }
+            "slack-list-view-sort" | "slack-list-view-sort-narrow" => {
+                crate::slack_lists::fixture::view_sort::install(&mut state, name);
+            }
+            "slack-list-text-field-create"
+            | "slack-list-text-field-create-narrow"
+            | "slack-list-number-field-create"
+            | "slack-list-number-field-create-narrow"
+            | "slack-list-checkbox-field-create"
+            | "slack-list-checkbox-field-create-narrow" => {
+                crate::slack_lists::fixture::text_field_create::install(&mut state, name);
+            }
+            "slack-list-number-filter" | "slack-list-number-filter-narrow" => {
+                crate::slack_lists::fixture::number_filter::install(&mut state, name);
+            }
+            "slack-list-view-filter" | "slack-list-view-filter-narrow" => {
+                crate::slack_lists::fixture::view_filter::install(&mut state, name);
+            }
+            "slack-list-field-visibility" | "slack-list-field-visibility-narrow" => {
+                crate::slack_lists::fixture::field_visibility::install(&mut state, name);
+            }
+            "slack-list-number-rename" | "slack-list-number-rename-narrow" => {
+                crate::slack_lists::fixture::number_rename::install(&mut state, name);
+            }
+            "slack-list-number-precision" | "slack-list-number-precision-narrow" => {
+                crate::slack_lists::fixture::column_precision::install(&mut state, name);
+            }
             "slack-list-hydration" | "slack-list-hydration-narrow" => {
                 crate::slack_lists::fixture::hydration::install(&mut state, name)
+            }
+            "slack-list-find"
+            | "slack-list-find-narrow"
+            | "slack-list-find-board"
+            | "slack-list-find-board-narrow"
+            | "slack-list-find-empty"
+            | "slack-list-find-empty-narrow" => {
+                crate::slack_lists::fixture::find::install(&mut state, name);
+            }
+            "slack-list-board-heading"
+            | "slack-list-board-heading-narrow"
+            | "slack-list-board-heading-checked-narrow" => {
+                crate::slack_lists::fixture::board_heading::install(&mut state, name)
             }
             "slack-list-board-add" | "slack-list-board-add-narrow" => {
                 crate::slack_lists::fixture::board_creation::install(&mut state, name)
@@ -1373,7 +1429,9 @@ impl ShellState {
             | "bookmarks-error"
             | "bookmarks-folder"
             | "bookmarks-folder-remove"
-            | "bookmarks-move" => {
+            | "bookmarks-move"
+            | "bookmarks-emoji"
+            | "bookmarks-emoji-narrow" => {
                 state.channel_tab = ChannelTab::Bookmarks;
                 let team = state.core.active_team.clone().unwrap();
                 let channel = state.core.active_channel.clone().unwrap();
@@ -1425,6 +1483,9 @@ impl ShellState {
                     store.error = Some(
                         "Bookmarks could not refresh. Your previous links are still here.".into(),
                     );
+                }
+                if matches!(name, "bookmarks-emoji" | "bookmarks-emoji-narrow") {
+                    crate::bookmarks::emoji::fixture(&mut state);
                 }
             }
             "canvas-create" | "canvas-create-narrow" | "canvas-create-error" => {
@@ -1512,8 +1573,15 @@ impl ShellState {
                     );
                 }
             }
-            "pins" | "pins-narrow" | "pins-empty" | "pins-error" | "channel-pinned-message" => {
+            "pins"
+            | "pins-narrow"
+            | "pins-empty"
+            | "pins-error"
+            | "channel-pinned-message"
+            | "pins-files"
+            | "pins-files-narrow" => {
                 use super_platinum_core::pins::{PinnedItem, PinsPage};
+                let file_fixture = matches!(name, "pins-files" | "pins-files-narrow");
                 let team = state.core.active_team.clone().unwrap();
                 let channel = state.core.active_channel.clone().unwrap();
                 state.channel_tab = if name == "channel-pinned-message" {
@@ -1532,7 +1600,7 @@ impl ShellState {
                     state.core.workspaces[&team].messages[&channel]
                         .messages
                         .iter()
-                        .take(3)
+                        .take(if file_fixture { 1 } else { 3 })
                         .enumerate()
                         .map(|(i, message)| PinnedItem {
                             kind: "message".into(),
@@ -1546,6 +1614,9 @@ impl ShellState {
                 };
                 state.core.pins.apply(generation, PinsPage { items });
                 state.core.reconcile_pin_copies(&team, &channel);
+                if file_fixture {
+                    pinned_files::apply(&mut state.core, &team, &channel);
+                }
                 if name == "pins-error" {
                     state.core.pins.loaded = false;
                     state.core.pins.error = Some("Pins could not load. Please try again.".into());
@@ -1776,6 +1847,8 @@ impl ShellState {
             | "forward-recovery-narrow"
             | "forward"
             | "forward-narrow"
+            | "forward-links"
+            | "forward-links-narrow"
             | "forward-error"
             | "forward-partial"
             | "forward-partial-narrow"
@@ -2057,6 +2130,14 @@ impl ShellState {
             | "pdf-preview-error"
             | "pdf-preview-search-long" => crate::pdf_preview::fixture::apply(&mut state, &name),
             "video-viewer" => state.open_fixture_viewer("video/mp4"),
+            "file-share-draft-reopen" => crate::file_share::check::restart::install(&mut state),
+            "file-share"
+            | "file-share-narrow"
+            | "file-share-pressure"
+            | "file-share-pressure-narrow" => crate::file_share::check::seed::install(&mut state),
+            "message-file-actions" | "message-file-actions-narrow" => {
+                crate::file_actions::attachment::check::fixture(&mut state)
+            }
             "viewer-actions-files"
             | "viewer-actions-message"
             | "viewer-actions-narrow"
@@ -2069,7 +2150,25 @@ impl ShellState {
             | "file-recovery"
             | "file-recovery-narrow"
             | "file-rename-channel-narrow" => crate::file_actions_check::fixture(&mut state),
-            "original-download" | "original-download-narrow" | "original-download-save-dialog" => {}
+            "original-download"
+            | "original-download-narrow"
+            | "original-download-save-dialog"
+            | "original-download-save-workflow"
+            | "cached-viewer-save-check" => {}
+            #[cfg(all(
+                feature = "original-download-native-fixture",
+                feature = "protected-native-fixture"
+            ))]
+            "file-preview-refresh-check" | "file-preview-refresh-check-narrow" => {
+                crate::file_preview::refresh::check::install(&mut state)
+                    .expect("Owned refresh fixture configuration required");
+            }
+            "file-preview-refresh"
+            | "file-preview-refresh-narrow"
+            | "file-preview-refresh-error"
+            | "file-preview-refresh-error-narrow" => {
+                crate::file_preview::refresh::fixture::install(&mut state, &name)
+            }
             "file-preview-text"
             | "file-preview-narrow"
             | "file-preview-large"

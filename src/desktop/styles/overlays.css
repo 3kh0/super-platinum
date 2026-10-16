@@ -410,6 +410,8 @@
 .search-filter-options label { display: flex; align-items: center; gap: 8px; min-height: var(--control-height); color: var(--text); font-size: var(--text-sm); cursor: pointer; }
 .search-filter-options input { margin: 0; accent-color: var(--accent); }
 .search-filter-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+/* Keep the shared 2px focus ring inside actions at the scrollport edge. */
+.search-filter-actions button:focus-visible { outline-offset: -2px; }
 .search-filter-panel p { margin: 4px 0; color: var(--muted); font-size: var(--text-sm); }
 
 .search-dialog > .results[hidden] { display: none; }
@@ -498,3 +500,7 @@
 .pdf-find-previous .icon { transform:rotate(180deg); }
 .pdf-page .textLayer mark { color:transparent; background:rgb(255 205 60 / .4); padding:0; border:0; }
 .pdf-page .textLayer mark.pdf-find-active { background:rgb(0 112 243 / .3); outline:1px solid #0070f3; }
+
+.file-refresh {display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;min-width:0;}
+.file-refresh button {height:32px;min-width:132px;flex-shrink:0;padding:0 10px;border-radius:8px;background:var(--surface-raised);color:var(--text);}
+.file-refresh p {flex:1 1 220px;margin:0;color:var(--muted);font-size:var(--text-sm);line-height:1.5;}

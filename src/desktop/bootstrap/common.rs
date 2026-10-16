@@ -56,6 +56,7 @@ pub(super) async fn refresh_history_at(
     latest: Option<String>,
 ) {
     let generation = state.read().channel_generation;
+    let file_read = state.write().core.begin_file_display_read(team);
     let result = api::fetch_history(
         transport,
         client,
@@ -80,15 +81,23 @@ pub(super) async fn refresh_history_at(
     {
         return;
     }
+    let result = result.and_then(|page| {
+        state
+            .read()
+            .core
+            .finish_file_display_read(team, file_read)
+            .map(|files| (page, files))
+            .map_err(|reason| super_platinum_core::slack::Error::Api(reason.into()))
+    });
     match result {
-        Ok(page) => {
+        Ok((page, files)) => {
             let mut shell = state.write();
             let upload_ids =
                 crate::messaging::upload_recovery::incoming(&shell, team, &channel, &page.messages);
             if let Some(workspace) = shell.core.workspaces.get_mut(team) {
                 let messages = workspace.messages.entry(channel.clone()).or_default();
                 for message in page.messages {
-                    let message = super_platinum_core::state::visible_message(message);
+                    let message = files.message(message);
                     if super_platinum_core::state::is_channel_timeline_visible(&message) {
                         messages.upsert(message);
                     }

@@ -1,4 +1,6 @@
 //! Native orchestration for channel pins; mutations survive their source row.
+mod change_ack;
+
 use crate::state::ShellState;
 use dioxus::prelude::*;
 use std::sync::Arc;
@@ -72,6 +74,10 @@ pub async fn load(mut state: Signal<ShellState>, channel: String) {
         }
         shell.core.pins.begin(&channel)
     };
+    let file_read = state
+        .write()
+        .core
+        .begin_file_display_read(&ctx.session.team_id);
     let result = api::fetch_pins(&ctx.transport, &ctx.client, &ctx.session, &channel).await;
     if !ctx.current(&state.peek()) {
         return;
@@ -81,9 +87,15 @@ pub async fn load(mut state: Signal<ShellState>, channel: String) {
         if shell.core.pins.generation != generation {
             return;
         }
+        let result = result.and_then(|page| {
+            shell
+                .core
+                .apply_pin_page_since(&ctx.session.team_id, generation, page, file_read)
+                .map_err(|reason| super_platinum_core::slack::Error::Api(reason.into()))
+        });
         match result {
-            Ok(page) => {
-                shell.core.pins.apply(generation, page);
+            Ok(false) => return,
+            Ok(true) => {
                 shell
                     .core
                     .reconcile_pin_copies(&ctx.session.team_id, &channel);
@@ -185,15 +197,10 @@ pub fn change(mut state: Signal<ShellState>, channel: String, ts: String, pinned
             .pins
             .version(&channel, &format!("message:{ts}"))
             .map(str::to_owned);
-        let message = message(&shell, &channel, &ts).unwrap_or_else(|| Message {
-            ts: Some(ts.clone()),
-            ..Default::default()
-        });
         (
             PinnedItem {
                 kind: "message".into(),
                 channel: Some(channel.clone()),
-                message: Some(message),
                 created: Some(super_platinum_core::state::now_secs() as i64),
                 created_by: Some(ctx.session.user_id.clone()),
                 ..Default::default()
@@ -220,15 +227,15 @@ pub fn change(mut state: Signal<ShellState>, channel: String, ts: String, pinned
             shell.core.pins.busy.remove(&(channel.clone(), ts.clone()));
             match result {
                 Ok(()) => {
-                    // A newer websocket change wins over this request's delayed ack.
-                    if shell.core.pins.version(&channel, &format!("message:{ts}"))
-                        == version.as_deref()
-                    {
-                        shell.core.pins.set(&channel, item, pinned);
-                        shell
-                            .core
-                            .update_pin_copies(&ctx.session.team_id, &channel, &ts, pinned);
-                    }
+                    change_ack::apply(
+                        &mut shell,
+                        &ctx,
+                        &channel,
+                        &ts,
+                        item,
+                        pinned,
+                        version.as_deref(),
+                    );
                     shell.show_toast(if pinned {
                         "Message pinned to this conversation."
                     } else {
@@ -296,3 +303,6 @@ pub fn open(mut state: Signal<ShellState>, channel: String, message: Message) {
         }
     });
 }
+
+#[cfg(test)]
+mod ingress_tests;

@@ -32,6 +32,7 @@ mod file_actions;
 mod file_actions_check;
 mod file_events;
 mod file_preview;
+mod file_share;
 mod files;
 mod fixture;
 mod fonts;

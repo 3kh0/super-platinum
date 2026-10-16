@@ -51,7 +51,7 @@ fn begin(s: &mut ShellState) -> (Guard, Intent) {
     assert!(open_shell(s, "name", visit));
     let key = Key::current(s).unwrap();
     let serial = entry(s).unwrap().serial;
-    with_registry(|r| r.entries.get_mut(&key).unwrap().name = "Delivery".into());
+    with_registry(|r| r.entries.get_mut(&key).unwrap().input = Input::Name("Delivery".into()));
     prepare(s, serial).unwrap()
 }
 fn sent(s: &mut ShellState) -> Guard {
@@ -407,7 +407,9 @@ fn editing_changed_document_or_stale_view_disables_confirmation_and_keeps_input(
         assert!(open_shell(&mut s, "name", visit));
         let key = Key::current(&s).unwrap();
         let original = entry(&s).unwrap();
-        with_registry(|r| r.entries.get_mut(&key).unwrap().name = "Keep this name".into());
+        with_registry(|r| {
+            r.entries.get_mut(&key).unwrap().input = Input::Name("Keep this name".into())
+        });
         assert!(presentation(&s).unwrap().can_confirm);
         let view = s.slack_lists.view.as_mut().unwrap();
         if changed_document {
@@ -427,12 +429,75 @@ fn editing_changed_document_or_stale_view_disables_confirmation_and_keeps_input(
         let retained = entry(&s).unwrap();
         assert_eq!(retained.serial, original.serial);
         assert_eq!(retained.original, original.original);
-        assert_eq!(retained.name, "Keep this name");
+        assert_eq!(retained.input.name().unwrap(), "Keep this name");
         assert_eq!(retained.stage, Stage::Editing);
         assert!(retained.intent.is_none() && retained.job.is_none());
     }
 }
 
 mod views;
+mod visibility;
 
+mod precision;
 mod view_create;
+
+mod sort;
+
+mod filter;
+
+mod text_create;
+
+#[test]
+fn bounded_registry_isolates_test_threads_and_retains_each_ui_instance() {
+    use std::{sync::mpsc, time::Duration};
+    let wait = Duration::from_secs(10);
+    let mut original = shell();
+    let guard = sent(&mut original);
+    registry::record(
+        &guard.key.owner,
+        &Error::RateLimited {
+            retry_after_secs: Some(120),
+        },
+    );
+    let owner = guard.key.owner.clone();
+    let (ready_tx, ready_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        assert_eq!(with_registry(|r| r.entries.len()), 0);
+        assert!(!registry::blocked(&owner));
+        let mut retained = Vec::new();
+        for _ in 0..registry::MAX_ENTRIES {
+            let mut s = shell();
+            let visit = generation(&s).unwrap();
+            assert!(open_shell(&mut s, "name", visit));
+            retained.push((Key::current(&s).unwrap(), entry(&s).unwrap().serial));
+        }
+        assert_eq!(with_registry(|r| r.entries.len()), registry::MAX_ENTRIES);
+        let mut overflow = shell();
+        let visit = generation(&overflow).unwrap();
+        assert!(!open_shell(&mut overflow, "name", visit));
+        assert!(entry(&overflow).is_none());
+        ready_tx.send(()).unwrap();
+        release_rx.recv_timeout(wait).unwrap();
+        with_registry(|r| {
+            assert_eq!(r.entries.len(), registry::MAX_ENTRIES);
+            for (key, serial) in retained {
+                let e = &r.entries[&key];
+                assert_eq!(e.serial, serial);
+                assert_eq!(e.stage, Stage::Editing);
+            }
+        });
+    });
+    ready_rx.recv_timeout(wait).unwrap();
+    assert_eq!(entry(&original).unwrap().serial, guard.serial);
+    assert_eq!(entry(&original).unwrap().stage, Stage::Saving);
+    assert!(registry::blocked(&guard.key.owner));
+    let mut other = shell();
+    let visit = generation(&other).unwrap();
+    assert!(open_shell(&mut other, "name", visit));
+    assert_eq!(with_registry(|r| r.entries.len()), 2);
+    release_tx.send(()).unwrap();
+    worker.join().unwrap();
+}
+
+mod grouping;

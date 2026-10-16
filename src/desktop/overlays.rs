@@ -59,6 +59,12 @@ pub fn overlay_view(
     if overlay == Overlay::ReactionPicker {
         return rsx! { crate::reaction_picker::ReactionPicker { state } };
     }
+    if overlay == Overlay::FileShare {
+        if let Some(dialog) = crate::file_share::visible(snapshot) {
+            return rsx! {crate::view::file_share::FileShareDialog {key:"{dialog.id}",state}};
+        }
+        return rsx! {crate::view::file_share::RecoveryDialog {state}};
+    }
     if overlay == Overlay::Forward {
         return rsx! { crate::forward::ForwardDialog {key:"{snapshot.forward_target.as_ref().map(|t|t.id.as_str()).unwrap_or_default()}", state } };
     }
@@ -97,6 +103,7 @@ pub fn overlay_view(
             "",
         ),
         Overlay::Forward => unreachable!("forward dialog owns its surface"),
+        Overlay::FileShare => unreachable!("file Share owns its dialog"),
         Overlay::ComposerEmoji => unreachable!("composer emoji owns its dialog"),
         Overlay::ReactionPicker => unreachable!("reaction picker owns its dialog"),
     };

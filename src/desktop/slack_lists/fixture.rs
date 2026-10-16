@@ -6,20 +6,30 @@ use super_platinum_core::{
     slack::{api, client::RequestBody},
 };
 pub(crate) mod board_creation;
+pub(crate) mod board_heading;
 mod board_views;
 mod channel_edit;
+pub(crate) mod column_precision;
 pub(crate) mod column_rename;
 mod creation;
 mod date_edit;
 mod date_views;
 mod duplicate;
+pub(crate) mod field_visibility;
+pub(crate) mod find;
 pub(crate) mod hydration;
 mod link_edit;
+pub(crate) mod number_filter;
+pub(crate) mod number_rename;
 mod record_detail;
 mod record_open;
+pub(crate) mod text_field_create;
 mod user_edit;
 pub(crate) mod view_create;
+pub(crate) mod view_filter;
+pub(crate) mod view_grouping;
 pub(crate) mod view_rename;
+pub(crate) mod view_sort;
 pub(crate) use board_views::{add_board_views, enable_board_tasks, restore_board_views};
 pub(crate) use channel_edit::{add_channel_edits, channel_edit_value, restore_channel_edits};
 pub(super) use creation::dispatch_creation;
@@ -40,6 +50,7 @@ pub(crate) use user_edit::{add_user_edits, restore_user_edits, user_edit_value};
 
 #[derive(Clone)]
 pub(crate) struct Fixture {
+    checkbox: Option<text_field_create::checkbox::State>,
     board_creation: board_creation::State,
     record_open: record_open::State,
     creation: creation::State,
@@ -110,6 +121,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     }).collect::<Vec<_>>();
     let file: File = serde_json::from_value(document.clone()).expect("fixture file");
     shell.slack_lists.fixture = Some(Fixture {
+        checkbox: None,
         board_creation: board_creation::State::default(),
         record_open: record_open::State::default(),
         creation: creation::State::default(),
@@ -148,12 +160,19 @@ pub(crate) fn refresh(shell: &mut ShellState) {
         return;
     };
     let fixture = shell.slack_lists.fixture.as_ref().unwrap();
-    let result = if fixture.error {
+    let mut result = if fixture.error {
         Err(Error::Offline("fixture offline".into()))
     } else {
         Ok(loaded(fixture))
     };
+    if let Err(error) = text_field_create::checkbox::read_input(shell, &attempt, &mut result) {
+        text_field_create::checkbox::fail(shell, error);
+        return;
+    }
     finish_read(shell, &attempt, result);
+    if let Err(error) = text_field_create::checkbox::read_completed(shell, &attempt) {
+        text_field_create::checkbox::fail(shell, error);
+    }
 }
 pub(crate) fn toggle_checkbox(shell: &mut ShellState, row: &str, column: &str) {
     if !enabled(shell) {
@@ -169,8 +188,12 @@ pub(super) fn dispatch(shell: &mut ShellState, attempt: EditAttempt) {
         return;
     }
     let canonical = loaded(shell.slack_lists.fixture.as_ref().unwrap());
-    if let Err(error) = validate_edit(shell, &attempt, canonical) {
+    if let Err(error) = validate_edit(shell, &attempt, canonical.clone()) {
         cancel_preflight(shell, &attempt, error);
+        return;
+    }
+    if let Err(error) = text_field_create::checkbox::preflight(shell, &attempt, &canonical) {
+        text_field_create::checkbox::fail(shell, error);
         return;
     }
     let session = WorkspaceSession {
@@ -182,6 +205,10 @@ pub(super) fn dispatch(shell: &mut ShellState, attempt: EditAttempt) {
         token: "fixture-not-a-token".into(),
     };
     let request = api::list_cell_update(&shell.core.client, &session, &attempt.edit);
+    if let Err(error) = text_field_create::checkbox::request(shell, &attempt, &request) {
+        text_field_create::checkbox::fail(shell, error);
+        return;
+    }
     let no_retry = !request.retry_safe();
     let valid = match request.body {
         RequestBody::Form(fields) => {
@@ -265,6 +292,9 @@ pub(crate) fn complete_pending(shell: &mut ShellState) {
         Ok(json!({"ok":true,"cells":cells}))
     };
     finish_edit(shell, &attempt, result);
+    if let Err(error) = text_field_create::checkbox::completion(shell, &attempt, uncertain) {
+        text_field_create::checkbox::fail(shell, error);
+    }
 }
 pub(crate) fn attempt_count(shell: &ShellState) -> usize {
     shell.slack_lists.fixture.as_ref().map_or(0, |f| f.attempts)

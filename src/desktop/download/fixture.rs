@@ -1,12 +1,16 @@
-//! Opt-in synthetic inputs only. Never installs Session/Transport in ShellState.
+//! Opt-in synthetic inputs. Original-stream fixtures never install ShellState credentials;
+//! the separate cached fixture explicitly owns a synthetic Session/disconnected Transport.
 use super::*;
 use std::{
     path::PathBuf,
     sync::{Mutex, OnceLock, atomic::AtomicUsize},
 };
 use super_platinum_core::{MediaAssetKind, slack::Transport};
+#[cfg(feature = "protected-native-fixture")]
+pub(crate) mod cached;
 pub(crate) mod check;
 pub(crate) mod dialog;
+pub(crate) mod workflow;
 pub const BYTES: u64 = 65 * 1024 * 1024 + 7;
 pub const NAME: &str = "original-fixture.bin";
 static RUN: OnceLock<Arc<Run>> = OnceLock::new();
@@ -33,7 +37,8 @@ pub(crate) fn enabled() -> bool {
     (matches!(
         std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
         Ok("original-download" | "original-download-narrow")
-    ) || dialog::enabled())
+    ) || dialog::enabled()
+        || workflow::enabled())
         && std::env::var("SUPER_PLATINUM_ORIGINAL_DOWNLOAD_CHECK").as_deref() == Ok("1")
 }
 pub(super) fn capture(shell: &ShellState, id: &MediaAssetId) -> Option<Input> {
@@ -85,6 +90,10 @@ impl Input {
         (self.run.source.clone(), self.run.transport.clone())
     }
     pub fn completed(&self, result: &Result<(), DownloadError>) {
+        if self.native_workflow() {
+            self.workflow_completed(result);
+            return;
+        }
         let outcome = match result {
             Ok(()) => "saved",
             Err(DownloadError::Canceled) => "canceled",

@@ -619,3 +619,153 @@ fn completed_handoff_lookup_has_no_queue_disk_or_new_inventory_effect() {
     assert_eq!(queue.control.lock().unwrap().jobs.len(), jobs);
     assert_eq!(std::fs::read(queue.owner.path()).unwrap(), bytes);
 }
+
+// Release both test gates and wake under Pending even if an assertion unwinds.
+// This owns Worker only, never Queue, so it cannot defer the Drop being tested.
+struct ShutdownRescue {
+    worker: Arc<Worker>,
+    stopping: Arc<AtomicBool>,
+    wait_release: Option<mpsc::Sender<()>>,
+    stop_release: Option<mpsc::Sender<()>>,
+}
+impl ShutdownRescue {
+    fn new(queue: &Queue) -> Self {
+        Self {
+            worker: queue.worker.clone(),
+            stopping: queue.stopping.clone(),
+            wait_release: None,
+            stop_release: None,
+        }
+    }
+    fn gate_wait(&mut self, queue: &Queue) -> mpsc::Receiver<()> {
+        let (entered, receiver) = mpsc::channel();
+        let (release, released) = mpsc::channel();
+        {
+            let _pending = self.worker.pending.lock().unwrap();
+            *queue.shutdown_test.before_wait.lock().unwrap() = Some((entered, released));
+        }
+        self.wait_release = Some(release);
+        self.worker.ready.notify_all();
+        receiver
+    }
+    fn release_wait(&mut self) {
+        if let Some(release) = self.wait_release.take() {
+            let _ = release.send(());
+        }
+    }
+    fn rescue(&mut self) {
+        self.release_wait();
+        if let Some(release) = self.stop_release.take() {
+            let _ = release.send(());
+        }
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(6);
+        loop {
+            match self.worker.pending.try_lock() {
+                Ok(_pending) => {
+                    self.stopping.store(true, Ordering::Release);
+                    self.worker.ready.notify_all();
+                    self.worker.accounted.notify_all();
+                    return;
+                }
+                Err(std::sync::TryLockError::Poisoned(_)) => return,
+                Err(std::sync::TryLockError::WouldBlock) => {
+                    if std::time::Instant::now() >= deadline {
+                        return;
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                }
+            }
+        }
+    }
+}
+impl Drop for ShutdownRescue {
+    fn drop(&mut self) {
+        self.rescue();
+    }
+}
+
+#[test]
+fn old_stop_notification_precedes_wait_and_cleanup_is_rescued() {
+    let queue = Queue::fresh().unwrap();
+    let mut rescue = ShutdownRescue::new(&queue);
+    let entered = rescue.gate_wait(&queue);
+    entered
+        .recv_timeout(std::time::Duration::from_secs(3))
+        .unwrap();
+    // The actual worker has evaluated stop=false and holds Pending before wait.
+    // Reproduce only the old out-of-mutex publication, never an alternate
+    // production Drop implementation. Condvars do not retain this notification.
+    queue.stopping.store(true, Ordering::Release);
+    queue.worker.ready.notify_all();
+    rescue.release_wait();
+    {
+        // Acquisition proves the gated worker advanced into wait's atomic
+        // release. A permitted spurious wake may already have let it exit;
+        // thread liveness is deliberately not used as proof of a lost wake.
+        let _pending = queue.worker.pending.lock().unwrap();
+        assert!(queue.stopping.load(Ordering::Acquire));
+    }
+    // Rescue before starting real Drop, then bound its join via a completion
+    // channel. A regression must fail the test, never join forever on this thread.
+    rescue.rescue();
+    let (done, finished) = mpsc::channel();
+    let dropper = std::thread::spawn(move || {
+        drop(queue);
+        let _ = done.send(());
+    });
+    finished
+        .recv_timeout(std::time::Duration::from_secs(3))
+        .unwrap();
+    dropper.join().unwrap();
+}
+
+#[test]
+fn actual_drop_publishes_stop_under_pending_and_releases_owner_after_join() {
+    let queue = Queue::fresh().unwrap();
+    migrate(&queue);
+    queue.open(inspect(&queue)).unwrap();
+    let ticket = queue.ticket().unwrap();
+    let mut rescue = ShutdownRescue::new(&queue);
+    let entered = rescue.gate_wait(&queue);
+    entered
+        .recv_timeout(std::time::Duration::from_secs(3))
+        .unwrap();
+    rescue.release_wait();
+    {
+        // Ensure the worker is parked with no producer before actual Drop.
+        let _pending = queue.worker.pending.lock().unwrap();
+    }
+    let (at_stop, stop_boundary) = mpsc::channel();
+    let (release, released) = mpsc::channel();
+    *queue.shutdown_test.before_stop.lock().unwrap() = Some((at_stop, released));
+    rescue.stop_release = Some(release);
+    let (done, finished) = mpsc::channel();
+    let dropper = std::thread::spawn(move || {
+        drop(queue);
+        let _ = done.send(());
+    });
+    // Hook is after admission.dead, immediately before stopping.store. Moving
+    // that boundary outside Pending makes this false: worker is already parked.
+    assert!(
+        stop_boundary
+            .recv_timeout(std::time::Duration::from_secs(3))
+            .unwrap()
+    );
+    assert!(!rescue.stopping.load(Ordering::Acquire));
+    assert!(matches!(
+        rescue.worker.pending.try_lock(),
+        Err(std::sync::TryLockError::WouldBlock)
+    ));
+    assert!(OwnedRoute::reopen_fixture(&ticket).is_err());
+    rescue.stop_release.take().unwrap().send(()).unwrap();
+    finished
+        .recv_timeout(std::time::Duration::from_secs(3))
+        .unwrap();
+    dropper.join().unwrap();
+    assert!(rescue.stopping.load(Ordering::Acquire));
+    // The diagnostic Worker Arc itself retains admission's Owned. Release it
+    // before checking that the actual marker/file ownership can be reacquired.
+    drop(rescue);
+    let reopened = OwnedRoute::reopen_fixture(&ticket).unwrap();
+    assert!(reopened.inspect().unwrap().wait().unwrap().open().is_ok());
+}

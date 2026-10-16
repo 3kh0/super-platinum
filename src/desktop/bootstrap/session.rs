@@ -730,5 +730,6 @@ pub(crate) fn install_loaded(mut state: Signal<ShellState>, mut loaded: ShellSta
     let mut previous = state.write();
     let _release = crate::performance::emoji_retirement::scope(14, 1, 0);
     crate::read_preferences::settings::carry_pending(&mut previous, &mut loaded);
+    crate::file_share::carry_pending(&mut previous, &mut loaded);
     *previous = loaded;
 }

@@ -104,6 +104,7 @@ pub(crate) async fn load_started_thread(
         &visit.transport,
         &session,
     );
+    let file_read = state.write().core.begin_file_display_read(&team);
     let result = api::fetch_replies(
         &visit.transport,
         &client,
@@ -114,8 +115,16 @@ pub(crate) async fn load_started_thread(
     if !visit.current(&state.peek()) {
         return;
     }
+    let result = result.and_then(|page| {
+        state
+            .read()
+            .core
+            .finish_file_display_read(&team, file_read)
+            .map(|files| (page, files))
+            .map_err(|reason| super_platinum_core::slack::Error::Api(reason.into()))
+    });
     match result {
-        Ok(page) => {
+        Ok((page, files)) => {
             let last_read = page
                 .messages
                 .iter()
@@ -143,7 +152,7 @@ pub(crate) async fn load_started_thread(
                     .entry((team.clone(), channel.clone(), root.clone()))
                     .or_default();
                 for message in page.messages {
-                    messages.upsert(super_platinum_core::state::visible_message(message));
+                    messages.upsert(files.message(message));
                 }
                 messages.loaded = true;
                 messages.recount_thread_unreads(&root);
@@ -255,6 +264,7 @@ pub async fn load_thread_page(
         request
     };
     dioxus::document::eval("window.superPlatinumThreadAnchor?.hold();");
+    let file_read = state.write().core.begin_file_display_read(&team);
     let result = api::fetch_replies(
         &visit.transport,
         &client,
@@ -265,8 +275,16 @@ pub async fn load_thread_page(
     if !visit.current(&state.peek()) {
         return;
     }
+    let result = result.and_then(|page| {
+        state
+            .read()
+            .core
+            .finish_file_display_read(&team, file_read)
+            .map(|files| (page, files))
+            .map_err(|reason| super_platinum_core::slack::Error::Api(reason.into()))
+    });
     match result {
-        Ok(page) => {
+        Ok((page, files)) => {
             {
                 let mut shell = state.write();
                 let upload_ids = crate::messaging::upload_recovery::incoming(
@@ -284,7 +302,7 @@ pub async fn load_thread_page(
                     .entry((team.clone(), channel.clone(), root.clone()))
                     .or_default();
                 for message in page.messages {
-                    bag.upsert(super_platinum_core::state::visible_message(message));
+                    bag.upsert(files.message(message));
                 }
                 bag.recount_thread_unreads(&root);
                 crate::messaging::upload_recovery::reconcile(

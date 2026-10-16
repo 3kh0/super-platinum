@@ -18,6 +18,8 @@ def validate_probe(value,expected):
     require(isinstance(value.get('controls'),list) and 0<len(value['controls'])<=80,'bounded controls')
     for c in value['controls']:
         require(isinstance(c,dict) and isinstance(c.get('runtimeId'),list) and c['runtimeId'] and all(type(x) is int for x in c['runtimeId']),'control runtime ID')
+    eligible=[c for c in value['controls'] if c.get('name')=='Cancel' and c.get('controlType')=='ControlType.Button' and c.get('enabled') is True and c.get('offscreen') is False and c.get('invoke') is True]
+    require(len(eligible)==1,'probe requires exactly one enabled visible invokable Cancel for explicit review')
 def validate_review(review,probe,expected):
     require(set(review)=={'version','action','nonce','pid','creation','hwnd','target'},'exact review fields')
     require(type(review['version']) is int and review['version']==1 and review['action']=='cancel','review action')

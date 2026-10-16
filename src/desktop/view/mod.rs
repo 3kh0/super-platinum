@@ -14,6 +14,7 @@ mod chrome;
 mod completion;
 pub(crate) mod composer;
 mod external_choices;
+pub(crate) mod file_share;
 pub(crate) mod files;
 mod global_notifications;
 mod huddle;
@@ -98,6 +99,7 @@ const CSS: &str = concat!(
     include_str!("../styles/bookmarks.css"),
     include_str!("../styles/pins.css"),
     include_str!("../styles/forward.css"),
+    include_str!("../styles/file-share.css"),
     include_str!("../styles/scheduled.css"),
     include_str!("../styles/channel-details.css"),
     include_str!("../styles/channel-notifications.css"),

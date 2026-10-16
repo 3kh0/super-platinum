@@ -20,6 +20,18 @@ class CanvasCheck:
     required: tuple[str, ...]
     counts: dict[str, int]
     stages: tuple[str, ...]
+    private_files: tuple[tuple[str, str], ...] = ()
+
+
+def private_checks(spec, directory):
+    checks = {spec.flag: "1", "SUPER_PLATINUM_CANVAS_CAPTURE_ACK_DIR": str(directory)}
+    for key, name in spec.private_files:
+        if (not key.startswith("SUPER_PLATINUM_") or key in checks
+                or not name or name in (".", "..") or "/" in name or "\\" in name
+                or ":" in name or (directory / name).exists()):
+            raise RuntimeError("Invalid private fixture file")
+        checks[key] = str(directory / name)
+    return checks
 
 
 def validate(spec, fixture, receipt):
@@ -85,7 +97,7 @@ def run(spec, fixture, binary, captures):
     try:
         with tempfile.TemporaryDirectory(prefix="sp-canvas-ack-") as directory:
             acknowledgments = Path(directory)
-            checks = {spec.flag: "1", "SUPER_PLATINUM_CANVAS_CAPTURE_ACK_DIR": directory}
+            checks = private_checks(spec, acknowledgments)
             native = NativeFixture(fixture, captures / f"{fixture}.log", binary, checks)
             with audited_fixture(native, evidence) as audit:
                 deadline = time.monotonic() + 180

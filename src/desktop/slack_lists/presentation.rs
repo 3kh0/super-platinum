@@ -10,6 +10,11 @@ pub(crate) struct Presentation {
     pub generation: u64,
     pub layout_generation: u64,
     pub selected_view: Option<String>,
+    pub find_input: String,
+    pub find_applied: String,
+    pub find_revision: u64,
+    pub grouping_revision: u64,
+    pub find_available: bool,
     pub view_choices: Arc<Vec<layout::ViewChoice>>,
     pub view_notice: Option<String>,
     pub entries: Arc<Vec<layout::TableEntry>>,
@@ -99,6 +104,11 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
         generation: view.generation,
         layout_generation: view.layout.generation,
         selected_view: view.layout.selected.clone(),
+        find_input: view.layout.find.input.clone(),
+        find_applied: view.layout.find.applied.clone(),
+        find_revision: view.layout.find.revision,
+        grouping_revision: view.layout.grouping_revision,
+        find_available: find::available(view),
         view_choices: view.layout.choices.clone(),
         view_notice: view.layout.notice.clone(),
         entries: view.layout.entries.clone(),
@@ -201,24 +211,33 @@ pub(super) fn project_cells(
         .columns
         .iter()
         .map(|column| {
+            // Preserve actual booleans even when readonly. Only an eligible editable
+            // missing ordinary Checkbox gets an input default; raw cells stay Empty.
+            let input = loaded
+                .document
+                .editable(loaded.allow_lists.as_deref())
+                .then(|| {
+                    column.checkbox_input_value_with_policy(
+                        row,
+                        &loaded.document.id,
+                        loaded.personal_task_lists.as_ref(),
+                    )
+                })
+                .flatten();
             // Reading checkbox state must not clone unrelated rich JSON.
             let checkbox = matches!(
                 column.kind.as_str(),
                 "checkbox" | "completed" | "todo_completed"
             )
             .then(|| row.fields.get(&column.key)?.get("checkbox")?.as_bool())
-            .flatten();
+            .flatten()
+            .or(input);
             let (text, content) = content::project(workspace, media, column, row);
             CellView {
                 column_id: column.id.clone(),
                 text,
                 checkbox,
-                editable: loaded.document.editable(loaded.allow_lists.as_deref())
-                    && column.editable_checkbox_with_policy(
-                        row,
-                        &loaded.document.id,
-                        loaded.personal_task_lists.as_ref(),
-                    ),
+                editable: input.is_some(),
                 can_edit: loaded.document.editable(loaded.allow_lists.as_deref())
                     && column.editable_value(
                         row,

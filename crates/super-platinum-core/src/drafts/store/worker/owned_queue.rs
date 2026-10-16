@@ -80,6 +80,35 @@ pub(crate) struct Queue {
     stopping: Arc<AtomicBool>,
     alive: Arc<Mutex<bool>>,
     thread: Mutex<Option<std::thread::JoinHandle<()>>>,
+    #[cfg(test)]
+    shutdown_test: Arc<ShutdownTest>,
+}
+// Per-route deterministic test gates only; no ordinary runtime shutdown mode.
+#[cfg(test)]
+#[derive(Default)]
+struct ShutdownTest {
+    before_wait: Mutex<Option<(mpsc::Sender<()>, mpsc::Receiver<()>)>>,
+    before_stop: Mutex<Option<(mpsc::Sender<bool>, mpsc::Receiver<()>)>>,
+}
+#[cfg(test)]
+impl ShutdownTest {
+    fn before_wait(&self) {
+        if let Some((entered, release)) = self.before_wait.lock().unwrap().take() {
+            let _ = entered.send(());
+            // A failed test cannot permanently strand the real worker here.
+            let _ = release.recv_timeout(std::time::Duration::from_secs(5));
+        }
+    }
+    fn before_stop(&self, worker: &Worker) {
+        if let Some((entered, release)) = self.before_stop.lock().unwrap().take() {
+            let held = matches!(
+                worker.pending.try_lock(),
+                Err(std::sync::TryLockError::WouldBlock)
+            );
+            let _ = entered.send(held);
+            let _ = release.recv_timeout(std::time::Duration::from_secs(5));
+        }
+    }
 }
 struct WorkerExit {
     worker: Arc<Worker>,
@@ -132,6 +161,10 @@ impl Queue {
         let retained = owner.clone();
         let opened = proof.clone();
         let stop = stopping.clone();
+        #[cfg(test)]
+        let shutdown_test = Arc::new(ShutdownTest::default());
+        #[cfg(test)]
+        let run_test = shutdown_test.clone();
         let thread = std::thread::Builder::new()
             .name("protected-owned-fixture".into())
             .spawn(move || {
@@ -143,6 +176,8 @@ impl Queue {
                             && pending.updates.is_empty()
                             && !stop.load(Ordering::Acquire)
                         {
+                            #[cfg(test)]
+                            run_test.before_wait();
                             pending = run.ready.wait(pending).unwrap();
                         }
                         if stop.load(Ordering::Acquire)
@@ -173,6 +208,8 @@ impl Queue {
             stopping,
             alive,
             thread: Mutex::new(Some(thread)),
+            #[cfg(test)]
+            shutdown_test,
         }))
     }
     pub(super) fn diagnostics(&self) -> Result<accounting::Snapshot, Error> {
@@ -303,10 +340,18 @@ impl Queue {
 }
 impl Drop for Queue {
     fn drop(&mut self) {
-        if let Some(admission) = &mut self.worker.pending.lock().unwrap().admission {
-            admission.dead = true;
+        {
+            // The stop predicate and Condvar::wait share Pending. Publishing
+            // after unlocking can lose the final wake between predicate check
+            // and wait, leaving this owner blocked forever in join.
+            let mut pending = self.worker.pending.lock().unwrap();
+            if let Some(admission) = &mut pending.admission {
+                admission.dead = true;
+            }
+            #[cfg(test)]
+            self.shutdown_test.before_stop(&self.worker);
+            self.stopping.store(true, Ordering::Release);
         }
-        self.stopping.store(true, Ordering::Release);
         self.worker.ready.notify_all();
         self.worker.accounted.notify_all();
         if let Some(thread) = self.thread.lock().unwrap().take() {

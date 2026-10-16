@@ -1,0 +1,47 @@
+/* One scroll owner keeps the message, destination and status reachable. */
+.modal.file-share-dialog { display: flex; flex-direction: column; box-sizing: border-box; top: 24px; width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: var(--space-4); overflow: hidden; }
+.modal.file-share-dialog > header { flex-shrink: 0; min-height: var(--control-height); padding: 0 var(--space-1); margin-bottom: var(--space-3); }
+.file-share-dialog > header .icon-btn { width: var(--control-height); height: var(--control-height); flex: 0 0 var(--control-height); }
+.file-share-body { min-height: 0; overflow-y: auto; padding: var(--space-1); }
+.file-share-source { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-3); margin-bottom: var(--space-3); border-radius: var(--radius-md); background: var(--surface); overflow-wrap: anywhere; }
+.file-share-source .icon { flex-shrink: 0; }
+.file-share-source strong { font-size: var(--text-md); font-weight: 500; }
+.file-share-dialog label { display: block; font-size: var(--text-sm); margin-bottom: var(--space-2); }
+.file-share-dialog input { box-sizing: border-box; width: 100%; min-height: var(--control-height); padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
+.file-share-selected { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-2) 0; font-size: var(--text-sm); overflow-wrap: anywhere; }
+.file-share-selected .icon { flex-shrink: 0; }
+.file-share-options { max-height: 136px; overflow-y: auto; margin: var(--space-1) 0 var(--space-3); }
+.file-share-option { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: var(--control-height); padding: 0 var(--space-2); text-align: left; border-radius: var(--radius-sm); }
+.file-share-option span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.file-share-option .icon { flex-shrink: 0; }
+.file-share-option:hover { background: var(--hover-overlay); }
+.file-share-option.selected { background: var(--selection-bg); }
+.file-share-dialog .rich-reminder-editor { min-height: 64px; max-height: 160px; margin-bottom: var(--space-3); }
+.file-share-hint { margin: var(--space-2) 0; font-size: var(--text-sm); color: var(--muted); overflow-wrap: anywhere; }
+.file-share-status { padding: var(--space-3); margin-top: var(--space-3); border-radius: var(--radius-md); background: var(--surface); overflow-wrap: anywhere; }
+.file-share-status strong { font-size: var(--text-sm); font-weight: 600; }
+.file-share-status p { margin: var(--space-1) 0 0; font-size: var(--text-sm); }
+.file-share-custom { white-space: pre-wrap; }
+.file-share-error { margin: var(--space-2) 0; font-size: var(--text-sm); overflow-wrap: anywhere; }
+.modal.file-share-dialog > footer { flex-shrink: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-3); }
+.file-share-dialog > footer button { min-height: var(--control-height); padding: 0 var(--space-3); border-radius: var(--radius-md); }
+.file-share-dialog > footer .primary { min-width: max(80px, 7.5em); }
+.file-share-dialog button:disabled { opacity: .5; cursor: default; }
+.saved-file-shares { margin: var(--space-2) 0; }
+.saved-file-share { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); }
+.saved-file-share-copy { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.saved-file-share-copy p { margin: var(--space-1) 0; font-size: var(--text-sm); color: var(--muted); }
+@media (max-height: 500px) {
+  .modal.file-share-dialog { top: 8px; max-height: calc(100vh - 16px); padding: var(--space-3); }
+  .file-share-options { max-height: 96px; }
+}
+
+.file-share-earlier { margin: var(--space-2) 0; }
+.file-share-earlier button { min-height: var(--control-height); padding: 0 var(--space-3); border-radius: var(--radius-md); }
+.file-share-earlier-preview { margin-top: var(--space-2); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.file-share-earlier-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.file-share-earlier-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow: auto; margin: var(--space-2) 0; }
+
+/* Keep the destination focus ring inside its box at the body scrollport edge. */
+#file-share-destination:focus-visible { outline-offset: -3px; }

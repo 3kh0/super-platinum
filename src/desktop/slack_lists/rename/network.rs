@@ -147,7 +147,7 @@ pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) 
                 unsent(
                     &mut state.write(),
                     &guard,
-                    "Could not verify the name and permissions. Nothing was sent. Close this editor and refresh before trying again.",
+                    "Could not verify the schema and permissions. Nothing was sent. Close this editor and refresh before trying again.",
                 );
                 return;
             }
@@ -165,13 +165,49 @@ pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) 
         let result = if super::super::fixture::enabled(&state.peek()) {
             fixture::write(state, &guard, permit).await
         } else if let Some(context) = guard.scope.request(&state.peek()) {
+            let text_creation = permit.is_text_creation();
+            let sort = permit.is_sort();
+            let grouping = permit.is_grouping();
+            let filter = permit.is_filter();
+            let visibility = permit.is_visibility();
+            let precision = permit.is_precision();
             let creation = permit.is_creation();
             let view = permit.is_view();
             let request = permit.request(&context.client, &context.session);
             let current = || {
                 guard.current(&state.peek(), Stage::Saving) && !registry::blocked(&guard.key.owner)
             };
-            if creation {
+            if text_creation {
+                context
+                    .transport
+                    .execute_list_column_create(request, current)
+                    .await
+            } else if filter {
+                context
+                    .transport
+                    .execute_list_view_filter(request, current)
+                    .await
+            } else if grouping {
+                context
+                    .transport
+                    .execute_list_view_grouping(request, current)
+                    .await
+            } else if sort {
+                context
+                    .transport
+                    .execute_list_view_sort(request, current)
+                    .await
+            } else if visibility {
+                context
+                    .transport
+                    .execute_list_field_visibility(request, current)
+                    .await
+            } else if precision {
+                context
+                    .transport
+                    .execute_list_column_precision(request, current)
+                    .await
+            } else if creation {
                 context
                     .transport
                     .execute_list_view_create(request, current)

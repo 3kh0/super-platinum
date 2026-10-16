@@ -37,8 +37,8 @@ PRESETS = {
         "files-empty", "files-error", "files-density", "files-density-narrow",
         "channel-files", "channel-files-narrow", "channel-links", "channel-links-narrow",
         "channel-links-empty", "channel-links-error", "pins", "pins-narrow",
-        "pins-empty", "pins-error", "channel-pinned-message", "bookmarks",
-        "bookmarks-narrow", "bookmarks-edit", "bookmarks-remove", "bookmarks-error",
+        "pins-empty", "pins-error", "channel-pinned-message", "pins-files", "pins-files-narrow", "bookmarks",
+        "bookmarks-narrow", "bookmarks-emoji", "bookmarks-emoji-narrow", "bookmarks-edit", "bookmarks-remove", "bookmarks-error",
         "bookmarks-folder", "bookmarks-folder-remove", "bookmarks-move",
     ),
 }

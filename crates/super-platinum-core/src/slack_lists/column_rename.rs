@@ -1,4 +1,4 @@
-//! Bounded ordinary Text-column rename, not schema migration or row continuation.
+//! Bounded ordinary Text/precision-only Number rename, not type conversion or cell editing.
 //! Primary source: post-hydration-schema/source-excerpts.json (TC0j/ColumnEditor).
 use super::{Document, ListError, PersonalTaskLists};
 use serde_json::{Value, json};
@@ -14,6 +14,26 @@ pub struct ColumnRename {
 }
 
 impl ColumnRename {
+    /// Presentation support only; capture/admit still reparse and check List policy.
+    pub fn supports(column: &super::Column) -> bool {
+        if column.kind == "text" {
+            return column.raw.get("options") == Some(&json!({"format":"text"}));
+        }
+        let precision = column
+            .raw
+            .get("options")
+            .and_then(|o| o.get("precision"))
+            .and_then(Value::as_u64);
+        column.kind == "number"
+            && precision.is_some_and(|p| {
+                p <= 5 && column.raw.get("options") == Some(&json!({"precision":p}))
+            })
+    }
+    /// Exact captured lossless options; the name-only builder must preserve them.
+    pub fn unchanged_options(&self) -> &Value {
+        &self.document.column(&self.column_id).unwrap().raw["options"]
+    }
+
     pub fn capture(
         document: &Document,
         column_id: &str,
@@ -113,7 +133,7 @@ fn eligible(
     // transforms those options and requests default-cell backfill. Restrict the
     // first slice to a shape for which this transform is exactly lossless and
     // contains no default-value, task, notification, or typed-cell options.
-    if column.kind != "text" || column.raw.get("options") != Some(&json!({"format":"text"})) {
+    if !ColumnRename::supports(column) {
         return Err(ListError(
             "Renaming this field configuration is not supported yet.",
         ));
@@ -197,3 +217,6 @@ impl ColumnRenameAttempt {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod number_tests;

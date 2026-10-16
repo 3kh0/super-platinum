@@ -1,4 +1,6 @@
 //! Native channel bookmarks. Mutations survive row unmounts and recheck stale edits.
+pub(crate) mod emoji;
+
 use crate::{
     icons::{Icon, icon},
     scheduled::Context,
@@ -299,7 +301,7 @@ pub fn BookmarksPanel(mut state: Signal<ShellState>, channel: String) -> Element
                             rsx! {
                                 div {class:"bookmark-row",role:"listitem",key:"{bookmark.id}",style:"margin-left:{depth.min(4)*16}px",
                                     button {class:"bookmark-open",disabled:!folder&&!valid_link(&url),title:"{url}","aria-expanded":if folder{Some(expanded.to_string())}else{None},onclick:move |_|{if folder{let mut shell=state.write();let set=&mut shell.core.bookmarks.collapsed;if !set.remove(&folder_id){set.insert(folder_id.clone());}}else if crate::media::open_external(&url).is_err(){state.write().show_toast("This bookmark could not be opened.");}},
-                                        {icon(if folder{Icon::ChevronRight}else{Icon::Bookmark},"icon")}
+                                        {emoji::render(state, &snapshot, bookmark)}
                                         span {class:"files-row-body",span {class:"files-title","{title}"}
                                             span {class:"files-meta",if let Some(parent)=parent {"{parent} · "}if matches!(bookmark.kind.as_deref(),Some("folder"|"local_folder")) {"Folder"} else {"{bookmark.link.as_deref().unwrap_or(\"Open this item in Slack\")}"}}
                                         }

@@ -35,6 +35,15 @@ class Review(unittest.TestCase):
     def test_owner_types_are_not_coerced(self):
         for args in [('a'*31,1,1),('A'*32,1,1),('a'*32,True,1),('a'*32,1,False)]:
             with self.assertRaises(RuntimeError):owner(*args)
+    def test_probe_rejects_missing_or_ambiguous_eligible_cancel_before_review(self):
+        for controls in [[{**self.target,'name':'Save'}],[self.target,self.target],[self.target,{**self.target,'runtimeId':[42,1,6]}]]:
+            with self.assertRaisesRegex(RuntimeError,'exactly one'):
+                validate_probe({**self.probe,'controls':controls},self.owner)
+    def test_probe_rejects_unusable_cancel_without_selecting_a_target(self):
+        for changes in [dict(enabled=False),dict(offscreen=True),dict(invoke=False),dict(controlType='ControlType.Edit')]:
+            with self.assertRaisesRegex(RuntimeError,'exactly one'):
+                validate_probe({**self.probe,'controls':[{**self.target,**changes}]},self.owner)
+        self.assertIsNone(validate_probe(self.probe,self.owner))
 class Settle(unittest.TestCase):
     def run_samples(self,values):
         self.now=0.;self.seen=[]

@@ -226,7 +226,8 @@ const MOUNT: &str = r#"function mountListCellEditor(generation,visit,rowId,colum
    editor.dataset.focusCurrentId=active?.id||'';
    editor.dataset.focusCurrentTag=active?.tagName||'';
    if(active&&active!==document.body&&active!==previous&&!editor.contains(active)){editor.dataset.focusPhase='focus-moved';return;}
-   const target=editor.querySelector('[contenteditable=true]')||editor.querySelector('input:not(:disabled)')||editor.querySelector('button:not(:disabled)')||editor;
+   const rendered=selector=>[...editor.querySelectorAll(selector)].find(control=>control.getClientRects().length>0);
+   const target=rendered('[contenteditable=true]')||rendered('input:not(:disabled)')||rendered('button:not(:disabled)')||editor;
    target.focus({preventScroll:true});
    editor.dataset.focusPhase=editor.contains(document.activeElement)?'focused':'focus-rejected';
  });

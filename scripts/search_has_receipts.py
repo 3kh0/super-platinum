@@ -39,6 +39,18 @@ def geometry(g,viewport,interactive=True):
     require(all(abs(actual-center)<=2*math.ulp(center) for actual,center in zip(p,midpoint)),'Search hit point differs')
     require(r[0]<=p[0]<=r[2] and r[1]<=p[1]<=r[3] and c[0]<=p[0]<=c[2] and c[1]<=p[1]<=c[3],'Search hit point outside control/clip')
 
+def focus_geometry(g,viewport):
+    geometry(g,viewport)
+    require(g['focused'] is True and g['focusVisible'] is True,'Search action focus missing')
+    width,offset=g['outlineWidth'],g['outlineOffset']
+    require(vector([width,offset],2) and width==2 and g['outlineStyle']=='solid','Search outline style differs')
+    require(isinstance(g['outlineColor'],str) and g['outlineColor'] not in ('','transparent','rgba(0, 0, 0, 0)'),'Search outline color missing')
+    r,c=g['rect'],g['clip'];expansion=max(0,width+offset)
+    expected=[r[0]-expansion,r[1]-expansion,r[2]+expansion,r[3]+expansion]
+    require(vector(g['outline'],4) and all(abs(a-b)<=2*math.ulp(b) for a,b in zip(g['outline'],expected)),'Search outline derivation differs')
+    # No CSS-pixel allowance: the entire ring must fit, even when the center hits.
+    require(c[0]<=expected[0]<expected[2]<=c[2] and c[1]<=expected[1]<expected[3]<=c[3],'Search outline clipped')
+
 def validate_stage(stage,index,fixture,first_revision=None,platform=None):
     require(type(index) is int and 0<=index<len(CASES),'Unknown Search stage')
     name,query,flags,error,revision=CASES[index]
@@ -62,6 +74,9 @@ def validate_stage(stage,index,fixture,first_revision=None,platform=None):
     keys={'query','filters'}|({'file','link','apply','clear'} if flags is not None else set())|({'alert'} if error else set())
     require(set(dom['controls'])==keys,'Missing Search geometry')
     for key,g in dom['controls'].items():geometry(g,viewport,key!='alert')
+    if name=='quote-refused':
+        focus=dom['controls']['apply']['focusGeometry'];focus_geometry(focus,viewport)
+        require(all(focus[k]==dom['controls']['apply'][k] for k in ('rect','clip','point','visible','hit','disabled','tabIndex')),'Search retained focus control differs')
 
 def validate(fixture,receipt,platform=None):
     require(fixture in (FIXTURE,FIXTURE+'-narrow') and receipt['fixture']==fixture,'Search fixture differs')
@@ -73,7 +88,11 @@ def validate(fixture,receipt,platform=None):
     require(type(receipt['refusedRevision']) is int and receipt['refusedRevision']==first+3,'Refusal changed query revision')
     actions=receipt['actions'];require(len(actions)==len(ACTIONS),'Missing Search actions')
     for action,(kind,value) in zip(actions,ACTIONS):
-        require(action=={'ok':True,'kind':kind,'value':value,'focusedAtDispatch':True} and type(action['ok']) is bool and type(action['focusedAtDispatch']) is bool,'Search action/focus sequence differs')
+        expected={'ok':True,'kind':kind,'value':value,'focusedAtDispatch':True}
+        if kind=='click' and value in ('Apply filters','Clear filters'):
+            focus_geometry(action['focusGeometry'],rows[0]['dom']['viewport'])
+            expected['focusGeometry']=action['focusGeometry']
+        require(action==expected and type(action['ok']) is bool and type(action['focusedAtDispatch']) is bool,'Search action/focus sequence differs')
     for key in ('query','filters','file','link','apply','clear'):
         a=rows[0]['dom']['controls'][key]['rect'];b=rows[1]['dom']['controls'][key]['rect']
         require(all(abs(x-y)<=1 for x,y in zip(a,b)),'Checkbox toggle shifted Search layout')

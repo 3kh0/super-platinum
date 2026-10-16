@@ -35,7 +35,12 @@ function setup() {
   const label=node('managed-schedule-message-label',116,106,488,18,body,true);
   const toolbar=node('toolbar',116,124,488,32,body,true);
   const editor=node('managed-schedule-message',116,156,488,96,body,true);
-  editor.previousElementSibling=toolbar;
+  // The shared link panel now sits between the toolbar and contenteditable.
+  // Model its hidden geometry so a sibling-based lookup reproduces the failure.
+  editor.previousElementSibling={textContent:'hidden link controls',disabled:false,
+    getBoundingClientRect:()=>({x:0,y:0,width:0,height:0}),contains:()=>false};
+  const richOwner={querySelector:selector=>selector===':scope > .format-toolbar'?toolbar:null};
+  editor.closest=selector=>selector==='.rich-editor'?richOwner:null;
   const dateLabel=node('dateLabel',116,306,488,18,body,true);
   const date=node('managed-schedule-date',116,336,488,32,body,true);
   date.value='2030-01-01T12:00';
@@ -114,4 +119,15 @@ test('mount generation change or disconnection during actual scroll refuses rece
   assert.equal((await changed.check('reveal',{view:'date'})).ok,false);
   const removed=setup();removed.onFrame(n=>{if(n===3)removed.body.isConnected=false;});
   assert.equal((await removed.check('reveal',{view:'date'})).ok,false);
+});
+
+test('toolbar measurement bypasses the actual hidden link-panel sibling',async()=>{
+  const h=setup();
+  const sibling=h.elements['managed-schedule-message'].previousElementSibling;
+  assert.equal(sibling.getBoundingClientRect().width,0);
+  const value=await h.check('measure',{view:'editor'});
+  assert.equal(value.ok,true);
+  assert.equal(value.controls.toolbar.text,'toolbar');
+  assert.equal(value.controls.toolbar.visible,true);
+  assert.equal(value.controls.toolbar.unobscured,true);
 });

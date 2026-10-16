@@ -27,14 +27,14 @@ async fn run(
     }
     checked(desktop,r#"(()=>{const d=document.querySelector('.canvas-dialog');return {ok:d.textContent.includes('This unsupported formatting stays readable.')&&!d.querySelector('[data-canvas-text-section="unsupported"] .canvas-text-open')};})()"#).await?;
     open(desktop).await?;
-    checked(desktop,r#"(()=>{const b=window.superPlatinumRichEditor.read('canvas-text-draft');window.__canvasTextSeed=JSON.stringify(b);return {ok:b[0].elements.length===1&&b[0].elements[0].elements.some(e=>e.style?.bold&&e.text==='bold')&&JSON.stringify(b).includes('🦊')};})()"#).await?;
+    checked(desktop,r#"(()=>{const b=window.superPlatinumRichEditor.read('canvas-text-draft');window.__canvasTextSeed=JSON.stringify(b);return {ok:!document.querySelector('#canvas-text-editor .format-toolbar [aria-label="Bulleted list"],#canvas-text-editor .format-toolbar [aria-label="Numbered list"]')&&b[0].elements.length===1&&b[0].elements[0].elements.some(e=>e.style?.bold&&e.text==='bold')&&JSON.stringify(b).includes('🦊')};})()"#).await?;
     set_draft(
         desktop,
         "<div><strong>Keep this</strong></div><div>Second paragraph</div>",
     )
     .await?;
     click(desktop, "#canvas-text-save").await?;
-    wait(desktop,r#"(()=>{const e=document.getElementById('canvas-text-draft');return {ok:!!document.querySelector('#canvas-text-editor [role=alert]')&&e?.isContentEditable&&e.textContent==='Keep thisSecond paragraph'&&window.superPlatinumRichEditor.read(e.id)[0].elements.length===2};})()"#).await?;
+    wait(desktop,r#"(()=>{const e=document.getElementById('canvas-text-draft');return {ok:!!document.querySelector('#canvas-text-editor > [role=alert]')&&e?.isContentEditable&&e.textContent==='Keep thisSecond paragraph'&&window.superPlatinumRichEditor.read(e.id)[0].elements.length===2};})()"#).await?;
     editor_layout(desktop).await?;
     no_writes(&state)?;
     capture_stage(state, "unsupported-draft", 0).await?;

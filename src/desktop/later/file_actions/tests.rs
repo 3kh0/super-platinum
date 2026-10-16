@@ -66,6 +66,7 @@ async fn controller_load_and_retire_use_captured_storage_and_exact_uuid() {
         visit: 1,
         transport: None,
         path: Some(path.clone()),
+        attachment: None,
     };
     let Begin::Started(receipt) = target
         .run(|j, s| {
@@ -120,6 +121,7 @@ async fn controls_share_active_guard_and_failed_deadline_survives_remount() {
         visit: 1,
         transport: None,
         path: Some(path.clone()),
+        attachment: None,
     };
     let active = guards::Active::claim(&target).unwrap();
     assert!(guards::Active::claim(&target.clone()).is_err());

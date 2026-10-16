@@ -5,6 +5,7 @@ use std::sync::Arc;
 pub(crate) mod check;
 mod delivery;
 pub(crate) mod inventory;
+mod link_check;
 mod people;
 mod recovery;
 mod recovery_check;
@@ -165,7 +166,7 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
     use_effect(move || {
         if !error.read().is_empty() {
             document::eval(
-                "requestAnimationFrame(()=>document.querySelector('#forward-dialog [role=alert]')?.scrollIntoView({block:'nearest'}));",
+                "requestAnimationFrame(()=>document.querySelector('#forward-dialog .forward-error[role=alert]')?.scrollIntoView({block:'nearest'}));",
             );
         }
     });
@@ -249,7 +250,7 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
     rsx! {
         div {class:"scrim",onclick:move |_|if !sending(){close(state)}}
         section {id:"forward-dialog","data-keyboard-dialog":"true","data-dialog-kind":"forward","data-dialog-generation":dialog_id.clone(),"data-escape-local":"true","data-forward-id":dialog_id,class:"modal forward-dialog",role:"dialog","aria-modal":"true","aria-labelledby":"forward-title",
-            onmounted:move |_|{dioxus::core::spawn_forever(check::run(state));dioxus::core::spawn_forever(recovery_check::run(state));},
+            onmounted:move |_|{dioxus::core::spawn_forever(check::run(state));dioxus::core::spawn_forever(link_check::run(state));dioxus::core::spawn_forever(recovery_check::run(state));},
             onkeydown:move |event|if event.key()==Key::Escape {event.stop_propagation();if !sending(){close(state)}},
             header {
                 h2 {id:"forward-title","{title}"}

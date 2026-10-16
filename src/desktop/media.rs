@@ -13,6 +13,8 @@ use super_platinum_core::{
 };
 
 pub(crate) mod check;
+mod fresh_original;
+pub(crate) use fresh_original::FreshOriginal;
 mod uri;
 pub(crate) use uri::MediaUri;
 
@@ -172,6 +174,7 @@ impl AssetCache {
 struct MediaSource {
     url: String,
     original: Option<(String, bool)>,
+    snapshot: Option<std::sync::Weak<[u8]>>,
     mime: String,
     authenticated: bool,
     /// Registered but not queued. Full-resolution originals — a 60 MB video, a
@@ -255,12 +258,14 @@ impl MediaRegistry {
     /// Hold the requested original while a native Save dialog is open, even
     /// if scrolling elsewhere evicts it from the bounded renderer cache.
     pub fn ready_bytes(&self, id: &MediaAssetId) -> Option<Arc<[u8]>> {
-        self.assets
+        let cached = self
+            .assets
             .lock()
             .expect("media registry poisoned")
             .get(id)
             .filter(|asset| !asset.provisional)
-            .map(|asset| asset.bytes.clone())
+            .map(|asset| asset.bytes.clone());
+        cached.or_else(|| self.snapshot(id).map(|(_, bytes)| bytes))
     }
 
     fn insert_asset(&self, id: MediaAssetId, mime: String, bytes: Arc<[u8]>, provisional: bool) {
@@ -414,6 +419,11 @@ impl MediaRegistry {
         let Some(source) = sources.get_mut(id) else {
             return;
         };
+        // An explicitly refreshed text snapshot is immutable; only a new explicit
+        // attempt may fetch it again under a different identity.
+        if source.snapshot.is_some() {
+            return;
+        }
         source.deferred = false;
         drop(sources);
         // A viewer can reopen an original after its bytes were evicted.
@@ -485,6 +495,7 @@ impl MediaRegistry {
                 MediaSource {
                     url: url.to_owned(),
                     original: None,
+                    snapshot: None,
                     mime,
                     authenticated,
                     deferred,
@@ -505,7 +516,8 @@ impl MediaRegistry {
         if !ready {
             assets.evicted.remove(id);
         }
-        ready
+        drop(assets);
+        ready || self.snapshot(id).is_some()
     }
 
     /// Decoder failures are presentation failures: keep the original bytes
@@ -776,6 +788,16 @@ impl MediaRegistry {
             }
             asset
         };
+        let asset = asset.or_else(|| {
+            self.snapshot(&id).map(|(mime, bytes)| MediaAsset {
+                mime,
+                bytes,
+                provisional: false,
+                last_used: 0,
+                revision: 0,
+                image_failed: false,
+            })
+        });
         match asset {
             Some(asset) => response(
                 StatusCode::OK,
@@ -874,7 +896,13 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "threads-keyboard-narrow"
                 | "threads-file-paste-narrow"
                 | "original-download-narrow"
+                | "file-preview-refresh-narrow"
+                | "file-preview-refresh-check-narrow"
+                | "file-preview-refresh-error-narrow"
                 | "file-preview-narrow"
+                | "file-share-narrow"
+                | "file-share-pressure-narrow"
+                | "message-file-actions-narrow"
                 | "file-actions-narrow"
                 | "file-rename-narrow"
                 | "file-recovery-narrow"
@@ -883,6 +911,7 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "viewer-actions-pdf"
                 | "file-actions-channel-narrow"
                 | "bookmarks-narrow"
+                | "bookmarks-emoji-narrow"
                 | "canvas-create-narrow"
                 | "canvas-narrow"
                 | "canvas-checklist-narrow"
@@ -896,8 +925,10 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "channel-links-narrow"
                 | "channel-files-narrow"
                 | "pins-narrow"
+                | "pins-files-narrow"
                 | "forward-recovery-narrow"
                 | "forward-narrow"
+                | "forward-links-narrow"
                 | "forward-partial-narrow"
                 | "forward-people-narrow"
                 | "new-dm-narrow"
@@ -924,8 +955,24 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "button-metadata-narrow"
                 | "slack-list-narrow"
                 | "slack-list-board-add-narrow"
+                | "slack-list-board-heading-narrow"
+                | "slack-list-board-heading-checked-narrow"
                 | "slack-list-hydration-narrow"
                 | "slack-list-column-rename-narrow"
+                | "slack-list-number-precision-narrow"
+                | "slack-list-number-rename-narrow"
+                | "slack-list-field-visibility-narrow"
+                | "slack-list-view-filter-narrow"
+                | "slack-list-number-filter-narrow"
+                | "slack-list-text-field-create-narrow"
+                | "slack-list-number-field-create-narrow"
+                | "slack-list-checkbox-field-create-narrow"
+                | "slack-list-view-sort-narrow"
+                | "slack-list-view-grouping-narrow"
+                | "slack-list-board-grouping-narrow"
+                | "slack-list-find-narrow"
+                | "slack-list-find-board-narrow"
+                | "slack-list-find-empty-narrow"
                 | "slack-list-view-rename-narrow"
                 | "slack-list-view-create-narrow"
                 | "slack-list-subitem-create-narrow"
@@ -1485,6 +1532,70 @@ mod tests {
         );
 
         let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn bookmark_rejects_provisional_bytes_from_prior_unscoped_same_url_registration() {
+        use dioxus::core::{AttributeValue, Mutation, Mutations};
+        use dioxus::prelude::*;
+        use std::{cell::Cell, rc::Rc};
+
+        type Slot = Rc<Cell<Option<Signal<crate::state::ShellState>>>>;
+        fn has_src(edits: &Mutations, uri: &str) -> bool {
+            edits.edits.iter().any(|edit| {
+                matches!(edit,
+                Mutation::SetAttribute {name:"src", value:AttributeValue::Text(value), ..}
+                if value == uri)
+            })
+        }
+        let registry = MediaRegistry::default();
+        let url = "https://example.test/bookmark-pending.png";
+        let id = registry.register_emoji("bookmark-pending", url);
+        registry.insert_asset(
+            id.clone(),
+            "image/png".into(),
+            b"old workspace bytes".as_slice().into(),
+            true,
+        );
+        assert!(registry.is_ready(&id));
+        assert!(registry.ready_bytes(&id).is_none());
+        let slot = Slot::default();
+        let mut dom = VirtualDom::new_with_props(
+            |(slot, registry): (Slot, MediaRegistry)| {
+                let state = use_signal(move || {
+                    crate::state::ShellState::fixture_variant(registry, "bookmarks-emoji")
+                });
+                slot.set(Some(state));
+                rsx! {crate::bookmarks::BookmarksPanel {state, channel:"C2"}}
+            },
+            (slot.clone(), registry.clone()),
+        );
+        let edits = dom.rebuild_to_vec();
+        let mut state = slot.get().unwrap();
+        let epoch = state.peek().media_epoch;
+        assert!(
+            !has_src(&edits, &id.webview_uri_at(epoch)),
+            "provisional old-URL bytes must not paint as the current bookmark emoji"
+        );
+        let scoped = registry.register_emoji("bookmark//T1/bookmark-pending", url);
+        assert_eq!(scoped, id, "same-URL deduplication remains unchanged");
+        assert_eq!(
+            registry.sources.read().unwrap()[&id].slot.as_deref(),
+            Some("emoji/bookmark-pending")
+        );
+        dom.in_runtime(|| {
+            registry.insert(id.clone(), "image/png", b"current URL bytes".as_slice());
+            state.write().media_epoch += 1;
+        });
+        let edits = dom.render_immediate_to_vec();
+        assert!(
+            has_src(&edits, &id.webview_uri_at(state.peek().media_epoch)),
+            "the same source must paint once its current bytes arrive"
+        );
+        assert_eq!(
+            registry.sources.read().unwrap()[&id].slot.as_deref(),
+            Some("emoji/bookmark-pending")
+        );
     }
 
     #[test]

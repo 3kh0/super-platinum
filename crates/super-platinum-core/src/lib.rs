@@ -14,6 +14,7 @@ pub mod error;
 pub mod file_actions;
 pub mod file_download;
 pub mod file_preview;
+pub mod file_sharing;
 pub mod files;
 pub mod forwarding;
 pub mod huddle;

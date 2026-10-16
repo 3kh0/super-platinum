@@ -27,7 +27,7 @@ fn rich_node_with_source(
     match node {
         RichNode::Canvas(target) => {
             let target = target.clone();
-            rsx! {button {class:"file-link",onclick:move |_|crate::canvas::open_target(state,target.clone()),{crate::icons::icon(crate::icons::Icon::AttachFile,"file-link-icon")} "{target.title}"}}
+            rsx! {button {class:"file-link",onclick:move |_|crate::canvas::open_target(state,target.clone()),{crate::icons::icon(crate::icons::Icon::AttachFile,"icon file-link-icon")} "{target.title}"}}
         }
         RichNode::Text(text) => rsx! { span { "{text}" } },
         RichNode::StyledText {
@@ -105,7 +105,16 @@ fn rich_node_with_source(
         }
         RichNode::Code(code) => rsx! { code { "{code}" } },
         RichNode::Paragraph(nodes) => {
-            rsx! { p { for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } } }
+            if source.is_some()
+                && nodes
+                    .iter()
+                    .any(|node| matches!(node, RichNode::Media { file: Some(_), .. }))
+            {
+                // File actions contain a form: a paragraph cannot own this flow content.
+                rsx! { div { class:"message-file-paragraph", for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } } }
+            } else {
+                rsx! { p { for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } } }
+            }
         }
         RichNode::Quote(nodes) => {
             rsx! { blockquote { for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } } }
@@ -140,69 +149,79 @@ fn rich_node_with_source(
             mime,
             size,
         } => {
-            // The box the preview will fill, declared before its bytes land:
-            // without it every arriving image shoves the transcript around
-            // under the reader.
-            let sizing = size
-                .filter(|(width, height)| *width > 0 && *height > 0)
-                .map(|(width, height)| {
-                    format!("width: {width}px; aspect-ratio: {width} / {height}")
-                })
-                .unwrap_or_default();
-            let Some(target) = full.as_ref().or(id.as_ref()) else {
-                return rsx! { span { class: "file-link", {crate::icons::icon(crate::icons::Icon::AttachFile, "file-link-icon")} "{name}" } };
-            };
-            let mut viewer = viewer_vm(target, name, mime);
-            viewer.download_name = download_name.clone();
-            viewer.file = file.clone();
-            let Some(id) = id.as_ref() else {
-                return rsx! {
-                    button {
-                        class: "file-link",
-                        onclick: move |_| open_viewer(state, viewer.clone()),
-                        {crate::icons::icon(crate::icons::Icon::AttachFile, "file-link-icon")}
-                        "{name}"
-                    }
+            let preview = (|| -> Element {
+                // The box the preview will fill, declared before its bytes land:
+                // without it every arriving image shoves the transcript around
+                // under the reader.
+                let sizing = size
+                    .filter(|(width, height)| *width > 0 && *height > 0)
+                    .map(|(width, height)| {
+                        format!("width: {width}px; aspect-ratio: {width} / {height}")
+                    })
+                    .unwrap_or_default();
+                let Some(target) = full.as_ref().or(id.as_ref()) else {
+                    return rsx! { span { class: "file-link", {crate::icons::icon(crate::icons::Icon::AttachFile, "icon file-link-icon")} "{name}" } };
                 };
-            };
-            if mime.starts_with("image/") {
-                rsx! {
-                    button {
-                        class: "media-button",
-                        onclick: move |_| open_viewer(state, viewer.clone()),
-                        MediaImage {
-                            state, id:id.clone(), media_epoch,
-                            class: "message-media",
-                            alt: "{name}",
-                            style: "{sizing}",
+                let mut viewer = viewer_vm(target, name, mime);
+                viewer.download_name = download_name.clone();
+                viewer.file = file.clone();
+                let Some(id) = id.as_ref() else {
+                    return rsx! {
+                        button {
+                            class: "file-link",
+                            onclick: move |_| open_viewer(state, viewer.clone()),
+                            {crate::icons::icon(crate::icons::Icon::AttachFile, "icon file-link-icon")}
+                            "{name}"
+                        }
+                    };
+                };
+                if mime.starts_with("image/") {
+                    rsx! {
+                        button {
+                            class: "media-button",
+                            onclick: move |_| open_viewer(state, viewer.clone()),
+                            MediaImage {
+                                state, id:id.clone(), media_epoch,
+                                class: "message-media",
+                                alt: "{name}",
+                                style: "{sizing}",
+                            }
+                        }
+                    }
+                } else if mime.starts_with("video/") {
+                    // Inline is the poster frame Slack already rendered; the movie
+                    // itself downloads only once the viewer opens it.
+                    rsx! {
+                        button {
+                            class: "media-button media-poster",
+                            onclick: move |_| open_viewer(state, viewer.clone()),
+                            MediaImage {
+                                state, id:id.clone(), media_epoch,
+                                class: "message-media",
+                                alt: "{name}",
+                                style: "{sizing}",
+                            }
+                            span { class: "media-play", {crate::icons::icon(crate::icons::Icon::Play, "media-play-icon")} }
+                        }
+                    }
+                } else {
+                    rsx! {
+                        button {
+                            class: "file-link",
+                            onclick: move |_| open_viewer(state, viewer.clone()),
+                            {crate::icons::icon(crate::icons::Icon::AttachFile, "icon file-link-icon")}
+                            "{name}"
                         }
                     }
                 }
-            } else if mime.starts_with("video/") {
-                // Inline is the poster frame Slack already rendered; the movie
-                // itself downloads only once the viewer opens it.
-                rsx! {
-                    button {
-                        class: "media-button media-poster",
-                        onclick: move |_| open_viewer(state, viewer.clone()),
-                        MediaImage {
-                            state, id:id.clone(), media_epoch,
-                            class: "message-media",
-                            alt: "{name}",
-                            style: "{sizing}",
-                        }
-                        span { class: "media-play", {crate::icons::icon(crate::icons::Icon::Play, "media-play-icon")} }
-                    }
-                }
+            })();
+            let target = source.zip(file.as_ref()).and_then(|(source, file)| {
+                crate::file_actions::attachment::target(&state.read(), source, file, name)
+            });
+            if let Some(target) = target {
+                rsx! { crate::file_actions::attachment::MessageFile { state, target, children:preview } }
             } else {
-                rsx! {
-                    button {
-                        class: "file-link",
-                        onclick: move |_| open_viewer(state, viewer.clone()),
-                        {crate::icons::icon(crate::icons::Icon::AttachFile, "file-link-icon")}
-                        "{name}"
-                    }
-                }
+                preview
             }
         }
 
@@ -464,6 +483,7 @@ fn open_viewer(mut state: Signal<ShellState>, viewer: crate::state::ViewerVm) {
     shell.media.request(&viewer.id);
     shell.viewer = Some(viewer);
     shell.overlay = Some(Overlay::Viewer);
+    crate::file_preview::refresh::opened(&mut shell);
 }
 
 fn open_link(state: Signal<ShellState>, url: &str) {

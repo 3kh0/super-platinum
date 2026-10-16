@@ -34,6 +34,8 @@ def unicode_batches(text):
 
 
 def input_batches(action):
+    if action == "tab":
+        return [[(0x0F, SCANCODE), (0x0F, SCANCODE | KEYUP)]]
     if action == "type":
         return unicode_batches(TEXT)
     if action == "replace":
@@ -43,7 +45,7 @@ def input_batches(action):
     if action == "select-left":
         return [[(0x2A, SCANCODE), (0x4B, SCANCODE | EXTENDED),
                  (0x4B, SCANCODE | EXTENDED | KEYUP), (0x2A, SCANCODE | KEYUP)]]
-    raise ValueError("Only fixture text, Backspace and Shift+Left are admitted")
+    raise ValueError("Only fixture text, Backspace, Shift+Left and Tab are admitted")
 
 
 def pending_releases(batch, inserted):

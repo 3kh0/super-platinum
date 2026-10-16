@@ -79,7 +79,7 @@ pub(in crate::canvas) fn Editor(
                     event.prevent_default();event.stop_propagation();if cancellable {cancel(state,draft,generation);}
                 }
             },
-            crate::view::rich_editor::RichEditor {id:"canvas-text-draft",label:field_label,blocks,disabled:disabled||deletion,autofocus:!deletion,expected_generation:Some(generation)},
+            crate::view::rich_editor::RichEditor {id:"canvas-text-draft",label:field_label,blocks,allow_lists:false,disabled:disabled||deletion,autofocus:!deletion,expected_generation:Some(generation)},
             p {class:"canvas-text-hint",if replacement {"Delete this paragraph and leave an empty paragraph in its place? Its text and formatting will be removed. If the result cannot be confirmed, both changes stay locked for review."} else if deletion {"Delete this paragraph? Its text and formatting will be removed from this canvas."} else if insertion {"Add one paragraph here. Use Shift+Enter for a line break."} else {"Edit this paragraph. Use Shift+Enter for a line break."}}
             if stale {p {role:"status","This canvas changed. Cancel and refresh before saving this paragraph."}}
             if let Some(error)=error {p {role:"alert","{error}"}}

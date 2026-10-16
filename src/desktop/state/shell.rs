@@ -50,6 +50,8 @@ pub struct ShellState {
     /// Bumped while file uploads are in flight so progress UI re-renders.
     pub upload_ui_epoch: u64,
     pub(crate) file_events: crate::file_events::Tracker,
+    pub(crate) file_share: crate::file_share::State,
+    pub(crate) file_share_fixture: Option<crate::file_share::FixtureCapability>,
     pub stick_to_bottom: bool,
     pub loading_older: bool,
     pub chat_paused: bool,
@@ -136,6 +138,7 @@ pub struct ShellState {
     pub self_menu_mutations: crate::bootstrap::SelfMenuMutations,
     pub profile_vip_pending: crate::profile_vip::Pending,
     pub viewer: Option<ViewerVm>,
+    pub file_refresh: crate::file_preview::refresh::State,
     pub canvas: Option<CanvasTarget>,
     pub(crate) canvas_checklist: crate::canvas::checklist::State,
     pub canvas_create: Option<crate::canvas_create::Draft>,
@@ -391,6 +394,7 @@ impl ShellState {
             .and_then(|v| v.file.as_ref().map(|f| &f.id))
             .is_some_and(|id| workspace.deleted_files.contains(id))
         {
+            self.file_refresh.close();
             self.viewer = None;
             if self.overlay == Some(Overlay::Viewer) {
                 self.overlay = None;
@@ -570,6 +574,13 @@ impl ShellState {
     }
 
     pub fn dismiss_overlay(&mut self) {
+        if self.overlay == Some(Overlay::Viewer) {
+            crate::file_preview::refresh::close(self);
+        }
+        if self.overlay == Some(Overlay::FileShare) {
+            crate::file_share::dismiss(self);
+            return;
+        }
         if self.overlay == Some(Overlay::ComposerEmoji) {
             crate::composer_emoji::close_shell(self);
             return;

@@ -4,12 +4,35 @@ use serde_json::Value;
 use std::collections::{BTreeMap, HashSet};
 
 mod cell_edit;
+mod column_create;
+mod column_precision;
 mod column_rename;
+mod field_visibility;
 mod view_create;
+mod view_filter;
+mod view_grouping;
+pub use column_create::{
+    ColumnCreate, ColumnCreateAttempt, ColumnCreateKind, ColumnCreatePermit, ColumnCreatePhase,
+};
 mod view_rename;
+mod view_sort;
+pub use column_precision::{
+    ColumnPrecision, ColumnPrecisionAttempt, ColumnPrecisionPermit, ColumnPrecisionPhase,
+};
 pub use column_rename::{ColumnRename, ColumnRenameAttempt, ColumnRenamePermit, ColumnRenamePhase};
+pub use field_visibility::{
+    ViewFieldVisibility, ViewFieldVisibilityAttempt, ViewFieldVisibilityPermit,
+    ViewFieldVisibilityPhase,
+};
 pub use view_create::{
     ViewCreate, ViewCreateAttempt, ViewCreatePermit, ViewCreatePhase, ViewLayout,
+};
+pub use view_filter::{
+    NumberFilterOperator, ViewFilter, ViewFilterAttempt, ViewFilterChoice, ViewFilterPermit,
+    ViewFilterPhase,
+};
+pub use view_grouping::{
+    ViewGrouping, ViewGroupingAttempt, ViewGroupingChoice, ViewGroupingPermit, ViewGroupingPhase,
 };
 pub use view_rename::{ViewRename, ViewRenameAttempt, ViewRenamePermit, ViewRenamePhase};
 mod subitem;
@@ -29,6 +52,7 @@ mod edits;
 mod hierarchy;
 mod hydration;
 pub use hydration::ListRecordHydration;
+pub mod find;
 pub mod numbers;
 mod ordering;
 mod policy;
@@ -316,3 +340,5 @@ impl RecordsPage {
 
 #[cfg(test)]
 mod tests;
+
+pub use view_sort::{ViewSort, ViewSortAttempt, ViewSortChoice, ViewSortPermit, ViewSortPhase};

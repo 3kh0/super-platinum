@@ -21,6 +21,20 @@ class VisualValidationTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 RUNNER.selected_fixtures([], names)
 
+    def test_board_heading_catalog_narrow_variants_have_native_window_mapping(self):
+        # The fixture catalog and window setup are separate registries. A name
+        # ending in -narrow alone does not make the native window narrow.
+        import re
+        names = {name for name in RUNNER.known_fixtures()
+                 if name.startswith("slack-list-board-heading") and name.endswith("-narrow")}
+        self.assertEqual(names, {"slack-list-board-heading-narrow",
+                                 "slack-list-board-heading-checked-narrow"})
+        media = (RUNNER.ROOT / "src/desktop/media.rs").read_text(encoding="utf-8")
+        narrow_branch = media.split("let initial_size = if protected_narrow", 1)[1].split(
+            "WINDOW_MIN_INNER_SIZE", 1)[0]
+        mapped = set(re.findall(r'"([a-z][a-z0-9-]*)"', narrow_branch))
+        self.assertFalse(names - mapped, f"Catalog fixtures missing native narrow mapping: {names - mapped}")
+
     def test_capture_must_exist_and_match_native_dimensions(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "capture.png"

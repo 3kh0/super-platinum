@@ -62,6 +62,8 @@ impl CoreAppState {
         if patch.is_empty() {
             return false;
         }
+        self.file_display_reads
+            .record(self.account_epoch, team, id, patch);
         self.visit_files(team, |copy| {
             if copy.id.as_deref() == Some(id) && !deleted(copy) {
                 patch.apply(copy);

@@ -195,9 +195,21 @@ fn allowed(request: &PreparedRequest) -> bool {
         && value(3).trim() == value(3)
         && value(3).encode_utf16().count() <= 256
         && !value(3).chars().any(char::is_control)
-        && value(4) == "{\"format\":\"text\"}"
+        && matches!(
+            value(4),
+            "{\"format\":\"text\"}"
+                | "{\"precision\":0}"
+                | "{\"precision\":1}"
+                | "{\"precision\":2}"
+                | "{\"precision\":3}"
+                | "{\"precision\":4}"
+                | "{\"precision\":5}"
+        )
         && value(5) == "true"
         && value(6) == "update-column"
 }
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod number_tests;

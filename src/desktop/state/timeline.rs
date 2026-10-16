@@ -2,6 +2,12 @@ use super::ShellState;
 use crate::model::*;
 
 impl ShellState {
+    /// Complete synthetic source; unlike `messages`, this is not a viewport slice.
+    /// Native fixture checks use it to detect source mutation across window changes.
+    pub(crate) fn fixture_message_source(&self) -> Option<&[MessageVm]> {
+        self.fixture_channel_messages.as_deref()
+    }
+
     /// Whether indexed rows refer to canonical history rather than fixture VMs.
     pub(crate) fn channel_window_is_canonical(&self) -> bool {
         self.fixture_channel_messages.is_none()

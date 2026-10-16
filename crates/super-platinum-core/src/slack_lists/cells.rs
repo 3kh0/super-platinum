@@ -46,6 +46,43 @@ impl Column {
                 .get("row_id")
                 .is_none_or(|id| id.as_str() == Some(&record.id))
     }
+    /// Supported ordinary no-option shapes; preserve absence versus {} in raw.
+    pub(super) fn ordinary_checkbox_without_options(&self) -> bool {
+        self.kind == "checkbox"
+            && self
+                .raw
+                .get("options")
+                .is_none_or(|v| v.as_object().is_some_and(|o| o.is_empty()))
+    }
+    /// Input/display value only, never canonical readback. Missing stays Empty
+    /// in cell() and is not admitted by the generic typed editor.
+    pub fn checkbox_input_value_with_policy(
+        &self,
+        record: &Record,
+        list_id: &str,
+        personal_tasks: Option<&PersonalTaskLists>,
+    ) -> Option<bool> {
+        if self.editable_checkbox_with_policy(record, list_id, personal_tasks) {
+            return record.fields.get(&self.key)?.get("checkbox")?.as_bool();
+        }
+        if !self.ordinary_checkbox_without_options()
+            || record.fields.contains_key(&self.key)
+            || record.fields.values().any(|field| {
+                field
+                    .get("column_id")
+                    .is_some_and(|id| id.as_str() == Some(&self.id))
+            })
+            || ["archived", "is_deleted"].iter().any(|key| {
+                record
+                    .raw
+                    .get(key)
+                    .is_some_and(|v| !v.is_null() && v != &Value::Bool(false))
+            })
+        {
+            return None;
+        }
+        Some(false)
+    }
     pub fn cell(&self, record: &Record) -> CellValue {
         let Some(field) = record.fields.get(&self.key) else {
             return CellValue::Empty;

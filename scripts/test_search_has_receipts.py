@@ -12,21 +12,26 @@ import unittest
 from unittest.mock import patch
 
 HERE=Path(__file__).resolve().parent
-# Staged tests use only the explicitly named isolated baseline helpers.
+# Staged tests reuse pinned main helpers; no native process is launched.
 if not (HERE/'native_check.py').is_file():
-    ROOT=next(p for p in HERE.parents if (p/'tmp/protected-c3-validation1/scripts/native_check.py').is_file())
-    sys.path.append(str(ROOT/'tmp/protected-c3-validation1/scripts'))
+    ROOT=next(p for p in HERE.parents if (p/'scripts/native_check.py').is_file())
+    sys.path.append(str(ROOT/'scripts'))
 from search_has_receipts import CASES,ACTIONS,FIXTURE,validate,validate_stage,geometry
 
 def receipt(narrow=False):
     fixture=FIXTURE+('-narrow' if narrow else '');viewport=[668,380] if narrow else [1280,780]
     def geometry():return {'rect':[40,80,110,110],'clip':[0,0,*viewport],'point':[75,95],
        'visible':True,'hit':True,'disabled':False,'tabIndex':0}
+    def focus():
+        return dict(geometry(),focused=True,focusVisible=True,outlineWidth=2,outlineOffset=-2,
+            outlineStyle='solid',outlineColor='rgb(96, 165, 250)',outline=[40,80,110,110])
     records=[]
     for i,(name,query,flags,error,revision) in enumerate(CASES):
         controls={k:geometry() for k in ('query','filters')}
         if flags is not None:controls.update({k:geometry() for k in ('file','link','apply','clear')})
-        if error:controls['alert']=geometry();controls['alert']['tabIndex']=-1
+        if error:
+            controls['alert']=geometry();controls['alert']['tabIndex']=-1
+            controls['apply']['focusGeometry']=focus()
         native={'query':query,'revision':1+revision,'panel':flags is not None,'flags':flags,'error':error,
            'results':0,'page':0,'loading':False,'noSession':True,'noTransport':True}
         dom={'ok':True,'viewport':viewport,'query':query,'queryRevision':query,'panel':flags is not None,
@@ -34,7 +39,7 @@ def receipt(narrow=False):
           'alert':error,'controls':controls,'dialog':[20,20,viewport[0]-20,viewport[1]-20],'horizontalOverflow':False,'results':0}
         records.append({'ok':True,'stage':name,'ordinal':i,'noSession':True,'noTransport':True,'native':native,'dom':dom})
     return {'ok':True,'fixture':fixture,'noSession':True,'noTransport':True,'credentialBoundary':'actual search credentials refused; no raw request ledger',
-      'records':records,'actions':[dict(ok=True,kind=k,value=v,focusedAtDispatch=True) for k,v in ACTIONS],
+      'records':records,'actions':[dict(ok=True,kind=k,value=v,focusedAtDispatch=True,**({'focusGeometry':focus()} if k=='click' and v in ('Apply filters','Clear filters') else {})) for k,v in ACTIONS],
       'refusedRevision':4,'layout':{'ok':True,'viewport':viewport}}
 
 class Receipts(unittest.TestCase):
@@ -44,6 +49,26 @@ class Receipts(unittest.TestCase):
     def test_normal_narrow_contract(self):
         for narrow in (False,True):
             value=receipt(narrow);validate(value['fixture'],value,'win32')
+    def test_focus_outline_missing_or_forged(self):
+        self.reject(lambda v:v['actions'][2].pop('focusGeometry'))
+        self.reject(lambda v:v['actions'][4]['focusGeometry'].__setitem__('focusVisible',False))
+        self.reject(lambda v:v['records'][5]['dom']['controls']['apply'].pop('focusGeometry'))
+        self.reject(lambda v:v['records'][5]['dom']['controls']['apply']['focusGeometry'].__setitem__('focused',False))
+        self.reject(lambda v:v['actions'][2]['focusGeometry'].__setitem__('outline',[41,80,110,110]))
+    def test_outward_outline_clipping_despite_center_hit(self):
+        def corrupt(v):
+            g=v['actions'][2]['focusGeometry'];g.update(clip=[40,80,110,110],outlineOffset=2,outline=[36,76,114,114])
+        self.reject(corrupt)
+        value=receipt(True);value['actions'][2]['focusGeometry']['clip']=[40,80,110,110]
+        validate(value['fixture'],value,'win32')
+    def test_focus_geometry_cannot_bind_another_control(self):
+        def corrupt(v):
+            g=v['records'][5]['dom']['controls']['apply']['focusGeometry']
+            g.update(rect=[41,80,111,110],point=[76,95],outline=[41,80,111,110])
+        self.reject(corrupt)
+    def test_outline_style_and_numeric_types_fail_closed(self):
+        for key,value in [('outlineWidth',True),('outlineWidth',0),('outlineOffset',float('nan')),('outlineStyle','none'),('outlineColor','transparent')]:
+            self.reject(lambda v,k=key,x=value:v['actions'][2]['focusGeometry'].__setitem__(k,x))
     def test_missing_duplicate_order(self):
         self.reject(lambda v:v['records'].pop())
         self.reject(lambda v:v['records'].__setitem__(2,copy.deepcopy(v['records'][1])))

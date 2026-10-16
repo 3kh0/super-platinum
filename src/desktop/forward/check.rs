@@ -21,7 +21,17 @@ pub(crate) async fn run(state: Signal<ShellState>) {
     }
     let original_target = state.peek().forward_target.clone();
     let original_channel = state.peek().core.active_channel.clone();
-    let mut eval = dioxus::document::eval(
+    let Some(original_messages) = state
+        .peek()
+        .fixture_message_source()
+        .map(<[MessageVm]>::to_vec)
+    else {
+        eprintln!("forward check failed: missing fixture message source");
+        return;
+    };
+    let mut eval = dioxus::document::eval(&format!(
+        "{}\n{}",
+        include_str!("list_toolbar_check.js"),
         r#"
     await (async()=>{
         const name=await dioxus.recv();
@@ -31,7 +41,7 @@ pub(crate) async fn run(state: Signal<ShellState>) {
         const assert=(ok,label)=>{if(!ok)throw Error(label);};
         const stable=value=>JSON.stringify(value,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b))):v);
         const root=()=>document.getElementById('forward-dialog');
-        const button=text=>[...root().querySelectorAll('button')].find(b=>b.textContent.trim()===text);
+        const button=text=>[...root().querySelectorAll('button')].find(b=>b.getClientRects().length>0&&b.textContent.trim()===text);
         const input=()=>document.getElementById('forward-destination');
         const note=()=>document.getElementById('forward-note');
         const key=(el,key,shiftKey=false)=>el.dispatchEvent(new KeyboardEvent('keydown',{key,shiftKey,bubbles:true,cancelable:true}));
@@ -60,7 +70,7 @@ pub(crate) async fn run(state: Signal<ShellState>) {
                 button('Resend…').click();await wait(()=>button('Cancel')===document.activeElement,'resend confirmation focused');
                 assert(root().textContent.includes('could create a duplicate'),'resend warning');
                 button('Cancel').click();await wait(()=>button('Check delivery'),'resend cancelled');
-                button('Check delivery').click();await wait(()=>root().querySelector('[role=alert]')?.textContent.includes('Connect to Slack'),'offline check retained');
+                button('Check delivery').click();await wait(()=>root().querySelector('.forward-error[role=alert]')?.textContent.includes('Connect to Slack'),'offline check retained');
                 button('Resend…').click();await wait(()=>button('Resend original'),'explicit resend confirmation');
                 button('Resend original').click();await wait(()=>button('Check delivery')&&!button('Check delivery').disabled,'offline resend finishes');
                 assert(root().querySelector('.forward-result[data-destination=C5]').dataset.delivery==='uncertain','offline resend preserves uncertainty');
@@ -77,7 +87,7 @@ pub(crate) async fn run(state: Signal<ShellState>) {
                 await query('ship');assert(!option(),'selected destination excluded');
                 assert(note().getAttribute('contenteditable')==='true','note remains editable');
             }
-            button('Forward').click();await wait(()=>root().querySelector('[role=alert]')?.textContent.includes('Connect to Slack')&&!button('Forward').disabled,'offline submission retains dialog');
+            button('Forward').click();await wait(()=>root().querySelector('.forward-error[role=alert]')?.textContent.includes('Connect to Slack')&&!button('Forward').disabled,'offline submission retains dialog');
             assert(stable(window.superPlatinumRichEditor.read('forward-note'))===original,'note retained through failures');
             assert(root().querySelectorAll('.forward-chip').length===(name.includes('partial')?1:2),'destinations retained');
             const d=root().getBoundingClientRect();assert(d.left>=0&&d.right<=innerWidth+1&&d.bottom<=innerHeight+1,'dialog fits viewport');
@@ -88,11 +98,12 @@ pub(crate) async fn run(state: Signal<ShellState>) {
             await report({stage:'restore'});await wait(root,'restored capture fixture');
             await wait(()=>document.activeElement===input(),'destination focus restored on reopen');
             if(name.includes('partial')) {button('Resend…').click();await wait(()=>button('Cancel')===document.activeElement,'capture confirmation focused');}
-            await pause();await report({ok:true});
+            const listToolbar=await window.checkForwardListToolbar({root,note,input,report,wait,pause,assert,stable,key});
+            await pause();await report({ok:true,listToolbar});
         } catch(error) {await report({ok:false,case:error.message});}
     })();
     "#,
-    );
+    ));
     let _ = eval.send(name.clone());
     loop {
         let receipt = eval.recv::<serde_json::Value>().await.unwrap_or_default();
@@ -100,6 +111,19 @@ pub(crate) async fn run(state: Signal<ShellState>) {
             Some("note") => {
                 let note = read_note("fixture-forward").await;
                 let _ = eval.send(serde_json::json!({"note":note}));
+                continue;
+            }
+            Some("list-note") => {
+                let note = read_note("fixture-forward").await;
+                let shell = state.peek();
+                let result = prepared_list_note(
+                    &shell,
+                    original_target.as_ref(),
+                    &original_messages,
+                    note,
+                    &receipt["blocks"],
+                );
+                let _ = eval.send(result);
                 continue;
             }
             Some("person") => {
@@ -129,5 +153,151 @@ pub(crate) async fn run(state: Signal<ShellState>) {
             }
         }
         let _ = eval.send("received");
+    }
+}
+
+// Prepare through the production builder with an empty synthetic token. This
+// check never constructs a transport, persists a delivery or sends a request.
+pub(super) fn prepared_list_note(
+    shell: &ShellState,
+    original: Option<&ForwardTarget>,
+    messages: &[MessageVm],
+    note: Option<Vec<serde_json::Value>>,
+    claimed: &serde_json::Value,
+) -> serde_json::Value {
+    use super_platinum_core::{forwarding::Deliveries, slack::client::RequestBody};
+    let (Some(original), Some(note)) = (original, note) else {
+        return serde_json::json!({"ok":false});
+    };
+    let source_kept = shell.core.session.is_none()
+        && shell.core.transport.is_none()
+        && shell.fixture_message_source() == Some(messages)
+        && shell.forward_target.as_ref().is_some_and(|target| {
+            target.id == original.id
+                && target.channel == original.channel
+                && target.message == original.message
+                && target.team == original.team
+                && target.epoch == original.epoch
+        });
+    let session = WorkspaceSession {
+        team_id: original.team.clone(),
+        enterprise_id: None,
+        user_id: "U_FIXTURE".into(),
+        name: "Fixture".into(),
+        url: "https://example.invalid".into(),
+        token: String::new(),
+    };
+    let mut deliveries = Deliveries::default();
+    let request = deliveries
+        .prepare(
+            &original.channel,
+            &original.message.ts,
+            "C_LIST_NOTE_FIXTURE",
+            "Fixture destination",
+            &note,
+            1,
+        )
+        .unwrap();
+    let prepared = api::chat_share_message(&SlackClient::default(), &session, &request);
+    let RequestBody::Form(fields) = prepared.body else {
+        return serde_json::json!({"ok":false});
+    };
+    let expected = vec![
+        ("token".to_owned(), String::new()),
+        ("channel".to_owned(), original.channel.clone()),
+        ("timestamp".to_owned(), original.message.ts.clone()),
+        ("share_channel".to_owned(), "C_LIST_NOTE_FIXTURE".into()),
+        ("client_msg_id".to_owned(), request.client_msg_id.clone()),
+        ("text".to_owned(), String::new()),
+        ("blocks".to_owned(), serde_json::to_string(&note).unwrap()),
+    ];
+    let ok = source_kept
+        && fields == expected
+        && !request.client_msg_id.is_empty()
+        && prepared.method == "POST"
+        && prepared
+            .url
+            .split('?')
+            .next()
+            .is_some_and(|url| url.ends_with("/api/chat.shareMessage"))
+        && serde_json::to_value(&note).unwrap() == *claimed;
+    serde_json::json!({"ok":ok,"sourceKept":source_kept,"blocks":note,"preparedFields":fields.len(),"prepared":fields})
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::media::MediaRegistry;
+    use serde_json::{Value, json};
+
+    fn note() -> Vec<Value> {
+        vec![json!({"type":"rich_text","elements":[{
+            "type":"rich_text_list","style":"bullet","elements":[{
+                "type":"rich_text_section","elements":[{"type":"text","text":"Worth a look 🚀"}]
+            }]
+        }]})]
+    }
+
+    fn receipt(shell: &ShellState, original: &ForwardTarget, source: &[MessageVm]) -> Value {
+        let note = note();
+        prepared_list_note(
+            shell,
+            Some(original),
+            source,
+            Some(note.clone()),
+            &json!(note),
+        )
+    }
+
+    #[test]
+    fn forward_preparation_preserves_full_source_across_projection_window_changes() {
+        let mut shell = ShellState::fixture_variant(MediaRegistry::default(), "forward");
+        let original = shell.forward_target.clone().unwrap();
+        let source = shell.fixture_message_source().unwrap().to_vec();
+        let projected = shell.messages.clone();
+        assert!(source.len() > projected.len());
+        assert_eq!(receipt(&shell, &original, &source)["ok"], true);
+
+        shell.core.pending_scroll_to = None;
+        shell.set_timeline_window(0, 0, [], false);
+        assert_ne!(shell.messages, projected);
+        assert_eq!(shell.fixture_message_source(), Some(source.as_slice()));
+        let result = receipt(&shell, &original, &source);
+        assert_eq!(result["ok"], true);
+        assert_eq!(result["sourceKept"], true);
+        assert_eq!(result["preparedFields"], 7);
+        assert_eq!(result["blocks"], json!(note()));
+    }
+
+    #[test]
+    fn forward_preparation_rejects_mutated_off_window_fixture_source() {
+        let mut shell = ShellState::fixture_variant(MediaRegistry::default(), "forward");
+        let original = shell.forward_target.clone().unwrap();
+        let source = shell.fixture_message_source().unwrap().to_vec();
+        shell.core.pending_scroll_to = None;
+        shell.set_timeline_window(0, 0, [], false);
+        let mut changed = source.clone();
+        let hidden = changed.last_mut().unwrap();
+        assert!(!shell.messages.iter().any(|message| message.id == hidden.id));
+        assert!(!hidden.body.is_empty());
+        hidden.body.clear();
+        shell.install_fixture_messages(changed);
+        let result = receipt(&shell, &original, &source);
+        assert_eq!(result["sourceKept"], false);
+        assert_eq!(result["ok"], false);
+    }
+
+    #[test]
+    fn forward_preparation_still_rejects_a_different_claimed_note_or_target() {
+        let mut shell = ShellState::fixture_variant(MediaRegistry::default(), "forward");
+        let original = shell.forward_target.clone().unwrap();
+        let source = shell.fixture_message_source().unwrap().to_vec();
+        let result = prepared_list_note(&shell, Some(&original), &source, Some(note()), &json!([]));
+        assert_eq!(result["sourceKept"], true);
+        assert_eq!(result["ok"], false);
+        shell.forward_target.as_mut().unwrap().message.body.clear();
+        let result = receipt(&shell, &original, &source);
+        assert_eq!(result["sourceKept"], false);
+        assert_eq!(result["ok"], false);
     }
 }

@@ -65,7 +65,8 @@ pub(crate) fn PinsPanel(state: Signal<ShellState>, channel: String) -> Element {
                                     } else if let Some(file)=&item.file {
                                         {
                                             let file=file.clone();let title=super_platinum_core::state::file_title(&file);
-                                            rsx! {button {class:"pin-open",onclick:move |_|crate::files::open(state,file.clone()),"{title}"}}
+                                            let deleted=super_platinum_core::file_actions::deleted(&file);
+                                            rsx! {button {class:"pin-open",disabled:deleted,onclick:move |_|crate::files::open(state,file.clone()),"{title}"}}
                                         }
                                         if let Some(comment)=item.comment.as_ref().and_then(|c|c.get("comment")).and_then(|v|v.as_str()) {p {class:"pin-legacy-comment","{comment}"}}
                                     }

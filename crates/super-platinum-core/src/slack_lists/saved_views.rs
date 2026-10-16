@@ -21,6 +21,8 @@ pub struct ProjectionContext {
     /// Captured !viewOnly controls empty group presentation. This flag does not
     /// authorize a mutation; callers must still enforce canonical permissions.
     pub editable: bool,
+    /// Ephemeral local Find over the full loaded schema, after rules and sort.
+    pub find: Option<super::find::Query>,
     pub date: Option<DateContext>,
     /// Verified personal List + todos experiment + !rollback decoder policy.
     pub date_uses_timestamps: Option<bool>,
@@ -167,6 +169,16 @@ pub fn project(
         }
     }
     evaluate::sort(document, &mut rows, &sorts, context)?;
+    if let Some(query) = context.find.as_ref().filter(|query| !query.text.is_empty()) {
+        let search = super::find::Search::new(document, query).map_err(unsupported)?;
+        let mut found = Vec::with_capacity(rows.len());
+        for row in rows {
+            if search.matches(row).map_err(unsupported)? {
+                found.push(row);
+            }
+        }
+        rows = found;
+    }
     let unique_record_count = rows.len();
     let groups = if layout == ProjectionLayout::Board {
         board::project(grouping, view, rows, &filters, &sorts, context)?

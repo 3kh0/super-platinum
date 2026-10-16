@@ -41,15 +41,54 @@ mod isolated {
         thread: Mutex<Option<std::thread::JoinHandle<()>>>,
         // Held for the complete route lifetime. Evidence is retained on drop.
         _lock: File,
+        #[cfg(test)]
+        shutdown_test: Arc<ShutdownTest>,
     }
     impl Drop for Queue {
         fn drop(&mut self) {
-            self.stopping.store(true, Ordering::Release);
+            {
+                // Publish the wait predicate under the same mutex as Condvar::wait.
+                // Otherwise the final notification can precede wait registration.
+                let _pending = self.worker.pending.lock().unwrap();
+                #[cfg(test)]
+                self.shutdown_test.before_stop(&self.worker);
+                self.stopping.store(true, Ordering::Release);
+            }
             self.worker.ready.notify_all();
             if let Some(thread) = self.thread.lock().unwrap().take() {
                 let _ = thread.join();
             }
         }
+    }
+    // Per-route deterministic gates only; no feature-enabled runtime controls.
+    #[cfg(test)]
+    #[derive(Default)]
+    struct ShutdownTest {
+        before_wait: Mutex<Option<(mpsc::Sender<()>, mpsc::Receiver<()>)>>,
+        before_stop: Mutex<Option<(mpsc::Sender<bool>, mpsc::Receiver<()>)>>,
+    }
+    #[cfg(test)]
+    impl ShutdownTest {
+        fn before_wait(&self) {
+            if let Some((entered, release)) = self.before_wait.lock().unwrap().take() {
+                let _ = entered.send(());
+                let _ = release.recv_timeout(std::time::Duration::from_secs(5));
+            }
+        }
+        fn before_stop(&self, worker: &Worker) {
+            if let Some((entered, release)) = self.before_stop.lock().unwrap().take() {
+                let held = matches!(
+                    worker.pending.try_lock(),
+                    Err(std::sync::TryLockError::WouldBlock)
+                );
+                let _ = entered.send(held);
+                let _ = release.recv_timeout(std::time::Duration::from_secs(5));
+            }
+        }
+    }
+    #[cfg(test)]
+    mod tests {
+        include!("protected_queue_tests.rs");
     }
     fn valid_owned(directory: &Path, marker: &str) -> Result<(), AppError> {
         let metadata = std::fs::symlink_metadata(directory)?;
@@ -103,6 +142,10 @@ mod isolated {
         let stopping = Arc::new(AtomicBool::new(false));
         let run = worker.clone();
         let stop = stopping.clone();
+        #[cfg(test)]
+        let shutdown_test = Arc::new(ShutdownTest::default());
+        #[cfg(test)]
+        let run_test = shutdown_test.clone();
         let expected_account = account.to_owned();
         let thread = std::thread::Builder::new()
             .name("protected-isolated-drafts".into())
@@ -114,6 +157,8 @@ mod isolated {
                             && pending.updates.is_empty()
                             && !stop.load(Ordering::Acquire)
                         {
+                            #[cfg(test)]
+                            run_test.before_wait();
                             pending = run.ready.wait(pending).unwrap();
                         }
                         if stop.load(Ordering::Acquire) && pending.requests.is_empty() {
@@ -143,6 +188,8 @@ mod isolated {
             stopping,
             thread: Mutex::new(Some(thread)),
             _lock: lock,
+            #[cfg(test)]
+            shutdown_test,
         })))
     }
 }

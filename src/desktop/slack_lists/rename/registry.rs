@@ -1,9 +1,8 @@
 //! Bounded process retention. No credentials, dispatch permits or replay actions.
 use super::*;
-use std::{
-    sync::{Mutex, OnceLock},
-    time::{Duration, Instant},
-};
+#[cfg(not(test))]
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
 pub(super) const MAX_ENTRIES: usize = 32;
 pub(super) const MAX_DOCUMENT: usize = 2 * 1024 * 1024;
 pub(super) type Owner = (Option<String>, String, String);
@@ -48,7 +47,14 @@ pub(super) struct Entry {
     pub view_selection: Option<u64>,
     pub selected: Option<String>,
     pub available: Option<String>,
-    pub name: String,
+    pub original_records: Option<std::sync::Arc<RecordsPage>>,
+    pub field_choice: text_create::Choice,
+    pub observed_field: Option<text_create::Observed>,
+    pub input: Input,
+    pub visibility_choice: u64,
+    pub filter_choice: u64,
+    pub sort_choice: u64,
+    pub grouping_choice: u64,
     pub before: String,
     pub original: Document,
     pub intent: Option<Intent>,
@@ -63,12 +69,21 @@ pub(super) struct Registry {
     deadlines: BTreeMap<Owner, Option<Instant>>,
     overflow: bool,
 }
+#[cfg(not(test))]
 pub(super) fn with_registry<T>(f: impl FnOnce(&mut Registry) -> T) -> T {
     static REGISTRY: OnceLock<Mutex<Registry>> = OnceLock::new();
     f(&mut REGISTRY
         .get_or_init(Default::default)
         .lock()
         .unwrap_or_else(|e| e.into_inner()))
+}
+// Each unit-test thread is an isolated serial UI instance. Same-thread shell
+// replacement retains receipts and cooldowns, as the production process does.
+#[cfg(test)]
+thread_local! {static TEST_REGISTRY:std::cell::RefCell<Registry>=Default::default();}
+#[cfg(test)]
+pub(super) fn with_registry<T>(f: impl FnOnce(&mut Registry) -> T) -> T {
+    TEST_REGISTRY.with(|r| f(&mut r.borrow_mut()))
 }
 pub(super) fn entry(shell: &ShellState) -> Option<Entry> {
     let key = Key::current(shell)?;

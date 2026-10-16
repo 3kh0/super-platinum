@@ -7,6 +7,7 @@ use super_platinum_core::{
     slack::{Error, api, models::File},
     state::file_title,
 };
+pub(crate) mod attachment;
 pub(crate) mod later;
 mod recovery;
 mod recovery_check;
@@ -21,6 +22,7 @@ pub struct Target {
     pub link: Option<String>,
     pub owned: bool,
     pub renameable: bool,
+    pub(crate) attachment: Option<attachment::Guard>,
     pub epoch: u64,
     pub team: String,
 }
@@ -39,6 +41,7 @@ impl Target {
             owned: !workspace.self_user_id.is_empty()
                 && file.uploader.as_deref() == Some(&workspace.self_user_id),
             renameable: file.renameable,
+            attachment: None,
             epoch: shell.core.account_epoch,
             team: team.clone(),
         })
@@ -57,6 +60,7 @@ impl Target {
             link: policy::permalink(file),
             owned: policy::can_delete(file, user),
             renameable: policy::renameable(file),
+            attachment: None,
             epoch: shell.core.account_epoch,
             team,
         }
@@ -64,6 +68,10 @@ impl Target {
     fn current(&self, shell: &ShellState) -> bool {
         shell.core.account_epoch == self.epoch
             && shell.core.active_team.as_deref() == Some(&self.team)
+            && self
+                .attachment
+                .as_ref()
+                .is_none_or(|guard| guard.current(shell))
     }
 }
 
@@ -362,16 +370,20 @@ pub async fn delete(
 
 #[component]
 pub fn Actions(
-    state: Signal<ShellState>,
+    mut state: Signal<ShellState>,
     target: Target,
     #[props(default)] in_viewer: bool,
     #[props(default)] recovery_list: bool,
+    instance: Option<String>,
+    share_return: Option<String>,
 ) -> Element {
     let mut expanded = use_signal(|| false);
     let mut action = use_signal(ActionState::default);
     let mut load_serial = use_signal(|| 0_u64);
     let current = action.read().clone();
     let copy_target = target.clone();
+    let share_target = target.clone();
+    let share_available = crate::file_share::can_open(&state.read(), &target);
     let open_target = target.clone();
     let delete_target = target.clone();
     let rename_target = target.clone();
@@ -382,6 +394,11 @@ pub fn Actions(
         "file-actions-{}-{}-{}-{}-{}",
         target.epoch, target.team, target.id, in_viewer, recovery_list
     );
+    let button_id = instance.map_or(button_id.clone(), |instance| {
+        format!("{button_id}-{instance}")
+    });
+    let share_focus = share_return.unwrap_or_else(|| button_id.clone());
+    let share_address = share_focus.clone();
     let focus_id = button_id.clone();
     let reveal_id = button_id.clone();
     let feedback_id = button_id.clone();
@@ -401,8 +418,8 @@ pub fn Actions(
         let id = serde_json::to_string(&reveal_id).unwrap();
         document::eval(&format!(
             r#"requestAnimationFrame(()=>{{
-            const row=document.getElementById({id})?.closest('.file-result,.viewer-footer');
-            const panel=row?.querySelector('.file-action-panel'),list=row?.closest('.files-results,.viewer,.file-recovery-list');
+            const row=document.getElementById({id})?.closest('.file-result,.viewer-footer,.message-file');
+            const panel=row?.querySelector('.file-action-panel'),list=row?.closest('.files-results,.viewer,.file-recovery-list,.timeline,.thread-body');
             if(!panel||!list)return;
             const focus=panel.querySelector('input:not(:disabled)')||panel.querySelector('button:not(:disabled)');
             focus?.focus({{preventScroll:true}});
@@ -422,12 +439,15 @@ pub fn Actions(
         }
         let id = serde_json::to_string(&feedback_id).unwrap();
         document::eval(&format!(
-            "requestAnimationFrame(()=>document.getElementById({id})?.closest('.file-result,.viewer-footer')?.querySelector('.file-action-error')?.scrollIntoView({{block:'nearest'}}));"
+            "requestAnimationFrame(()=>document.getElementById({id})?.closest('.file-result,.viewer-footer,.message-file')?.querySelector('.file-action-error')?.scrollIntoView({{block:'nearest'}}));"
         ));
     });
+    if target.attachment.is_some() && !target.current(&state.read()) {
+        return rsx! {};
+    }
     rsx! {
         div {class:"file-row-actions",onmounted:move |_|{dioxus::core::spawn_forever(rename_check::run(state,action));dioxus::core::spawn_forever(recovery_check::run(state));},
-            button {id:button_id.clone(),class:"icon-btn file-more",title:"File actions", "aria-label":"Actions for {target.title}","aria-expanded":expanded(),
+            button {id:button_id.clone(),"data-file-share-return":share_address,"data-file-share-owner":state.read().core.account_epoch,class:"icon-btn file-more",title:"File actions", "aria-label":"Actions for {target.title}","aria-expanded":expanded(),
                 disabled:current.busy,
                 onclick:move |_|{
                     expanded.toggle();load_serial+=1;
@@ -477,10 +497,16 @@ pub fn Actions(
                 } else if current.busy {
                     p {class:"file-action-note",role:"status","Checking saved changes…"}
                 } else {
-                    if let Some(saved_target) = crate::later::file_actions::Target::capture(&state.read(), &target.id, &target.title) {
+                    if let Some(saved_target) = crate::later::file_actions::Target::capture(&state.read(), &target.id, &target.title).map(|saved| saved.with_attachment(target.attachment.clone())) {
                         later::SavedControl { key:"{state.read().draft_writes.view_id}:{state.read().core.active_account:?}:{state.read().core.account_epoch}:{target.team}:{target.id}", state, target:saved_target }
                     }
                     div {class:"file-action-buttons",
+                        if share_available {
+                            button {r#type:"button",class:"file-share-action",onclick:move |_|{
+                                let result=crate::file_share::open(state,share_target.clone(),share_focus.clone());
+                                match result {Ok(_)=>{expanded.set(false);back(action);},Err(error)=>state.write().show_toast(error.message())}
+                            },"Share file"}
+                        }
                         button {disabled:target.link.is_none(),onclick:move |_|{dioxus::core::spawn_forever(copy(state,copy_target.clone()));},"Copy link"}
                         button {disabled:target.link.is_none(),onclick:move |_|open(state,&open_target),"Open in Slack"}
                         if target.owned {

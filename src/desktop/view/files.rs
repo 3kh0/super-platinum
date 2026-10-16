@@ -67,7 +67,7 @@ pub(crate) fn FilesPanel(
                 button {class:"later-refresh",disabled:loading,onclick:move |_|{dioxus::core::spawn_forever(crate::files::load(state,refresh.clone(),page));},"Refresh"}
             }
             }
-            if channel.is_none() {crate::file_actions::recovery_list::RecoveryList {state}}
+            if channel.is_none() {crate::file_actions::recovery_list::RecoveryList {state}super::file_share::SavedFileShares {state}}
             form {class:"files-search",onsubmit:move |event|{event.prevent_default();let value=text();reload(state,scope.peek().as_deref(),|q|q.text=value);},
                 {icon(Icon::Search,"icon")}
                 input {type:"search","aria-label":"Search files",placeholder:if channel.is_some() {"Search files in this conversation"} else {"Search files, or use in:channel and from:person"},initial_value:"{text}",oninput:move |event|text.set(event.value())}

@@ -28,7 +28,9 @@ fn start(s: &mut ShellState) -> (Guard, Intent) {
     assert!(open_target(s, Target::View("V_CUSTOM".into()), visit));
     let e = entry(s).unwrap();
     let key = Key::current(s).unwrap();
-    with_registry(|r| r.entries.get_mut(&key).unwrap().name = "New shared name".into());
+    with_registry(|r| {
+        r.entries.get_mut(&key).unwrap().input = Input::Name("New shared name".into())
+    });
     prepare(s, e.serial).unwrap()
 }
 fn fresh(s: &ShellState) -> network::Metadata {
@@ -59,7 +61,7 @@ fn editing_selection_aba_refuses_without_losing_name() {
     assert!(open_target(&mut s, Target::View("V_CUSTOM".into()), visit));
     let e = entry(&s).unwrap();
     with_registry(|r| {
-        r.entries.get_mut(&Key::current(&s).unwrap()).unwrap().name = "Keep me".into()
+        r.entries.get_mut(&Key::current(&s).unwrap()).unwrap().input = Input::Name("Keep me".into())
     });
     assert!(presentation(&s).unwrap().can_confirm);
     s.slack_lists
@@ -70,7 +72,7 @@ fn editing_selection_aba_refuses_without_losing_name() {
         .selection_generation = next_id();
     assert!(!presentation(&s).unwrap().can_confirm);
     assert!(prepare(&mut s, e.serial).is_none());
-    assert_eq!(entry(&s).unwrap().name, "Keep me");
+    assert_eq!(entry(&s).unwrap().input.name().unwrap(), "Keep me");
     assert!(entry(&s).unwrap().job.is_none());
 }
 #[test]

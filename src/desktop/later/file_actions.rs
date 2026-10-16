@@ -1,4 +1,6 @@
 //! Durable, explicit file-to-Later changes. No mounted component owns a write.
+#[cfg(test)]
+mod attachment_tests;
 mod guards;
 #[cfg(test)]
 mod tests;
@@ -23,6 +25,7 @@ pub struct Target {
     visit: u64,
     transport: Option<Arc<Transport>>,
     path: Option<PathBuf>,
+    attachment: Option<crate::file_actions::attachment::Guard>,
 }
 impl PartialEq for Target {
     fn eq(&self, other: &Self) -> bool {
@@ -34,6 +37,7 @@ impl PartialEq for Target {
             && self.epoch == other.epoch
             && self.visit == other.visit
             && self.path == other.path
+            && self.attachment == other.attachment
             && match (&self.transport, &other.transport) {
                 (Some(a), Some(b)) => Arc::ptr_eq(a, b),
                 (None, None) => true,
@@ -59,7 +63,30 @@ impl Target {
             visit: shell.draft_writes.view_id,
             transport: shell.core.transport.clone(),
             path,
+            attachment: None,
         })
+    }
+    pub(crate) fn with_attachment(
+        mut self,
+        guard: Option<crate::file_actions::attachment::Guard>,
+    ) -> Self {
+        self.attachment = guard;
+        self
+    }
+    // Only a new write depends on the rendered attachment. Captured journal
+    // recovery and already-admitted results retain their existing owner lifetime.
+    fn admit_new_write(&self, shell: &ShellState) -> Result<(), String> {
+        if !self.current(shell) {
+            return Err("The active workspace changed.".into());
+        }
+        if self
+            .attachment
+            .as_ref()
+            .is_some_and(|guard| !guard.current(shell))
+        {
+            return Err("This message attachment changed. Reopen its file actions.".into());
+        }
+        Ok(())
     }
     pub fn current(&self, shell: &ShellState) -> bool {
         shell.core.active_account.as_ref() == Some(&self.account)
@@ -338,12 +365,14 @@ async fn change_inner(
     target: Target,
     action: SavedAction,
 ) -> Result<View, String> {
-    if !target.current(&state.peek()) {
-        return Err("The active workspace changed.".into());
-    }
+    target.admit_new_write(&state.peek())?;
     if let Some(view) = cooling_down(&target).await? {
         return Ok(view);
     }
+    // Recheck after any pre-admission wait. There is no await between this
+    // admission and enqueueing the journal reservation below. Source changes
+    // after admission do not cancel the journal or discard its result.
+    target.admit_new_write(&state.peek())?;
     if matches!(action, SavedAction::Save)
         && state
             .peek()
