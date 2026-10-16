@@ -9,7 +9,7 @@
  const hit=e=>{if(!visible(e))return false;const r=e.getBoundingClientRect();return [.15,.5,.85].every(x=>[.15,.5,.85].every(y=>{const f=document.elementFromPoint(r.left+r.width*x,r.top+r.height*y);return f===e||e.contains(f);}));};
  const scrollState=()=>[...document.querySelectorAll('.slack-list-dialog,.slack-list-dialog *')].filter(e=>e.scrollHeight>e.clientHeight+1||e.scrollWidth>e.clientWidth+1).map(e=>({node:e,id:e.id||null,className:e.className,left:e.scrollLeft,top:e.scrollTop}));
  const scrollReceipt=(before)=>{const after=scrollState();return before.map(b=>{const a=after.find(a=>a.node===b.node);return{id:b.id,className:b.className,before:[b.left,b.top],after:a?[a.left,a.top]:null};});};
- const reveal=e=>{const before=scrollState();e?.scrollIntoView({block:'nearest',inline:'nearest'});return scrollReceipt(before);};
+ const reveal=(e,block='nearest')=>{const before=scrollState();e?.scrollIntoView({block,inline:'nearest'});return scrollReceipt(before);};
  const find=()=>q('.slack-list-find input');let opener=null,findNode=null,findRange=null;const activations=[];
  const modes=Object.freeze({text:Object.freeze({name:'Release notes',id:'C_TEXT_OBSERVED',key:'text_observed',label:'Text'}),number:Object.freeze({name:'Release count',id:'C_NUMBER_OBSERVED',key:'number_observed',label:'Number'}),checkbox:Object.freeze({name:'Verified',id:'C_CHECKBOX_OBSERVED',key:'checkbox_observed',label:'Checkbox'}),date:Object.freeze({name:'Target date',id:'C_DATE_OBSERVED',key:'date_observed',label:'Date'}),select:Object.freeze({name:'Release phase',id:'C_SELECT_OBSERVED',key:'select_observed',label:'Select'})});let mode=null,kind=null;
  const ids=()=>[...document.querySelectorAll('.slack-list-grid tr[data-row-id]')].map(e=>e.dataset.rowId);
