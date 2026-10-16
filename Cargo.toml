@@ -65,8 +65,8 @@ super-platinum-core = { path = "crates/super-platinum-core", features = ["protec
 
 [target.'cfg(target_os = "windows")'.dependencies]
 # Match the version already used by the pinned desktop dependency graph.
-windows-core = "=0.61.2"
-windows = { version = "=0.61.3", features = [
+windows-core = "=0.62.2"
+windows = { version = "=0.62.2", features = [
     "Data_Xml_Dom",
     "Foundation",
     "UI_Notifications",
