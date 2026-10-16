@@ -6,6 +6,7 @@ pub(crate) enum FieldCreateMode {
     Text,
     Number,
     Checkbox,
+    Date,
 }
 impl FieldCreateMode {
     pub(crate) fn kind(self) -> ColumnCreateKind {
@@ -13,6 +14,7 @@ impl FieldCreateMode {
             Self::Text => ColumnCreateKind::Text,
             Self::Number => ColumnCreateKind::NumberDefault0,
             Self::Checkbox => ColumnCreateKind::Checkbox,
+            Self::Date => ColumnCreateKind::DateSingleDefault,
         }
     }
     pub(crate) fn name(self) -> &'static str {
@@ -20,6 +22,7 @@ impl FieldCreateMode {
             Self::Text => "Release notes",
             Self::Number => "Release count",
             Self::Checkbox => "Verified",
+            Self::Date => "Target date",
         }
     }
     pub(crate) fn observed(self) -> (&'static str, &'static str) {
@@ -27,6 +30,7 @@ impl FieldCreateMode {
             Self::Text => ("C_TEXT_OBSERVED", "text_observed"),
             Self::Number => ("C_NUMBER_OBSERVED", "number_observed"),
             Self::Checkbox => ("C_CHECKBOX_OBSERVED", "checkbox_observed"),
+            Self::Date => ("C_DATE_OBSERVED", "date_observed"),
         }
     }
     pub(crate) fn prefix(self) -> &'static str {
@@ -34,6 +38,7 @@ impl FieldCreateMode {
             Self::Text => "slack-list-text-field-create",
             Self::Number => "slack-list-number-field-create",
             Self::Checkbox => "slack-list-checkbox-field-create",
+            Self::Date => "slack-list-date-field-create",
         }
     }
     pub(crate) fn env_prefix(self) -> &'static str {
@@ -41,6 +46,7 @@ impl FieldCreateMode {
             Self::Text => "SUPER_PLATINUM_LIST_TEXT_FIELD_CREATE",
             Self::Number => "SUPER_PLATINUM_LIST_NUMBER_FIELD_CREATE",
             Self::Checkbox => "SUPER_PLATINUM_LIST_CHECKBOX_FIELD_CREATE",
+            Self::Date => "SUPER_PLATINUM_LIST_DATE_FIELD_CREATE",
         }
     }
 }
@@ -48,12 +54,14 @@ fn mode_gate(
     text: Option<&str>,
     number: Option<&str>,
     checkbox: Option<&str>,
+    date: Option<&str>,
     alias: Option<&str>,
 ) -> Option<FieldCreateMode> {
-    let mode = match (text, number, checkbox) {
-        (Some("1"), None, None) => FieldCreateMode::Text,
-        (None, Some("1"), None) => FieldCreateMode::Number,
-        (None, None, Some("1")) => FieldCreateMode::Checkbox,
+    let mode = match (text, number, checkbox, date) {
+        (Some("1"), None, None, None) => FieldCreateMode::Text,
+        (None, Some("1"), None, None) => FieldCreateMode::Number,
+        (None, None, Some("1"), None) => FieldCreateMode::Checkbox,
+        (None, None, None, Some("1")) => FieldCreateMode::Date,
         _ => return None,
     };
     let alias = alias?;
@@ -68,6 +76,9 @@ pub(crate) fn field_create_mode() -> Option<FieldCreateMode> {
             .ok()
             .as_deref(),
         std::env::var("SUPER_PLATINUM_LIST_CHECKBOX_FIELD_CREATE_CHECK")
+            .ok()
+            .as_deref(),
+        std::env::var("SUPER_PLATINUM_LIST_DATE_FIELD_CREATE_CHECK")
             .ok()
             .as_deref(),
         std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
@@ -259,6 +270,7 @@ pub(super) async fn write(
         FieldCreateMode::Text => Some("{\"format\":\"text\"}"),
         FieldCreateMode::Number => Some("{\"precision\":0}"),
         FieldCreateMode::Checkbox => None,
+        FieldCreateMode::Date => Some("{\"date_format\":\"default\",\"format\":\"single\"}"),
     };
     if let Some(options) = options {
         expected.push(("options".into(), options.into()));
@@ -304,7 +316,7 @@ mod tests {
         number: Option<&str>,
         alias: Option<&str>,
     ) -> Option<FieldCreateMode> {
-        super::mode_gate(text, number, None, alias)
+        super::mode_gate(text, number, None, None, alias)
     }
     #[test]
     fn checkbox_gate_is_exact_and_options_are_absent() {
@@ -313,16 +325,23 @@ mod tests {
             "slack-list-checkbox-field-create-narrow",
         ] {
             assert_eq!(
-                super::mode_gate(None, None, Some("1"), Some(alias)),
+                super::mode_gate(None, None, Some("1"), None, Some(alias)),
                 Some(FieldCreateMode::Checkbox)
             );
             for extra in [Some(""), Some("0"), Some("1")] {
-                assert!(super::mode_gate(extra, None, Some("1"), Some(alias)).is_none());
-                assert!(super::mode_gate(None, extra, Some("1"), Some(alias)).is_none());
+                assert!(super::mode_gate(extra, None, Some("1"), None, Some(alias)).is_none());
+                assert!(super::mode_gate(None, extra, Some("1"), None, Some(alias)).is_none());
             }
         }
         assert!(
-            super::mode_gate(None, None, Some("1"), Some("slack-list-text-field-create")).is_none()
+            super::mode_gate(
+                None,
+                None,
+                Some("1"),
+                None,
+                Some("slack-list-text-field-create")
+            )
+            .is_none()
         );
         let mut doc =
             json!({"list_metadata":{"schema":[{"id":"old"}],"views":[{"columns":[{"id":"old"}]}]}});
@@ -555,3 +574,14 @@ pub(crate) fn text_create_registry(shell: &ShellState) -> Result<Value, String> 
         json!({"present":e.is_some(),"serial":e.as_ref().map(|e|e.serial),"job":e.as_ref().and_then(|e|e.job),"intent":e.as_ref().is_some_and(|e|e.intent.is_some())}),
     )
 }
+
+#[cfg(test)]
+pub(crate) fn close_date_fixture(shell: &ShellState) -> bool {
+    let Some(e) = entry(shell) else { return false };
+    e.target == Target::NewTextField("V_FILTER".into())
+        && e.stage == Stage::Editing
+        && e.field_choice.kind == ColumnCreateKind::DateSingleDefault
+        && super::super::close_entry(shell, e.serial)
+}
+#[cfg(test)]
+mod date_tests;

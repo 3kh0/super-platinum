@@ -82,7 +82,7 @@ test('named Text field fixture is wired through catalog, boot and minimum narrow
   const media=readFileSync(path.join(base,'src/desktop/media.rs'),'utf8');
   assertNarrowBinding(media);
   const boot=readFileSync(path.join(base,'src/desktop/state/boot.rs'),'utf8');
-  assert.match(boot,/"slack-list-text-field-create"\s*\|\s*"slack-list-text-field-create-narrow"\s*\|\s*"slack-list-number-field-create"\s*\|\s*"slack-list-number-field-create-narrow"\s*\|\s*"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install\(&mut state, name\);/);
+  assert.match(boot,/"slack-list-text-field-create"\s*\|\s*"slack-list-text-field-create-narrow"\s*\|\s*"slack-list-number-field-create"\s*\|\s*"slack-list-number-field-create-narrow"\s*\|\s*"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*\|\s*"slack-list-date-field-create"\s*\|\s*"slack-list-date-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install\(&mut state, name\);/);
   const catalog=readFileSync(path.join(base,'scripts/agent-ui-check.sh'),'utf8');
   assert.match(catalog,/^\s+slack-list-text-field-create slack-list-text-field-create-narrow\s*$/m);
 });
@@ -110,7 +110,7 @@ test('Number fixture keeps named minimum narrow window and the shared boot route
  const media=readFileSync(path.join(base,'src/desktop/media.rs'),'utf8');
  const initial=media.match(/let initial_size = ([\s\S]*?);\r?\n/)?.[1];assert.ok(initial);
  const aliases=[...initial.matchAll(/"([a-z0-9-]+)"/g)].map(m=>m[1]);assert.equal(aliases.filter(v=>v==='slack-list-number-field-create-narrow').length,1);assert.equal(aliases.includes('slack-list-number-field-create'),false);
- const boot=readFileSync(path.join(base,'src/desktop/state/boot.rs'),'utf8');assert.match(boot,/"slack-list-number-field-create"\s*\|\s*"slack-list-number-field-create-narrow"\s*\|\s*"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
+ const boot=readFileSync(path.join(base,'src/desktop/state/boot.rs'),'utf8');assert.match(boot,/"slack-list-number-field-create"\s*\|\s*"slack-list-number-field-create-narrow"\s*\|\s*"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*\|\s*"slack-list-date-field-create"\s*\|\s*"slack-list-date-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
  const catalog=readFileSync(path.join(base,'scripts/agent-ui-check.sh'),'utf8');assert.match(catalog,/^\s+slack-list-number-field-create slack-list-number-field-create-narrow\s*$/m);
 });
 
@@ -119,7 +119,7 @@ function assertCheckboxWiring(media,boot,catalog,view) {
  const aliases=[...initial.matchAll(/"([a-z0-9-]+)"/g)].map(m=>m[1]);
  assert.equal(aliases.filter(v=>v==='slack-list-checkbox-field-create-narrow').length,1);
  assert.equal(aliases.includes('slack-list-checkbox-field-create'),false);
- assert.match(boot,/"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
+ assert.match(boot,/"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*\|\s*"slack-list-date-field-create"\s*\|\s*"slack-list-date-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
  assert.match(catalog,/^\s+slack-list-checkbox-field-create slack-list-checkbox-field-create-narrow\s*$/m);
  assert.match(view,/option\s*\{\s*value:\s*"checkbox",\s*selected:\s*field_kind\s*==\s*"checkbox",\s*"Checkbox"\s*\}/);
 }

@@ -562,3 +562,6 @@ mod number_rename_tests {
         }
     }
 }
+
+#[cfg(test)]
+pub(crate) use text_create::close_date_fixture;

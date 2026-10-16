@@ -7,6 +7,7 @@ use super_platinum_core::{
 };
 pub(crate) mod board_creation;
 pub(crate) mod board_heading;
+pub(crate) mod board_move;
 mod board_views;
 mod channel_edit;
 pub(crate) mod column_precision;
@@ -51,6 +52,8 @@ pub(crate) use user_edit::{add_user_edits, restore_user_edits, user_edit_value};
 #[derive(Clone)]
 pub(crate) struct Fixture {
     checkbox: Option<text_field_create::checkbox::State>,
+    date: Option<text_field_create::date::State>,
+    board_move_check: Option<board_move::check::State>,
     board_creation: board_creation::State,
     record_open: record_open::State,
     creation: creation::State,
@@ -122,6 +125,8 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     let file: File = serde_json::from_value(document.clone()).expect("fixture file");
     shell.slack_lists.fixture = Some(Fixture {
         checkbox: None,
+        date: None,
+        board_move_check: None,
         board_creation: board_creation::State::default(),
         record_open: record_open::State::default(),
         creation: creation::State::default(),
@@ -169,9 +174,25 @@ pub(crate) fn refresh(shell: &mut ShellState) {
         text_field_create::checkbox::fail(shell, error);
         return;
     }
+    if let Err(error) = text_field_create::date::read_input(shell, &attempt, &mut result) {
+        text_field_create::date::fail(shell, error);
+        return;
+    }
+    if let Err(error) = board_move::check::read_input(shell, &attempt, &mut result) {
+        board_move::check::fail(shell, error);
+        return;
+    }
     finish_read(shell, &attempt, result);
     if let Err(error) = text_field_create::checkbox::read_completed(shell, &attempt) {
         text_field_create::checkbox::fail(shell, error);
+    }
+    if let Err(error) = text_field_create::date::read_completed(shell, &attempt) {
+        text_field_create::date::fail(shell, error);
+        return;
+    }
+    if let Err(error) = board_move::check::read_completed(shell, &attempt) {
+        board_move::check::fail(shell, error);
+        return;
     }
 }
 pub(crate) fn toggle_checkbox(shell: &mut ShellState, row: &str, column: &str) {
@@ -196,6 +217,14 @@ pub(super) fn dispatch(shell: &mut ShellState, attempt: EditAttempt) {
         text_field_create::checkbox::fail(shell, error);
         return;
     }
+    if let Err(error) = text_field_create::date::preflight(shell, &attempt, &canonical) {
+        text_field_create::date::fail(shell, error);
+        return;
+    }
+    if let Err(error) = board_move::check::preflight(shell, &attempt, &canonical) {
+        board_move::check::fail(shell, error);
+        return;
+    }
     let session = WorkspaceSession {
         team_id: "T_LIST_FIXTURE".into(),
         enterprise_id: None,
@@ -207,6 +236,14 @@ pub(super) fn dispatch(shell: &mut ShellState, attempt: EditAttempt) {
     let request = api::list_cell_update(&shell.core.client, &session, &attempt.edit);
     if let Err(error) = text_field_create::checkbox::request(shell, &attempt, &request) {
         text_field_create::checkbox::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::date::request(shell, &attempt, &request) {
+        text_field_create::date::fail(shell, error);
+        return;
+    }
+    if let Err(error) = board_move::check::request(shell, &attempt, &request) {
+        board_move::check::fail(shell, error);
         return;
     }
     let no_retry = !request.retry_safe();
@@ -294,6 +331,14 @@ pub(crate) fn complete_pending(shell: &mut ShellState) {
     finish_edit(shell, &attempt, result);
     if let Err(error) = text_field_create::checkbox::completion(shell, &attempt, uncertain) {
         text_field_create::checkbox::fail(shell, error);
+    }
+    if let Err(error) = text_field_create::date::completion(shell, &attempt, uncertain) {
+        text_field_create::date::fail(shell, error);
+        return;
+    }
+    if let Err(error) = board_move::check::completion(shell, &attempt, uncertain) {
+        board_move::check::fail(shell, error);
+        return;
     }
 }
 pub(crate) fn attempt_count(shell: &ShellState) -> usize {

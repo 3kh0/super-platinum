@@ -1,6 +1,7 @@
 //! Constructed owner/capacity fixture; no server-normalization claim or writes.
 use super::*;
 pub(crate) mod checkbox;
+pub(crate) mod date;
 pub(crate) fn install(shell: &mut ShellState, name: &str) {
     assert!(matches!(
         name,
@@ -10,6 +11,8 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
             | "slack-list-number-field-create-narrow"
             | "slack-list-checkbox-field-create"
             | "slack-list-checkbox-field-create-narrow"
+            | "slack-list-date-field-create"
+            | "slack-list-date-field-create-narrow"
     ));
     let server = seed(shell, name);
     if super::super::rename::fixture::field_create_check_enabled() {
@@ -24,6 +27,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     let serial = super::super::rename::presentation(shell).unwrap().serial;
     if name.starts_with("slack-list-number-field-create")
         || name.starts_with("slack-list-checkbox-field-create")
+        || name.starts_with("slack-list-date-field-create")
     {
         let choice = super::super::rename::text_create::choice(shell).unwrap();
         assert!(super::super::rename::text_create::kind_shell(
@@ -34,6 +38,8 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
             choice,
             if name.starts_with("slack-list-checkbox-field-create") {
                 "checkbox"
+            } else if name.starts_with("slack-list-date-field-create") {
+                "date"
             } else {
                 "number"
             }
@@ -50,6 +56,8 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
             "Release count".into()
         } else if name.starts_with("slack-list-checkbox-field-create") {
             "Verified".into()
+        } else if name.starts_with("slack-list-date-field-create") {
+            "Target date".into()
         } else {
             "Release notes".into()
         }
@@ -83,6 +91,8 @@ mod tests {
             "slack-list-number-field-create-narrow",
             "slack-list-checkbox-field-create",
             "slack-list-checkbox-field-create-narrow",
+            "slack-list-date-field-create",
+            "slack-list-date-field-create-narrow",
         ] {
             let mut shell =
                 ShellState::fixture_variant(crate::media::MediaRegistry::default(), name);
@@ -111,6 +121,8 @@ mod tests {
                     "Release count"
                 } else if name.starts_with("slack-list-checkbox-field-create") {
                     "Verified"
+                } else if name.starts_with("slack-list-date-field-create") {
+                    "Target date"
                 } else {
                     "Release notes"
                 }
@@ -123,6 +135,8 @@ mod tests {
                     "number"
                 } else if name.starts_with("slack-list-checkbox-field-create") {
                     "checkbox"
+                } else if name.starts_with("slack-list-date-field-create") {
+                    "date"
                 } else {
                     "text"
                 }

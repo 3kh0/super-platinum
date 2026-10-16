@@ -18,7 +18,7 @@
   const g=(key,label,rows)=>({key,label,rows:ids(rows),count:rows.length});
   if(stage==='select')return [g('OPT_PROGRESS','In progress',[1,4,8,0,5]),g('OPT_DONE','Done',[2,3,7])];
   if(stage==='cleared')return [g('',board?'Ungrouped':'',[2,3,1,4,7,8,0,5])];
-  return board?[g('','Unchecked',[2,4,8,0]),g('true','Checked',[3,1,7,5])]:[g('true','Checked',[3,1,7,5]),g('','Ungrouped',[2,4,8,0])];
+  return board?[g('','Ungrouped',[2,4,8,0]),g('true',['conflict','retired'].includes(stage)?'Other done: true':'Done: true',[3,1,7,5])]:[g('true','Checked',[3,1,7,5]),g('','Ungrouped',[2,4,8,0])];
  }
  function groups(board){
   if(board)return all('.slack-list-lane').map(l=>({key:l.dataset.groupKey,label:l.getAttribute('aria-label'),count:Number(l.dataset.count),rows:[...l.querySelectorAll('.slack-list-card')].map(r=>r.dataset.rowId)}));

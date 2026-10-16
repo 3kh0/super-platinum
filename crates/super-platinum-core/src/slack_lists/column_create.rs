@@ -1,4 +1,4 @@
-//! Minimal ordinary Text/Number/Checkbox field creation. Request shape is source-backed; the
+//! Minimal ordinary Text/Number/Checkbox/Date field creation. Request shape is source-backed; the
 //! isolated-addition predicate is a conservative observational subset, not a
 //! captured server normalization contract or proof that this attempt caused it.
 use super::{Column, Document, ListError, PersonalTaskLists, RecordsPage, ViewRename};
@@ -10,6 +10,7 @@ pub enum ColumnCreateKind {
     Text,
     NumberDefault0,
     Checkbox,
+    DateSingleDefault,
 }
 impl ColumnCreateKind {
     pub fn as_str(self) -> &'static str {
@@ -17,6 +18,7 @@ impl ColumnCreateKind {
             Self::Text => "text",
             Self::NumberDefault0 => "number",
             Self::Checkbox => "checkbox",
+            Self::DateSingleDefault => "date",
         }
     }
     /// Exact wire options. Checkbox omits the form member entirely.
@@ -25,6 +27,7 @@ impl ColumnCreateKind {
             Self::Text => Some(json!({"format":"text"})),
             Self::NumberDefault0 => Some(json!({"precision":0})),
             Self::Checkbox => None,
+            Self::DateSingleDefault => Some(json!({"format":"single","date_format":"default"})),
         }
     }
     fn observes_options(self, column: &Column) -> bool {
@@ -109,6 +112,9 @@ impl ColumnCreate {
                 }
                 ColumnCreateKind::Checkbox => {
                     "Enter a nonempty Checkbox field name on one line, at most 256 UTF-16 units."
+                }
+                ColumnCreateKind::DateSingleDefault => {
+                    "Enter a nonempty Date field name on one line, at most 256 UTF-16 units."
                 }
             }));
         }
@@ -398,3 +404,6 @@ mod number_tests;
 
 #[cfg(test)]
 mod checkbox_tests;
+
+#[cfg(test)]
+mod date_tests;

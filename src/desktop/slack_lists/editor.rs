@@ -10,6 +10,7 @@ mod users;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum EditorKind {
+    BoardMove,
     RichText,
     Number,
     Date,
@@ -46,7 +47,7 @@ pub(crate) struct EditorView {
 }
 #[derive(Clone)]
 pub(super) struct Draft {
-    generation: u64,
+    pub(super) generation: u64,
     visit: u64,
     revision: u64,
     pub(super) authority: EditAuthority,
@@ -181,30 +182,44 @@ pub(super) fn begin_with_authority(
         .iter()
         .find(|record| record.id == row)
         .ok_or("This item is no longer available.")?;
-    let kind = match column.kind.as_str() {
-        "text" | "rich_text" => EditorKind::RichText,
-        "number" | "currency" => EditorKind::Number,
-        "date" | "due_date" | "todo_due_date" => EditorKind::Date,
-        "select" | "multi_select" if column.is_multi_select() => EditorKind::MultiSelect,
-        "select" => EditorKind::Select,
-        "user" if column.is_multi_user() => EditorKind::MultiUser,
-        "user" => EditorKind::User,
-        "channel" if column.is_multi_channel() => EditorKind::MultiChannel,
-        "channel" => EditorKind::Channel,
-        "link" => EditorKind::Link,
-        _ => return Err("This field does not have an editor yet."),
+    let board = matches!(authority, EditAuthority::BoardMove(_));
+    let kind = if board {
+        EditorKind::BoardMove
+    } else {
+        match column.kind.as_str() {
+            "text" | "rich_text" => EditorKind::RichText,
+            "number" | "currency" => EditorKind::Number,
+            "date" | "due_date" | "todo_due_date" => EditorKind::Date,
+            "select" | "multi_select" if column.is_multi_select() => EditorKind::MultiSelect,
+            "select" => EditorKind::Select,
+            "user" if column.is_multi_user() => EditorKind::MultiUser,
+            "user" => EditorKind::User,
+            "channel" if column.is_multi_channel() => EditorKind::MultiChannel,
+            "channel" => EditorKind::Channel,
+            "link" => EditorKind::Link,
+            _ => return Err("This field does not have an editor yet."),
+        }
     };
-    let original = column
-        .edit_value(
-            record,
-            &loaded.document.id,
-            loaded.personal_task_lists.as_ref(),
-        )
-        .map_err(|_| "This cell cannot be safely edited.")?;
+    let original = if board {
+        board_move::input(loaded, record, column)
+            .ok_or("This lane value cannot be safely moved.")?
+    } else {
+        column
+            .edit_value(
+                record,
+                &loaded.document.id,
+                loaded.personal_task_lists.as_ref(),
+            )
+            .map_err(|_| "This cell cannot be safely edited.")?
+    };
     if !loaded.document.editable(loaded.allow_lists.as_deref()) {
         return Err("This cell cannot be edited. Check your access.");
     }
-    let mut choices = Vec::new();
+    let mut choices = if board {
+        board_move::choices(column)
+    } else {
+        Vec::new()
+    };
     if matches!(kind, EditorKind::Select | EditorKind::MultiSelect) {
         let mut seen = std::collections::HashSet::new();
         for choice in column
@@ -276,6 +291,7 @@ pub(super) fn begin_with_authority(
     };
     let view = shell.slack_lists.view.as_mut().unwrap();
     layout::protect_selection(view);
+    view.board_move_return = None;
     view.editor = Some(draft);
     view.error = None;
     Ok(())
@@ -366,16 +382,20 @@ pub(super) fn begin_save(
     {
         return Err("This cell or your access changed. Reopen it before saving.");
     }
-    let edit = CellEdit::capture(
-        &loaded.document,
-        &loaded.records,
-        draft.row_id.as_str(),
-        draft.column_id.as_str(),
-        loaded.allow_lists.as_deref(),
-        loaded.personal_task_lists.as_ref(),
-        value,
-    )
-    .map_err(|_| "This value cannot be saved. Check the value and choices.")?;
+    let edit = if matches!(draft.authority, EditAuthority::BoardMove(_)) {
+        board_move::capture(loaded, &draft.row_id, &draft.column_id, value)?
+    } else {
+        CellEdit::capture(
+            &loaded.document,
+            &loaded.records,
+            draft.row_id.as_str(),
+            draft.column_id.as_str(),
+            loaded.allow_lists.as_deref(),
+            loaded.personal_task_lists.as_ref(),
+            value,
+        )
+        .map_err(|_| "This value cannot be saved. Check the value and choices.")?
+    };
     let attempt = EditAttempt {
         selection_generation: view.layout.selection_generation,
         authority: draft.authority,

@@ -1,4 +1,5 @@
 //! Exact-gated native Lists fixture checks. Never runs against a live workspace.
+mod board_move;
 use crate::state::ShellState;
 use dioxus::prelude::*;
 use serde_json::{Value, json};
@@ -33,6 +34,7 @@ mod view_rename;
 mod view_sort;
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    board_move::start(state, desktop.clone());
     find::start(state, desktop.clone());
     field_visibility::start(state, desktop.clone());
     view_sort::start(state, desktop.clone());

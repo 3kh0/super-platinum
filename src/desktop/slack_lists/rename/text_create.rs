@@ -1,4 +1,4 @@
-//! Explicit ordinary Text/Number/Checkbox creation, retaining the exact item population.
+//! Explicit ordinary Text/Number/Checkbox/Date creation, retaining the exact item population.
 use super::*;
 use std::sync::Arc;
 use super_platinum_core::slack_lists::{
@@ -28,6 +28,7 @@ pub(crate) fn label(kind: ColumnCreateKind) -> &'static str {
         ColumnCreateKind::Text => "Text",
         ColumnCreateKind::NumberDefault0 => "Number",
         ColumnCreateKind::Checkbox => "Checkbox",
+        ColumnCreateKind::DateSingleDefault => "Date",
     }
 }
 fn parse_kind(value: &str) -> Option<ColumnCreateKind> {
@@ -35,6 +36,7 @@ fn parse_kind(value: &str) -> Option<ColumnCreateKind> {
         "text" => Some(ColumnCreateKind::Text),
         "number" => Some(ColumnCreateKind::NumberDefault0),
         "checkbox" => Some(ColumnCreateKind::Checkbox),
+        "date" => Some(ColumnCreateKind::DateSingleDefault),
         _ => None,
     }
 }

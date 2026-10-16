@@ -39,6 +39,13 @@ pub(super) fn documents(before: &Value, mode: FieldCreateMode) -> [Value; 2] {
             "checkbox",
             None,
         ),
+        FieldCreateMode::Date => (
+            "C_DATE_OBSERVED",
+            "date_observed",
+            "Target date",
+            "date",
+            Some(json!({"format":"single","date_format":"default"})),
+        ),
     };
     let mut after = before.clone();
     let mut column =
@@ -61,6 +68,11 @@ fn requests(mode: FieldCreateMode) -> Vec<Value> {
         FieldCreateMode::Text => ("Release notes", "text", Some("{\"format\":\"text\"}")),
         FieldCreateMode::Number => ("Release count", "number", Some("{\"precision\":0}")),
         FieldCreateMode::Checkbox => ("Verified", "checkbox", None),
+        FieldCreateMode::Date => (
+            "Target date",
+            "date",
+            Some("{\"date_format\":\"default\",\"format\":\"single\"}"),
+        ),
     };
     let file = json!({"method":"POST","path":"/api/files.info","fields":[["token","fixture-not-a-token"],["file","F_LIST_FIXTURE"]]});
     let team = json!({"method":"POST","path":"/api/team.prefs.get","fields":[["token","fixture-not-a-token"],["target_team","T1"],["_x_reason","native-list-permission"]]});
@@ -365,6 +377,93 @@ mod number_tests {
                     &docs,
                     id,
                     FieldCreateMode::Number
+                )
+                .is_err()
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod date_tests {
+    use super::*;
+    #[test]
+    fn date_create_literal_is_seven_fields_and_full_exact_options() {
+        let calls = requests(FieldCreateMode::Date);
+        assert_eq!(calls.len(), 11);
+        assert_eq!(
+            calls
+                .iter()
+                .filter(|r| r["path"] == "/api/lists.columns.create")
+                .count(),
+            1
+        );
+        assert_eq!(
+            calls[3]["fields"],
+            json!([
+                ["token", "fixture-not-a-token"],
+                ["list_id", "F_LIST_FIXTURE"],
+                ["view_id", "V_FILTER"],
+                ["name", "Target date"],
+                ["type", "date"],
+                ["options", r#"{"date_format":"default","format":"single"}"#],
+                ["_x_reason", "create-column"]
+            ])
+        );
+        let docs = documents(
+            &json!({"list_metadata":{"schema":[{"id":"old"}],"views":[{"columns":[{"id":"old"}]}]}}),
+            FieldCreateMode::Date,
+        );
+        assert_eq!(
+            docs[1]["list_metadata"]["schema"][1]["options"],
+            json!({"date_format":"default","format":"single"})
+        );
+        assert_eq!(
+            docs[1]["list_metadata"]["views"][0]["columns"][1],
+            json!({"id":"C_DATE_OBSERVED","key":"date_observed","visible":true})
+        );
+        let id = 29;
+        let base = json!({"requests":calls,"responses":responses(&docs),"finished":completions(id),"server":docs[1],"writePending":false,"readPending":false});
+        exact(
+            &base,
+            11,
+            4,
+            false,
+            false,
+            1,
+            &docs,
+            id,
+            FieldCreateMode::Date,
+        )
+        .unwrap();
+        for change in 0..4 {
+            let mut bad = base.clone();
+            match change {
+                0 => {
+                    bad["requests"][3]["fields"][5][1] =
+                        json!(r#"{"dateFormat":"default","format":"single"}"#)
+                }
+                1 => {
+                    bad["requests"][3]["fields"][5][1] =
+                        json!(r#"{"date_format":"default","format":"single","timezone":"UTC"}"#)
+                }
+                2 => bad["requests"][3]["fields"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(json!(["position", "end"])),
+                _ => bad["finished"][2]["applied"] = json!(true),
+            }
+            assert!(
+                exact(
+                    &bad,
+                    11,
+                    4,
+                    false,
+                    false,
+                    1,
+                    &docs,
+                    id,
+                    FieldCreateMode::Date
                 )
                 .is_err()
             );

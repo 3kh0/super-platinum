@@ -9,6 +9,9 @@ mod link;
 
 #[component]
 pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u64) -> Element {
+    if editor.kind == EditorKind::BoardMove {
+        return rsx! {super::board_move::MoveEditor {state,editor,visit}};
+    }
     let initial = editor.original.clone();
     let mut number = use_signal(move || match initial.as_ref() {
         CellEditValue::Number(value) => value.as_ref().map(ToString::to_string).unwrap_or_default(),
@@ -75,6 +78,7 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
             p {class:"slack-list-editor-item","{editor.row_label}"}
             div { class:"slack-list-editor-body",
                 match editor.kind {
+                    EditorKind::BoardMove => rsx! {},
                     EditorKind::RichText => rsx! {super::super::rich_editor::RichEditor {id:"slack-list-rich-draft",label:editor.column_label.clone(),blocks,labels,disabled,expected_generation:Some(generation)}},
                     EditorKind::Number => rsx! {
                         label {r#for:"slack-list-number-draft","{editor.column_label}"}
@@ -141,6 +145,7 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
                         if save_disabled || reading(){return;}
                         error.set(None);
                         match kind {
+                            EditorKind::BoardMove => {},
                             EditorKind::Number => {
                                 let input=number.read().trim().to_owned();
                                 let value=if input.is_empty(){Ok(None)}else{input.parse::<serde_json::Number>().map(Some)};
@@ -206,8 +211,35 @@ const MOUNT: &str = r#"function mountListCellEditor(generation,visit,rowId,colum
  const previousCell=previous?.closest('td,.slack-list-card-field,.slack-list-detail-field');
  const cell=matchesCell(previousCell)?previousCell:cells().find(matchesCell);
  const instanceId=cell?.closest('[data-instance-id]')?.dataset.instanceId;
- const observer=new MutationObserver(()=>{
-   if(editor.isConnected)return;observer.disconnect();
+ let initialFrame=null,recoveryFrame=null,recoveryCause=null,lastOwned=null,disposed=false;
+ const owns=()=>editor.isConnected&&dialog.isConnected&&document.getElementById('slack-list-cell-editor')===editor&&editor.closest('.slack-list-dialog')===dialog&&editor.dataset.editorGeneration===String(generation)&&dialog.dataset.dialogGeneration===String(visit);
+ const shown=control=>!!control?.isConnected&&control.getClientRects().length>0&&!control.closest('[hidden],[inert]')&&!['hidden','collapse'].includes(getComputedStyle(control).visibility);
+ const enabled=control=>shown(control)&&!control.matches(':disabled')&&control.getAttribute('aria-disabled')!=='true';
+ const rememberFocus=event=>{if(event.target===document.body)return;if(owns()&&editor.contains(event.target))lastOwned=event.target;else{lastOwned=recoveryCause=null;if(recoveryFrame!==null)cancelAnimationFrame(recoveryFrame);recoveryFrame=null;}};
+ const cleanup=()=>{if(disposed)return;disposed=true;observer.disconnect();document.removeEventListener('focusin',rememberFocus,true);if(initialFrame!==null)cancelAnimationFrame(initialFrame);if(recoveryFrame!==null)cancelAnimationFrame(recoveryFrame);initialFrame=recoveryFrame=null;recoveryCause=lastOwned=null;};
+ const recover=()=>{
+   recoveryFrame=null;const cause=recoveryCause;recoveryCause=null;
+   if(!owns()){cleanup();return;}
+   if(!cause||lastOwned!==cause)return;
+   const dialogs=[...document.querySelectorAll('[role="dialog"]')].filter(shown);
+   if(dialogs.at(-1)!==editor)return;
+   const active=document.activeElement;
+   if(active&&active!==document.body&&active.isConnected){
+     if(!editor.contains(active)||enabled(active))return;
+   }
+   const cancel=editor.querySelector('#slack-list-editor-cancel');
+   const target=enabled(cancel)?cancel:[...editor.querySelectorAll('button,input,select,textarea,[contenteditable=true]')].find(enabled)||(enabled(editor)?editor:null);
+   target?.focus({preventScroll:true});
+ };
+ const observer=new MutationObserver(records=>{
+   if(disposed)return;
+   if(editor.isConnected){
+     if(!owns()){cleanup();return;}
+     // oldValue records the disabling even if a no-op restores enabled before delivery/frame.
+     const affected=lastOwned&&records.some(record=>record.type==='attributes'&&record.attributeName==='disabled'&&record.oldValue===null&&editor.contains(record.target)&&(record.target===lastOwned||record.target.contains(lastOwned)));
+     if(affected){recoveryCause=lastOwned;if(recoveryFrame===null)recoveryFrame=requestAnimationFrame(recover);}
+   }
+   if(editor.isConnected)return;cleanup();
    if(dialog.isConnected&&dialog.dataset.dialogGeneration===String(visit)&&!dialog.querySelector('#slack-list-cell-editor')){
      const active=document.activeElement;
      if(!active||active===document.body||editor.contains(active)){
@@ -219,8 +251,12 @@ const MOUNT: &str = r#"function mountListCellEditor(generation,visit,rowId,colum
        if(target?.matches('.slack-list-grid td,.slack-list-card-field,.slack-list-detail-field'))target.scrollIntoView({block:'nearest',inline:'nearest'});
      }
    }
- });observer.observe(dialog,{childList:true,subtree:true});
- requestAnimationFrame(()=>{
+ });observer.observe(dialog,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled'],attributeOldValue:true});
+ // Also observe outer removal; watching only the dialog misses its own disconnect.
+ observer.observe(document.body,{childList:true,subtree:true});
+ document.addEventListener('focusin',rememberFocus,true);
+ initialFrame=requestAnimationFrame(()=>{
+   initialFrame=null;
    if(!editor.isConnected||dialog.dataset.dialogGeneration!==String(visit)){editor.dataset.focusPhase='stale-owner';return;}
    const active=document.activeElement;
    editor.dataset.focusCurrentId=active?.id||'';

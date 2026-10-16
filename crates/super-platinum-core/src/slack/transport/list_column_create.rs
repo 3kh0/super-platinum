@@ -1,4 +1,4 @@
-//! Exact minimal Text/Number/Checkbox-column-create form, sharing only the established one-attempt HTTP mechanics.
+//! Exact minimal Text/Number/Checkbox/Date-column-create form, sharing only the established one-attempt HTTP mechanics.
 use super::*;
 pub type ListColumnCreateFailure = ListColumnRenameFailure;
 impl Transport {
@@ -55,6 +55,7 @@ fn allowed(request: &PreparedRequest) -> bool {
         Some("text") => crate::slack_lists::ColumnCreateKind::Text,
         Some("number") => crate::slack_lists::ColumnCreateKind::NumberDefault0,
         Some("checkbox") => crate::slack_lists::ColumnCreateKind::Checkbox,
+        Some("date") => crate::slack_lists::ColumnCreateKind::DateSingleDefault,
         _ => return false,
     };
     let expected: &[&str] = if kind.options().is_none() {

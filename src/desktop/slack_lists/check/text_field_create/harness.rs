@@ -130,6 +130,8 @@ pub(crate) async fn capture(
     if !oracle::STAGES.contains(&stage)
         && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::Checkbox)
             && checkbox::STAGES.contains(&stage))
+        && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::Date)
+            && date::STAGES.contains(&stage))
     {
         return Err("Invalid capture stage".into());
     }

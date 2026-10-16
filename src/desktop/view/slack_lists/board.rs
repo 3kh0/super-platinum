@@ -129,6 +129,7 @@ fn card(
     };
     rsx! {article {key:"{row.instance_id}",class:"slack-list-card","data-row-id":"{row.id}","data-instance-id":"{row.instance_id}","aria-label":if row.label.is_empty(){"Untitled item"}else{row.label.as_str()},
         div{class:"slack-list-card-heading",{header_cells.into_iter()}
+            super::board_move::MoveAction {state,instance:row.instance_id.clone(),row:row.id.clone(),label:item.to_owned(),visit,layout}
             button{r#type:"button",class:"slack-list-record-open",tabindex:"-1","aria-label":"Open {item}",title:"Open item details (Alt+Enter)",
                 onclick:move |_|crate::slack_lists::open_record_detail(state,instance.clone(),visit,layout),{icon(Icon::Expand,"icon")}}
         }

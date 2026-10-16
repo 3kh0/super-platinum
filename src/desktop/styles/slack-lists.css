@@ -97,6 +97,7 @@
 .slack-list-user-results { max-height: 192px; overflow-y: auto; }
 .slack-list-date-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .slack-list-date-actions button { flex-shrink: 0; }
+.slack-list-date-actions button:focus-visible { outline-offset: -2px; }
 .slack-list-editor-body fieldset { margin: 0; padding: 0; border: 0; }
 .slack-list-choice { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px; font-size: var(--text-sm); cursor: pointer; }
 .slack-list-choice input { flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--accent); }
@@ -104,6 +105,7 @@
 .slack-list-editor-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
 .slack-list-editor-actions button { height: var(--control-height); min-height: var(--control-height); margin: 0; padding: 0 12px; border-radius: var(--radius-md); background: var(--surface); font-size: var(--text-sm); }
 .slack-list-editor-actions .primary { background: var(--accent); color: var(--on-accent); }
+#slack-list-editor-save { min-inline-size: 80px; }
 .slack-list-cell-editor > .slack-list-error { margin: 0; font-size: var(--text-sm); }
 .slack-list-cell-editor .rich-reminder-editor { min-height: 72px; max-height: 240px; }
 @media (max-width: 600px) {
@@ -222,8 +224,8 @@
 .slack-list-rename-header > .icon { width: 16px; height: 16px; flex-shrink: 0; }
 
 /* The shared schema editor's creation-only layout and wrapped footer. */
-#slack-list-new-view-layout, #slack-list-new-view-grouping, #slack-list-precision, .slack-list-editor-body > :is(#slack-list-field-choice, #slack-list-field-visible, #slack-list-sort-field, #slack-list-sort-direction, #slack-list-grouping-field, #slack-list-filter-condition, #slack-list-filter-operator, #slack-list-new-field-kind) { width: 100%; min-height: var(--control-height); padding: 0 8px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
-.slack-list-editor-body > :is(#slack-list-field-choice, #slack-list-field-visible, #slack-list-sort-field, #slack-list-sort-direction, #slack-list-grouping-field, #slack-list-filter-condition, #slack-list-filter-operator, #slack-list-new-field-kind):disabled { opacity: .55; cursor: default; }
+#slack-list-new-view-layout, #slack-list-new-view-grouping, #slack-list-precision, .slack-list-editor-body > :is(#slack-list-field-choice, #slack-list-field-visible, #slack-list-sort-field, #slack-list-sort-direction, #slack-list-grouping-field, #slack-list-board-destination, #slack-list-filter-condition, #slack-list-filter-operator, #slack-list-new-field-kind) { width: 100%; min-height: var(--control-height); padding: 0 8px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
+.slack-list-editor-body > :is(#slack-list-field-choice, #slack-list-field-visible, #slack-list-sort-field, #slack-list-sort-direction, #slack-list-grouping-field, #slack-list-board-destination, #slack-list-filter-condition, #slack-list-filter-operator, #slack-list-new-field-kind):disabled { opacity: .55; cursor: default; }
 #slack-list-rename[data-view-create]:not([data-view-create=""]) .slack-list-editor-actions,
 #slack-list-rename[data-precision-column]:not([data-precision-column=""]) .slack-list-editor-actions { flex-wrap: wrap; }
 #slack-list-rename[data-precision-column]:not([data-precision-column=""]) #slack-list-rename-confirm { min-width: 80px; }
@@ -306,3 +308,7 @@
   .slack-list-layout:has(> .slack-list-scroll) > .slack-list-keyboard-disclosure { order: 1; max-height: none; overflow: visible; }
   .slack-list-layout:has(> .slack-list-scroll) > .slack-list-pagination { order: 2; }
 }
+
+/* The explicit membership move keeps its action width during dispatch. */
+#slack-list-cell-editor[data-board-move-editor="true"] #slack-list-editor-save { min-width: 92px; }
+#slack-list-cell-editor[data-board-move-editor="true"] .slack-list-editor-actions { flex-wrap: wrap; }

@@ -179,7 +179,8 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
                         onchange:move |event|{if let Some(rendered)=field_choice{rename::text_create::choose_kind(state,serial,visit,selected,rendered,event.value());}},
                         option{value:"text",selected:field_kind=="text","Text"}
                         option{value:"number",selected:field_kind=="number","Number"}
-                        option{value:"checkbox",selected:field_kind=="checkbox","Checkbox"}}
+                        option{value:"checkbox",selected:field_kind=="checkbox","Checkbox"}
+                        option{value:"date",selected:field_kind=="date","Date"}}
                     p{class:"slack-list-editor-hint",if field_kind=="number"{"Number format: 0 decimal places. Missing values stay empty. "}else if field_kind=="checkbox"{"Editable empty cells appear unchecked. Values are saved only when you change a checkbox. "}"Shared with everyone who has access to this List."}
                 }
                 if creation.is_some(){p{class:"slack-list-editor-hint","Views are shared with everyone who has access to this List. New views do not copy the selected view settings."}

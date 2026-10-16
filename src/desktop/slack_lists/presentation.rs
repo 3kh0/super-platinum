@@ -34,6 +34,7 @@ pub(crate) struct Presentation {
     pub stale: bool,
     pub mutation: Option<MutationView>,
     pub editor: Option<EditorView>,
+    pub board_move_return: Option<board_move::Return>,
     pub detail: Option<RecordDetailView>,
 }
 pub(crate) struct MutationView {
@@ -100,6 +101,7 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
     };
     Some(Presentation {
         editor: editor::presentation(shell),
+        board_move_return: board_move::returned(shell),
         detail: record_detail::presentation(view),
         generation: view.generation,
         layout_generation: view.layout.generation,

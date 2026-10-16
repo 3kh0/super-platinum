@@ -1042,6 +1042,12 @@ impl ShellState {
             | "slack-list-column-rename-narrow" => {
                 crate::slack_lists::rename::fixture::install(&mut state, name)
             }
+            "slack-list-board-move"
+            | "slack-list-board-move-narrow"
+            | "slack-list-board-move-checkbox"
+            | "slack-list-board-move-checkbox-narrow" => {
+                crate::slack_lists::fixture::board_move::install(&mut state, name)
+            }
             "slack-list-view-grouping"
             | "slack-list-view-grouping-narrow"
             | "slack-list-board-grouping"
@@ -1056,7 +1062,9 @@ impl ShellState {
             | "slack-list-number-field-create"
             | "slack-list-number-field-create-narrow"
             | "slack-list-checkbox-field-create"
-            | "slack-list-checkbox-field-create-narrow" => {
+            | "slack-list-checkbox-field-create-narrow"
+            | "slack-list-date-field-create"
+            | "slack-list-date-field-create-narrow" => {
                 crate::slack_lists::fixture::text_field_create::install(&mut state, name);
             }
             "slack-list-number-filter" | "slack-list-number-filter-narrow" => {

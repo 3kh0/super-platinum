@@ -46,6 +46,7 @@ pub(super) struct Detail {
 pub(super) enum EditAuthority {
     Layout,
     RecordDetail(u64),
+    BoardMove(u64),
 }
 impl EditAuthority {
     /// A layout collapse after an explicit gesture does not cancel that intent;
@@ -54,12 +55,13 @@ impl EditAuthority {
     pub(super) fn permits_dispatch(self, view: &View, row: &str, column: &str) -> bool {
         match self {
             Self::Layout => view.detail.is_none(),
-            Self::RecordDetail(_) => self.admits(view, row, column),
+            Self::RecordDetail(_) | Self::BoardMove(_) => self.admits(view, row, column),
         }
     }
     pub(super) fn admits(self, view: &View, row: &str, column: &str) -> bool {
         match self {
             Self::Layout => view.detail.is_none() && layout::cell_visible(view, row, column),
+            Self::BoardMove(layout) => board_move::admits(view, row, column, layout),
             Self::RecordDetail(generation) => view.detail.as_ref().is_some_and(|detail| {
                 detail.generation == generation
                     && detail.record_id == row

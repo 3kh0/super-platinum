@@ -3,6 +3,7 @@ use super::*;
 use crate::slack_lists::rename::{self, Stage, fixture as rename_fixture};
 use rename_fixture::FieldCreateMode;
 mod checkbox;
+mod date;
 mod harness;
 mod oracle;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
@@ -16,6 +17,8 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
                 let mut receipt = json!({"ok":false,"error":error,"failedLedger":rename_fixture::snapshot(&state.peek()).ok(),"failedDocument":document(state).ok(),"failedPopulation":population(state).ok()});
                 if mode == FieldCreateMode::Checkbox {
                     receipt["failedCellLedger"] = checkbox::failed_snapshot(&state.peek());
+                } else if mode == FieldCreateMode::Date {
+                    receipt["failedCellLedger"] = date::failed_snapshot(&state.peek());
                 }
                 receipt
             }
@@ -571,6 +574,8 @@ async fn run(
     }
     let cells = if mode == FieldCreateMode::Checkbox {
         Some(checkbox::run(state, d, &mut proof).await?)
+    } else if mode == FieldCreateMode::Date {
+        Some(date::run(state, d, &mut proof).await?)
     } else {
         None
     };

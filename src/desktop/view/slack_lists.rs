@@ -5,6 +5,7 @@ use crate::{
 };
 use dioxus::prelude::*;
 mod board;
+mod board_move;
 mod create;
 mod delete;
 mod editor;
@@ -178,6 +179,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
             if let Some(open)=detail_open {record::RecordDetail{key:"record-detail-{open}",state}}
             {delete::confirmation(state,generation)}
             {rename::panel(state)}
+            if let Some(receipt)=view.board_move_return {board_move::MoveReturn{key:"board-return-{receipt.serial}",state,receipt}}
             if let Some(editor)=view.editor {editor::CellEditor{key:"list-cell-editor-{editor.generation}",state,editor,visit:generation}}
         }
     }

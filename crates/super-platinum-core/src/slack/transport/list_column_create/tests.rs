@@ -34,6 +34,11 @@ async fn actual_capture_permit_builder_and_transport_preserve_exact_typed_forms_
             Some(r#"{"precision":0}"#),
         ),
         (ColumnCreateKind::Checkbox, "checkbox", None),
+        (
+            ColumnCreateKind::DateSingleDefault,
+            "date",
+            Some(r#"{"date_format":"default","format":"single"}"#),
+        ),
     ] {
         for name in ["Notes", "Café & 東京"] {
             let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -406,3 +411,4 @@ async fn type_options_cross_pairs_nonzero_and_opaque_number_options_refuse_befor
 }
 
 mod checkbox;
+mod date;

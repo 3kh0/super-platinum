@@ -93,9 +93,11 @@ FIXTURES=(
   slack-list-text-field-create slack-list-text-field-create-narrow
   slack-list-number-field-create slack-list-number-field-create-narrow
   slack-list-checkbox-field-create slack-list-checkbox-field-create-narrow
+  slack-list-date-field-create slack-list-date-field-create-narrow
   slack-list-view-sort slack-list-view-sort-narrow
   slack-list-view-grouping slack-list-view-grouping-narrow
   slack-list-board-grouping slack-list-board-grouping-narrow
+  slack-list-board-move slack-list-board-move-narrow slack-list-board-move-checkbox slack-list-board-move-checkbox-narrow
   slack-list-find slack-list-find-narrow slack-list-find-board slack-list-find-board-narrow slack-list-find-empty slack-list-find-empty-narrow
   slack-list-view-rename slack-list-view-rename-narrow
   slack-list-view-create slack-list-view-create-narrow

@@ -11,6 +11,7 @@ use super_platinum_core::{
     slack::{Error, models::File},
     slack_lists::{CellEdit, CheckboxEdit, Document, PersonalTaskLists, RecordsPage},
 };
+pub(crate) mod board_move;
 mod cell_receipts;
 pub(crate) mod check;
 pub(crate) mod create;
@@ -82,6 +83,7 @@ struct View {
     expanded: std::collections::BTreeSet<String>,
     label_rows: labels::Index,
     editor: Option<editor::Draft>,
+    board_move_return: Option<board_move::Return>,
     detail: Option<record_detail::Detail>,
     loading: bool,
     stale: bool,
@@ -171,6 +173,7 @@ pub(super) fn open_shell(shell: &mut ShellState, file: File) -> bool {
         expanded: Default::default(),
         label_rows: Default::default(),
         editor: None,
+        board_move_return: None,
         detail: None,
         loading: false,
         stale: true,
@@ -354,6 +357,7 @@ pub(super) fn finish_read(
     match result {
         Ok(loaded) if loaded.document.id == attempt.id => {
             let mut notice = None;
+            let board_return = board_move::pending_return(shell, &loaded);
             let resolved=shell.slack_lists.operations.get(&attempt.id).filter(|m|m.phase==Phase::Uncertain).is_some_and(|mutation| {
                 let edit=&mutation.attempt.edit;
                 if edit.readback_matches(&loaded.document,&loaded.records) {true}
@@ -385,6 +389,7 @@ pub(super) fn finish_read(
             view.revision = next_id();
             rebuild_rows(shell);
             create::reconcile(shell);
+            board_move::observed(shell, board_return);
             // Page absence never settles deletion; this only retires a stale
             // unsent confirmation/preflight after the canonical read changed.
             delete::poll(shell);

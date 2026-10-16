@@ -750,6 +750,9 @@ fn checked(
                             super_platinum_core::slack_lists::ColumnCreateKind::Checkbox => {
                                 "A matching Checkbox field is now visible in this Table."
                             }
+                            super_platinum_core::slack_lists::ColumnCreateKind::DateSingleDefault => {
+                                "A matching Date field is now visible in this Table."
+                            }
                         }
                     } else {
                         "No isolated matching field is visible in this Table. Review the returned fields. The earlier request may still arrive; closing does not repeat or undo it."
