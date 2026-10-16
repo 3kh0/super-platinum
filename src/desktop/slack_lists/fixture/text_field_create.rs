@@ -2,6 +2,7 @@
 use super::*;
 pub(crate) mod checkbox;
 pub(crate) mod date;
+pub(crate) mod select;
 pub(crate) fn install(shell: &mut ShellState, name: &str) {
     assert!(matches!(
         name,
@@ -13,6 +14,8 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
             | "slack-list-checkbox-field-create-narrow"
             | "slack-list-date-field-create"
             | "slack-list-date-field-create-narrow"
+            | "slack-list-select-field-create"
+            | "slack-list-select-field-create-narrow"
     ));
     let server = seed(shell, name);
     if super::super::rename::fixture::field_create_check_enabled() {
@@ -28,6 +31,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     if name.starts_with("slack-list-number-field-create")
         || name.starts_with("slack-list-checkbox-field-create")
         || name.starts_with("slack-list-date-field-create")
+        || name.starts_with("slack-list-select-field-create")
     {
         let choice = super::super::rename::text_create::choice(shell).unwrap();
         assert!(super::super::rename::text_create::kind_shell(
@@ -36,7 +40,9 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
             visit,
             selection,
             choice,
-            if name.starts_with("slack-list-checkbox-field-create") {
+            if name.starts_with("slack-list-select-field-create") {
+                "select"
+            } else if name.starts_with("slack-list-checkbox-field-create") {
                 "checkbox"
             } else if name.starts_with("slack-list-date-field-create") {
                 "date"
@@ -52,7 +58,9 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
         visit,
         selection,
         choice,
-        if name.starts_with("slack-list-number-field-create") {
+        if name.starts_with("slack-list-select-field-create") {
+            "Release phase".into()
+        } else if name.starts_with("slack-list-number-field-create") {
             "Release count".into()
         } else if name.starts_with("slack-list-checkbox-field-create") {
             "Verified".into()
@@ -62,6 +70,44 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
             "Release notes".into()
         }
     ));
+    if name.starts_with("slack-list-select-field-create") {
+        use super::super::rename::text_create::select::{Edit, edit_shell};
+        for label in [
+            "Ready",
+            "In progress",
+            "Review",
+            "Blocked",
+            "Waiting",
+            "Approved",
+            "Scheduled",
+            "Équipe 東京",
+        ] {
+            let epoch = super::super::rename::presentation(shell)
+                .unwrap()
+                .select_draft
+                .unwrap()
+                .add_epoch;
+            assert!(edit_shell(
+                shell,
+                serial,
+                visit,
+                selection,
+                choice,
+                Edit::Pending {
+                    epoch,
+                    value: label.into()
+                }
+            ));
+            assert!(edit_shell(
+                shell,
+                serial,
+                visit,
+                selection,
+                choice,
+                Edit::Add { epoch }
+            ));
+        }
+    }
 }
 pub(super) fn seed(shell: &mut ShellState, name: &str) -> Value {
     super::view_filter::seed(shell, name);

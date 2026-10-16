@@ -6,6 +6,7 @@ mod checkbox;
 mod date;
 mod harness;
 mod oracle;
+mod select;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     let Some(mode) = rename_fixture::field_create_mode() else {
         return;
@@ -19,6 +20,8 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
                     receipt["failedCellLedger"] = checkbox::failed_snapshot(&state.peek());
                 } else if mode == FieldCreateMode::Date {
                     receipt["failedCellLedger"] = date::failed_snapshot(&state.peek());
+                } else if mode == FieldCreateMode::Select {
+                    receipt["failedCellLedger"] = select::failed_snapshot(&state.peek());
                 }
                 receipt
             }
@@ -240,6 +243,7 @@ struct Proof {
     id: u64,
     stages: Vec<Value>,
     captures: serde_json::Map<String, Value>,
+    select_options: Option<Value>,
 }
 impl Proof {
     fn stable(&self, state: Signal<ShellState>, mode: usize) -> Result<(), String> {
@@ -288,14 +292,28 @@ impl Proof {
         d: &dioxus::desktop::DesktopContext,
         name: &str,
     ) -> Result<(), String> {
-        let ordinal = self.stages.len();
+        let actual_ordinal = self.stages.len();
+        let ordinal = actual_ordinal
+            .checked_sub(if self.mode == FieldCreateMode::Select {
+                4
+            } else {
+                0
+            })
+            .ok_or("Missing Select prelude")?;
         if oracle::STAGES.get(ordinal) != Some(&name) {
             return Err("Wrong Text creation stage order".into());
         }
         let mode = usize::from(ordinal >= 5);
         self.stable(state, mode)?;
         let ledger = rename_fixture::snapshot(&state.peek())?;
-        oracle::stage(&ledger, ordinal, &self.docs, self.id, self.mode)?;
+        oracle::stage_with_options(
+            &ledger,
+            ordinal,
+            &self.docs,
+            self.id,
+            self.mode,
+            self.select_options.as_ref(),
+        )?;
         let scrolling = if ordinal == 6 {
             Some(checked(d, "window.__listTextCreate.revealTable()").await?)
         } else {
@@ -337,7 +355,11 @@ impl Proof {
                 || c["intentPopulation"] != self.population
                 || c["name"] != self.mode.name()
                 || c["kind"] != self.mode.kind().as_str()
-                || c.get("options") != self.mode.kind().options().as_ref()
+                || c.get("options")
+                    != self
+                        .select_options
+                        .as_ref()
+                        .or(self.mode.kind().options().as_ref())
                 || c["choice"] != model["choice"]
                 || c["view"] != "V_FILTER"
                 || c["user"] != "U0"
@@ -345,6 +367,15 @@ impl Proof {
                 return Err("Original create custody changed".into());
             }
             Some(c)
+        } else {
+            None
+        };
+        let option_dom = if ordinal < 6 {
+            if let Some(expected) = self.select_options.as_ref() {
+                Some(select::options::verify(state, d, expected).await?)
+            } else {
+                None
+            }
         } else {
             None
         };
@@ -357,7 +388,14 @@ impl Proof {
         if !model.is_null() && draft(state)? != model {
             return Err("Field draft changed during capture".into());
         }
-        self.stages.push(json!({"ordinal":ordinal,"stage":name,"geometry":geometry,"scrolling":scrolling,"custody":custody,"ledger":ledger,"document":document(state)?,"population":population(state)?,"find":find(state)?,"draft":model,"noSession":true,"noTransport":true}));
+        if let Some(before) = option_dom.as_ref() {
+            if select::options::verify(state, d, self.select_options.as_ref().unwrap()).await?
+                != *before
+            {
+                return Err("Select option DOM changed during capture".into());
+            }
+        }
+        self.stages.push(harness::creation_stage(self.mode,json!({"ordinal":actual_ordinal,"stage":name,"geometry":geometry,"scrolling":scrolling,"custody":custody,"ledger":ledger,"document":document(state)?,"population":population(state)?,"find":find(state)?,"draft":model,"noSession":true,"noTransport":true}),option_dom)?);
         Ok(())
     }
 }
@@ -426,15 +464,25 @@ async fn run(
     }
     let mut proof = Proof {
         mode,
-        docs: oracle::documents(&before, mode),
+        docs: if mode == FieldCreateMode::Select {
+            [before.clone(), before.clone()]
+        } else {
+            oracle::documents(&before, mode)
+        },
         population,
         find: find(state)?,
         id: 0,
         stages: vec![],
         captures: Default::default(),
+        select_options: None,
     };
     proof.stable(state, 0)?;
     let canceled = open_name(state, d, mode).await?;
+    let select_prelude = if mode == FieldCreateMode::Select {
+        Some(select::options::prelude(state, d, &mut proof).await?)
+    } else {
+        None
+    };
     click(d, "slack-list-rename-close").await?;
     let cancel_focus = wait_dom(d, "window.__listTextCreate.returnedAdd()").await?;
     let cancel_registry = rename_fixture::text_create_registry(&state.peek())?;
@@ -452,6 +500,21 @@ async fn run(
     }
     proof.stable(state, 0)?;
     let created_choice = open_name(state, d, mode).await?;
+    if mode == FieldCreateMode::Select {
+        let configured = select::options::fill(state, d).await?;
+        let expected = configured["options"].clone();
+        rename_fixture::select_create::validate(&expected)?;
+        rename_fixture::select_create::bind(
+            &state.peek(),
+            created_choice["model"]["serial"]
+                .as_u64()
+                .ok_or("Missing Select serial")?,
+            expected.clone(),
+        )?;
+        proof.docs = oracle::documents_with_options(&before, mode, Some(&expected));
+        proof.select_options = Some(expected);
+        select::options::top(state, d).await?;
+    }
     proof.id = created_choice["model"]["serial"]
         .as_u64()
         .ok_or("Missing Text serial")?;
@@ -475,7 +538,18 @@ async fn run(
     phase(state, Stage::Checking).await?;
     pending(state, "readPending").await?;
     let held = rename_fixture::snapshot(&state.peek())?;
-    oracle::exact(&held, 8, 2, false, true, 1, &proof.docs, proof.id, mode)?;
+    oracle::exact_with_options(
+        &held,
+        8,
+        2,
+        false,
+        true,
+        1,
+        &proof.docs,
+        proof.id,
+        mode,
+        proof.select_options.as_ref(),
+    )?;
     let captured_loaded = state
         .peek()
         .slack_lists
@@ -519,7 +593,7 @@ async fn run(
     }
     rename_fixture::release(&state.peek(), true)?;
     let obsolete = completed(state, 3).await?;
-    oracle::exact(
+    oracle::exact_with_options(
         &obsolete,
         8,
         3,
@@ -529,6 +603,7 @@ async fn run(
         &proof.docs,
         proof.id,
         mode,
+        proof.select_options.as_ref(),
     )?;
     phase(state, Stage::Uncertain).await?;
     proof.stable(state, 0)?;
@@ -558,7 +633,18 @@ async fn run(
     let ledger = rename_fixture::snapshot(&state.peek())?;
     let viewport = checked(d, "({ok:true,viewport:[innerWidth,innerHeight]})").await?;
     proof.stable(state, 1)?;
-    oracle::exact(&ledger, 11, 4, false, false, 1, &proof.docs, proof.id, mode)?;
+    oracle::exact_with_options(
+        &ledger,
+        11,
+        4,
+        false,
+        false,
+        1,
+        &proof.docs,
+        proof.id,
+        mode,
+        proof.select_options.as_ref(),
+    )?;
     if rename_fixture::snapshot(&state.peek())? != ledger {
         return Err("Final Text ledger drift".into());
     }
@@ -576,6 +662,8 @@ async fn run(
         Some(checkbox::run(state, d, &mut proof).await?)
     } else if mode == FieldCreateMode::Date {
         Some(date::run(state, d, &mut proof).await?)
+    } else if mode == FieldCreateMode::Select {
+        Some(select::run(state, d, &mut proof).await?)
     } else {
         None
     };
@@ -586,6 +674,10 @@ async fn run(
         return Err("Checkbox viewport changed after creation".into());
     }
     let mut terminal = json!({"ok":true,"mode":mode.kind().as_str(),"fixture":std::env::var("SUPER_PLATINUM_FIXTURE").unwrap(),"owner":owner,"noSession":true,"noTransport":true,"before":proof.docs[0],"after":proof.docs[1],"population":proof.population,"find":proof.find,"firstFind":first_find,"attempt":proof.id,"cancel":{"draft":canceled,"focus":cancel_focus,"registry":cancel_registry,"ledger":canceled_ledger},"create":created_choice,"retiredCheck":retired,"observed":observed,"doneFocus":done_focus,"doneRegistry":done_registry,"stages":proof.stages,"captures":proof.captures,"ledger":ledger,"viewport":viewport["viewport"]});
+    if let Some(prelude) = select_prelude {
+        terminal["selectPrelude"] = prelude;
+        terminal["expectedOptions"] = proof.select_options.clone().unwrap();
+    }
     if let Some(cells) = cells {
         terminal["cellWorkflow"] = cells;
     }

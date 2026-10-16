@@ -1,8 +1,10 @@
-//! Minimal ordinary Text/Number/Checkbox/Date field creation. Request shape is source-backed; the
+//! Minimal ordinary Text/Number/Checkbox/Date/Select field creation. Request shape is source-backed; the
 //! isolated-addition predicate is a conservative observational subset, not a
 //! captured server normalization contract or proof that this attempt caused it.
 use super::{Column, Document, ListError, PersonalTaskLists, RecordsPage, ViewRename};
 use serde_json::{Value, json};
+mod select;
+pub use select::{SelectCreateOption, SelectCreateOptions};
 
 /// Closed creation shapes. This is not a type conversion or arbitrary options API.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -11,6 +13,7 @@ pub enum ColumnCreateKind {
     NumberDefault0,
     Checkbox,
     DateSingleDefault,
+    Select,
 }
 impl ColumnCreateKind {
     pub fn as_str(self) -> &'static str {
@@ -19,21 +22,17 @@ impl ColumnCreateKind {
             Self::NumberDefault0 => "number",
             Self::Checkbox => "checkbox",
             Self::DateSingleDefault => "date",
+            Self::Select => "select",
         }
     }
-    /// Exact wire options. Checkbox omits the form member entirely.
+    /// Constant wire options. Checkbox omits the member; Select requires the owned
+    /// configuration on ColumnCreate::options and cannot use capture_kind.
     pub fn options(self) -> Option<Value> {
         match self {
             Self::Text => Some(json!({"format":"text"})),
             Self::NumberDefault0 => Some(json!({"precision":0})),
-            Self::Checkbox => None,
+            Self::Checkbox | Self::Select => None,
             Self::DateSingleDefault => Some(json!({"format":"single","date_format":"default"})),
-        }
-    }
-    fn observes_options(self, column: &Column) -> bool {
-        match self.options() {
-            Some(expected) => column.raw.get("options") == Some(&expected),
-            None => column.ordinary_checkbox_without_options(),
         }
     }
 }
@@ -45,6 +44,7 @@ pub struct ColumnCreate {
     view_id: String,
     name: String,
     kind: ColumnCreateKind,
+    select: Option<SelectCreateOptions>,
     user_id: String,
 }
 fn identity(s: &str) -> bool {
@@ -96,6 +96,54 @@ impl ColumnCreate {
         allow: Option<&str>,
         personal: Option<&PersonalTaskLists>,
     ) -> Result<Self, ListError> {
+        if kind == ColumnCreateKind::Select {
+            return Err(ListError("Select creation requires its captured options."));
+        }
+        Self::capture_config(
+            document,
+            records,
+            view,
+            name,
+            kind,
+            None,
+            authenticated_user,
+            allow,
+            personal,
+        )
+    }
+    pub fn capture_select(
+        document: &Document,
+        records: &RecordsPage,
+        view: &str,
+        name: &str,
+        options: SelectCreateOptions,
+        authenticated_user: &str,
+        allow: Option<&str>,
+        personal: Option<&PersonalTaskLists>,
+    ) -> Result<Self, ListError> {
+        Self::capture_config(
+            document,
+            records,
+            view,
+            name,
+            ColumnCreateKind::Select,
+            Some(options),
+            authenticated_user,
+            allow,
+            personal,
+        )
+    }
+    fn capture_config(
+        document: &Document,
+        records: &RecordsPage,
+        view: &str,
+        name: &str,
+        kind: ColumnCreateKind,
+        select: Option<SelectCreateOptions>,
+        authenticated_user: &str,
+        allow: Option<&str>,
+        personal: Option<&PersonalTaskLists>,
+    ) -> Result<Self, ListError> {
         representations(document, records)?;
         eligible(document, view, authenticated_user, allow, personal)?;
         let name = name.trim();
@@ -113,6 +161,9 @@ impl ColumnCreate {
                 ColumnCreateKind::Checkbox => {
                     "Enter a nonempty Checkbox field name on one line, at most 256 UTF-16 units."
                 }
+                ColumnCreateKind::Select => {
+                    "Enter a nonempty Select field name on one line, at most 256 UTF-16 units."
+                }
                 ColumnCreateKind::DateSingleDefault => {
                     "Enter a nonempty Date field name on one line, at most 256 UTF-16 units."
                 }
@@ -124,6 +175,7 @@ impl ColumnCreate {
             view_id: view.into(),
             name: name.into(),
             kind,
+            select,
             user_id: authenticated_user.into(),
         })
     }
@@ -144,6 +196,13 @@ impl ColumnCreate {
     }
     pub fn kind(&self) -> ColumnCreateKind {
         self.kind
+    }
+    /// Complete immutable options, including the captured Select choice vector.
+    pub fn options(&self) -> Option<Value> {
+        self.select
+            .as_ref()
+            .map(SelectCreateOptions::wire)
+            .or_else(|| self.kind.options())
     }
     pub fn authenticated_user(&self) -> &str {
         &self.user_id
@@ -196,7 +255,11 @@ impl ColumnCreate {
             || !identity(&added.key)
             || added.name != self.name
             || added.kind != self.kind.as_str()
-            || !self.kind.observes_options(added)
+            || !(if self.kind == ColumnCreateKind::Checkbox {
+                added.ordinary_checkbox_without_options()
+            } else {
+                self.options().as_ref() == added.raw.get("options")
+            })
             || added
                 .raw
                 .get("is_primary_column")
@@ -407,3 +470,6 @@ mod checkbox_tests;
 
 #[cfg(test)]
 mod date_tests;
+
+#[cfg(test)]
+mod select_tests;

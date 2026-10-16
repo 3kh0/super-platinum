@@ -7,6 +7,7 @@ pub(crate) enum FieldCreateMode {
     Number,
     Checkbox,
     Date,
+    Select,
 }
 impl FieldCreateMode {
     pub(crate) fn kind(self) -> ColumnCreateKind {
@@ -15,6 +16,7 @@ impl FieldCreateMode {
             Self::Number => ColumnCreateKind::NumberDefault0,
             Self::Checkbox => ColumnCreateKind::Checkbox,
             Self::Date => ColumnCreateKind::DateSingleDefault,
+            Self::Select => ColumnCreateKind::Select,
         }
     }
     pub(crate) fn name(self) -> &'static str {
@@ -23,6 +25,7 @@ impl FieldCreateMode {
             Self::Number => "Release count",
             Self::Checkbox => "Verified",
             Self::Date => "Target date",
+            Self::Select => "Release phase",
         }
     }
     pub(crate) fn observed(self) -> (&'static str, &'static str) {
@@ -31,6 +34,7 @@ impl FieldCreateMode {
             Self::Number => ("C_NUMBER_OBSERVED", "number_observed"),
             Self::Checkbox => ("C_CHECKBOX_OBSERVED", "checkbox_observed"),
             Self::Date => ("C_DATE_OBSERVED", "date_observed"),
+            Self::Select => ("C_SELECT_OBSERVED", "select_observed"),
         }
     }
     pub(crate) fn prefix(self) -> &'static str {
@@ -39,6 +43,7 @@ impl FieldCreateMode {
             Self::Number => "slack-list-number-field-create",
             Self::Checkbox => "slack-list-checkbox-field-create",
             Self::Date => "slack-list-date-field-create",
+            Self::Select => "slack-list-select-field-create",
         }
     }
     pub(crate) fn env_prefix(self) -> &'static str {
@@ -47,28 +52,41 @@ impl FieldCreateMode {
             Self::Number => "SUPER_PLATINUM_LIST_NUMBER_FIELD_CREATE",
             Self::Checkbox => "SUPER_PLATINUM_LIST_CHECKBOX_FIELD_CREATE",
             Self::Date => "SUPER_PLATINUM_LIST_DATE_FIELD_CREATE",
+            Self::Select => "SUPER_PLATINUM_LIST_SELECT_FIELD_CREATE",
         }
     }
 }
-fn mode_gate(
+fn mode_gate_all(
     text: Option<&str>,
     number: Option<&str>,
     checkbox: Option<&str>,
     date: Option<&str>,
+    select: Option<&str>,
     alias: Option<&str>,
 ) -> Option<FieldCreateMode> {
-    let mode = match (text, number, checkbox, date) {
-        (Some("1"), None, None, None) => FieldCreateMode::Text,
-        (None, Some("1"), None, None) => FieldCreateMode::Number,
-        (None, None, Some("1"), None) => FieldCreateMode::Checkbox,
-        (None, None, None, Some("1")) => FieldCreateMode::Date,
+    let mode = match (text, number, checkbox, date, select) {
+        (Some("1"), None, None, None, None) => FieldCreateMode::Text,
+        (None, Some("1"), None, None, None) => FieldCreateMode::Number,
+        (None, None, Some("1"), None, None) => FieldCreateMode::Checkbox,
+        (None, None, None, Some("1"), None) => FieldCreateMode::Date,
+        (None, None, None, None, Some("1")) => FieldCreateMode::Select,
         _ => return None,
     };
     let alias = alias?;
     (alias == mode.prefix() || alias == format!("{}-narrow", mode.prefix())).then_some(mode)
 }
+#[cfg(test)]
+fn mode_gate(
+    t: Option<&str>,
+    n: Option<&str>,
+    c: Option<&str>,
+    d: Option<&str>,
+    a: Option<&str>,
+) -> Option<FieldCreateMode> {
+    mode_gate_all(t, n, c, d, None, a)
+}
 pub(crate) fn field_create_mode() -> Option<FieldCreateMode> {
-    mode_gate(
+    mode_gate_all(
         std::env::var("SUPER_PLATINUM_LIST_TEXT_FIELD_CREATE_CHECK")
             .ok()
             .as_deref(),
@@ -79,6 +97,9 @@ pub(crate) fn field_create_mode() -> Option<FieldCreateMode> {
             .ok()
             .as_deref(),
         std::env::var("SUPER_PLATINUM_LIST_DATE_FIELD_CREATE_CHECK")
+            .ok()
+            .as_deref(),
+        std::env::var("SUPER_PLATINUM_LIST_SELECT_FIELD_CREATE_CHECK")
             .ok()
             .as_deref(),
         std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
@@ -177,6 +198,9 @@ fn seed_reopened(
 
 // Fixture data only: the production observer discovers these returned identities.
 fn add_field(server: &mut Value, mode: FieldCreateMode) -> Result<(), Error> {
+    if mode == FieldCreateMode::Select {
+        return Err(Error::Api("fixture_select_needs_owned_options".into()));
+    }
     let (id, key) = mode.observed();
     let schema = server["list_metadata"]["schema"]
         .as_array_mut()
@@ -205,7 +229,7 @@ pub(crate) fn text_create_custody(shell: &ShellState) -> Result<Value, String> {
     };
     let records = e.original_records.as_ref().ok_or("Missing captured page")?;
     let mut custody = json!({"serial":e.serial,"document":e.original.raw,"population":records.raw,"intentDocument":i.original().raw,"intentPopulation":i.original_records().raw,"name":i.desired_name(),"view":i.view_id(),"user":i.authenticated_user(),"kind":i.kind().as_str(),"choice":e.field_choice.revision});
-    if let Some(options) = i.kind().options() {
+    if let Some(options) = i.options() {
         custody["options"] = options;
     }
     Ok(custody)
@@ -258,6 +282,24 @@ pub(super) async fn write(
             )));
         }
     }
+    let select = if mode == FieldCreateMode::Select {
+        Some(
+            select::bound_options(
+                &state.peek(),
+                entry(&state.peek())
+                    .ok_or(ListColumnRenameFailure::NotRequested(
+                        Error::TransportNotConfigured,
+                    ))?
+                    .serial,
+            )
+            .map_err(|_| {
+                ListColumnRenameFailure::NotRequested(Error::Api("fixture_select_options".into()))
+            })?,
+        )
+    } else {
+        None
+    };
+    let select_wire = select.as_ref().map(Value::to_string);
     let request = permit.request(&state.peek().core.client, &session());
     let mut expected = vec![
         ("token".into(), "fixture-not-a-token".into()),
@@ -270,6 +312,7 @@ pub(super) async fn write(
         FieldCreateMode::Text => Some("{\"format\":\"text\"}"),
         FieldCreateMode::Number => Some("{\"precision\":0}"),
         FieldCreateMode::Checkbox => None,
+        FieldCreateMode::Select => select_wire.as_deref(),
         FieldCreateMode::Date => Some("{\"date_format\":\"default\",\"format\":\"single\"}"),
     };
     if let Some(options) = options {
@@ -303,8 +346,22 @@ pub(super) async fn write(
         .map_err(|_| {
             ListColumnRenameFailure::Unconfirmed(Error::Transport("fixture_closed".into()))
         })?;
-    add_field(ledger().lock().unwrap().server.as_mut().unwrap(), mode)
+    {
+        let mut l = ledger().lock().unwrap();
+        if mode == FieldCreateMode::Select {
+            select::add_field(
+                l.server.as_mut().unwrap(),
+                select
+                    .as_ref()
+                    .ok_or(ListColumnRenameFailure::Unconfirmed(Error::Api(
+                        "fixture_select_options".into(),
+                    )))?,
+            )
+        } else {
+            add_field(l.server.as_mut().unwrap(), mode)
+        }
         .map_err(ListColumnRenameFailure::Unconfirmed)?;
+    }
     Err(ListColumnRenameFailure::Unconfirmed(Error::Transport(
         "fixture_response_lost".into(),
     )))
@@ -585,3 +642,5 @@ pub(crate) fn close_date_fixture(shell: &ShellState) -> bool {
 }
 #[cfg(test)]
 mod date_tests;
+
+pub(crate) mod select;

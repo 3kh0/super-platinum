@@ -49,6 +49,7 @@ pub(super) struct Entry {
     pub available: Option<String>,
     pub original_records: Option<std::sync::Arc<RecordsPage>>,
     pub field_choice: text_create::Choice,
+    pub select_draft: text_create::select::Draft,
     pub observed_field: Option<text_create::Observed>,
     pub input: Input,
     pub visibility_choice: u64,

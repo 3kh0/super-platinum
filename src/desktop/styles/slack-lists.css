@@ -312,3 +312,11 @@
 /* The explicit membership move keeps its action width during dispatch. */
 #slack-list-cell-editor[data-board-move-editor="true"] #slack-list-editor-save { min-width: 92px; }
 #slack-list-cell-editor[data-board-move-editor="true"] .slack-list-editor-actions { flex-wrap: wrap; }
+
+/* Bounded Add field option draft; the existing editor body owns overflow. */
+.slack-list-select-create { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.slack-list-select-option, .slack-list-select-option-input { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.slack-list-select-option span { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: var(--text-sm); }
+.slack-list-select-create button { flex-shrink: 0; min-height: var(--control-height); padding: 0 8px; border-radius: var(--radius-md); }
+.slack-list-select-option-input input { flex: 1; min-width: 0; font: inherit; }
+.slack-list-select-create :is(input, button):focus-visible { outline-offset: -2px; }

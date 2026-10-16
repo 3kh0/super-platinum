@@ -17,7 +17,25 @@ pub(super) fn order(_mode: usize) -> Vec<String> {
         .collect()
 }
 pub(super) fn documents(before: &Value, mode: FieldCreateMode) -> [Value; 2] {
+    documents_with_options(before, mode, None)
+}
+pub(super) fn documents_with_options(
+    before: &Value,
+    mode: FieldCreateMode,
+    select: Option<&Value>,
+) -> [Value; 2] {
     let (id, key, name, kind, options) = match mode {
+        FieldCreateMode::Select => (
+            "C_SELECT_OBSERVED",
+            "select_observed",
+            "Release phase",
+            "select",
+            Some(
+                select
+                    .expect("Select oracle needs independently captured options")
+                    .clone(),
+            ),
+        ),
         FieldCreateMode::Text => (
             "C_TEXT_OBSERVED",
             "text_observed",
@@ -64,7 +82,19 @@ pub(super) fn documents(before: &Value, mode: FieldCreateMode) -> [Value; 2] {
     [before.clone(), after]
 }
 fn requests(mode: FieldCreateMode) -> Vec<Value> {
+    requests_with_options(mode, None)
+}
+fn requests_with_options(mode: FieldCreateMode, select: Option<&Value>) -> Vec<Value> {
+    let wire = select.map(Value::to_string);
     let (name, kind, options) = match mode {
+        FieldCreateMode::Select => (
+            "Release phase",
+            "select",
+            Some(
+                wire.as_deref()
+                    .expect("Select request oracle needs owned options"),
+            ),
+        ),
         FieldCreateMode::Text => ("Release notes", "text", Some("{\"format\":\"text\"}")),
         FieldCreateMode::Number => ("Release count", "number", Some("{\"precision\":0}")),
         FieldCreateMode::Checkbox => ("Verified", "checkbox", None),
@@ -198,10 +228,26 @@ pub(super) fn exact(
     id: u64,
     mode: FieldCreateMode,
 ) -> Result<(), String> {
+    exact_with_options(
+        l, count, finished, pending, read, server, docs, id, mode, None,
+    )
+}
+pub(super) fn exact_with_options(
+    l: &Value,
+    count: usize,
+    finished: usize,
+    pending: bool,
+    read: bool,
+    server: usize,
+    docs: &[Value; 2],
+    id: u64,
+    mode: FieldCreateMode,
+    select: Option<&Value>,
+) -> Result<(), String> {
     if id == 0 {
         return Err("Missing Text attempt identity".into());
     }
-    let req = requests(mode);
+    let req = requests_with_options(mode, select);
     let res = responses(docs);
     let done = completions(id);
     if count > req.len() || finished > done.len() || server > 1 {
@@ -225,6 +271,16 @@ pub(super) fn stage(
     id: u64,
     mode: FieldCreateMode,
 ) -> Result<(), String> {
+    stage_with_options(l, index, docs, id, mode, None)
+}
+pub(super) fn stage_with_options(
+    l: &Value,
+    index: usize,
+    docs: &[Value; 2],
+    id: u64,
+    mode: FieldCreateMode,
+    select: Option<&Value>,
+) -> Result<(), String> {
     let &(count, finished, server) = [
         (0, 0, 0),
         (4, 0, 0),
@@ -236,7 +292,7 @@ pub(super) fn stage(
     ]
     .get(index)
     .ok_or("Unknown Text creation stage")?;
-    exact(
+    exact_with_options(
         l,
         count,
         finished,
@@ -246,6 +302,7 @@ pub(super) fn stage(
         docs,
         id,
         mode,
+        select,
     )
 }
 #[cfg(test)]
@@ -468,5 +525,80 @@ mod date_tests {
                 .is_err()
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod select_tests {
+    use super::*;
+    #[test]
+    fn select_wire_uses_independent_ordered_dom_options_and_refuses_drift() {
+        let options = json!({"format":"single_select","choices":[{"label":"Ready","value":"OptAAAAAAA0","color":"blue"},{"label":"\u{c9}quipe \u{6771}\u{4eac}","value":"OptAAAAAAA1","color":"cyan"}]});
+        let calls = requests_with_options(FieldCreateMode::Select, Some(&options));
+        assert_eq!(calls.len(), 11);
+        assert_eq!(
+            calls[3]["fields"],
+            json!([
+                ["token", "fixture-not-a-token"],
+                ["list_id", "F_LIST_FIXTURE"],
+                ["view_id", "V_FILTER"],
+                ["name", "Release phase"],
+                ["type", "select"],
+                ["options", serde_json::to_string(&options).unwrap()],
+                ["_x_reason", "create-column"]
+            ])
+        );
+        let before = json!({"opaque":{"keep":1},"list_metadata":{"schema":[{"id":"old"}],"views":[{"columns":[{"id":"old"}]}]}});
+        let docs = documents_with_options(&before, FieldCreateMode::Select, Some(&options));
+        assert_eq!(docs[1]["list_metadata"]["schema"][1]["options"], options);
+        let id = 29;
+        let ledger = json!({"requests":calls,"responses":responses(&docs),"finished":completions(id),"server":docs[1],"writePending":false,"readPending":false});
+        let verify = |v: &Value| {
+            exact_with_options(
+                v,
+                11,
+                4,
+                false,
+                false,
+                1,
+                &docs,
+                id,
+                FieldCreateMode::Select,
+                Some(&options),
+            )
+        };
+        verify(&ledger).unwrap();
+        for n in 0..5 {
+            let mut bad = ledger.clone();
+            match n {
+                0 => {
+                    let mut altered = options.clone();
+                    altered["choices"].as_array_mut().unwrap().reverse();
+                    bad["requests"][3]["fields"][5][1] =
+                        json!(serde_json::to_string(&altered).unwrap());
+                }
+                1 => bad["requests"][3]["fields"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(json!(["position", "end"])),
+                2 => {
+                    bad["server"]["list_metadata"]["schema"][1]["options"]["format"] =
+                        json!("multi_select")
+                }
+                3 => bad["finished"][2]["applied"] = json!(true),
+                _ => bad["requests"][3]["retrySafe"] = json!(true),
+            }
+            assert!(verify(&bad).is_err());
+        }
+        let mut stripped = docs[1].clone();
+        stripped["list_metadata"]["schema"]
+            .as_array_mut()
+            .unwrap()
+            .remove(1);
+        stripped["list_metadata"]["views"][0]["columns"]
+            .as_array_mut()
+            .unwrap()
+            .remove(1);
+        assert_eq!(stripped, before);
     }
 }

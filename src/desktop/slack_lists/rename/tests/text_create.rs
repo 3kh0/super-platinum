@@ -561,3 +561,5 @@ fn owner_capacity_and_fresh_policy_are_required_and_retired_completion_stays_unc
 mod checkbox;
 mod date;
 mod number;
+
+mod select;

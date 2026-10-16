@@ -3,6 +3,7 @@ use super::*;
 mod filter;
 pub(crate) mod grouping;
 mod text_create;
+pub(crate) use text_create::select as select_create;
 pub(crate) use text_create::{
     FieldCreateMode, field_create_check_enabled, field_create_mode, seed_text_create,
     seed_text_create_reopen, stale_text_create_file, text_create_custody, text_create_registry,
@@ -35,6 +36,7 @@ struct Ledger {
     precision_file_once: Option<Value>,
     finished: Vec<Value>,
     server: Option<Value>,
+    select_options: Option<(u64, Value)>,
 }
 fn ledger() -> &'static Mutex<Ledger> {
     static LEDGER: OnceLock<Mutex<Ledger>> = OnceLock::new();

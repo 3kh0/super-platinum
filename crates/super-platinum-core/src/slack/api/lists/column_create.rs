@@ -13,7 +13,7 @@ pub fn list_column_create(
         ("name", intent.desired_name().into()),
         ("type", intent.kind().as_str().into()),
     ];
-    if let Some(options) = intent.kind().options() {
+    if let Some(options) = intent.options() {
         fields.push(("options", options.to_string()));
     }
     fields.push(("_x_reason", "create-column".into()));

@@ -13,6 +13,7 @@ mod view_filter;
 mod view_grouping;
 pub use column_create::{
     ColumnCreate, ColumnCreateAttempt, ColumnCreateKind, ColumnCreatePermit, ColumnCreatePhase,
+    SelectCreateOption, SelectCreateOptions,
 };
 mod view_rename;
 mod view_sort;

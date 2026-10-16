@@ -53,6 +53,7 @@ pub(crate) use user_edit::{add_user_edits, restore_user_edits, user_edit_value};
 pub(crate) struct Fixture {
     checkbox: Option<text_field_create::checkbox::State>,
     date: Option<text_field_create::date::State>,
+    select_create: Option<text_field_create::select::State>,
     board_move_check: Option<board_move::check::State>,
     board_creation: board_creation::State,
     record_open: record_open::State,
@@ -126,6 +127,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     shell.slack_lists.fixture = Some(Fixture {
         checkbox: None,
         date: None,
+        select_create: None,
         board_move_check: None,
         board_creation: board_creation::State::default(),
         record_open: record_open::State::default(),
@@ -178,6 +180,10 @@ pub(crate) fn refresh(shell: &mut ShellState) {
         text_field_create::date::fail(shell, error);
         return;
     }
+    if let Err(error) = text_field_create::select::read_input(shell, &attempt, &mut result) {
+        text_field_create::select::fail(shell, error);
+        return;
+    }
     if let Err(error) = board_move::check::read_input(shell, &attempt, &mut result) {
         board_move::check::fail(shell, error);
         return;
@@ -188,6 +194,10 @@ pub(crate) fn refresh(shell: &mut ShellState) {
     }
     if let Err(error) = text_field_create::date::read_completed(shell, &attempt) {
         text_field_create::date::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::select::read_completed(shell, &attempt) {
+        text_field_create::select::fail(shell, error);
         return;
     }
     if let Err(error) = board_move::check::read_completed(shell, &attempt) {
@@ -221,6 +231,10 @@ pub(super) fn dispatch(shell: &mut ShellState, attempt: EditAttempt) {
         text_field_create::date::fail(shell, error);
         return;
     }
+    if let Err(error) = text_field_create::select::preflight(shell, &attempt, &canonical) {
+        text_field_create::select::fail(shell, error);
+        return;
+    }
     if let Err(error) = board_move::check::preflight(shell, &attempt, &canonical) {
         board_move::check::fail(shell, error);
         return;
@@ -240,6 +254,10 @@ pub(super) fn dispatch(shell: &mut ShellState, attempt: EditAttempt) {
     }
     if let Err(error) = text_field_create::date::request(shell, &attempt, &request) {
         text_field_create::date::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::select::request(shell, &attempt, &request) {
+        text_field_create::select::fail(shell, error);
         return;
     }
     if let Err(error) = board_move::check::request(shell, &attempt, &request) {
@@ -334,6 +352,10 @@ pub(crate) fn complete_pending(shell: &mut ShellState) {
     }
     if let Err(error) = text_field_create::date::completion(shell, &attempt, uncertain) {
         text_field_create::date::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::select::completion(shell, &attempt, uncertain) {
+        text_field_create::select::fail(shell, error);
         return;
     }
     if let Err(error) = board_move::check::completion(shell, &attempt, uncertain) {

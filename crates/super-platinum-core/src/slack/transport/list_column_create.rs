@@ -1,4 +1,4 @@
-//! Exact minimal Text/Number/Checkbox/Date-column-create form, sharing only the established one-attempt HTTP mechanics.
+//! Exact minimal Text/Number/Checkbox/Date/Select-column-create form, sharing only the established one-attempt HTTP mechanics.
 use super::*;
 pub type ListColumnCreateFailure = ListColumnRenameFailure;
 impl Transport {
@@ -55,10 +55,11 @@ fn allowed(request: &PreparedRequest) -> bool {
         Some("text") => crate::slack_lists::ColumnCreateKind::Text,
         Some("number") => crate::slack_lists::ColumnCreateKind::NumberDefault0,
         Some("checkbox") => crate::slack_lists::ColumnCreateKind::Checkbox,
+        Some("select") => crate::slack_lists::ColumnCreateKind::Select,
         Some("date") => crate::slack_lists::ColumnCreateKind::DateSingleDefault,
         _ => return false,
     };
-    let expected: &[&str] = if kind.options().is_none() {
+    let expected: &[&str] = if kind == crate::slack_lists::ColumnCreateKind::Checkbox {
         &["token", "list_id", "view_id", "name", "type", "_x_reason"]
     } else {
         &[
@@ -93,8 +94,15 @@ fn allowed(request: &PreparedRequest) -> bool {
         && value(3) == value(3).trim()
         && value(3).encode_utf16().count() <= 256
         && !value(3).chars().any(char::is_control)
-        && kind.options().is_none_or(|expected| {
-            crate::slash_commands::codec::decode(value(5).as_bytes(), 8192).ok() == Some(expected)
+        && (if kind == crate::slack_lists::ColumnCreateKind::Select {
+            crate::slash_commands::codec::decode(value(5).as_bytes(), 8192)
+                .ok()
+                .is_some_and(|v| crate::slack_lists::SelectCreateOptions::from_wire(&v).is_ok())
+        } else {
+            kind.options().is_none_or(|expected| {
+                crate::slash_commands::codec::decode(value(5).as_bytes(), 8192).ok()
+                    == Some(expected)
+            })
         })
         && value(fields.len() - 1) == "create-column"
 }

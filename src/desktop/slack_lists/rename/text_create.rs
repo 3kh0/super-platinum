@@ -1,6 +1,7 @@
 //! Explicit ordinary Text/Number/Checkbox/Date creation, retaining the exact item population.
 use super::*;
 use std::sync::Arc;
+pub(crate) mod select;
 use super_platinum_core::slack_lists::{
     ColumnCreate, ColumnCreateAttempt, ColumnCreateKind, ListError,
 };
@@ -29,6 +30,7 @@ pub(crate) fn label(kind: ColumnCreateKind) -> &'static str {
         ColumnCreateKind::NumberDefault0 => "Number",
         ColumnCreateKind::Checkbox => "Checkbox",
         ColumnCreateKind::DateSingleDefault => "Date",
+        ColumnCreateKind::Select => "Select",
     }
 }
 fn parse_kind(value: &str) -> Option<ColumnCreateKind> {
@@ -37,6 +39,7 @@ fn parse_kind(value: &str) -> Option<ColumnCreateKind> {
         "number" => Some(ColumnCreateKind::NumberDefault0),
         "checkbox" => Some(ColumnCreateKind::Checkbox),
         "date" => Some(ColumnCreateKind::DateSingleDefault),
+        "select" => Some(ColumnCreateKind::Select),
         _ => None,
     }
 }
@@ -183,6 +186,35 @@ fn change(
     name: Option<String>,
     kind: ColumnCreateKind,
 ) -> bool {
+    with_edit(shell, serial, visit, selection, rendered, |e| {
+        let Input::NewTextField(old_name) = &e.input else {
+            return false;
+        };
+        let next_name = name.unwrap_or_else(|| old_name.clone());
+        if next_name == *old_name && kind == e.field_choice.kind {
+            return false;
+        }
+        e.input = Input::NewTextField(next_name);
+        // A type epoch guards callbacks across type ABA. Name events from the
+        // same rendered handler remain ordered even before the next render.
+        if kind != e.field_choice.kind {
+            e.select_draft = select::Draft::default();
+            e.field_choice = Choice {
+                revision: next_id(),
+                kind,
+            };
+        }
+        true
+    })
+}
+pub(super) fn with_edit(
+    shell: &ShellState,
+    serial: u64,
+    visit: u64,
+    selection: u64,
+    rendered: Choice,
+    change: impl FnOnce(&mut registry::Entry) -> bool,
+) -> bool {
     if generation(shell) != Some(visit)
         || super::selection(shell) != Some(selection)
         || !owner::available(shell)
@@ -215,23 +247,7 @@ fn change(
         {
             return false;
         }
-        let Input::NewTextField(old_name) = &e.input else {
-            return false;
-        };
-        let next_name = name.unwrap_or_else(|| old_name.clone());
-        if next_name == *old_name && kind == e.field_choice.kind {
-            return false;
-        }
-        e.input = Input::NewTextField(next_name);
-        // A type epoch guards callbacks across type ABA. Name events from the
-        // same rendered handler remain ordered even before the next render.
-        if kind != e.field_choice.kind {
-            e.field_choice = Choice {
-                revision: next_id(),
-                kind,
-            };
-        }
-        true
+        change(e)
     })
 }
 pub(super) fn capture(
@@ -249,6 +265,19 @@ pub(super) fn capture(
             .ok_or(ListError("The loaded items were not retained."))?;
         if loaded.records != *expected {
             return Err(ListError("The loaded items changed. Review a new field."));
+        }
+        if entry.field_choice.kind == ColumnCreateKind::Select {
+            return ColumnCreate::capture_select(
+                &entry.original,
+                expected,
+                view,
+                name,
+                entry.select_draft.capture()?,
+                user(shell).ok_or(ListError("The authenticated owner changed."))?,
+                loaded.allow_lists.as_deref(),
+                loaded.personal_task_lists.as_ref(),
+            )
+            .map(Intent::NewTextField);
         }
         ColumnCreate::capture_kind(
             &entry.original,

@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import test from 'node:test';
+const base=process.argv[2]||process.cwd();
+const source=readFileSync(path.join(base,'src/desktop/slack_lists/check/text_field_create/select/select.js'),'utf8');
+const options={format:'single_select',choices:Array.from({length:8},(_,i)=>({value:'OptAAAAAAA'+i,label:i===1?'\u00c9quipe \u6771\u4eac':'Option '+i,color:'blue'}))};
+function fixture(){
+ const nodes=new Map(),actions=[];let modal=true,reveals=0,locked=false;
+ const document={activeElement:null,querySelectorAll:s=>s==='.slack-list-warning'?[warning]:[]};
+ function element(id){return{id,isConnected:true,disabled:false,hidden:false,covered:false,dataset:{},box:[20,20,80,32],focus(){document.activeElement=this;},click(){if(!this.disabled&&!locked)actions.push(this.id);},closest(){return null;},contains(e){return e===this;},matches(s){return s===':disabled'&&(this.disabled||locked);}};}
+ const panel=element('slack-list-cell-editor');panel.dataset.editorGeneration='7';
+ const cancel=element('slack-list-editor-cancel'),save=element('slack-list-editor-save'),refresh=element('slack-list-editor-refresh');
+ const alert=Object.assign(element('alert'),{textContent:'This value cannot be saved. Check the value and choices.'});
+ let radios=Array.from({length:9},(_,i)=>{const e=element('radio'+i),label=Object.assign(element('label'+i),{querySelector:()=>({textContent:i?options.choices[i-1].label:'No selection'})});e.value=i?options.choices[i-1].value:'on';e.attr=i?e.value:null;e.getAttribute=n=>n==='value'?e.attr:null;e.hasAttribute=n=>n==='value'&&e.attr!==null;e.closest=s=>s==='label'?label:null;e.checked=i===0;e.click=()=>{if(e.matches(':disabled'))return;actions.push(e.id);radios.forEach(r=>r.checked=r===e);};return e;});
+ let buttons=[cancel,save];panel.querySelectorAll=s=>s==='button'?buttons:s==='[role=alert]'?[alert]:s.includes('input[type=radio]')?radios:[];
+ panel.contains=e=>[panel,...radios,cancel,save,refresh,alert].includes(e);
+ const row=element('row');row.dataset={rowId:'R_LIST_003',instanceId:'instance1'};
+ const cell=element('cell');cell.dataset.columnId='C_SELECT_OBSERVED';cell.closest=s=>s==='[data-instance-id]'||s==='[data-row-id]'?row:null;
+ const edit=element('edit'),primary=element('primary');let cellText='';cell.querySelector=s=>s==='.slack-list-cell-text'?{textContent:cellText}:edit;
+ row.querySelector=s=>s.includes('C_NAME')?primary:cell;
+ const root=element('root');root.dataset={dialogGeneration:'2',viewSelection:'3'};root.scrollWidth=root.clientWidth=500;root.contains=e=>[cell,row,primary].includes(e);
+ const heading=Object.assign(element('heading'),{textContent:'Release phase'}),picker={value:'V_FILTER',selectedOptions:[{textContent:'Shared checklist'}]},warning=Object.assign(element('warning'),{textContent:'Only part of this List is loaded'}),find=element('find');
+ const visible=e=>!!e&&e.isConnected&&!e.hidden&&e.box[0]>=0&&e.box[0]+e.box[2]<=640;
+ const hit=e=>visible(e)&&!e.covered,ring=e=>visible(e)&&!e.clipped;
+ const tools={q:s=>s==='#slack-list-cell-editor'?(modal?panel:null):nodes.get(s)||null,rect:e=>e?.box||null,visible,hit,reveal:()=>{reveals++;return[]},ids:()=>['R_LIST_003','R_LIST_001','R_LIST_007','R_LIST_005']};
+ nodes.set('.slack-list-grid tr[data-row-id="R_LIST_003"]',row);nodes.set('.slack-list-dialog',root);nodes.set('.slack-list-grid',root);nodes.set('.slack-list-grid th[data-column-id="C_SELECT_OBSERVED"]',heading);nodes.set('#slack-list-view-select',picker);nodes.set('.slack-list-find input',find);
+ for(const e of [cancel,save,refresh])nodes.set('#'+e.id,e);
+ const window={__listTextCreate:{selectTools:()=>tools,findRetained:()=>({ok:true})},__listSelectOptions:{ring}};
+ assert.equal(vm.runInNewContext(source,{window,document,innerWidth:640,innerHeight:380}).ok,true);
+ const api=window.__listSelectCreate;assert.equal(api.configure(options).ok,true);radios[0].focus();assert.equal(api.ready([],7).ok,true);
+ return{api,radios,panel,cell,root,row,cancel,save,refresh,alert,actions,document,nodes,get reveals(){return reveals;},set modal(v){modal=v;},set buttons(v){buttons=v;},set locked(v){locked=v;},get radios(){return radios;},set radios(v){radios=v;},set cellText(v){cellText=v;}};
+}
+test('No selection binds absent attribute and owned label, not native on value',()=>{const h=fixture();assert.equal(h.radios[0].value,'on');assert.equal(h.api.choose(null,7).ok,true);assert.equal(h.api.empty(7).ok,true);h.radios[0].attr='on';assert.equal(h.api.empty(7).ok,false);});
+test('exact Unicode option ID is selected and explicit clear returns empty',()=>{const h=fixture();assert.equal(h.api.choose(options.choices[1].value,7).ok,true);assert.equal(h.radios[2].checked,true);assert.equal(h.api.choose(null,7).ok,true);assert.equal(h.radios[0].checked,true);assert.deepEqual(h.actions,['radio2','radio0']);});
+test('unknown IDs, stale generation, disconnected owner and replaced radio refuse actions',()=>{const valid=options.choices[1].value;for(const [mutate,value] of [[h=>{},'unknown'],[h=>h.panel.dataset.editorGeneration='8',valid],[h=>h.panel.isConnected=false,valid],[h=>h.radios[2]={...h.radios[2]},valid]]){const h=fixture();mutate(h);assert.equal(h.api.choose(value,7).ok,false);assert.equal(h.actions.length,0);}});
+test('covered or clipped selected radio refuses before native activation',()=>{for(const key of ['covered','clipped']){const h=fixture();h.radios[2][key]=true;assert.equal(h.api.choose(options.choices[1].value,7).ok,false);assert.equal(h.actions.length,0);}});
+test('no-op requires exact visible error and unchanged empty enabled draft',()=>{const h=fixture();assert.equal(h.api.noop(7).ok,true);h.alert.textContent='other';assert.equal(h.api.noop(7).ok,false);h.alert.textContent='This value cannot be saved. Check the value and choices.';h.locked=true;assert.equal(h.api.noop(7).ok,false);});
+test('editing geometry rejects missing footer, doubled selection and covered radio',()=>{const h=fixture();assert.equal(h.api.geometry('select-edit',7).ok,true);h.buttons=[h.cancel];assert.equal(h.api.geometry('select-edit',7).ok,false);h.buttons=[h.cancel,h.save];h.radios[1].checked=true;assert.equal(h.api.geometry('select-edit',7).ok,false);h.radios[1].checked=false;h.radios[0].covered=true;assert.equal(h.api.geometry('select-edit',7).ok,false);});
+test('ACK geometry requires retained selected ID, actual Refresh and disabled fieldset',()=>{const h=fixture();h.api.choose(options.choices[1].value,7);h.locked=true;h.save.disabled=true;h.buttons=[h.refresh,h.cancel,h.save];h.cancel.focus();assert.equal(h.api.geometry('select-acknowledged',7).ok,true);h.refresh.covered=true;assert.equal(h.api.geometry('select-acknowledged',7).ok,false);});
+test('disabled replay probes do not activate mock browser disabled controls',()=>{const h=fixture();h.locked=true;h.save.disabled=true;assert.equal(h.api.disabledNoReplay(7).ok,true);assert.equal(h.actions.length,0);h.locked=false;assert.equal(h.api.disabledNoReplay(7).ok,false);});
+test('return proof never reveals or repairs focus and binds logical cell',()=>{const h=fixture();h.modal=false;h.cell.focus();const n=h.reveals;assert.equal(h.api.returned().ok,true);assert.equal(h.reveals,n);h.root.focus();assert.equal(h.api.returned().ok,false);assert.equal(h.reveals,n);h.cell.focus();h.cell.dataset.columnId='wrong';assert.equal(h.api.returned().ok,false);});
+test('observed and cleared surfaces bind actual selected label, Find and Table',()=>{const h=fixture();h.modal=false;h.cell.focus();h.cellText=options.choices[1].label;assert.equal(h.api.geometry('select-observed',null).ok,true);h.cellText='wrong';assert.equal(h.api.geometry('select-observed',null).ok,false);h.cellText='';assert.equal(h.api.geometry('cleared',null).ok,true);h.nodes.get('#slack-list-view-select').value='other';assert.equal(h.api.geometry('cleared',null).ok,false);});

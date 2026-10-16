@@ -40,6 +40,7 @@ pub(crate) struct Presentation {
     pub creation: Option<super_platinum_core::slack_lists::ViewLayout>,
     pub text_creation: bool,
     pub field_choice: Option<text_create::Choice>,
+    pub select_draft: Option<text_create::select::Draft>,
     pub observed_field: Option<text_create::Observed>,
     pub grouping: String,
     pub grouping_options: Vec<(String, String)>,
@@ -169,6 +170,10 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
             creation: e.target.creation(),
             text_creation: e.target.is_text_creation(),
             field_choice: e.target.is_text_creation().then_some(e.field_choice),
+            select_draft: (e.target.is_text_creation()
+                && e.field_choice.kind
+                    == super_platinum_core::slack_lists::ColumnCreateKind::Select)
+                .then(|| e.select_draft.clone()),
             observed_field: e
                 .review
                 .as_ref()
@@ -404,6 +409,7 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
                 original_records,
                 observed_field: None,
                 field_choice: text_create::Choice::initial(),
+                select_draft: Default::default(),
                 input,
                 visibility_choice: next_id(),
                 filter_choice: next_id(),
@@ -749,6 +755,9 @@ fn checked(
                             }
                             super_platinum_core::slack_lists::ColumnCreateKind::Checkbox => {
                                 "A matching Checkbox field is now visible in this Table."
+                            }
+                            super_platinum_core::slack_lists::ColumnCreateKind::Select => {
+                                "A matching Select field is now visible in this Table."
                             }
                             super_platinum_core::slack_lists::ColumnCreateKind::DateSingleDefault => {
                                 "A matching Date field is now visible in this Table."

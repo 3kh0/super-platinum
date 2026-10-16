@@ -1,4 +1,5 @@
 use super::*;
+mod select;
 use crate::slack_lists::rename::{self, Stage};
 pub(super) fn action(
     state: Signal<ShellState>,
@@ -130,6 +131,7 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
     let filter_valid = filter
         .as_ref()
         .is_none_or(|p| rename::filter::valid(&p.desired));
+    let select_valid = view.select_draft.as_ref().is_none_or(|d| d.ready());
     let filter_save = filter.clone();
     let grouping_save = view_grouping.clone();
     let unchanged = if let Some(p) = &view_grouping {
@@ -180,7 +182,8 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
                         option{value:"text",selected:field_kind=="text","Text"}
                         option{value:"number",selected:field_kind=="number","Number"}
                         option{value:"checkbox",selected:field_kind=="checkbox","Checkbox"}
-                        option{value:"date",selected:field_kind=="date","Date"}}
+                        option{value:"date",selected:field_kind=="date","Date"}
+                        option{value:"select",selected:field_kind=="select","Select"}}
                     p{class:"slack-list-editor-hint",if field_kind=="number"{"Number format: 0 decimal places. Missing values stay empty. "}else if field_kind=="checkbox"{"Editable empty cells appear unchecked. Values are saved only when you change a checkbox. "}"Shared with everyone who has access to this List."}
                 }
                 if creation.is_some(){p{class:"slack-list-editor-hint","Views are shared with everyone who has access to this List. New views do not copy the selected view settings."}
@@ -200,6 +203,7 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
                 input{id:"slack-list-rename-name",r#type:"text","data-field-choice":"{field_revision}",value:"{view.name}",maxlength:view.limit,disabled:!editing||(text_creation&&!view.can_confirm),
                     oninput:move |event|{if text_creation {if let Some(rendered)=field_choice {rename::text_create::input(state,serial,visit,selected,rendered,event.value());}}else{rename::input(state,serial,event.value())}}}
                 }
+                if let (Some(draft),Some(choice))=(view.select_draft,field_choice) {{select::fields(state,serial,visit,selected,choice,draft,editing && view.can_confirm)}}
                 p{id:"slack-list-rename-message",class:"slack-list-editor-hint",role:"status","{view.message}"}
                 if matches!(view.stage,Stage::Observed|Stage::Conflict|Stage::Available){p{id:"slack-list-rename-current",class:"slack-list-editor-hint","Current fields: {current}"}}
                 if let Some(observed)=view.observed_field {p{id:"slack-list-text-field-observed",class:"slack-list-editor-hint","data-column-id":"{observed.id}","data-column-key":"{observed.key}","Observed {field_label} field: {observed.name}"}}
@@ -208,7 +212,7 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
             div{class:"slack-list-editor-actions",
                 button{id:"slack-list-rename-leave",r#type:"button",onclick:move |_|{let mut state=state;crate::slack_lists::close_shell(&mut state.write());},"Close list"}
                 if closable{button{id:"slack-list-rename-close",r#type:"button",onclick:move |_|close(state,serial,visit),if editing{"Cancel"}else if matches!(view.stage,Stage::Conflict|Stage::Available){"Close review"}else{"Done"}}}
-                if editing{button{id:"slack-list-rename-confirm",r#type:"button",class:"primary",disabled:!view.can_confirm||!filter_valid||(precision.is_none()&&visibility.is_none()&&sort.is_none()&&filter.is_none()&&view_grouping.is_none()&&view.name.trim().is_empty())||unchanged,
+                if editing{button{id:"slack-list-rename-confirm",r#type:"button",class:"primary",disabled:!view.can_confirm||!filter_valid||!select_valid||(precision.is_none()&&visibility.is_none()&&sort.is_none()&&filter.is_none()&&view_grouping.is_none()&&view.name.trim().is_empty())||unchanged,
                     onclick:move |_|{if let Some(p)=grouping_save.clone(){rename::grouping::confirm(state,serial,visit,p.choice)}else{super::filter::confirm(state,serial,visit,filter_save.clone())}},if visibility.is_some()||sort.is_some()||filter.is_some()||view_grouping.is_some(){"Save for everyone"}else if precision.is_some(){"Save"}else if text_creation{"Create field"}else if creation.is_some(){"Create view"}else{"Rename {noun}"}}}
                 if checkable{button{id:"slack-list-rename-check",r#type:"button",class:"primary",disabled:!view.can_check,
                     onclick:move |_|rename::check(state,serial),if view_grouping.is_some(){"Check current grouping"}else if sort.is_some(){"Check current sort"}else if filter.is_some(){"Check current filter"}else if visibility.is_some(){"Check current visibility"}else if precision.is_some(){"Check current format"}else if text_creation{"Check current fields"}else if creation.is_some(){"Check current views"}else{"Check current {noun}"}}}

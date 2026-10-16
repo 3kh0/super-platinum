@@ -132,6 +132,8 @@ pub(crate) async fn capture(
             && checkbox::STAGES.contains(&stage))
         && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::Date)
             && date::STAGES.contains(&stage))
+        && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::Select)
+            && (select::STAGES.contains(&stage) || select::options::STAGES.contains(&stage)))
     {
         return Err("Invalid capture stage".into());
     }
@@ -272,5 +274,53 @@ mod tests {
             )
             .is_err()
         );
+    }
+}
+
+/// Historical modes keep their exact stage schema; only Select adds option custody.
+pub(super) fn creation_stage(
+    mode: FieldCreateMode,
+    mut legacy: Value,
+    options: Option<Value>,
+) -> Result<Value, String> {
+    if !legacy.is_object() || legacy.get("options").is_some() {
+        return Err("Historical stage shape already contains options".into());
+    }
+    if mode == FieldCreateMode::Select {
+        legacy["options"] = options.unwrap_or(Value::Null);
+    }
+    Ok(legacy)
+}
+#[cfg(test)]
+mod select_stage_tests {
+    use super::*;
+    #[test]
+    fn emitted_historical_stage_has_no_new_key_and_select_options_are_explicit() {
+        let legacy = json!({"ordinal":0,"stage":"field-edit","geometry":{"ok":true},"scrolling":null,"custody":null,"ledger":{},"document":{},"population":{},"find":{},"draft":{},"noSession":true,"noTransport":true});
+        let options = json!({"dom":{"rows":[{"value":"OptAAAAAAA0"}]},"model":{},"options":{}});
+        for mode in [
+            FieldCreateMode::Text,
+            FieldCreateMode::Number,
+            FieldCreateMode::Checkbox,
+            FieldCreateMode::Date,
+        ] {
+            assert_eq!(creation_stage(mode, legacy.clone(), None).unwrap(), legacy);
+            assert_eq!(
+                creation_stage(mode, legacy.clone(), Some(options.clone())).unwrap(),
+                legacy
+            );
+        }
+        let mut expected = legacy.clone();
+        expected["options"] = options.clone();
+        assert_eq!(
+            creation_stage(FieldCreateMode::Select, legacy.clone(), Some(options)).unwrap(),
+            expected
+        );
+        expected["options"] = Value::Null;
+        assert_eq!(
+            creation_stage(FieldCreateMode::Select, legacy.clone(), None).unwrap(),
+            expected
+        );
+        assert!(creation_stage(FieldCreateMode::Text, expected, None).is_err());
     }
 }

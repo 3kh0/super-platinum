@@ -23,7 +23,7 @@ async fn actual_capture_permit_builder_and_transport_preserve_exact_typed_forms_
         slack::{SlackClient, api},
         slack_lists::{
             ColumnCreate, ColumnCreateAttempt, ColumnCreateKind, Document, PersonalTaskLists,
-            RecordsPage,
+            RecordsPage, SelectCreateOptions,
         },
     };
     for (kind, wire_type, wire_options) in [
@@ -34,6 +34,13 @@ async fn actual_capture_permit_builder_and_transport_preserve_exact_typed_forms_
             Some(r#"{"precision":0}"#),
         ),
         (ColumnCreateKind::Checkbox, "checkbox", None),
+        (
+            ColumnCreateKind::Select,
+            "select",
+            Some(
+                r#"{"choices":[{"color":"cyan","label":"Ready","value":"OptABCDEFGH"}],"format":"single_select"}"#,
+            ),
+        ),
         (
             ColumnCreateKind::DateSingleDefault,
             "date",
@@ -52,16 +59,32 @@ async fn actual_capture_permit_builder_and_transport_preserve_exact_typed_forms_
                 &serde_json::json!({"ok":true,"prefs":{"task_lists":"[]","assigned_to_list":""}}),
             )
             .unwrap();
-            let intent = ColumnCreate::capture_kind(
-                &document,
-                &records,
-                "V1",
-                name,
-                kind,
-                "U1",
-                Some("full"),
-                Some(&personal),
-            )
+            let intent = if kind == ColumnCreateKind::Select {
+                ColumnCreate::capture_select(
+                    &document,
+                    &records,
+                    "V1",
+                    name,
+                    SelectCreateOptions::from_wire(
+                        &serde_json::from_str(wire_options.unwrap()).unwrap(),
+                    )
+                    .unwrap(),
+                    "U1",
+                    Some("full"),
+                    Some(&personal),
+                )
+            } else {
+                ColumnCreate::capture_kind(
+                    &document,
+                    &records,
+                    "V1",
+                    name,
+                    kind,
+                    "U1",
+                    Some("full"),
+                    Some(&personal),
+                )
+            }
             .unwrap();
             let mut attempt = ColumnCreateAttempt::new(intent);
             let permit = attempt
@@ -412,3 +435,5 @@ async fn type_options_cross_pairs_nonzero_and_opaque_number_options_refuse_befor
 
 mod checkbox;
 mod date;
+
+mod select;
