@@ -122,6 +122,22 @@ fn main() {
             std::process::exit(2);
         }
     }
+    if fixture::protected_owned_requested() {
+        #[cfg(not(feature = "protected-native-fixture"))]
+        {
+            eprintln!("protected-owned-send: binary lacks protected-native-fixture");
+            std::process::exit(2);
+        }
+        #[cfg(feature = "protected-native-fixture")]
+        if !drafts::protected::owned_native::enabled()
+            || fixture::protected_requested()
+            || fixture::protected_enrollment_requested()
+            || fixture::protected_adoption_requested()
+        {
+            eprintln!("protected-owned-send: exact exclusive fixture alias and CHECK=1 required");
+            std::process::exit(2);
+        }
+    }
     // A feature-off or malformed fixture request must never reach ordinary boot.
     if fixture::protected_requested() {
         #[cfg(not(feature = "protected-native-fixture"))]

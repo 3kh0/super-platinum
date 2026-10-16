@@ -116,16 +116,28 @@ impl Worker {
         families: &[&'static str],
         build: impl FnOnce(&I, mpsc::Sender<Result<T, p::Error>>) -> Request,
     ) -> Result<Step<I, T>, Refused<I>> {
+        self.family_request_at(&scope.account_id, Some(&scope.key), input, families, build)
+    }
+    // The account inventory has no invented destination; all scoped families
+    // retain their original account/key bounds and exact admission path.
+    fn family_request_at<I: Send + Sync + 'static, T: Send + 'static>(
+        &self,
+        account: &str,
+        key: Option<&DraftKey>,
+        input: I,
+        families: &[&'static str],
+        build: impl FnOnce(&I, mpsc::Sender<Result<T, p::Error>>) -> Request,
+    ) -> Result<Step<I, T>, Refused<I>> {
         let (send, receive) = mpsc::channel();
         let mut pending = self.pending.lock().unwrap();
-        if !bounded(&scope.account_id, Some(&scope.key)) {
+        if !bounded(account, key) {
             return Err(refusal(&mut pending, Reason::Metadata, input));
         }
         // All finite family slots are reserved atomically BEFORE any Prepare or
         // Reserve command. This reserves holder capacity, not C1 record capacity.
         let reserved = (|| {
             let a = pending.admission.as_mut().ok_or(Reason::Unsupported)?;
-            a.check(&scope.account_id, false)?;
+            a.check(account, false)?;
             if families.is_empty() || families.len() > 4 {
                 return Err(Reason::Stale);
             }
@@ -178,6 +190,25 @@ impl Worker {
         drop(pending);
         held.status.lock().unwrap().request = Some(build(&held.input, send));
         Ok(Step { key, held })
+    }
+    pub(in crate::drafts::store::worker) fn hold_inventory(
+        &self,
+        account: String,
+    ) -> Result<Step<String, Arc<p::Loaded>>, Refused<String>> {
+        if !bounded(&account, None) {
+            return Err(refusal(
+                &mut self.pending.lock().unwrap(),
+                Reason::Metadata,
+                account,
+            ));
+        }
+        self.family_request_at(
+            &account.clone(),
+            None,
+            account,
+            &["protected-inventory"],
+            |account, reply| wrapped(account, Action::Inventory { reply }),
+        )
     }
     pub(in crate::drafts::store::worker) fn reattach_step<
         I: Send + Sync + 'static,
@@ -584,7 +615,10 @@ impl Worker {
 
 #[path = "local_steps.rs"]
 mod local;
-pub use local::{CheckpointInput, PreserveInput, ReleaseInput, SendInput, WriteOutcome};
+pub use local::{
+    CheckpointInput, LocalOutcome, LocalWriteInput, PreserveInput, ReleaseInput, SendInput,
+    WriteOutcome,
+};
 pub(in crate::drafts::store::worker) use local::{
     Checkpointed, Preserved, Registered, Released, SendClaimed, SendConsumed, SendPrepared,
 };

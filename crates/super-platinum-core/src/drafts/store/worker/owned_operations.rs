@@ -4,8 +4,8 @@ use super::*;
 use crate::drafts::store::protected as p;
 
 pub use a::{
-    CheckpointInput, MutationInput, OpenInput, PreserveInput, ReleaseInput, SendInput, TeamInput,
-    WriteOutcome,
+    CheckpointInput, LocalOutcome, LocalWriteInput, MutationInput, OpenInput, PreserveInput,
+    ReleaseInput, SendInput, TeamInput, WriteOutcome,
 };
 
 /// Admission refusal is never a durable Error and must not trigger Preserve.
@@ -124,6 +124,25 @@ impl Operations {
             .reattach_step(&key.0)
             .map(|s| self.wrap(s))
             .map_err(Into::into)
+    }
+}
+impl Operations {
+    /// Actual whole-account inventory observation. Never normalizes or revokes
+    /// streams, grants a cutover permit, or chooses an initialization mode.
+    pub fn inventory(
+        &self,
+    ) -> Result<StorageJob<String, Arc<p::Loaded>>, AdmissionRefused<String>> {
+        self.queue
+            .worker
+            .hold_inventory(self.account().to_owned())
+            .map(|s| self.wrap(s))
+            .map_err(Into::into)
+    }
+    pub fn resume_inventory(
+        &self,
+        key: &OperationKey,
+    ) -> Result<StorageJob<String, Arc<p::Loaded>>, AdmissionError> {
+        self.resume(key)
     }
 }
 /// The constructor is private; generic arguments cannot create queue authority.
@@ -277,6 +296,41 @@ impl<I> StorageJob<I, p::WriteResult> {
     }
     pub fn failed_attempts(&self) -> Vec<(u64, p::Error)> {
         self.step.failed_attempts()
+    }
+}
+root!(
+    write_local,
+    resume_write_local,
+    hold_local_write,
+    LocalWriteInput,
+    p::LocalWriteResult
+);
+impl StorageJob<LocalWriteInput, p::LocalWriteResult> {
+    pub fn local_result(&self) -> Option<Result<LocalOutcome, p::Error>> {
+        self.step.local_result()
+    }
+    pub fn retry_storage(&self) -> Result<(), AdmissionError> {
+        self.queue
+            .worker
+            .retry_issued_local_write(&self.step)
+            .map_err(Into::into)
+    }
+}
+impl Operations {
+    /// Named isolated fixture fault; the unchanged executor refuses a nonisolated worker.
+    pub fn fixture_fault(
+        &self,
+        scope: Scope,
+        point: p::test_support::FaultPoint,
+    ) -> Result<
+        StorageJob<p::test_support::FaultPoint, ()>,
+        AdmissionRefused<p::test_support::FaultPoint>,
+    > {
+        self.queue
+            .worker
+            .hold_local_fault(scope, point)
+            .map(|s| self.wrap(s))
+            .map_err(Into::into)
     }
 }
 impl StorageJob<CheckpointInput, p::WriteResult> {

@@ -19,6 +19,7 @@ pub struct ViewCreate {
     document: Document,
     name: String,
     layout: ViewLayout,
+    grouping: Option<String>,
 }
 impl ViewCreate {
     /// Borrowed UI hint. Full parsing/policy is required again at capture/admit.
@@ -36,6 +37,31 @@ impl ViewCreate {
         allow: Option<&str>,
         personal: Option<&PersonalTaskLists>,
     ) -> Result<Self, ListError> {
+        Self::capture_with_grouping(document, name, layout, None, allow, personal)
+    }
+    /// Source new-view dropdown sends only grouping.group_by (the column key).
+    /// These borrowed choices are hints; capture/admit validate the full schema.
+    pub fn grouping_columns(document: &Document) -> impl Iterator<Item = &super::Column> {
+        document.columns.iter().filter(|column| {
+            !column.key.trim().is_empty()
+                && column.key.len() <= 1024
+                && !column.key.chars().any(char::is_control)
+                && super::saved_views::supports_new_grouping(column)
+        })
+    }
+    pub fn capture_with_grouping(
+        document: &Document,
+        name: &str,
+        layout: ViewLayout,
+        grouping: Option<&str>,
+        allow: Option<&str>,
+        personal: Option<&PersonalTaskLists>,
+    ) -> Result<Self, ListError> {
+        if grouping.is_some_and(|key| !Self::grouping_columns(document).any(|c| c.key == key)) {
+            return Err(ListError(
+                "Choose an existing select or checkbox field for grouping.",
+            ));
+        }
         if Document::parse(document.raw.clone())? != *document {
             return Err(ListError("List representations disagree."));
         }
@@ -52,6 +78,7 @@ impl ViewCreate {
             document: document.clone(),
             name: name.into(),
             layout,
+            grouping: grouping.map(str::to_owned),
         })
     }
     pub fn original(&self) -> &Document {
@@ -66,6 +93,9 @@ impl ViewCreate {
     pub fn layout(&self) -> ViewLayout {
         self.layout
     }
+    pub fn grouping_key(&self) -> Option<&str> {
+        self.grouping.as_deref()
+    }
     pub fn revalidate(
         &self,
         fresh: &Document,
@@ -79,7 +109,15 @@ impl ViewCreate {
                 "This List changed. Cancel and refresh before adding a view.",
             ));
         }
-        eligible(fresh, allow, personal)
+        eligible(fresh, allow, personal)?;
+        if self
+            .grouping
+            .as_deref()
+            .is_some_and(|key| !Self::grouping_columns(fresh).any(|c| c.key == key))
+        {
+            return Err(ListError("The grouping field changed. Review a new view."));
+        }
+        Ok(())
     }
     /// Exactly one isolated addition, never causal attribution or ownership.
     /// The host must additionally project this ID with its actual retained population
@@ -110,6 +148,20 @@ impl ViewCreate {
             || added["name"].as_str() != Some(&self.name)
             || added["type"].as_str() != Some(self.layout.as_str())
         {
+            return None;
+        }
+        // Grouped creation has a deliberately exact readback cohort. Do not
+        // claim a requested grouping when it is absent, redirected, or enriched
+        // with unreviewed grouping settings. Keep that full raw read for review.
+        let grouping_matches = match &self.grouping {
+            Some(key) => added.get("grouping") == Some(&serde_json::json!({"group_by":key})),
+            None => match added.get("grouping") {
+                None | Some(Value::Null) => true,
+                Some(Value::Object(settings)) => settings.is_empty(),
+                _ => false,
+            },
+        };
+        if !grouping_matches {
             return None;
         }
         let id = added["id"].as_str().filter(|s| !s.trim().is_empty())?;
@@ -204,3 +256,6 @@ impl ViewCreateAttempt {
 }
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod grouping_tests;

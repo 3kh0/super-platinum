@@ -2,6 +2,8 @@
 use super::*;
 use super_platinum_core::canvas::edit::text::TextDraft;
 
+const STATUS_LABELS: [&str; 3] = ["Unconfirmed", "Checking\u{2026}", "Saving\u{2026}"];
+
 #[component]
 pub(in crate::canvas) fn Editor(
     state: Signal<ShellState>,
@@ -55,13 +57,18 @@ pub(in crate::canvas) fn Editor(
         })
         .map(|(_, _, stage)| stage);
     let cancellable = !pending || stage == Some(checklist::Stage::Preparing);
+    let idle_label = if deletion {
+        "Delete paragraph"
+    } else if insertion {
+        "Add paragraph"
+    } else {
+        "Save"
+    };
     let save_label = match stage {
-        Some(checklist::Stage::Uncertain) => "Unconfirmed",
-        Some(checklist::Stage::AwaitingRead) => "Checking…",
-        _ if busy => "Saving…",
-        _ if deletion => "Delete paragraph",
-        _ if insertion => "Add paragraph",
-        _ => "Save",
+        Some(checklist::Stage::Uncertain) => STATUS_LABELS[0],
+        Some(checklist::Stage::AwaitingRead) => STATUS_LABELS[1],
+        _ if busy => STATUS_LABELS[2],
+        _ => idle_label,
     };
     rsx! {
         section { id:"canvas-text-editor",class:"canvas-text-editor","data-editor-generation":generation,"data-canvas-visit":visit,"data-replacement-target":replacement_target,
@@ -101,7 +108,11 @@ pub(in crate::canvas) fn Editor(
                             let restore=draft.try_read().ok().is_some_and(|d|d.as_ref().is_some_and(|d|d.generation==generation&&d.pending.is_none()&&current(&state.peek(),d))) && !reader.peek().loading;
                             let _=eval.send(restore);
                         });
-                    },"{save_label}"}
+                    },
+                    span {class:"canvas-text-save-label","{save_label}"}
+                    span {class:"canvas-text-save-size","aria-hidden":"true","data-label":idle_label}
+                    for status in STATUS_LABELS {span {class:"canvas-text-save-size","aria-hidden":"true","data-label":status}}
+                }
             }
         }
     }

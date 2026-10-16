@@ -72,7 +72,13 @@ impl WorkerSource {
     /// Invalid params cannot displace an already accepted worker.
     pub fn capture(shell: &mut ShellState, params: ConnectParams) -> Result<Self, Invalid> {
         if crate::fixture::is_fixture() {
-            return Err(Invalid::Source);
+            #[cfg(feature = "protected-native-fixture")]
+            let allowed = crate::drafts::protected::owned_native::permits_socket(shell);
+            #[cfg(not(feature = "protected-native-fixture"))]
+            let allowed = false;
+            if !allowed {
+                return Err(Invalid::Source);
+            }
         }
         let binding =
             network::Binding::capture(shell, &params.team).map_err(|_| Invalid::Source)?;

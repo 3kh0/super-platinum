@@ -89,6 +89,11 @@ impl Desktop {
 /// paired managed store. An unknown startup state is never proof of no owner.
 pub(crate) fn legacy_allowed(shell: &ShellState, key: &DraftKey) -> Result<(), &'static str> {
     #[cfg(feature = "protected-native-fixture")]
+    if super::protected::owned_native::named() {
+        return Err("Owned protected fixture forbids legacy delivery.");
+    }
+
+    #[cfg(feature = "protected-native-fixture")]
     if super::protected::adoption_fixture::named() {
         return Err("Protected adoption fixture has no delivery route.");
     }
@@ -165,6 +170,11 @@ fn legacy_ownership(shell: &ShellState, key: &DraftKey) -> Result<(), &'static s
 }
 
 pub(crate) fn route(shell: &mut ShellState, changes: BTreeMap<DraftKey, LocalDraft>) {
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::owned_native::named() {
+        super::protected::owned_native::route(shell, changes);
+        return;
+    }
     #[cfg(feature = "protected-native-fixture")]
     if super::protected::adoption_fixture::named() {
         super::protected::adoption_fixture::route(shell, changes);
@@ -301,6 +311,11 @@ fn route_existing(
 }
 
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::owned_native::named() {
+        return super::protected::owned_native::poll(shell);
+    }
+
     #[cfg(feature = "protected-native-fixture")]
     if super::protected::adoption_fixture::named() {
         return false;

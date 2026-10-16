@@ -7,6 +7,8 @@ use crate::{
     },
 };
 
+pub(crate) mod display_metadata;
+
 /// The small, non-secret subset a rendered attachment needs for file actions.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FileIdentity {

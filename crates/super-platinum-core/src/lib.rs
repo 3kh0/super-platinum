@@ -12,6 +12,7 @@ pub mod direct_messages;
 pub mod drafts;
 pub mod error;
 pub mod file_actions;
+pub mod file_download;
 pub mod file_preview;
 pub mod files;
 pub mod forwarding;

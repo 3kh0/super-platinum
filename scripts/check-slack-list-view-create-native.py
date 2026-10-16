@@ -27,18 +27,18 @@ WAITING = "slack-list-view-create-waiting: "
 STAGE = "slack-list-view-create-stage: "
 FIXTURE = "slack-list-view-create"
 FIXTURES = (FIXTURE, FIXTURE + "-narrow")
-STAGES = ("initial", "editing", "saving", "uncertain", "available", "final")
-NARROW_STAGES = ("initial", "editing", "saving", "uncertain", "checking", "stale", "available", "final")
+STAGES = ("initial", "refused", "editing", "saving", "uncertain", "available", "final")
+NARROW_STAGES = ("initial", "refused", "editing", "saving", "uncertain", "checking", "stale", "available", "final")
 REQUIRED = ("noTransport", "noSession", "syntheticInput", "actualBuilderDecoderReducers",
             "explicitConfirmation", "writeReplyNotProjected", "explicitOpen", "exactReadback",
-            "partialPopulationPreserved", "noMutationReplay", "selectedViewPreservedUntilOpen")
+            "partialPopulationPreserved", "noMutationReplay", "selectedViewPreservedUntilOpen", "groupingCancelNoRequest", "groupingSchemaRefused")
 
 
 def contract(fixture):
     if fixture not in FIXTURES:
         raise RuntimeError("Unknown exact List new shared view fixture")
     return CheckSpec(fixture=FIXTURE, flag=FLAG, prefix=PREFIX,
-                     prepared_requests=8 if fixture.endswith("-narrow") else 7, required=REQUIRED), NARROW_STAGES if fixture.endswith("-narrow") else STAGES
+                     prepared_requests=11 if fixture.endswith("-narrow") else 10, required=REQUIRED), NARROW_STAGES if fixture.endswith("-narrow") else STAGES
 
 
 def ready_tuple(fixture, nonce, pid):
@@ -150,10 +150,10 @@ def initial_population():
         {"id": "R_HYDRATE_PARENT", "list_id": "F_LIST_FIXTURE", "position": "0000000001",
          "date_created": 1, "created_by": "U1", "fields": [
              {"key": "NAME", "text": "Project parent"}, {"key": "done", "checkbox": False},
-             {"key": "notes", "text": "Known parent; children are not loaded yet."}]},
+             {"key": "notes", "text": "Known parent; children are not loaded yet."}, {"key":"status","select":["todo"]}]},
         {"id": "R_HYDRATE_OTHER", "list_id": "F_LIST_FIXTURE", "position": "9999999999",
          "date_created": 2, "created_by": "U1", "fields": [
-             {"key": "NAME", "text": "Unrelated retained item"}, {"key": "done", "checkbox": False}]}],
+             {"key": "NAME", "text": "Unrelated retained item"}, {"key": "done", "checkbox": True}, {"key":"status","select":["done"]}]}],
         "response_metadata": {"next_cursor": "fixture-opaque-unloaded+/=", "keep": "exact"}}
 
 
@@ -169,6 +169,7 @@ def document():
 def create_document(fixture=FIXTURE):
     raw = document()
     raw["title"] = "Add shared view review"
+    raw["list_metadata"]["schema"].append({"id":"C_STATUS","key":"status","name":"Status","type":"select","options":{"format":"single_select","choices":[{"value":"todo","label":"To do"},{"value":"done","label":"Done"}]},"opaque":{"keep":3}})
     raw["list_limits"]["over_view_maximum"] = False
     raw["created"], raw["user"] = 1700000000, "U1"
     raw["list_metadata"]["schema"][0].update(options={"format": "text"}, opaque={"keep": 1})
@@ -188,8 +189,23 @@ def current_document(fixture=FIXTURE):
     raw["list_metadata"]["views"].insert(1, {
         "id":"V_SERVER_NEW", "name":"Delivery overview", "type":"board" if fixture.endswith("-narrow") else "table", "position":"0015",
         "columns":[{"key":"NAME","id":"C_NAME","visible":True,"width":240},{"key":"done","id":"C_CHECK","visible":True},{"key":"notes","id":"C_RICH","visible":True}],
-        "filters":[], "sorts":[], "show_completed_items":True, "opaque":{"server_defaults":[1,{"future":True}]}})
+        "grouping":{"group_by":grouping_key(fixture)}, "filters":[], "sorts":[], "show_completed_items":True, "opaque":{"server_defaults":[1,{"future":True}]}})
     return raw
+
+
+def grouping_key(fixture):
+    return "status" if fixture.endswith("-narrow") else "done"
+
+
+def refused_document(fixture):
+    raw = create_document(fixture)
+    next(c for c in raw["list_metadata"]["schema"] if c["key"] == grouping_key(fixture))["type"] = "text"
+    return raw
+
+
+def expected_groups(fixture):
+    return ([{"key":"todo","label":"To do","count":1},{"key":"done","label":"Done","count":1}]
+            if fixture.endswith("-narrow") else [{"key":"true","label":"Checked","count":1},{"key":"","label":"Ungrouped","count":1}])
 
 
 def expected_wire(fixture=FIXTURE):
@@ -199,8 +215,8 @@ def expected_wire(fixture=FIXTURE):
              req("team.prefs.get", [["target_team", "T1"], ["_x_reason", "native-list-permission"]]),
              req("users.prefs.get", [["prefs", "task_lists,assigned_to_list"], ["_x_reason", "native-list-completion-permission"]])]
     write = req("lists.views.create", [["list_id", "F_LIST_FIXTURE"], ["name", "Delivery overview"],
-                ["type", "board" if fixture.endswith("-narrow") else "table"], ["_x_reason", "create-view"]])
-    return reads + [write] + ([reads[0]] if fixture.endswith("-narrow") else []) + reads
+                ["type", "board" if fixture.endswith("-narrow") else "table"], ["grouping", json.dumps({"group_by":grouping_key(fixture)},separators=(",",":"))], ["_x_reason", "create-view"]])
+    return reads + reads + [write] + ([reads[0]] if fixture.endswith("-narrow") else []) + reads
 
 
 
@@ -212,7 +228,7 @@ def validate_wire(receipt):
     permission = {"ok": True, "prefs": {"allow_lists": "full"}}
     personal = {"ok": True, "prefs": {"task_lists": "[]", "assigned_to_list": ""}}
     response = {"syntheticFailure":"response_lost"} if narrow else {"ok":True,"list":{"id":after["id"],"list_metadata":after["list_metadata"]},"opaque_reply":{"retain":True}}
-    responses = [{"ok":True,"file":before},permission,personal,response] + ([{"ok":True,"file":after}] if narrow else []) + [{"ok":True,"file":after},permission,personal]
+    responses = [{"ok":True,"file":refused_document(fixture)},permission,personal] + [{"ok":True,"file":before},permission,personal,response] + ([{"ok":True,"file":after}] if narrow else []) + [{"ok":True,"file":after},permission,personal]
 
     ledger = receipt.get("ledger", {})
     if ledger.get("requests") != expected_wire(fixture) or ledger.get("responses") != responses:
@@ -231,8 +247,12 @@ def validate_wire(receipt):
             or receipt.get("selectedView") != "V_SERVER_NEW" or receipt.get("selectedViewPreservedUntilOpen") is not True
             or receipt.get("positiveReplyRetained") is not (not narrow) or receipt.get("lateReadRejected") is not narrow
             or receipt.get("retainedMutationReply") != (None if narrow else response)
-            or receipt.get("writeRequests") != 1 or receipt.get("readRequests") != (7 if narrow else 6)):
+            or receipt.get("writeRequests") != 1 or receipt.get("readRequests") != (10 if narrow else 9)):
         raise RuntimeError("Exact schema/population or request count differs")
+    if (receipt.get("groupingKey") != grouping_key(fixture)
+            or receipt.get("groupingCancelNoRequest") is not True or receipt.get("groupingSchemaRefused") is not True
+            or receipt.get("groupProjection") != {"ok":True,"groups":expected_groups(fixture)}):
+        raise RuntimeError("Grouping selection, refusal, or mounted projection differs")
     visits = receipt.get("visitGenerations")
     if (not isinstance(visits, list) or (narrow and (len(visits)!=2 or any(type(v) is not int or v<=0 for v in visits) or visits[0]==visits[1])) or (not narrow and visits != [])):
         raise RuntimeError("Old and new mounted visits are not distinct")
@@ -252,8 +272,8 @@ def validate_native(fixture, nonce, pid, directory, receipt, stages_seen, platfo
         raise RuntimeError("Prepared request count must be an integer")
     validate_wire(receipt)
     geometry = receipt.get("geometry")
-    phase_map={"initial":None,"editing":"Editing","saving":"Saving","uncertain":"Uncertain","checking":"Checking","stale":"Uncertain","available":"Available","final":None}
-    phase_controls={None:["slack-list-new-view","slack-list-close"],"Editing":["slack-list-rename-leave","slack-list-rename-close","slack-list-rename-confirm"],"Saving":["slack-list-rename-leave"],"Checking":["slack-list-rename-leave"],"Uncertain":["slack-list-rename-leave","slack-list-rename-check"],"Available":["slack-list-rename-leave","slack-list-rename-close","slack-list-rename-check","slack-list-new-view-open"]}
+    phase_map={"initial":None,"refused":"NotRequested","editing":"Editing","saving":"Saving","uncertain":"Uncertain","checking":"Checking","stale":"Uncertain","available":"Available","final":None}
+    phase_controls={None:["slack-list-new-view","slack-list-close"],"Editing":["slack-list-new-view-layout","slack-list-new-view-grouping","slack-list-rename-name","slack-list-rename-leave","slack-list-rename-close","slack-list-rename-confirm"],"NotRequested":["slack-list-rename-leave","slack-list-rename-close"],"Saving":["slack-list-rename-leave"],"Checking":["slack-list-rename-leave"],"Uncertain":["slack-list-rename-leave","slack-list-rename-check"],"Available":["slack-list-rename-leave","slack-list-rename-close","slack-list-rename-check","slack-list-new-view-open"]}
     if not isinstance(geometry, list) or len(geometry) != len(stages):
         raise RuntimeError("Missing exact geometry stages")
     for g, stage in zip(geometry, stages):
@@ -265,7 +285,7 @@ def validate_native(fixture, nonce, pid, directory, receipt, stages_seen, platfo
                 or g.get("viewport") != receipt.get("viewport") or g.get("hitPointsPerControl") != 9
                 or [c.get("id") for c in g.get("controls", [])] != ids
                 or any(c.get("hit") is not True for c in g.get("controls", []))
-                or (phase and (g.get("input") != "Delivery overview" or g.get("creationLayout") != ("board" if fixture.endswith("-narrow") else "table")))):
+                or (phase and (g.get("input") != "Delivery overview" or g.get("grouping") != grouping_key(fixture) or g.get("creationLayout") != ("board" if fixture.endswith("-narrow") else "table")))):
             raise RuntimeError("Rename control geometry or mounted state differs")
     for key, value in (("fixture", fixture), ("nonce", nonce), ("pid", pid)):
         if receipt.get(key) != value or (key == "pid" and type(receipt[key]) is not int):

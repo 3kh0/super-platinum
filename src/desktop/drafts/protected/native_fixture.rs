@@ -258,6 +258,11 @@ pub(crate) fn binding(shell: &ShellState) -> Option<Arc<Binding>> {
     BINDING.get().filter(|b| b.current(shell)).cloned()
 }
 pub(crate) fn record_native(kind: &str, evidence: Value) {
+    if super::owned_native::named() {
+        super::owned_native::record_native(kind, evidence);
+        return;
+    }
+
     if super::adoption_fixture::enabled() {
         super::adoption_fixture::record_native(kind, evidence);
         return;

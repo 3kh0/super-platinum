@@ -28,7 +28,20 @@ pub(crate) mod native_fixture;
 mod observations;
 pub(crate) mod operation;
 mod outcome;
+#[cfg(any(test, feature = "protected-native-fixture"))]
+mod owned_editor;
+#[cfg(feature = "protected-native-fixture")]
+pub(crate) mod owned_native;
+#[cfg(any(test, feature = "protected-native-fixture"))]
+mod owned_release;
+#[cfg(any(test, feature = "protected-native-fixture"))]
+mod owned_route;
+#[cfg(test)]
+mod owned_route_tests;
+#[cfg(any(test, feature = "protected-native-fixture"))]
+mod owned_send;
 mod owner;
+mod ownership;
 pub(crate) mod projection;
 mod recovery;
 mod refresh;

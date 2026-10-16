@@ -68,6 +68,173 @@ backlog. [RESUME.md](RESUME.md) supplies the machine handoff and first next task
 
 ## Workstreams and acceptance evidence
 
+**Current checkpoint: List grouping native2 accepted; Save-dialog diagnostic1 failed before any UIA action.**
+The feature-enabled dev build passes in 406.2789156 s, receipt
+`tmp/save-dialog-native-build1/gate.json`, log SHA
+`d1575090c796b3984462c758e557463ca0f21b3e9d350a6b2f150175b71fea5d`.
+EXE `bcab09a771f999ffb6d85d7116870eaf159bfad580a55a163e2f162a69bc2f54`;
+seal `057c3f378de160fe70f84db76ac877af5c2affc57bfa704b050042e3b96790d2`.
+Current source remains the 2,432-entry f8e6704d inventory. The dedicated alias
+route was executed with Git Bash and correctly exits 2 before generic Cargo/UI
+work, directing the caller to its own runner. `git diff --check` exits 0.
+
+Fresh `tmp/list-grouping-native2` is independently CLEAR for both named
+disconnected fixtures. Root and auditor read all 16 original PNGs: name-input
+focus is now fully visible on all four sides at both widths; normal checkbox
+Table groups and narrow select Board lanes/counts are correct. Seven / nine
+stages, ten / eleven requests, one mutation each, exact current readback,
+retired-owner rejection, no replay, closed logs, process identity, pointer
+restoration and empty cleanup pass. Root visual record SHA
+`be8fe7fb79574168f9676166cb2fe3fbb1c5d13c4b4b0574f382699304b13a91`;
+independent audit `tmp/list-grouping-native2-independent-audit.json`, SHA
+`cba31e3cb09c8fc1a1d42b0483350440c7708ee1e8ca662f6f6edace7e3daab6`.
+Native1 retains its visual HOLD and earlier binary/source attribution. This closes
+the bounded optional checkbox/select new-view grouping and focus follow-up, not
+live Slack creation, other grouping families or broader Lists parity.
+
+The first actual Save diagnostic is FAILED:
+`tmp/original-save-dialog-e4bbffbcbc2832f167c30f268faa556c/receipt.json`.
+It recorded actual-rfd requested, then failed at the pre-capture dialog HWND
+ownership check before UIA discovery/review/Cancel. Only initial.png exists;
+root read it and it shows the bare shell rather than the viewer acknowledged by
+the DOM. The capture was not a valid viewer visual check. The runner discarded
+the failed hit-test details, so the exact modal-ownership failure cause is unknown;
+an opening/paint transition is a hypothesis, not a retained observation.
+PID 4136 has matching creation/exit identity, controlled exit 1, empty cleanup
+and audit errors, unchanged pointer and binary, zero HTTP requests and no saved
+file. No real dialog cancellation or native Save acceptance is claimed.
+Preserve this failure. A tmp-only harness correction is being prepared to retain
+all bounded window/hit observations and wait for stable visibility without
+weakening the ownership checks or replaying any UI action.
+
+**Earlier installation and validation checkpoint:**
+The grouping default dev build passed in 400.8990969 s at
+`tmp/list-grouping-native-build1/gate.json`, log SHA
+`a783193e3d618efc41c38411292ce5da9a359b0628ac3b26fb21c129934df26c`.
+EXE `5001e7683ff618fc2572e89c9d0246ec27f91ca143716dea8396602c68904a55`;
+seal `f561bfd353d15ae9e54a82a9d4f69bac1027b8d993adcc239b3232fffe61d931`.
+Fresh `tmp/list-grouping-native1` completed both disconnected cases, runner exit 0:
+seven normal / nine narrow stages and ten / eleven requests, one mutation each.
+Normal opens a checkbox-grouped Table; narrow opens a select-grouped Board and
+rejects the retired-owner read. Exact grouping/readback, no replay, closed logs,
+process identities, restored pointers and empty cleanup pass. Owned native exit 1
+is controlled termination, not a graceful-shutdown claim. Root and independent
+auditor read all 16 original PNGs. Functional evidence is CLEAR, but full visual
+acceptance is HOLD: both editing PNGs clip the name-input focus outline at the
+scroll body's horizontal edges. Audit
+`tmp/list-grouping-native1-independent-audit.json`, SHA
+`72e93606de7c7e8d74691b9b0ae9197b4cb8c627826ef3b7857c8aff56f60fd8`;
+root visual record SHA
+`d444865bd1105d089fa104f9a03568168249ff81c3ea5b66e0f78b53342e0f04`.
+Native1 remains bound to source 2b109 and EXE 5001e768; no retroactive acceptance.
+
+The small CSS correction keeps the existing focus width/color and uses an inset
+outline for full-width direct form controls in the scroll body. Receipt:
+`tmp/list-editor-focus-install1/receipt.json`, inventory SHA
+`0dbd28aba221687146a2c71affd07505f79db6c0176ccf70eceb32d2f70f4df0`.
+Its fresh native visual verification remains pending.
+
+Root then installed independently source-reviewed Save diagnostic manifest
+`dacca9aecc427f6b3ef3dc8a6f70ab48b3075bbb68c0cfcd5d2703437d9a716a`:
+11 targets (five replacements, six additions), receipt
+`tmp/save-dialog-install1/receipt.json`. Installation-time 2,432-entry inventory SHA
+`b59a5912d9c02e1de2126618a56b5758ee30b4ddd663effb4bcb7316644cc054`.
+Review SHA `1bbf3ea22d3a6a3c41bd1d30efeb361007934116ad0eeb5439d0443fca9d54e4`.
+This separate feature/alias-gated diagnostic reaches actual rfd and permits one
+root-reviewed observed UIA Cancel. It returns before transfer even on an unexpected
+selected path; no Save/overwrite action exists. It preserves the old download
+fixture and normal overwrite policy. Root format passes in 3.4138044 s and six
+installed Python checks pass in 0.006 s. The feature-enabled full desktop suite passes **1,910 / 0 failed / 7 ignored**,
+including both new diagnostic tests, 9.73 s tests / 374.4579169 s total. Receipt:
+`tmp/save-dialog-desktop-full1/gate.json`; log SHA
+`d915190a4ad8f320637014084cfd2b8b43bf73fbbcad7533a9cbb501fa8fa786`.
+Source b59a remained unchanged through the gate; no core source changed.
+Root then applied two reviewed harness-only launch fixes:
+`tmp/save-dialog-launch-fix1/receipt.json`. The helper uses process-only
+`-ExecutionPolicy Bypass`, matching the existing notification harness under the
+current Restricted default; no persistent policy is changed. The generic UI
+script now exits 2 for this dedicated alias instead of continuing into its second
+launch loop. The original source review missed these launch prerequisites; its
+addendum is `tmp/save-dialog-launch-corrections-review.json`, SHA
+`fee8eeed206ce3eae2fdb6d35aa58bd48e8ffe4f09c64020192fa257df38701e`.
+Current 2,432-entry inventory is `tmp/save-dialog-launch-fix1/after.json`, SHA
+`f8e6704d7c0d7a55ab45f5768ddfc8da3caf8d83665b4e9249538387007f7c19`.
+Installed Python checks pass again, six tests in 0.005 s. Rust bytes are unchanged
+by the two script corrections. The feature-enabled dev build/seal is running at
+`tmp/save-dialog-native-build1`; grouping native2 and actual Save cancellation
+remain pending. Actual UIA selectors are not yet observed.
+No actual OS cancellation, overwrite/sentinel preservation or positive Save
+acceptance follows from source review. No performance/observer/activation claim.
+
+**Earlier grouping source gates (before focus correction and Save diagnostic):**
+Root installed independently source-reviewed manifest
+`d0d63fb162229e4bf013e0564aaf6d4a391e40f1de58ecd563c67f07bce7e606`:
+18 targets (17 replacements, one new test module). Receipt:
+`tmp/list-view-grouping-install1/receipt.json`; current 2,426-entry inventory SHA
+`2b10906c8f001f7401cc679c9e2d7670a31ce02088d04a37867faeeb34555742`.
+New Table/Board views may optionally group by an ordinary checkbox or supported
+select column; None preserves the omitted grouping request. Schema/owner guards,
+one-use confirmation, no replay, exact current readback and explicit navigation
+remain in place. Independent source review is CLEAR:
+`tmp/list-view-grouping-independent-review.json`, SHA
+`899bda9da1477533b70a2079e2d79084ffa36bee0ca40296ac97c69817535020`.
+Fourteen installed mocked Python checks pass in 0.057 s. Root/core formatting
+passes in 3.3999699 s / 2.2372364 s. Independently locked core passes
+**2,180 / 0 failed / 5 ignored plus one doctest**, 36.79 s tests / 80.6337563 s
+total, at `tmp/list-grouping-core-full1/gate.json`; log SHA
+`b12f45ee1252dc858fa7b8018b690d6a7561d87a5fe02086c28db1487c2a7885`.
+Desktop full1 passes **1,903 / 0 failed / 7 ignored**, including both new
+grouping regressions, in 10.48 s tests / 279.7577512 s total. Receipt:
+`tmp/list-grouping-desktop-full1/gate.json`; log SHA
+`08ae2bdc2315e3bda1f4e2c9290fd131037a4ace9427c9c282fcc9c436b6df50`.
+Source inventory 2b109 is unchanged. A matching default-feature dev build is
+running under `tmp/list-grouping-native-build1`; native validation remains pending. The prepared
+native contract is seven normal and nine narrow stages, with ten and eleven
+requests respectively and one mutation per case. No live Slack success is claimed.
+
+**Previous source gate: Files display metadata core and desktop validation pass.**
+Root read the full patch and applied the independently cleared manifest
+`bf8ecdd825a88828f0d67093fefd4072fa9c9d9ef3592c2faa250e5a7145b992`:
+nine targets (four existing, five new). Receipt:
+`tmp/file-display-metadata-install1/receipt.json`; 2,425-file `after.json` SHA
+`4ed5dfe4b7e8f6e8d755f0b3c89f27ee74af5a71b1d81bb2646d3a3ec3c002ac`.
+Scope is existing names plus `size` and nonempty `pretty_type`, with per-field
+Later revisions and whitespace-name fallback protection. Media fields/bytes and
+viewer state remain preserved; the existing index fence is not broadened.
+Root/core formatting passes in 3.8620733 s / 2.2428723 s under
+`tmp/file-display-fmt1` and `tmp/file-display-core-fmt1`, with unchanged source.
+Independently locked full core with `original-download-fixture` passes
+**2,174 / 0 failed / 5 ignored plus one doctest**, including eight new core
+regressions, in 129.6364692 s total / 37.41 s tests. Receipt:
+`tmp/file-display-core-full1/gate.json`; log SHA
+`94e4d284473fcdf19d1acaafd465a1b99f9fcde8f9330e3a2cad223f3af47770`.
+The daemon restart interrupted desktop `file-display-desktop-full1` before a
+test result or completed gate; no worker survived. Preserve that log as interrupted.
+The first retry refused preflight before Cargo because generated bytecode
+`scripts/__pycache__/native_fixture.cpython-314.pyc` changed; every source file
+remained identical. `tmp/file-display-restart1/receipt.json` records the exact
+difference and interrupted log hash. The Files gate's 2,425-entry inventory is
+`tmp/file-display-restart1/sources.json`, SHA
+`39fd3c387f73dfa1751ac5571bbf03bfdc302edbd34f3d6fdebbc8d419d5d21d`.
+Desktop retry passes under `tmp/file-display-desktop-full2`: full locked default
+suite **1,901 / 0 failed / 7 ignored**, including both new viewer regressions,
+9.69 s tests / 325.9347082 s total. Receipt `gate.json`; log SHA
+`61ccf260bd6671c2d03a6adc7763a50f165b4ecf756dd7503288526ffce2888d`.
+Inventory 39fd remained unchanged through that Files gate. All ten new regressions pass across core/desktop.
+The bounded size/type-label slice is implemented and source-tested; ordinary late
+history, lagging future indexes, media/content generations and live interoperability
+remain open. No new native or performance acceptance is claimed.
+Earlier preview2 acceptance remains bound to source 2ff3 / EXE f56df39b.
+
+**Next work:** review/apply the bounded Save diagnostic capture-readiness and
+evidence correction, then run a fresh diagnostic on the existing sealed executable
+if Rust remains byte-identical. Inspect the actual dialog PNG/control inventory
+before publishing its exact observed Cancel descriptor. No user mouse approval
+is needed. Actual overwrite/sentinel preservation and positive Save remain
+separate unimplemented verification work. Grouping native2 is complete for its
+named disconnected scope. Protected journal inventory/terminal custody, broader
+Files history/index/media reconciliation and broad parity remain open.
+
 **Evidence in "Current status" is historical macOS evidence unless a later
 Windows receipt explicitly says otherwise.** "Remaining implementation and
 verification" includes required missing behavior as well as unproven behavior;
@@ -75,13 +242,13 @@ existing fixtures or unit tests do not replace live interoperability checks.
 
 | Workflow | Current status and latest evidence | Remaining implementation and verification |
 | --- | --- | --- |
-| Native Windows dev environment | Main Rich core 2,130 / 5 plus doctest and compile checks pass. Current isolated V19 adds one reviewed cfg(test) signature correction; formatting passes and full desktop tests are running in session 1901. After passing tests, fresh V19 build/seal and EXE/PDB comparison precede native decisions. Prior V18 includes applied V17 payload and two Python corrections; formatting, 22 Search Python tests and runtime check pass; V18 build is sealed and actual known poll-chain measurement is 734,240 bytes (314,336 bytes below reserve), constructor chain 491,400; unknown ancestors/callees prevent a whole-stack safety claim. Independent frame review is clear for bounded retry only. Full desktop session 12181 failed E0308 compilation in a stale test-helper return type before tests ran; cfg(test)-only V19 correction is installed, with full tests and a fresh matching build still pending. No V18 native launch or whole-stack safety claim. Prior V16 formatting, 19 Python/five Node tests, combined feature desktop **1,903 / 7**, default runtime check and sealed native build pass. Latest isolated core full remains V12 **2,161 / 5 plus doctest**. Actual V16 frame inspection retains an over-reserve direct edge (1,376,016 bytes) and constructor chain (1,049,336 bytes before return addresses/ancestors). [Exact gates and history](RESUME.md) | Root holds Send retry; helper success is not whole-stack safety, and V16 Send has not launched. V5/native2 failed-artifact audits do not prove Send/HTTP/durable outcomes. Isolated changes are not promoted to main. Separate Search V16 cohort failed: normal eight PNGs succeeded, narrow midpoint oracle failed before accepted stage (one PNG, 1 ULP). Root read all nine; independent failure audit is complete, cohort still failed. Immediate extra preflight failed shell quoting; only prior seal/post-run whole-input verification passed. Mouse released/no readiness pending; Canvas/download unlaunched. Older Canvas cp1 accepts eight processes / 40 PNGs on ae21 only, with width-fix native follow-up open. No overhead repeat; production protected storage/autosave/realtime ingress/native Slash activation remain off and broad parity remains incomplete |
+| Native Windows dev environment | Optional new-view grouping is installed in current main (2,426 entries), independently source-reviewed, with formats and full core **2,180 / 0 failed / 5 ignored plus doctest** passing; default desktop **1,903 / 0 failed / 7 ignored** also passes. Default dev build and native1 functional evidence pass on EXE 5001e768; all 16 PNGs read, complete visual acceptance HOLD for clipped name focus. CSS fix and separate real Save cancellation diagnostic are installed (2,432 entries), feature desktop **1,910 / 0 failed / 7 ignored** passes; two harness launch fixes and matching feature dev build pass. Grouping native2 independently passes all 16 inspected PNGs with unclipped focus; actual Save diagnostic1 failed before UIA action at modal ownership/capture readiness, and its initial PNG did not show the acknowledged viewer. The prior Files display-metadata cohort passed formats, full core **2,174 / 0 failed / 5 ignored plus doctest** and default desktop **1,901 / 0 failed / 7 ignored**, covering all ten new regressions. Prior V21 is promoted to main: 131 paths, 63 replacements / 68 additions. The separate two-file unsupported-preview correction is installed; that preview source cohort's format and default desktop **1,899 / 0 failed / 7 ignored** pass, including two new preview tests. The combined-feature dev build/seal passes (EXE 5202797c). Preview capture failed after six normal stages with generic metadata error; deletion race is a source-supported inference, narrow unattempted. The reviewed single-file complete-snapshot correction is installed; three focused tests and the matching dev build/seal pass (EXE f56df39b). Capture2 is independently accepted for both disconnected cases: all 14 PNGs read by root/auditor, exact saved files, cancellation cleanup and identities verified. Separately installed observer harness repair passes ten mocked tests, without diagnostic rerun. Prior isolated V21 core **2,166 / 5 plus doctest**, runtime check, desktop **1,905 / 7**, build and four-case / 20-PNG Owned Send fixture pass. V19 Search/Canvas/download are independently accepted for **16/40/14 PNGs** on their sealed binary. [Current receipts and limits](RESUME.md) | Main2 preview fixture acceptance is complete; main1 remains failed with all seven original PNGs inspected. OS Save dialog/live authentication/trusted input remain open. Earlier failed Send/stack cohorts retain their verdicts. Finite observer W1 failed before readiness; independent failure audit is complete, later roles unattempted. Its terminal attempt closed the scheduling hold, not performance acceptance. Keep thin/PACKED=false; no retirement slices, observer retry or overhead repeat. No live/OS-input/crash/broad C3 acceptance follows; production protected-store selection/autosave/realtime ingress/native Slash remain off |
 | Conversation reading, unread markers, history, navigation | Channel/thread bounded rich projection, complete row metadata, anchors, exact old targets and thread paging; Mac private warm-start/history/pagination checks and large synthetic native selection/window checks passed; Windows channel and five thread fixture checks pass with all six PNGs inspected, including 10,001-row bounds and selection pin/release; source-backed opening/read preferences, exact settings synchronization and resumable cold unread loading pass core/desktop tests and source review; corrected reading navigation and Reading settings each pass both Windows sizes with all twenty PNGs inspected per workflow, including settings focus preservation; Escape and bulk read pass both sizes with twenty and twenty-eight inspected PNGs respectively | Live bulk/read acknowledgements and full workspace-history coverage (production Threads/Activity/history/replies sequence now passes 25 focused tests with synthetic execution); cold Later/search/draft metadata paths, real 200-plus-reply native pagination, scrollbar/selection edge coverage, delayed live account/outage races, live synchronized opening/read preference verification and broader cross-client comparison |
 | Compose/reply, formatting, edits/deletes, broadcasts | Native Unicode/reference/IME guards and formatting; private bold/italic send proof; text and file broadcasts plus ordinary thread-only reply proved in **Live composer verification and channel mute integration**; late edit ownership guarded; supported channel/thread text enters the shared durable send journal; Windows trusted Unicode/edit-key and isolated synthetic file-paste checks pass both sizes with 22 inspected PNGs | Remaining edit/delete/list/link/mention and cross-client races; full rich-note/composer parity; actual OS IME sessions; broader rich/file/scheduled journal integration and live thread fault proof; Windows live end-to-end send/upload verification and remaining integration |
-| Drafts, scheduling and local recovery | Destination-owned local persistence, Drafts/Scheduled queues, guarded send/cancel/conflict recovery and source-backed reconciliation are implemented. Windows accepted slices include Update recovery **12 pairs / 52 PNGs** on da7ebcd0, acknowledged Send **12 pairs / 72 PNGs** on cd881dcc, and managed rich Schedule ms9 **22 pairs / 44 processes / 154 PNGs** on e3d70217 with exact SQLite and zero restart requests. Protected scenarios pass across pd3/pd4; enrollment pe2 independently passes **12 cases / 80 PNGs** on 076ce07d. D pa4 independently accepts all **14 runs / 150 PNGs** on feature3 **89687b72**, with exact raw SQLite/lease/glyph/process proof; [current status](RESUME.md) separates it from earlier native receipts | D acceptance is disconnected synthetic only, without live/IME/restart/global HTTP proof. Production protected storage selection, observation ingress and ordinary bidirectional remote autosave remain off. Broader lossless blocks/files, simultaneous edits, multi-destination scheduling, actual timed delivery, live thread/attachment recovery, process-crash and disk-failure coverage remain outstanding; isolated synthetic/controlled-restart evidence is not live or crash proof |
+| Drafts, scheduling and local recovery | Destination-owned local persistence, Drafts/Scheduled queues, guarded send/cancel/conflict recovery and source-backed reconciliation are implemented. Windows accepted slices include Update recovery **12 pairs / 52 PNGs** on da7ebcd0, acknowledged Send **12 pairs / 72 PNGs** on cd881dcc, and managed rich Schedule ms9 **22 pairs / 44 processes / 154 PNGs** on e3d70217 with exact SQLite and zero restart requests. Protected scenarios pass across pd3/pd4; enrollment pe2 independently passes **12 cases / 80 PNGs** on 076ce07d. D pa4 independently accepts all **14 runs / 150 PNGs** on feature3 **89687b72**, with exact raw SQLite/lease/glyph/process proof; Named V21 Owned Send independently accepts four cases / 20 PNGs, exact one frozen request/ACK each and retained post-exit SQL dictionaries (actual DBs no longer available for independent reopening). [Current status](RESUME.md) separates all binary cohorts | D acceptance is disconnected synthetic only, without live/IME/restart/global HTTP proof. Production protected storage selection, observation ingress and ordinary bidirectional remote autosave remain off. Broader lossless blocks/files, simultaneous edits, multi-destination scheduling, actual timed delivery, live thread/attachment recovery, process-crash and disk-failure coverage remain outstanding; isolated synthetic/controlled-restart evidence is not live or crash proof |
 | Mentions, emoji, custom emoji and reactions | Native mention/reference completion, retained mention Retry-After and in-app clipboard checks; prior private Mac undo/redo and custom reaction round trips. Emoji en2 independently passes normal/narrow with **32 inspected PNGs** and complete ledger/hash/process/pointer evidence on e4c09596. The unready choice is correctly disabled while visually unchanged. Combined emoji wiring and the audited thin desktop projection are installed; [current source gates](RESUME.md) pass  Insertion3 independently passes both sizes: **32 inspected PNGs / two closed processes / 64 edges**, three ACKs per process and stale guards on thin3028bf91. | Broader live/thread shortcode, tone/recents and directory send/render verification; broadcast eligibility/member ordering and arbitrary reply reactions; real clipboard/cross-window interoperability, OS input and long undo/cold-draft coverage. En2 is synthetic channel evidence, not general live/thread acceptance |
-| Search, filters, results navigation | Channel/sender/date controls, sort/paging, literal syntax, shortcuts, exact thread replies and archived private navigation verified; guarded missing-metadata resolution tested; Windows search/filter/loading/empty/error and palette static layouts inspected at available normal/narrow fixture sizes. Structured `has:file` / `has:link` filters are implemented in isolated V9: 15 focused core tests, full core 2,146 / 5 ignored plus one doctest, default desktop 1,880 / 7, runtime feature check and formats pass. The Search fixture is installed as isolated V15 and included in V16's passing combined feature desktop 1,903 / 7 and default runtime check. The first V16 native cohort failed: normal seven stages/final passed, narrow initial midpoint assertion failed by one ULP before an accepted stage; all nine PNGs were read by root and the independent failure audit is complete. V18's two-file Python correction and 22 passing tests do not retroactively accept the failed cohort. No complete native acceptance. [Exact source gates](RESUME.md) | Isolated structured filters still need main promotion and native/live verification; other additional filter types, current cross-client ranking/filter comparison, live cold metadata, multi-account/outage races and Windows keyboard behavior remain open |
-| Files, upload/download, previews and file actions | Browser/paging, text/code/audio/searchable PDF, channel Files & links, own-file rename/delete/save and viewer actions; pasted Unicode filenames now remain independent of staging paths through display/normal/thread/broadcast/scheduled upload, with exact loopback HTTP and six inspected Windows PNGs; private API round trips; file-name event refresh plus Later copy reconciliation; dense Files normal/narrow native checks passed. Original-file streaming beyond the media cache limit is implemented in isolated V10: four policy and eight HTTP focused tests, all five desktop download tests, full core 2,158 / 5 ignored plus one doctest, default desktop 1,885 / 7, runtime feature check and formats pass. [Exact source gates](RESUME.md) | Isolated original-file streaming still needs main promotion and native/live verification; its busy/cancel fixture was installed as isolated V11, passed V12 focused/combined Rust gates and is included in V16's passing combined feature desktop 1,903 / 7 and default runtime check. Native captures remain unrun and the OS save dialog is separately unverified. Broader non-name/content realtime refresh and late history/index reconciliation; direct attachment actions/share, Office/richer PDF/codecs/password paths, and live UI/permission/lost-response/account-race coverage remain open |
+| Search, filters, results navigation | Channel/sender/date controls, sort/paging, literal syntax, shortcuts, exact thread replies and archived private navigation verified; guarded missing-metadata resolution tested; Windows search/filter/loading/empty/error and palette static layouts inspected at available normal/narrow fixture sizes. Structured `has:file` / `has:link` filters are implemented in isolated V9: 15 focused core tests, full core 2,146 / 5 ignored plus one doctest, default desktop 1,880 / 7, runtime feature check and formats pass. The Search fixture is installed as isolated V15 and included in V16's passing combined feature desktop 1,903 / 7 and default runtime check. The first V16 native cohort failed: normal seven stages/final passed, narrow initial midpoint assertion failed by one ULP before an accepted stage; all nine PNGs were read by root and the independent failure audit is complete. V18's two-file Python correction and 22 passing tests do not retroactively accept the failed cohort. V19 normal/narrow fixture acceptance is independently CLEAR with 16 PNGs, all read by root and auditor; exact query/checkbox/refusal/focus states pass. Narrow Apply focus outline is partly clipped while text/hit target remain visible. The old V16 failed cohort remains preserved. [Exact source gates](RESUME.md) | Structured filters are now promoted to main; live verification beyond synthetic DOM fixture coverage remains open, along with other additional filter types, current cross-client ranking/filter comparison, live cold metadata, multi-account/outage races and Windows keyboard behavior remain open |
+| Files, upload/download, previews and file actions | Browser/paging, text/code/audio/searchable PDF, channel Files & links, own-file rename/delete/save and viewer actions; pasted Unicode filenames now remain independent of staging paths through display/normal/thread/broadcast/scheduled upload, with exact loopback HTTP and six inspected Windows PNGs; private API round trips; file-name event refresh plus Later copy reconciliation; bounded size/nonempty pretty_type refresh is now installed with per-field Later revisions and whitespace-name protection, formats, full core **2,174 / 5 ignored plus doctest**, and default desktop **1,901 / 7 ignored** passing (all ten new regressions); dense Files normal/narrow native checks passed. Original-file streaming beyond the media cache limit is implemented in isolated V10: four policy and eight HTTP focused tests, all five desktop download tests, full core 2,158 / 5 ignored plus one doctest, default desktop 1,885 / 7, runtime feature check and formats pass. [Exact source gates](RESUME.md) | Original-file streaming is now promoted to main; live verification beyond the accepted loopback fixture remains open; its busy/cancel fixture was installed as isolated V11, passed V12 focused/combined Rust gates and is included in V16's passing combined feature desktop 1,903 / 7 and default runtime check. V19 normal/narrow fixture acceptance is independently CLEAR: two closed processes / 14 PNGs, all read by root and auditor, three loopback transfers per case (cancel/save/cancel), exact retained 65 MiB + 7-byte file/hash and canceled-file absence. Stable controls pass; saved-toast pixels and preview completion are not proved. The separate two-file unsupported-preview correction is installed in main; its default suite and matching build pass; first normal native case failed with generic metadata error after six stages, narrow unattempted; canceled-file disappearance is a source-supported inference, not retained OS-error proof. The fixture-only complete-snapshot fix passes all three focused tests and matching build; fresh capture2 is independently accepted for both named disconnected cases: all 14 originals read by root/auditor, seven stages/eight ACKs/three requests per case, exact saved files and cleanup verified. Main1 remains failed; main2 proves readable unsupported fallback and stable controls, without retroactive acceptance. The OS Save cancellation diagnostic1 reached actual rfd requested but failed before UIA discovery/action; its only initial PNG shows the pre-viewer shell. Zero requests/files and owned cleanup pass. Cancellation, overwrite and positive Save remain unverified. Live validation of the bounded display-metadata slice, broader non-name/content realtime refresh and late history/index reconciliation; direct attachment actions/share, Office/richer PDF/codecs/password paths, and live UI/permission/lost-response/account-race coverage remain open |
 | Uncertain upload/file operations | File rename/delete journals and inventory passed restart fixtures; Windows normal/narrow seed/restart/retire pass with all six PNGs inspected and exact read-only SQL comparison; uploads persist reservation before staging and exact staged IDs before publication, restore inert receipts and offer bounded read-only checks; **Durable upload recovery and own-profile text editing** verified two-process SQLite/native restoration; Windows normal/narrow seed/restart and exact receipt retirement pass with all four PNGs inspected | Real lost-response/restart/outage proof, mid-commit disk failure/process-crash injection, unknown/no-ID receipts and broader cross-account scenarios; no automatic replay or inference from a missing result |
 | Later, save/remind, completed items | Message save/complete/remind/archive and realtime privately verified; rich personal reminders; saved files hydrate/open and retain durable operation recovery, normal/narrow native and SQLite proof | Live saved-file mutation/readback/realtime, full saved-index coverage, delayed cold message destinations and live preview edits/deletes; absence from a page must not imply removal |
 | Pins, bookmarks and channel tabs | Pins/private realtime round trip and exact saved/pinned reply routing; bookmark links/folders/order/cascade safeguards with private API proof and native fixtures; portable Windows normal/narrow workflow passes with two inspected PNGs plus the inspected singular-copy retake | Custom tabs and combined resources parity, bookmark emoji/non-link actions, live native bookmark mutation/realtime; old targets beyond loaded pages, large lists, offline/permission/reconnect cases |
@@ -93,8 +260,8 @@ existing fixtures or unit tests do not replace live interoperability checks.
 | Activity/DM/Dock badge policy | Exact Inbox category gates, authoritative count snapshots/revisions and separate DM rail selector implemented; Mac paired snapshot Activity35/DM46; canonical Dock aggregation/AppKit readback passed. Windows direct taskbar sink, failure/recovery/owner safeguards and eleven inspected numeric/unread/clear stages pass, including synthetic recreation; six production hook stages verify Activity/Later/account retirement with inspected pixels | Authentic unified-user/MRU/org-channel Enterprise context for unknown legacy/ordinary-unread branches; real badge-event delivery and preference controls; actual Windows Explorer-restart recovery |
 | Channel/global notifications, DND and accounts | Permanent/temporary channel mute and detailed preferences privately API/native verified; recurring hours/global defaults and macOS presentation checked. Windows direct WinRT submission, unpackaged shortcut/COM identity and bounded diagnostics implemented; isolated silent preview passes submission/history/cleanup, registration restoration and inspected OS banner pixels; synthetic COM account-owned routing reaches the exact thread reply without switching accounts; actual warm OS preview activation restores the same minimized window; actual cold OS activation launches a new process and paints the channel, with exact cleanup and inspected delayed captures; global defaults pass both Windows sizes with two inspected PNGs, seven reached controls and exact synthetic 9-write/ 12-read receipts; recurring schedules pass both sizes with inspected PNGs, seven reached days and exact 8-write/ 10-read receipts; presentation passes both sizes with local audio completion and 6-write/ 11-read receipts | Authorized live schedule/global/presentation writes, real OS/mobile message delivery, visible Dock attention, selected custom platform sounds, full account isolation/preferences; Windows live conversation routing and Linux delivery |
 | Huddles, camera, sharing and devices | Existing Slack room/Chime state machine and media bridge/UI | Human-approved controlled private call: join/leave, mute, audio/video, sharing, device/permission changes and reconnect; Windows secure-origin/media/OS behavior |
-| Canvases | Native reader/create/rename and bounded rich paragraph/checklist editing retain private Mac cross-client evidence. Windows cu2 UI passes 22 PNGs; recovery cr2 passes four processes / 16 PNGs; local-review cl2 passes eight processes / 32 PNGs, each with its recorded limits. Paired-runtime cp1 is independently CLEAR on sealed ae21a080 only: **eight closed processes / 40 original PNGs / 32 ordered stages**, exact logs/counts/geometry/SQLite (active empty, one archive, integrity OK), eight restored pointers and empty errors; root and auditor read all 40. [Exact current evidence](RESUME.md) | cp1 showed primary-button loading width shifting Cancel. The source fix is installed in isolated V12 and 19 JavaScript geometry cases pass; fresh native validation remains open. cp1 uses synthetic ACKs and controlled restart; owned termination exit 1 is not graceful shutdown or crash proof. Earlier and cp1 receipts retain their own binary attribution and do not validate isolated V10. General authoring/structure, comments, collaboration, rich-shape/title coverage, durable creation, live credential/lost-response/IME/crash behavior remain incomplete |
-| Lists | Saved tables/boards/filter/sort/date groups, details/open tracking, cell edits, create/delete/Undo and source-backed Duplicate retain earlier evidence. Timestamp checks include **50 inspected PNGs**; Board lane Add **14 PNGs**. Bounded hydration lh1 independently passes **14 PNGs** with unchanged opaque cursor/stale exclusion. Column rename lr5 independently passes both sizes (**16 PNGs**); saved-view rename lv2 independently passes **16 PNGs**, normal Table/narrow Board, all stale/observed/final picker states and focus. Exact eight-request ledgers preserve unknown schema, raw records and cursor; see [lv2 visual review](../tmp/agent-ui/lv2/root-visual-review.txt) | Subitem si2 independently CLEAR on corrected f8957b3e: four processes/ 36 inspected PNGs, 46 calls/ 10 opens/ 72 edges/cleanup; root all 36 read. Si1 visual HOLD remains historical. Live server continuation/global pagination and broader permission/fault behavior remain unproved; never infer full membership from a bounded page. Other schema writes, drag/lane management, To-dos/assignee/reminders and remaining actions/comments still require work |
+| Canvases | Native reader/create/rename and bounded rich paragraph/checklist editing retain private Mac cross-client evidence. Windows cu2 UI passes 22 PNGs; recovery cr2 passes four processes / 16 PNGs; local-review cl2 passes eight processes / 32 PNGs, each with its recorded limits. Paired-runtime cp1 is independently CLEAR on sealed ae21a080 only: **eight closed processes / 40 original PNGs / 32 ordered stages**, exact logs/counts/geometry/SQLite (active empty, one archive, integrity OK), eight restored pointers and empty errors; root and auditor read all 40. [Exact current evidence](RESUME.md) | cp1 showed primary-button loading width shifting Cancel. The source fix is installed in isolated V12 and 19 JavaScript geometry cases pass; V19 acceptance is independently CLEAR with eight closed processes / 40 PNGs / 32 stages, all read by root and auditor. Status/Cancel geometry is stable across the measured states, closing that width follow-up for V19. Controlled SQLite restart and retained local decisions pass, with final two databases reread read-only. cp1 uses synthetic ACKs and controlled restart; owned termination exit 1 is not graceful shutdown or crash proof. Earlier and cp1 receipts retain their own binary attribution and do not validate isolated V10. General authoring/structure, comments, collaboration, rich-shape/title coverage, durable creation, live credential/lost-response/IME/crash behavior remain incomplete |
+| Lists | Saved tables/boards/filter/sort/date groups, details/open tracking, cell edits, create/delete/Undo and source-backed Duplicate retain earlier evidence. Timestamp checks include **50 inspected PNGs**; Board lane Add **14 PNGs**. Bounded hydration lh1 independently passes **14 PNGs** with unchanged opaque cursor/stale exclusion. Column rename lr5 independently passes both sizes (**16 PNGs**); saved-view rename lv2 independently passes **16 PNGs**, normal Table/narrow Board, all stale/observed/final picker states and focus. Exact eight-request ledgers preserve unknown schema, raw records and cursor; see [lv2 visual review](../tmp/agent-ui/lv2/root-visual-review.txt) Optional Group by for new Table/Board views is installed for ordinary checkbox and supported select fields (manifest d0d63fb1); independent source review, 14 installed mocked Python checks, formats and full core **2,180 / 5 ignored plus doctest** pass. Default desktop **1,903 / 7 ignored** passes; default dev build and native1 functional checks pass (16 inspected PNGs), but complete visual acceptance is HOLD for clipped name focus; the CSS fix is accepted in fresh native2 (16 originals read by root/auditor, exact requests/current grouping/cleanup pass); native1 remains HOLD; no live grouped-view creation or complete schema-write parity is claimed. | Subitem si2 independently CLEAR on corrected f8957b3e: four processes/ 36 inspected PNGs, 46 calls/ 10 opens/ 72 edges/cleanup; root all 36 read. Si1 visual HOLD remains historical. Live server continuation/global pagination and broader permission/fault behavior remain unproved; never infer full membership from a bounded page. Other schema writes, drag/lane management, To-dos/assignee/reminders and remaining actions/comments still require work |
 | App interactions and workflows | Typed modal forms and ordinary controls, multi-user/channel selectors, scoped origin/state, external selectors and late-response guards retain accepted normal/narrow fixtures and earlier private evidence. The held external-selector checks retain **4 cases / 38 PNGs** and exact raw request dictionaries. Slash core, durable journal, atomic intent, completion, archive/remote cleanup and reviewed legacy execution are integrated; the latest main core suite passes **2,130 tests / 5 ignored + one doctest**. Earlier test/import/zero-filter failures remain in the dated ledger | Mounted Slash routing and native/live execution acceptance remain pending; source/domain passes do not establish production activation. Broader missing/filtered/IM origins, specialized client actions/Agentforce/Grid restrictions, app/workflow discovery/execution, owned private live receipt targets and complete modal response/error proof remain outstanding |
 | Keyboard, focus, accessibility and narrow windows | Native focus traps, shortcut typing handoff, selected controls/selection and synthetic IME guards; multiple normal/minimum Mac fixtures verified; Windows SendInput Unicode/Backspace/selection/replacement passes channel and thread at both sizes with 16 inspected PNGs and trusted-event receipts | Real OS IME and broader trusted keyboard coverage, screen-reader/labels, full focus restoration and reduced-motion/contrast sweeps, Windows shortcuts/WebView2 controls; isolated DOM events are not trusted-input proof |
 | Geist visual system | Local Geist/Mono, neutral tokens, uniform selection, muted system activity, compact Files/List/settings/control refinements and many inspected Mac fixtures; scoped on-fill/secondary-text contrast corrections pass four Windows palette fixtures, with 12 inspected captures and named actual/probe measurements; 21 Windows search/navigation and 32 resource static fixtures add inspected layouts, with stated taskbar limits and four unobstructed resource recaptures | Inspect every required surface/state at normal/narrow sizes on Windows; loading/error/empty/long labels, selected palettes, keyboard focus, AA contrast and reduced motion; full system consistency review |
@@ -15142,3 +15309,759 @@ is independently CLEAR, SHA
 `4210592fa8131a63118758e9e3f59c4cdf9dd9f75d32679d10f9912818ea4ba5`.
 It fails explicitly; root will inspect its success before any separate native
 launch. It is a verifier, not a runner.
+
+### 2026-10-15 - V19 disk-full failure and same-source test retry
+
+V19 `desktop-full1` failed with Cargo exit 101 after 196.14847600000212 s:
+rustc-LLVM reported no space on device. **No tests executed**, and source
+inventories were unchanged. The original log is retained, SHA
+`f4621761b7903da57771c0b86422d803c00e3a9c6e3d671ff352309dafe6f089`.
+C: had zero free bytes. Automatic approval review blocked root's proposed removal
+of three obsolete incremental caches with only "blocked by policy"; nothing was
+deleted by that action, and no deletion retry was made.
+
+After the user resumed, root measured 232,330,788,864 free bytes (about 216 GiB)
+and confirmed no compiler was active before restarting. V19 `desktop-full2` is
+now running in root session **69944**, with the same source, command and features:
+
+```text
+gate-v19.py v19-desktop-full2 --source-v19 cargo test --locked --no-default-features --features protected-native-fixture,original-download-native-fixture --bin super-platinum --target-dir C:/Users/mortar/Documents/GitHub/super-platinum/target
+```
+
+No result is claimed for this retry. No source promotion, native window or
+readiness question is pending.
+
+Main remains unchanged; no isolated source promotion or new native acceptance is claimed.
+
+### 2026-10-15 - V19 full desktop retry passes; native build running
+
+V19 `desktop-full2` passes **1,904 / 0 failed / 7 ignored**, session 69944
+exit 0, 9.36 s tests / 429.5349044000001 s total. Log SHA
+`676bf91ee6363b55ac01082b3e6bfacb5ef8c710da1a8cb2d92af1b4f9dbf283`.
+Whole main and isolated inventories are unchanged; the full1 disk-full failure
+remains preserved above. No deletion is attributed to the blocked root action.
+
+V19 `native-build1` is running in root session 42072 with the same fixture
+features, dev profile, `--bin super-platinum` and `--message-format=json`.
+Next: matching seal and PDB comparison, fresh mouse availability, and a separate
+successfully verified preflight before native launch. No new native result or
+source promotion is claimed.
+
+### 2026-10-15 - V19 sealed build and fresh frame extraction
+
+V19 `native-build1` **passes**, root session 42072, 398.15460840000003 s,
+log SHA `4bfd5727cb00e778f147094f00234b45ef5e8246dc061233c2bda635dc32a0dc`;
+whole inventories are unchanged. Seal: `tmp/parity-native-v19-build1/build.json`,
+SHA `f27a85994b085228bd400fd49e2807d47ea4836da2eb8cb5a9320ec6589d5e1b`.
+EXE SHA `29c4e5d966958f52e85ef7e1882f640e22b51a77ea45ac5c70c1d52393e69365`;
+PDB SHA `12b131c2b596c38ba19bba860c6981c43965a4dc256c56710d6c559800dc5466`.
+
+The changed EXE/PDB hashes required fresh extraction. f40/41bc completed under
+`tmp/protected-owned-send-v19-frame-audit1` and
+`tmp/protected-owned-send-v19-private-frame-audit1`. Root read seven prologues,
+four calls and PDB identity; its decision record SHA is
+`87f9a51af8fbefbd016411357522563661bd791dc903a7500f7c1a87be9a5338`.
+Selected chains remain 491,400 bytes for construction and 734,240 bytes for
+polling against a 1,048,576-byte reserve. Unknown frames are excluded; this is
+not a whole-stack safety guarantee. Independent audit is pending.
+
+Fresh mouse availability is pending for about three minutes: Send first, then
+separate Search/Canvas/download checks, stopping on the first failure. Inspect
+a successful separate preflight before launch. No native launch or source
+promotion is claimed.
+
+### 2026-10-15 - V19 bounded-frame review and input verification pass
+
+Independent V19 measured-frame review is CLEAR for a bounded retry:
+`tmp/protected-owned-send-v19-independent-frame-review.json`, SHA
+`39a1b4980a86a719f2f9721e13a493b2ebe6756aecef7d69ac8af260b2d789a5`.
+Root read it. Separate `verify_sealed_inputs.py` verification passes against
+V19 source and EXE hashes, without source writes or native execution.
+Only the fresh mouse availability reply is pending before the first Send launch.
+No native launch or acceptance is claimed; unknown stack frames remain excluded.
+
+### 2026-10-15 - V19 native Send failure and three runner cohorts awaiting review
+
+**Current source: isolated V19; source gates pass, native reviews in progress.**
+Main's 2,351 files remain unchanged and isolated V19 has 2,417 files, inventory
+`e956210c2f04966189dacaa79d18112084ee84b3bad15bdbd3c6df733af95bbc`.
+No main promotion or production protected-store/autosave/realtime ingress/native
+Slash activation is claimed. The user granted ongoing full mouse control;
+**do not request another quiet-window confirmation** for this authorized work.
+
+V19 full desktop passes **1,904 / 0 failed / 7 ignored** (9.36 s tests), following
+the preserved full1 disk-full failure. The matching dev build passes in
+398.15460840000003 s; `tmp/parity-native-v19-build1/build.json` seals EXE
+`29c4e5d966958f52e85ef7e1882f640e22b51a77ea45ac5c70c1d52393e69365`
+and PDB `12b131c2b596c38ba19bba860c6981c43965a4dc256c56710d6c559800dc5466`.
+Latest isolated core full remains V12 **2,161 / 5 ignored plus one doctest**;
+main Rich core remains **2,130 / 5 plus one doctest**, separately attributed.
+Independent V19 frame review is CLEAR for bounded retry, not whole-stack safety:
+`tmp/protected-owned-send-v19-independent-frame-review.json`, SHA
+`39a1b4980a86a719f2f9721e13a493b2ebe6756aecef7d69ac8af260b2d789a5`.
+Selected constructor/poll chains are 491,400/734,240 bytes; unknown frames remain
+excluded. Separate sealed-input verification passed before the new launches.
+
+**Send remains FAILED:** `tmp/protected-owned-send-native-v19-1` first
+normal/channel case completed all five UI stages, ten ordered edges and one
+terminal without observed overflow. PID 14632 closed and the pointer was restored
+with no cleanup errors. The outer closed-SQL audit failed: parent temporary-path
+mismatch and child temporary storage removed before audit leave no independently
+inspected closed database. The final PNG also shows an `invalid_auth` history
+toast from a fixture network-isolation gap involving `load_older`. Exact global
+HTTP count/endpoint was not captured; the hard-coded zero counter is not proof.
+All five original PNGs were independently read. Failed cohort and audit remain:
+`tmp/protected-owned-send-v19-1-independent-failed-audit.json`.
+This is not whole-workflow, durable-custody or no-network acceptance.
+
+**Other V19 runners pass; final acceptance is pending:**
+
+- Search: `tmp/search-has-native-v19-1`, two closed processes and 16 PNGs.
+  Root has read all 16; independent audit is ongoing.
+- Canvas: `tmp/canvas-replacement-native-v19-1`, eight closed processes and
+  40 PNGs. Root has read 10 of 40; visual and independent audits are ongoing.
+- Original download: `tmp/original-download-native-v19-1`, two closed processes
+  and 14 PNGs. Root image review has not started; independent audit is ongoing.
+
+The receipts bind the V19 EXE above and report empty cleanup/audit error arrays.
+Controlled owned-process exit 1 is distinct from successful runner completion;
+these results are not graceful-shutdown, live Slack or physical-input proof.
+The original-download OS save dialog remains separately unverified. Older
+accepted Canvas cp1 and other native slices keep their own binary attribution;
+new runner success alone does not close the Canvas width or other visual gates.
+
+**Next testable steps:** finish root and independent review of all 70 successful
+Search/Canvas/download PNGs and their closed receipts. For Send, review and
+integrate the closed-storage Python preparation (manifest
+`a8a764d32e799c37041f573d62741e799d6ff80c06731e4331276fed0309c7d6`)
+and the pending disconnected fixture Transport plus `load_older` guard. Run the
+required checks, build/seal any Rust correction, inspect a successful separate
+preflight, then rerun the unchanged strict Send workflow with retained storage
+available for closed-SQL inspection. These fixes are preparation, not installed
+or accepted here. No performance overhead rerun or broad parity completion is
+claimed. Historical failures and exact earlier gate hashes are retained below.
+
+### 2026-10-15 - V19 three fixture workflows accepted; Send still failed
+
+**V19 fixture acceptance is complete for Search, Canvas and original download:**
+all 70 original PNGs were read by root and independently audited, across 12
+closed processes on the sealed V19 EXE above. Send's five failed-cohort PNGs were
+also read, so root's four `root-visual-review.json` records cover all 75 originals.
+
+- Search: `tmp/search-has-native-v19-1`, two processes / 16 PNGs; independent
+  audit `tmp/search-has-v19-independent-audit.json` is CLEAR, SHA
+  `8649635f46423e51fb405f040fa0e7579aa0d3571ecc92541acd3457616ef999`.
+  Exact query/checkbox/refusal/focus states pass. Narrow inner scrolling leaves
+  part of the Apply focus outline clipped, but its text and hit target remain
+  visible; this observation is retained, not a broader keyboard/IME claim.
+- Canvas: `tmp/canvas-replacement-native-v19-1`, eight processes / 40 PNGs /
+  32 stages; independent audit `tmp/canvas-v19-independent-audit.json` is CLEAR,
+  SHA `23e66d4e7220f4287e7f53151f2a55282a61f0b33e8b9660d4e917a880e83b2f`.
+  Primary status and Cancel geometry stay stable across measured same-editor
+  states: the earlier width follow-up is closed for V19. Controlled SQLite
+  restart and retained local-review decisions pass; only the final two databases
+  were reread read-only, while historical snapshots are retained dictionaries.
+- Original download: `tmp/original-download-native-v19-1`, two processes /
+  14 PNGs; independent audit `tmp/original-download-v19-independent-audit.json`
+  is CLEAR, SHA `7b71ef459360d1b71279f558590bc250e84580ca6abd5078fc04bb92ce0f0c44`.
+  Each case records three loopback requests (canceled, saved, canceled), verifies
+  the retained 65 MiB + 7-byte file/hash and absence of canceled files, and shows
+  stable Download/Cancel controls. The saved toast is proved by native state,
+  not the saved screenshot; loading preview copy does not prove preview completion.
+
+These accepted fixture slices retain empty cleanup/audit arrays and restored
+pointers. Owned-process termination exit 1 is controlled cleanup, not graceful
+shutdown or crash/power-loss proof. Search/Canvas use synthetic DOM actions and
+ACKs; download uses loopback Transport and a substituted destination. No live
+Slack/CDN authentication, OS Save dialog/overwrite consent, physical keyboard,
+IME or global network-recording acceptance follows. Main promotion remains open.
+Older accepted slices and failed V16/Search or V19/Send runs retain their own
+binary attribution and verdicts.
+
+**Next testable steps:** finish freezing the Rust nine-target disconnected
+fixture Transport / `load_older` isolation correction and compose the V20
+installer with the independently clear closed-storage Python correction
+(manifest `a8a764d32e799c37041f573d62741e799d6ff80c06731e4331276fed0309c7d6`,
+42 tests passing). Rust source review is substantively clear, but its frozen
+manifest is still pending. **No V20 is installed yet.** After review/integration,
+run required checks, build/seal the Rust correction, verify inputs separately,
+and rerun the strict Send workflow with storage retained for closed-SQL audit.
+No new quiet-window confirmation is required under ongoing mouse control.
+No performance overhead rerun or broad parity completion is claimed.
+
+Root visual records are retained inside each cohort: Search SHA
+`403a63ab1bf0d00c9452e7916e0e4504d9d8b62389ef63e426d5101b0aef13ec`,
+Canvas `11e535aad81c2ae6b914b3d7ce1d59fd8318a3f4b7fbe6c0c48180376dfb1a99`,
+download `80a81981c235ee6fb48980e4f87cc67004c25a06dddf39c6d42fea4312a0f486`,
+and failed Send `8ebec17c5117509b54e0d0577910a2df18b5e904e8e8d9e39a1e3a1635cc458f`.
+
+### 2026-10-15 - Isolated V20 installed; core validation running
+
+**Current source: isolated V20; core tests running, native retry pending.**
+Root installed V20 at 21:15:18-23 UTC after reading the full installer/gate and
+performing separate preflight/apply. Installer 3a519400 is independently CLEAR.
+Inventory has 2,419 files, SHA
+`499dfd268a17612358023984b61b520d8731c22ef13f5b0aa56bdab20e2d5f2d`;
+main's 2,351 files remain unchanged. Receipt:
+`.validation-evidence/protected-owned-send-combined-install/receipt.json`.
+V20 root/core formatting passes with empty logs in 3.468059 s / 2.2424008 s;
+installed Python tests pass **42 tests in 0.409 s**. Core full1 is running in
+root session **77487**, using locked core Cargo with `original-download-fixture`
+and the main core target directory. No V20 Rust result or native run is claimed.
+**Next testable steps:** finish the V20 core gate and required desktop/runtime
+checks, then build/seal the corrected fixture, verify inputs separately and
+rerun strict Send with storage retained for closed-SQL audit. V19's failed Send
+verdict remains; its accepted Search/Canvas/download fixtures are prior-cohort
+evidence. No new quiet-window confirmation is required under ongoing mouse
+control. No performance overhead rerun or broad parity completion is claimed.
+
+Unsupported-preview candidate 67490bdf is a separate, uninstalled UI tranche:
+independent source review is CLEAR for two targets, two authored Rust tests and
+six passing JavaScript tests. It is not part of V20 and has no Rust/native result.
+
+### 2026-10-15 - V20 test compilation failure and V21 assertion correction
+
+**Current source: isolated V21; corrected core gate running, native retry pending.**
+V20 core full1 failed compilation before any tests ran: E0277 because
+`wreq::Client` lacks `Debug` for a new test's `OnceLock.set(...).unwrap()`.
+The failed gate took 22.0083063 s, log SHA
+`e6e09a569b92719769beed7cb07de604a6f13b19fe79dc45f72644893d2c22fb`;
+its inventories were unchanged and the failure is preserved.
+
+Root applied V21's sole cfg(test) correction, `assert!(set(...).is_ok())`,
+retaining before/after evidence and receipt at
+`.validation-evidence/v21-test-client-assertion`. Current isolated inventory has
+2,419 files, SHA `2b65c2fc9665e5046c67c28df6cefa2728859b2843ed11bc10715e66dc1d09f2`;
+main's 2,351 files remain unchanged. V21 core formatting passes in 2.2211418 s.
+The minimal correction is under independent review. Core full retry is running
+in root session **94863**, using the same locked command with
+`original-download-fixture` and main core target directory. No test pass, new
+build or native run is claimed yet.
+
+The underlying V20 installation remains recorded at
+`.validation-evidence/protected-owned-send-combined-install/receipt.json`:
+installer 3a519400 independently CLEAR, installed 21:15:18-23 UTC; root/core
+formats passed in 3.468059 s / 2.2424008 s and installed Python tests passed
+**42 tests in 0.409 s**. V21 changes only the test assertion above.
+
+### 2026-10-15 - V21 core and ordinary runtime gates pass
+
+The exact assertion correction is independently CLEAR. Core full with
+`original-download-fixture` passes **2,166 / 0 failed / 5 ignored plus one
+doctest**, including all five new loopback-branch tests, in 85.8145736 s
+(38.08 s tests), log SHA
+`33c387246048539000edbbb6589d18cd4db73644d172222a8867be225bf9965e`.
+Ordinary default runtime check passes in 224.8619267 s, log SHA
+`1e3760e46883d4327e69d6acff54cb046a3824d4ab8593face32a68902cfbff0`.
+Whole inventories are unchanged. Desktop full is running in root session
+**3806**, with the current fixture features, locked Cargo and main target
+directory. No new desktop result, build or native run is claimed yet.
+
+Read-only main-promotion assessment:
+`tmp/protected-c3-validation-root-gates/v21-main-integration-assessment.json`:
+131 source paths (63 changed, 68 added, none removed); only the three living
+docs are dirty in main, without overlap. Source promotion still waits for the
+current native Send workflow; the assessment itself does not authorize acceptance.
+
+### 2026-10-15 - V21 desktop suite passes; both native promotion prerequisites remain
+
+Desktop full1 passes **1,905 / 0 failed / 7 ignored**, 9.48 s tests /
+355.1219813 s total, log SHA
+`a29a85fbaacdf7c3601f72c14f17fc6d2716d9f5cc457c01f5bcace40e802596`.
+Whole inventories are unchanged. V21 native-build1 is running in root session
+**9935**, using the same fixture features, dev profile, `--message-format=json`
+and main target directory. No new build result or native run is claimed yet.
+
+Read-only promotion assessment confirms that the three living docs are dirty in main without source overlap. Promotion requires both current native
+Send validation and the still-unrun finite emoji retirement observer. Neither
+the assessment nor a passing Send run alone completes these prerequisites.
+V4 observer preflight passes all 32 targets, 81 dependencies and 14 helpers;
+the five observer pins remain exact. Root read the verifier, runner and
+`tmp/emoji-retirement-root-gates/native-launch-instructions-v4.txt`. After all
+Cargo work, run Send first, then the fixed **W1/B1/W2/B2/W3/B3** finite observer
+once, stopping on the first failure without substitution. Output remains planned
+at `tmp/emoji-retirement-observed1`. **Never repeat the already completed overhead
+test.** The observer uses its separately sealed a5b54fae binary and retained
+overhead receipt; it is not a V21 binary measurement.
+
+### 2026-10-15 - V21 sealed build and fresh frame extraction
+
+Whole inventories are unchanged. V21 native-build1 passes in 356.7188005 s,
+log SHA `310a46bbf023b515b8b6521fe144babd991d83c4b0b84324d8ea1276ed613cff`.
+Seal: `tmp/parity-native-v21-build1/build.json`, SHA
+`2cbb09a4f21ee0ae10d01d42f7f8ee0b2a09281e149d24e2ed9751680ea25018`;
+EXE `7951d8855227bd71f5b5356cf4772fe38ed7065d85a73d116f3d0336fddb6fd7`;
+PDB `f6101e9b1e01737a82d1e7fd5513d8f6c68815c6e09481b428e36b34bbb776cb`.
+Fresh f40/41bc extraction completed under
+`tmp/protected-owned-send-v21-frame-audit1` and
+`tmp/protected-owned-send-v21-private-frame-audit1`. Root read seven prologues,
+four calls and PDB identity; `root-review.json` records unchanged selected
+constructor/poll chains of 491,400/734,240 bytes. Unknown frames remain excluded;
+this is not a whole-stack safety guarantee. Independent review is finishing.
+Separate `verify_sealed_inputs.py` verification passes. Ongoing full mouse
+control permits the forthcoming Send launch; no V21 native result is claimed yet.
+
+After Send, the fixed finite emoji observer remains required once; never repeat the overhead test. No main promotion or new native acceptance is claimed.
+
+### 2026-10-15 - V21 Send receipts pass; finite observer fails before readiness
+
+**Latest native state:** all four V21 Send case receipts report success, with
+20 original PNGs inspected by root. Clear stages are empty; newer input remains
+after the terminal, and frozen multiline Unicode messages are visible in channel
+and thread. No `invalid_auth` toast is present. Root visual record:
+`tmp/protected-owned-send-native-v21-1/root-visual-review.json`, SHA
+`b8401328723c98a535093af6cc81c67eb7d4e56545f790fadf3ac79c9304eebb`.
+Independent closed-SQL audit is pending; whole-workflow acceptance is not yet
+claimed. V19's failed Send cohort remains preserved separately.
+
+**Finite observer failed before readiness:** session 57707 exited 1. Evidence:
+`tmp/emoji-retirement-observed1/report.json`, `W1/receipt.json`, `W1/native.log`,
+and `tmp/emoji-retirement-root-gates/native-series1-console.log`.
+W1 PID 6492, creation FILETIME 134365739336061098, has matching exit identity,
+empty cleanup errors and `terminalProvenanceCurrent: true`. There are no PNGs,
+trace, readiness or actions; B1/W2/B2/W3/B3 were not attempted. The runner passed
+an unresolved relative `--output` directory through the environment; Rust
+requires an absolute private directory and emitted `Invalid private directory`
+before the waiting handshake. The runner ignored FAILED while awaiting WAITING,
+so its `Startup deadline` is secondary. Independent failed-artifact audit is
+ongoing. No retry or overhead repeat occurred, and no measurement acceptance
+follows. Main remains untouched; promotion interpretation awaits the audits and
+an explicit disposition of this unmet observer gate.
+
+### 2026-10-15 - V21 bounded Owned Send independent acceptance
+
+Independent audit is CLEAR for the bounded named V21 Owned Send cohort:
+`tmp/protected-owned-send-v21-independent-audit.json`, SHA
+`6b6952e7223915a58a0f65d1309fa2eacfaef689a8c4e8b7eb8277444fa24d69`.
+All four cases / 20 PNGs pass strict terminal validation and recomputed full
+retained SQL dictionaries, with four distinct process/account identities and
+exactly one frozen request/ACK each. Post-exit storage/final identity matches;
+no errors or overflow were observed. The runner read actual closed SQLite before
+cleanup; independent review could not reopen the now-deleted databases and instead
+recomputed retained dictionaries and checked source/exit identity. Acceptance is
+synthetic DOM/ACK fixture scope only, not live Slack, physical input/IME,
+crash/restart durability, global network recording or broader C3 activation.
+V19's failed Send cohort remains preserved separately.
+
+### 2026-10-15 - Failed observer closes scheduling hold, not performance acceptance
+
+Root adopts the evidence-based interpretation of the recorded instructions:
+observer pins must stay unchanged through the pending diagnostic, and functional
+promotion must not precede it. They do not explicitly require a successful
+diagnostic for unrelated functional promotion. W1's terminal failure therefore
+closes that scheduling hold; stop-on-first-failure/no-retry remains binding.
+All six roles are required only for complete-series acceptance, which is absent.
+Keep thin / `PACKED=false`; no retirement slices, native retry or overhead repeat.
+Functional promotion is preparing under its own passed gates and exact receipts,
+not applied yet. The failed observer and all historical failures remain retained.
+
+### 2026-10-15 - V21 functional promotion and separate preview installation
+
+**Current source: V21 promoted to main, then unsupported-preview correction installed;
+main desktop tests are running.** Functional promotion completed at 21:45 UTC:
+`tmp/protected-v21-main-promotion-root-gates/install-1/receipt.json` reports
+success for 131 paths (63 replacements, 68 additions, none removed). The promoted
+2,419-file whole inventory has canonical SHA
+`1db8ffc80e3125c0d3879d2d5bb1a237173415789e690cee0aca60a961220dad`.
+Isolated source remained unchanged and the three living docs were byte-identical
+through promotion.
+
+The separate two-file unsupported-preview correction is now installed in main
+through reviewed installer
+`e2c261f16f1095a46990c638393d959976bccc26f7cb6c44b90ce07f70ba5292`.
+Receipt: `tmp/unsupported-preview-main-install/receipt.json`; current main
+`after.json` inventory SHA
+`f2bcf9d3c7d372cce23cb2cec35a5c03766fc700f0b2ede85cc1698a001e7ea0`
+(2,419 files). Root formatting passes in 3.5441899 s at
+`tmp/main-preview-fmt1/gate.json`. Full main
+`cargo test --locked --bin super-platinum` is running in root session **23079**,
+evidence under `tmp/main-preview-desktop-full1`. No new main suite pass or native
+preview acceptance is claimed; agent source edits are frozen.
+
+**Passed source/native evidence keeps its original attribution.** Before the
+preview edit, isolated V21 passed core **2,166 / 0 failed / 5 ignored plus one
+doctest**, ordinary runtime check, desktop **1,905 / 0 failed / 7 ignored**,
+formats and the sealed dev build. V21 EXE
+`7951d8855227bd71f5b5356cf4772fe38ed7065d85a73d116f3d0336fddb6fd7`
+proved the named Owned Send fixture: four cases / 20 root-and-auditor-inspected
+PNGs, exactly one frozen request/ACK per case, preserved newer input and no
+observed overflow or `invalid_auth` toast. Independent audit:
+`tmp/protected-owned-send-v21-independent-audit.json`, SHA
+`6b6952e7223915a58a0f65d1309fa2eacfaef689a8c4e8b7eb8277444fa24d69`.
+The runner inspected closed SQLite before cleanup; independent review recomputed
+full retained dictionaries but could not reopen the deleted databases.
+
+V19 Search/Canvas/original-download fixture acceptance covers 16/40/14 PNGs,
+12 closed processes, all root-and-auditor inspected, on EXE 29c4e5d9. Audits:
+`tmp/search-has-v19-independent-audit.json`,
+`tmp/canvas-v19-independent-audit.json`, and
+`tmp/original-download-v19-independent-audit.json`. Canvas status/Cancel width
+follow-up is closed for V19. Download proves three loopback transfers per case
+(cancel/save/cancel), exact retained 65 MiB + 7-byte content and canceled-file
+absence; it does not prove the OS Save dialog or live CDN authentication.
+Search retains the narrow partially clipped Apply focus outline observation.
+These fixtures do not establish physical input/IME, live Slack, global network
+recording, graceful shutdown, crash/power-loss durability or broad C3 activation.
+Earlier V19 Send and stack failures remain failed. Main promotion does not
+retroactively broaden any native receipt or establish preview behavior.
+
+**Finite observer terminal failure is retained, not performance acceptance.**
+W1 PID 6492 failed before readiness because unresolved relative output reached
+Rust's absolute private-directory guard. Its later startup deadline is secondary.
+No PNG, trace or action exists; B1/W2/B2/W3/B3 were unattempted. Process identity
+and cleanup are retained at `tmp/emoji-retirement-observed1`; independent failed
+review is complete, SHA
+`1fa7a620a1b6bf26dfef322cfe97c478c9d65ee4045eb28893fb6ca875644d70`.
+Root interpreted the instruction to preserve pins through the pending diagnostic
+and prohibit earlier promotion as a scheduling hold, not a successful-performance
+requirement for unrelated functional changes. The terminal failed attempt closed
+that hold, permitting functional promotion under its own passed gates; it did
+not pass the observer. Keep ordinary thin / `PACKED=false`, with no retirement
+slices, native observer retry or repeat of the completed overhead test.
+
+**Next:** finish the current main desktop gate and validate the preview correction
+with an appropriately attributed build/native check. Keep the exact promotion,
+preview and gate receipts separate. The user granted ongoing full mouse control;
+do not request another quiet-window confirmation for authorized work. Production
+protected-store selection, ordinary autosave, realtime ingress and native Slash
+activation remain off. Broad parity remains incomplete.
+
+### 2026-10-15 - Main preview suite passes; matching native build running
+
+Full main default desktop passes **1,899 / 0 failed / 7 ignored**, including both
+new preview tests, in 382.9648182 s total / 9.71 s tests. Receipt:
+`tmp/main-preview-desktop-full1/gate.json`; log SHA
+`3126605a73e48671b0fe75010b336c4d56e5541589972f0e8840e340a12dd35f`.
+Sources f2bc are unchanged; core bytes match tested V21. Combined-feature dev
+build/seal is running in session 40693 under `tmp/main-preview-native-build1`
+through `tmp/main-functional-gates.py`; no build/native preview result yet.
+
+Harness successor e5c21052b73e46d764e19a5e0fbd07baccd77f4133acfb323781c3350048f12c
+is independently CLEAR with ten mocked tests, but remains staged until capture
+freeze ends. No observer rerun or overhead repeat follows.
+
+### 2026-10-15 - Main preview build passes; fixture metadata race stops capture
+
+The combined-feature dev build passes in 449.7507337 s, receipt
+`tmp/main-preview-native-build1/gate.json`; log SHA
+`1417b1e151132f26370261a0ea93a3d576c8ad7bba79f5aafff5784f2a242f81`.
+EXE `5202797c917078e97dd5973330df9a756a2a1eca6b295fcd81ea2ca9458fa059`;
+seal `7314e3320ae6fa1346aae674033b66a7755daf1771b18489b3bcd09bb8e62295`.
+Fresh source/seal verification passes through `tmp/verify-main-preview-native.py`;
+the earlier inline PowerShell command had a syntax error and launched no native
+process. The corrected script passed before capture.
+
+**Preview capture FAILED:** `tmp/original-download-preview-main1` first normal
+case reached six stages, then failed at closed with native `download metadata`.
+A canceled part file disappears between `read_dir` and `metadata`; narrow was
+not attempted. Root inspected all seven PNGs (six stages plus native failure):
+unsupported fallback is readable, Download/Cancel geometry is stable, and closing
+visually restores the conversation. This partial evidence is not complete native
+acceptance. A fixture-only snapshot retry on `NotFound`, without accepting a
+partial snapshot, is being prepared; it is not installed yet.
+
+The independently cleared observer harness repair
+`e5c21052b73e46d764e19a5e0fbd07baccd77f4133acfb323781c3350048f12c`
+is now installed separately in two paths. Current main inventory has 2,420 files:
+`tmp/observer-startup-repair-install1/after.json`, SHA
+`d179e8a0f7d23f8dce03462df9fa3381632bac071b988c540b7456427cf95152`.
+Installed mocked tests pass **10 tests in 0.023 s**. This later script change does
+not alter the compiled preview binary's attribution. No observer or overhead
+rerun occurred; the prior failed diagnostic remains retained.
+
+### 2026-10-15 - Preview failure diagnosis qualified; scan correction installed
+
+The original error mapping discarded the OS error: disappearance of a canceled
+part between `read_dir` and `metadata` is a source-supported diagnosis, not
+captured `NotFound` proof. Narrow was not attempted. Root and independent review
+read all seven PNGs (six stages plus native failure): fallback and controls are
+readable/stable, and closing visually restores the conversation. Failed audit:
+`tmp/original-download-preview-main1-independent-failed-audit.json`, SHA
+`69e4afd1cc8fdcfd93f2f78909fc4c9490c5f48ad8967064f0e1d8be7073803f`.
+PID 5720 exited 1 with matching identity, restored pointer and empty cleanup;
+three local GETs are retained. Saved bytes were independently hashed to
+`f6adce243f15fd2e8de891799ca3a4f13fe375402fb2a321249bdc12fe113a02`.
+Root PNG record SHA is
+`f88a6fb736fea147cd6835a5117cf8815cb66084ea7dd43b230a4678b6f547a8`.
+This failed cohort is not complete native acceptance.
+
+The independently cleared single-file fixture correction
+`a51f25ac5e03b604044e2c78104a80a65386ff2b261b1e986b6f51bd9845c83c`
+is installed: `tmp/download-scan-race-install1/receipt.json`. Current 2,420-file
+main inventory at that folder's `after.json` has SHA
+`2ff3b9558d788f27112cbc41c27341152456acaab53dd9d37b242c916ddf6a76`.
+It rejects an incomplete snapshot on `NotFound`, continues scanning so other
+errors remain fatal, and preserves the existing bounded loop. Three deterministic
+Rust regressions are authored. Root format passes in 3.4227677 s; focused
+`download::fixture::check::scan_tests` is running in session **14140**, under
+`tmp/main-download-race-tests1`, with both fixture features and locked Cargo.
+No focused result or new capture is claimed yet.
+
+### 2026-10-15 - Three scan regressions pass; matching build running
+
+Focused `download::fixture::check::scan_tests` passes **3 / 0 failed / 0 ignored /
+1,914 filtered**, 0.00 s tests / 312.9278978 s total. Receipt:
+`tmp/main-download-race-tests1/gate.json`; log SHA
+`a82515fde14d7da28ad250a0f7c02d375894693abd43bd08014d7cf442a4eb9a`.
+Source 2ff3 remains unchanged. Combined-feature dev build/seal runs in session
+99134 under `tmp/main-download-race-native-build1`, then fresh normal/narrow
+capture2 is planned. No new build/native result yet. Prior main default 1,899
+pass remains attributed to f2bc; no full-suite rerun is required for this
+fixture-only three-test correction.
+
+### 2026-10-15 - Preview capture2 passes root checks; independent audit pending
+
+The dev build/seal with combined fixture features passes in 296.7925264 s,
+receipt `tmp/main-download-race-native-build1/gate.json`; log SHA
+`a938667b4b3e63da40f946d36bf6b2341285474627877ff60fc1e2d0c2c96808`.
+EXE `f56df39b6c6b9268a7c5e029b867747298d14acf8a1d7b6dce2a5fd7cd252fa1`;
+seal `e305e3913d1020fc3b3ee08c92e2a0b28bfe5d8540b2a208137f0501a69b2137`.
+Source 2ff3 is unchanged. Separate `verify-main-download-race-native.py` passes.
+The prior main default suite (1,899 passed) remains attributed to f2bc.
+
+**Preview capture2 runners pass; independent acceptance is pending.** At
+`tmp/original-download-preview-main2`, normal and narrow each complete seven
+stages: 14 PNGs total, runner exit 0, both receipts `ok: true`, processes closed
+and cleanup errors empty. Root personally read all 14: fallback copy is correct,
+controls remain stable without overlap, and closing restores the conversation.
+Root reread both 68,157,447-byte saved files, verified hash
+`f6adce243f15fd2e8de891799ca3a4f13fe375402fb2a321249bdc12fe113a02`, and found
+only the saved file in each destination. Root visual record SHA:
+`1a7d4ab8ba92bd6e6ea73d56d454f0c083b18727c6d7790e3d1efbbef1f95fe9`.
+Independent audit is running; acceptance beyond these root checks is not yet
+claimed. The failed main1 cohort remains preserved. No Cargo or owned native
+process remains active. Normal `git diff --check` passes; no observer rerun or
+performance claim follows.
+
+### 2026-10-15 - Main2 preview fixture independent acceptance closes
+
+Independent acceptance is now CLEAR for both named disconnected fixtures:
+`tmp/original-download-preview-main2-independent-audit.json`, SHA
+`b6b4c6f34663d6e288d26fde1f36eb0860d1997f06bee02eb56009d1aa76bf54`.
+The auditor read all 14 originals and verified seven stages, eight ACKs and three
+requests per case, exact saved hashes, cancellation cleanup, process identities
+and pointer restoration. Unsupported fallback and stable Download/Cancel geometry
+are accepted at both widths on EXE f56df39b. The fixture substitutes the destination
+and uses loopback; OS Save dialog, live authentication, overwrite consent and
+trusted physical input remain unproved. Saved toast state is validated but not
+visually present in the PNGs. Main1 remains failed; no retroactive acceptance,
+observer retry or performance claim follows. No owned Cargo/native process remains.
+
+**Next unresolved acceptance tasks (identified, not implemented here):**
+
+- Files row: validate the actual Windows Save dialog path, cancel and existing-file
+  preservation using a controlled local destination. Current fixture substitutes
+  `input.destination()` at `src/desktop/download.rs:90`; actual
+  `choose_destination` uses `rfd::AsyncFileDialog` at line 136. The accepted
+  loopback workflow does not exercise that OS interaction or overwrite consent.
+- Files row: investigate non-name/content realtime reconciliation across every
+  stored file copy. `src/desktop/file_events.rs:179` intentionally merges verified
+  names only, then calls `rename_file` at line 207. First inventory authoritative
+  field presence and revision/owner guards; preserve protection against partial
+  responses rather than replacing whole file metadata. This is a concrete source
+  gap, distinct from the now-accepted streaming/unsupported-preview fixture.
+
+Preserve main1's failed normal run and unattempted narrow case, and keep promotion,
+preview, harness and gate receipts separately attributed. Ongoing mouse control
+remains authorized; no new quiet-window confirmation is required. Production
+protected-store selection, ordinary autosave, realtime ingress and native Slash
+activation remain off. Performance observation is unresolved: keep thin /
+`PACKED=false`, with no observer retry, overhead repeat or retirement slices.
+Broad parity remains incomplete.
+
+### 2026-10-15 - Bounded Files display metadata installed; validation pending
+
+**Current main source: Files display metadata installed; Rust validation pending.**
+Root read the full patch and applied the independently cleared manifest
+`bf8ecdd825a88828f0d67093fefd4072fa9c9d9ef3592c2faa250e5a7145b992`:
+nine targets (four existing, five new). Receipt:
+`tmp/file-display-metadata-install1/receipt.json`; 2,425-file `after.json` SHA
+`4ed5dfe4b7e8f6e8d755f0b3c89f27ee74af5a71b1d81bb2646d3a3ec3c002ac`.
+Scope is existing names plus `size` and nonempty `pretty_type`, with per-field
+Later revisions and whitespace-name fallback protection. Media fields/bytes and
+viewer state remain preserved; the existing index fence is not broadened.
+Root/core formatting passes in 3.8620733 s / 2.2428723 s under
+`tmp/file-display-fmt1` and `tmp/file-display-core-fmt1`, with unchanged source.
+Ten new tests are authored but not yet run. Independently locked full core with
+`original-download-fixture` is running under `tmp/file-display-core-full1`;
+desktop validation follows. No new Rust/native or performance acceptance is claimed.
+Earlier preview2 acceptance remains bound to source 2ff3 / EXE f56df39b.
+
+### 2026-10-15 - Files display core suite passes; desktop validation running
+
+Independently locked full core with `original-download-fixture` passes
+**2,174 / 0 failed / 5 ignored plus one doctest**, including eight new core
+regressions, in 129.6364692 s total / 37.41 s tests. Receipt:
+`tmp/file-display-core-full1/gate.json`; log SHA
+`94e4d284473fcdf19d1acaafd465a1b99f9fcde8f9330e3a2cad223f3af47770`.
+Source 4ed5 is unchanged. Full default desktop is running under
+`tmp/file-display-desktop-full1` (`cargo test --locked --bin super-platinum`);
+the two new desktop regressions are not yet validated. No new native or
+performance acceptance is claimed.
+
+### 2026-10-15 - Daemon recovery preserves interrupted desktop gate
+
+The daemon restart interrupted desktop `file-display-desktop-full1` before a
+test result or completed gate; no worker survived. Preserve that log as interrupted.
+The first retry refused preflight before Cargo because generated bytecode
+`scripts/__pycache__/native_fixture.cpython-314.pyc` changed; every source file
+remained identical. `tmp/file-display-restart1/receipt.json` records the exact
+difference and interrupted log hash. The current 2,425-entry inventory is
+`tmp/file-display-restart1/sources.json`, SHA
+`39fd3c387f73dfa1751ac5571bbf03bfdc302edbd34f3d6fdebbc8d419d5d21d`.
+Desktop retry is running under `tmp/file-display-desktop-full2`
+(`cargo test --locked --bin super-platinum`). The two new desktop regressions
+remain unvalidated. No new native or performance acceptance is claimed.
+
+### 2026-10-15 - Files display metadata validation closes
+
+Desktop retry passes under `tmp/file-display-desktop-full2`: full locked default
+suite **1,901 / 0 failed / 7 ignored**, including both new viewer regressions,
+9.69 s tests / 325.9347082 s total. Receipt `gate.json`; log SHA
+`61ccf260bd6671c2d03a6adc7763a50f165b4ecf756dd7503288526ffce2888d`.
+Inventory 39fd is unchanged. All ten new regressions pass across core/desktop.
+The bounded size/type-label slice is implemented and source-tested; ordinary late
+history, lagging future indexes, media/content generations and live interoperability
+remain open. No new native or performance acceptance is claimed.
+
+Optional List grouping is staged under `tmp/list-view-grouping-prep`, manifest
+`d0d63fb162229e4bf013e0564aaf6d4a391e40f1de58ecd563c67f07bce7e606`.
+Eighteen targets remain uninstalled, with 14 staged Python checks, formatting,
+JavaScript syntax and patch applicability passing. Independent source review is
+running; Rust and native grouping checks remain unrun.
+
+### 2026-10-15 - Optional new-view grouping installed; validation underway
+
+Root installed exact manifest d0d63fb1 after independent source review CLEAR,
+18 targets (17 replacements and one new test module), receipt
+`tmp/list-view-grouping-install1/receipt.json`. Current inventory has 2,426 entries,
+SHA `2b10906c8f001f7401cc679c9e2d7670a31ce02088d04a37867faeeb34555742`.
+Root/core formats pass in 3.3999699 s / 2.2372364 s; installed mocked Python
+checks pass 14 tests in 0.057 s. Independently locked full core passes
+**2,180 / 0 failed / 5 ignored plus one doctest**, 36.79 s tests / 80.6337563 s
+total, at `tmp/list-grouping-core-full1/gate.json`, log SHA
+`b12f45ee1252dc858fa7b8018b690d6a7561d87a5fe02086c28db1487c2a7885`.
+Source 2b109 is unchanged. Desktop full1 is running; desktop and fresh native
+validation are not yet complete.
+The previously completed Files gate remains 2,174 core / 5 ignored plus doctest
+and 1,901 desktop / 7 ignored; those results predate grouping. Independent source
+review and mocked tests do not replace the new desktop or native gates. Earlier
+failures and native binary attribution remain unchanged. No observer retry,
+overhead repeat, protected activation or performance acceptance follows.
+
+### 2026-10-15 - Optional grouping desktop suite passes
+
+Desktop full1 passes **1,903 / 0 failed / 7 ignored**, including both new
+grouping regressions, in 10.48 s tests / 279.7577512 s total. Receipt:
+`tmp/list-grouping-desktop-full1/gate.json`; log SHA
+`08ae2bdc2315e3bda1f4e2c9290fd131037a4ace9427c9c282fcc9c436b6df50`.
+Source inventory 2b109 is unchanged. A matching default-feature dev build is
+running under `tmp/list-grouping-native-build1`; native validation remains pending.
+
+### 2026-10-15 - Grouping native1 functional pass, focus defect, and Save diagnostic installation
+
+**Current main source: List focus correction and real Save-dialog cancellation diagnostic installed; validation underway.**
+The grouping default dev build passed in 400.8990969 s at
+`tmp/list-grouping-native-build1/gate.json`, log SHA
+`a783193e3d618efc41c38411292ce5da9a359b0628ac3b26fb21c129934df26c`.
+EXE `5001e7683ff618fc2572e89c9d0246ec27f91ca143716dea8396602c68904a55`;
+seal `f561bfd353d15ae9e54a82a9d4f69bac1027b8d993adcc239b3232fffe61d931`.
+Fresh `tmp/list-grouping-native1` completed both disconnected cases, runner exit 0:
+seven normal / nine narrow stages and ten / eleven requests, one mutation each.
+Normal opens a checkbox-grouped Table; narrow opens a select-grouped Board and
+rejects the retired-owner read. Exact grouping/readback, no replay, closed logs,
+process identities, restored pointers and empty cleanup pass. Owned native exit 1
+is controlled termination, not a graceful-shutdown claim. Root and independent
+auditor read all 16 original PNGs. Functional evidence is CLEAR, but full visual
+acceptance is HOLD: both editing PNGs clip the name-input focus outline at the
+scroll body's horizontal edges. Audit
+`tmp/list-grouping-native1-independent-audit.json`, SHA
+`72e93606de7c7e8d74691b9b0ae9197b4cb8c627826ef3b7857c8aff56f60fd8`;
+root visual record SHA
+`d444865bd1105d089fa104f9a03568168249ff81c3ea5b66e0f78b53342e0f04`.
+Native1 remains bound to source 2b109 and EXE 5001e768; no retroactive acceptance.
+
+The small CSS correction keeps the existing focus width/color and uses an inset
+outline for full-width direct form controls in the scroll body. Receipt:
+`tmp/list-editor-focus-install1/receipt.json`, inventory SHA
+`0dbd28aba221687146a2c71affd07505f79db6c0176ccf70eceb32d2f70f4df0`.
+Its fresh native visual verification remains pending.
+
+Root then installed independently source-reviewed Save diagnostic manifest
+`dacca9aecc427f6b3ef3dc8a6f70ab48b3075bbb68c0cfcd5d2703437d9a716a`:
+11 targets (five replacements, six additions), receipt
+`tmp/save-dialog-install1/receipt.json`. Current 2,432-entry inventory SHA
+`b59a5912d9c02e1de2126618a56b5758ee30b4ddd663effb4bcb7316644cc054`.
+Review SHA `1bbf3ea22d3a6a3c41bd1d30efeb361007934116ad0eeb5439d0443fca9d54e4`.
+This separate feature/alias-gated diagnostic reaches actual rfd and permits one
+root-reviewed observed UIA Cancel. It returns before transfer even on an unexpected
+selected path; no Save/overwrite action exists. It preserves the old download
+fixture and normal overwrite policy. Root format passes in 3.4138044 s and six
+installed Python checks pass in 0.006 s. Feature-enabled full desktop tests are
+running under `tmp/save-dialog-desktop-full1`; two new Rust tests and actual UIA
+selector feasibility are not yet validated. No new core source changed.
+No actual OS cancellation, overwrite/sentinel preservation or positive Save
+acceptance follows from source review. No performance/observer/activation claim.
+
+### 2026-10-15 - Save diagnostic desktop passes; launch prerequisites corrected
+
+The feature-enabled full desktop suite passes **1,910 / 0 failed / 7 ignored**,
+including both new diagnostic tests, 9.73 s tests / 374.4579169 s total. Receipt:
+`tmp/save-dialog-desktop-full1/gate.json`; log SHA
+`d915190a4ad8f320637014084cfd2b8b43bf73fbbcad7533a9cbb501fa8fa786`.
+Source b59a remained unchanged through the gate; no core source changed.
+Root then applied two reviewed harness-only launch fixes:
+`tmp/save-dialog-launch-fix1/receipt.json`. The helper uses process-only
+`-ExecutionPolicy Bypass`, matching the existing notification harness under the
+current Restricted default; no persistent policy is changed. The generic UI
+script now exits 2 for this dedicated alias instead of continuing into its second
+launch loop. The original source review missed these launch prerequisites; its
+addendum is `tmp/save-dialog-launch-corrections-review.json`, SHA
+`fee8eeed206ce3eae2fdb6d35aa58bd48e8ffe4f09c64020192fa257df38701e`.
+Current 2,432-entry inventory is `tmp/save-dialog-launch-fix1/after.json`, SHA
+`f8e6704d7c0d7a55ab45f5768ddfc8da3caf8d83665b4e9249538387007f7c19`.
+Installed Python checks pass again, six tests in 0.005 s. Rust bytes are unchanged
+by the two script corrections. The feature-enabled dev build/seal is running at
+`tmp/save-dialog-native-build1`; grouping native2 and actual Save cancellation
+remain pending. Actual UIA selectors are not yet observed.
+
+### 2026-10-15 - Grouping native2 accepted; actual Save diagnostic1 capture failure
+
+**Current checkpoint: List grouping native2 accepted; Save-dialog diagnostic1 failed before any UIA action.**
+The feature-enabled dev build passes in 406.2789156 s, receipt
+`tmp/save-dialog-native-build1/gate.json`, log SHA
+`d1575090c796b3984462c758e557463ca0f21b3e9d350a6b2f150175b71fea5d`.
+EXE `bcab09a771f999ffb6d85d7116870eaf159bfad580a55a163e2f162a69bc2f54`;
+seal `057c3f378de160fe70f84db76ac877af5c2affc57bfa704b050042e3b96790d2`.
+Current source remains the 2,432-entry f8e6704d inventory. The dedicated alias
+route was executed with Git Bash and correctly exits 2 before generic Cargo/UI
+work, directing the caller to its own runner. `git diff --check` exits 0.
+
+Fresh `tmp/list-grouping-native2` is independently CLEAR for both named
+disconnected fixtures. Root and auditor read all 16 original PNGs: name-input
+focus is now fully visible on all four sides at both widths; normal checkbox
+Table groups and narrow select Board lanes/counts are correct. Seven / nine
+stages, ten / eleven requests, one mutation each, exact current readback,
+retired-owner rejection, no replay, closed logs, process identity, pointer
+restoration and empty cleanup pass. Root visual record SHA
+`be8fe7fb79574168f9676166cb2fe3fbb1c5d13c4b4b0574f382699304b13a91`;
+independent audit `tmp/list-grouping-native2-independent-audit.json`, SHA
+`cba31e3cb09c8fc1a1d42b0483350440c7708ee1e8ca662f6f6edace7e3daab6`.
+Native1 retains its visual HOLD and earlier binary/source attribution. This closes
+the bounded optional checkbox/select new-view grouping and focus follow-up, not
+live Slack creation, other grouping families or broader Lists parity.
+
+The first actual Save diagnostic is FAILED:
+`tmp/original-save-dialog-e4bbffbcbc2832f167c30f268faa556c/receipt.json`.
+It recorded actual-rfd requested, then failed at the pre-capture dialog HWND
+ownership check before UIA discovery/review/Cancel. Only initial.png exists;
+root read it and it shows the bare shell rather than the viewer acknowledged by
+the DOM. The capture was not a valid viewer visual check. The runner discarded
+the failed hit-test details, so the exact modal-ownership failure cause is unknown;
+an opening/paint transition is a hypothesis, not a retained observation.
+PID 4136 has matching creation/exit identity, controlled exit 1, empty cleanup
+and audit errors, unchanged pointer and binary, zero HTTP requests and no saved
+file. No real dialog cancellation or native Save acceptance is claimed.
+Preserve this failure. A tmp-only harness correction is being prepared to retain
+all bounded window/hit observations and wait for stable visibility without
+weakening the ownership checks or replaying any UI action.

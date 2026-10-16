@@ -30,6 +30,8 @@ impl Command {
         // Inspect the tag by reference: moving Action here would put its largest
         // payload back in this frame before the selected handler can consume it.
         match &self.action {
+            #[cfg(any(test, feature = "protected-test-support"))]
+            Action::Inventory { .. } => handlers_queries::execute(self, open, pending, isolated),
             Action::Load { .. } => handlers_queries::execute(self, open, pending, isolated),
             Action::Review { .. } => handlers_queries::execute(self, open, pending, isolated),
             Action::ReviewLocal { .. } => handlers_queries::execute(self, open, pending, isolated),

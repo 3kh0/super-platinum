@@ -389,7 +389,11 @@ pub(crate) fn file_node(
     let mime = super_platinum_core::file_preview::mime_for_file(&file).to_owned();
     let full = file
         .full_url()
+        .or_else(|| super_platinum_core::state::file_download_url(file))
         .map(|url| media.register_deferred(MediaAssetKind::Attachment, url, mime.clone()));
+    if let Some(id) = &full {
+        media.register_file_download(id, file);
+    }
     match file.preview() {
         Some(preview) => RichNode::Media {
             file: super_platinum_core::file_actions::identity(&file),

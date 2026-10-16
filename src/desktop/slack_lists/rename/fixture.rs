@@ -171,6 +171,7 @@ pub(super) async fn write(
                 &mut server,
                 &desired,
                 target.creation().unwrap(),
+                target.grouping(),
             );
             // Deliberately a mutation response.list, never files.info.file.
             l.responses.push(json!({"ok":true,"list":{"id":server["id"],"list_metadata":server["list_metadata"]},"opaque_reply":{"retain":true}}));
@@ -196,7 +197,12 @@ pub(super) async fn write(
     {
         let mut l = ledger().lock().unwrap();
         if let Some(layout) = target.creation() {
-            super::super::fixture::view_create::add(l.server.as_mut().unwrap(), &desired, layout);
+            super::super::fixture::view_create::add(
+                l.server.as_mut().unwrap(),
+                &desired,
+                layout,
+                target.grouping(),
+            );
             if std::env::var("SUPER_PLATINUM_FIXTURE").as_deref() == Ok("slack-list-view-create") {
                 return Ok(l.responses.last().unwrap().clone());
             }
@@ -276,4 +282,35 @@ pub(crate) fn retained_reply(shell: &ShellState) -> Option<Value> {
         return None;
     }
     entry(shell)?.raw_reply
+}
+
+/// Exact disconnected source mutation for a schema-race preflight. No live reads/writes.
+pub(crate) fn grouping_schema(shell: &ShellState, key: &str, changed: bool) -> Result<(), String> {
+    if !create_check_enabled() || !enabled(shell) {
+        return Err("Disconnected new-view fixture required".into());
+    }
+    let original = shell
+        .slack_lists
+        .view
+        .as_ref()
+        .and_then(|v| v.loaded.as_ref())
+        .and_then(|l| l.document.columns.iter().find(|c| c.key == key))
+        .ok_or("Missing fixture grouping column")?
+        .raw
+        .clone();
+    let mut l = ledger().lock().unwrap();
+    if l.pending.is_some() || l.held_read.is_some() {
+        return Err("Pending fixture response".into());
+    }
+    let column = l.server.as_mut().ok_or("Missing fixture server")?["list_metadata"]["schema"]
+        .as_array_mut()
+        .ok_or("Missing fixture schema")?
+        .iter_mut()
+        .find(|c| c["key"] == key)
+        .ok_or("Missing fixture server grouping column")?;
+    *column = original;
+    if changed {
+        column["type"] = json!("text");
+    }
+    Ok(())
 }

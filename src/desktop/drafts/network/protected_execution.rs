@@ -74,6 +74,19 @@ impl Binding {
         now: u64,
         current: F,
     ) -> Attempt {
+        #[cfg(feature = "protected-native-fixture")]
+        if crate::drafts::protected::owned_native::named() {
+            return self
+                .execute_claimed_with(claim, now, |request| async {
+                    if !current() {
+                        return Err(ProtectedDraftFailure::NotRequested(Error::Transport(
+                            "Owned fixture current guard refused".into(),
+                        )));
+                    }
+                    crate::drafts::protected::owned_native::response(request)
+                })
+                .await;
+        }
         self.execute_claimed_with(claim, now, |request| {
             self.transport
                 .execute_protected_draft_mutation(request, &current)

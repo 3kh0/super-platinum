@@ -18,11 +18,19 @@ impl Owner {
     pub async fn review(&self) -> Result<durable::Review, durable::Error> {
         self.account.initialize().await?;
         let _guard = self.gate.lock().await;
+        #[cfg(any(test, feature = "protected-native-fixture"))]
+        if let Some(route) = &self.account.owned {
+            return route.review(self.scope.clone()).await;
+        }
         super::account::wait(self.account.client()?.review(self.scope.clone())).await
     }
     pub async fn local_inventory(&self) -> Result<durable::LocalInventory, durable::Error> {
         self.account.initialize().await?;
         let _guard = self.gate.lock().await;
+        #[cfg(any(test, feature = "protected-native-fixture"))]
+        if let Some(route) = &self.account.owned {
+            return route.local(self.scope.clone()).await;
+        }
         super::account::wait(self.account.client()?.review_local(self.scope.clone())).await
     }
     pub(super) fn client(&self) -> Result<&durable::Client, durable::Error> {

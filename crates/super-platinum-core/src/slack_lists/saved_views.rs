@@ -184,3 +184,8 @@ pub fn project(
         incomplete: page.next_cursor.is_some(),
     })
 }
+
+/// New-view grouping is bounded to ordinary field families already projected.
+pub(super) fn supports_new_grouping(column: &Column) -> bool {
+    column.kind == "checkbox" || (column.kind == "select" && evaluate::choices(column).is_ok())
+}

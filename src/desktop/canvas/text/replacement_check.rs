@@ -244,11 +244,14 @@ async fn run(
     )
     .await?;
     let geometry = confirmation(desktop).await?;
+    let first_actions = action_geometry(desktop, "Delete paragraph", None).await?;
+    let mut action_geometries = vec![first_actions.clone()];
     capture(state, "confirmation", 1, Some(geometry)).await?;
     wait(desktop, r#"({ok:!!document.querySelector('#canvas-text-editor')&&!document.querySelector('#canvas-text-save')?.disabled})"#).await?;
     confirmation(desktop).await?;
     click(desktop, "#canvas-text-save").await?;
     reserved(&state, desktop).await?;
+    action_geometries.push(action_geometry(desktop, "Saving\u{2026}", Some(&first_actions)).await?);
     capture(state, "reserved", 2, None).await?;
     if !fixture::release(state).await {
         return Err("Reserved pair lost dispatch ownership".into());
@@ -262,6 +265,7 @@ async fn run(
     if counts(&state) != (1, 1, 0, 0) {
         return Err("Duplicate pair dispatch".into());
     }
+    action_geometries.push(action_geometry(desktop, "Saving\u{2026}", Some(&first_actions)).await?);
     capture(state, "saving", 3, None).await?;
     let attempt = fixture::accept(&mut state.write()).ok_or("Missing pair ACK")?;
     let read = fixture::read(state).await?;
@@ -269,6 +273,8 @@ async fn run(
         return Err("Pair unlocked before disk retirement".into());
     }
     controls(desktop, true).await?;
+    action_geometries
+        .push(action_geometry(desktop, "Checking\u{2026}", Some(&first_actions)).await?);
     capture(state, "accepted-locked", 4, None).await?;
     checklist::recovery::settle(state, &read).await;
     if !checklist::text_ops::settled(&state.peek(), &attempt) || stored().await?.is_some() {
@@ -316,6 +322,8 @@ async fn run(
     .await?;
     wait(desktop, r#"({ok:!!document.querySelector('#canvas-text-editor')&&!document.querySelector('#canvas-text-save')?.disabled})"#).await?;
     confirmation(desktop).await?;
+    let second_actions = action_geometry(desktop, "Delete paragraph", None).await?;
+    action_geometries.push(second_actions.clone());
     click(desktop, "#canvas-text-save").await?;
     reserved(&state, desktop).await?;
     if !fixture::release(state).await || !fixture::uncertain(&mut state.write()) {
@@ -326,8 +334,9 @@ async fn run(
     if counts(&state) != (2, 2, 1, 1) {
         return Err("Unexpected paired workflow counts".into());
     }
+    action_geometries.push(action_geometry(desktop, "Unconfirmed", Some(&second_actions)).await?);
     capture(state, "uncertain-before-exit", 8, None).await?;
-    Ok(final_value(
+    let mut result = final_value(
         state,
         &mode,
         layout,
@@ -340,8 +349,39 @@ async fn run(
             "subsequentEdit",
             "duplicateSafe",
             "unknownRetained",
+            "stableActions",
         ],
-    ))
+    );
+    result["actionGeometry"] = json!(action_geometries);
+    Ok(result)
+}
+
+// Measure real labels/states; do not overwrite text or styles to simulate them.
+const ACTION_GEOMETRY: &str = r#"(expected,baseline)=>{
+ const editor=document.getElementById('canvas-text-editor'),group=editor?.querySelector('.canvas-text-actions');
+ const cancel=group?.querySelector('#canvas-text-cancel'),save=group?.querySelector('#canvas-text-save');
+ if(!editor?.isConnected||!group||!cancel||!save||save.textContent!==expected)return {ok:false};
+ const g=group.getBoundingClientRect();
+ const rect=e=>{const r=e.getBoundingClientRect();return [r.left-g.left,r.top-g.top,r.width,r.height]};
+ const current={label:save.textContent,generation:editor.dataset.editorGeneration,visit:editor.dataset.canvasVisit,groupWidth:g.width,cancel:rect(cancel),save:rect(save)};
+ const valid=Number.isFinite(g.width)&&g.width>0&&[...current.cancel,...current.save].every(Number.isFinite)&&current.cancel[2]>0&&current.cancel[3]>0&&current.save[2]>0&&current.save[3]>0;
+ const same=!baseline||(baseline.generation===current.generation&&baseline.visit===current.visit&&Math.abs(baseline.groupWidth-current.groupWidth)<=.5&&['cancel','save'].every(k=>baseline[k]?.length===4&&current[k].every((v,i)=>Math.abs(v-baseline[k][i])<=.5)));
+ return {ok:valid&&same,...current};
+}"#;
+async fn action_geometry(
+    desktop: &dioxus::desktop::DesktopContext,
+    expected: &str,
+    baseline: Option<&Value>,
+) -> Result<Value, String> {
+    wait(
+        desktop,
+        &format!(
+            "({ACTION_GEOMETRY})({},{})",
+            json!(expected),
+            json!(baseline)
+        ),
+    )
+    .await
 }
 
 async fn confirmation(desktop: &dioxus::desktop::DesktopContext) -> Result<Value, String> {

@@ -1,6 +1,6 @@
 //! Detached input persistence carrying immutable registered writer provenance.
+use super::ownership::Tracked as Mutex;
 use super::*;
-use std::sync::Mutex;
 use super_platinum_core::drafts::sync::ConsumeIntent;
 
 pub(crate) struct Editor {
@@ -9,6 +9,8 @@ pub(crate) struct Editor {
     pub(super) gate: tokio::sync::Mutex<()>,
     pub(super) state: Mutex<State>,
     changed: tokio::sync::Notify,
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    pub(super) owned_write: Mutex<Option<Arc<super::owned_editor::Write>>>,
     pub(super) identity: Arc<()>,
     pub(super) retention_id: String,
 }
@@ -111,6 +113,8 @@ impl Editor {
                 retired: false,
             }),
             changed: tokio::sync::Notify::new(),
+            #[cfg(any(test, feature = "protected-native-fixture"))]
+            owned_write: Mutex::default(),
             identity: Arc::new(()),
             retention_id,
         })
@@ -235,42 +239,81 @@ impl Editor {
             let Some((mut command, mut preserve, retry)) = next else {
                 break;
             };
-            let mut result = if preserve {
-                self.preserve_command(&command).await
-            } else if retry {
-                self.checkpoint_command(&command).await
-            } else {
-                // Rebase only before a fresh serial's first attempt. A storage
-                // retry retains its exact original expected proof and payload.
-                let fresh = self.owner.review().await;
-                match fresh {
-                    Ok(review)
-                        if editor_proof::can_rebase(
-                            &command.expected,
-                            &review,
-                            &command.writer,
-                        ) =>
-                    {
-                        command.expected = review;
-                        self.checkpoint_command(&command).await
+            #[cfg(any(test, feature = "protected-native-fixture"))]
+            let owned = if let Some(route) = &self.owner.account.owned {
+                let held = {
+                    let mut slot = self.owned_write.lock().unwrap();
+                    if !retry {
+                        *slot = Some(super::owned_editor::Write::new(command.clone()));
                     }
-                    Ok(_) => {
-                        preserve = true;
-                        self.preserve_command(&command).await
+                    slot.clone()
+                };
+                let result = match held {
+                    Some(held) => {
+                        held.run(route, &self.owner, &mut command, &mut preserve, retry)
+                            .await
                     }
-                    Err(error) => Err(error),
+                    None => Err(super::owned_route::o::AdmissionError::Incomplete),
+                };
+                match result {
+                    Ok(value) => Some(value),
+                    Err(_) => {
+                        // Retain exact Command and Held (including returned
+                        // refusal input). Never run the durable Preserve path.
+                        let mut state = self.state.lock().unwrap();
+                        state.retry = Some((command, preserve));
+                        state.error = Some(durable::Error::Unsupported);
+                        state.running = false;
+                        break;
+                    }
                 }
+            } else {
+                None
             };
-            if !preserve
-                && result
-                    .as_ref()
-                    .is_err_and(|error| *error != durable::Error::Storage)
-            {
-                // Recognized precondition failure leaves this serial unused.
-                // Preserve this exact input immediately, not on another keystroke.
-                preserve = true;
-                result = self.preserve_command(&command).await;
-            }
+            #[cfg(not(any(test, feature = "protected-native-fixture")))]
+            let owned: Option<Result<durable::WriteResult, durable::Error>> = None;
+            let result = if let Some(result) = owned {
+                result
+            } else {
+                let mut result = if preserve {
+                    self.preserve_command(&command).await
+                } else if retry {
+                    self.checkpoint_command(&command).await
+                } else {
+                    // Rebase only before a fresh serial's first attempt. A storage
+                    // retry retains its exact original expected proof and payload.
+                    let fresh = self.owner.review().await;
+                    match fresh {
+                        Ok(review)
+                            if editor_proof::can_rebase(
+                                &command.expected,
+                                &review,
+                                &command.writer,
+                            ) =>
+                        {
+                            command.expected = review;
+                            self.checkpoint_command(&command).await
+                        }
+                        Ok(_) => {
+                            preserve = true;
+                            self.preserve_command(&command).await
+                        }
+                        Err(error) => Err(error),
+                    }
+                };
+                if !preserve
+                    && result
+                        .as_ref()
+                        .is_err_and(|error| *error != durable::Error::Storage)
+                {
+                    // Recognized precondition failure leaves this serial unused.
+                    // Preserve this exact input immediately, not on another keystroke.
+                    preserve = true;
+                    result = self.preserve_command(&command).await;
+                }
+
+                result
+            };
             match result {
                 Ok(durable::WriteResult::Applied(review)) => {
                     if review.scope() != self.owner.scope()

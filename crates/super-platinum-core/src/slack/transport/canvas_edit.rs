@@ -108,6 +108,7 @@ impl Transport {
     }
 
     pub(super) fn single_attempt_client(&self) -> Result<&wreq::Client, Error> {
+        self.http()?;
         if let Some(http) = self.canvas_http.get() {
             return Ok(http);
         }

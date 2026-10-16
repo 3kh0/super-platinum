@@ -10,7 +10,8 @@ pub(in crate::drafts::store::worker) use steps::{
     ReservedObservation, SendClaimed, SendConsumed, SendPrepared, Step, StepState,
 };
 pub use steps::{
-    CheckpointInput, MutationInput, PreserveInput, ReleaseInput, SendInput, WriteOutcome,
+    CheckpointInput, LocalOutcome, LocalWriteInput, MutationInput, PreserveInput, ReleaseInput,
+    SendInput, WriteOutcome,
 };
 #[path = "completion_prerequisites.rs"]
 mod prerequisites;
@@ -161,6 +162,16 @@ pub(in crate::drafts::store::worker) struct Completion {
     held: Arc<CompletionHeld>,
 }
 impl Completion {
+    // Observation of the exact already-issued completion binding. This clone
+    // cannot mint/recover ClaimedDispatch or authorize another network attempt.
+    pub(in crate::drafts::store::worker) fn mutation_receipt(&self) -> Result<p::Receipt, Reason> {
+        let s = self.held.status.lock().map_err(|_| Reason::Incomplete)?;
+        match s.binding.as_deref() {
+            Some(Binding::Mutation(receipt)) => Ok(receipt.clone()),
+            _ => Err(Reason::Stale),
+        }
+    }
+
     pub(in crate::drafts::store::worker) fn is_mutation(&self) -> bool {
         matches!(
             self.held.status.lock().unwrap().binding.as_deref(),

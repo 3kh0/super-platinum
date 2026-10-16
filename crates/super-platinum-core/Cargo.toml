@@ -8,6 +8,7 @@ license-file = "../../LICENSE.txt"
 [workspace]
 
 [features]
+original-download-fixture = []
 protected-test-support = []
 
 [dependencies]

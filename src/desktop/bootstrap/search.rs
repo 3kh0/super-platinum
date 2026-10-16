@@ -266,6 +266,42 @@ mod tests {
         assert!(!shell.search_pager.loading);
         assert!(shell.search_results.is_empty());
     }
+    #[test]
+    fn applying_has_filter_replaces_query_and_invalidates_old_search() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        shell.set_search_query("launch has:pin".into());
+        let request = shell
+            .search_pager
+            .begin(1, "T1", &shell.search_query, false)
+            .unwrap();
+        shell.search_results.push(hit("C1", "1"));
+        let mut filters =
+            super_platinum_core::search_query::SearchFilters::from_query(&shell.search_query);
+        filters.has_file = true;
+        filters.has_link = true;
+        shell.search_filters = Some(filters);
+        let revision = shell.search_input_revision;
+        assert!(shell.apply_search_filters());
+        assert_eq!(shell.search_query, "launch has:pin has:file has:link");
+        assert!(shell.search_filters.is_none());
+        assert!(shell.search_results.is_empty());
+        assert!(!shell.search_pager.accepts(&request));
+        assert_eq!(shell.search_input_revision, revision.wrapping_add(1));
+    }
+    #[test]
+    fn search_filter_fixtures_project_default_and_combined_flags() {
+        for (name, has_link) in [("search-filters", false), ("search-filters-narrow", true)] {
+            let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+            search_fixture(&mut shell, name);
+            let filters = shell.search_filters.as_ref().unwrap();
+            assert!(filters.has_file);
+            assert_eq!(filters.has_link, has_link);
+            assert_eq!(
+                filters.apply(&shell.search_query).unwrap(),
+                shell.search_query
+            );
+        }
+    }
 }
 
 pub(crate) fn search_fixture(shell: &mut ShellState, name: &str) {
@@ -273,6 +309,11 @@ pub(crate) fn search_fixture(shell: &mut ShellState, name: &str) {
     shell.overlay = Some(crate::state::Overlay::Search);
     shell.set_search_query("in:ship launch".into());
     if name.starts_with("search-filters") {
+        shell.set_search_query(if name.ends_with("-narrow") {
+            "in:ship launch has:file has:link".into()
+        } else {
+            "in:ship launch has:file".into()
+        });
         shell.search_filters =
             Some(super_platinum_core::search_query::SearchFilters::from_query(&shell.search_query));
     }

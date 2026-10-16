@@ -23,7 +23,7 @@ STAGES = {"seed": ("initial", "confirmation", "reserved", "saving", "accepted-lo
           "reviewed": ("review-decision-retained",)}
 COUNTS = {"seed": {"dispatches": 2, "reservations": 2, "retirements": 1, "textAttempts": 1},
           **{mode: {"dispatches": 0, "reservations": 0, "retirements": 0, "textAttempts": 0} for mode in ("restart", "review", "reviewed")}}
-FLAGS = {"seed": ("cancelSafe", "persistedBeforeDispatch", "sealedReadback", "retiredBeforeUnlock", "replacementFocused", "subsequentEdit", "duplicateSafe", "unknownRetained"),
+FLAGS = {"seed": ("cancelSafe", "persistedBeforeDispatch", "sealedReadback", "retiredBeforeUnlock", "replacementFocused", "subsequentEdit", "duplicateSafe", "unknownRetained", "stableActions"),
          "restart": ("inertLock", "noReplay", "refreshPreserved", "reopenPreserved"),
          "review": ("manualAcknowledgement", "cancelSafe", "archiveBeforeUnlock", "refreshRequired", "canonicalUnchanged", "outcomeUnknown", "noReplay"),
          "reviewed": ("archiveRetained", "noActiveLock", "noReplay")}
@@ -202,6 +202,28 @@ def validate_final(spec, fixture, value):
     if any(type(value.get(k)) is not int for k in ("dispatches", "reservations", "retirements", "textAttempts")):
         raise RuntimeError("Recovery final transition counts must be integers")
     validate(spec, fixture, value)
+    if "stableActions" in spec.required:
+        validate_action_geometry(value.get("actionGeometry"))
+
+
+def validate_action_geometry(records):
+    labels=["Delete paragraph","Saving\u2026","Saving\u2026","Checking\u2026","Delete paragraph","Unconfirmed"]
+    if not isinstance(records,list) or len(records)!=len(labels):
+        raise RuntimeError("Missing action-width state observations")
+    for row,label in zip(records,labels):
+        if not isinstance(row,dict) or row.get("ok") is not True or row.get("label")!=label or any(not isinstance(row.get(k),str) or not row[k].isdigit() for k in ("generation","visit")):
+            raise RuntimeError("Wrong action-width state or owner")
+        width=row.get("groupWidth")
+        if type(width) not in (int,float) or not math.isfinite(width) or width<=0: raise RuntimeError("Invalid action group width")
+        for key in ("cancel","save"):
+            r=row.get(key)
+            if not isinstance(r,list) or len(r)!=4 or any(type(v) not in (int,float) or not math.isfinite(v) for v in r) or r[2]<=0 or r[3]<=0 or r[0]<-.5 or r[0]+r[2]>width+.5:
+                raise RuntimeError("Invalid action bounds")
+    if records[0]["generation"]==records[4]["generation"]: raise RuntimeError("Distinct confirmations reused an editor")
+    for index,base in ((1,0),(2,0),(3,0),(5,4)):
+        row,old=records[index],records[base]
+        if row["generation"]!=old["generation"] or row["visit"]!=old["visit"] or abs(row["groupWidth"]-old["groupWidth"])>.5 or any(abs(v-o)>.5 for key in ("cancel","save") for v,o in zip(row[key],old[key])):
+            raise RuntimeError("Canvas status moved or resized its controls")
 
 
 def validate_closed(native, stages, final):

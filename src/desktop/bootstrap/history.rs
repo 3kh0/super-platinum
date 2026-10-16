@@ -160,7 +160,16 @@ pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
     mark_channel_read(state, mark_on_open).await;
 }
 
-pub async fn load_older(mut state: Signal<ShellState>) {
+pub async fn load_older(state: Signal<ShellState>) {
+    load_older_in_mode(state, crate::fixture::is_fixture()).await;
+}
+
+async fn load_older_in_mode(mut state: Signal<ShellState>, fixture: bool) {
+    // As with initial history/replies, fixture rows are a closed population.
+    // The synthetic captured session must never enable scroll-triggered reads.
+    if fixture {
+        return;
+    }
     if state
         .peek()
         .read_presentation
@@ -603,3 +612,7 @@ pub async fn mark_thread_read(mut state: Signal<ShellState>, channel: String, ro
 pub async fn mark_all_read(state: Signal<ShellState>) {
     crate::read_shortcuts::bulk::request(state);
 }
+
+#[cfg(test)]
+#[path = "history_fixture_tests.rs"]
+mod fixture_tests;

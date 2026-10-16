@@ -67,7 +67,18 @@ def overhead_gate(path,manifest):
     require(result==gate['analysis'],'Overhead validation changed')
     return {'path':str(path),'sha256':digest(path),'analysis':result}
 
+def wait_for_startup(native,deadline):
+    while True:
+        failed=native.receipts(FAILED)
+        require(not failed,'Native protocol failed before readiness: '+json.dumps(failed))
+        waiting=native.receipts(WAITING)
+        if waiting:return waiting
+        native.require_running()
+        require(time.monotonic()<deadline,'Startup deadline');time.sleep(.025)
+
+
 def one(role,binary,folder,provenance):
+    folder=folder.resolve()
     start=time.monotonic();folder.mkdir(parents=True,exist_ok=False)
     nonce=secrets.token_hex(16);private=folder/f'emoji-retirement-{nonce}';private.mkdir()
     env={'SUPER_PLATINUM_EMOJI_RETIREMENT':'1','SUPER_PLATINUM_EMOJI_RETIREMENT_NONCE':nonce,
@@ -83,9 +94,7 @@ def one(role,binary,folder,provenance):
             creation=metrics.times(handle)['creation_filetime'];evidence['processCreationFiletime']=creation
             with pointer_cleanup(evidence) as stack, cleanup_boundary(evidence,cap):
                 deadline=start+25
-                while not (waiting:=native.receipts(WAITING)):
-                    native.require_running()
-                    require(time.monotonic()<deadline,'Startup deadline');time.sleep(.025)
+                waiting=wait_for_startup(native,deadline)
                 expected=dict(version=2,nonce=nonce,pid=pid,creation=creation,fixture='emoji-retirement-64000',process=role)
                 require(waiting==[expected],'Readiness challenge identity/inventory')
                 require(all(integer(waiting[0][k]) for k in ('version','pid','creation')),'Readiness identity types')
@@ -185,20 +194,23 @@ def main():
     args=parser.parse_args();require(sys.platform=='win32','Windows only')
     binary=args.binary.resolve();provenance=sealed(binary,args.build_receipt.resolve())
     overhead=overhead_gate(args.overhead_gate.resolve(),provenance['manifest_sha256'])
+    args.output=args.output.resolve()
     args.output.mkdir(parents=True,exist_ok=False)
-    receipts=[];report={'ok':False,'overhead':overhead}
+    receipts=[];attempts=[];report={'ok':False,'overhead':overhead}
     try:
         for role in ROLES:
             require(sealed(binary,args.build_receipt.resolve())==provenance,'Pre-process provenance changed')
             require(overhead_gate(args.overhead_gate.resolve(),provenance['manifest_sha256'])==overhead,'Overhead admission changed')
+            attempt={'role':role,'ok':False};attempts.append(attempt)
             receipts.append(one(role,binary,args.output/role,provenance))
+            attempt['ok']=receipts[-1]['ok']
             require(receipts[-1]['ok'],'Stop on failed/censored shutdown; no replacement process')
         require(sealed(binary,args.build_receipt.resolve())==provenance,'Final provenance changed')
         report.update(aggregate(receipts),ok=True)
     except BaseException as error:
         report['error']=f'{type(error).__name__}: {error}';raise
     finally:
-        report['processes']=[{'role':r['process'],'ok':r['ok']} for r in receipts]
+        report['processes']=attempts
         try:
             report['terminalProvenanceCurrent']=sealed(binary,args.build_receipt.resolve())==provenance
             if not report['terminalProvenanceCurrent']:report['ok']=False

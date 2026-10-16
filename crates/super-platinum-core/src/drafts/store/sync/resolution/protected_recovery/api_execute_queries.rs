@@ -11,6 +11,23 @@ pub(super) fn execute(
     let _ = (&pending, isolated, &open);
     let account = command.account.as_str();
     match command.action {
+        #[cfg(any(test, feature = "protected-test-support"))]
+        Action::Inventory { reply } => {
+            let result = (|| {
+                if !valid_uuid(account) {
+                    return Err(Error::Stale);
+                }
+                let opened = open(account).map_err(|_| Error::Storage)?;
+                adapter_schema::require(&opened.0).map_err(|_| Error::WrongFormat)?;
+                loading::load(&opened, account, LoadMode::Current, &pending)
+                    .map(std::sync::Arc::new)
+            })();
+            let report = terminal::protected(&result, |_| {
+                terminal::Report::new(terminal::Execution::ReadObserved)
+            });
+            let _ = reply.send(result);
+            report
+        }
         Action::Load { mode, reply } => {
             let result = (|| {
                 if !valid_uuid(account) {

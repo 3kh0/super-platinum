@@ -8,24 +8,30 @@ use super_platinum_core::slack_lists::{
 pub(crate) enum Target {
     Column(String),
     View(String),
-    NewView(ViewLayout),
+    NewView(ViewLayout, Option<String>),
 }
 impl Target {
     pub fn id(&self) -> Option<&str> {
         match self {
             Self::Column(v) | Self::View(v) => Some(v),
-            Self::NewView(_) => None,
+            Self::NewView(_, _) => None,
         }
     }
     pub fn creation(&self) -> Option<ViewLayout> {
-        if let Self::NewView(layout) = self {
+        if let Self::NewView(layout, _) = self {
             Some(*layout)
         } else {
             None
         }
     }
+    pub fn grouping(&self) -> Option<&str> {
+        match self {
+            Self::NewView(_, key) => key.as_deref(),
+            _ => None,
+        }
+    }
     pub fn is_view(&self) -> bool {
-        matches!(self, Self::View(_) | Self::NewView(_))
+        matches!(self, Self::View(_) | Self::NewView(_, _))
     }
     pub fn noun(&self) -> &'static str {
         if self.is_view() { "view" } else { "field" }
@@ -35,7 +41,7 @@ impl Target {
     }
     pub fn name<'a>(&self, doc: &'a Document) -> Option<&'a str> {
         match self {
-            Self::NewView(_) => Some(""),
+            Self::NewView(_, _) => Some(""),
             Self::Column(id) => doc.column(id).map(|c| c.name.as_str()),
             Self::View(id) => doc
                 .views
@@ -47,7 +53,7 @@ impl Target {
     }
     pub fn supports(&self, doc: &Document) -> bool {
         match self {
-            Self::NewView(_) => ViewCreate::supports(doc),
+            Self::NewView(_, _) => ViewCreate::supports(doc),
             Self::Column(id) => doc.column(id).is_some_and(|c| {
                 c.kind == "text" && c.raw.get("options") == Some(&json!({"format":"text"}))
             }),
@@ -66,9 +72,15 @@ impl Target {
         personal: Option<&PersonalTaskLists>,
     ) -> Result<Intent, super_platinum_core::slack_lists::ListError> {
         match self {
-            Self::NewView(layout) => {
-                ViewCreate::capture(doc, name, *layout, allow, personal).map(Intent::Create)
-            }
+            Self::NewView(layout, grouping) => ViewCreate::capture_with_grouping(
+                doc,
+                name,
+                *layout,
+                grouping.as_deref(),
+                allow,
+                personal,
+            )
+            .map(Intent::Create),
             Self::Column(id) => {
                 ColumnRename::capture(doc, id, name, allow, personal).map(Intent::Column)
             }

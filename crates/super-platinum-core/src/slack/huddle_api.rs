@@ -221,6 +221,7 @@ pub async fn nearest_media_region(transport: &Transport, user_agent: &str) -> St
     let lookup = async {
         let response = transport
             .http()
+            .ok()?
             .get(NEAREST_MEDIA_REGION_URL)
             .timeout(REGION_LOOKUP_TIMEOUT)
             .header("User-Agent", user_agent)

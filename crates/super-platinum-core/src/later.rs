@@ -2,7 +2,9 @@
 use crate::slack::models::{File, Message};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+mod file_metadata;
 mod files;
+use file_metadata::FileUpdate;
 mod membership;
 pub use files::FileHydrationFailure;
 pub use membership::{SavedMembership, SavedRequest};
@@ -212,13 +214,6 @@ impl PreviewUpdate {
     }
 }
 
-#[derive(Debug)]
-struct FileUpdate {
-    revision: u64,
-    title: String,
-    name: Option<(u64, String)>,
-}
-
 #[derive(Debug, Default)]
 pub struct LaterState {
     pub scope: Option<(u64, String)>,
@@ -279,21 +274,16 @@ impl LaterState {
         }
     }
     pub(crate) fn record_file_rename(&mut self, id: &str, title: &str, name: Option<&str>) {
-        let revision = self.next_hydration_revision();
-        let name = name.map(|name| (revision, name.into())).or_else(|| {
-            self.file_updates
-                .get(id)
-                .and_then(|update| update.name.clone())
-        });
-        self.file_updates.insert(
-            id.into(),
-            FileUpdate {
-                revision,
-                title: title.into(),
+        self.record_file_display_metadata(
+            id,
+            crate::file_actions::display_metadata::DisplayPatch {
+                title: Some(title),
                 name,
+                ..Default::default()
             },
         );
     }
+
     pub(crate) fn record_file_deletion(&mut self, id: &str) {
         self.deleted_files.insert(id.into());
         self.file_updates.remove(id);
@@ -390,14 +380,7 @@ impl LaterState {
             } else if !crate::file_actions::deleted(file)
                 && let Some(update) = self.file_updates.get(id)
             {
-                if update.revision > requested_revision {
-                    file.title = Some(update.title.clone());
-                }
-                if let Some((revision, name)) = &update.name
-                    && *revision > requested_revision
-                {
-                    file.name = Some(name.clone());
-                }
+                update.apply_since(file, requested_revision);
             }
         });
         if let Some(pending) = self.preview_updates.get(&key) {

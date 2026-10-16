@@ -51,7 +51,12 @@ fn allowed(request: &PreparedRequest) -> bool {
     let RequestBody::Form(fields) = &request.body else {
         return false;
     };
-    let expected = &["token", "list_id", "name", "type", "_x_reason"];
+    let grouped = fields.len() == 6;
+    let expected: &[&str] = if grouped {
+        &["token", "list_id", "name", "type", "grouping", "_x_reason"]
+    } else {
+        &["token", "list_id", "name", "type", "_x_reason"]
+    };
     if fields.len() != expected.len()
         || fields
             .iter()
@@ -72,7 +77,24 @@ fn allowed(request: &PreparedRequest) -> bool {
         && value(2).encode_utf16().count() <= 60
         && !value(2).chars().any(char::is_control)
         && matches!(value(3), "table" | "board")
-        && value(4) == "create-view"
+        && value(fields.len() - 1) == "create-view"
+        && (!grouped || valid_grouping(value(4)))
+}
+
+fn valid_grouping(raw: &str) -> bool {
+    // Duplicate JSON keys are refused by the shared strict decoder.
+    crate::slash_commands::codec::decode(raw.as_bytes(), 8192).is_ok_and(|v| {
+        v.as_object().is_some_and(|o| {
+            o.len() == 1
+                && o.get("group_by")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|key| {
+                        !key.trim().is_empty()
+                            && key.len() <= 1024
+                            && !key.chars().any(char::is_control)
+                    })
+        })
+    })
 }
 
 #[cfg(test)]

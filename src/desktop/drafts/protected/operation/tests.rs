@@ -348,7 +348,7 @@ async fn actual_accepted_send_and_local_release_cannot_hide_deferred_native_clea
     )
     .unwrap_or_else(|_| panic!("reserve"));
     let captured = stream.clone();
-    let mut applied = editor
+    let mut applied: Box<Applied> = editor
         .apply_review_owned(
             lease,
             Action::Consume(super_platinum_core::drafts::sync::ConsumeKind::Send),
@@ -379,28 +379,27 @@ async fn actual_accepted_send_and_local_release_cannot_hide_deferred_native_clea
         .release_completion_owned(accepted.clone(), intent, operation.clone())
         .await;
     assert_eq!(handoff, Ok(()));
-    let result = operation
-        .delivered(delivery::Finished {
-            dispatched: Dispatched {
-                review: accepted,
-                receipt,
-                attempt: Arc::new(Attempt {
-                    outcome: Outcome::Sent {
-                        client_msg_id: issued.client_msg_id,
-                        draft_id: issued.base.map(|v| v.id),
-                        ts: "100.000001".into(),
-                    },
-                    cooldown_until_ms: None,
-                    issue: None,
-                    dispatched: true,
-                    raw: None,
-                }),
-            },
-            inventory_published: true,
-            queue_published: false,
-            local_handoff: handoff,
-        })
-        .unwrap();
+    let finished = Arc::new(delivery::Finished {
+        dispatched: Dispatched {
+            review: accepted,
+            receipt,
+            attempt: Arc::new(Attempt {
+                outcome: Outcome::Sent {
+                    client_msg_id: issued.client_msg_id,
+                    draft_id: issued.base.map(|v| v.id),
+                    ts: "100.000001".into(),
+                },
+                cooldown_until_ms: None,
+                issue: None,
+                dispatched: true,
+                raw: None,
+            }),
+        },
+        inventory_published: true,
+        queue_published: false,
+        local_handoff: handoff,
+    });
+    let result = operation.delivered(finished.clone()).unwrap();
     assert_eq!(result, Status::AwaitingRecovery);
     operation.finish(Ok(result));
     assert!(matches!(
@@ -411,7 +410,7 @@ async fn actual_accepted_send_and_local_release_cannot_hide_deferred_native_clea
     assert!(evidence.release.is_some());
     assert!(evidence.local_lease.is_some());
     assert_eq!(evidence.handoff, Some(Ok(())));
-    assert!(evidence.finished.is_some());
+    assert!(Arc::ptr_eq(evidence.finished.as_ref().unwrap(), &finished));
     drop(evidence);
     assert!(
         fixture
@@ -448,4 +447,15 @@ async fn operation_request_cannot_be_rebound_to_different_action_or_owner() {
     let other = Fixture::new().await;
     assert!(!operation.belongs_owner(&other.owner));
     assert!(operation.belongs_owner(&fixture.owner));
+}
+
+#[test]
+fn async_handoff_payloads_remain_indirect() {
+    use std::mem::size_of;
+    // These are the actual apply/perform and delivery async output shapes.
+    // Avoid copying whole reviewed inventories in each enclosing poll frame.
+    assert!(size_of::<Result<Box<Applied>, durable::Error>>() <= 4 * size_of::<usize>());
+    assert!(size_of::<Result<Arc<delivery::Finished>, durable::Error>>() <= 4 * size_of::<usize>());
+    // Send/Consume must not inherit the inline capacity of Baseline evidence.
+    assert!(size_of::<Action>() <= 4096);
 }

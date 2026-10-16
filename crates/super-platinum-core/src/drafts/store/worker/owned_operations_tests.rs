@@ -327,3 +327,9 @@ fn generic_job_type_cannot_change_actual_resume_input_family() {
 
 #[path = "owned_wait_tests.rs"]
 mod waiting;
+
+#[path = "owned_inventory_tests.rs"]
+mod inventory;
+
+#[path = "owned_local_fifo_tests.rs"]
+mod local_fifo;

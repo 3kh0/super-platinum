@@ -212,3 +212,13 @@ pub(crate) fn protected_adoption_requested() -> bool {
                 std::env::var_os(format!("SUPER_PLATINUM_PROTECTED_ADOPTION_{suffix}")).is_some()
             })
 }
+
+/// Any partial request fails before ordinary boot, including a feature-off binary.
+pub(crate) fn protected_owned_requested() -> bool {
+    std::env::var("SUPER_PLATINUM_FIXTURE").is_ok_and(|v| v.starts_with("protected-owned-send"))
+        || ["CHECK", "ROOT", "NONCE", "SCENARIO", "CAPTURE_DIR"]
+            .iter()
+            .any(|suffix| {
+                std::env::var_os(format!("SUPER_PLATINUM_PROTECTED_OWNED_SEND_{suffix}")).is_some()
+            })
+}

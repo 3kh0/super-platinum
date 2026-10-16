@@ -43,6 +43,33 @@ impl Owner {
     ) -> Result<Dispatched, durable::Error> {
         self.account.initialize().await?;
         self.check(&expected)?;
+        #[cfg(any(test, feature = "protected-native-fixture"))]
+        if self.account.owned.is_some() {
+            let held = parent
+                .record()
+                .evidence
+                .lock()
+                .map_err(|_| durable::Error::Storage)?
+                .owned_send
+                .clone()
+                .ok_or(durable::Error::Unsupported)?;
+            let consumed = held
+                .consume
+                .job()
+                .map_err(super::owned_route::ui)?
+                .result()
+                .ok_or(durable::Error::Pending)??;
+            if !consumed.same(&expected) {
+                return Err(durable::Error::Stale);
+            }
+            return held
+                .dispatch(&parent, &binding, now_ms, || {
+                    state
+                        .try_peek()
+                        .is_ok_and(|shell| binding.current(&shell) && source.current(&shell))
+                })
+                .await;
+        }
         // Typing beside a frozen Send/Schedule is independently durable. Only
         // that exact retained intent may rebase preparation onto the newer
         // local inventory; ordinary Create/Update/Delete stay exact-review.
@@ -157,6 +184,32 @@ impl Owner {
         &self,
         operation_id: &str,
     ) -> Result<Dispatched, durable::Error> {
+        #[cfg(any(test, feature = "protected-native-fixture"))]
+        if self.account.owned.is_some() {
+            for parent in self.account.retained_operations()? {
+                let held = {
+                    let record = parent.record();
+                    let evidence = record
+                        .evidence
+                        .lock()
+                        .map_err(|_| durable::Error::Storage)?;
+                    if record.scope == self.scope
+                        && evidence
+                            .receipt
+                            .as_ref()
+                            .is_some_and(|r| r.operation().id == operation_id)
+                    {
+                        evidence.owned_send.clone()
+                    } else {
+                        None
+                    }
+                };
+                if let Some(held) = held {
+                    return held.retry_storage(&parent).await;
+                }
+            }
+            return Err(durable::Error::Pending);
+        }
         let repair =
             journal::Repair::begin(self, operation_id, journal::RetainedKind::MutationStorage)?;
         let completion = self

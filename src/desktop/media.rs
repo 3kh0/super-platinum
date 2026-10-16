@@ -171,6 +171,7 @@ impl AssetCache {
 #[derive(Clone)]
 struct MediaSource {
     url: String,
+    original: Option<(String, bool)>,
     mime: String,
     authenticated: bool,
     /// Registered but not queued. Full-resolution originals — a 60 MB video, a
@@ -357,6 +358,56 @@ impl MediaRegistry {
         self.register_source_inner(kind, url, mime.into(), is_slack_hosted(url), None, true)
     }
 
+    /// The preview may be a transcoded movie. Retain the actual file download
+    /// source separately; it never enters the preview load queue.
+    pub(crate) fn register_file_download(
+        &self,
+        id: &MediaAssetId,
+        file: &super_platinum_core::slack::models::File,
+    ) {
+        let Some(url) = super_platinum_core::state::file_download_url(file) else {
+            return;
+        };
+        if let Some(source) = self
+            .sources
+            .write()
+            .expect("media registry poisoned")
+            .get_mut(id)
+        {
+            let cached_original =
+                source.url == url || file.url_private.as_deref() == Some(source.url.as_str());
+            if source
+                .original
+                .as_ref()
+                .is_some_and(|(old, original)| old == url && *original == cached_original)
+            {
+                return;
+            }
+            source.original = Some((url.to_owned(), cached_original));
+        }
+    }
+    pub(crate) fn original_download_url(&self, id: &MediaAssetId) -> Option<String> {
+        self.sources
+            .read()
+            .ok()?
+            .get(id)?
+            .original
+            .as_ref()
+            .map(|(url, _)| url.clone())
+    }
+    pub(crate) fn ready_download_bytes(&self, id: &MediaAssetId) -> Option<Arc<[u8]>> {
+        let allowed = self.sources.read().ok()?.get(id).is_none_or(|source| {
+            source
+                .original
+                .as_ref()
+                .is_none_or(|(_, original)| *original)
+        });
+        allowed.then(|| self.ready_bytes(id)).flatten()
+    }
+    pub(crate) fn same_registry(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.sources, &other.sources)
+    }
+
     /// Queues a deferred asset. Called when the viewer opens one.
     pub fn request(&self, id: &MediaAssetId) {
         let mut sources = self.sources.write().expect("media registry poisoned");
@@ -433,6 +484,7 @@ impl MediaRegistry {
                 id.clone(),
                 MediaSource {
                     url: url.to_owned(),
+                    original: None,
                     mime,
                     authenticated,
                     deferred,
@@ -807,7 +859,8 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
     let protected_narrow = cfg!(feature = "protected-native-fixture")
         && matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
-            Ok("protected-drafts-narrow"
+            Ok("protected-owned-send-narrow"
+                | "protected-drafts-narrow"
                 | "protected-enrollment-narrow"
                 | "protected-adoption-narrow")
         );
@@ -820,6 +873,7 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "pdf-preview-narrow"
                 | "threads-keyboard-narrow"
                 | "threads-file-paste-narrow"
+                | "original-download-narrow"
                 | "file-preview-narrow"
                 | "file-actions-narrow"
                 | "file-rename-narrow"
@@ -930,7 +984,8 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "activity-narrow"
                 | "activity-navigation-narrow"
                 | "search-narrow"
-                | "search-filters-narrow")
+                | "search-filters-narrow"
+                | "search-has-filters-narrow")
         ) {
         WINDOW_MIN_INNER_SIZE
     } else {

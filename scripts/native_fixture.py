@@ -59,7 +59,7 @@ def request(endpoint, command, timeout=20, **fields):
 class NativeFixture:
     """Own exactly one disconnected fixture and its private temporary endpoint."""
 
-    def __init__(self, fixture, log, binary=None, checks=None):
+    def __init__(self, fixture, log, binary=None, checks=None, *, after_exit=None):
         self.fixture = fixture
         self.log = Path(log).resolve()
         self.binary = Path(binary or os.environ.get("SUPER_PLATINUM_BINARY", DEFAULT_BINARY)).resolve()
@@ -73,6 +73,9 @@ class NativeFixture:
         self._temporary_name = None
         self._temporary_identity = None
         self.cleanup_errors = []
+        self._after_exit = after_exit
+        self._after_exit_attempted = False
+        self._entered = False
 
     def __enter__(self):
         if not self.binary.is_file():
@@ -103,6 +106,9 @@ class NativeFixture:
             env["SUPER_PLATINUM_AGENT_SOCK"] = str(temporary / "agent.sock")
         env.update(self.checks)
         try:
+            if self._after_exit is not None and any(env[name] != str(temporary)
+                                                   for name in ("TMP", "TEMP", "TMPDIR")):
+                raise ValueError("Closed audit requires the owned child temporary environment")
             self._output = self.log.open("w", encoding="utf-8")
             self.process = subprocess.Popen([str(self.binary)], cwd=ROOT, env=env,
                                             stdout=self._output, stderr=self._output,
@@ -123,6 +129,7 @@ class NativeFixture:
                 time.sleep(.05)
             self.control("ping")
             self.focus()
+            self._entered = True
             return self
         except BaseException as error:
             self._close_preserving(error)
@@ -201,6 +208,9 @@ class NativeFixture:
                 except subprocess.TimeoutExpired:
                     self.process.kill()
                     self.process.wait(timeout=5)
+            if self._after_exit is not None and self._entered and not self._after_exit_attempted:
+                if self.process is None or self.process.poll() is None:
+                    raise RuntimeError("Fixture process closure is not confirmed")
         except BaseException as error:
             self._cleanup_error("process", error)
             raise
@@ -211,6 +221,27 @@ class NativeFixture:
         except BaseException as error:
             self._cleanup_error("output", error)
             raise
+        audit_error = None
+        try:
+            if self._after_exit is not None and self._entered and not self._after_exit_attempted:
+                self._after_exit_attempted = True  # Never replay a failed audit on close retry.
+                # Captured child TMP/TEMP/TMPDIR, verified against its original
+                # owner and file identity. Logs are closed and storage still exists.
+                self._after_exit(self._verify_temporary())
+        except BaseException as error:
+            audit_error = error
+            self._cleanup_error("after_exit", error)
+            raise
+        finally:
+            try:
+                self._cleanup_temporary()
+            except BaseException as error:
+                if audit_error is None:
+                    raise
+                if hasattr(audit_error, "add_note"):
+                    audit_error.add_note(f"Temporary cleanup also failed: {type(error).__name__}: {error}")
+
+    def _cleanup_temporary(self):
         if self._temporary is not None:
             # WebView2 descendants can release/recreate scratch files shortly
             # after the owned GUI exits. Retry only this verified directory,

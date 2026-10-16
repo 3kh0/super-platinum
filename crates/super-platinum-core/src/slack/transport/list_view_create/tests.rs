@@ -251,3 +251,43 @@ async fn redirects_declared_and_streamed_bounds_and_nested_duplicates_never_retr
         assert!(matches!(result,Err(ListViewCreateFailure::Unconfirmed(_))));server.await.unwrap();
     }
 }
+
+#[test]
+fn optional_grouping_form_is_exact_and_duplicate_safe() {
+    let address = "127.0.0.1:1".parse().unwrap();
+    let base = request(address);
+    assert!(allowed(&base));
+    let grouped = |value: &str| {
+        let mut request = base.clone();
+        let RequestBody::Form(fields) = &mut request.body else {
+            panic!()
+        };
+        fields.insert(4, ("grouping".into(), value.into()));
+        request
+    };
+    for value in [r#"{"group_by":"checked"}"#, r#"{"group_by":"status"}"#] {
+        assert!(allowed(&grouped(value)));
+    }
+    for value in [
+        r#"{}"#,
+        r#"null"#,
+        r#"[]"#,
+        r#"{"groupBy":"checked"}"#,
+        r#"{"group_by":""}"#,
+        r#"{"group_by":"a","group_by":"b"}"#,
+        r#"{"group_by":"a","order":[]}"#,
+        r#"{"group_by":true}"#,
+        r#"{"group_by":"a\nb"}"#,
+    ] {
+        assert!(!allowed(&grouped(value)), "{value}");
+    }
+    assert!(!allowed(&grouped(
+        &serde_json::json!({"group_by":"x".repeat(1025)}).to_string()
+    )));
+    let mut wrong = grouped(r#"{"group_by":"checked"}"#);
+    let RequestBody::Form(fields) = &mut wrong.body else {
+        panic!()
+    };
+    fields.swap(4, 5);
+    assert!(!allowed(&wrong));
+}

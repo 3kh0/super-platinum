@@ -5,13 +5,18 @@ use crate::{drafts::observation, state::ShellState};
 use std::sync::atomic::{AtomicBool, Ordering};
 use super_platinum_core::slack::events::RawEvent;
 
+pub(super) mod inventory;
+pub(super) mod jobs;
+
 pub(crate) struct Source {
+    pub(super) inventory: Arc<inventory::Record>,
     account: Arc<Account>,
     socket: Arc<observation::Source>,
     frame_generation: u64,
     stream: durable::Stream,
-    revoked: AtomicBool,
+    revoked: Arc<AtomicBool>,
     runtime: tokio::runtime::Handle,
+    cleanup: Option<Arc<jobs::Job>>,
 }
 impl Source {
     /// Explicit continuity setup; never called by a load, render or tick. The
@@ -24,44 +29,17 @@ impl Source {
         frame_generation: u64,
         team: String,
     ) -> Result<Arc<Self>, durable::Error> {
-        use dioxus::prelude::ReadableExt;
-        let (send, receive) = tokio::sync::oneshot::channel();
-        dioxus::core::spawn_forever(async move {
-            let result = async {
-                account.initialize().await?;
-                let current = || {
-                    !account.team_blocked(&team)
-                        && state.try_peek().is_ok_and(|shell| {
-                            shell.core.active_account.as_deref() == Some(account.id())
-                                && socket.matches_owner(account.id(), &team)
-                                && socket.current(&shell, frame_generation)
-                        })
-                };
-                if !current() {
-                    return Err(durable::Error::Gap);
-                }
-                let expected = account::wait(account.client()?.stream_state(team.clone())).await?;
-                if !current() {
-                    return Err(durable::Error::Gap);
-                }
-                let stream = account::wait(account.client()?.open_stream(team, expected)).await?;
-                let shell = match state.try_peek() {
-                    Ok(shell) => shell,
-                    Err(_) => {
-                        account.retire_stream(
-                            stream,
-                            durable::GapReason::SourceReplaced,
-                            tokio::runtime::Handle::try_current().ok(),
-                        );
-                        return Err(durable::Error::Gap);
-                    }
-                };
-                Self::captured(account, socket, frame_generation, stream, &shell)
-            }
-            .await;
-            let _ = send.send(result);
-        });
-        receive.await.map_err(|_| durable::Error::Storage)?
+        jobs::Request {
+            state,
+            account,
+            socket,
+            frame_generation,
+            team,
+        }
+        .begin()
+        .map_err(|refused| refused.error)?
+        .receive()
+        .await
     }
 
     /// A local basis is an explicit full-inventory decision. Opening a socket
@@ -101,6 +79,16 @@ impl Source {
         stream: durable::Stream,
         shell: &ShellState,
     ) -> Result<Arc<Self>, durable::Error> {
+        Self::captured_with_job(account, socket, frame_generation, stream, shell, None)
+    }
+    fn captured_with_job(
+        account: Arc<Account>,
+        socket: Arc<observation::Source>,
+        frame_generation: u64,
+        stream: durable::Stream,
+        shell: &ShellState,
+        cleanup: Option<Arc<jobs::Job>>,
+    ) -> Result<Arc<Self>, durable::Error> {
         if stream.account() != account.id() {
             stream.revoke();
             return Err(durable::Error::Stale);
@@ -112,16 +100,29 @@ impl Source {
             || account.team_blocked(stream.team())
             || runtime.is_none()
         {
-            account.retire_stream(stream, durable::GapReason::SourceReplaced, runtime);
+            if let Some(child) = &cleanup {
+                child.retire(stream, durable::GapReason::SourceReplaced);
+            } else {
+                account.retire_stream(stream, durable::GapReason::SourceReplaced, runtime);
+            }
             return Err(durable::Error::Gap);
         }
+        let revoked = Arc::new(AtomicBool::new(false));
         Ok(Arc::new(Self {
+            inventory: inventory::Record::new(
+                &account,
+                socket.clone(),
+                frame_generation,
+                stream.clone(),
+                revoked.clone(),
+            ),
             account,
             socket,
             frame_generation,
             stream,
-            revoked: AtomicBool::new(false),
+            revoked,
             runtime: runtime.expect("checked runtime"),
+            cleanup,
         }))
     }
     pub fn current(&self, shell: &ShellState) -> bool {
@@ -154,23 +155,33 @@ impl Source {
     /// process barrier also prevents opening a replacement stream meanwhile.
     pub fn gap(self: &Arc<Self>, reason: durable::GapReason) {
         if !self.revoked.swap(true, Ordering::AcqRel) {
-            self.account
-                .retire_stream(self.stream.clone(), reason, Some(self.runtime.clone()));
+            self.inventory.phase(inventory::Phase::GapRequested(reason));
+            self.retire(reason);
+        }
+    }
+    fn retire(&self, reason: durable::GapReason) {
+        match &self.cleanup {
+            Some(child) => child.retire(self.stream.clone(), reason),
+            None => {
+                self.account
+                    .retire_stream(self.stream.clone(), reason, Some(self.runtime.clone()))
+            }
         }
     }
     /// Explicit disk-only repair. It never opens a stream or invokes transport.
     pub fn retry_gap(self: &Arc<Self>) -> Result<(), durable::Error> {
-        self.account.retry_gap(self.stream.team())
+        self.inventory.clock.change();
+        match &self.cleanup {
+            Some(child) => child.retry_gap(),
+            None => self.account.retry_gap(self.stream.team()),
+        }
     }
 }
 impl Drop for Source {
     fn drop(&mut self) {
+        self.inventory.phase(inventory::Phase::Dropped);
         if !self.revoked.swap(true, Ordering::AcqRel) {
-            self.account.retire_stream(
-                self.stream.clone(),
-                durable::GapReason::InterruptedAdmission,
-                Some(self.runtime.clone()),
-            );
+            self.retire(durable::GapReason::InterruptedAdmission);
         }
     }
 }

@@ -2,7 +2,80 @@
 use super::*;
 use super::{editor::Editor, local_writer::LocalWriter};
 
+enum HandoffReply {
+    Legacy(durable::Reply<durable::Release>),
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    Owned(Arc<super::owned_release::Release>, operation::Operation),
+}
 impl Editor {
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    pub(super) async fn retry_owned_handoff(
+        self: &Arc<Self>,
+        parent: operation::Operation,
+    ) -> Result<(), durable::Error> {
+        if self.owner.account.owned.is_none() || !parent.belongs(self) {
+            return Err(durable::Error::Stale);
+        }
+        let editor = self.clone();
+        self.runtime
+            .spawn(async move {
+                let _gate = editor.gate.lock().await;
+                let held = parent
+                    .record()
+                    .evidence
+                    .lock()
+                    .map_err(|_| durable::Error::Storage)?
+                    .owned_release
+                    .clone()
+                    .ok_or(durable::Error::Pending)?;
+                let expected = held
+                    .held
+                    .job()
+                    .map_err(super::owned_route::ui)?
+                    .input()
+                    .expected
+                    .clone();
+                {
+                    let state = editor.state.lock().map_err(|_| durable::Error::Storage)?;
+                    if state.busy
+                        || state.running
+                        || !state.handoff_lost
+                        || state.released.is_some()
+                        || state
+                            .handoff_expected
+                            .as_ref()
+                            .is_none_or(|v| !v.same(&expected))
+                    {
+                        return Err(durable::Error::Stale);
+                    }
+                }
+                // Storage completion can finish after retirement; installation cannot.
+                let lease = held.retry_storage(&parent).await?;
+                if !parent.current()
+                    || editor
+                        .state
+                        .lock()
+                        .map_err(|_| durable::Error::Storage)?
+                        .retired
+                {
+                    return Err(durable::Error::Stale);
+                }
+                let local = LocalWriter::from_handoff(
+                    editor.owner.account.clone(),
+                    lease,
+                    expected.local().clone(),
+                )?;
+                let inventory = local.refresh_inventory().await;
+                let installed = editor.install_local(local, Some((&parent, &expected)));
+                let result = installed.and(inventory);
+                parent.retain(|s| s.handoff = Some(result))?;
+                editor.notify();
+                result
+            })
+            .await
+            .map_err(|_| durable::Error::Storage)?
+    }
+
     pub(super) async fn release_completion_owned(
         self: &Arc<Self>,
         accepted: durable::Review,
@@ -123,7 +196,33 @@ impl Editor {
             if operation.as_ref().is_some_and(|op| !op.current()) {
                 return Err(durable::Error::Stale);
             }
-            let reply = self.owner.release(fresh.clone())?;
+            #[cfg(any(test, feature = "protected-native-fixture"))]
+            let routed = self.owner.account.owned.clone();
+            #[cfg(not(any(test, feature = "protected-native-fixture")))]
+            let routed: Option<()> = None;
+            let reply = if routed.is_some() {
+                #[cfg(any(test, feature = "protected-native-fixture"))]
+                {
+                    let route = routed.as_ref().expect("checked route");
+                    let parent = operation.as_ref().ok_or(durable::Error::Unsupported)?;
+                    let held = super::owned_release::Release::new(
+                        route,
+                        super::owned_route::o::ReleaseInput {
+                            expected: fresh.clone(),
+                            writer: state.writer.clone(),
+                        },
+                    );
+                    parent.retain(|s| s.owned_release = Some(held.clone()))?;
+                    held.held.submit().map_err(super::owned_route::ui)?;
+                    HandoffReply::Owned(held, parent.clone())
+                }
+                #[cfg(not(any(test, feature = "protected-native-fixture")))]
+                {
+                    unreachable!()
+                }
+            } else {
+                HandoffReply::Legacy(self.owner.release(fresh.clone())?)
+            };
             state.busy = true;
             // From this enqueue onward a missing reply may mean committed
             // release. A second release call is never a recovery mechanism.
@@ -132,15 +231,30 @@ impl Editor {
             (fresh, state.writer.clone(), reply)
         };
         let result = async {
-            let release = account::wait(reply).await?;
-            if let Some(operation) = &operation {
-                operation.retain(|s| s.release = Some(release.clone()))?;
-                operation.phase(operation::Phase::StartLocal)?;
-            }
-            let lease = account::wait(self.owner.client()?.start_local(release, writer)).await?;
-            if let Some(operation) = &operation {
-                operation.retain(|s| s.local_lease = Some(lease.clone()))?;
-            }
+            let lease = match reply {
+                HandoffReply::Legacy(reply) => {
+                    let release = account::wait(reply).await?;
+                    if let Some(operation) = &operation {
+                        operation.retain(|s| s.release = Some(release.clone()))?;
+                        operation.phase(operation::Phase::StartLocal)?;
+                    }
+                    let lease =
+                        account::wait(self.owner.client()?.start_local(release, writer)).await?;
+                    if let Some(operation) = &operation {
+                        operation.retain(|s| s.local_lease = Some(lease.clone()))?;
+                    }
+
+                    lease
+                }
+                #[cfg(any(test, feature = "protected-native-fixture"))]
+                HandoffReply::Owned(held, parent) => {
+                    let lease = held.finish(&parent).await?;
+                    if !parent.current() {
+                        return Err(durable::Error::Stale);
+                    }
+                    lease
+                }
+            };
             let local = LocalWriter::from_handoff(
                 self.owner.account.clone(),
                 lease,
@@ -149,7 +263,7 @@ impl Editor {
             // Retain the lease before a fallible inventory read. No retry of
             // start_local is possible through this branch.
             let inventory = local.refresh_inventory().await;
-            self.install_local(local)?;
+            self.install_local(local, operation.as_ref().map(|p| (p, &expected)))?;
             inventory
         }
         .await;
@@ -167,8 +281,30 @@ impl Editor {
         self.notify();
         result
     }
-    fn install_local(&self, writer: Arc<LocalWriter>) -> Result<(), durable::Error> {
+    fn install_local(
+        self: &Arc<Self>,
+        writer: Arc<LocalWriter>,
+        authority: Option<(&operation::Operation, &durable::Review)>,
+    ) -> Result<(), durable::Error> {
         let mut state = self.state.lock().map_err(|_| durable::Error::Storage)?;
+        #[cfg(any(test, feature = "protected-native-fixture"))]
+        if self.owner.account.owned.is_some() {
+            let (parent, expected) = authority.ok_or(durable::Error::Unsupported)?;
+            if !parent.current()
+                || !parent.belongs(self)
+                || state.retired
+                || state
+                    .handoff_expected
+                    .as_ref()
+                    .is_none_or(|v| !v.same(expected))
+            {
+                return Err(durable::Error::Stale);
+            }
+            // Retain the actual issued lease before a pending-input submission
+            // can fail. Never discard this LocalWriter and renew another one.
+            state.released = Some(writer.clone());
+            state.handoff_lost = false;
+        }
         if let Some((_, pending)) = &state.pending {
             writer.submit(pending)?;
         }
@@ -232,7 +368,7 @@ impl Editor {
                         writer.refresh_inventory().await?;
                         writer
                     };
-                    editor.install_local(writer)?;
+                    editor.install_local(writer, None)?;
                     Ok(())
                 }
                 .await;

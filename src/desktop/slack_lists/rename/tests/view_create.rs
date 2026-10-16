@@ -252,3 +252,73 @@ fn unavailable_read_does_not_relabel_original_dispatch_as_unsent() {
     assert!(entry(&s).unwrap().available.is_none());
     assert_eq!(selected_view(&s), Some("V_OLD"));
 }
+
+fn grouped_draft(s: &mut ShellState) -> (u64, u64) {
+    let visit = generation(s).unwrap();
+    let selection = super::super::selection(s).unwrap();
+    assert!(view_create::open_shell(s, visit, selection));
+    let serial = entry(s).unwrap().serial;
+    assert_eq!(entry(s).unwrap().target.grouping(), None);
+    assert!(view_create::grouping_shell(s, serial, visit, "done"));
+    with_registry(|r| {
+        r.entries.get_mut(&Key::current(s).unwrap()).unwrap().name = "Fresh view".into()
+    });
+    (serial, visit)
+}
+#[test]
+fn grouping_selection_is_owned_and_does_not_adopt_changed_schema() {
+    let (mut s, _c) = create_shell();
+    let (serial, visit) = grouped_draft(&mut s);
+    assert!(!view_create::grouping_shell(&mut s, serial, visit, "name"));
+    assert!(!view_create::grouping_shell(&mut s, serial + 1, visit, ""));
+    assert!(!view_create::grouping_shell(&mut s, serial, visit + 1, ""));
+    assert_eq!(entry(&s).unwrap().target.grouping(), Some("done"));
+    assert!(view_create::grouping_shell(&mut s, serial, visit, ""));
+    assert_eq!(entry(&s).unwrap().target.grouping(), None);
+    assert!(view_create::grouping_shell(&mut s, serial, visit, "done"));
+    let v = s.slack_lists.view.as_mut().unwrap();
+    let l = v.loaded.as_mut().unwrap();
+    l.document.raw["list_metadata"]["schema"][1]["type"] = json!("text");
+    l.document = Document::parse(l.document.raw.clone()).unwrap();
+    assert!(!view_create::grouping_shell(&mut s, serial, visit, ""));
+    assert!(prepare(&mut s, serial).is_none());
+    assert_eq!(entry(&s).unwrap().target.grouping(), Some("done"));
+}
+#[test]
+fn grouped_preflight_and_readback_reject_wrong_column_without_replay() {
+    let (mut s, _c) = create_shell();
+    let (serial, visit) = grouped_draft(&mut s);
+    let (g, i) = prepare(&mut s, serial).unwrap();
+    assert!(!view_create::grouping_shell(&mut s, serial, visit, ""));
+    let mut changed = metadata(&s, None);
+    changed.document.raw["list_metadata"]["schema"][1]["type"] = json!("text");
+    changed.document = Document::parse(changed.document.raw).unwrap();
+    assert!(admitted(&s, &g, &i, &changed).is_none());
+    assert!(admitted(&s, &g, &i, &metadata(&s, None)).is_some());
+    completed(
+        &mut s,
+        &g,
+        Err(ListColumnRenameFailure::Unconfirmed(Error::Transport(
+            "lost".into(),
+        ))),
+    );
+    assert!(prepare(&mut s, serial).is_none());
+    let g = checking(&mut s);
+    let wrong = added(&s);
+    assert!(checked(&mut s, &g, Ok(wrong)));
+    assert_eq!(entry(&s).unwrap().stage, Stage::Conflict);
+    assert!(view_create::open_available_shell(&mut s, serial).is_none());
+    // A later exact current read permits navigation, not attribution of creation.
+    let g = checking(&mut s);
+    let mut fresh = metadata(&s, None);
+    fresh.document.raw["list_metadata"]["views"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|v| v["id"] == "SERVER_NEW")
+        .unwrap()["grouping"] = json!({"group_by":"done"});
+    fresh.document = Document::parse(fresh.document.raw).unwrap();
+    assert!(checked(&mut s, &g, Ok(fresh)));
+    assert_eq!(entry(&s).unwrap().stage, Stage::Available);
+    assert!(view_create::open_available_shell(&mut s, serial).is_some());
+}

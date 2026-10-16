@@ -92,31 +92,43 @@ async fn run(
     let mut geometry = Vec::new();
     let mut captures = serde_json::Map::new();
     stage(d, "initial", &mut geometry, &mut captures).await?;
-    checked(d, "window.__listRename.click('#slack-list-new-view')").await?;
-    phase(state, Stage::Editing).await?;
+    draft(state, d, narrow).await?;
+    checked(d, "window.__listRename.click('#slack-list-rename-close')").await?;
+    wait_dom(d, "({ok:!document.getElementById('slack-list-rename')&&document.activeElement?.id==='slack-list-new-view'})").await?;
+    if !rename_fixture::snapshot(&state.peek())?["requests"]
+        .as_array()
+        .unwrap()
+        .is_empty()
+    {
+        return Err("Canceled grouping draft issued a request".into());
+    }
+    draft(state, d, narrow).await?;
+    let grouping = if narrow { "status" } else { "done" };
+    rename_fixture::grouping_schema(&state.peek(), grouping, true)?;
+    checked(d, "window.__listRename.click('#slack-list-rename-confirm')").await?;
+    phase(state, Stage::NotRequested).await?;
     wait_dom(
         d,
-        "({ok:document.getElementById('slack-list-rename-name')===document.activeElement})",
+        "({ok:document.getElementById('slack-list-rename')?.dataset.renameStage==='NotRequested'})",
     )
     .await?;
-    checked(d, "window.__listRename.input('Delivery overview')").await?;
-    checked(
-        d,
-        &format!(
-            "window.__listRename.chooseLayout({})",
-            json!(if narrow { "board" } else { "table" })
-        ),
-    )
-    .await?;
-    wait_dom(d,"({ok:document.getElementById('slack-list-rename-name')?.value==='Delivery overview'&&!document.getElementById('slack-list-rename-confirm')?.disabled})").await?;
-    wait_dom(
-        d,
-        &format!(
-            "({{ok:document.getElementById('slack-list-rename')?.dataset.viewCreate==={}}})",
-            json!(if narrow { "board" } else { "table" })
-        ),
-    )
-    .await?;
+    let refused = rename_fixture::snapshot(&state.peek())?;
+    if refused["requests"].as_array().unwrap().len() != 3
+        || refused["requests"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["path"] == "/api/lists.views.create")
+        || document(state)? != before
+        || population(state)? != initial
+    {
+        return Err("Changed grouping schema escaped preflight".into());
+    }
+    stage(d, "refused", &mut geometry, &mut captures).await?;
+    rename_fixture::grouping_schema(&state.peek(), grouping, false)?;
+    checked(d, "window.__listRename.click('#slack-list-rename-close')").await?;
+    wait_dom(d, "({ok:!document.getElementById('slack-list-rename')})").await?;
+    draft(state, d, narrow).await?;
     stage(d, "editing", &mut geometry, &mut captures).await?;
     checked(d, "window.__listRename.click('#slack-list-rename-confirm')").await?;
     phase(state, Stage::Saving).await?;
@@ -132,7 +144,7 @@ async fn run(
     rename_fixture::release(&state.peek(), false)?;
     phase(state, Stage::Uncertain).await?;
     let retained_reply = rename_fixture::retained_reply(&state.peek());
-    let source_reply = rename_fixture::snapshot(&state.peek())?["responses"][3].clone();
+    let source_reply = rename_fixture::snapshot(&state.peek())?["responses"][6].clone();
     if if narrow {
         retained_reply.is_some()
     } else {
@@ -205,6 +217,7 @@ async fn run(
         } else {
             super_platinum_core::slack_lists::ViewLayout::Table
         },
+        Some(grouping),
     );
     if after != expected
         || population(state)? != initial
@@ -216,22 +229,77 @@ async fn run(
     checked(d, "window.__listRename.click('#slack-list-new-view-open')").await?;
     wait_dom(d,r#"(()=>{const p=document.getElementById('slack-list-rename'),v=document.getElementById('slack-list-view-select'),a=document.activeElement;return {ok:!p&&v?.value==='V_SERVER_NEW'&&v?.selectedOptions[0]?.textContent==='Delivery overview'&&a===v,overlayPresent:!!p,selected:v?.value,label:v?.selectedOptions[0]?.textContent,active:a?.id}})()"#).await?;
     stage(d, "final", &mut geometry, &mut captures).await?;
+    let group_projection = wait_dom(d, "window.__listRename.groups()").await?;
     let final_layout = layout(state, "V_SERVER_NEW")?;
     if initial_layout != final_layout {
         return Err("Rename changed projection kind".into());
     }
     let ledger = rename_fixture::snapshot(&state.peek())?;
-    if ledger["requests"].as_array().unwrap().len() != if narrow { 8 } else { 7 }
+    if ledger["requests"].as_array().unwrap().len() != if narrow { 11 } else { 10 }
         || ledger["finished"].as_array().unwrap().len() != if narrow { 3 } else { 2 }
     {
         return Err("Unexpected request/completion count".into());
     }
     Ok(
-        json!({"ok":true,"fixture":owner["fixture"],"nonce":owner["nonce"],"pid":owner["pid"],"preparedRequests":if narrow{8}else{7},
+        json!({"ok":true,"fixture":owner["fixture"],"nonce":owner["nonce"],"pid":owner["pid"],"preparedRequests":if narrow{11}else{10},
         "noTransport":state.peek().core.transport.is_none(),"noSession":state.peek().core.session.is_none(),"syntheticInput":true,
         "actualBuilderDecoderReducers":true,"explicitConfirmation":true,"writeReplyNotProjected":true,"lateReadRejected":narrow,"positiveReplyRetained":!narrow,"retainedMutationReply":retained_reply,
-        "exactReadback":true,"selectedViewPreservedUntilOpen":true,"selectedView":"V_SERVER_NEW","explicitOpen":true,"layoutKinds":[initial_layout,final_layout],"partialPopulationPreserved":true,"noMutationReplay":true,"writeRequests":1,"readRequests":if narrow{7}else{6},
+        "exactReadback":true,"groupingKey":grouping,"groupProjection":group_projection,"groupingCancelNoRequest":true,"groupingSchemaRefused":true,"selectedViewPreservedUntilOpen":true,"selectedView":"V_SERVER_NEW","explicitOpen":true,"layoutKinds":[initial_layout,final_layout],"partialPopulationPreserved":true,"noMutationReplay":true,"writeRequests":1,"readRequests":if narrow{10}else{9},
         "before":before,"after":after,"initialPopulation":initial,"finalPopulation":population(state)?,"ledger":ledger,
         "visitGenerations":visits,"geometry":geometry,"captures":captures,"viewport":eval(d,"[innerWidth,innerHeight]").await?}),
     )
+}
+
+async fn draft(
+    state: Signal<ShellState>,
+    d: &dioxus::desktop::DesktopContext,
+    narrow: bool,
+) -> Result<(), String> {
+    checked(d, "window.__listRename.click('#slack-list-new-view')").await?;
+    phase(state, Stage::Editing).await?;
+    wait_dom(
+        d,
+        "({ok:document.getElementById('slack-list-new-view-grouping')?.value===''})",
+    )
+    .await?;
+    wait_dom(
+        d,
+        "({ok:document.getElementById('slack-list-rename-name')===document.activeElement})",
+    )
+    .await?;
+    checked(d, "window.__listRename.input('Delivery overview')").await?;
+    checked(
+        d,
+        &format!(
+            "window.__listRename.chooseLayout({})",
+            json!(if narrow { "board" } else { "table" })
+        ),
+    )
+    .await?;
+    wait_dom(d,"({ok:document.getElementById('slack-list-rename-name')?.value==='Delivery overview'&&!document.getElementById('slack-list-rename-confirm')?.disabled})").await?;
+    wait_dom(
+        d,
+        &format!(
+            "({{ok:document.getElementById('slack-list-rename')?.dataset.viewCreate==={}}})",
+            json!(if narrow { "board" } else { "table" })
+        ),
+    )
+    .await?;
+    checked(
+        d,
+        &format!(
+            "window.__listRename.chooseGrouping({})",
+            json!(if narrow { "status" } else { "done" })
+        ),
+    )
+    .await?;
+    wait_dom(
+        d,
+        &format!(
+            "({{ok:document.getElementById('slack-list-new-view-grouping')?.value==={}}})",
+            json!(if narrow { "status" } else { "done" })
+        ),
+    )
+    .await?;
+    Ok(())
 }

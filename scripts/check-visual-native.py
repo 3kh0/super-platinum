@@ -24,6 +24,7 @@ from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 PRESETS = {
     "search-navigation": (
         "search", "search-narrow", "search-filters", "search-filters-narrow",
+        "search-has-filters", "search-has-filters-narrow",
         "search-loading", "search-empty", "search-error", "search-more-error",
         "palette", "palette-people", "dms", "new-dm", "new-dm-narrow",
         "new-dm-selected", "new-dm-pending", "new-dm-error", "new-dm-directory",

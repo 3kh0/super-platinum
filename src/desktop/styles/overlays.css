@@ -406,6 +406,9 @@
 .search-filter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .search-filter-grid label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: var(--text-sm); }
 .search-filter-grid input { min-width: 0; width: 100%; min-height: var(--control-height); padding: 6px 8px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text); }
+.search-filter-options { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 8px; }
+.search-filter-options label { display: flex; align-items: center; gap: 8px; min-height: var(--control-height); color: var(--text); font-size: var(--text-sm); cursor: pointer; }
+.search-filter-options input { margin: 0; accent-color: var(--accent); }
 .search-filter-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 .search-filter-panel p { margin: 4px 0; color: var(--muted); font-size: var(--text-sm); }
 

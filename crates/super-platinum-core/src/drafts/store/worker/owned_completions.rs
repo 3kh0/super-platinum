@@ -62,6 +62,11 @@ macro_rules! common {
 common!(MutationCompletion, Mutation, p::Review);
 common!(LocalCompletion, Local, p::LocalWriterLease);
 impl MutationCompletion {
+    /// Historical exact issued receipt, not transport or current-row authority.
+    pub fn receipt(&self) -> Result<p::Receipt, AdmissionError> {
+        self.held.mutation_receipt().map_err(Into::into)
+    }
+
     /// The actual non-Clone claim is transferred once. A receipt/Operation cannot
     /// construct this value. The slot and immutable completion binding remain.
     pub fn take_claimed(&self) -> Result<p::ClaimedDispatch, AdmissionError> {

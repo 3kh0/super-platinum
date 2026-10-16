@@ -15,6 +15,98 @@ def windows_error(code):
 
 
 class CleanupTests(unittest.TestCase):
+    def test_closed_callback_reads_owned_files_before_cleanup_exactly_once(self):
+        calls = []
+        temporary = tempfile.TemporaryDirectory(prefix="sp-fixture-closed-test-")
+        path = Path(temporary.name).resolve(strict=True)
+        (path / "retained").write_bytes(b"closed storage")
+        value = module.NativeFixture("test", "unused.log")
+        info = path.stat()
+        value._temporary = value._temporary_owner = temporary
+        value._temporary_path, value._temporary_name = path, temporary.name
+        value._temporary_identity = (info.st_dev, info.st_ino)
+        temporary._finalizer.detach()
+        value.process = Mock()
+        value.process.poll.return_value = 0
+        output = value._output = io.StringIO()
+        value._entered = True
+        def audit(actual):
+            self.assertEqual(actual, path)
+            self.assertTrue(output.closed)
+            self.assertEqual(value.process.poll(), 0)
+            self.assertEqual((actual / "retained").read_bytes(), b"closed storage")
+            calls.append(actual)
+        value._after_exit = audit
+        value.close()
+        self.assertFalse(path.exists())
+        value.close()
+        self.assertEqual(calls, [path])
+
+    def test_audit_failure_still_cleans_and_is_not_replayed(self):
+        value, temporary = self.fixture()
+        error = RuntimeError("closed audit failed")
+        value._entered = True
+        value._after_exit = Mock(side_effect=error)
+        with self.assertRaises(RuntimeError) as caught: value.close()
+        self.assertIs(caught.exception, error)
+        temporary.cleanup.assert_called_once()
+        self.assertEqual(value.cleanup_errors[0]['stage'], 'after_exit')
+        value.close()
+        value._after_exit.assert_called_once()
+
+    def test_audit_and_cleanup_failures_preserve_body_then_audit_priority(self):
+        for body in (None, ValueError('body failure')):
+            with self.subTest(body=body):
+                value, temporary = self.fixture([OSError('deletion failed')])
+                value._entered = True
+                audit = RuntimeError('audit failed')
+                value._after_exit = Mock(side_effect=audit)
+                if body is None:
+                    with self.assertRaises(RuntimeError) as caught: value.__exit__(None, None, None)
+                    self.assertIs(caught.exception, audit)
+                else:
+                    value.__exit__(ValueError, body, None)
+                    self.assertIn('audit failed', body.__notes__[0])
+                self.assertIn('deletion failed', audit.__notes__[0])
+                self.assertEqual([e['stage'] for e in value.cleanup_errors], ['after_exit', 'temporary'])
+                temporary.cleanup.assert_called_once()
+
+    def test_unconfirmed_process_blocks_audit_and_temporary_deletion(self):
+        value, temporary = self.fixture()
+        value._entered = True
+        value._after_exit = Mock()
+        value.process.poll.return_value = None
+        with self.assertRaisesRegex(RuntimeError, 'closure is not confirmed'): value.close()
+        value._after_exit.assert_not_called()
+        temporary.cleanup.assert_not_called()
+        self.assertEqual(value.cleanup_errors[0]['stage'], 'process')
+
+    def test_changed_owner_blocks_callback_and_cleanup(self):
+        value, temporary = self.fixture()
+        value._entered = True
+        value._after_exit = Mock()
+        value._temporary_owner = object()
+        with self.assertRaisesRegex(RuntimeError, 'unverified'): value.close()
+        value._after_exit.assert_not_called()
+        temporary.cleanup.assert_not_called()
+
+    def test_failed_enter_never_runs_successful_exit_callback(self):
+        value, temporary = self.fixture()
+        value._after_exit = Mock()
+        value.close()
+        value._after_exit.assert_not_called()
+        temporary.cleanup.assert_called_once()
+
+    def test_closed_audit_refuses_redirected_child_temporary_environment(self):
+        value, temporary = self.fixture()
+        value._after_exit = Mock()
+        value.checks = {'TMP': 'different root'}
+        with patch.object(Path, "is_file", return_value=True), patch.object(Path, "mkdir"), patch.object(Path, "resolve", return_value=value._temporary_path), patch.object(Path, "stat", return_value=Mock(st_dev=1, st_ino=2)), patch.object(module.tempfile, "TemporaryDirectory", return_value=temporary), patch.object(module.subprocess, "Popen") as launch:
+            with self.assertRaisesRegex(ValueError, 'owned child temporary environment'): value.__enter__()
+        launch.assert_not_called()
+        value._after_exit.assert_not_called()
+        temporary.cleanup.assert_called_once()
+
     def test_real_stdlib_explicit_cleanup_after_finalizer_detach(self):
         value = module.NativeFixture("test", "unused.log")
         temporary = tempfile.TemporaryDirectory(prefix="sp-fixture-cleanup-test-")

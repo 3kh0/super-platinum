@@ -32,6 +32,8 @@ pub(crate) struct Presentation {
     pub column: String,
     pub view: Option<String>,
     pub creation: Option<super_platinum_core::slack_lists::ViewLayout>,
+    pub grouping: String,
+    pub grouping_options: Vec<(String, String)>,
     pub can_navigate: bool,
     pub noun: &'static str,
     pub limit: usize,
@@ -123,6 +125,14 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
                 None
             },
             creation: e.target.creation(),
+            grouping: e.target.grouping().unwrap_or_default().into(),
+            grouping_options: if e.target.creation().is_some() {
+                super_platinum_core::slack_lists::ViewCreate::grouping_columns(&e.original)
+                    .map(|c| (c.key.clone(), c.name.clone()))
+                    .collect()
+            } else {
+                Vec::new()
+            },
             can_navigate: e.stage == Stage::Available
                 && e.review
                     .as_ref()

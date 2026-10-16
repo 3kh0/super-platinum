@@ -1,6 +1,9 @@
 //! One ordered local continuation. Cloning the lane cannot reset its serial.
+use super::ownership::Tracked as Mutex;
 use super::*;
-use std::{collections::VecDeque, sync::Mutex};
+use std::collections::VecDeque;
+#[path = "owned_local.rs"]
+mod owned;
 
 pub(crate) struct LocalWriter {
     account: Arc<Account>,
@@ -23,10 +26,19 @@ struct State {
 }
 struct Submission {
     command: Command,
-    reply: durable::Reply<durable::LocalWriteResult>,
+    reply: owned::Reply,
 }
 #[derive(Clone)]
 struct Command {
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    owned: Option<
+        Arc<
+            super::owned_route::Held<
+                super::owned_route::o::LocalWriteInput,
+                durable::LocalWriteResult,
+            >,
+        >,
+    >,
     predecessor: u64,
     serial: u64,
     expected: LocalDraft,
@@ -42,6 +54,19 @@ pub(crate) struct LocalSnapshot {
     pub failed_inputs: Vec<(u64, LocalDraft)>,
 }
 impl LocalWriter {
+    /// Desktop holder membership only. Core job progression is a separate edge.
+    pub(super) fn ownership_stamp(
+        &self,
+    ) -> Result<super::ownership::Stamp, super::ownership::Error> {
+        self.state.observe(|_| ()).map(|(stamp, ())| stamp)
+    }
+    pub(super) fn validate_ownership(
+        &self,
+        stamp: &super::ownership::Stamp,
+    ) -> Result<(), super::ownership::Error> {
+        self.state.validate(stamp)
+    }
+
     /// Called only after the one-use start_local receipt while the Editor gate
     /// remains held. The paired canonical value has not changed at handoff.
     pub(super) fn from_handoff(
@@ -96,12 +121,7 @@ impl LocalWriter {
         Ok(writer)
     }
     pub(super) async fn refresh_inventory(&self) -> Result<(), durable::Error> {
-        let inventory = super::account::wait(
-            self.account
-                .client()?
-                .review_local(self.lease.scope().clone()),
-        )
-        .await?;
+        let inventory = self.current_inventory().await?;
         let mut state = self.state.lock().map_err(|_| durable::Error::Storage)?;
         if inventory.scope() != self.lease.scope()
             || inventory.row().is_some()
@@ -133,18 +153,25 @@ impl LocalWriter {
             let serial = predecessor
                 .checked_add(1)
                 .ok_or(durable::Error::Unsupported)?;
-            let reply = self.account.client()?.write_local(
-                self.lease.clone(),
-                predecessor,
-                serial,
-                state.tail.clone(),
-                local.clone(),
-            );
-            let command = Command {
+            let mut command = Command {
+                #[cfg(any(test, feature = "protected-native-fixture"))]
+                owned: None,
                 predecessor,
                 serial,
                 expected: state.tail.clone(),
                 local: local.clone(),
+            };
+            let reply = match self.enqueue(&mut command, false) {
+                Ok(reply) => reply,
+                Err(error) => {
+                    #[cfg(any(test, feature = "protected-native-fixture"))]
+                    if self.account.owned.is_some() {
+                        state.unsent_latest = Some(local.clone());
+                        state.retries.insert(serial, command);
+                        state.error = Some(error);
+                    }
+                    return Err(error);
+                }
             };
             state.serial = serial;
             state.tail = local.clone();
@@ -173,27 +200,26 @@ impl LocalWriter {
                             if let Some(local) = state.unsent_latest.take() {
                                 let predecessor = state.serial;
                                 if let Some(serial) = predecessor.checked_add(1) {
-                                    let command = Command {
+                                    let mut command = Command {
+                                        #[cfg(any(test, feature = "protected-native-fixture"))]
+                                        owned: None,
                                         predecessor,
                                         serial,
                                         expected: state.tail.clone(),
                                         local: local.clone(),
                                     };
-                                    match self.account.client() {
-                                        Ok(client) => {
-                                            let reply = client.write_local(
-                                                self.lease.clone(),
-                                                predecessor,
-                                                serial,
-                                                command.expected.clone(),
-                                                local.clone(),
-                                            );
+                                    match self.enqueue(&mut command, false) {
+                                        Ok(reply) => {
                                             state.serial = serial;
                                             state.tail = local.clone();
                                             state.latest_input = Some((serial, local));
                                             Some(Submission { command, reply })
                                         }
                                         Err(error) => {
+                                            #[cfg(any(test, feature = "protected-native-fixture"))]
+                                            if self.account.owned.is_some() {
+                                                state.retries.insert(serial, command);
+                                            }
                                             state.unsent_latest = Some(local);
                                             state.error = Some(error);
                                             state.running = false;
@@ -222,14 +248,9 @@ impl LocalWriter {
                 return;
             };
             let command = next.command;
-            let result = super::account::wait(next.reply).await;
+            let result = owned::wait(next.reply).await;
             let current = if matches!(&result, Ok(durable::LocalWriteResult::Applied(_))) {
-                Some(match self.account.client() {
-                    Ok(client) => {
-                        super::account::wait(client.review_local(self.lease.scope().clone())).await
-                    }
-                    Err(error) => Err(error),
-                })
+                Some(self.current_inventory().await)
             } else {
                 None
             };
@@ -306,18 +327,12 @@ impl LocalWriter {
             if state.running {
                 return Err(durable::Error::Pending);
             }
-            let command = state
+            let mut command = state
                 .retries
                 .get(&serial)
                 .cloned()
                 .ok_or(durable::Error::Stale)?;
-            let reply = self.account.client()?.write_local(
-                self.lease.clone(),
-                command.predecessor,
-                command.serial,
-                command.expected.clone(),
-                command.local.clone(),
-            );
+            let reply = self.enqueue(&mut command, true)?;
             state.pending.push_back(Submission { command, reply });
             state.running = true;
         }

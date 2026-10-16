@@ -53,7 +53,7 @@ impl RegisteredMutation {
         self.finish(attempt)
     }
     #[cfg(test)]
-    async fn run_with<F, Fut>(
+    pub(crate) async fn run_with<F, Fut>(
         &self,
         binding: &Binding,
         now: u64,

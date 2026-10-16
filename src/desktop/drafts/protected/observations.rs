@@ -6,6 +6,8 @@ use dioxus::prelude::{ReadableExt, Signal};
 use std::{collections::VecDeque, sync::Mutex};
 use super_platinum_core::slack::events::RawEvent;
 
+pub(super) mod inventory;
+
 const MAX_PENDING: usize = 64;
 pub(crate) struct ObservationQueue {
     source: Arc<Source>,
@@ -14,16 +16,25 @@ pub(crate) struct ObservationQueue {
 }
 #[derive(Default)]
 struct Queue {
-    pending: VecDeque<Work>,
-    results: VecDeque<Result<Observed, durable::Error>>,
+    pending: VecDeque<Arc<Work>>,
+    active: Option<Arc<Work>>,
+    abandoned: Vec<Arc<Work>>,
+    results: VecDeque<Arc<Completed>>,
+    delivered: Vec<Arc<Completed>>,
+    unknown: bool,
     running: bool,
     failed: bool,
+}
+struct Completed {
+    work: Option<Arc<Work>>,
+    result: Result<Observed, durable::Error>,
 }
 struct Work {
     owner: Owner,
     editor: Option<Arc<Editor>>,
     prepared: Prepared,
 }
+#[derive(Clone)]
 pub(crate) struct Observed {
     pub before: durable::Review,
     pub after: durable::Review,
@@ -31,11 +42,13 @@ pub(crate) struct Observed {
 }
 impl ObservationQueue {
     pub fn new(account: Arc<Account>, source: Arc<Source>) -> Arc<Self> {
-        Arc::new(Self {
+        let queue = Arc::new(Self {
             account,
             source,
             state: Mutex::default(),
-        })
+        });
+        queue.source.inventory.register(&queue);
+        queue
     }
     /// Admission remains tied to the original socket/frame and exact owner.
     /// Completed but unconsumed results count toward the bound too.
@@ -57,53 +70,107 @@ impl ObservationQueue {
             let shell = state.try_peek().map_err(|_| durable::Error::Stale)?;
             self.source.prepare(&shell, &key, raw)?
         };
-        let start = {
-            let mut queue = self.state.lock().map_err(|_| durable::Error::Storage)?;
-            if queue.failed {
-                return Err(durable::Error::Gap);
-            }
-            if queue.pending.len() + queue.results.len() + usize::from(queue.running) >= MAX_PENDING
-            {
-                queue.failed = true;
-                queue.pending.clear();
-                self.source.gap(durable::GapReason::QueueOverflow);
-                return Err(durable::Error::Gap);
-            }
-            queue.pending.push_back(Work {
-                owner,
-                editor,
-                prepared,
-            });
-            let start = !queue.running;
-            queue.running = true;
-            start
-        };
+        let start = self.admit(Arc::new(Work {
+            owner,
+            editor,
+            prepared,
+        }))?;
         if start {
-            let queue = self.clone();
+            let guard = inventory::Running {
+                queue: self.clone(),
+                finished: false,
+            };
             dioxus::core::spawn_forever(async move {
-                queue.run(state).await;
+                let mut guard = guard;
+                guard.queue.clone().run(state).await;
+                guard.finished = true;
             });
         }
         Ok(())
     }
+    fn admit(&self, work: Arc<Work>) -> Result<bool, durable::Error> {
+        if !self.source.inventory.same_account(&self.account)
+            || !Arc::ptr_eq(&work.owner.account, &self.account)
+            || work
+                .editor
+                .as_ref()
+                .is_some_and(|editor| !Arc::ptr_eq(&editor.owner.account, &self.account))
+        {
+            return Err(durable::Error::Stale);
+        }
+        let mut queue = self.state.lock().map_err(|_| durable::Error::Storage)?;
+        if queue.failed {
+            return Err(durable::Error::Gap);
+        }
+        self.source.inventory.clock.change();
+        if queue.pending.len()
+            + queue.results.len()
+            + queue.delivered.len()
+            + usize::from(queue.active.is_some())
+            + queue.abandoned.len()
+            >= MAX_PENDING
+        {
+            queue.failed = true;
+            queue.abandon_pending();
+            drop(queue);
+            self.source.gap(durable::GapReason::QueueOverflow);
+            return Err(durable::Error::Gap);
+        }
+        queue.pending.push_back(work);
+        let start = !queue.running;
+        queue.running = true;
+        Ok(start)
+    }
+    fn next(&self) -> Option<Arc<Work>> {
+        let mut queue = self.state.lock().unwrap();
+        self.source.inventory.clock.change();
+        if queue.failed {
+            queue.abandon_pending();
+        }
+        let next = queue.pending.pop_front();
+        queue.active = next.clone();
+        if next.is_none() {
+            queue.running = false;
+        }
+        next
+    }
+    fn finish(&self, result: Result<Observed, durable::Error>) {
+        let mut queue = self.state.lock().unwrap();
+        self.source.inventory.clock.change();
+        queue.failed |= result.is_err();
+        let work = queue.active.take();
+        if work.is_none() {
+            queue.unknown = true;
+            queue.failed = true;
+        }
+        queue
+            .results
+            .push_back(Arc::new(Completed { work, result }));
+    }
     pub fn take_result(&self) -> Option<Result<Observed, durable::Error>> {
-        self.state.lock().ok()?.results.pop_front()
+        let mut queue = match self.state.lock() {
+            Ok(queue) => queue,
+            Err(_) => {
+                self.source.inventory.clock.unknown();
+                return None;
+            }
+        };
+        if queue.results.is_empty() {
+            return None;
+        }
+        self.source.inventory.clock.change();
+        let completed = queue.results.pop_front()?;
+        let result = completed.result.clone();
+        // Taking a result is not proof that its projection was installed. Keep
+        // the accepted input and result until a future typed handoff exists.
+        queue.delivered.push(completed);
+        Some(result)
     }
     async fn run(self: Arc<Self>, state: Signal<ShellState>) {
         loop {
-            let next = {
-                let mut queue = self.state.lock().unwrap();
-                if queue.failed {
-                    queue.pending.clear();
-                }
-                let next = queue.pending.pop_front();
-                if next.is_none() {
-                    queue.running = false;
-                }
-                next
-            };
+            let next = self.next();
             let Some(work) = next else { return };
-            let result = self.process(state, work).await;
+            let result = self.process(state, &work).await;
             if let Err(error) = result.as_ref() {
                 self.source.gap(if *error == durable::Error::Storage {
                     durable::GapReason::StorageFailure
@@ -111,21 +178,17 @@ impl ObservationQueue {
                     durable::GapReason::InterruptedAdmission
                 });
             }
-            let mut queue = self.state.lock().unwrap();
-            queue.failed |= result.is_err();
-            queue.results.push_back(result);
+            self.finish(result);
         }
     }
     async fn process(
         &self,
         state: Signal<ShellState>,
-        work: Work,
+        work: &Work,
     ) -> Result<Observed, durable::Error> {
-        let Work {
-            owner,
-            editor,
-            prepared,
-        } = work;
+        let owner = work.owner.clone();
+        let editor = work.editor.clone();
+        let prepared = &work.prepared;
         let _active = journal::Active::begin(&owner)?;
         if prepared.scope() != owner.scope() {
             return Err(durable::Error::Stale);
@@ -251,5 +314,16 @@ impl ObservationQueue {
             after: result.after().clone(),
             barrier,
         })
+    }
+}
+
+impl Queue {
+    fn abandon_pending(&mut self) {
+        self.abandoned.extend(self.pending.drain(..));
+    }
+}
+impl Drop for ObservationQueue {
+    fn drop(&mut self) {
+        self.source.inventory.clock.change();
     }
 }

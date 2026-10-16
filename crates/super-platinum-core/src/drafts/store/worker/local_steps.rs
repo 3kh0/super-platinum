@@ -99,7 +99,7 @@ impl Worker {
         })
     }
 
-    #[cfg(test)]
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub(in crate::drafts::store::worker) fn hold_local_fault(
         &self,
         scope: Scope,
@@ -325,10 +325,10 @@ impl Worker {
     }
     // Named local retries only. No new-generation or fenced retry authority.
     // The original payload remains held even if submission races a new fence.
-    fn retry_local_storage<I: Send + Sync + 'static>(
+    fn retry_local_storage<I: Send + Sync + 'static, T: Send + 'static>(
         &self,
-        step: &Step<I, p::WriteResult>,
-        build: impl FnOnce(&I, mpsc::Sender<Result<p::WriteResult, p::Error>>) -> Action,
+        step: &Step<I, T>,
+        build: impl FnOnce(&I, mpsc::Sender<Result<T, p::Error>>) -> Action,
     ) -> Result<(), Reason> {
         let input = step.input();
         let (reply, receiver) = mpsc::channel();
@@ -339,7 +339,7 @@ impl Worker {
         let actual = entry
             .retained
             .clone()
-            .downcast::<StepHeld<I, p::WriteResult>>()
+            .downcast::<StepHeld<I, T>>()
             .map_err(|_| Reason::Stale)?;
         if !Arc::ptr_eq(&actual, &step.held) || entry.generation != a.generation {
             return Err(Reason::Stale);
@@ -368,3 +368,7 @@ impl Worker {
         self.submit_step(step)
     }
 }
+
+#[path = "retained_local_steps.rs"]
+mod local_fifo;
+pub use local_fifo::{LocalOutcome, LocalWriteInput};

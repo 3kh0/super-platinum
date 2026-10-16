@@ -333,8 +333,8 @@ pub(super) use completion::{
 };
 
 pub use completion::{
-    CheckpointInput, MutationInput, OpenInput, PreserveInput, ReleaseInput, SendInput, TeamInput,
-    WriteOutcome,
+    CheckpointInput, LocalOutcome, LocalWriteInput, MutationInput, OpenInput, PreserveInput,
+    ReleaseInput, SendInput, TeamInput, WriteOutcome,
 };
 
 #[path = "accounted_wait.rs"]

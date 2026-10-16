@@ -55,8 +55,9 @@ FIXTURES=(
   pdf-preview pdf-preview-narrow pdf-preview-error pdf-preview-search-long
   viewer-actions-files viewer-actions-message viewer-actions-narrow viewer-actions-pdf
   file-actions file-actions-narrow file-actions-channel-narrow file-rename file-rename-narrow file-rename-channel-narrow file-recovery file-recovery-narrow file-preview-renamed-files file-preview-renamed-message
+  original-download original-download-narrow original-download-save-dialog
   file-preview-text file-preview-narrow file-preview-large file-preview-utf16 file-preview-empty file-preview-binary file-preview-audio
-  video-viewer search search-opening search-loading search-empty search-error search-more-error search-narrow search-filters search-filters-narrow palette palette-people activity-unread activity-channel-post
+  video-viewer search search-opening search-loading search-empty search-error search-more-error search-narrow search-filters search-filters-narrow search-has-filters search-has-filters-narrow palette palette-people activity-unread activity-channel-post
   activity-thread-tools activity-paging activity-loading activity-error activity-more-error activity-empty activity-narrow activity-navigation activity-navigation-narrow dms
   dm-history-failed dm-cached-refresh-failed toast-long-error
   connection-connecting connection-no-network composer-multiline
@@ -135,6 +136,13 @@ if [[ "$#" -gt 0 ]]; then FIXTURES=("$@"); fi
 # they are intentionally not part of the default-feature sweep.
 for fixture in "${FIXTURES[@]}"; do
   case "$fixture" in
+    original-download-save-dialog)
+      echo "Use scripts/check-save-dialog-discovery-windows.py for the owned native Save dialog diagnostic." >&2
+      exit 2
+      ;;
+    original-download|original-download-narrow)
+      echo "Use scripts/check-original-download-native.py for the owned local streaming workflow." >&2
+      exit 2 ;;
     slack-list-subitem-create|slack-list-subitem-create-narrow|slack-list-subitem-uncertain|slack-list-subitem-uncertain-narrow)
       echo "Use scripts/check-slack-list-subitem-native.py for the owned subitem workflow." >&2
       exit 2 ;;
@@ -146,6 +154,9 @@ for fixture in "${FIXTURES[@]}"; do
       echo "Use scripts/check-protected-enrollment-native.py with an explicitly feature-built binary." >&2
       exit 2
       ;;
+    protected-owned-send|protected-owned-send-narrow)
+      echo "Use scripts/check-protected-owned-send-native.py with an explicitly feature-built binary." >&2
+      exit 2 ;;
     protected-drafts|protected-drafts-narrow)
       echo "Use scripts/check-protected-drafts-native.py with an explicitly feature-built binary." >&2
       exit 2 ;;

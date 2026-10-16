@@ -1,6 +1,7 @@
 //! Retained Editor-open ownership only. No queue fence or continuation authority.
+use super::ownership::Tracked as Mutex;
 use super::*;
-use std::sync::{Mutex, Weak};
+use std::sync::Weak;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Phase {
@@ -25,6 +26,8 @@ pub(super) struct Evidence {
     // Preserve actual evidence even when installation or the waiter disappears.
     pub review: Option<Arc<durable::Review>>,
     pub writer: Option<durable::Writer>,
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    pub owned: super::owned_route::Opening,
     editor: Option<Weak<editor::Editor>>,
 }
 pub(super) struct Job {
@@ -104,6 +107,8 @@ impl Request {
                 terminal: Terminal::Running,
                 review: None,
                 writer: None,
+                #[cfg(any(test, feature = "protected-native-fixture"))]
+                owned: Default::default(),
                 editor: None,
             }),
             changed: Default::default(),
@@ -232,6 +237,39 @@ impl Completion {
             evidence.terminal = Terminal::Failed(error);
         }
     }
+    async fn read(&self, owner: &Owner) -> Result<durable::Review, durable::Error> {
+        #[cfg(any(test, feature = "protected-native-fixture"))]
+        if let Some(route) = &owner.account.owned {
+            let held =
+                super::owned_route::Held::new(route.operations.review(owner.scope().clone()));
+            self.job
+                .evidence
+                .lock()
+                .map_err(|_| durable::Error::Storage)?
+                .owned
+                .read = Some(held.clone());
+            return held.value().await.map_err(super::owned_route::ui)?;
+        }
+        account::wait(owner.client()?.review(owner.scope().clone())).await
+    }
+    async fn register(
+        &self,
+        owner: &Owner,
+        review: durable::Review,
+    ) -> Result<durable::Writer, durable::Error> {
+        #[cfg(any(test, feature = "protected-native-fixture"))]
+        if let Some(route) = &owner.account.owned {
+            let held = super::owned_route::Held::new(route.operations.register(review));
+            self.job
+                .evidence
+                .lock()
+                .map_err(|_| durable::Error::Storage)?
+                .owned
+                .register = Some(held.clone());
+            return held.value().await.map_err(super::owned_route::ui)?;
+        }
+        account::wait(owner.register(review)?).await
+    }
     async fn run_inner(
         &self,
         owner: Owner,
@@ -242,7 +280,7 @@ impl Completion {
         self.job.phase(Phase::WaitingOwner)?;
         let gate = owner.gate.clone().lock_owned().await;
         self.job.phase(Phase::Reading)?;
-        let fresh = Arc::new(account::wait(owner.client()?.review(owner.scope().clone())).await?);
+        let fresh = Arc::new(self.read(&owner).await?);
         {
             let mut evidence = self
                 .job
@@ -260,7 +298,7 @@ impl Completion {
             return Err(durable::Error::Stale);
         }
         self.job.phase(Phase::Registering)?;
-        let writer = account::wait(owner.register((*fresh).clone())?).await?;
+        let writer = self.register(&owner, (*fresh).clone()).await?;
         {
             let mut evidence = self
                 .job

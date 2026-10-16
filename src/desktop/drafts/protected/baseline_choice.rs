@@ -18,7 +18,7 @@ impl Editor {
     pub async fn retry_baseline_choice(
         self: &Arc<Self>,
         state: Signal<crate::state::ShellState>,
-    ) -> Result<Applied, durable::Error> {
+    ) -> Result<Box<Applied>, durable::Error> {
         let editor = self.clone();
         let (send, receive) = tokio::sync::oneshot::channel();
         dioxus::core::spawn_forever(async move {
@@ -30,7 +30,7 @@ impl Editor {
     async fn retry_choice_inner(
         self: Arc<Self>,
         state: Signal<crate::state::ShellState>,
-    ) -> Result<Applied, durable::Error> {
+    ) -> Result<Box<Applied>, durable::Error> {
         let _gate = self.gate.lock().await;
         let retry = {
             let mut current = self.state.lock().map_err(|_| durable::Error::Storage)?;
@@ -97,13 +97,13 @@ impl Editor {
                     }),
                 });
                 current.barrier = Some(barrier.clone());
-                Ok(Applied {
+                Ok(Box::new(Applied {
                     before,
                     after,
                     serial: retry.capture.serial,
                     barrier: Some(barrier),
                     native_clear: NativeClear::NotAttempted,
-                })
+                }))
             }
             Ok(_) => {
                 current.error = Some(durable::Error::Stale);

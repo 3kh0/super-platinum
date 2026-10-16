@@ -4,6 +4,43 @@ use crate::state::{ShellState, ViewerVm};
 use dioxus::prelude::*;
 use super_platinum_core::{MediaAssetId, file_preview};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PreviewState {
+    Unsupported,
+    Loading,
+    Unavailable,
+    Image,
+    Video,
+    Audio,
+    Pdf,
+    Text,
+}
+
+fn preview_state(mime: &str, ready: bool, failed: bool) -> PreviewState {
+    let content = if mime.starts_with("image/") {
+        PreviewState::Image
+    } else if mime.starts_with("video/") {
+        PreviewState::Video
+    } else if mime.starts_with("audio/") {
+        PreviewState::Audio
+    } else if mime == "application/pdf" {
+        PreviewState::Pdf
+    } else if file_preview::is_text(mime) {
+        PreviewState::Text
+    } else {
+        // Unsupported types have no preview to load. Original downloads are
+        // independent of the preview cache and may never populate it.
+        return PreviewState::Unsupported;
+    };
+    if ready {
+        content
+    } else if failed {
+        PreviewState::Unavailable
+    } else {
+        PreviewState::Loading
+    }
+}
+
 #[component]
 pub fn FileViewer(state: Signal<ShellState>, viewer: ViewerVm, media_epoch: u64) -> Element {
     let (ready, failed) = {
@@ -18,23 +55,25 @@ pub fn FileViewer(state: Signal<ShellState>, viewer: ViewerVm, media_epoch: u64)
     let uri = viewer.id.webview_uri();
     let actions = crate::file_actions::Target::for_viewer(&state.read(), &viewer);
     let has_actions = actions.is_some();
+    let preview = preview_state(&viewer.mime, ready, failed);
     rsx! {
         div {class:"viewer",
-            if !ready {
-                if failed {p {class:"media-unavailable",role:"status","Preview unavailable"}}
-                else {p {class:"viewer-loading",role:"status","Loading {viewer.name}…"}}
-            } else if viewer.mime.starts_with("image/") {
-                crate::view::media_image::MediaImage {state,id:viewer.id.clone(),media_epoch,alt:viewer.name.clone()}
-            } else if viewer.mime.starts_with("video/") {
-                video {key:"viewer-{uri}",src:"{uri}",controls:true,autoplay:true,"{viewer.name}"}
-            } else if viewer.mime.starts_with("audio/") {
-                audio {class:"audio-preview",src:"{uri}",controls:true,preload:"metadata","aria-label":"Play {viewer.name}","{viewer.name}"}
-            } else if viewer.mime == "application/pdf" {
-                crate::pdf_preview::PdfPreview {key:"{viewer.id.uri()}",state,id:viewer.id.clone()}
-            } else if file_preview::is_text(&viewer.mime) {
-                TextContent {key:"{viewer.id.uri()}",state,id:viewer.id.clone()}
-            } else {
+            if preview == PreviewState::Unsupported {
                 p {"A preview is not available for this file type. Download it to open it."}
+            } else if preview == PreviewState::Loading {
+                p {class:"viewer-loading",role:"status","Loading {viewer.name}…"}
+            } else if preview == PreviewState::Unavailable {
+                p {class:"media-unavailable",role:"status","Preview unavailable"}
+            } else if preview == PreviewState::Image {
+                crate::view::media_image::MediaImage {state,id:viewer.id.clone(),media_epoch,alt:viewer.name.clone()}
+            } else if preview == PreviewState::Video {
+                video {key:"viewer-{uri}",src:"{uri}",controls:true,autoplay:true,"{viewer.name}"}
+            } else if preview == PreviewState::Audio {
+                audio {class:"audio-preview",src:"{uri}",controls:true,preload:"metadata","aria-label":"Play {viewer.name}","{viewer.name}"}
+            } else if preview == PreviewState::Pdf {
+                crate::pdf_preview::PdfPreview {key:"{viewer.id.uri()}",state,id:viewer.id.clone()}
+            } else if preview == PreviewState::Text {
+                TextContent {key:"{viewer.id.uri()}",state,id:viewer.id.clone()}
             }
             div {class:if has_actions{"viewer-footer has-actions"}else{"viewer-footer"},
                 crate::download::DownloadButton {key:"{viewer.id.uri()}",state,id:viewer.id.clone(),name:viewer.download_name.clone(),ready}
@@ -180,6 +219,23 @@ fn renamed_fixture(shell: &mut ShellState, name: &str) {
 }
 
 pub async fn native_check(mut state: Signal<ShellState>) {
+    if std::env::var("SUPER_PLATINUM_FIXTURE").as_deref() == Ok("original-download-save-dialog") {
+        #[cfg(feature = "original-download-native-fixture")]
+        crate::download::fixture::dialog::run(state).await;
+        #[cfg(not(feature = "original-download-native-fixture"))]
+        eprintln!("save-dialog-check: {{\"ok\":false,\"error\":\"feature unavailable\"}}");
+        return;
+    }
+    if matches!(
+        std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
+        Ok("original-download" | "original-download-narrow")
+    ) {
+        #[cfg(feature = "original-download-native-fixture")]
+        crate::download::fixture::check::run(state).await;
+        #[cfg(not(feature = "original-download-native-fixture"))]
+        eprintln!("original-download-check: {{\"ok\":false,\"error\":\"feature unavailable\"}}");
+        return;
+    }
     if !crate::fixture::is_fixture()
         || std::env::var_os("SUPER_PLATINUM_FILE_PREVIEW_CHECK").is_none()
     {
@@ -269,5 +325,57 @@ pub async fn native_check(mut state: Signal<ShellState>) {
             "super-platinum: file preview check failed: {}",
             result["case"]
         );
+    }
+}
+
+#[cfg(test)]
+mod preview_state_tests {
+    use super::{PreviewState, preview_state};
+
+    #[test]
+    fn unsupported_types_never_claim_loading_or_preview_failure() {
+        for mime in [
+            "application/octet-stream",
+            "application/zip",
+            "",
+            "application/x-unknown",
+        ] {
+            for (ready, failed) in [(false, false), (false, true), (true, false), (true, true)] {
+                assert_eq!(
+                    preview_state(mime, ready, failed),
+                    PreviewState::Unsupported,
+                    "{mime}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn supported_types_preserve_pending_failure_and_ready_content() {
+        for (mime, content) in [
+            ("image/png", PreviewState::Image),
+            ("video/mp4", PreviewState::Video),
+            ("audio/wav", PreviewState::Audio),
+            ("application/pdf", PreviewState::Pdf),
+            ("text/plain; charset=utf-8", PreviewState::Text),
+            ("application/json", PreviewState::Text),
+            ("application/vnd.example+json", PreviewState::Text),
+            ("application/xml", PreviewState::Text),
+        ] {
+            assert_eq!(
+                preview_state(mime, false, false),
+                PreviewState::Loading,
+                "{mime}"
+            );
+            assert_eq!(
+                preview_state(mime, false, true),
+                PreviewState::Unavailable,
+                "{mime}"
+            );
+            assert_eq!(preview_state(mime, true, false), content, "{mime}");
+            // Preserve the existing ready-byte path, including MediaImage's
+            // own decoder-failure handling; this fix changes only unsupported types.
+            assert_eq!(preview_state(mime, true, true), content, "{mime}");
+        }
     }
 }

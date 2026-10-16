@@ -1,5 +1,8 @@
 //! Captured account lifetime and the only blocking Reply wait boundary.
+use super::ownership::Tracked;
 use super::*;
+mod initialization;
+pub(crate) mod inventory;
 use std::sync::{
     Mutex, OnceLock,
     atomic::{AtomicBool, Ordering},
@@ -8,13 +11,16 @@ use std::sync::{
 pub(crate) struct Account {
     id: String,
     client: durable::Client,
-    initialization: tokio::sync::Mutex<Initialization>,
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    pub(super) owned: Option<Arc<super::owned_route::Route>>,
+    initialization: Arc<initialization::Holder>,
     ready: AtomicBool,
     gates: Mutex<BTreeMap<DraftKey, Arc<tokio::sync::Mutex<()>>>>,
     gaps: Mutex<(u64, BTreeMap<String, PendingGap>)>,
+    pub(super) source_jobs: Tracked<super::source::jobs::Book>,
     pub(super) journal: Mutex<super::journal::Journal>,
-    pub(super) editors: Mutex<super::retention::Editors>,
-    pub(super) operations: Mutex<super::operation::Records>,
+    pub(super) editors: Tracked<super::retention::Editors>,
+    pub(super) operations: Tracked<super::operation::Records>,
 }
 
 #[cfg(test)]
@@ -30,8 +36,7 @@ mod editor_open_initialization_tests {
         let id = "00000000-0000-4000-8000-000000000394";
         let store = durable::test_support::Isolated::create(id.into(), path).unwrap();
         let account = Account::isolated(id.into(), store.client());
-        let guard = account.initialization.lock().await;
-        assert!(matches!(*guard, Initialization::New));
+        let (entered, release) = account.initialization.hold_wait();
         let owner = account
             .owner(DraftKey {
                 team: "T1".into(),
@@ -64,7 +69,8 @@ mod editor_open_initialization_tests {
             account.editor_inventory().unwrap()[0].terminal,
             Some(super::super::editor_open::Terminal::Running)
         );
-        drop(guard);
+        entered.await.unwrap();
+        release.send(()).unwrap();
         tokio::time::timeout(std::time::Duration::from_secs(5), opened.ready())
             .await
             .unwrap();
@@ -81,11 +87,6 @@ struct PendingGap {
     reason: durable::GapReason,
     running: bool,
 }
-enum Initialization {
-    New,
-    Running(tokio::task::JoinHandle<Result<(), durable::Error>>),
-    Ready,
-}
 
 pub(super) async fn wait<T: Send + 'static>(reply: durable::Reply<T>) -> Result<T, durable::Error> {
     tokio::task::spawn_blocking(move || reply.wait())
@@ -99,29 +100,55 @@ impl Account {
     #[cfg(test)]
     pub(super) fn from_initialized(value: durable::owned_store::Initialized) -> Arc<Self> {
         Arc::new(Self {
+            #[cfg(any(test, feature = "protected-native-fixture"))]
+            owned: None,
             id: value.account().to_owned(),
             client: value.client(),
-            initialization: tokio::sync::Mutex::new(Initialization::Ready),
+            initialization: initialization::Holder::supplied(value),
             ready: AtomicBool::new(true),
             gates: Mutex::default(),
             gaps: Mutex::default(),
+            source_jobs: Tracked::default(),
             journal: Mutex::default(),
-            editors: Mutex::default(),
-            operations: Mutex::default(),
+            editors: Tracked::default(),
+            operations: Tracked::default(),
         })
     }
     #[cfg(any(test, feature = "protected-native-fixture"))]
     pub(super) fn isolated(id: String, client: durable::Client) -> Arc<Self> {
         Arc::new(Self {
+            #[cfg(any(test, feature = "protected-native-fixture"))]
+            owned: None,
             id,
             client,
-            initialization: tokio::sync::Mutex::new(Initialization::New),
+            initialization: initialization::Holder::new(),
             ready: AtomicBool::new(false),
             gates: Mutex::default(),
             gaps: Mutex::default(),
+            source_jobs: Tracked::default(),
             journal: Mutex::default(),
-            editors: Mutex::default(),
-            operations: Mutex::default(),
+            editors: Tracked::default(),
+            operations: Tracked::default(),
+        })
+    }
+    /// Only an actual once-cold initialized owned route can construct this
+    /// fixture Account. Default captured/isolated/factory behavior is unchanged.
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    pub(super) fn from_retained(value: durable::owned_store::Initialized) -> Arc<Self> {
+        let initialized = initialization::Holder::supplied(value.clone());
+        let route = super::owned_route::Route::new(value);
+        Arc::new(Self {
+            id: route.initialized.account().to_owned(),
+            client: route.initialized.client(),
+            owned: Some(route),
+            initialization: initialized,
+            ready: AtomicBool::new(true),
+            gates: Mutex::default(),
+            gaps: Mutex::default(),
+            source_jobs: Tracked::default(),
+            journal: Mutex::default(),
+            editors: Tracked::default(),
+            operations: Tracked::default(),
         })
     }
     /// Memory only. This package has no selector callsite. The core Client must
@@ -140,15 +167,18 @@ impl Account {
             .entry(id.to_owned())
             .or_insert_with(|| {
                 Arc::new(Self {
+                    #[cfg(any(test, feature = "protected-native-fixture"))]
+                    owned: None,
                     id: id.to_owned(),
                     client: durable::Client::new(id.to_owned()),
-                    initialization: tokio::sync::Mutex::new(Initialization::New),
+                    initialization: initialization::Holder::new(),
                     ready: AtomicBool::new(false),
                     gates: Mutex::default(),
                     gaps: Mutex::default(),
+                    source_jobs: Tracked::default(),
                     journal: Mutex::default(),
-                    editors: Mutex::default(),
-                    operations: Mutex::default(),
+                    editors: Tracked::default(),
+                    operations: Tracked::default(),
                 })
             })
             .clone())
@@ -212,10 +242,45 @@ impl Account {
     }
     /// Repair remains owned by Account after its source/worker disappears.
     pub fn retry_gap(self: &Arc<Self>, team: &str) -> Result<(), durable::Error> {
+        self.retry_gap_impl(team, || ())
+    }
+    #[cfg(test)]
+    pub(super) fn retry_gap_interleaved(
+        self: &Arc<Self>,
+        team: &str,
+        before_legacy: impl FnOnce(),
+    ) -> Result<(), durable::Error> {
+        self.retry_gap_impl(team, before_legacy)
+    }
+    fn retry_gap_impl(
+        self: &Arc<Self>,
+        team: &str,
+        before_legacy: impl FnOnce(),
+    ) -> Result<(), durable::Error> {
+        // A retained Source child owns its exact original generation and all
+        // results. Do not bypass that holder through the legacy retry path.
+        let generation = self
+            .gaps
+            .lock()
+            .map_err(|_| durable::Error::Storage)?
+            .1
+            .get(team)
+            .map(|gap| gap.generation);
+        if let Some(generation) = generation {
+            if let Some(child) = self.retained_gap(team, generation)? {
+                return child.retry_gap();
+            }
+        }
         let runtime = tokio::runtime::Handle::try_current().map_err(|_| durable::Error::Storage)?;
+        before_legacy();
         let (stream, reason, generation) = {
             let mut gaps = self.gaps.lock().map_err(|_| durable::Error::Storage)?;
             let gap = gaps.1.get_mut(team).ok_or(durable::Error::Stale)?;
+            // A retained child may have installed a newer barrier after the
+            // first lookup. Never submit that child's input via legacy custody.
+            if Some(gap.generation) != generation {
+                return Err(durable::Error::Pending);
+            }
             if gap.running {
                 return Err(durable::Error::Pending);
             }
@@ -240,31 +305,22 @@ impl Account {
             .map_or(true, |gaps| gaps.1.contains_key(team))
     }
     pub async fn initialize(self: &Arc<Self>) -> Result<(), durable::Error> {
-        let mut state = self.initialization.lock().await;
-        if matches!(*state, Initialization::New) {
-            // Enqueue once before detaching the wait. Canceling the caller keeps
-            // this handle in Account; no second AfterRestart may run beside it.
-            let reply = self.client.load(durable::LoadMode::AfterRestart);
-            *state =
-                Initialization::Running(tokio::spawn(async move { wait(reply).await.map(|_| ()) }));
-        }
-        if let Initialization::Running(task) = &mut *state {
-            let result = task.await.unwrap_or(Err(durable::Error::Storage));
-            *state = if result.is_ok() {
-                Initialization::Ready
-            } else {
-                Initialization::New
-            };
-            result?;
-            self.ready.store(true, Ordering::Release);
-        }
-        Ok(())
+        self.initialization.initialize(self).await
     }
+
     pub async fn inventory(self: &Arc<Self>) -> Result<durable::Loaded, durable::Error> {
         self.initialize().await?;
+        #[cfg(any(test, feature = "protected-native-fixture"))]
+        if let Some(route) = &self.owned {
+            return Err(route.unsupported());
+        }
         wait(self.client.load(durable::LoadMode::Current)).await
     }
     pub(super) fn client(&self) -> Result<&durable::Client, durable::Error> {
+        #[cfg(any(test, feature = "protected-native-fixture"))]
+        if let Some(route) = &self.owned {
+            return Err(route.unsupported());
+        }
         self.ready
             .load(Ordering::Acquire)
             .then_some(&self.client)

@@ -27,6 +27,11 @@ pub(crate) fn intercept(state: Signal<ShellState>) -> bool {
 
 pub(crate) fn intercept_target(mut state: Signal<ShellState>, target: ComposerTarget) -> bool {
     #[cfg(feature = "protected-native-fixture")]
+    if super::protected::owned_native::intercept(state, target) {
+        return true;
+    }
+
+    #[cfg(feature = "protected-native-fixture")]
     if super::protected::native_fixture::intercept(state, target) {
         return true;
     }

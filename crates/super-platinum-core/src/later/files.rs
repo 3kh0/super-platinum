@@ -36,14 +36,7 @@ impl LaterState {
                 .insert(id.into(), FileHydrationFailure::Deleted);
         } else {
             if let Some(update) = self.file_updates.get(id) {
-                if update.revision > requested_revision {
-                    file.title = Some(update.title.clone());
-                }
-                if let Some((revision, name)) = &update.name
-                    && *revision > requested_revision
-                {
-                    file.name = Some(name.clone());
-                }
+                update.apply_since(&mut file, requested_revision);
             }
             self.file_errors.remove(id);
         }

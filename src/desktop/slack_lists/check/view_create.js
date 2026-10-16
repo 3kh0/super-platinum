@@ -5,10 +5,12 @@
     click(selector){const e=document.querySelector(selector);e?.scrollIntoView({block:'nearest',inline:'nearest'});if(!e||e.disabled||!hit(e))return {ok:false,selector};e.focus();e.click();return {ok:true,selector,hitPoints:9}},
     input(value){const e=document.getElementById('slack-list-rename-name');if(!e||e.disabled||!hit(e))return {ok:false};e.focus();Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,value);e.dispatchEvent(new Event('input',{bubbles:true}));return {ok:true}},
     chooseLayout(value){const e=document.getElementById('slack-list-new-view-layout');if(!e||e.disabled||!hit(e))return {ok:false};e.value=value;e.dispatchEvent(new Event('change',{bubbles:true}));return {ok:true}},
+    chooseGrouping(value){const e=document.getElementById('slack-list-new-view-grouping');if(!e||e.disabled||!hit(e)||![...e.options].some(o=>o.value===value))return {ok:false};e.value=value;e.dispatchEvent(new Event('change',{bubbles:true}));return {ok:true}},
+    groups(){const board=!!document.querySelector('.slack-list-board');const groups=[...document.querySelectorAll(board?'.slack-list-lane':'.slack-list-group')].map(e=>({key:e.dataset.groupKey,label:e.querySelector(board?'h3':'.slack-list-group-toggle span')?.textContent,count:Number(e.querySelector('.slack-list-group-count')?.textContent)}));const expected=board?[{key:'todo',label:'To do',count:1},{key:'done',label:'Done',count:1}]:[{key:'true',label:'Checked',count:1},{key:'',label:'Ungrouped',count:1}];return {ok:JSON.stringify(groups)===JSON.stringify(expected),groups};},
     closeList(){const r=document.querySelector('.slack-list-dialog');if(!r)return {ok:false};r.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));return {ok:true}},
     geometry(stage){const root=document.querySelector('.slack-list-dialog'),panel=document.getElementById('slack-list-rename');
-      const controls=[...(panel||root)?.querySelectorAll(panel?'button:not([disabled])':'#slack-list-new-view,#slack-list-close')||[]].map(e=>({id:e.id||e.dataset.renameView,hit:hit(e)}));
-      const expected={initial:null,editing:'Editing',saving:'Saving',uncertain:'Uncertain',checking:'Checking',stale:'Uncertain',available:'Available',final:null}[stage];
+      const controls=[...(panel||root)?.querySelectorAll(panel?'button:not([disabled]),select:not([disabled]),input:not([disabled])':'#slack-list-new-view,#slack-list-close')||[]].map(e=>({id:e.id||e.dataset.renameView,hit:hit(e)}));
+      const expected={initial:null,refused:'NotRequested',editing:'Editing',saving:'Saving',uncertain:'Uncertain',checking:'Checking',stale:'Uncertain',available:'Available',final:null}[stage];
       const phase=panel?.dataset.renameStage||null;
       const picker=document.getElementById('slack-list-view-select');
       const pickerID=picker?.value,pickerLabel=picker?.selectedOptions?.[0]?.textContent;
@@ -18,7 +20,7 @@
       const bounded=visible(root)&&(!panel||visible(panel))&&root.scrollWidth<=root.clientWidth+1;
       const r=panel?.getBoundingClientRect();
       return {ok:pickerExact&&phase===expected&&bounded&&partial&&controls.every(c=>c.hit)&&(!panel||panel.contains(document.activeElement)),stage,bounded,partial,controls,hitPointsPerControl:9,
-        creationLayout:panel?.dataset.viewCreate||null,pickerID,pickerLabel,pickerExact,actualLayout:document.querySelector(".slack-list-board")?"board":document.querySelector("table.slack-list-grid")?"table":null,phase,input:document.getElementById('slack-list-rename-name')?.value||null,
+        grouping:document.getElementById('slack-list-new-view-grouping')?.value??null,creationLayout:panel?.dataset.viewCreate||null,pickerID,pickerLabel,pickerExact,actualLayout:document.querySelector(".slack-list-board")?"board":document.querySelector("table.slack-list-grid")?"table":null,phase,input:document.getElementById('slack-list-rename-name')?.value||null,
         panel:r?{x:r.x,y:r.y,width:r.width,height:r.height}:null,focused:document.activeElement?.id,focusedInside:!panel||panel.contains(document.activeElement),viewport:[innerWidth,innerHeight]};}
   };return {ok:true};
 })()

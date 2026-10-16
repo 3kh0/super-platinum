@@ -7,6 +7,20 @@ use super_platinum_core::drafts::{
     sync::{ConsumeKind, RejectedScheduleChoice, Snapshot as RawSnapshot},
 };
 
+enum ReviewReply {
+    Legacy(durable::Reply<durable::Review>),
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    Owned(Arc<super::owned_send::Send>),
+}
+impl ReviewReply {
+    async fn wait(self) -> Result<durable::Review, durable::Error> {
+        match self {
+            Self::Legacy(reply) => account::wait(reply).await,
+            #[cfg(any(test, feature = "protected-native-fixture"))]
+            Self::Owned(held) => held.consumed().await,
+        }
+    }
+}
 pub(crate) enum Action {
     Consume(ConsumeKind),
     Schedule {
@@ -20,7 +34,7 @@ pub(crate) enum Action {
     Control(durable::Control),
     Settle(LocalChoice),
     Baseline {
-        evidence: super::baseline::Evidence,
+        evidence: Box<super::baseline::Evidence>,
         choice: RemoteChoice,
         state: dioxus::prelude::Signal<crate::state::ShellState>,
     },
@@ -84,7 +98,7 @@ impl Editor {
         action: Action,
         operation: operation::Operation,
         guard: G,
-    ) -> Result<Applied, durable::Error>
+    ) -> Result<Box<Applied>, durable::Error>
     where
         G: FnOnce() -> Result<Option<durable::Stream>, durable::Error> + 'static,
     {
@@ -136,7 +150,7 @@ impl Editor {
         lease: ReviewLease,
         action: Action,
         guard: G,
-    ) -> Result<Applied, durable::Error>
+    ) -> Result<Box<Applied>, durable::Error>
     where
         G: FnOnce() -> Result<Option<durable::Stream>, durable::Error> + 'static,
     {
@@ -154,7 +168,7 @@ impl Editor {
         lease: ReviewLease,
         action: Action,
         guard: G,
-    ) -> Result<Applied, durable::Error>
+    ) -> Result<Box<Applied>, durable::Error>
     where
         G: FnOnce() -> Result<Option<durable::Stream>, durable::Error>,
     {
@@ -166,7 +180,7 @@ impl Editor {
         action: Action,
         guard: G,
         operation: Option<operation::Operation>,
-    ) -> Result<Applied, durable::Error>
+    ) -> Result<Box<Applied>, durable::Error>
     where
         G: FnOnce() -> Result<Option<durable::Stream>, durable::Error>,
     {
@@ -202,7 +216,7 @@ impl Editor {
             Action::Baseline {
                 evidence, choice, ..
             } => Some(Arc::new(baseline_choice::Retry {
-                evidence: evidence.clone(),
+                evidence: evidence.as_ref().clone(),
                 choice: choice.clone(),
                 capture: captured.clone(),
             })),
@@ -225,45 +239,78 @@ impl Editor {
             let stream = guard()?;
             let expected = lease.claim(&captured)?;
             let before = expected.clone();
-            let reply = match action {
-                Action::Consume(kind) => {
-                    self.owner
-                        .consume(stream.ok_or(durable::Error::Gap)?, expected, kind)?
-                }
-                Action::Schedule { snapshot, post_at } => self.owner.schedule(
-                    stream.ok_or(durable::Error::Gap)?,
-                    expected,
-                    snapshot,
-                    post_at,
-                )?,
-                Action::RejectedSchedule { choice, now_secs } => self.owner.rejected_schedule(
-                    stream.ok_or(durable::Error::Gap)?,
-                    expected,
-                    choice,
-                    now_secs,
-                )?,
-                Action::Control(action) => self.owner.control(expected, action)?,
-                Action::Settle(choice) => self.owner.settle(expected, choice)?,
-                Action::Baseline {
-                    evidence,
-                    choice,
-                    state,
-                } => {
-                    use dioxus::prelude::ReadableExt;
-                    if !evidence.evidence.review().same(&expected) {
-                        return Err(durable::Error::Stale);
+            #[cfg(any(test, feature = "protected-native-fixture"))]
+            let routed = self.owner.account.owned.clone();
+            #[cfg(not(any(test, feature = "protected-native-fixture")))]
+            let routed: Option<()> = None;
+            let reply = if routed.is_some() {
+                #[cfg(any(test, feature = "protected-native-fixture"))]
+                {
+                    let route = routed.as_ref().expect("checked route");
+                    if !matches!(action, Action::Consume(ConsumeKind::Send)) {
+                        return Err(route.unsupported());
                     }
-                    let shell = state.try_peek().map_err(|_| durable::Error::Stale)?;
-                    if !evidence.binding.current(&shell) || !evidence.source.current(&shell) {
-                        return Err(durable::Error::Gap);
-                    }
-                    self.owner.choose_baseline(evidence.evidence, choice)?
+                    let parent = operation.as_ref().ok_or(durable::Error::Unsupported)?;
+                    let stream = stream.ok_or(durable::Error::Gap)?;
+                    self.owner.check_stream(&stream)?;
+                    self.owner.check(&expected)?;
+                    let held = super::owned_send::Send::new(
+                        route,
+                        super::owned_route::o::SendInput { stream, expected },
+                    );
+                    // Existing root owns returned input and complete fixed family
+                    // before actual Consume enqueue or any await.
+                    parent.retain(|s| s.owned_send = Some(held.clone()))?;
+                    held.consume.submit().map_err(super::owned_route::ui)?;
+                    ReviewReply::Owned(held)
                 }
+                #[cfg(not(any(test, feature = "protected-native-fixture")))]
+                {
+                    unreachable!()
+                }
+            } else {
+                let reply = ReviewReply::Legacy(match action {
+                    Action::Consume(kind) => {
+                        self.owner
+                            .consume(stream.ok_or(durable::Error::Gap)?, expected, kind)?
+                    }
+                    Action::Schedule { snapshot, post_at } => self.owner.schedule(
+                        stream.ok_or(durable::Error::Gap)?,
+                        expected,
+                        snapshot,
+                        post_at,
+                    )?,
+                    Action::RejectedSchedule { choice, now_secs } => self.owner.rejected_schedule(
+                        stream.ok_or(durable::Error::Gap)?,
+                        expected,
+                        choice,
+                        now_secs,
+                    )?,
+                    Action::Control(action) => self.owner.control(expected, action)?,
+                    Action::Settle(choice) => self.owner.settle(expected, choice)?,
+                    Action::Baseline {
+                        evidence,
+                        choice,
+                        state,
+                    } => {
+                        use dioxus::prelude::ReadableExt;
+                        if !evidence.evidence.review().same(&expected) {
+                            return Err(durable::Error::Stale);
+                        }
+                        let shell = state.try_peek().map_err(|_| durable::Error::Stale)?;
+                        if !evidence.binding.current(&shell) || !evidence.source.current(&shell) {
+                            return Err(durable::Error::Gap);
+                        }
+                        self.owner.choose_baseline(evidence.evidence, choice)?
+                    }
+                });
+
+                reply
             };
             state.busy = true;
             (before, state.serial, reply)
         };
-        let result = account::wait(reply).await;
+        let result = reply.wait().await;
         let mut state = self.state.lock().unwrap();
         state.busy = false;
         let result = match result {
@@ -296,13 +343,13 @@ impl Editor {
                 } else {
                     None
                 };
-                Ok(Applied {
+                Ok(Box::new(Applied {
                     native_clear: NativeClear::NotAttempted,
                     before,
                     after,
                     serial,
                     barrier,
-                })
+                }))
             }
             Ok(_) => {
                 state.error = Some(durable::Error::Stale);

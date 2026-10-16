@@ -64,10 +64,15 @@ with tempfile.TemporaryDirectory() as temp:
     with closing(sqlite3.connect(db)) as c:c.execute("UPDATE local_reviews SET decision='success'");c.commit()
     rejects(lambda:m.validate_stage(db,'review-decision-retained',original,observed))
 
+def action_records():
+    labels=['Delete paragraph','Saving\u2026','Saving\u2026','Checking\u2026','Delete paragraph','Unconfirmed']
+    return [dict(ok=True,label=label,generation='7' if i<4 else '8',visit='3',groupWidth=400,cancel=[180,0,72,32],save=[260,0,140,32]) for i,label in enumerate(labels)]
+
 for mode in m.STAGES:
     spec=m.CanvasCheck('canvas-replacement','flag',m.FLAGS[mode],m.COUNTS[mode],m.STAGES[mode])
     for fixture in m.FIXTURES:
         value=dict(ok=True,noSession=True,noTransport=True,layout=dict(ok=True,viewport=expected_viewport(fixture)),**m.COUNTS[mode],**dict.fromkeys(m.FLAGS[mode],True))
+        if mode=="seed":value["actionGeometry"]=action_records()
         m.validate_final(spec,fixture,value);count+=1
         for key in (*m.FLAGS[mode],'noSession','noTransport'):
             rejects(lambda key=key:m.validate_final(spec,fixture,dict(value,**{key:False})))
@@ -103,4 +108,19 @@ for fixture in m.FIXTURES:
         for field,value in [('ok',False),('hit',False),('rect',[0,0,0,30]),('rect',[0,-50,20,30]),('rect',[0,0,True,30]),('rect',[float('nan'),0,20,30]),('clip',dict(left=0,top=0,right=5,bottom=height))]:
             altered=copy.deepcopy(packet);altered['reviewGeometry'][key][field]=value
             rejects(lambda altered=altered:m.validate_review_geometry(altered,fixture))
+m.validate_action_geometry(action_records());count+=1
+for bad in (None,[],action_records()[:-1]):rejects(lambda bad=bad:m.validate_action_geometry(bad))
+for index in range(6):
+    for key,value in [('ok',False),('label','wrong'),('generation',''),('visit',None),('groupWidth',True),('groupWidth',float('nan')),('cancel',[180,0,0,32]),('save',[260,0,141,32]),('save',[260,0,True,32])]:
+        bad=action_records();bad[index][key]=value
+        rejects(lambda bad=bad:m.validate_action_geometry(bad))
+for index in (1,2,3,5):
+    for key in ('cancel','save'):
+        for coord in range(4):
+            bad=action_records();bad[index][key][coord]-=1
+            rejects(lambda bad=bad:m.validate_action_geometry(bad))
+    bad=action_records();bad[index]['generation']='99'
+    rejects(lambda bad=bad:m.validate_action_geometry(bad))
+bad=action_records();bad[4]['generation']=bad[5]['generation']='7'
+rejects(lambda:m.validate_action_geometry(bad))
 print(f'{count} paired runner/SQLite cases PASS (synthetic schema bytes; no native/Cargo)')

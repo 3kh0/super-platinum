@@ -16,6 +16,7 @@ mod canvas_collab;
 mod canvas_edit;
 mod draft_mutation;
 mod emoji_preferences;
+mod original_download;
 mod protected_draft;
 pub use canvas_edit::CanvasEditFailure;
 pub use protected_draft::{MAX_PROTECTED_DRAFT_RESPONSE_BYTES, ProtectedDraftFailure};
@@ -70,7 +71,7 @@ pub enum Health {
 
 #[derive(Clone)]
 pub struct Transport {
-    http: wreq::Client,
+    http: Option<wreq::Client>,
     /// Strict single-attempt mutations also disable HTTP-library protocol retries.
     /// Lazily pooled so ordinary boot/read paths do not construct another client.
     canvas_http: Arc<std::sync::OnceLock<wreq::Client>>,
@@ -118,7 +119,7 @@ impl Transport {
             .build()
             .map_err(|e| Error::Transport(format!("client build: {e}")))?;
         Ok(Self {
-            http,
+            http: Some(http),
             canvas_http: Arc::new(std::sync::OnceLock::new()),
             d_cookie: d_cookie.into(),
             health: Arc::new(watch::Sender::new(Health::Unknown)),
@@ -156,6 +157,7 @@ impl Transport {
     /// the link to be confirmed back instead. Bounded: past the hold it fails
     /// like any other offline call, and the caller's own error path runs.
     async fn await_link(&self) -> Result<(), Error> {
+        self.http()?;
         if self.health() != Health::Offline {
             return Ok(());
         }
@@ -170,8 +172,10 @@ impl Transport {
         }
     }
 
-    pub fn http(&self) -> &wreq::Client {
-        &self.http
+    pub fn http(&self) -> Result<&wreq::Client, Error> {
+        self.http
+            .as_ref()
+            .ok_or_else(|| Error::Offline("disconnected fixture transport".into()))
     }
 
     pub fn d_cookie(&self) -> &str {
@@ -331,6 +335,7 @@ impl Transport {
         bytes: Vec<u8>,
         progress: Arc<AtomicU64>,
     ) -> Result<(), Error> {
+        let http = self.http()?;
         let length = bytes.len();
         let chunks = bytes
             .chunks(64 * 1024)
@@ -340,8 +345,7 @@ impl Transport {
             progress.fetch_add(chunk.len() as u64, Ordering::Relaxed);
             Ok::<_, std::convert::Infallible>(chunk)
         }));
-        let response = self
-            .http
+        let response = http
             .post(url)
             .header("Content-Type", "application/octet-stream")
             .header("Content-Length", length)
@@ -368,7 +372,7 @@ impl Transport {
         req: &PreparedRequest,
         structured_block_response: bool,
     ) -> Result<Value, Error> {
-        self.execute_once_using(req, structured_block_response, &self.http)
+        self.execute_once_using(req, structured_block_response, self.http()?)
             .await
     }
 
@@ -378,6 +382,7 @@ impl Transport {
         structured_block_response: bool,
         http: &wreq::Client,
     ) -> Result<Value, Error> {
+        self.http()?;
         let req_url = req.url.clone();
         let mut builder = match req.method {
             "POST" => http.post(&req.url),
@@ -486,7 +491,7 @@ impl Transport {
 
     pub async fn get_text(&self, url: &str, user_agent: &str) -> Result<String, Error> {
         let response = self
-            .http
+            .http()?
             .get(url)
             .header("User-Agent", user_agent)
             .header("Cookie", self.cookie())
@@ -533,7 +538,7 @@ impl Transport {
         // bound, one stalled avatar or unfurl image wedges the whole media
         // refresh (and every later one, since loads are serialized).
         let mut request = self
-            .http
+            .http()?
             .get(url)
             .timeout(MEDIA_FETCH_TIMEOUT)
             .header("User-Agent", user_agent);
@@ -944,6 +949,7 @@ mod tests {
             let transport = Transport::new("cookie").unwrap();
             let response = transport
                 .http()
+                .unwrap()
                 .get(format!("http://{address}/image"))
                 .send()
                 .await
@@ -1019,3 +1025,6 @@ mod tests {
         assert!(!destination_request.contains("cookie:"));
     }
 }
+
+#[cfg(any(test, feature = "protected-test-support"))]
+mod disconnected_fixture;

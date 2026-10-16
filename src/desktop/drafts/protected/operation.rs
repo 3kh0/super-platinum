@@ -1,8 +1,9 @@
 //! Retained evidence for one renderer-owned Send/Schedule, never dispatch authority.
+use super::ownership::Tracked as Mutex;
 use super::*;
 use crate::drafts::network::Attempt;
 use std::sync::{
-    Mutex, Weak,
+    Weak,
     atomic::{AtomicBool, Ordering},
 };
 
@@ -81,6 +82,10 @@ pub(crate) struct Evidence {
     pub consumed: Option<Arc<Consumed>>,
     pub attempt: Option<Arc<Attempt>>,
     pub receipt: Option<durable::Receipt>,
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    pub owned_send: Option<Arc<super::owned_send::Send>>,
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    pub owned_release: Option<Arc<super::owned_release::Release>>,
     pub recorded: Option<Arc<durable::Review>>,
     pub preservation: Option<Result<(), durable::Error>>,
     pub publication: Publications,
@@ -112,6 +117,11 @@ pub(crate) struct Operation(pub(super) Arc<Record>);
 pub(super) struct Records {
     next: u64,
     entries: BTreeMap<u64, Arc<Record>>,
+}
+impl Records {
+    pub(super) fn ownership_entries(&self) -> Vec<Operation> {
+        self.entries.values().cloned().map(Operation).collect()
+    }
 }
 pub(crate) struct Seed {
     pub request: Request,
@@ -181,6 +191,10 @@ impl Account {
                 consumed: None,
                 attempt: None,
                 receipt: None,
+                #[cfg(any(test, feature = "protected-native-fixture"))]
+                owned_send: None,
+                #[cfg(any(test, feature = "protected-native-fixture"))]
+                owned_release: None,
                 recorded: None,
                 preservation: None,
                 publication: Publications::default(),
@@ -271,7 +285,7 @@ impl Operation {
             .as_ref()
             .is_some_and(|value| value.native_clear == NativeClear::Cleared))
     }
-    pub fn delivered(&self, value: delivery::Finished) -> Result<Status, durable::Error> {
+    pub fn delivered(&self, value: Arc<delivery::Finished>) -> Result<Status, durable::Error> {
         let settled = self.native_cleared()?
             && value.local_handoff.is_ok()
             && value.inventory_published
@@ -282,7 +296,7 @@ impl Operation {
             };
         self.retain(|s| {
             s.handoff = Some(value.local_handoff);
-            s.finished = Some(Arc::new(value));
+            s.finished = Some(value);
         })?;
         Ok(if settled {
             Status::Finished

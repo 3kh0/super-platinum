@@ -24,7 +24,7 @@ impl Transport {
             return Err(Error::Api("canvas_read_request_too_large".into()));
         }
         let mut builder = self
-            .http
+            .http()?
             .post(&req.url)
             .timeout(API_TIMEOUT)
             // A form token must never follow a cross-origin redirect, including

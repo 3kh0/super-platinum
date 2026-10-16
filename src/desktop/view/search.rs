@@ -1,3 +1,4 @@
+pub(crate) mod check;
 use crate::state::ShellState;
 use dioxus::prelude::*;
 use super_platinum_core::{search::SearchSort, search_query::SearchFilters};
@@ -36,6 +37,10 @@ pub(crate) fn controls(mut state: Signal<ShellState>, shell: &ShellState) -> Ele
                     {field(state, "After date", "YYYY-MM-DD", "after", &filters.after, None)}
                     {field(state, "Before date", "YYYY-MM-DD", "before", &filters.before, None)}
                 }
+                div { class: "search-filter-options",
+                    {has_filter(state, "Has files", true, filters.has_file)}
+                    {has_filter(state, "Has links", false, filters.has_link)}
+                }
                 datalist { id: "search-channel-options",
                     for name in channel_options(shell, &filters.channel) { option { value: "{name}" } }
                 }
@@ -54,6 +59,24 @@ pub(crate) fn controls(mut state: Signal<ShellState>, shell: &ShellState) -> Ele
                     }, "Apply filters" }
                 }
             }
+        }
+    }
+}
+
+fn has_filter(mut state: Signal<ShellState>, label: &str, file: bool, checked: bool) -> Element {
+    rsx! {
+        label {
+            input { r#type: "checkbox", checked,
+                onchange: move |event| {
+                    let mut shell = state.write();
+                    shell.search_filter_error = None;
+                    if let Some(filters) = shell.search_filters.as_mut() {
+                        if file { filters.has_file = event.checked(); }
+                        else { filters.has_link = event.checked(); }
+                    }
+                }
+            }
+            "{label}"
         }
     }
 }

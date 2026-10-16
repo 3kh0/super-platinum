@@ -19,6 +19,11 @@ pub(crate) enum Action {
         point: faults::FaultPoint,
         reply: std::sync::mpsc::Sender<Result<(), Error>>,
     },
+    // Retained inventory read only; no caller-selected initialization mode.
+    #[cfg(any(test, feature = "protected-test-support"))]
+    Inventory {
+        reply: std::sync::mpsc::Sender<Result<std::sync::Arc<Loaded>, Error>>,
+    },
     Load {
         mode: LoadMode,
         reply: std::sync::mpsc::Sender<Result<Loaded, Error>>,

@@ -17,14 +17,14 @@ def receipt(fixture="slack-list-view-create"):
     permission={"ok":True,"prefs":{"allow_lists":"full"}}
     personal={"ok":True,"prefs":{"task_lists":"[]","assigned_to_list":""}}
     response={"syntheticFailure":"response_lost"} if narrow else {"ok":True,"list":{"id":after["id"],"list_metadata":after["list_metadata"]},"opaque_reply":{"retain":True}}
-    return {"layoutKinds":[before["list_metadata"]["views"][0]["type"]]*2,"fixture":fixture,"selectedView":"V_SERVER_NEW","selectedViewPreservedUntilOpen":True,"positiveReplyRetained":not narrow,"lateReadRejected":narrow,"retainedMutationReply":None if narrow else response,
-        "before":before,"after":after,"initialPopulation":M["initial_population"](),"finalPopulation":M["initial_population"](),"writeRequests":1,"readRequests":7 if narrow else 6,
-        "visitGenerations":[10,20] if narrow else [],"ledger":{"requests":M["expected_wire"](fixture),"responses":[{"ok":True,"file":before},permission,personal,response]+([{"ok":True,"file":after}] if narrow else [])+[{"ok":True,"file":after},permission,personal],"server":after,"writePending":False,"readPending":False,
+    return {"groupingKey":M["grouping_key"](fixture),"groupProjection":{"ok":True,"groups":M["expected_groups"](fixture)},"groupingCancelNoRequest":True,"groupingSchemaRefused":True,"layoutKinds":[before["list_metadata"]["views"][0]["type"]]*2,"fixture":fixture,"selectedView":"V_SERVER_NEW","selectedViewPreservedUntilOpen":True,"positiveReplyRetained":not narrow,"lateReadRejected":narrow,"retainedMutationReply":None if narrow else response,
+        "before":before,"after":after,"initialPopulation":M["initial_population"](),"finalPopulation":M["initial_population"](),"writeRequests":1,"readRequests":10 if narrow else 9,
+        "visitGenerations":[10,20] if narrow else [],"ledger":{"requests":M["expected_wire"](fixture),"responses":[{"ok":True,"file":M["refused_document"](fixture)},permission,personal,{"ok":True,"file":before},permission,personal,response]+([{"ok":True,"file":after}] if narrow else [])+[{"ok":True,"file":after},permission,personal],"server":after,"writePending":False,"readPending":False,
         "finished":[{"serial":5,"kind":kind,"applied":applied} for kind,applied in ([("write",False)]+([("check",False)] if narrow else [])+[("check",True)])]}}
 
 class Oracle(unittest.TestCase):
     def test_create_response_is_never_files_info_or_selection_authority(self):
-        for mutate in (lambda r:r["ledger"]["responses"][3].update(file=r["after"]),lambda r:r.update(selectedView="V_CUSTOM"),lambda r:r["after"]["list_metadata"]["views"].reverse(),lambda r:r["after"]["list_metadata"].update(default_view="V_SERVER_NEW")):
+        for mutate in (lambda r:r["ledger"]["responses"][6].update(file=r["after"]),lambda r:r.update(selectedView="V_CUSTOM"),lambda r:r["after"]["list_metadata"]["views"].reverse(),lambda r:r["after"]["list_metadata"].update(default_view="V_SERVER_NEW")):
             r=receipt();mutate(r)
             with self.assertRaises(RuntimeError):M["validate_wire"](r)
 
@@ -46,13 +46,13 @@ class Oracle(unittest.TestCase):
 
     def test_missing_or_replayed_request(self):
         for change in (lambda r: r["ledger"]["requests"].pop(),
-                       lambda r: r["ledger"]["requests"].append(r["ledger"]["requests"][3])):
+                       lambda r: r["ledger"]["requests"].append(r["ledger"]["requests"][6])):
             r = receipt(); change(r)
             with self.assertRaises(RuntimeError): M["validate_wire"](r)
 
     def test_id_not_key_and_no_layout_change_or_cursor(self):
         for fields in ([["id", "V_CUSTOM"]], [["grouping", "{}"]], [["cursor", "invented"]]):
-            r = receipt(); r["ledger"]["requests"][3]["fields"].extend(fields)
+            r = receipt(); r["ledger"]["requests"][6]["fields"].extend(fields)
             with self.assertRaises(RuntimeError): M["validate_wire"](r)
 
     def test_population_completeness_and_unknown_metadata_are_exact(self):
@@ -68,6 +68,45 @@ class Oracle(unittest.TestCase):
                        lambda r: r.update(visitGenerations=[10, 10])):
             r = receipt(M["FIXTURE"]+"-narrow"); change(r)
             with self.assertRaises(RuntimeError): M["validate_wire"](r)
+
+class GeometryOracle(unittest.TestCase):
+    def test_grouping_control_and_refused_stage_are_mandatory(self):
+        for fixture in M["FIXTURES"]:
+            spec, stages=M["contract"](fixture)
+            phases={"initial":None,"refused":"NotRequested","editing":"Editing","saving":"Saving","uncertain":"Uncertain","checking":"Checking","stale":"Uncertain","available":"Available","final":None}
+            controls={None:["slack-list-new-view","slack-list-close"],"NotRequested":["slack-list-rename-leave","slack-list-rename-close"],"Editing":["slack-list-new-view-layout","slack-list-new-view-grouping","slack-list-rename-name","slack-list-rename-leave","slack-list-rename-close","slack-list-rename-confirm"],"Saving":["slack-list-rename-leave"],"Checking":["slack-list-rename-leave"],"Uncertain":["slack-list-rename-leave","slack-list-rename-check"],"Available":["slack-list-rename-leave","slack-list-rename-close","slack-list-rename-check","slack-list-new-view-open"]}
+            layout="board" if fixture.endswith("-narrow") else "table"
+            r=receipt(fixture)
+            r.update(nonce="a"*32,pid=1,preparedRequests=spec.prepared_requests,viewport=[1200,800],ok=True)
+            r.update({key:True for key in M["REQUIRED"]})
+            r["geometry"]=[dict(stage=stage,phase=phases[stage],actualLayout=layout,ok=True,bounded=True,partial=True,focusedInside=True,viewport=r["viewport"],hitPointsPerControl=9,controls=[{"id":i,"hit":True} for i in controls[phases[stage]]],input="Delivery overview",grouping=M["grouping_key"](fixture),creationLayout=layout,pickerExact=True,pickerID="V_SERVER_NEW" if stage=="final" else "V_CUSTOM",pickerLabel="Delivery overview" if stage=="final" else "Project delivery") for stage in stages]
+            directory=Path("fake-captures")
+            r["captures"]={stage:str(directory/f"{fixture}-{stage}.png") for stage in stages}
+            edges=[{"stage":stage,"edge":edge} for stage in stages for edge in ("before","after")]
+            g=M["validate_native"].__globals__
+            with patch.dict(g,{"validate_receipt":Mock(),"png_signature":Mock(return_value=[1200,800])}):
+                M["validate_native"](fixture,"a"*32,1,directory,r,edges)
+                editing=next(v for v in r["geometry"] if v["stage"]=="editing")
+                editing["controls"]=[c for c in editing["controls"] if c["id"]!="slack-list-new-view-grouping"]
+                with self.assertRaises(RuntimeError): M["validate_native"](fixture,"a"*32,1,directory,r,edges)
+
+class GroupingOracle(unittest.TestCase):
+    def test_wrong_omitted_extra_grouping_and_refused_write_fail(self):
+        for fixture in M["FIXTURES"]:
+            for key in (None, "wrong", ""):
+                r=receipt(fixture)
+                r["after"]["list_metadata"]["views"][1]["grouping"]={"group_by":key}
+                with self.assertRaises(RuntimeError): M["validate_wire"](r)
+            for change in (
+                lambda r:r.update(groupingSchemaRefused=False),
+                lambda r:r.update(groupingCancelNoRequest=False),
+                lambda r:r["groupProjection"]["groups"].pop(),
+                lambda r:r["ledger"]["requests"][6]["fields"].pop(4),
+                lambda r:r["ledger"]["requests"].insert(0,r["ledger"]["requests"][6]),
+                lambda r:r["after"]["list_metadata"]["views"][1]["grouping"].update(order=[]),
+            ):
+                r=receipt(fixture);change(r)
+                with self.assertRaises(RuntimeError): M["validate_wire"](r)
 
 class Cleanup(unittest.TestCase):
     def test_pointer_cleanup_preserves_primary_and_fails_without_primary(self):

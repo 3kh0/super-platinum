@@ -176,8 +176,8 @@ pub(crate) fn prepare(
     })
 }
 
-/// Merge verified names only. A title event must not replace media URLs, share
-/// metadata, or the open preview element with a potentially partial response.
+/// Merge verified names, size and type label only. Media/content/access metadata
+/// and the open preview element remain unchanged by a partial response.
 pub(crate) fn reconcile_metadata(shell: &mut ShellState, team: &str, file: &File) -> bool {
     let Some(id) = file.id.as_deref().filter(|id| !id.is_empty()) else {
         return false;
@@ -191,22 +191,20 @@ pub(crate) fn reconcile_metadata(shell: &mut ShellState, team: &str, file: &File
     {
         return false;
     }
-    // An ID-only/inaccessible response has no authoritative display name.
-    if file
-        .title
-        .as_deref()
-        .filter(|title| !title.is_empty())
-        .or(file.name.as_deref())
-        .is_none_or(|s| s.is_empty())
-    {
+    if !shell.core.merge_file_display_metadata(team, file) {
         return false;
     }
-    let title = super_platinum_core::state::file_title(file);
-    shell
-        .core
-        .rename_file(team, id, &title, file.name.as_deref());
+    // A size/type-only response must not rename the viewer to its fallback ID.
+    let title = file
+        .title
+        .as_deref()
+        .filter(|title| !title.trim().is_empty())
+        .or(file.name.as_deref().filter(|name| !name.trim().is_empty()))
+        .map(|_| super_platinum_core::state::file_title(file));
+
     if shell.core.active_team.as_deref() == Some(team) {
-        if let Some(viewer) = &mut shell.viewer
+        if let Some(title) = title
+            && let Some(viewer) = &mut shell.viewer
             && viewer
                 .file
                 .as_ref()
@@ -214,7 +212,11 @@ pub(crate) fn reconcile_metadata(shell: &mut ShellState, team: &str, file: &File
         {
             viewer.name = title;
             // Missing optional metadata must not erase the known download name.
-            if file.name.is_some() {
+            if file
+                .name
+                .as_deref()
+                .is_some_and(|name| !name.trim().is_empty())
+            {
                 viewer.download_name = super_platinum_core::state::file_download_name(file);
             }
         }
@@ -320,3 +322,7 @@ impl Read {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "file_events/display_metadata_tests.rs"]
+mod display_metadata_tests;

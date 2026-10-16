@@ -86,6 +86,13 @@
 .canvas-text-actions { display:flex; align-items:center; justify-content:flex-end; gap:var(--space-2); }
 .canvas-text-actions button { height:var(--control-height); min-height:var(--control-height); margin:0; padding:0 var(--space-3); background:var(--surface-raised); border-radius:var(--radius-md); font-size:var(--text-sm); }
 .canvas-text-actions button.primary { background:var(--text); color:var(--bg); }
+/* Intrinsic label reservation keeps Cancel anchored through save status changes.
+   Generated sizing text is hidden, aria-hidden, and absent from textContent. */
+#canvas-text-save { display:inline-grid; grid-template-areas:"label"; align-items:center; justify-items:center; flex-shrink:0; white-space:nowrap; }
+#canvas-text-save > span { grid-area:label; }
+#canvas-text-save .canvas-text-save-size { visibility:hidden; pointer-events:none; }
+#canvas-text-save .canvas-text-save-size::before { content:attr(data-label); }
+
 .canvas-text-actions button:disabled { opacity:.45; cursor:default; }
 
 /* A paragraph draft owns the reader viewport. Only its text scrolls, keeping

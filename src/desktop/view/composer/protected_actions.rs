@@ -52,7 +52,7 @@ impl Prepared {
         action: Action,
         source: Option<Arc<Source>>,
         binding: Option<Binding>,
-    ) -> Result<Applied, Error> {
+    ) -> Result<Box<Applied>, Error> {
         // Keep the original captured Source alive through the entire renderer
         // handoff, as before extraction. Dropping its last Arc revokes Stream.
         let source_guard = source.clone();
@@ -78,7 +78,7 @@ impl Prepared {
     pub(crate) async fn consume_fixture(
         self,
         binding: Arc<crate::drafts::protected::native_fixture::Binding>,
-    ) -> Result<Applied, Error> {
+    ) -> Result<Box<Applied>, Error> {
         let target = self.native.target;
         let editor = self.native.editor.clone();
         self.perform_guarded(
@@ -87,7 +87,7 @@ impl Prepared {
         )
         .await
     }
-    async fn perform_guarded<G>(self, action: Action, additional: G) -> Result<Applied, Error>
+    async fn perform_guarded<G>(self, action: Action, additional: G) -> Result<Box<Applied>, Error>
     where
         G: FnOnce(
                 &ShellState,
@@ -249,46 +249,51 @@ pub(crate) fn start(
         Route::Fixture(binding) => Some(binding.clone()),
         _ => None,
     };
-    let installed = root.install(operation.clone(), async move {
-        #[cfg(feature = "protected-native-fixture")]
-        let fixture = match &route {
-            Route::Fixture(binding) => Some(binding.clone()),
-            _ => None,
-        };
-        let result = async {
-            let prepared = prepare(captured, owned.clone()).await?;
-            owned.phase(crate::drafts::protected::operation::Phase::Prepared)?;
-            match route {
-                Route::Delivery(delivery, now) => {
-                    let finished = delivery.run_owned(prepared, request, now).await?;
-                    owned.delivered(finished)
-                }
-                #[cfg(feature = "protected-native-fixture")]
-                Route::Fixture(binding) => {
-                    if !matches!(request, crate::drafts::protected::operation::Request::Send) {
-                        return Err(Error::Unsupported);
+    // Heap-back the complete action before generic Root/Entry handoff. Passing
+    // its inline future by value exceeded the measured native main stack.
+    let installed = root.install(
+        operation.clone(),
+        Box::pin(async move {
+            #[cfg(feature = "protected-native-fixture")]
+            let fixture = match &route {
+                Route::Fixture(binding) => Some(binding.clone()),
+                _ => None,
+            };
+            let result = async {
+                let prepared = prepare(captured, owned.clone()).await?;
+                owned.phase(crate::drafts::protected::operation::Phase::Prepared)?;
+                match route {
+                    Route::Delivery(delivery, now) => {
+                        let finished = delivery.run_owned(prepared, request, now).await?;
+                        owned.delivered(finished)
                     }
-                    let result = prepared.consume_fixture(binding.clone()).await;
-                    match result {
-                        Ok(applied) => {
-                            binding.complete_operation(&owned, &applied);
-                            Ok(Status::ConsumedAwaitingDelivery)
+                    #[cfg(feature = "protected-native-fixture")]
+                    Route::Fixture(binding) => {
+                        if !matches!(request, crate::drafts::protected::operation::Request::Send) {
+                            return Err(Error::Unsupported);
                         }
-                        Err(error) => {
-                            binding.fail_operation(error);
-                            Err(error)
+                        let result = prepared.consume_fixture(binding.clone()).await;
+                        match result {
+                            Ok(applied) => {
+                                binding.complete_operation(&owned, &applied);
+                                Ok(Status::ConsumedAwaitingDelivery)
+                            }
+                            Err(error) => {
+                                binding.fail_operation(error);
+                                Err(error)
+                            }
                         }
                     }
                 }
             }
-        }
-        .await;
-        #[cfg(feature = "protected-native-fixture")]
-        if let (Some(binding), Err(error)) = (fixture, &result) {
-            binding.fail_operation(*error);
-        }
-        result
-    });
+            .await;
+            #[cfg(feature = "protected-native-fixture")]
+            if let (Some(binding), Err(error)) = (fixture, &result) {
+                binding.fail_operation(*error);
+            }
+            result
+        }),
+    );
     if let Err(error) = installed {
         // Account admission already exists; its armed completion guard records
         // Unknown. Return that exact retained operation rather than claiming a

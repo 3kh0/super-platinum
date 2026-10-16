@@ -149,7 +149,10 @@ pub fn open(mut state: Signal<ShellState>, file: File) {
         crate::slack_lists::open(state, file);
         return;
     }
-    let Some(url) = file.full_url() else {
+    let Some(url) = file
+        .full_url()
+        .or_else(|| super_platinum_core::state::file_download_url(&file))
+    else {
         state
             .write()
             .show_toast("This file is not available to preview.");
@@ -160,6 +163,7 @@ pub fn open(mut state: Signal<ShellState>, file: File) {
     let id = shell
         .media
         .register_deferred(MediaAssetKind::Attachment, url, mime.clone());
+    shell.media.register_file_download(&id, &file);
     shell.media.request(&id);
     shell.viewer = Some(ViewerVm {
         file: super_platinum_core::file_actions::identity(&file),

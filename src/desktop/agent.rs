@@ -56,6 +56,8 @@ pub async fn serve(
     #[cfg(feature = "protected-native-fixture")]
     crate::drafts::protected::native_fixture::check::start(state, desktop.clone());
     #[cfg(feature = "protected-native-fixture")]
+    crate::drafts::protected::owned_native::check::start(state, desktop.clone());
+    #[cfg(feature = "protected-native-fixture")]
     crate::drafts::protected::enrollment_fixture::check::start(state, desktop.clone());
     #[cfg(feature = "protected-native-fixture")]
     crate::drafts::protected::adoption_fixture::check::start(state, desktop.clone());
@@ -83,6 +85,7 @@ pub async fn serve(
     crate::activity_feed::check::start(state, desktop.clone());
     crate::media::check::start(state, desktop.clone());
     crate::view::theme::check::start(state, desktop.clone());
+    crate::view::search::check::start(state, desktop.clone());
     crate::composer_emoji::check::start(state, desktop.clone());
     crate::emoji_native::start(state, desktop.clone());
     crate::performance::emoji_lifecycle::start(state, desktop.clone());

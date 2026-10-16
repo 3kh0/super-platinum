@@ -81,20 +81,24 @@ impl Delivery {
     }
     /// The whole action, including consumption, HTTP and result handoff, belongs
     /// to the root task. Dropping a dialog waiter cannot cancel these steps.
-    pub(crate) async fn run_owned(
+    // Keep construction of the large delivery future outside its caller's poll
+    // frame. The existing root still owns and polls this exact future.
+    #[inline(never)]
+    pub(crate) fn run_owned(
         self,
         prepared: Prepared,
         request: Request,
         now: fn() -> u64,
-    ) -> Result<Finished, durable::Error> {
-        self.run_inner(prepared, request, now).await
+    ) -> std::pin::Pin<Box<impl std::future::Future<Output = Result<Arc<Finished>, durable::Error>>>>
+    {
+        Box::pin(self.run_inner(prepared, request, now))
     }
     async fn run_inner(
         mut self,
         prepared: Prepared,
         request: Request,
         now: fn() -> u64,
-    ) -> Result<Finished, durable::Error> {
+    ) -> Result<Arc<Finished>, durable::Error> {
         let operation = prepared.operation().clone();
         self.operation = Some(operation.clone());
         if !prepared.belongs_to(&self.editor)
@@ -117,6 +121,8 @@ impl Delivery {
                 Some(self.binding.clone()),
             )
             .await?;
+        #[cfg(feature = "protected-native-fixture")]
+        super::owned_native::after_clear(&operation, &applied).await?;
         let intent = applied
             .after
             .row()
@@ -208,12 +214,12 @@ impl Delivery {
         } else {
             Ok(())
         };
-        Ok(Finished {
+        Ok(Arc::new(Finished {
             dispatched,
             inventory_published,
             queue_published,
             local_handoff,
-        })
+        }))
     }
     fn owner_current(&self, shell: &ShellState) -> bool {
         let scope = self.editor.scope();

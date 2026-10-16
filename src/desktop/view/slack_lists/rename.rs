@@ -46,6 +46,8 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
         format!("Rename {noun}")
     };
     let create_layout = creation.map(|l| l.as_str()).unwrap_or_default();
+    let grouping = view.grouping;
+    let grouping_options = view.grouping_options;
     let label = if noun == "view" {
         "View name"
     } else {
@@ -84,6 +86,14 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
                 if creation.is_some(){p{class:"slack-list-editor-hint","Views are shared with everyone who has access to this List. New views do not copy the selected view settings."}
                     label{r#for:"slack-list-new-view-layout","Layout"}
                     select{id:"slack-list-new-view-layout",value:"{create_layout}",disabled:!editing,onchange:move |event|{use super_platinum_core::slack_lists::ViewLayout;let layout=match event.value().as_str(){"table"=>ViewLayout::Table,"board"=>ViewLayout::Board,_=>return};rename::view_create::layout(state,serial,layout);},option{value:"table",selected:create_layout=="table","Table"}option{value:"board",selected:create_layout=="board","Board"}}
+                    label{r#for:"slack-list-new-view-grouping","Group by"}
+                    select{id:"slack-list-new-view-grouping",value:"{grouping}",disabled:!editing||!view.can_confirm,
+                        onchange:move |event|rename::view_create::grouping(state,serial,visit,event.value()),
+                        option{value:"",selected:grouping.is_empty(),"None"}
+                        for (key, name) in grouping_options {
+                            option{value:"{key}",selected:grouping==key,"{name}"}
+                        }
+                    }
                 }
                 label{r#for:"slack-list-rename-name","{label}"}
                 input{id:"slack-list-rename-name",r#type:"text",value:"{view.name}",maxlength:view.limit,disabled:!editing,

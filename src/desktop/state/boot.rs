@@ -73,6 +73,11 @@ impl ShellState {
                 state.overlay = Some(Overlay::Settings);
                 state
             }
+            "search-has-filters" | "search-has-filters-narrow" => {
+                let mut state = Self::fixture(media);
+                crate::view::search::check::install(&mut state);
+                state
+            }
             "search"
             | "search-loading"
             | "search-empty"
@@ -1187,6 +1192,10 @@ impl ShellState {
                 crate::drafts::schedule::fixture::apply(&mut state)
             }
             #[cfg(feature = "protected-native-fixture")]
+            "protected-owned-send" | "protected-owned-send-narrow" => {
+                crate::drafts::protected::owned_native::apply(&mut state)
+            }
+            #[cfg(feature = "protected-native-fixture")]
             "protected-drafts" | "protected-drafts-narrow" => {
                 crate::drafts::protected::native_fixture::apply(&mut state)
             }
@@ -2060,6 +2069,7 @@ impl ShellState {
             | "file-recovery"
             | "file-recovery-narrow"
             | "file-rename-channel-narrow" => crate::file_actions_check::fixture(&mut state),
+            "original-download" | "original-download-narrow" | "original-download-save-dialog" => {}
             "file-preview-text"
             | "file-preview-narrow"
             | "file-preview-large"
