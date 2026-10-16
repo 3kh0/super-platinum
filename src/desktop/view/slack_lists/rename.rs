@@ -55,6 +55,10 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
     let Some(view) = rename::presentation(&state.read()) else {
         return rsx! {};
     };
+    render_panel(state, view)
+}
+
+fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Element {
     let serial = view.serial;
     let column = view.column;
     let saved_view = view.view.unwrap_or_default();
@@ -206,9 +210,10 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
                 if let (Some(draft),Some(choice))=(view.select_draft,field_choice) {{select::fields(state,serial,visit,selected,choice,draft,editing && view.can_confirm)}}
                 p{id:"slack-list-rename-message",class:"slack-list-editor-hint",role:"status","{view.message}"}
                 if matches!(view.stage,Stage::Observed|Stage::Conflict|Stage::Available){p{id:"slack-list-rename-current",class:"slack-list-editor-hint","Current fields: {current}"}}
-                if let Some(observed)=view.observed_field {p{id:"slack-list-text-field-observed",class:"slack-list-editor-hint","data-column-id":"{observed.id}","data-column-key":"{observed.key}","Observed {field_label} field: {observed.name}"}}
+                if field_kind!="select" {if let Some(observed)=view.observed_field.as_ref() {{observed_summary(observed,field_label)}}}
                 if view.blocked{p{class:"slack-list-warning","Slack asked us to wait. Checking and changes are temporarily unavailable."}}
             }
+            if field_kind=="select" {if let Some(observed)=view.observed_field.as_ref() {{observed_summary(observed,field_label)}}}
             div{class:"slack-list-editor-actions",
                 button{id:"slack-list-rename-leave",r#type:"button",onclick:move |_|{let mut state=state;crate::slack_lists::close_shell(&mut state.write());},"Close list"}
                 if closable{button{id:"slack-list-rename-close",r#type:"button",onclick:move |_|close(state,serial,visit),if editing{"Cancel"}else if matches!(view.stage,Stage::Conflict|Stage::Available){"Close review"}else{"Done"}}}
@@ -222,6 +227,14 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
         }
     }
 }
+
+// Confirmation remains readable beside Done even with eight retained options.
+fn observed_summary(observed: &rename::text_create::Observed, label: &str) -> Element {
+    rsx! {p{id:"slack-list-text-field-observed",class:"slack-list-editor-hint","data-column-id":"{observed.id}","data-column-key":"{observed.key}","Observed {label} field: {observed.name}"}}
+}
+
+#[cfg(test)]
+mod observed_tests;
 
 fn close(state: Signal<ShellState>, serial: u64, visit: u64) {
     if crate::slack_lists::generation(&state.peek()) != Some(visit) {
