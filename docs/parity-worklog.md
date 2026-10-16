@@ -68,7 +68,48 @@ backlog. [RESUME.md](RESUME.md) supplies the machine handoff and first next task
 
 ## Workstreams and acceptance evidence
 
-**Current checkpoint: List grouping native2 accepted; Save-dialog diagnostic1 failed before any UIA action.**
+**Current checkpoint: List grouping native2 accepted; Save diagnostics2/3 exposed helper issues, cancellation still unverified.**
+Root installed the three Python capture-settling changes from manifest
+`32ec0e7cc444a0e835e14d53d5478a1cd4be4d85946eec9232f3b8a6e4e4a45b`.
+All 12 installed pure tests pass in 0.006 s. Installation receipt:
+`tmp/save-dialog-settle-install1/receipt.json`, 2,432-entry inventory SHA
+`03dcb4a5aa6d0e22c6358a7addf499499d24de269adb09385dff1816c24b1872`.
+The tested EXE remains bcab09a7 (original build inventory f8e6704d); every
+compiled input is unchanged. Harness changes have separate attribution.
+
+Attempt2 `tmp/original-save-dialog-6ef01c95d111ad42564b04c00a26e2aa`
+captured a settled actual viewer and Windows Save dialog; root read both originals.
+It failed before control inventory/Cancel at PowerShell array subtraction parsing
+in helper line68. Root parenthesized both coordinate differences; the isolated
+nonzero-origin geometry check returns [123,234,1280,800] and helper AST parses.
+Receipt `tmp/save-dialog-geometry-fix1/receipt.json`; current inventory SHA
+`a021cfc06a2308ba7b6a240240f9a5da59712078ceb30ca446a8093eda894142`.
+
+Attempt3 `tmp/original-save-dialog-294a71067399b96529479218a48969bf`
+captured the viewer and native dialog (both originals read by root), then recorded
+ten Shell UIA controls but omitted visible Save/Cancel and filename controls.
+No review was published, no cancel helper ran, and no automated action was invoked.
+Before review expiry, actual rfd returned Some(path), with transferAllowed=false;
+the diagnostic correctly rejected it. The cause is unknown. Unchanged pointer
+does not establish all input sources. It remains FAILED, not cancellation evidence.
+Both attempts retain matching owned creation/exit identity, empty cleanup/audit
+errors, unchanged binary/pointer, zero HTTP requests and empty downloads folders.
+No transfer was allowed even for the unexpected selected path.
+
+The missing controls are consistent with absent managed Win32 proxies, but that
+is still a hypothesis. A read-only local registration test loaded Microsoft's
+provider assembly (40 descriptors) but threw NullReferenceException in
+ProxyManager.LoadDefaultProxies. Investigate a public-API compiled bootstrap
+before another native launch. Do not infer missing selectors or replay an action.
+Attempt1's failed capture remains retained. Actual cancellation, overwrite and
+positive Save acceptance remain open; no new Rust build/test claim is made.
+
+The retained Slack checkbox grouping audit confirms false/missing share a bucket;
+Table's Ungrouped text is correct. Board's Unchecked text approximates Slack's
+visible checkbox glyph; a bounded icon/accessibility correction is being prepared
+under tmp. Audit: `tmp/list-checkbox-grouping-audit/README.md`.
+
+**Earlier checkpoint (retained attribution):**
 The feature-enabled dev build passes in 406.2789156 s, receipt
 `tmp/save-dialog-native-build1/gate.json`, log SHA
 `d1575090c796b3984462c758e557463ca0f21b3e9d350a6b2f150175b71fea5d`.
@@ -226,14 +267,12 @@ history, lagging future indexes, media/content generations and live interoperabi
 remain open. No new native or performance acceptance is claimed.
 Earlier preview2 acceptance remains bound to source 2ff3 / EXE f56df39b.
 
-**Next work:** review/apply the bounded Save diagnostic capture-readiness and
-evidence correction, then run a fresh diagnostic on the existing sealed executable
-if Rust remains byte-identical. Inspect the actual dialog PNG/control inventory
-before publishing its exact observed Cancel descriptor. No user mouse approval
-is needed. Actual overwrite/sentinel preservation and positive Save remain
-separate unimplemented verification work. Grouping native2 is complete for its
-named disconnected scope. Protected journal inventory/terminal custody, broader
-Files history/index/media reconciliation and broad parity remain open.
+**Next work:** resolve and verify the Windows UIA provider bootstrap, then run
+a separately identified actual cancellation diagnostic with a freshly observed
+Cancel descriptor. Review the Board checkbox header candidate. Actual OS overwrite
+and positive Save, protected journal inventory/terminal custody, broader Files
+history/index/media reconciliation and the full parity acceptance table remain
+open. Do not retry the terminal emoji observer or performance overhead run.
 
 **Evidence in "Current status" is historical macOS evidence unless a later
 Windows receipt explicitly says otherwise.** "Remaining implementation and
@@ -16065,3 +16104,46 @@ file. No real dialog cancellation or native Save acceptance is claimed.
 Preserve this failure. A tmp-only harness correction is being prepared to retain
 all bounded window/hit observations and wait for stable visibility without
 weakening the ownership checks or replaying any UI action.
+
+### 2026-10-15 - Save capture settling and native attempts2/3
+
+**Current checkpoint: List grouping native2 accepted; Save diagnostics2/3 exposed helper issues, cancellation still unverified.**
+Root installed the three Python capture-settling changes from manifest
+`32ec0e7cc444a0e835e14d53d5478a1cd4be4d85946eec9232f3b8a6e4e4a45b`.
+All 12 installed pure tests pass in 0.006 s. Installation receipt:
+`tmp/save-dialog-settle-install1/receipt.json`, 2,432-entry inventory SHA
+`03dcb4a5aa6d0e22c6358a7addf499499d24de269adb09385dff1816c24b1872`.
+The tested EXE remains bcab09a7 (original build inventory f8e6704d); every
+compiled input is unchanged. Harness changes have separate attribution.
+
+Attempt2 `tmp/original-save-dialog-6ef01c95d111ad42564b04c00a26e2aa`
+captured a settled actual viewer and Windows Save dialog; root read both originals.
+It failed before control inventory/Cancel at PowerShell array subtraction parsing
+in helper line68. Root parenthesized both coordinate differences; the isolated
+nonzero-origin geometry check returns [123,234,1280,800] and helper AST parses.
+Receipt `tmp/save-dialog-geometry-fix1/receipt.json`; current inventory SHA
+`a021cfc06a2308ba7b6a240240f9a5da59712078ceb30ca446a8093eda894142`.
+
+Attempt3 `tmp/original-save-dialog-294a71067399b96529479218a48969bf`
+captured the viewer and native dialog (both originals read by root), then recorded
+ten Shell UIA controls but omitted visible Save/Cancel and filename controls.
+No review was published, no cancel helper ran, and no automated action was invoked.
+Before review expiry, actual rfd returned Some(path), with transferAllowed=false;
+the diagnostic correctly rejected it. The cause is unknown. Unchanged pointer
+does not establish all input sources. It remains FAILED, not cancellation evidence.
+Both attempts retain matching owned creation/exit identity, empty cleanup/audit
+errors, unchanged binary/pointer, zero HTTP requests and empty downloads folders.
+No transfer was allowed even for the unexpected selected path.
+
+The missing controls are consistent with absent managed Win32 proxies, but that
+is still a hypothesis. A read-only local registration test loaded Microsoft's
+provider assembly (40 descriptors) but threw NullReferenceException in
+ProxyManager.LoadDefaultProxies. Investigate a public-API compiled bootstrap
+before another native launch. Do not infer missing selectors or replay an action.
+Attempt1's failed capture remains retained. Actual cancellation, overwrite and
+positive Save acceptance remain open; no new Rust build/test claim is made.
+
+The retained Slack checkbox grouping audit confirms false/missing share a bucket;
+Table's Ungrouped text is correct. Board's Unchecked text approximates Slack's
+visible checkbox glyph; a bounded icon/accessibility correction is being prepared
+under tmp. Audit: `tmp/list-checkbox-grouping-audit/README.md`.
