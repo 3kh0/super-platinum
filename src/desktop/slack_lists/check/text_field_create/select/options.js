@@ -15,10 +15,15 @@
    if(trace){const index=trace.ancestorCount++;const a={index,...identify(p),rect:box(c),overflowX:bounded(s.overflowX,32),overflowY:bounded(s.overflowY,32)};if(trace.ancestors.length<24)trace.ancestors.push(a);if(/auto|scroll|hidden|clip/.test(s.overflowX)){if(c.left>l)trace.limiters.left={index,edge:c.left};if(c.right<r)trace.limiters.right={index,edge:c.right};}if(/auto|scroll|hidden|clip/.test(s.overflowY)){if(c.top>u)trace.limiters.top={index,edge:c.top};if(c.bottom<d)trace.limiters.bottom={index,edge:c.bottom};}}
    if(/auto|scroll|hidden|clip/.test(s.overflowX)){l=Math.max(l,c.left);r=Math.min(r,c.right);}if(/auto|scroll|hidden|clip/.test(s.overflowY)){u=Math.max(u,c.top);d=Math.min(d,c.bottom);}
   }
-  if(trace){trace.clip={left:l,top:u,right:r,bottom:d};trace.comparisons={left:b.left-x>=l,top:b.top-x>=u,right:b.right+x<=r,bottom:b.bottom+x<=d};trace.margins={left:b.left-x-l,top:b.top-x-u,right:r-(b.right+x),bottom:d-(b.bottom+x)};trace.ancestorsTruncated=trace.ancestorCount>24;}
-  return b.left-x>=l&&b.top-x>=u&&b.right+x<=r&&b.bottom+x<=d;
+  // Fixed absolute allowance for independently reported DOM edges; never scale or accumulate it.
+  const allowanceCss=2**-16,margins={left:b.left-x-l,top:b.top-x-u,right:r-(b.right+x),bottom:d-(b.bottom+x)};
+  const comparisons={left:b.left-x>=l,top:b.top-x>=u,right:b.right+x<=r,bottom:b.bottom+x<=d};
+  const fits=margin=>Number.isFinite(margin)&&margin>=-allowanceCss;
+  const adjustedComparisons={left:fits(margins.left),top:fits(margins.top),right:fits(margins.right),bottom:fits(margins.bottom)};
+  if(trace){trace.clip={left:l,top:u,right:r,bottom:d};trace.comparisons=comparisons;trace.margins=margins;trace.allowanceCss=allowanceCss;trace.adjustedComparisons=adjustedComparisons;trace.ancestorsTruncated=trace.ancestorCount>24;}
+  return adjustedComparisons.left&&adjustedComparisons.top&&adjustedComparisons.right&&adjustedComparisons.bottom;
  }
- // Failure-only bounded primitive snapshot. The strict zero-margin decision above is unchanged.
+ // Failure-only bounded primitive snapshot retains raw strict and adjusted comparisons.
  function pairFailure(e,trace){
   try{
    const diagnostic={version:1,branch:'pair',element:identify(e),active:identify(document.activeElement),activeIsButton:document.activeElement===e,viewport:[innerWidth,innerHeight],devicePixelRatio:typeof devicePixelRatio==='number'?devicePixelRatio:null,ring:trace,finite:true};
