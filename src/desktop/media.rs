@@ -964,6 +964,7 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "slack-list-field-visibility-narrow"
                 | "slack-list-view-filter-narrow"
                 | "slack-list-number-filter-narrow"
+                | "slack-list-compound-filter-narrow"
                 | "slack-list-text-field-create-narrow"
                 | "slack-list-number-field-create-narrow"
                 | "slack-list-checkbox-field-create-narrow"

@@ -134,7 +134,7 @@ fn numeric_raw_unknown_shapes_refuse_even_clear_without_mutating_them() {
         ),
         (
             "filters",
-            json!([{"key":"estimate","operator":"equal","values":["2"]},{"key":"done","operator":"is_empty","values":[]}]),
+            json!([{"key":"estimate","operator":"equal","values":["2"]},{"key":"estimate","operator":"is_empty","values":[]}]),
         ),
     ] {
         let mut raw = document().raw;
@@ -162,6 +162,36 @@ fn numeric_raw_unknown_shapes_refuse_even_clear_without_mutating_them() {
         );
         assert_eq!(doc.raw, raw);
     }
+}
+#[test]
+fn loaded_mixed_rules_allow_complete_replacement_and_clear() {
+    let mut raw = document().raw;
+    raw["list_metadata"]["views"][0]["filters"] = json!([
+        {"key":"estimate","operator":"equal","values":["2"]},
+        {"key":"done","operator":"is_empty","values":[]}
+    ]);
+    let doc = Document::parse(raw.clone()).unwrap();
+    assert_eq!(
+        ViewFilter::current(&doc, "V1"),
+        Some(ViewFilterChoice::All(vec![
+            numeric(Equal, Some("2")),
+            choice(false)
+        ]))
+    );
+    for desired in [numeric(Equal, Some("3")), ViewFilterChoice::None] {
+        let intent = capture(&doc, desired.clone());
+        let expected = match desired {
+            ViewFilterChoice::None => document(),
+            _ => observed(&capture(&document(), desired.clone())),
+        };
+        assert_eq!(intent.filters(), &expected.views[0]["filters"]);
+        assert_eq!(intent.info_column_filters(), json!([]));
+        assert_eq!(observed(&intent), expected);
+        assert!(intent.observes_desired(&expected));
+        assert_eq!(ViewFilter::current(&expected, "V1"), Some(desired));
+        assert_eq!(intent.original(), &doc);
+    }
+    assert_eq!(doc.raw, raw);
 }
 #[test]
 fn number_precision_policy_and_choice_type_are_checked_independently() {

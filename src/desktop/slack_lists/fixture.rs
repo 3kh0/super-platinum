@@ -12,6 +12,7 @@ mod board_views;
 mod channel_edit;
 pub(crate) mod column_precision;
 pub(crate) mod column_rename;
+pub(crate) mod compound_filter;
 mod creation;
 mod date_edit;
 mod date_views;

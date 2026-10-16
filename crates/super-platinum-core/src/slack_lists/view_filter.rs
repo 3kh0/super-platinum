@@ -1,12 +1,16 @@
-//! Complete zero-or-one Checkbox/Number filter replacement for an ordinary saved Table.
+//! Complete bounded Checkbox/Number AND filter replacement for an ordinary saved Table.
 //! This authoring boundary is deliberately narrower than saved-view read projection.
 use super::{Column, ColumnRename, Document, ListError, PersonalTaskLists, ViewRename};
+#[cfg(test)]
+mod compound_tests;
 mod number;
 pub use number::NumberFilterOperator;
 use serde_json::{Value, json};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ViewFilterChoice {
+    /// Canonical flat 2..=8 condition set; nested sets and None rows refuse.
+    All(Vec<ViewFilterChoice>),
     None,
     Checkbox {
         column_id: String,
@@ -17,6 +21,29 @@ pub enum ViewFilterChoice {
         operator: NumberFilterOperator,
         value: Option<String>,
     },
+}
+pub const MAX_FILTER_CONDITIONS: usize = 8;
+impl ViewFilterChoice {
+    pub fn conditions(&self) -> &[Self] {
+        match self {
+            Self::None => &[],
+            Self::All(rows) => rows,
+            _ => std::slice::from_ref(self),
+        }
+    }
+    pub fn from_conditions(mut rows: Vec<Self>) -> Self {
+        match rows.len() {
+            0 => Self::None,
+            1 => rows.pop().unwrap(),
+            _ => Self::All(rows),
+        }
+    }
+    pub fn column_id(&self) -> Option<&str> {
+        match self {
+            Self::Checkbox { column_id, .. } | Self::Number { column_id, .. } => Some(column_id),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct ViewFilter {
@@ -37,7 +64,7 @@ impl ViewFilter {
             && identity(&column.key)
     }
     /// None means unsupported, not unfiltered. Missing filters and [] mean unfiltered.
-    /// Extra rule members (including optional column_id), null, and multiple rules
+    /// Extra rule members (including optional column_id), null, and oversized sets
     /// stay untouched: no canonical write semantics for those shapes are claimed.
     pub fn current(document: &Document, view: &str) -> Option<ViewFilterChoice> {
         if !identity(view) {
@@ -62,46 +89,18 @@ impl ViewFilter {
         if rules.is_empty() {
             return Some(ViewFilterChoice::None);
         }
-        if rules.len() != 1 {
+        if rules.len() > MAX_FILTER_CONDITIONS {
             return None;
         }
-        let rule = rules[0].as_object()?;
-        if rule.len() != 3 {
-            return None;
-        }
-        let key = rule.get("key")?.as_str()?;
-        let operator = NumberFilterOperator::parse(rule.get("operator")?.as_str()?)?;
-        let values = rule.get("values")?.as_array()?;
-        let column = document.columns.iter().find(|c| c.key == key)?;
-        if !Self::supports_column(column) {
-            return None;
-        }
-        if column.kind == "checkbox" {
-            if !values.is_empty() {
-                return None;
-            }
-            let checked = match operator {
-                NumberFilterOperator::IsEmpty => false,
-                NumberFilterOperator::IsNotEmpty => true,
-                _ => return None,
-            };
-            return Some(ViewFilterChoice::Checkbox {
-                column_id: column.id.clone(),
-                checked,
-            });
-        }
-        let value = match values.as_slice() {
-            [] => None,
-            [Value::String(value)] => Some(value.as_str()),
-            _ => return None,
-        };
-        operator
-            .valid_value(value)
-            .then(|| ViewFilterChoice::Number {
-                column_id: column.id.clone(),
-                operator,
-                value: value.map(str::to_owned),
+        let mut keys = std::collections::BTreeSet::new();
+        let rows = rules
+            .iter()
+            .map(|value| {
+                let row = parse_condition(document, value)?;
+                keys.insert(row.column_id()?.to_owned()).then_some(row)
             })
+            .collect::<Option<Vec<_>>>()?;
+        Some(ViewFilterChoice::from_conditions(rows))
     }
     pub fn capture(
         document: &Document,
@@ -119,31 +118,51 @@ impl ViewFilter {
         if before == desired {
             return Err(ListError("Choose a different filter."));
         }
-        let filters = match &desired {
-            ViewFilterChoice::None => json!([]),
-            ViewFilterChoice::Checkbox { column_id, checked } => {
-                let column = document
-                    .column(column_id)
-                    .filter(|c| c.kind == "checkbox" && Self::supports_column(c))
-                    .ok_or(ListError("Choose a supported Checkbox field."))?;
-                json!([{ "key": column.key, "operator": if *checked {"is_not_empty"} else {"is_empty"}, "values":[] }])
+        let rows = desired.conditions();
+        if rows.len() > MAX_FILTER_CONDITIONS
+            || matches!(&desired, ViewFilterChoice::All(v) if v.len()<2)
+        {
+            return Err(ListError("Use at most eight filter conditions."));
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        let mut values = Vec::with_capacity(rows.len());
+        for row in rows {
+            if !row.column_id().is_some_and(|id| seen.insert(id)) {
+                return Err(ListError("Use each filter field only once."));
             }
-            ViewFilterChoice::Number {
-                column_id,
-                operator,
-                value,
-            } => {
-                let column = document
-                    .column(column_id)
-                    .filter(|c| c.kind == "number" && Self::supports_column(c))
-                    .ok_or(ListError("Choose a supported Number field."))?;
-                if !operator.valid_value(value.as_deref()) {
-                    return Err(ListError("Enter a valid finite number for this filter."));
+            let value = match row {
+                ViewFilterChoice::None | ViewFilterChoice::All(_) => {
+                    return Err(ListError("Choose a flat set of filter conditions."));
                 }
-                let values: Vec<&str> = value.as_deref().into_iter().collect();
-                json!([{ "key": column.key, "operator": operator.as_str(), "values": values }])
-            }
-        };
+                ViewFilterChoice::Checkbox { column_id, checked } => {
+                    let column = document
+                        .column(column_id)
+                        .filter(|c| c.kind == "checkbox" && Self::supports_column(c))
+                        .ok_or(ListError("Choose a supported Checkbox field."))?;
+                    json!({ "key": column.key, "operator": if *checked {"is_not_empty"} else {"is_empty"}, "values":[] })
+                }
+                ViewFilterChoice::Number {
+                    column_id,
+                    operator,
+                    value,
+                } => {
+                    let column = document
+                        .column(column_id)
+                        .filter(|c| c.kind == "number" && Self::supports_column(c))
+                        .ok_or(ListError("Choose a supported Number field."))?;
+                    if !operator.valid_value(value.as_deref()) {
+                        return Err(ListError("Enter a valid finite number for this filter."));
+                    }
+                    let values: Vec<&str> = value.as_deref().into_iter().collect();
+                    json!({ "key": column.key, "operator": operator.as_str(), "values": values })
+                }
+            };
+            values.push(value);
+        }
+        let filters = Value::Array(values);
+        if serde_json::to_vec(&filters).map_or(true, |v| v.len() > 8192) {
+            return Err(ListError("These filter conditions are too large."));
+        }
         let mut expected_metadata = document.raw["list_metadata"].clone();
         let target = expected_metadata["views"]
             .as_array_mut()
@@ -210,6 +229,45 @@ impl ViewFilter {
                 .all(|k| fresh.raw.get(*k) == self.document.raw.get(*k))
             && fresh.raw.get("list_metadata") == Some(&self.expected_metadata)
     }
+}
+fn parse_condition(document: &Document, value: &Value) -> Option<ViewFilterChoice> {
+    let rule = value.as_object()?;
+    if rule.len() != 3 {
+        return None;
+    }
+    let key = rule.get("key")?.as_str()?;
+    let operator = NumberFilterOperator::parse(rule.get("operator")?.as_str()?)?;
+    let values = rule.get("values")?.as_array()?;
+    let column = document.columns.iter().find(|c| c.key == key)?;
+    if !ViewFilter::supports_column(column) {
+        return None;
+    }
+    if column.kind == "checkbox" {
+        if !values.is_empty() {
+            return None;
+        }
+        let checked = match operator {
+            NumberFilterOperator::IsEmpty => false,
+            NumberFilterOperator::IsNotEmpty => true,
+            _ => return None,
+        };
+        return Some(ViewFilterChoice::Checkbox {
+            column_id: column.id.clone(),
+            checked,
+        });
+    }
+    let value = match values.as_slice() {
+        [] => None,
+        [Value::String(value)] => Some(value.as_str()),
+        _ => return None,
+    };
+    operator
+        .valid_value(value)
+        .then(|| ViewFilterChoice::Number {
+            column_id: column.id.clone(),
+            operator,
+            value: value.map(str::to_owned),
+        })
 }
 fn eligible(
     doc: &Document,

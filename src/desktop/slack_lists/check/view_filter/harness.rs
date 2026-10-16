@@ -121,9 +121,13 @@ pub(crate) async fn capture(
     d: &dioxus::desktop::DesktopContext,
     stage: &str,
 ) -> Result<Value, String> {
-    if !(0..8)
-        .any(|i| oracle::stage_name(i, rename_fixture::number_filter_check_enabled()) == stage)
-    {
+    let valid = if rename_fixture::compound_filter_check_enabled() {
+        oracle::COMPOUND_STAGES.contains(&stage)
+    } else {
+        (0..8)
+            .any(|i| oracle::stage_name(i, rename_fixture::number_filter_check_enabled()) == stage)
+    };
+    if !valid {
         return Err("Invalid capture stage".into());
     }
     let (directory, owner) = configuration()?;

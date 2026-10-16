@@ -48,8 +48,12 @@ fn harness() -> (VirtualDom, Draft, Mutations) {
                 choices: vec![("A".into(), "A".into()), ("B".into(), "B".into())],
                 numbers: vec!["A".into(), "B".into()],
                 choice,
+                rows: vec![filter::Row {
+                    id: 17,
+                    epoch: choice,
+                }],
             };
-            fields(state, 7, 1, &p, true)
+            super::super::fields(state, 7, 1, p, true)
         },
         copy,
     );

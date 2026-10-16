@@ -90,6 +90,7 @@ FIXTURES=(
   slack-list-field-visibility slack-list-field-visibility-narrow
   slack-list-view-filter slack-list-view-filter-narrow
   slack-list-number-filter slack-list-number-filter-narrow
+  slack-list-compound-filter slack-list-compound-filter-narrow
   slack-list-text-field-create slack-list-text-field-create-narrow
   slack-list-number-field-create slack-list-number-field-create-narrow
   slack-list-checkbox-field-create slack-list-checkbox-field-create-narrow

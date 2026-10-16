@@ -22,9 +22,10 @@
     if(!root.isConnected||root.dataset.renameSerial!==serial||dialog.dataset.dialogGeneration!==visit){observer.disconnect();return;}
     const dialogs=[...document.querySelectorAll('[role="dialog"]')].filter(e=>e.getBoundingClientRect().width>0&&!e.closest('[hidden],[inert]'));
     if(dialogs.at(-1)!==root)return;
+    if(root.dataset.filterFocus||root.dataset.filterCapture)return;
     const active=document.activeElement;
     if(root.contains(active)&&!active.disabled)return;
-    (root.querySelector('#slack-list-grouping-field:not([disabled])')||root.querySelector('#slack-list-filter-condition:not([disabled])')||root.querySelector('#slack-list-sort-field:not([disabled])')||root.querySelector('#slack-list-field-choice:not([disabled])')||root.querySelector('#slack-list-precision:not([disabled])')||root.querySelector('input:not([disabled])')||root.querySelector('#slack-list-rename-check:not([disabled])')||root.querySelector('#slack-list-new-view-open:not([disabled])')||root.querySelector('#slack-list-rename-close:not([disabled])')||root.querySelector('#slack-list-rename-leave'))?.focus({preventScroll:true});
+    (root.querySelector('#slack-list-grouping-field:not([disabled])')||root.querySelector('#slack-list-filter-set [data-filter-field]:not([disabled])')||root.querySelector('#slack-list-filter-add-field:not([disabled])')||root.querySelector('#slack-list-sort-field:not([disabled])')||root.querySelector('#slack-list-field-choice:not([disabled])')||root.querySelector('#slack-list-precision:not([disabled])')||root.querySelector('input:not([disabled])')||root.querySelector('#slack-list-rename-check:not([disabled])')||root.querySelector('#slack-list-new-view-open:not([disabled])')||root.querySelector('#slack-list-rename-close:not([disabled])')||root.querySelector('#slack-list-rename-leave'))?.focus({preventScroll:true});
   };
   const schedule=()=>{if(!queued){queued=true;requestAnimationFrame(focus)}};
   const observer=new MutationObserver(schedule);

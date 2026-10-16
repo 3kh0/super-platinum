@@ -211,7 +211,7 @@ fn stale_selection_completion_and_changed_metadata_never_project() {
 fn unsupported_current_filter_shapes_and_special_completion_field_refuse() {
     for patch in [
         json!({"filters":[{"key":"estimate","operator":"is_not_empty","values":[],"opaque":1}]}),
-        json!({"filters":[{"key":"estimate","operator":"is_empty","values":[]},{"key":"other","operator":"is_not_empty","values":[]}]}),
+        json!({"filters":[{"key":"estimate","operator":"is_empty","values":[]},{"key":"estimate","operator":"is_not_empty","values":[]}]}),
         json!({"filters":[{"key":"estimate","operator":"is_not_empty","values":[],"column_id":"C_N"}]}),
         json!({"filters":null}),
         json!({"info_column_filters":null}),
@@ -402,3 +402,5 @@ fn checked_unchecked_clear_compose_saved_number_sort_and_active_find_with_raw73_
         open(&mut s);
     }
 }
+
+mod compound;

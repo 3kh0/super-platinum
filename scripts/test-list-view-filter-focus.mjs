@@ -20,7 +20,7 @@ function harness() {
   let observerDisconnects=0;
   const root={...element('panel'),dataset:{renameSerial:'7',renameColumn:'',renameView:'V_TABLE',filterView:'V_TABLE'},
     closest:s=>s==='.slack-list-dialog'?dialog:null,contains:e=>e===select,
-    addEventListener:()=>{},querySelector:s=>s==='#slack-list-filter-condition:not([disabled])'&&!select.disabled?select:s==='#slack-list-rename-close:not([disabled])'?close:null,
+    addEventListener:()=>{},querySelector:s=>s==='#slack-list-filter-set [data-filter-field]:not([disabled])'&&!select.disabled?select:s==='#slack-list-rename-close:not([disabled])'?close:null,
   };
   dialogs=[dialog,root];
   const document={body,activeElement:body,addEventListener:()=>{},removeEventListener:()=>{},
@@ -56,7 +56,7 @@ test('new top dialog wins over Filter return',()=>{
 test('intervening live interactive focus is preserved',()=>{
   const h=harness();h.arm();h.remove();h.document.activeElement=h.header;h.flush();assert.deepEqual(h.calls,[]);
 });
-test('actual focus helper selects editable Checkbox condition',()=>{
+test('actual focus helper selects first editable condition field',()=>{
   const h=harness();vm.runInContext(focus,h.context);h.flush();assert.deepEqual(h.calls,['filter-condition']);
 });
 test('actual focus helper does not refocus a current select',()=>{
@@ -92,3 +92,6 @@ test('source wiring regression rejects the original missing narrow-size branch',
 test('changed view-selection generation refuses Filter return even on same view',()=>{
  const h=harness();h.arm();h.remove();h.dialog.dataset.viewSelection='9';h.flush();assert.deepEqual(h.calls,[]);
 });
+
+test('pending exact structural focus or native capture prevents generic focus steal',()=>{for(const key of ['filterFocus','filterCapture']){const h=harness();h.root.dataset[key]='owned';vm.runInContext(focus,h.context);h.flush();assert.deepEqual(h.calls,[]);}});
+test('empty filter opens on explicit Add field picker',()=>{const h=harness();const original=h.root.querySelector;h.root.querySelector=s=>s==='#slack-list-filter-set [data-filter-field]:not([disabled])'?null:s==='#slack-list-filter-add-field:not([disabled])'?h.select:original(s);vm.runInContext(focus,h.context);h.flush();assert.deepEqual(h.calls,['filter-condition']);});

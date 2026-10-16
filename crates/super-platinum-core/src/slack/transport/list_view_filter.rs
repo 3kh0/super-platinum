@@ -1,4 +1,4 @@
-//! Exact zero-or-one Checkbox/Number filter form, sharing only the established one-attempt HTTP mechanics.
+//! Exact bounded Checkbox/Number AND filter form, sharing only the established one-attempt HTTP mechanics.
 use super::*;
 pub type ListViewFilterFailure = ListColumnRenameFailure;
 impl Transport {
@@ -85,39 +85,45 @@ fn allowed(request: &PreparedRequest) -> bool {
     let Ok(value) = crate::slash_commands::codec::decode(text(3).as_bytes(), 8192) else {
         return false;
     };
-    let Some(items) = value.as_array().filter(|v| v.len() <= 1) else {
+    let Some(items) = value.as_array().filter(|v| v.len() <= 8) else {
         return false;
     };
     if items.is_empty() {
         return true;
     }
-    let Some(item) = items[0].as_object() else {
-        return false;
-    };
-    if item.len() != 3
-        || !item
-            .get("key")
+    let mut keys = std::collections::BTreeSet::new();
+    items.iter().all(|value| {
+        let Some(item) = value.as_object() else {
+            return false;
+        };
+        if item.len() != 3
+            || !item
+                .get("key")
+                .and_then(Value::as_str)
+                .is_some_and(identity)
+        {
+            return false;
+        }
+        if !keys.insert(item["key"].as_str().unwrap()) {
+            return false;
+        }
+        let Some(operator) = item
+            .get("operator")
             .and_then(Value::as_str)
-            .is_some_and(identity)
-    {
-        return false;
-    }
-    let Some(operator) = item
-        .get("operator")
-        .and_then(Value::as_str)
-        .and_then(crate::slack_lists::NumberFilterOperator::parse)
-    else {
-        return false;
-    };
-    let Some(values) = item.get("values").and_then(Value::as_array) else {
-        return false;
-    };
-    let value = match values.as_slice() {
-        [] => None,
-        [Value::String(value)] => Some(value.as_str()),
-        _ => return false,
-    };
-    operator.valid_value(value)
+            .and_then(crate::slack_lists::NumberFilterOperator::parse)
+        else {
+            return false;
+        };
+        let Some(values) = item.get("values").and_then(Value::as_array) else {
+            return false;
+        };
+        let value = match values.as_slice() {
+            [] => None,
+            [Value::String(value)] => Some(value.as_str()),
+            _ => return false,
+        };
+        operator.valid_value(value)
+    })
 }
 #[cfg(test)]
 mod tests;

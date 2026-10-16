@@ -1,0 +1,43 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import test from 'node:test';
+const base=process.argv[2]||'.';
+const source=fs.readFileSync(path.join(base,'src/desktop/view/slack_lists/filter/capture.js'),'utf8');
+function setup(){
+ const nodes=new Map(),timers=new Map();let clock=0,sequence=0;
+ const node=(id,extra={})=>{const n={id,isConnected:true,disabled:false,tagName:'BUTTON',dataset:{},getClientRects:()=>[{}],...extra};nodes.set(id,n);return n;};
+ const proof={serial:'7',token:'91',visit:'3',structure:'21',rows:[{id:'1',epoch:'11',column:'A',operator:'equal',number:true},{id:'2',epoch:'12',column:'B',operator:'less_than',number:true}]};
+ const inputs=[],maps=[];
+ const rows=proof.rows.map((p,i)=>{
+  const field=node('field'+i,{value:p.column,tagName:'SELECT'}),op=node('op'+i,{value:p.operator,tagName:'SELECT'}),remove=node('remove'+i),input=node('value'+i,{tagName:'INPUT',type:'number',value:i?'2e1':'12.50',validity:{valid:true,badInput:false}});inputs.push(input);
+  const map={'[data-filter-field]':[field],'[data-filter-operator]':[op],'[data-filter-remove]':[remove],'[data-filter-value]':[input]};maps.push(map);
+  return node('row'+i,{dataset:{filterRow:p.id,filterEpoch:p.epoch},querySelectorAll:s=>map[s]||[]});
+ });
+ const set=node('slack-list-filter-set',{dataset:{filterVisit:'3',filterStructure:'21',filterEditable:'true'},querySelectorAll:s=>s==='[data-filter-row]'?rows:rows.flatMap((_,i)=>maps[i][s==='input'?'[data-filter-value]':s]||[])});
+ const controls=['slack-list-filter-add-field','slack-list-filter-add','slack-list-filter-clear','slack-list-rename-confirm'].map(id=>node(id,{tagName:id.endsWith('-field')?'SELECT':'BUTTON'}));controls[1].disabled=true;node('slack-list-rename-close');
+ const root=node('slack-list-rename',{dataset:{renameSerial:'7',renameStage:'Editing'},querySelector:s=>nodes.get(s.slice(1)),querySelectorAll:s=>nodes.has(s.slice(1))?[nodes.get(s.slice(1))]:[],contains:n=>Array.from(nodes.values()).includes(n)});
+ const dialogs=[root];const document={getElementById:id=>nodes.get(id),querySelectorAll:()=>dialogs};
+ const context=vm.createContext({document,setTimeout:(f,ms)=>{const id=++sequence;timers.set(id,{f,at:clock+ms});return id;},clearTimeout:id=>timers.delete(id)});vm.runInContext(source,context);
+ return {proof,nodes,rows,maps,inputs,set,root,dialogs,controls,capture:()=>context.compoundFilterSnapshot(proof),tick:ms=>{clock+=ms;for(const [id,t]of [...timers])if(t.at<=clock){timers.delete(id);t.f();}},timers};
+}
+function clean(x){assert.equal(x.root.dataset.filterCapture,undefined);assert.equal(x.inputs[0].disabled,false);assert.equal(x.inputs[1].disabled,false);assert.equal(x.inputs[0].value,'12.50');}
+test('actual two-Number snapshot is ordered and lexical; prior disabled bits survive restore',()=>{const x=setup(),r=x.capture();assert.deepEqual(JSON.parse(JSON.stringify(r.snapshot)),x.proof.rows.map((p,i)=>({id:p.id,epoch:p.epoch,column:p.column,operator:p.operator,value:i?'2e1':'12.50',valid:true})));assert.ok(x.inputs.every(n=>n.disabled));assert.equal(x.nodes.get('slack-list-rename-close').disabled,false);assert.equal(x.root.dataset.filterCapture,'91');r.finish(true);clean(x);assert.equal(x.controls[1].disabled,true);assert.equal(x.timers.size,0);});
+test('invalid second input never locks or changes first input',()=>{for(const mutate of [x=>x.inputs[1].validity.badInput=true,x=>x.inputs[1].validity.valid=false,x=>x.inputs[1].value='x'.repeat(129),x=>x.inputs[1].type='text',x=>x.inputs[1].tagName='TEXTAREA']){const x=setup();mutate(x);assert.equal(x.capture(),null);clean(x);assert.equal(x.timers.size,0);}});
+test('over-cap current lexical input remains mounted and exact until correction',()=>{const x=setup(),node=x.inputs[0],long='9'.repeat(129);node.value=long;assert.equal(x.capture(),null);assert.equal(x.inputs[0],node);assert.equal(node.value,long);assert.equal(node.disabled,false);assert.equal(x.root.dataset.filterCapture,undefined);node.value='12.50';const r=x.capture();assert.ok(r);assert.equal(r.snapshot[0].value,'12.50');assert.equal(r.snapshot[1].value,'2e1');r.finish(true);assert.equal(x.inputs[0],node);});
+test('complete ordered row and control inventory refuses missing duplicate extra reordered or stale members',()=>{for(const mutate of [x=>x.rows.pop(),x=>x.rows.reverse(),x=>x.rows.push(x.rows[0]),x=>x.rows[1].dataset.filterRow='1',x=>x.rows[1].dataset.filterEpoch='11',x=>x.maps[1]['[data-filter-value]']=[],x=>x.maps[1]['[data-filter-value]'].push(x.inputs[1]),x=>x.maps[1]['[data-filter-field]'][0].value='C',x=>x.maps[1]['[data-filter-operator]'][0].value='equal',x=>x.set.dataset.filterStructure='22',x=>x.root.dataset.renameStage='Preparing',x=>x.dialogs.push({isConnected:true,getClientRects:()=>[{}]}),x=>x.set.dataset.filterEditable='false']){const x=setup();mutate(x);assert.equal(x.capture(),null);assert.equal(x.inputs[0].disabled,false);assert.equal(x.root.dataset.filterCapture,undefined);}});
+test('all Checkbox and empty saves use the same ownership and complete inventory gate',()=>{for(const count of [0,2]){const x=setup();if(!count){x.proof.rows=[];x.rows.length=0;}else{x.proof.rows.forEach((p,i)=>{p.number=false;x.maps[i]['[data-filter-value]']=[];});}const r=x.capture();assert.ok(r);assert.equal(r.snapshot.length,count);assert.ok(r.snapshot.every(row=>row.value===null));r.finish(true);}});
+test('unexpected Number input in Checkbox or empty-operator row refuses',()=>{const x=setup();x.proof.rows[1].number=false;assert.equal(x.capture(),null);clean(x);});
+test('existing different DOM lock cannot be taken over',()=>{const x=setup();x.root.dataset.filterCapture='other';assert.equal(x.capture(),null);assert.equal(x.root.dataset.filterCapture,'other');assert.equal(x.inputs[0].disabled,false);});
+test('lost delivery or hung host receive releases exact lock at bounded watchdog',()=>{const x=setup();x.capture();x.tick(4999);assert.equal(x.inputs[0].disabled,true);x.tick(1);clean(x);});
+test('late old cleanup cannot enable a newer lock even with the same structure',()=>{const x=setup(),old=x.capture();x.root.dataset.filterCapture='new';old.finish(true);assert.equal(x.root.dataset.filterCapture,'new');assert.ok(x.inputs.every(n=>n.disabled));});
+test('operation advance source disabled or replaced input prevents restoration',()=>{for(const mutate of [x=>x.root.dataset.renameStage='Preparing',x=>x.set.dataset.filterEditable='false',x=>x.nodes.set('value1',{...x.inputs[1]}),x=>x.root.isConnected=false,x=>x.set.dataset.filterStructure='23']){const x=setup(),r=x.capture();mutate(x);r.finish(true);assert.ok(x.inputs.every(n=>n.disabled));}});
+test('successful handoff releases lock without enabling operation controls',()=>{const x=setup(),r=x.capture();r.finish(false);assert.equal(x.root.dataset.filterCapture,undefined);assert.ok(x.inputs.every(n=>n.disabled));x.tick(10000);assert.ok(x.inputs.every(n=>n.disabled));});
+test('exception after first disable restores original bits and rethrows primary error',()=>{const x=setup();let disabled=false;Object.defineProperty(x.inputs[1],'disabled',{get:()=>disabled,set:v=>{if(v)throw Error('primary lock failure');disabled=v;}});assert.throws(()=>x.capture(),/primary lock failure/);clean(x);assert.equal(x.timers.size,0);});
+
+test('untagged or extra Number input outside the owned row vector refuses',()=>{const x=setup(),query=x.set.querySelectorAll;x.set.querySelectorAll=s=>s==='input'?[...query(s),{}]:query(s);assert.equal(x.capture(),null);clean(x);});
+
+function bridge(){const rust=fs.readFileSync(path.join(base,'src/desktop/view/slack_lists/filter/capture.rs'),'utf8');const literal=rust.match(/^\s*"(\{\};.*)",$/m)?.[1];assert.ok(literal,'actual embedded bridge string');let script=JSON.parse('"'+literal+'"').replaceAll('{{','{').replaceAll('}}','}').replace('{};', ';').replace('{proof}','{}');return new (Object.getPrototypeOf(async function(){}).constructor)('compoundFilterSnapshot','dioxus',script);}
+test('actual embedded bridge preserves primary send/receive error while running cleanup',async()=>{for(const at of ['send','recv']){const calls=[];const primary=Error(at);await assert.rejects(bridge()(()=>({snapshot:[],finish:v=>{calls.push(v);throw Error('secondary cleanup');}}),{send:()=>{if(at==='send')throw primary;},recv:async()=>{throw primary;}}),e=>e===primary);assert.deepEqual(calls,[true]);}});
+test('actual embedded success bridge hands lock to operation state',async()=>{const calls=[];await bridge()(()=>({snapshot:[],finish:v=>calls.push(v)}),{send:v=>assert.deepEqual(v,[]),recv:async()=>false});assert.deepEqual(calls,[false,true]);});

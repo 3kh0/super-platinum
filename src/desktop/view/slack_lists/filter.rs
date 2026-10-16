@@ -1,12 +1,15 @@
 use super::*;
 use crate::slack_lists::rename::{self, filter};
 use super_platinum_core::slack_lists::{NumberFilterOperator as Op, ViewFilterChoice};
+mod capture;
+mod focus;
 mod number;
+mod rows;
 
 pub(super) fn action(state: Signal<ShellState>, visit: u64) -> Element {
     let selection = rename::selection(&state.read()).unwrap_or_default();
     let disabled = !filter::can_open(&state.read());
-    rsx! {button{id:"slack-list-filter",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,title:"Save one Checkbox or Number filter for this shared Table",onclick:move |_|filter::open(state,visit,selection),{icon(Icon::Filter,"icon")}span{"Filter"}}}
+    rsx! {button{id:"slack-list-filter",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,title:"Save conditions for this shared Table",onclick:move |_|filter::open(state,visit,selection),{icon(Icon::Filter,"icon")}span{"Filter"}}}
 }
 fn name<'a>(id: &str, choices: &'a [(String, String)]) -> &'a str {
     choices
@@ -18,6 +21,11 @@ fn name<'a>(id: &str, choices: &'a [(String, String)]) -> &'a str {
 fn label(choice: Option<&ViewFilterChoice>, choices: &[(String, String)]) -> String {
     match choice {
         None => "Unavailable".into(),
+        Some(ViewFilterChoice::All(rows)) => rows
+            .iter()
+            .map(|r| label(Some(r), choices))
+            .collect::<Vec<_>>()
+            .join(" AND "),
         Some(ViewFilterChoice::None) => "No filter".into(),
         Some(ViewFilterChoice::Checkbox { column_id, checked }) => format!(
             "{} {}",
@@ -81,39 +89,7 @@ pub(super) fn fields(
     p: filter::Presentation,
     editable: bool,
 ) -> Element {
-    let choice = p.choice;
-    let rendered = p.desired.clone();
-    let choices = options(&p.choices, &p.numbers);
-    let index = choices
-        .iter()
-        .position(|value| same_option(value, &p.desired));
-    let value = index.map(|i| i.to_string()).unwrap_or_default();
-    let rows = choices
-        .iter()
-        .enumerate()
-        .map(|(i, value)| {
-            let title = if let ViewFilterChoice::Number { column_id, .. } = value {
-                format!("{} (Number)", name(column_id, &p.choices))
-            } else {
-                label(Some(value), &p.choices)
-            };
-            (i.to_string(), title)
-        })
-        .collect::<Vec<_>>();
-    let original = label(Some(&p.original), &p.choices);
-    let current = label(p.current.as_ref(), &p.choices);
-    rsx! {
-        label{r#for:"slack-list-filter-condition","Condition"}
-        select{id:"slack-list-filter-condition",value:"{value}",disabled:!editable||index.is_none(),"data-filter-choice":"{choice}",onchange:move |e|{
-            if let Some(desired)=selected(&e.value(),&choices){
-                // Selecting the current Number field does not reset its operator/value.
-                if !same_option(&rendered,&desired){filter::input(state,serial,visit,choice,rendered.clone(),desired);}
-            }
-        },for (id,name) in rows {option{value:"{id}",selected:value==id,"{name}"}}}
-        {number::fields(state,serial,visit,&p,editable)}
-        p{id:"slack-list-filter-current",class:"slack-list-editor-hint","Original: {original}. Current: {current}."}
-        p{class:"slack-list-editor-hint","Save changes this shared Table for everyone with access. Only currently loaded items can be filtered here; stored values are kept. Choose No filter to remove this rule."}
-    }
+    rsx! {rows::Conditions{state,serial,visit,p,editable}}
 }
 pub(super) fn confirm(
     state: Signal<ShellState>,
@@ -121,23 +97,11 @@ pub(super) fn confirm(
     visit: u64,
     p: Option<filter::Presentation>,
 ) {
-    if let Some(rendered) = p {
-        // A retained Checkbox/empty Save callback must not submit a newer Number
-        // draft through the non-native path after a field/operator transition.
-        let Some(current) = rename::presentation(&state.peek())
-            .filter(|v| v.serial == serial && v.stage == rename::Stage::Editing)
-            .and_then(|v| v.filter)
-            .filter(|f| f.choice == rendered.choice)
-        else {
-            return;
-        };
-        if matches!(&current.desired,ViewFilterChoice::Number {operator,..} if operator.requires_value())
-        {
-            number::confirm(state, serial, visit, current);
-            return;
-        }
-    }
-    rename::confirm(state, serial);
+    let Some(p) = p else {
+        rename::confirm(state, serial);
+        return;
+    };
+    capture::confirm(state, serial, visit, p.choice);
 }
 #[cfg(test)]
 mod tests {
@@ -219,3 +183,6 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod route_tests;

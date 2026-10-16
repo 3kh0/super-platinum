@@ -1,16 +1,42 @@
 //! Three explicit full-vector filter writes through the real builder and reducers.
 use super::*;
 pub(crate) fn filter_check_enabled() -> bool {
-    let legacy = std::env::var("SUPER_PLATINUM_LIST_VIEW_FILTER_CHECK").ok();
-    let number = std::env::var("SUPER_PLATINUM_LIST_NUMBER_FILTER_CHECK").ok();
-    let alias = std::env::var("SUPER_PLATINUM_FIXTURE").ok();
-    mode_gate(legacy.as_deref(), number.as_deref(), alias.as_deref()).is_some()
+    mode().is_some()
 }
 pub(crate) fn number_filter_check_enabled() -> bool {
+    mode() == Some(1)
+}
+pub(crate) fn compound_filter_check_enabled() -> bool {
+    mode() == Some(2)
+}
+fn mode() -> Option<u8> {
     let legacy = std::env::var("SUPER_PLATINUM_LIST_VIEW_FILTER_CHECK").ok();
     let number = std::env::var("SUPER_PLATINUM_LIST_NUMBER_FILTER_CHECK").ok();
+    let compound = std::env::var("SUPER_PLATINUM_LIST_COMPOUND_FILTER_CHECK").ok();
     let alias = std::env::var("SUPER_PLATINUM_FIXTURE").ok();
-    mode_gate(legacy.as_deref(), number.as_deref(), alias.as_deref()) == Some(true)
+    mode_for(
+        legacy.as_deref(),
+        number.as_deref(),
+        compound.as_deref(),
+        alias.as_deref(),
+    )
+}
+fn mode_for(
+    legacy: Option<&str>,
+    number: Option<&str>,
+    compound: Option<&str>,
+    alias: Option<&str>,
+) -> Option<u8> {
+    if compound == Some("1") {
+        return (legacy != Some("1")
+            && number != Some("1")
+            && matches!(
+                alias,
+                Some("slack-list-compound-filter" | "slack-list-compound-filter-narrow")
+            ))
+        .then_some(2);
+    }
+    mode_gate(legacy, number, alias).map(u8::from)
 }
 fn mode_gate(legacy: Option<&str>, number: Option<&str>, alias: Option<&str>) -> Option<bool> {
     if number != Some("1") && gate(legacy, alias) {
@@ -124,7 +150,21 @@ fn seed_reopened(
     Ok(())
 }
 fn vector(index: usize) -> Option<Value> {
-    vector_for(index, number_filter_check_enabled())
+    if compound_filter_check_enabled() {
+        compound_vector(index)
+    } else {
+        vector_for(index, number_filter_check_enabled())
+    }
+}
+fn compound_vector(index: usize) -> Option<Value> {
+    match index {
+        0 => Some(
+            json!([{"key":"done","operator":"is_not_empty","values":[]},{"key":"estimate","operator":"less_than","values":["12.50"]}]),
+        ),
+        1 => Some(json!([{"key":"estimate","operator":"less_than","values":["12.50"]}])),
+        2 => Some(json!([])),
+        _ => None,
+    }
 }
 fn vector_for(index: usize, number: bool) -> Option<Value> {
     if number {
@@ -253,6 +293,34 @@ pub(super) async fn write(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn compound_gate_and_full_vectors_are_closed_without_changing_legacy() {
+        for alias in [
+            "slack-list-compound-filter",
+            "slack-list-compound-filter-narrow",
+        ] {
+            assert_eq!(mode_for(None, None, Some("1"), Some(alias)), Some(2));
+            assert_eq!(mode_for(Some("1"), None, Some("1"), Some(alias)), None);
+            assert_eq!(mode_for(None, Some("1"), Some("1"), Some(alias)), None);
+            assert_eq!(mode_for(None, None, None, Some(alias)), None);
+        }
+        assert_eq!(
+            mode_for(None, None, Some("1"), Some("slack-list-number-filter")),
+            None
+        );
+        assert_eq!(
+            mode_for(Some("1"), None, None, Some("slack-list-view-filter")),
+            Some(0)
+        );
+        assert_eq!(
+            mode_for(None, Some("1"), None, Some("slack-list-number-filter")),
+            Some(1)
+        );
+        assert_eq!(compound_vector(0).unwrap().as_array().unwrap().len(), 2);
+        assert_eq!(compound_vector(1), vector_for(0, true));
+        assert_eq!(compound_vector(2), Some(json!([])));
+        assert!(compound_vector(3).is_none());
+    }
     #[test]
     fn number_mode_is_closed_and_vectors_keep_lexical_values() {
         for alias in [

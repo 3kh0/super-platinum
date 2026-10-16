@@ -1,5 +1,12 @@
-//! One shared Checkbox or Number filter, staged without changing the current projection.
+//! A complete shared Checkbox/Number AND draft; canonical projection changes only on readback.
 use super::*;
+mod capture;
+#[cfg(test)]
+pub(super) use capture::finish_at;
+mod rows;
+pub(crate) use capture::{Capture, Snapshot, finish, release, reserve};
+pub(super) use rows::rows_for;
+pub(crate) use rows::{Action, Row, editable, structural, update_value};
 use super_platinum_core::slack_lists::{NumberFilterOperator, ViewFilter, ViewFilterChoice};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Presentation {
@@ -9,6 +16,7 @@ pub(crate) struct Presentation {
     pub choices: Vec<(String, String)>,
     pub choice: u64,
     pub numbers: Vec<String>,
+    pub rows: Vec<Row>,
 }
 fn choices(doc: &Document) -> Vec<(String, String)> {
     doc.columns
@@ -81,6 +89,7 @@ pub(crate) fn change(
             return false;
         }
         e.input = Input::Filter(desired);
+        e.filter_rows = rows_for(&e.input);
         // Field/condition changes rotate identity, including A->B->A.
         e.filter_choice = next_id();
         true
@@ -89,6 +98,12 @@ pub(crate) fn change(
 fn supported(doc: &Document, choice: &ViewFilterChoice) -> bool {
     let (id, kind) = match choice {
         ViewFilterChoice::None => return true,
+        ViewFilterChoice::All(rows) => {
+            return rows.len() <= 8
+                && rows
+                    .iter()
+                    .all(|r| r.column_id().is_some() && supported(doc, r));
+        }
         ViewFilterChoice::Checkbox { column_id, .. } => (column_id, "checkbox"),
         ViewFilterChoice::Number { column_id, .. } => (column_id, "number"),
     };
@@ -135,6 +150,7 @@ fn edit(
         let Some(e) = r.entries.get_mut(&key).filter(|e| {
             e.serial == serial
                 && e.stage == Stage::Editing
+                && e.filter_capture.is_none()
                 && e.target.is_filter()
                 && selection_current(shell, e)
         }) else {
@@ -246,34 +262,18 @@ pub(crate) fn valid(choice: &ViewFilterChoice) -> bool {
         ViewFilterChoice::Number {
             operator, value, ..
         } => operator.valid_value(value.as_deref()),
+        ViewFilterChoice::All(rows) => {
+            let mut seen = std::collections::BTreeSet::new();
+            (2..=8).contains(&rows.len())
+                && rows
+                    .iter()
+                    .all(|row| row.column_id().is_some_and(|id| seen.insert(id)) && valid(row))
+        }
         _ => true,
     }
 }
-/// The renderer supplied an actual value/validity snapshot. This never accepts a
-/// stale field/operator, visit, owner, policy or source, and claims the shared job
-/// in the same state borrow before a queued input can change the admitted value.
-pub(crate) fn confirm_number(
-    mut state: Signal<ShellState>,
-    serial: u64,
-    visit: u64,
-    choice: u64,
-    rendered: ViewFilterChoice,
-    value: String,
-    validity: bool,
-) {
-    let claimed = prepare_number(
-        &mut state.write(),
-        serial,
-        visit,
-        choice,
-        &rendered,
-        value,
-        validity,
-    );
-    if let Some((guard, intent)) = claimed {
-        network::save(state, guard, intent);
-    }
-}
+/// Existing single-row state tests now enter the complete-set capture boundary.
+#[cfg(test)]
 pub(super) fn prepare_number(
     shell: &mut ShellState,
     serial: u64,
@@ -283,16 +283,36 @@ pub(super) fn prepare_number(
     value: String,
     validity: bool,
 ) -> Option<(Guard, Intent)> {
-    let ViewFilterChoice::Number { operator, .. } = rendered else {
+    let ViewFilterChoice::Number {
+        column_id,
+        operator,
+        ..
+    } = rendered
+    else {
         return None;
     };
-    if !validity || !operator.requires_value() || !operator.valid_value(Some(&value)) {
+    let e = entry(shell)?;
+    let Input::Filter(current) = &e.input else {
+        return None;
+    };
+    if !same_condition(current, rendered) || e.filter_rows.len() != 1 {
         return None;
     }
-    if !value_change(shell, serial, visit, choice, rendered, value) {
-        return None;
+    let capture = reserve(shell, serial, visit, choice)?;
+    let row = &e.filter_rows[0];
+    let snapshot = vec![Snapshot {
+        id: row.id.to_string(),
+        epoch: row.epoch.to_string(),
+        column: column_id.clone(),
+        operator: operator.as_str().into(),
+        value: Some(value),
+        valid: validity,
+    }];
+    let result = finish(shell, &capture, snapshot);
+    if result.is_none() {
+        release(shell, &capture);
     }
-    prepare(shell, serial)
+    result
 }
 pub(super) fn presentation(shell: &ShellState, e: &registry::Entry) -> Option<Presentation> {
     let Target::Filter(view) = &e.target else {
@@ -312,6 +332,7 @@ pub(super) fn presentation(shell: &ShellState, e: &registry::Entry) -> Option<Pr
             .and_then(|l| ViewFilter::current(&l.document, view)),
         choices: choices(&e.original),
         choice: e.filter_choice,
+        rows: e.filter_rows.clone(),
         numbers: e
             .original
             .columns
@@ -320,4 +341,29 @@ pub(super) fn presentation(shell: &ShellState, e: &registry::Entry) -> Option<Pr
             .map(|c| c.id.clone())
             .collect(),
     })
+}
+
+/// Native snapshot submission shares the existing one-attempt network worker.
+pub(crate) fn submit(
+    mut state: Signal<ShellState>,
+    capture: &Capture,
+    snapshot: Vec<Snapshot>,
+) -> bool {
+    let claimed = finish(&mut state.write(), capture, snapshot);
+    if let Some((guard, intent)) = claimed {
+        network::save(state, guard, intent);
+        true
+    } else {
+        false
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn close_fixture(shell: &ShellState) -> bool {
+    let Some(e) = entry(shell).filter(|e| {
+        e.target.is_filter() && e.stage == Stage::Editing && e.job.is_none() && e.intent.is_none()
+    }) else {
+        return false;
+    };
+    super::close_entry(shell, e.serial)
 }

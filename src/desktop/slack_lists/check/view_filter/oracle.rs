@@ -68,6 +68,17 @@ fn requests(number: bool) -> Vec<Value> {
     }
     out
 }
+fn requests_set(number: bool, compound: bool) -> Vec<Value> {
+    let mut req = requests(number);
+    if compound {
+        req[3]["fields"][3][1] = json!(
+            "[{\"key\":\"done\",\"operator\":\"is_not_empty\",\"values\":[]},{\"key\":\"estimate\",\"operator\":\"less_than\",\"values\":[\"12.50\"]}]"
+        );
+        req[14]["fields"][3][1] =
+            json!("[{\"key\":\"estimate\",\"operator\":\"less_than\",\"values\":[\"12.50\"]}]");
+    }
+    req
+}
 fn responses(docs: &[Value; 3]) -> Vec<Value> {
     let file = |i: usize| json!({"ok":true,"file":docs[i]});
     let team = json!({"ok":true,"prefs":{"allow_lists":"full"}});
@@ -113,13 +124,29 @@ pub(super) fn exact(
     ids: [u64; 3],
     number: bool,
 ) -> Result<(), String> {
+    exact_set(
+        l, count, finished, pending, read, server, docs, ids, number, false,
+    )
+}
+pub(super) fn exact_set(
+    l: &Value,
+    count: usize,
+    finished: usize,
+    pending: bool,
+    read: bool,
+    server: usize,
+    docs: &[Value; 3],
+    ids: [u64; 3],
+    number: bool,
+    compound: bool,
+) -> Result<(), String> {
     if ids[0] == 0
         || finished > 4 && (ids[1] == 0 || ids[1] == ids[0])
         || finished > 6 && (ids[2] == 0 || ids[..2].contains(&ids[2]))
     {
         return Err("Missing distinct filter attempt identities".into());
     }
-    let req = requests(number);
+    let req = requests_set(number, compound);
     let res = responses(docs);
     let done = completions(ids);
     if count > req.len() || finished > done.len() || server > 2 {
@@ -187,6 +214,80 @@ pub(super) fn stage(
 mod tests {
     use super::*;
     #[test]
+    fn compound_literal_vectors_keep_both_ordered_rules_and_retired_false() {
+        let before = json!({"id":"F_LIST_FIXTURE","list_metadata":{"views":[{"id":"V_FILTER","filters":[],"info_column_filters":[],"sorts":[{"key":"estimate","ascending":true}],"opaque":{"keep":true}}]}});
+        let docs = documents_set(&before, false, true);
+        assert_eq!(docs[0], before);
+        assert_eq!(
+            docs[1]["list_metadata"]["views"][0]["sorts"],
+            before["list_metadata"]["views"][0]["sorts"]
+        );
+        assert_eq!(
+            order_set(1, false, true),
+            [3, 1, 7].map(|i| format!("R_LIST_{i:03}"))
+        );
+        assert_eq!(
+            order_set(2, false, true),
+            [2, 3, 1, 4, 7, 8].map(|i| format!("R_LIST_{i:03}"))
+        );
+        let req = requests_set(false, true);
+        let ids = [41, 42, 43];
+        assert_eq!(req.len(), 25);
+        assert_eq!(
+            req.iter()
+                .filter(|r| r["path"] == "/api/lists.views.update")
+                .count(),
+            3
+        );
+        let base = json!({"requests":req,"responses":responses(&docs),"finished":completions(ids),"server":docs[0],"writePending":false,"readPending":false});
+        stage_set(&base, 9, &docs, ids, false, true).unwrap();
+        for branch in 0..6 {
+            let mut bad = base.clone();
+            match branch {
+                0 => bad["requests"][3]["fields"][3][1] = json!("[]"),
+                1 => {
+                    let mut rows = docs[1]["list_metadata"]["views"][0]["filters"]
+                        .as_array()
+                        .unwrap()
+                        .clone();
+                    rows.reverse();
+                    bad["requests"][3]["fields"][3][1] =
+                        json!(serde_json::to_string(&rows).unwrap());
+                }
+                2 => bad["requests"][3]["fields"][4][1] = json!("null"),
+                3 => bad["finished"][2]["applied"] = json!(true),
+                4 => {
+                    bad["requests"][14]["fields"][3][1] =
+                        base["requests"][3]["fields"][3][1].clone()
+                }
+                _ => bad["server"]["list_metadata"]["views"][0]["sorts"] = json!([]),
+            }
+            assert!(
+                stage_set(&bad, 9, &docs, ids, false, true).is_err(),
+                "branch {branch}"
+            );
+        }
+        // Count and server progression is fixed independently for every capture.
+        for (index, (count, finished, server)) in [
+            (0, 0, 0),
+            (4, 0, 0),
+            (4, 1, 1),
+            (7, 2, 1),
+            (8, 3, 1),
+            (11, 4, 1),
+            (11, 4, 1),
+            (18, 6, 2),
+            (18, 6, 2),
+            (25, 8, 0),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let sample = json!({"requests":&requests_set(false,true)[..count],"responses":&responses(&docs)[..count],"finished":&completions(ids)[..finished],"server":docs[server],"writePending":index==1,"readPending":false});
+            stage_set(&sample, index, &docs, ids, false, true).unwrap();
+        }
+    }
+    #[test]
     fn number_oracle_keeps_string_and_literal_negative_zero_ties_empty_order() {
         assert_eq!(
             order(1, true),
@@ -243,4 +344,76 @@ mod tests {
             3
         );
     }
+}
+
+pub(super) const COMPOUND_STAGES: [&str; 10] = [
+    "mixed-edit",
+    "mixed-saving",
+    "uncertain",
+    "conflict",
+    "retired",
+    "mixed",
+    "single-edit",
+    "single",
+    "clear-edit",
+    "cleared",
+];
+pub(super) fn order_set(index: usize, number: bool, compound: bool) -> Vec<String> {
+    if !compound {
+        return order(index, number);
+    }
+    let rows: &[usize] = match index {
+        0 => &[2, 3, 1, 4, 7, 8, 0, 5, 6],
+        1 => &[3, 1, 7],
+        2 => &[2, 3, 1, 4, 7, 8],
+        _ => panic!("unknown compound document"),
+    };
+    rows.iter().map(|i| format!("R_LIST_{i:03}")).collect()
+}
+pub(super) fn documents_set(before: &Value, number: bool, compound: bool) -> [Value; 3] {
+    let mut docs = documents(before, number);
+    if compound {
+        docs[1]["list_metadata"]["views"][0]["filters"] = json!([{"key":"done","operator":"is_not_empty","values":[]},{"key":"estimate","operator":"less_than","values":["12.50"]}]);
+        docs[2]["list_metadata"]["views"][0]["filters"] =
+            json!([{"key":"estimate","operator":"less_than","values":["12.50"]}]);
+    }
+    docs
+}
+pub(super) fn stage_set(
+    l: &Value,
+    index: usize,
+    docs: &[Value; 3],
+    ids: [u64; 3],
+    number: bool,
+    compound: bool,
+) -> Result<(), String> {
+    if !compound {
+        return stage(l, index, docs, ids, number);
+    }
+    let &(count, finished, server) = [
+        (0, 0, 0),
+        (4, 0, 0),
+        (4, 1, 1),
+        (7, 2, 1),
+        (8, 3, 1),
+        (11, 4, 1),
+        (11, 4, 1),
+        (18, 6, 2),
+        (18, 6, 2),
+        (25, 8, 0),
+    ]
+    .get(index)
+    .ok_or("Wrong compound stage")?;
+    exact_set(
+        l,
+        count,
+        finished,
+        index == 1,
+        false,
+        server,
+        docs,
+        ids,
+        number,
+        compound,
+    )
 }

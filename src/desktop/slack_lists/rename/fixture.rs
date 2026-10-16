@@ -10,8 +10,8 @@ pub(crate) use text_create::{
 };
 mod sort;
 pub(crate) use filter::{
-    filter_check_enabled, filter_registry_empty, number_filter_check_enabled, seed_filter,
-    seed_filter_reopen, stale_filter_file,
+    compound_filter_check_enabled, filter_check_enabled, filter_registry_empty,
+    number_filter_check_enabled, seed_filter, seed_filter_reopen, stale_filter_file,
 };
 mod visibility;
 pub(crate) use sort::{seed_sort, seed_sort_reopen, sort_check_enabled, stale_sort_file};

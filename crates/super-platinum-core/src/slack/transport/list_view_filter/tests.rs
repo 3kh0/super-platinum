@@ -149,7 +149,7 @@ async fn malformed_filters_or_wrong_wrapper_never_dispatch() {
         r#"[{"key":"notes","operator":"is_empty","values":[],"id":"C_TEXT"}]"#,
         r#"[{"key":"notes","operator":"is_empty","values":[],"operator":"is_not_empty"}]"#,
         r#"[{"key":"notes","operator":"is_empty"}]"#,
-        r#"[{"key":"a","operator":"is_empty","values":[]},{"key":"b","operator":"is_not_empty","values":[]}]"#,
+        r#"[{"key":"a","operator":"is_empty","values":[]},{"key":"a","operator":"is_not_empty","values":[]}]"#,
     ] {
         let mut r = request(address);
         let RequestBody::Form(fields) = &mut r.body else {
@@ -369,3 +369,5 @@ async fn absent_null_or_nonempty_metadata_filters_and_sort_form_never_dispatch()
 }
 
 mod number;
+
+mod compound;

@@ -54,6 +54,8 @@ pub(super) struct Entry {
     pub input: Input,
     pub visibility_choice: u64,
     pub filter_choice: u64,
+    pub filter_rows: Vec<filter::Row>,
+    pub filter_capture: Option<(u64, Instant)>,
     pub sort_choice: u64,
     pub grouping_choice: u64,
     pub before: String,

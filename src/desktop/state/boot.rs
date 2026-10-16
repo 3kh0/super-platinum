@@ -1069,6 +1069,9 @@ impl ShellState {
             | "slack-list-select-field-create-narrow" => {
                 crate::slack_lists::fixture::text_field_create::install(&mut state, name);
             }
+            "slack-list-compound-filter" | "slack-list-compound-filter-narrow" => {
+                crate::slack_lists::fixture::compound_filter::install(&mut state, name);
+            }
             "slack-list-number-filter" | "slack-list-number-filter-narrow" => {
                 crate::slack_lists::fixture::number_filter::install(&mut state, name);
             }

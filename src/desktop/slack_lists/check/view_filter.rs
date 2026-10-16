@@ -1,9 +1,10 @@
-//! Eight captures, three explicit saved-view filter changes, one real retained registry path.
+//! Versioned eight/eight/ten captures through the actual complete Filter capture and registry.
 use super::*;
 use crate::slack_lists::rename::{self, Stage, fixture as rename_fixture};
 mod harness;
 mod number;
 mod oracle;
+mod rows;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     if !rename_fixture::filter_check_enabled() {
         return;
@@ -87,6 +88,7 @@ fn find(state: Signal<ShellState>) -> Result<Value, String> {
 fn choice(value: &super_platinum_core::slack_lists::ViewFilterChoice) -> Value {
     use super_platinum_core::slack_lists::ViewFilterChoice;
     match value {
+        ViewFilterChoice::All(rows) => json!({"all": rows.iter().map(choice).collect::<Vec<_>>()}),
         ViewFilterChoice::None => json!({"column":null,"checked":null}),
         ViewFilterChoice::Number {
             column_id,
@@ -111,7 +113,7 @@ fn draft(state: Signal<ShellState>) -> Result<Value, String> {
         return Err("Wrong Filter presentation".into());
     }
     Ok(
-        json!({"serial":p.serial,"visit":crate::slack_lists::generation(&shell),"selection":rename::selection(&shell),"choice":s.choice,"original":choice(&s.original),"desired":choice(&s.desired),"current":s.current.as_ref().map(choice)}),
+        json!({"serial":p.serial,"visit":crate::slack_lists::generation(&shell),"selection":rename::selection(&shell),"choice":s.choice,"original":choice(&s.original),"desired":choice(&s.desired),"current":s.current.as_ref().map(choice),"rows":s.rows.iter().map(|r|json!({"id":r.id,"epoch":r.epoch})).collect::<Vec<_>>()}),
     )
 }
 async fn click(d: &dioxus::desktop::DesktopContext, id: &str) -> Result<(), String> {
@@ -127,49 +129,11 @@ async fn open_choice(
     d: &dioxus::desktop::DesktopContext,
     mode: usize,
 ) -> Result<Value, String> {
-    if rename_fixture::number_filter_check_enabled() && mode != 0 {
-        return number::open(state, d, mode).await;
-    }
-    checked(d, "window.__listViewFilter.rememberFilter()").await?;
-    click(d, "slack-list-filter").await?;
-    phase(state, Stage::Editing).await?;
-    wait_dom(
-        d,
-        "({ok:document.getElementById('slack-list-filter-condition')===document.activeElement})",
-    )
-    .await?;
-    let old = draft(state)?;
-    let condition = mode.to_string();
-    let selected = checked(
-        d,
-        &format!(
-            "window.__listViewFilter.select('#slack-list-filter-condition',{})",
-            json!(condition)
-        ),
-    )
-    .await?;
-    wait_dom(d,&format!("({{ok:document.getElementById('slack-list-filter-condition')?.value==={}&&document.getElementById('slack-list-filter-condition')?.dataset.filterChoice!=={}}})",json!(condition),json!(old["choice"].as_u64().unwrap().to_string()))).await?;
-    wait_dom(d,"({ok:!!document.getElementById('slack-list-rename-confirm')&&!document.getElementById('slack-list-rename-confirm').disabled})").await?;
-    let current = draft(state)?;
-    let desired = if mode == 0 {
-        json!({"column":null,"checked":null})
-    } else {
-        json!({"column":"C_CHECK","checked":mode==1})
-    };
-    if current["desired"] != desired {
-        return Err("Wrong desired filter after actual select events".into());
-    }
-    let dom = checked(d, "window.__listViewFilter.draft()").await?;
-    if dom["serial"].as_str() != current["serial"].as_u64().map(|n| n.to_string()).as_deref()
-        || dom["choice"].as_str() != current["choice"].as_u64().map(|n| n.to_string()).as_deref()
-        || dom["condition"] != condition
-    {
-        return Err("Rendered filter callback choice drift".into());
-    }
-    Ok(json!({"model":current,"dom":dom,"selected":selected}))
+    rows::open(state, d, mode).await
 }
 struct Proof {
     number: bool,
+    compound: bool,
     docs: [Value; 3],
     population: Value,
     find: Value,
@@ -198,7 +162,7 @@ impl Proof {
                 _ => None,
             })
             .collect::<Vec<_>>();
-        if ids != oracle::order(mode, self.number) {
+        if ids != oracle::order_set(mode, self.number, self.compound) {
             return Err(format!("Wrong projected Filter order: {ids:?}"));
         }
         drop(shell);
@@ -217,27 +181,53 @@ impl Proof {
         name: &str,
     ) -> Result<(), String> {
         let ordinal = self.stages.len();
-        if oracle::STAGES.get(ordinal) != Some(&name) {
+        let labels = if self.compound {
+            oracle::COMPOUND_STAGES.as_slice()
+        } else {
+            oracle::STAGES.as_slice()
+        };
+        if labels.get(ordinal) != Some(&name) {
             return Err("Wrong Filter stage order".into());
         }
-        let name = oracle::stage_name(ordinal, self.number);
-        let mode = [0, 0, 0, 0, 1, 2, 2, 0][ordinal];
+        let name = if self.compound {
+            name
+        } else {
+            oracle::stage_name(ordinal, self.number)
+        };
+        let mode = if self.compound {
+            [0, 0, 0, 0, 0, 1, 1, 2, 2, 0][ordinal]
+        } else {
+            [0, 0, 0, 0, 1, 2, 2, 0][ordinal]
+        };
+        let table = if self.compound {
+            matches!(ordinal, 5 | 7 | 9)
+        } else {
+            matches!(ordinal, 4 | 5 | 7)
+        };
         self.stable(state, mode)?;
         let ledger = rename_fixture::snapshot(&state.peek())?;
-        oracle::stage(&ledger, ordinal, &self.docs, self.ids, self.number)?;
-        if matches!(ordinal, 4 | 5 | 7) {
+        oracle::stage_set(
+            &ledger,
+            ordinal,
+            &self.docs,
+            self.ids,
+            self.number,
+            self.compound,
+        )?;
+        if table {
             checked(d, "window.__listViewFilter.revealFirst()").await?;
+        } else {
+            rows::capture_view(state, d, name).await?;
         }
         let geometry = wait_dom(
             d,
             &format!("window.__listViewFilter.geometry({})", json!(name)),
         )
         .await?;
-        let model = if matches!(ordinal, 4 | 5 | 7) {
-            Value::Null
-        } else {
-            draft(state)?
-        };
+        let model = if table { Value::Null } else { draft(state)? };
+        if !model.is_null() {
+            checked(d, &format!("window.__listViewFilter.sameDraft({model})")).await?;
+        }
         let owner = |v: &Value, n: Option<u64>| v.as_str() == n.map(|n| n.to_string()).as_deref();
         if !owner(
             &geometry["owner"]["visit"],
@@ -267,9 +257,25 @@ async fn run(
     d: &dioxus::desktop::DesktopContext,
 ) -> Result<Value, String> {
     let number_mode = rename_fixture::number_filter_check_enabled();
+    let compound_mode = rename_fixture::compound_filter_check_enabled();
     let owner = harness::wait_runner(state).await?;
     checked(d, include_str!("view_filter.js")).await?;
-    if number_mode {
+    checked(d, include_str!("view_filter/rows.js")).await?;
+    checked(
+        d,
+        &format!(
+            "window.__listViewFilter.setMode({})",
+            json!(if compound_mode {
+                "compound"
+            } else if number_mode {
+                "number"
+            } else {
+                "checkbox"
+            })
+        ),
+    )
+    .await?;
+    if number_mode || compound_mode {
         checked(d, "window.__listViewFilter.numberMode()").await?;
         checked(d, include_str!("view_filter/number.js")).await?;
     }
@@ -320,7 +326,7 @@ async fn run(
     {
         return Err("Wrong Filter fixture raw source".into());
     }
-    if number_mode {
+    if number_mode || compound_mode {
         let expected = [
             json!([12.5]),
             json!([2.0]),
@@ -345,7 +351,8 @@ async fn run(
     }
     let mut proof = Proof {
         number: number_mode,
-        docs: oracle::documents(&before, number_mode),
+        compound: compound_mode,
+        docs: oracle::documents_set(&before, number_mode, compound_mode),
         population,
         find: find(state)?,
         ids: [0; 3],
@@ -353,7 +360,7 @@ async fn run(
         captures: Default::default(),
     };
     proof.stable(state, 0)?;
-    let canceled = open_choice(state, d, if number_mode { 1 } else { 2 }).await?;
+    let canceled = open_choice(state, d, if number_mode || compound_mode { 1 } else { 2 }).await?;
     let invalid = if number_mode {
         number::invalid(state, d).await?
     } else {
@@ -369,8 +376,8 @@ async fn run(
         return Err("Cancel issued requests".into());
     }
     let cancel_empty = rename_fixture::filter_registry_empty(&state.peek())?;
-    if number_mode && !cancel_empty {
-        return Err("Canceled Number entry/intent survived".into());
+    if !cancel_empty {
+        return Err("Canceled Filter entry/intent survived".into());
     }
     proof.stable(state, 0)?;
     let checked_choice = open_choice(state, d, 1).await?;
@@ -380,8 +387,18 @@ async fn run(
     if checked_choice["model"]["serial"] == canceled["model"]["serial"] {
         return Err("Canceled filter identity reused".into());
     }
-    proof.stage(state, d, "checked-edit").await?;
-    let number_save = if number_mode {
+    proof
+        .stage(
+            state,
+            d,
+            if compound_mode {
+                "mixed-edit"
+            } else {
+                "checked-edit"
+            },
+        )
+        .await?;
+    let number_save = if number_mode || compound_mode {
         number::save(state, d).await?
     } else {
         click(d, "slack-list-rename-confirm").await?;
@@ -389,20 +406,32 @@ async fn run(
         pending(state, "writePending").await?;
         Value::Null
     };
-    proof.stage(state, d, "checked-saving").await?;
+    proof
+        .stage(
+            state,
+            d,
+            if compound_mode {
+                "mixed-saving"
+            } else {
+                "checked-saving"
+            },
+        )
+        .await?;
     rename_fixture::release(&state.peek(), false)?;
     phase(state, Stage::Uncertain).await?;
     proof.stage(state, d, "uncertain").await?;
     rename_fixture::stale_filter_file(&state.peek())?;
     click(d, "slack-list-rename-check").await?;
     phase(state, Stage::Conflict).await?;
-    proof.stage(state, d, "stale").await?;
+    proof
+        .stage(state, d, if compound_mode { "conflict" } else { "stale" })
+        .await?;
     rename_fixture::hold_read(&state.peek())?;
     click(d, "slack-list-rename-check").await?;
     phase(state, Stage::Checking).await?;
     pending(state, "readPending").await?;
     let held = rename_fixture::snapshot(&state.peek())?;
-    oracle::exact(
+    oracle::exact_set(
         &held,
         8,
         2,
@@ -412,6 +441,7 @@ async fn run(
         &proof.docs,
         proof.ids,
         proof.number,
+        proof.compound,
     )?;
     let captured_loaded = state
         .peek()
@@ -456,7 +486,7 @@ async fn run(
     }
     rename_fixture::release(&state.peek(), true)?;
     let obsolete = completed(state, 3).await?;
-    oracle::exact(
+    oracle::exact_set(
         &obsolete,
         8,
         3,
@@ -466,6 +496,7 @@ async fn run(
         &proof.docs,
         proof.ids,
         proof.number,
+        proof.compound,
     )?;
     phase(state, Stage::Uncertain).await?;
     proof.stable(state, 0)?;
@@ -477,6 +508,9 @@ async fn run(
         return Err("Retired check replaced original intent or choice".into());
     }
     let retired = json!({"oldVisit":old_visit,"newVisit":new_visit,"oldSelection":old_selection,"newSelection":new_selection,"oldEpoch":old_epoch,"newEpoch":state.peek().core.account_epoch,"held":held,"setup":setup,"completed":obsolete,"document":document(state)?,"population":self::population(state)?,"find":find(state)?,"reboundFind":rebound_find,"retained":retained});
+    if compound_mode {
+        proof.stage(state, d, "retired").await?;
+    }
     click(d, "slack-list-rename-check").await?;
     phase(state, Stage::Observed).await?;
     proof.stable(state, 1)?;
@@ -484,11 +518,16 @@ async fn run(
     checked(d, "window.__listViewFilter.rememberFilter()").await?;
     click(d, "slack-list-rename-close").await?;
     wait_dom(d, "window.__listViewFilter.returnedFilter()").await?;
-    proof.stage(state, d, "checked").await?;
+    proof
+        .stage(state, d, if compound_mode { "mixed" } else { "checked" })
+        .await?;
     let unchecked_choice = open_choice(state, d, 2).await?;
     proof.ids[1] = unchecked_choice["model"]["serial"]
         .as_u64()
         .ok_or("Missing Unchecked serial")?;
+    if compound_mode {
+        proof.stage(state, d, "single-edit").await?;
+    }
     let unchecked_ack = save_positive(state, d, &proof, 1, 15, 4, 2).await?;
     proof.stable(state, 1)?;
     click(d, "slack-list-rename-check").await?;
@@ -498,7 +537,9 @@ async fn run(
     checked(d, "window.__listViewFilter.rememberFilter()").await?;
     click(d, "slack-list-rename-close").await?;
     wait_dom(d, "window.__listViewFilter.returnedFilter()").await?;
-    proof.stage(state, d, "unchecked").await?;
+    proof
+        .stage(state, d, if compound_mode { "single" } else { "unchecked" })
+        .await?;
     let clear = open_choice(state, d, 0).await?;
     proof.ids[2] = clear["model"]["serial"]
         .as_u64()
@@ -517,7 +558,7 @@ async fn run(
     let ledger = rename_fixture::snapshot(&state.peek())?;
     let viewport = checked(d, "({ok:true,viewport:[innerWidth,innerHeight]})").await?;
     proof.stable(state, 0)?;
-    oracle::exact(
+    oracle::exact_set(
         &ledger,
         25,
         8,
@@ -527,30 +568,59 @@ async fn run(
         &proof.docs,
         proof.ids,
         proof.number,
+        proof.compound,
     )?;
     if rename_fixture::snapshot(&state.peek())? != ledger {
         return Err("Final Filter ledger drift".into());
     }
-    let mut receipt = json!({"ok":true,"fixture":std::env::var("SUPER_PLATINUM_FIXTURE").unwrap(),"owner":owner,"noSession":true,"noTransport":true,"before":proof.docs[0],"checked":proof.docs[1],"unchecked":proof.docs[2],"population":proof.population,"find":proof.find,"firstFind":first_find,"attempts":proof.ids,"cancel":{"draft":canceled,"focus":cancel_focus,"ledger":canceled_ledger},"choices":{"checked":checked_choice,"unchecked":unchecked_choice,"clear":clear},"retiredCheck":retired,"observed":{"checked":observed_checked,"unchecked":observed_unchecked,"clear":observed_clear},"positiveAcks":{"unchecked":unchecked_ack,"clear":clear_ack},"stages":proof.stages,"captures":proof.captures,"ledger":ledger,"viewport":viewport["viewport"]});
-    if number_mode {
+    let mut receipt = json!({"ok":true,"fixture":std::env::var("SUPER_PLATINUM_FIXTURE").unwrap(),"owner":owner,"noSession":true,"noTransport":true,"before":proof.docs[0],"checked":proof.docs[1],"unchecked":proof.docs[2],"population":proof.population,"find":proof.find,"firstFind":first_find,"attempts":proof.ids,"cancel":{"draft":canceled,"focus":cancel_focus,"ledger":canceled_ledger,"registryEmpty":cancel_empty},"choices":{"checked":checked_choice,"unchecked":unchecked_choice,"clear":clear},"retiredCheck":retired,"observed":{"checked":observed_checked,"unchecked":observed_unchecked,"clear":observed_clear},"positiveAcks":{"unchecked":unchecked_ack,"clear":clear_ack},"stages":proof.stages,"captures":proof.captures,"ledger":ledger,"viewport":viewport["viewport"]});
+    if number_mode || compound_mode {
         let obj = receipt.as_object_mut().unwrap();
-        for (old, new) in [("checked", "comparison"), ("unchecked", "empty")] {
+        for (old, new) in [
+            (
+                "checked",
+                if compound_mode { "mixed" } else { "comparison" },
+            ),
+            ("unchecked", if compound_mode { "single" } else { "empty" }),
+        ] {
             let v = obj.remove(old).unwrap();
             obj.insert(new.into(), v);
         }
         for key in ["choices", "observed", "positiveAcks"] {
             let map = obj.get_mut(key).unwrap().as_object_mut().unwrap();
-            for (old, new) in [("checked", "comparison"), ("unchecked", "empty")] {
+            for (old, new) in [
+                (
+                    "checked",
+                    if compound_mode { "mixed" } else { "comparison" },
+                ),
+                ("unchecked", if compound_mode { "single" } else { "empty" }),
+            ] {
                 if let Some(v) = map.remove(old) {
                     map.insert(new.into(), v);
                 }
             }
         }
-        obj.insert("mode".into(), json!("number"));
+        obj.insert(
+            "mode".into(),
+            json!(if compound_mode { "compound" } else { "number" }),
+        );
         obj.insert(
             "numberInput".into(),
             json!({"invalid":invalid,"save":number_save,"cancelRegistryEmpty":cancel_empty}),
         );
+    }
+    receipt["schema"] = json!(2);
+    receipt["mode"] = json!(if compound_mode {
+        "compound"
+    } else if number_mode {
+        "number"
+    } else {
+        "checkbox"
+    });
+    receipt["uiHistory"] = checked(d, "window.__listViewFilter.history()").await?;
+    proof.stable(state, 0)?;
+    if rename_fixture::snapshot(&state.peek())? != ledger {
+        return Err("Ledger changed after final UI history".into());
     }
     Ok(receipt)
 }
@@ -567,7 +637,7 @@ async fn save_positive(
     phase(state, Stage::Saving).await?;
     pending(state, "writePending").await?;
     let held = rename_fixture::snapshot(&state.peek())?;
-    oracle::exact(
+    oracle::exact_set(
         &held,
         count,
         finished,
@@ -577,12 +647,13 @@ async fn save_positive(
         &proof.docs,
         proof.ids,
         proof.number,
+        proof.compound,
     )?;
     proof.stable(state, before)?;
     rename_fixture::release(&state.peek(), false)?;
     phase(state, Stage::Uncertain).await?;
     let ack = rename_fixture::snapshot(&state.peek())?;
-    oracle::exact(
+    oracle::exact_set(
         &ack,
         count,
         finished + 1,
@@ -592,6 +663,7 @@ async fn save_positive(
         &proof.docs,
         proof.ids,
         proof.number,
+        proof.compound,
     )?;
     proof.stable(state, before)?;
     let retained =

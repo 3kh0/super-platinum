@@ -320,3 +320,10 @@
 .slack-list-select-create button { flex-shrink: 0; min-height: var(--control-height); padding: 0 8px; border-radius: var(--radius-md); }
 .slack-list-select-option-input input { flex: 1; min-width: 0; font: inherit; }
 .slack-list-select-create :is(input, button):focus-visible { outline-offset: -2px; }
+
+/* Complete filter sets retain the existing control tokens inside keyed rows. */
+#slack-list-filter-set :is(select,input) { width:100%; min-height:var(--control-height); padding:6px 8px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); color:var(--text); font:inherit; }
+#slack-list-filter-set :is(select,input):disabled { opacity:.55; cursor:default; }
+.slack-list-filter-row, .slack-list-filter-add { display:grid; gap:4px; margin-bottom:12px; }
+#slack-list-filter-add { display:inline-flex; align-items:center; justify-content:center; gap:var(--space-1); }
+#slack-list-filter-set :is(button,select,input):focus-visible { outline-offset:-2px; }

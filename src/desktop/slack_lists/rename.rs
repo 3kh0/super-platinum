@@ -410,6 +410,8 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
                 observed_field: None,
                 field_choice: text_create::Choice::initial(),
                 select_draft: Default::default(),
+                filter_rows: filter::rows_for(&input),
+                filter_capture: None,
                 input,
                 visibility_choice: next_id(),
                 filter_choice: next_id(),
@@ -422,7 +424,7 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
                 message: if target.is_text_creation() {
                     "Create one field shared with everyone who has access to this List. Existing items and view settings are kept.".into()
                 } else if target.is_filter() {
-                    "Choose one condition, or No filter, then Save for everyone. Cancel leaves the saved view unchanged.".into()
+                    "Choose conditions that must all match, then Save for everyone. Cancel leaves the saved view unchanged.".into()
                 } else if target.is_grouping() {
                     "Choose a field, or None, then Save for everyone. Cancel leaves the shared view unchanged.".into()
                 } else if target.is_sort() {
@@ -519,6 +521,10 @@ fn close_entry(shell: &ShellState, serial: u64) -> bool {
     can
 }
 pub(crate) fn confirm(mut state: Signal<ShellState>, serial: u64) {
+    // Every rendered Filter Save uses the owned complete-set snapshot.
+    if entry(&state.peek()).is_some_and(|e| e.target.is_filter()) {
+        return;
+    }
     let claimed = prepare(&mut state.write(), serial);
     if let Some((guard, intent)) = claimed {
         network::save(state, guard, intent);
@@ -529,6 +535,7 @@ fn prepare(shell: &mut ShellState, serial: u64) -> Option<(Guard, Intent)> {
     let old = entry(shell)?;
     if old.serial != serial
         || old.stage != Stage::Editing
+        || old.filter_capture.is_some()
         || (old.target.is_grouping() && !grouping::projection_current(shell, &old.target))
         || !selection_current(shell, &old)
         || !owner::available(shell)

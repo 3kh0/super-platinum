@@ -1,3 +1,5 @@
+// Legacy single-input helper regressions remain; actual complete-set runtime is covered
+// by test-list-compound-filter-capture.mjs. Current UI wiring is checked below.
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -48,13 +50,15 @@ test('epoch ABA and same-id input replacement prevent stale restore',()=>{
   const x=setup(),r=x.capture();change(x);r.restore();assert.equal(x.input.disabled,true);
  }
 });
-test('actual UI source keeps native partials and supports decimal values',()=>{
- const ui=fs.readFileSync(path.join(base,'src/desktop/view/slack_lists/filter/number.rs'),'utf8');
+test('current shared rows retain native partials and whole-set capture',()=>{
+ const ui=fs.readFileSync(path.join(base,'src/desktop/view/slack_lists/filter/rows.rs'),'utf8');
  assert.match(ui,/r#type:\s*"number",\s*step:\s*"any",\s*initial_value:/);
- assert.match(ui,/for epoch in \[choice\]/);assert.match(ui,/label\{key:\s*"\{serial\}:\{epoch\}"/);assert.match(ui,/confirm_number/);
- assert.match(ui,/eval\.recv::<Option<\(String, bool\)>>/);
+ assert.match(ui,/for version in \[epoch\]/);assert.match(ui,/label\{key:\s*"\{id\}:\{version\}"/);
+ const capture=fs.readFileSync(path.join(base,'src/desktop/view/slack_lists/filter/capture.rs'),'utf8');
+ assert.match(capture,/filter::reserve/);assert.match(capture,/eval\.recv::<Option<Vec<filter::Snapshot>>>/);
  assert.doesNotMatch(ui,/value:\s*"\{initial\}"/);
 });
+
 test('named normal/narrow fixture wires catalog boot and actual narrow sizing',()=>{
  for(const p of ['scripts/agent-ui-check.sh','src/desktop/state/boot.rs']) {
   const s=fs.readFileSync(path.join(base,p),'utf8');for(const n of ['slack-list-number-filter','slack-list-number-filter-narrow'])assert.ok(s.includes(n));
