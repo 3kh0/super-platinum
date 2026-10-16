@@ -18,7 +18,7 @@ async fn select_rejects_alternate_options_special_types_and_missing_fields_befor
         "null",
         "{}",
         r#"{"format":"single_select","choices":[]}"#,
-        r#"{"format":"multi_select","choices":[{"color":"cyan","label":"Ready","value":"OptABCDEFGH"}]}"#,
+        r#"{"format":"multiple","choices":[{"color":"cyan","label":"Ready","value":"OptABCDEFGH"}]}"#,
         r#"{"format":"single_select","choices":[{"color":"cyan","label":"Ready","value":"OptABCDEFGH","default":true}]}"#,
         r#"{"format":"single_select","choices":[{"color":"red","label":"Ready","value":"OptABCDEFGH"}]}"#,
         r#"{"format":"single_select","choices":[{"color":"cyan","label":"Ready","value":"OptABCDEFGH"}],"default_value":"OptABCDEFGH"}"#,
