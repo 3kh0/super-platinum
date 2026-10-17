@@ -640,6 +640,12 @@ async fn hydrate_surface_users(
 }
 
 pub async fn sign_in(mut state: Signal<ShellState>) {
+    if crate::canvas_create::departure::request(
+        &mut state.write(),
+        crate::canvas_create::departure::Destination::SignIn,
+    ) {
+        return;
+    }
     let media = state.read().media.clone();
     state.write().loading = true;
     let Ok(executable) = std::env::current_exe() else {
@@ -675,6 +681,12 @@ pub async fn sign_in(mut state: Signal<ShellState>) {
 }
 
 pub async fn switch_account(mut state: Signal<ShellState>, account_id: String) {
+    if crate::canvas_create::departure::request(
+        &mut state.write(),
+        crate::canvas_create::departure::Destination::SwitchAccount(account_id.clone()),
+    ) {
+        return;
+    }
     let result = tokio::task::spawn_blocking(move || {
         super_platinum_core::config::set_active_account(&account_id)
     })
@@ -691,6 +703,12 @@ pub async fn switch_account(mut state: Signal<ShellState>, account_id: String) {
 }
 
 pub async fn remove_account(mut state: Signal<ShellState>, account_id: String) {
+    if crate::canvas_create::departure::request(
+        &mut state.write(),
+        crate::canvas_create::departure::Destination::RemoveAccount(account_id.clone()),
+    ) {
+        return;
+    }
     let result = tokio::task::spawn_blocking(move || {
         super_platinum_core::config::remove_account(&account_id)
     })
@@ -730,6 +748,7 @@ pub(crate) fn install_loaded(mut state: Signal<ShellState>, mut loaded: ShellSta
     let mut previous = state.write();
     let _release = crate::performance::emoji_retirement::scope(14, 1, 0);
     crate::read_preferences::settings::carry_pending(&mut previous, &mut loaded);
+    crate::canvas_create::carry_pending(&mut previous, &mut loaded);
     crate::file_share::carry_pending(&mut previous, &mut loaded);
     *previous = loaded;
 }

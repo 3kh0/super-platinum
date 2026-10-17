@@ -4,7 +4,7 @@ use crate::{
     state::ShellState,
 };
 use dioxus::prelude::*;
-mod entities;
+pub(super) mod entities;
 mod link;
 
 #[component]
@@ -23,6 +23,11 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
         | CellEditValue::Users(values)
         | CellEditValue::Channels(values) => values.clone(),
         _ => Vec::new(),
+    });
+    let initial = editor.original.clone();
+    let mut rating = use_signal(move || match initial.as_ref() {
+        CellEditValue::Rating(value) => *value,
+        _ => None,
     });
     let mut reading = use_signal(|| false);
     let initial = editor.original.clone();
@@ -80,6 +85,9 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
                 match editor.kind {
                     EditorKind::BoardMove => rsx! {},
                     EditorKind::RichText => rsx! {super::super::rich_editor::RichEditor {id:"slack-list-rich-draft",label:editor.column_label.clone(),blocks,labels,disabled,expected_generation:Some(generation)}},
+                    EditorKind::Rating => if let Some(options) = editor.rating.as_ref() {
+                        super::rating::fields(state,options,rating,disabled)
+                    } else {rsx! {}},
                     EditorKind::Number => rsx! {
                         label {r#for:"slack-list-number-draft","{editor.column_label}"}
                         input {id:"slack-list-number-draft",r#type:"text",inputmode:"decimal",value:"{number}",disabled,
@@ -146,6 +154,7 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
                         error.set(None);
                         match kind {
                             EditorKind::BoardMove => {},
+                            EditorKind::Rating => crate::slack_lists::save_editor(state,generation,layout_generation,CellEditValue::Rating(*rating.read())),
                             EditorKind::Number => {
                                 let input=number.read().trim().to_owned();
                                 let value=if input.is_empty(){Ok(None)}else{input.parse::<serde_json::Number>().map(Some)};
@@ -211,14 +220,24 @@ const MOUNT: &str = r#"function mountListCellEditor(generation,visit,rowId,colum
  const previousCell=previous?.closest('td,.slack-list-card-field,.slack-list-detail-field');
  const cell=matchesCell(previousCell)?previousCell:cells().find(matchesCell);
  const instanceId=cell?.closest('[data-instance-id]')?.dataset.instanceId;
- let initialFrame=null,recoveryFrame=null,recoveryCause=null,lastOwned=null,disposed=false;
+ let initialFrame=null,recoveryFrame=null,recoveryCause=null,lastOwned=null,lastRemoval=null,recoveryRemoval=null,disposed=false;
  const owns=()=>editor.isConnected&&dialog.isConnected&&document.getElementById('slack-list-cell-editor')===editor&&editor.closest('.slack-list-dialog')===dialog&&editor.dataset.editorGeneration===String(generation)&&dialog.dataset.dialogGeneration===String(visit);
  const shown=control=>!!control?.isConnected&&control.getClientRects().length>0&&!control.closest('[hidden],[inert]')&&!['hidden','collapse'].includes(getComputedStyle(control).visibility);
  const enabled=control=>shown(control)&&!control.matches(':disabled')&&control.getAttribute('aria-disabled')!=='true';
- const rememberFocus=event=>{if(event.target===document.body)return;if(owns()&&editor.contains(event.target))lastOwned=event.target;else{lastOwned=recoveryCause=null;if(recoveryFrame!==null)cancelAnimationFrame(recoveryFrame);recoveryFrame=null;}};
- const cleanup=()=>{if(disposed)return;disposed=true;observer.disconnect();document.removeEventListener('focusin',rememberFocus,true);if(initialFrame!==null)cancelAnimationFrame(initialFrame);if(recoveryFrame!==null)cancelAnimationFrame(recoveryFrame);initialFrame=recoveryFrame=null;recoveryCause=lastOwned=null;};
+ // Snapshot only this editor's selected entity Remove controls while focus is
+ // still owned. The row may be detached before MutationObserver delivery.
+ const entityRemoval=control=>{
+   const row=control?.closest('[data-selected-user],[data-selected-channel]'),picker=row?.closest('.slack-list-entity-picker');
+   if(!row||!picker||!editor.contains(picker)||row.querySelector('button')!==control)return null;
+   const attribute=row.hasAttribute('data-selected-user')?'data-selected-user':'data-selected-channel';
+   const rows=[...picker.querySelectorAll('['+attribute+']')],index=rows.indexOf(row);
+   if(index<0)return null;
+   return{picker,attribute,ids:rows.slice(index+1).concat(rows.slice(0,index).reverse()).map(r=>r.getAttribute(attribute)),query:picker.querySelector(attribute==='data-selected-user'?'#slack-list-user-query':'#slack-list-channel-query')};
+ };
+ const rememberFocus=event=>{if(event.target===document.body)return;if(owns()&&editor.contains(event.target)){lastOwned=event.target;lastRemoval=entityRemoval(event.target);}else{lastOwned=recoveryCause=lastRemoval=recoveryRemoval=null;if(recoveryFrame!==null)cancelAnimationFrame(recoveryFrame);recoveryFrame=null;}};
+ const cleanup=()=>{if(disposed)return;disposed=true;observer.disconnect();document.removeEventListener('focusin',rememberFocus,true);if(initialFrame!==null)cancelAnimationFrame(initialFrame);if(recoveryFrame!==null)cancelAnimationFrame(recoveryFrame);initialFrame=recoveryFrame=null;recoveryCause=lastOwned=lastRemoval=recoveryRemoval=null;};
  const recover=()=>{
-   recoveryFrame=null;const cause=recoveryCause;recoveryCause=null;
+   recoveryFrame=null;const cause=recoveryCause,removal=recoveryRemoval;recoveryCause=recoveryRemoval=null;
    if(!owns()){cleanup();return;}
    if(!cause||lastOwned!==cause)return;
    const dialogs=[...document.querySelectorAll('[role="dialog"]')].filter(shown);
@@ -227,8 +246,14 @@ const MOUNT: &str = r#"function mountListCellEditor(generation,visit,rowId,colum
    if(active&&active!==document.body&&active.isConnected){
      if(!editor.contains(active)||enabled(active))return;
    }
+   let entityTarget=null;
+   if(removal&&removal.picker.isConnected&&editor.contains(removal.picker)){
+     const rows=[...removal.picker.querySelectorAll('['+removal.attribute+']')];
+     entityTarget=removal.ids.map(id=>{const matching=rows.filter(r=>r.getAttribute(removal.attribute)===id);return matching.length===1?matching[0].querySelector('button'):null;}).find(enabled);
+     if(!entityTarget&&removal.picker.contains(removal.query)&&enabled(removal.query))entityTarget=removal.query;
+   }
    const cancel=editor.querySelector('#slack-list-editor-cancel');
-   const target=enabled(cancel)?cancel:[...editor.querySelectorAll('button,input,select,textarea,[contenteditable=true]')].find(enabled)||(enabled(editor)?editor:null);
+   const target=entityTarget||(enabled(cancel)?cancel:[...editor.querySelectorAll('button,input,select,textarea,[contenteditable=true]')].find(enabled)||(enabled(editor)?editor:null));
    target?.focus({preventScroll:true});
  };
  const observer=new MutationObserver(records=>{
@@ -237,7 +262,8 @@ const MOUNT: &str = r#"function mountListCellEditor(generation,visit,rowId,colum
      if(!owns()){cleanup();return;}
      // oldValue records the disabling even if a no-op restores enabled before delivery/frame.
      const affected=lastOwned&&records.some(record=>record.type==='attributes'&&record.attributeName==='disabled'&&record.oldValue===null&&editor.contains(record.target)&&(record.target===lastOwned||record.target.contains(lastOwned)));
-     if(affected){recoveryCause=lastOwned;if(recoveryFrame===null)recoveryFrame=requestAnimationFrame(recover);}
+     const removed=lastOwned&&lastRemoval&&!editor.contains(lastOwned)&&records.some(record=>record.type==='childList'&&editor.contains(record.target)&&[...record.removedNodes].some(node=>node===lastOwned||node.contains(lastOwned)));
+     if(affected||removed){recoveryCause=lastOwned;recoveryRemoval=removed?lastRemoval:null;if(recoveryFrame===null)recoveryFrame=requestAnimationFrame(recover);}
    }
    if(editor.isConnected)return;cleanup();
    if(dialog.isConnected&&dialog.dataset.dialogGeneration===String(visit)&&!dialog.querySelector('#slack-list-cell-editor')){

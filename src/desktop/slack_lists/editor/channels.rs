@@ -16,7 +16,7 @@ pub(super) fn selected_labels(shell: &ShellState, ids: &[String]) -> Vec<Choice>
         })
         .collect()
 }
-fn eligible(channel: &Channel) -> bool {
+pub(super) fn eligible(channel: &Channel) -> bool {
     channel.id.len() >= 9
         && matches!(
             channel.id.as_bytes().first(),

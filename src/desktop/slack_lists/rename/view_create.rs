@@ -135,6 +135,7 @@ pub(super) fn open_available_shell(shell: &mut ShellState, serial: u64) -> Optio
     let view = shell.slack_lists.view.as_ref()?;
     let loaded = view.loaded.as_ref()?;
     let metadata = network::Metadata {
+        experiments: None,
         document: loaded.document.clone(),
         allow: loaded.allow_lists.clone(),
         personal: loaded.personal_task_lists.clone()?,

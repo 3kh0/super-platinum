@@ -15,6 +15,7 @@ pub(crate) mod delete;
 mod duplicate;
 mod editor;
 mod entity_edit;
+mod field_delete;
 mod field_visibility;
 mod find;
 mod horizontal;
@@ -36,6 +37,7 @@ mod view_sort;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     board_move::start(state, desktop.clone());
     find::start(state, desktop.clone());
+    field_delete::start(state, desktop.clone());
     field_visibility::start(state, desktop.clone());
     view_sort::start(state, desktop.clone());
     view_filter::start(state, desktop.clone());

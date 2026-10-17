@@ -9,6 +9,7 @@ import tempfile
 import time
 
 from canvas_evidence import audited_fixture, closed_receipts, png_signature
+import canvas_readiness
 from native_check import expected_viewport, field
 from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 
@@ -21,6 +22,7 @@ class CanvasCheck:
     counts: dict[str, int]
     stages: tuple[str, ...]
     private_files: tuple[tuple[str, str], ...] = ()
+    readiness: bool = False
 
 
 def private_checks(spec, directory):
@@ -98,8 +100,11 @@ def run(spec, fixture, binary, captures):
         with tempfile.TemporaryDirectory(prefix="sp-canvas-ack-") as directory:
             acknowledgments = Path(directory)
             checks = private_checks(spec, acknowledgments)
+            readiness = canvas_readiness.prepare(spec, fixture, acknowledgments, checks)
             native = NativeFixture(fixture, captures / f"{fixture}.log", binary, checks)
             with audited_fixture(native, evidence) as audit:
+                if readiness is not None:
+                    evidence["readiness"] = canvas_readiness.release(native, spec, acknowledgments, readiness)
                 deadline = time.monotonic() + 180
                 seen = 0
                 sampled = 0.
@@ -130,6 +135,8 @@ def run(spec, fixture, binary, captures):
                 audit.capture(screenshot, "final")
                 evidence["screenshot"] = str(screenshot)
             validate_closed(spec, fixture, native.log, evidence["stages"], evidence["native"])
+            if readiness is not None:
+                canvas_readiness.validate_closed(native.log, spec, evidence["readiness"])
             evidence["closedLogRevalidated"] = True
             for capture in evidence["captures"]:
                 png_signature(Path(capture["path"]), evidence.get("expectedPngDimensions"))

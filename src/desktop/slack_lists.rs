@@ -49,11 +49,15 @@ pub(crate) use super_platinum_core::slack_lists::{CellEditValue, saved_views::Pr
 #[cfg(test)]
 mod numeric_tests;
 mod presentation;
+pub(crate) mod rating;
+pub(crate) mod vote;
+pub(crate) use record_detail::toggle_vote as toggle_detail_vote;
 mod scope;
 #[cfg(test)]
 mod tests;
 pub(crate) use presentation::{
-    CellContent, CellView, ColumnView, Presentation, RowView, locale_changed, presentation,
+    CellContent, CellView, ColumnView, PeopleReference, Presentation, RowView, locale_changed,
+    presentation,
 };
 use scope::Scope;
 

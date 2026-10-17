@@ -1,6 +1,9 @@
 //! Explicit ordinary Text/Number/Checkbox/Date creation, retaining the exact item population.
 use super::*;
 use std::sync::Arc;
+pub(crate) mod entity;
+pub(crate) mod number;
+pub(crate) mod rating;
 pub(crate) mod select;
 use super_platinum_core::slack_lists::{
     ColumnCreate, ColumnCreateAttempt, ColumnCreateKind, ListError,
@@ -10,12 +13,14 @@ use super_platinum_core::slack_lists::{
 pub(crate) struct Choice {
     pub revision: u64,
     pub kind: ColumnCreateKind,
+    pub number_precision: super_platinum_core::slack_lists::NumberCreatePrecision,
 }
 impl Choice {
     pub(super) fn initial() -> Self {
         Self {
             revision: next_id(),
             kind: ColumnCreateKind::Text,
+            number_precision: Default::default(),
         }
     }
 }
@@ -30,7 +35,12 @@ pub(crate) fn label(kind: ColumnCreateKind) -> &'static str {
         ColumnCreateKind::NumberDefault0 => "Number",
         ColumnCreateKind::Checkbox => "Checkbox",
         ColumnCreateKind::DateSingleDefault => "Date",
+        ColumnCreateKind::PeopleSingleDefault => "People",
+        ColumnCreateKind::Link => "Link",
+        ColumnCreateKind::ChannelSingleDefault => "Channel",
         ColumnCreateKind::Select => "Select",
+        ColumnCreateKind::Rating => "Rating",
+        ColumnCreateKind::Vote => "Vote",
     }
 }
 fn parse_kind(value: &str) -> Option<ColumnCreateKind> {
@@ -39,7 +49,12 @@ fn parse_kind(value: &str) -> Option<ColumnCreateKind> {
         "number" => Some(ColumnCreateKind::NumberDefault0),
         "checkbox" => Some(ColumnCreateKind::Checkbox),
         "date" => Some(ColumnCreateKind::DateSingleDefault),
+        "user" => Some(ColumnCreateKind::PeopleSingleDefault),
+        "link" => Some(ColumnCreateKind::Link),
+        "channel" => Some(ColumnCreateKind::ChannelSingleDefault),
         "select" => Some(ColumnCreateKind::Select),
+        "rating" => Some(ColumnCreateKind::Rating),
+        "vote" => Some(ColumnCreateKind::Vote),
         _ => None,
     }
 }
@@ -49,7 +64,7 @@ pub(crate) struct Observed {
     pub key: String,
     pub name: String,
 }
-fn user(shell: &ShellState) -> Option<&str> {
+pub(super) fn user(shell: &ShellState) -> Option<&str> {
     let scope = shell
         .slack_lists
         .scope
@@ -199,9 +214,22 @@ fn change(
         // same rendered handler remain ordered even before the next render.
         if kind != e.field_choice.kind {
             e.select_draft = select::Draft::default();
+            e.entity_draft = entity::Draft::new(shell, kind);
+            e.rating_draft = if kind == ColumnCreateKind::Vote {
+                super_platinum_core::slack_lists::RatingOptions::capture(
+                    ":sparkling_heart:",
+                    1,
+                    None,
+                )
+                .expect("static Vote emoji")
+            } else {
+                Default::default()
+            };
+            e.rating_picker = None;
             e.field_choice = Choice {
                 revision: next_id(),
                 kind,
+                number_precision: Default::default(),
             };
         }
         true
@@ -255,6 +283,9 @@ pub(super) fn capture(
     entry: &registry::Entry,
     loaded: &Loaded,
 ) -> Result<Intent, ListError> {
+    if entry.target.is_deletion() {
+        return field_delete::capture(shell, entry, loaded);
+    }
     if let Target::NewTextField(view) = &entry.target {
         let Input::NewTextField(name) = &entry.input else {
             return Err(ListError("The field input changed."));
@@ -266,6 +297,38 @@ pub(super) fn capture(
         if loaded.records != *expected {
             return Err(ListError("The loaded items changed. Review a new field."));
         }
+        if entry.rating_picker.is_some() {
+            return Err(ListError("Close the emoji picker before creating a field."));
+        }
+        if entry.field_choice.kind == ColumnCreateKind::Vote {
+            return ColumnCreate::capture_vote(
+                &entry.original,
+                expected,
+                view,
+                name,
+                super_platinum_core::slack_lists::VoteOptions::capture(
+                    entry.rating_draft.emoji(),
+                    entry.rating_draft.team_id(),
+                )?,
+                user(shell).ok_or(ListError("The authenticated owner changed."))?,
+                loaded.allow_lists.as_deref(),
+                loaded.personal_task_lists.as_ref(),
+            )
+            .map(Intent::NewTextField);
+        }
+        if entry.field_choice.kind == ColumnCreateKind::Rating {
+            return ColumnCreate::capture_rating(
+                &entry.original,
+                expected,
+                view,
+                name,
+                entry.rating_draft.clone(),
+                user(shell).ok_or(ListError("The authenticated owner changed."))?,
+                loaded.allow_lists.as_deref(),
+                loaded.personal_task_lists.as_ref(),
+            )
+            .map(Intent::NewTextField);
+        }
         if entry.field_choice.kind == ColumnCreateKind::Select {
             return ColumnCreate::capture_select(
                 &entry.original,
@@ -273,6 +336,35 @@ pub(super) fn capture(
                 view,
                 name,
                 entry.select_draft.capture()?,
+                user(shell).ok_or(ListError("The authenticated owner changed."))?,
+                loaded.allow_lists.as_deref(),
+                loaded.personal_task_lists.as_ref(),
+            )
+            .map(Intent::NewTextField);
+        }
+        if entry.field_choice.kind == ColumnCreateKind::NumberDefault0 {
+            return ColumnCreate::capture_number(
+                &entry.original,
+                expected,
+                view,
+                name,
+                entry.field_choice.number_precision,
+                user(shell).ok_or(ListError("The authenticated owner changed."))?,
+                loaded.allow_lists.as_deref(),
+                loaded.personal_task_lists.as_ref(),
+            )
+            .map(Intent::NewTextField);
+        }
+        if matches!(
+            entry.field_choice.kind,
+            ColumnCreateKind::PeopleSingleDefault | ColumnCreateKind::ChannelSingleDefault
+        ) {
+            return ColumnCreate::capture_entity(
+                &entry.original,
+                expected,
+                view,
+                name,
+                entity::settings::capture(shell, entry)?,
                 user(shell).ok_or(ListError("The authenticated owner changed."))?,
                 loaded.allow_lists.as_deref(),
                 loaded.personal_task_lists.as_ref(),
@@ -304,7 +396,9 @@ pub(super) fn admit(
     intent: &Intent,
     fresh: &network::Metadata,
 ) -> Option<Permit> {
-    if let Intent::NewTextField(intent) = intent {
+    if let Intent::DeleteColumn(intent) = intent {
+        field_delete::admit(shell, intent, fresh)
+    } else if let Intent::NewTextField(intent) = intent {
         let records = &shell.slack_lists.view.as_ref()?.loaded.as_ref()?.records;
         ColumnCreateAttempt::new(intent.clone())
             .admit(

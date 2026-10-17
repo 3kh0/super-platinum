@@ -267,6 +267,15 @@ pub fn change(mut state: Signal<ShellState>, channel: String, ts: String, pinned
 }
 
 pub fn open(mut state: Signal<ShellState>, channel: String, message: Message) {
+    if crate::canvas_create::departure::request(
+        &mut state.write(),
+        crate::canvas_create::departure::Destination::Pinned {
+            channel: channel.clone(),
+            message: Box::new(message.clone()),
+        },
+    ) {
+        return;
+    }
     let Some(ts) = message.ts.clone() else {
         return;
     };
@@ -280,12 +289,13 @@ pub fn open(mut state: Signal<ShellState>, channel: String, message: Message) {
             .show_toast("This conversation is unavailable.");
         return;
     }
-    let (epoch, team, generation) = {
+    let (epoch, team, generation, shortcut) = {
         let shell = state.peek();
         (
             shell.core.account_epoch,
             shell.core.active_team.clone(),
             shell.channel_generation,
+            shell.shortcut_generation,
         )
     };
     dioxus::core::spawn_forever(async move {
@@ -295,6 +305,8 @@ pub fn open(mut state: Signal<ShellState>, channel: String, message: Message) {
             shell.core.account_epoch == epoch
                 && shell.core.active_team == team
                 && shell.channel_generation == generation
+                && shell.shortcut_generation == shortcut
+                && shell.overlay != Some(crate::state::Overlay::CanvasCreate)
         };
         if current {
             if let Some(root) = root {

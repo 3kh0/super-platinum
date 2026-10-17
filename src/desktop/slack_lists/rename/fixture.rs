@@ -1,11 +1,12 @@
 //! Exact named synthetic HTTP boundary. Same builders, positive decoder and reducers.
 use super::*;
+pub(crate) mod field_delete;
 mod filter;
 pub(crate) mod grouping;
 mod text_create;
 pub(crate) use text_create::select as select_create;
 pub(crate) use text_create::{
-    FieldCreateMode, field_create_check_enabled, field_create_mode, seed_text_create,
+    EntityCase, FieldCreateMode, field_create_check_enabled, field_create_mode, seed_text_create,
     seed_text_create_reopen, stale_text_create_file, text_create_custody, text_create_registry,
 };
 mod sort;
@@ -13,8 +14,13 @@ pub(crate) use filter::{
     compound_filter_check_enabled, filter_check_enabled, filter_registry_empty,
     number_filter_check_enabled, seed_filter, seed_filter_reopen, stale_filter_file,
 };
+#[cfg(test)]
+pub(crate) use sort::discard_sort_fixture;
 mod visibility;
-pub(crate) use sort::{seed_sort, seed_sort_reopen, sort_check_enabled, stale_sort_file};
+pub(crate) use sort::{
+    ordered_sort_check_enabled, seed_sort, seed_sort_reopen, sort_check_enabled,
+    sort_registry_empty, stale_sort_file,
+};
 use std::sync::{Mutex, OnceLock};
 use super_platinum_core::{
     config::WorkspaceSession,
@@ -133,7 +139,8 @@ pub(super) fn enabled(shell: &ShellState) -> bool {
         || sort_check_enabled()
         || filter_check_enabled()
         || grouping::check_enabled()
-        || field_create_check_enabled())
+        || field_create_check_enabled()
+        || field_delete::check_enabled())
         && super::super::fixture::enabled(shell)
         && shell.core.session.is_none()
         && shell.core.transport.is_none()
@@ -190,14 +197,21 @@ pub(super) async fn read(
     if !enabled(&state.peek()) || !guard.current(&state.peek(), stage) {
         return Err(Error::Api("fixture_retired".into()));
     }
+    let delete_policy = if field_delete::check_enabled() {
+        field_delete::policy_response(&request)?
+    } else {
+        None
+    };
     let path = record(request)?;
     let (raw, held) = {
         let mut l = ledger().lock().unwrap();
         let raw = match path.as_str() {
             "/api/files.info" => {
                 json!({"ok":true,"file":l.file_response(stage, precision_check_enabled() || number_rename_check_enabled() || visibility_check_enabled() || sort_check_enabled() || filter_check_enabled()
-        || grouping::check_enabled() || field_create_check_enabled())})
+        || grouping::check_enabled() || field_create_check_enabled() || field_delete::check_enabled())})
             }
+            "/api/experiments.getByUser" => delete_policy
+                .ok_or_else(|| Error::Api("fixture_delete_policy_not_configured".into()))?,
             "/api/team.prefs.get" => json!({"ok":true,"prefs":{"allow_lists":"full"}}),
             "/api/users.prefs.get" => {
                 json!({"ok":true,"prefs":{"task_lists":"[]","assigned_to_list":""}})
@@ -240,6 +254,9 @@ pub(super) async fn write(
         return Err(ListColumnRenameFailure::NotRequested(
             Error::TransportNotConfigured,
         ));
+    }
+    if permit.is_deletion() {
+        return field_delete::write(state, guard, permit).await;
     }
     // Exact owned Grouping adapter; static fixtures cannot dispatch.
     if permit.is_grouping() {
@@ -342,6 +359,7 @@ pub(super) fn finished(guard: &Guard, kind: &str, applied: bool) {
         || filter_check_enabled()
         || grouping::check_enabled()
         || field_create_check_enabled()
+        || field_delete::check_enabled()
     {
         ledger()
             .lock()
@@ -567,3 +585,10 @@ mod number_rename_tests {
 
 #[cfg(test)]
 pub(crate) use text_create::close_date_fixture;
+
+#[cfg(test)]
+pub(crate) use text_create::close_channel_fixture;
+#[cfg(test)]
+pub(crate) use text_create::close_link_fixture;
+#[cfg(test)]
+pub(crate) use text_create::close_people_fixture;

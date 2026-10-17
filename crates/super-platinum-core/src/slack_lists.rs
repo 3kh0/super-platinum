@@ -5,15 +5,22 @@ use std::collections::{BTreeMap, HashSet};
 
 mod cell_edit;
 mod column_create;
+mod rating;
+pub use rating::RatingOptions;
+mod vote;
+pub use vote::{MAX_VOTERS, VoteIntent, VoteOptions};
+mod column_delete;
 mod column_precision;
 mod column_rename;
+pub use column_delete::{ColumnDelete, ColumnDeleteAttempt, ColumnDeletePermit, ColumnDeletePhase};
 mod field_visibility;
 mod view_create;
 mod view_filter;
 mod view_grouping;
 pub use column_create::{
     ColumnCreate, ColumnCreateAttempt, ColumnCreateKind, ColumnCreatePermit, ColumnCreatePhase,
-    SelectCreateFormat, SelectCreateOption, SelectCreateOptions,
+    EntityCreateDefaults, EntityCreateDomain, EntityCreateFormat, EntityCreateOptions,
+    NumberCreatePrecision, SelectCreateFormat, SelectCreateOption, SelectCreateOptions,
 };
 mod view_rename;
 mod view_sort;

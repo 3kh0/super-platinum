@@ -12,7 +12,7 @@ pub(super) fn selected_labels(shell: &ShellState, ids: &[String]) -> Vec<EditorC
         })
         .collect()
 }
-fn eligible(user: &User) -> bool {
+pub(super) fn eligible(user: &User) -> bool {
     user.id.len() >= 9
         && matches!(user.id.as_bytes().first(), Some(b'U' | b'W'))
         && user

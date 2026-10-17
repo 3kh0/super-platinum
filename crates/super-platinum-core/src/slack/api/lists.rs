@@ -4,8 +4,10 @@ use crate::slack_lists::{CellEdit, CheckboxEdit, Document, PersonalTaskLists, Re
 use serde_json::Value;
 
 mod column_create;
+mod column_delete;
 mod column_precision;
 mod column_rename;
+pub use column_delete::*;
 mod field_visibility;
 mod view_filter;
 mod view_grouping;

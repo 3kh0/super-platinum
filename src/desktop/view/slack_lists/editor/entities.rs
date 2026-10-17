@@ -51,18 +51,42 @@ pub(super) fn EntityPicker(
                 }
             }
         }
+        DirectoryChoices {kind,directory,selected:selected.read().clone(),multi,disabled,input_name:input_name.to_owned(),toggle_single:false,
+            activate:move |(id,label,checked):(String,String,bool)|{
+                labels.write().insert(id.clone(),label);
+                if multi {let mut values=selected.write();values.retain(|value|value!=&id);if checked{values.push(id);}}
+                else {selected.set(vec![id]);}
+            }}
+        p{class:"slack-list-editor-hint","Changes are applied when you save."}
+    }}
+}
+
+/// Shared labelled directory surface; owner adapters supply admission and changes.
+/// Ordinary cell radio change remains unchanged. Creation can activate a selected
+/// radio again because its source callback uses full stored-default equality.
+#[component]
+pub(crate) fn DirectoryChoices(
+    kind: crate::slack_lists::entities::Kind,
+    directory: crate::slack_lists::entities::Presentation,
+    selected: Vec<String>,
+    multi: bool,
+    disabled: bool,
+    input_name: String,
+    toggle_single: bool,
+    activate: EventHandler<(String, String, bool)>,
+) -> Element {
+    let users = kind == crate::slack_lists::entities::Kind::Users;
+    rsx! {
         fieldset {disabled,legend{if users {if multi{"Choose people"}else{"Choose a person"}}else {if multi{"Choose channels"}else{"Choose a channel"}}}
             div{class:"slack-list-user-results","aria-busy":directory.loading,
                 for choice in directory.candidates.iter() {
                     {
-                        let id=choice.id.clone();let label=choice.label.clone();let checked=selected.read().contains(&id);
+                        let id=choice.id.clone();let click_id=id.clone();let label=choice.label.clone();let click_label=label.clone();let checked=selected.contains(&id);
                         rsx! {label{class:"slack-list-choice",key:"candidate-{choice.id}",
-                            input{r#type:if multi{"checkbox"}else{"radio"},name:input_name,value:"{choice.id}",checked,
-                                onchange:move |event|{
-                                    labels.write().insert(id.clone(),label.clone());
-                                    if multi {let mut values=selected.write();values.retain(|value|value!=&id);if event.checked(){values.push(id.clone());}}
-                                    else {selected.set(vec![id.clone()]);}
-                                }}span{"{choice.label}"}
+                            input{r#type:if multi{"checkbox"}else{"radio"},name:input_name.clone(),value:"{choice.id}",checked,
+                                onclick:move |_|{if toggle_single&&!multi{activate.call((click_id.clone(),click_label.clone(),true));}},
+                                onchange:move |event|{if multi||!toggle_single{activate.call((id.clone(),label.clone(),event.checked()));}}}
+                            span{"{choice.label}"}
                         }}
                     }
                 }
@@ -71,6 +95,8 @@ pub(super) fn EntityPicker(
         }
         if directory.loading{p{class:"slack-list-editor-hint",role:"status","Searching…"}}
         if let Some(error)=directory.error{p{class:"slack-list-error",role:"status","{error}"}}
-        p{class:"slack-list-editor-hint","Changes are applied when you save."}
-    }}
+    }
 }
+
+#[cfg(test)]
+mod choice_tests;

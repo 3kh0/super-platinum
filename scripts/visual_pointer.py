@@ -34,6 +34,11 @@ class WindowsPointerIO:
         for name, args, result in (
             ("GetCursorPos", [ctypes.POINTER(W.POINT)], W.BOOL),
             ("SetCursorPos", [ctypes.c_int, ctypes.c_int], W.BOOL),
+            ("GetPhysicalCursorPos", [ctypes.POINTER(W.POINT)], W.BOOL),
+            ("GetClipCursor", [ctypes.POINTER(W.RECT)], W.BOOL),
+            ("GetThreadDesktop", [W.DWORD], W.HANDLE),
+            ("GetUserObjectInformationW", [W.HANDLE, ctypes.c_int, ctypes.c_void_p,
+                                            W.DWORD, ctypes.POINTER(W.DWORD)], W.BOOL),
             ("WindowFromPoint", [W.POINT], W.HWND),
             ("SendMessageTimeoutW", [W.HWND, W.UINT, ctypes.c_size_t,
                                     ctypes.c_ssize_t, W.UINT, W.UINT,
@@ -48,6 +53,36 @@ class WindowsPointerIO:
             if not self.user.GetCursorPos(ctypes.byref(point)):
                 raise ctypes.WinError(ctypes.get_last_error())
             return point.x, point.y
+
+    def physical_position(self):
+        # Match position/clip probes' thread context; retain the raw API value.
+        with _physical_pixels(self.user):
+            point = W.POINT()
+            if not self.user.GetPhysicalCursorPos(ctypes.byref(point)):
+                raise ctypes.WinError(ctypes.get_last_error())
+            return point.x, point.y
+
+    def clip_rect(self):
+        with _physical_pixels(self.user):
+            rect = W.RECT()
+            if not self.user.GetClipCursor(ctypes.byref(rect)):
+                raise ctypes.WinError(ctypes.get_last_error())
+            return rect.left, rect.top, rect.right, rect.bottom
+
+    def input_desktop(self):
+        # UOI_IO=6 reads whether this thread's desktop currently receives input.
+        # The borrowed GetThreadDesktop handle must not be closed or switched.
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.GetCurrentThreadId.argtypes = []
+        kernel.GetCurrentThreadId.restype = W.DWORD
+        desktop = self.user.GetThreadDesktop(kernel.GetCurrentThreadId())
+        if not desktop:
+            raise ctypes.WinError(ctypes.get_last_error())
+        active, needed = W.BOOL(), W.DWORD()
+        if not self.user.GetUserObjectInformationW(desktop, 6, ctypes.byref(active),
+                                                   ctypes.sizeof(active), ctypes.byref(needed)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        return bool(active.value)
 
     def move(self, point):
         with _physical_pixels(self.user):
@@ -107,7 +142,41 @@ class FixturePointer:
         if self.placed != point:
             # Do not later overwrite an unexpected position (clipping or user input).
             self.data["movement_observed"] = True
+            self._diagnose_placement()
             raise RuntimeError("Pointer placement differed from requested title bar point")
+
+    def _diagnose_placement(self):
+        # Failure-only observations: never retry movement or convert a late
+        # target sample into success. A failed probe cannot hide other probes.
+        diagnostic = {"acceptance_unchanged": True, "samples": [],
+                      "scheduled_seconds": [0, .02, .1, .25],
+                      "probes": {
+                          "position": {"api": "GetCursorPos", "thread_dpi_context": "PER_MONITOR_AWARE_V2"},
+                          "physical_position": {"api": "GetPhysicalCursorPos", "thread_dpi_context": "PER_MONITOR_AWARE_V2"},
+                          "clip_rect_ltrb": {"api": "GetClipCursor", "thread_dpi_context": "PER_MONITOR_AWARE_V2"},
+                          "thread_desktop_receives_input": {"api": "GetThreadDesktop/GetUserObjectInformationW(UOI_IO)",
+                                                            "thread_dpi_context": "ambient"}}}
+        self.data["placement_diagnostic"] = diagnostic
+        try:
+            started = time.monotonic()
+            for offset in diagnostic["scheduled_seconds"]:
+                remaining = started + offset - time.monotonic()
+                if remaining > 0:
+                    time.sleep(remaining)
+                sample = {"elapsed_seconds": time.monotonic() - started}
+                diagnostic["samples"].append(sample)
+                for name, method in (("position", "position"),
+                                     ("physical_position", "physical_position"),
+                                     ("clip_rect_ltrb", "clip_rect"),
+                                     ("thread_desktop_receives_input", "input_desktop")):
+                    try:
+                        sample[name] = {"ok": True, "value": getattr(self.io, method)()}
+                    except Exception as error:
+                        sample[name] = {"ok": False, "error_type": type(error).__name__,
+                                        "error": str(error)}
+        except Exception as error:
+            diagnostic["error_type"] = type(error).__name__
+            diagnostic["error"] = str(error)
 
     def check(self, stage, require_clear=False):
         position = self.io.position()

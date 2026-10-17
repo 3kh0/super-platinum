@@ -254,3 +254,5 @@ fn wrong_type_or_options_readback_is_current_conflict_and_cannot_rearm_number_wr
         assert!(close_entry(&s, g.serial));
     }
 }
+
+mod precision;

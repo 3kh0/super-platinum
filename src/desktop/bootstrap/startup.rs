@@ -29,6 +29,7 @@ pub(crate) async fn initialize(mut state: Signal<ShellState>) {
         {
             let mut previous = state.write();
             crate::read_preferences::settings::carry_pending(&mut previous, &mut loaded);
+            crate::canvas_create::carry_pending(&mut previous, &mut loaded);
             *previous = loaded;
         }
         crate::performance::record(crate::performance::StartupStage::CacheLoaded);

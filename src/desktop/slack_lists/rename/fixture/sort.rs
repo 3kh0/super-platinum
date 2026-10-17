@@ -8,11 +8,34 @@ pub(crate) fn sort_check_enabled() -> bool {
         std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
     )
 }
+pub(crate) fn ordered_sort_check_enabled() -> bool {
+    sort_check_enabled()
+        && matches!(
+            std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
+            Ok("slack-list-ordered-sort" | "slack-list-ordered-sort-narrow")
+        )
+}
+pub(crate) fn sort_registry_empty(shell: &ShellState) -> bool {
+    entry(shell).is_none()
+}
+#[cfg(test)]
+pub(crate) fn discard_sort_fixture(shell: &ShellState) {
+    let e = entry(shell).expect("Owned Sort fixture editor");
+    assert_eq!(e.target, Target::Sort("V_SORT".into()));
+    assert_eq!(e.stage, Stage::Editing);
+    assert!(close_entry(shell, e.serial));
+    assert!(entry(shell).is_none());
+}
 fn gate(flag: Option<&str>, alias: Option<&str>) -> bool {
     flag == Some("1")
         && matches!(
             alias,
-            Some("slack-list-view-sort" | "slack-list-view-sort-narrow")
+            Some(
+                "slack-list-view-sort"
+                    | "slack-list-view-sort-narrow"
+                    | "slack-list-ordered-sort"
+                    | "slack-list-ordered-sort-narrow"
+            )
         )
 }
 pub(crate) fn seed_sort(shell: &ShellState, server: Value) {
@@ -99,6 +122,21 @@ fn seed_reopened(
     Ok(())
 }
 fn vector(index: usize) -> Option<Value> {
+    if ordered_sort_check_enabled() {
+        return ordered_vector(index);
+    }
+    legacy_vector(index)
+}
+fn ordered_vector(index: usize) -> Option<Value> {
+    match index {
+        0 => Some(json!([{"key":"done","ascending":true},{"key":"estimate","ascending":false}])),
+        1 => Some(json!([{"key":"estimate","ascending":false},{"key":"done","ascending":true}])),
+        2 => Some(json!([{"key":"estimate","ascending":false}])),
+        3 => Some(json!([])),
+        _ => None,
+    }
+}
+fn legacy_vector(index: usize) -> Option<Value> {
     match index {
         0 => Some(json!([{"key":"estimate","ascending":true}])),
         1 => Some(json!([{"key":"estimate","ascending":false}])),
@@ -216,7 +254,12 @@ mod tests {
     use super::*;
     #[test]
     fn only_exact_opted_in_aliases_enable_sort_executor() {
-        for alias in ["slack-list-view-sort", "slack-list-view-sort-narrow"] {
+        for alias in [
+            "slack-list-view-sort",
+            "slack-list-view-sort-narrow",
+            "slack-list-ordered-sort",
+            "slack-list-ordered-sort-narrow",
+        ] {
             assert!(gate(Some("1"), Some(alias)));
             for flag in [None, Some("true"), Some("0"), Some("")] {
                 assert!(!gate(flag, Some(alias)));
@@ -235,7 +278,7 @@ mod tests {
         let before = json!({"id":"F_LIST_FIXTURE","opaque":7,"list_metadata":{"schema":[{"id":"C_NUMBER","key":"estimate","type":"number"}],"views":[{"id":"V_SORT","sorts":[],"filters":[],"columns":[{"id":"C_NUMBER","visible":true}],"opaque":false},{"id":"other","sorts":[{"key":"other","ascending":true}]}]}});
         let mut server = before.clone();
         for index in 0..3 {
-            let desired = vector(index).unwrap();
+            let desired = legacy_vector(index).unwrap();
             set_sort(&mut server, desired.clone()).unwrap();
             assert_eq!(server["list_metadata"]["views"][0]["sorts"], desired);
             let mut restored = server.clone();
@@ -243,7 +286,28 @@ mod tests {
             assert_eq!(restored, before);
         }
         assert_eq!(server, before);
-        assert!(vector(3).is_none());
+        assert!(legacy_vector(3).is_none());
+    }
+    #[test]
+    fn ordered_executor_vectors_keep_priorities_and_unrelated_metadata_exact() {
+        let before = json!({"id":"F_LIST_FIXTURE","opaque":7,"list_metadata":{"schema":[{"id":"C_NUMBER","key":"estimate","type":"number"},{"id":"C_CHECK","key":"done","type":"checkbox"}],"views":[{"id":"V_SORT","sorts":[],"filters":[],"grouping":{},"opaque":false},{"id":"other","sorts":[{"key":"other","ascending":true}]}]}});
+        let expected = [
+            json!([{"key":"done","ascending":true},{"key":"estimate","ascending":false}]),
+            json!([{"key":"estimate","ascending":false},{"key":"done","ascending":true}]),
+            json!([{"key":"estimate","ascending":false}]),
+            json!([]),
+        ];
+        let mut server = before.clone();
+        for (index, want) in expected.iter().enumerate() {
+            let actual = ordered_vector(index).unwrap();
+            assert_eq!(&actual, want);
+            set_sort(&mut server, actual).unwrap();
+            let mut restored = server.clone();
+            restored["list_metadata"]["views"][0]["sorts"] = json!([]);
+            assert_eq!(restored, before);
+        }
+        assert_eq!(server, before);
+        assert!(ordered_vector(4).is_none());
     }
     #[test]
     fn replacement_seed_keeps_full_canonical_population_and_active_find_before_retired_read() {
@@ -294,6 +358,7 @@ mod tests {
             &write,
             &intent,
             &network::Metadata {
+                experiments: None,
                 document: saved.document.clone(),
                 allow: saved.allow_lists.clone(),
                 personal: saved.personal_task_lists.clone().unwrap(),
@@ -316,7 +381,7 @@ mod tests {
         let old_visit = generation(&shell).unwrap();
         let old_selection = selection(&shell).unwrap();
         let mut changed = saved.document.raw.clone();
-        set_sort(&mut changed, vector(0).unwrap()).unwrap();
+        set_sort(&mut changed, legacy_vector(0).unwrap()).unwrap();
         crate::slack_lists::close_shell(&mut shell);
         shell.core.account_epoch += 1;
         assert!(crate::slack_lists::open_shell(
@@ -370,6 +435,7 @@ mod tests {
             &mut shell,
             &guard,
             Ok(network::Metadata {
+                experiments: None,
                 document: Document::parse(changed).unwrap(),
                 allow: saved.allow_lists.clone(),
                 personal: saved.personal_task_lists.clone().unwrap()

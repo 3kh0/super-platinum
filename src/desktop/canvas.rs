@@ -1,6 +1,7 @@
 //! Native canvas reading. Editing and collaborative updates need Slack's
 //! separate document protocol; the reader never converts exports into writes.
 pub(crate) mod checklist;
+pub(crate) mod comments;
 mod loader;
 use loader::load;
 pub(crate) mod text;
@@ -33,6 +34,12 @@ pub fn open(mut state: Signal<ShellState>, file: File) {
     open_target(state, target);
 }
 pub fn open_target(mut state: Signal<ShellState>, target: CanvasTarget) {
+    if crate::canvas_create::departure::request(
+        &mut state.write(),
+        crate::canvas_create::departure::Destination::Canvas(target.clone()),
+    ) {
+        return;
+    }
     let mut shell = state.write();
     if shell
         .core
@@ -111,6 +118,14 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
             }
         } else {
             Reader::default()
+        }
+    });
+    let comments = use_signal(comments::State::default);
+    let mut comments_open = use_signal(comments::fixture::requested);
+    comments::focus::use_focus(state, comments, comments_open);
+    use_future(move || async move {
+        if comments::fixture::requested() {
+            comments::open(state, comments);
         }
     });
     // Fixture/backend completions can update canonical state without owning the
@@ -241,9 +256,12 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
         .clone()
         .unwrap_or_else(|| target.title.clone());
     let rename_title = title.clone();
-    let editing =
-        rename.read().is_some() || text_draft.read().is_some() || local_review.read().is_some();
-    let block_refresh = local_review.read().is_some()
+    let editing = rename.read().is_some()
+        || text_draft.read().is_some()
+        || local_review.read().is_some()
+        || *comments_open.read();
+    let block_refresh = *comments_open.read()
+        || local_review.read().is_some()
         || rename.read().is_some()
         || text_draft
             .read()
@@ -274,6 +292,7 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
             nav {class:"canvas-toolbar","aria-label":"Canvas actions",
                 span {class:"canvas-status",if text_draft.read().is_some() {"Editing paragraph"} else if loading {"Loading…"} else {"Read view"}}
                 span {class:"spacer"}
+                button {id:"canvas-comments-open","data-canvas-comment-action":"open",disabled:editing||writing,onclick:move |_|{comments_open.set(true);comments::open(state,comments);},"Show all threads"}
                 if snapshot.editable {button {disabled:refreshing||editing||checklist_pending||canonical.as_ref().is_some_and(|view|view.stale),onclick:move |_|{if text_draft.peek().is_none() && checklist::presentation(&state.peek()).is_none_or(|view|view.operation.is_none()&&!view.loading&&!view.stale) && !reader.peek().loading {rename.set(Some(RenameDraft{base:rename_title.clone(),input:rename_title.clone(),busy:false,error:None}));}},"Rename"}}
                 if local_review_available {button {disabled:refreshing||editing,onclick:move |_|checklist::recovery::review::open(state,reader,review_target.clone(),local_review),"Review saved change"}}
                 button {disabled:refreshing||block_refresh||writing,onclick:move |_|{spawn(load(state,reader,refresh.clone()));},"Refresh"}
@@ -281,6 +300,7 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
             }
             if let Some(notice) = notice {p {class:"canvas-status",role:"status", "{notice}"}}
             if rename.read().is_some() {RenameForm {state,reader,draft:rename,target:rename_target}}
+            if *comments_open.read() {comments::Panel {state,model:comments,opened:comments_open}} else {
             div {class:"canvas-scroll","aria-busy":loading,
                 if local_review.read().is_some() {checklist::recovery::review::Panel {state,draft:local_review}}
                 if let Some(error)=snapshot.error.as_ref() {div {class:"canvas-error",role:"alert",p {"{error}"}button {disabled:refreshing||block_refresh||writing,onclick:move |_|{spawn(load(state,reader,retry.clone()));},"Retry"}}}
@@ -295,6 +315,7 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
                 } else if loading {
                     div {class:"canvas-skeleton",role:"status","aria-label":"Loading canvas",div {}div {}div {}div {}}
                 }
+            }
             }
         }
     }

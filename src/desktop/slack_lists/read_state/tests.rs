@@ -112,6 +112,7 @@ fn recovered_feature_flags_start_only_the_unattempted_personal_default_request()
     assert_eq!(claim(view), Some((true, false)));
     assert_eq!(claim(view), None);
     view.loaded.as_mut().unwrap().list_experiments = Some(api::ListExperiments {
+        schema_owner_only: false,
         grid_todos: true,
         todos: false,
         todos_rollback: false,

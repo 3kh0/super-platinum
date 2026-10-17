@@ -186,6 +186,29 @@ fn field(
         rsx! {span{class:"slack-list-cell-text","{item}"}}
     } else {
         match &cell.content {
+            crate::slack_lists::CellContent::Vote {
+                count,
+                voted,
+                tooltip,
+                glyph,
+            } => super::vote::control(
+                state,
+                *count,
+                *voted,
+                tooltip,
+                glyph,
+                media_epoch,
+                true,
+                true,
+                false,
+                || {},
+            ),
+            crate::slack_lists::CellContent::Rating { value, max, glyph } => {
+                super::rating::display(state, *value, *max, glyph, false, media_epoch)
+            }
+            crate::slack_lists::CellContent::People(people) => {
+                rsx! {super::people::PeopleAvatars{state,people:people.clone(),media_epoch}}
+            }
             crate::slack_lists::CellContent::Plain => {
                 rsx! {span{class:"slack-list-cell-text","{cell.text}"}}
             }

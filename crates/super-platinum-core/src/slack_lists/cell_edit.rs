@@ -19,11 +19,15 @@ mod value;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CellEditValue {
+    /// Readback/presentation only; generic capture cannot assign voters.
+    Votes(Vec<String>),
     /// Ordinary Link cell content; storage does not authorize opening its URL.
     Link(Option<LinkValue>),
     Boolean(bool),
     RichText(Vec<Value>),
     Number(Option<Number>),
+    /// Ordinary Rating; missing/empty is distinct from a stored numeric zero.
+    Rating(Option<u8>),
     Select(Vec<String>),
     /// Ordinary User-column identities; personal To-do assignees use another protocol.
     Users(Vec<String>),
@@ -60,6 +64,19 @@ impl From<CheckboxEdit> for CellEdit {
 }
 
 impl Column {
+    /// Vote admission is separate from generic assignment and uses current-user intent.
+    pub fn vote_value(
+        &self,
+        record: &Record,
+        list_id: &str,
+        personal: Option<&PersonalTaskLists>,
+    ) -> Result<Vec<String>, ListError> {
+        if self.kind != "vote" {
+            return Err(ListError("This field is not an ordinary Vote."));
+        }
+        value::eligible(self, record, list_id, personal)?;
+        super::vote::read(self, record)
+    }
     /// Current Select columns store cardinality in options.format; older
     /// schemas may use the dedicated multi_select type (captured jHPH/FieldRenderer).
     pub fn is_multi_select(&self) -> bool {
@@ -87,7 +104,7 @@ impl Column {
         list_id: &str,
         personal_tasks: Option<&PersonalTaskLists>,
     ) -> bool {
-        value::eligible(self, record, list_id, personal_tasks).is_ok()
+        self.kind != "vote" && value::eligible(self, record, list_id, personal_tasks).is_ok()
     }
     /// Exact editor seed. Opaque rich nodes remain present, never plain-text flattened.
     pub fn edit_value(
@@ -96,6 +113,9 @@ impl Column {
         list_id: &str,
         personal_tasks: Option<&PersonalTaskLists>,
     ) -> Result<CellEditValue, ListError> {
+        if self.kind == "vote" {
+            return Err(ListError("Votes use the own-user control."));
+        }
         value::eligible(self, record, list_id, personal_tasks)?;
         value::read(self, record)
     }
@@ -111,6 +131,11 @@ impl CellEdit {
         personal_tasks: Option<&PersonalTaskLists>,
         desired: CellEditValue,
     ) -> Result<Self, ListError> {
+        if document.column(column_id).is_some_and(|c| c.kind == "vote")
+            || matches!(&desired, CellEditValue::Votes(_))
+        {
+            return Err(ListError("Votes require an authenticated own-user intent."));
+        }
         if let CellEditValue::Boolean(checked) = desired {
             // The generic editor still requires a stored boolean. Only the
             // dedicated checkbox input admits the first toggle from absence.
@@ -158,6 +183,42 @@ impl CellEdit {
                 record: record.raw.clone(),
                 column: column.raw.clone(),
                 value: desired,
+            },
+        })
+    }
+    /// Captures one own-user change. Never accepts an arbitrary desired voter array.
+    /// The host must bind authenticated_user to its current scope through dispatch.
+    pub fn capture_vote(
+        document: &Document,
+        page: &RecordsPage,
+        record_id: &str,
+        column_id: &str,
+        allow_lists: Option<&str>,
+        personal_tasks: Option<&PersonalTaskLists>,
+        authenticated_user: &str,
+        intent: super::VoteIntent,
+    ) -> Result<Self, ListError> {
+        if let Some(reason) = document.read_only_reason(allow_lists) {
+            return Err(ListError(reason));
+        }
+        let column = document
+            .column(column_id)
+            .ok_or(ListError("This Vote column is unavailable."))?;
+        let record = page
+            .record(record_id)
+            .ok_or(ListError("This Vote item is unavailable."))?;
+        let voters = column.vote_value(record, &document.id, personal_tasks)?;
+        let desired = super::vote::desired(voters, authenticated_user, intent)?;
+        Ok(Self {
+            inner: Edit::Typed {
+                list_id: document.id.clone(),
+                record_id: record.id.clone(),
+                column_id: column.id.clone(),
+                column_key: column.key.clone(),
+                document: document.raw.clone(),
+                record: record.raw.clone(),
+                column: column.raw.clone(),
+                value: CellEditValue::Votes(desired),
             },
         })
     }

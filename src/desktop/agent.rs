@@ -85,7 +85,9 @@ pub async fn serve(
     crate::message_buttons::conversation_check::start(state, desktop.clone());
     crate::message_buttons::time_check::start(state, desktop.clone());
     crate::message_buttons::multi_check::start(state, desktop.clone());
+    crate::canvas_create::fixture::check::start(state, desktop.clone());
     crate::canvas::checklist::check::start(state, desktop.clone());
+    crate::canvas::comments::check::start(state, desktop.clone());
     crate::file_actions::attachment::check::start(state, desktop.clone());
     crate::canvas::text::check::start(state, desktop.clone());
     crate::canvas::text::structure_check::start(state, desktop.clone());
@@ -331,6 +333,15 @@ async fn dispatch(
             let signal = *state;
             {
                 let mut shell = state.write();
+                if crate::canvas_create::departure::request(
+                    &mut shell,
+                    crate::canvas_create::departure::Destination::SearchQuery(query.clone()),
+                ) {
+                    return AgentResponse::ok(
+                        id,
+                        json!({"search_active":false,"canvas_save_pending":true}),
+                    );
+                }
                 shell.replace_search_query(query.clone());
                 shell.overlay = Some(Overlay::Search);
             }
@@ -343,17 +354,30 @@ async fn dispatch(
         }
         AgentCommand::OpenSettings { section } => {
             let mut shell = state.write();
-            shell.settings_section = match section.unwrap_or(AgentSettingsSection::Appearance) {
+            let section = match section.unwrap_or(AgentSettingsSection::Appearance) {
                 AgentSettingsSection::Appearance => crate::state::SettingsSection::Appearance,
                 AgentSettingsSection::Notifications => crate::state::SettingsSection::Notifications,
                 AgentSettingsSection::Reading => crate::state::SettingsSection::Reading,
                 AgentSettingsSection::Storage => crate::state::SettingsSection::Storage,
             };
+            if crate::canvas_create::departure::request(
+                &mut shell,
+                crate::canvas_create::departure::Destination::Settings(section),
+            ) {
+                return AgentResponse::ok(
+                    id,
+                    json!({"settings_open":false,"canvas_save_pending":true}),
+                );
+            }
+            shell.settings_section = section;
             shell.overlay = Some(Overlay::Settings);
             AgentResponse::ok(id, json!({ "settings_open": true }))
         }
         AgentCommand::CloseSettings => {
-            state.write().overlay = None;
+            let mut shell = state.write();
+            if shell.overlay == Some(Overlay::Settings) {
+                shell.dismiss_overlay();
+            }
             AgentResponse::ok(id, json!({ "closed": true }))
         }
         AgentCommand::CloseProfile => {

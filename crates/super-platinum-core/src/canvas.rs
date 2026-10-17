@@ -2,6 +2,8 @@
 //! No server HTML, styles, event attributes, or executable elements reach the renderer.
 use scraper::{ElementRef, Html, Node, Selector};
 
+pub mod comments;
+pub mod creation;
 pub mod edit;
 pub mod wire;
 

@@ -41,6 +41,7 @@ fn metadata(s: &ShellState, name: Option<&str>) -> network::Metadata {
         raw["list_metadata"]["schema"][0]["name"] = json!(name);
     }
     network::Metadata {
+        experiments: loaded.list_experiments,
         document: Document::parse(raw).unwrap(),
         allow: Some("full".into()),
         personal: loaded.personal_task_lists.clone().unwrap(),
@@ -501,3 +502,5 @@ fn bounded_registry_isolates_test_threads_and_retains_each_ui_instance() {
 }
 
 mod grouping;
+
+mod field_delete;

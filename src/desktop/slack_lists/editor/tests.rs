@@ -503,3 +503,5 @@ fn new_rich_cell_server_block_id_confirms_readback_and_closes_editor() {
     assert!(shell.slack_lists.operations.is_empty());
     assert_eq!(attempt.edit.cells()[0]["rich_text"], json!(blocks));
 }
+
+mod rating;

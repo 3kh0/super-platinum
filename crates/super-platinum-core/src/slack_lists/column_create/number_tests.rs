@@ -272,3 +272,5 @@ fn number_admission_keeps_owner_capacity_guards_and_never_rearms() {
         );
     }
 }
+
+mod precision;

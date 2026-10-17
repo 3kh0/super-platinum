@@ -13,6 +13,7 @@ pub(crate) enum EditorKind {
     BoardMove,
     RichText,
     Number,
+    Rating,
     Date,
     Link,
     Select,
@@ -37,6 +38,7 @@ pub(crate) struct EditorView {
     pub column_label: String,
     pub kind: EditorKind,
     pub original: Arc<CellEditValue>,
+    pub rating: Option<super_platinum_core::slack_lists::RatingOptions>,
     pub link_name_seed: String,
     pub choices: Arc<Vec<EditorChoice>>,
     pub directory: entities::Presentation,
@@ -60,6 +62,7 @@ pub(super) struct Draft {
     column_label: String,
     kind: EditorKind,
     original: Arc<CellEditValue>,
+    rating: Option<super_platinum_core::slack_lists::RatingOptions>,
     link_name_seed: String,
     choices: Arc<Vec<EditorChoice>>,
     directory: entities::State,
@@ -102,6 +105,7 @@ pub(super) fn presentation(shell: &ShellState) -> Option<EditorView> {
         column_label: draft.column_label.clone(),
         kind: draft.kind,
         original: draft.original.clone(),
+        rating: draft.rating.clone(),
         link_name_seed: draft.link_name_seed.clone(),
         choices: draft.choices.clone(),
         directory: draft.directory.presentation(),
@@ -189,6 +193,7 @@ pub(super) fn begin_with_authority(
         match column.kind.as_str() {
             "text" | "rich_text" => EditorKind::RichText,
             "number" | "currency" => EditorKind::Number,
+            "rating" => EditorKind::Rating,
             "date" | "due_date" | "todo_due_date" => EditorKind::Date,
             "select" | "multi_select" if column.is_multi_select() => EditorKind::MultiSelect,
             "select" => EditorKind::Select,
@@ -269,6 +274,14 @@ pub(super) fn begin_with_authority(
             .get(&column.key)
             .and_then(|field| field.get("link")),
     );
+    let rating = if kind == EditorKind::Rating {
+        Some(
+            super_platinum_core::slack_lists::RatingOptions::from_column(column)
+                .map_err(|_| "This Rating configuration cannot be safely edited.")?,
+        )
+    } else {
+        None
+    };
     let draft = Draft {
         generation: next_id(),
         visit,
@@ -283,6 +296,7 @@ pub(super) fn begin_with_authority(
         column_label: column.name.clone(),
         kind,
         original: Arc::new(original),
+        rating,
         link_name_seed,
         choices: Arc::new(choices),
         directory,

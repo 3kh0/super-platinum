@@ -11,11 +11,31 @@ use super_platinum_core::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct PeopleReference {
+    pub user_id: String,
+    pub label: String,
+    pub known: bool,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum CellContent {
     Plain,
-    Timestamp { tooltip: String },
+    Timestamp {
+        tooltip: String,
+    },
     Rich(Vec<RichNode>),
     Labels(Vec<String>),
+    Rating {
+        value: u8,
+        max: u8,
+        glyph: RichNode,
+    },
+    Vote {
+        count: usize,
+        voted: bool,
+        tooltip: String,
+        glyph: RichNode,
+    },
+    People(Vec<PeopleReference>),
 }
 
 pub(super) fn project(
@@ -51,6 +71,12 @@ pub(super) fn project(
             CellContent::Plain,
         );
     }
+    if let Some(vote) = super::super::vote::project(workspace, media, column, record) {
+        return vote;
+    }
+    if let Some(rating) = super::super::rating::project(workspace, media, column, record) {
+        return rating;
+    }
     let presentation = column.presentation(record);
     let fallback = presentation.plain_text();
     match presentation {
@@ -83,6 +109,13 @@ pub(super) fn project(
                 return (fallback, CellContent::Plain);
             }
             let ctx = BlockCtx::new(workspace, media);
+            let avatar_only = column.kind == "user"
+                && column
+                    .raw
+                    .get("options")
+                    .and_then(|o| o.get("show_member_name"))
+                    == Some(&Value::Bool(false));
+            let mut people = Vec::new();
             let mut nodes = Vec::new();
             for id in ids {
                 if !nodes.is_empty() {
@@ -97,11 +130,18 @@ pub(super) fn project(
                     }
                     _ => None,
                 };
-                if let Some(raw) = raw {
-                    nodes.extend(block_nodes(ctx, &raw));
-                } else {
-                    nodes.push(RichNode::Text(id));
+                let known = raw.is_some();
+                let item = raw
+                    .map(|raw| block_nodes(ctx, &raw))
+                    .unwrap_or_else(|| vec![RichNode::Text(id.clone())]);
+                if avatar_only {
+                    people.push(PeopleReference {
+                        user_id: id,
+                        label: item.iter().map(RichNode::plain_text).collect(),
+                        known,
+                    });
                 }
+                nodes.extend(item);
             }
             let text = nodes
                 .iter()
@@ -110,7 +150,14 @@ pub(super) fn project(
                     other => other.plain_text(),
                 })
                 .collect::<String>();
-            (text, CellContent::Rich(nodes))
+            (
+                text,
+                if avatar_only {
+                    CellContent::People(people)
+                } else {
+                    CellContent::Rich(nodes)
+                },
+            )
         }
         _ => (fallback, CellContent::Plain),
     }

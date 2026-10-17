@@ -1,7 +1,7 @@
 use super::*;
 mod content;
 mod timestamps;
-pub(crate) use content::CellContent;
+pub(crate) use content::{CellContent, PeopleReference};
 use std::sync::Arc;
 use super_platinum_core::{slack_lists::ParentRelation, state::Workspace};
 pub(super) use timestamps::project_timestamps;
@@ -54,7 +54,9 @@ impl ColumnView {
     pub(super) fn size(kind: &str) -> &'static str {
         match kind {
             "checkbox" | "completed" | "todo_completed" => "checkbox",
-            "number" | "currency" | "rating" => "number",
+            "number" | "currency" => "number",
+            "rating" => "rating",
+            "vote" => "number",
             _ => "standard",
         }
     }
@@ -239,7 +241,17 @@ pub(super) fn project_cells(
                 column_id: column.id.clone(),
                 text,
                 checkbox,
-                editable: input.is_some(),
+                editable: input.is_some()
+                    || (column.kind == "vote"
+                        && loaded.document.editable(loaded.allow_lists.as_deref())
+                        && workspace.is_some_and(|w| !w.self_user_id.is_empty())
+                        && column
+                            .vote_value(
+                                row,
+                                &loaded.document.id,
+                                loaded.personal_task_lists.as_ref(),
+                            )
+                            .is_ok()),
                 can_edit: loaded.document.editable(loaded.allow_lists.as_deref())
                     && column.editable_value(
                         row,

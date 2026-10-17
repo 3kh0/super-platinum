@@ -109,6 +109,7 @@ fn directory_completion_cannot_replace_new_query_cancelled_draft_or_account() {
                 .and_then(|view| view.editor.as_ref())
                 .is_none_or(|draft| draft
                     .directory
+                    .presentation()
                     .candidates
                     .iter()
                     .all(|choice| choice.id != "U88888888"))

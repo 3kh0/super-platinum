@@ -7,6 +7,7 @@ use serde_json::Value;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ListExperiments {
+    pub schema_owner_only: bool,
     pub sub_tasks: bool,
     pub grid_todos: bool,
     pub todos: bool,
@@ -53,6 +54,7 @@ pub fn parse_list_experiments(response: &Value) -> Result<ListExperiments, Error
         }
     };
     Ok(ListExperiments {
+        schema_owner_only: enabled("lists_schema_owner_only")?,
         sub_tasks: enabled("lists_sub_tasks")?,
         grid_todos: enabled("lists_grid_todos")?,
         todos: enabled("todos")?,
@@ -73,6 +75,42 @@ pub async fn fetch_list_experiments(
 mod tests {
     use super::*;
     use serde_json::json;
+    #[test]
+    fn schema_owner_only_requires_exact_on_assignment_and_rejects_malformed_evidence() {
+        for group in ["on", "off", "control", "ON", ""] {
+            let flags = parse_list_experiments(
+                &json!({"ok":true,"assignments":{"lists_schema_owner_only":{"group":group}}}),
+            )
+            .unwrap();
+            assert_eq!(flags.schema_owner_only, group == "on");
+        }
+        assert!(
+            !parse_list_experiments(&json!({"ok":true,"assignments":{}}))
+                .unwrap()
+                .schema_owner_only
+        );
+        for value in [
+            Value::Null,
+            json!({}),
+            json!({"group":true}),
+            json!({"group":null}),
+            json!({"group":2}),
+        ] {
+            assert!(
+                parse_list_experiments(
+                    &json!({"ok":true,"assignments":{"lists_schema_owner_only":value}})
+                )
+                .is_err()
+            );
+        }
+        for raw in [
+            json!({"ok":true}),
+            json!({"ok":false,"assignments":{}}),
+            json!({"ok":true,"error":"denied","assignments":{}}),
+        ] {
+            assert!(parse_list_experiments(&raw).is_err());
+        }
+    }
     #[test]
     fn absent_assignments_are_unknown_but_absent_flags_in_complete_response_are_off() {
         for value in [

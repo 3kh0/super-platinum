@@ -209,7 +209,7 @@ fn unsupported_current_sort_and_board_are_not_authorable() {
         ),
         (
             "table",
-            json!([{"key":"estimate","ascending":true},{"key":"other","ascending":false}]),
+            json!([{"key":"estimate","ascending":true},{"key":"estimate","ascending":false}]),
         ),
         ("board", json!([])),
     ] {
@@ -345,3 +345,7 @@ fn canonical_sort_readback_composes_active_find_without_reordering_raw_populatio
         open(&mut s);
     }
 }
+
+mod supported;
+
+mod ordered;

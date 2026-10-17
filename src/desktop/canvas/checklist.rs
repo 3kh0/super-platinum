@@ -14,7 +14,7 @@ pub(super) mod reader;
 pub(super) mod recovery;
 pub(super) mod replacement_ops;
 pub(super) mod save;
-mod scope;
+pub(in crate::canvas) mod scope;
 pub(super) mod structure_ops;
 pub(super) mod text_ops;
 use scope::Scope;

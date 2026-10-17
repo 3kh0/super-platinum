@@ -68,6 +68,7 @@ fn actual_grouping_permit_builds_five_fields_and_keeps_full_raw_source() {
             &g,
             &intent,
             &network::Metadata {
+                experiments: None,
                 document: original.document.clone(),
                 allow: original.allow_lists.clone(),
                 personal: original.personal_task_lists.clone().unwrap(),
@@ -123,6 +124,7 @@ fn replacement_requires_accepted_conflict_not_original_then_real_old_checked_ref
             &write,
             &intent,
             &network::Metadata {
+                experiments: None,
                 document: original.document.clone(),
                 allow: original.allow_lists.clone(),
                 personal: original.personal_task_lists.clone().unwrap(),
@@ -150,6 +152,7 @@ fn replacement_requires_accepted_conflict_not_original_then_real_old_checked_ref
             &mut s,
             &check,
             Ok(network::Metadata {
+                experiments: None,
                 document: conflict.document.clone(),
                 allow: conflict.allow_lists.clone(),
                 personal: conflict.personal_task_lists.clone().unwrap()
@@ -182,6 +185,7 @@ fn replacement_requires_accepted_conflict_not_original_then_real_old_checked_ref
             &mut s,
             &held,
             Ok(network::Metadata {
+                experiments: None,
                 document: Document::parse(desired).unwrap(),
                 allow: original.allow_lists,
                 personal: original.personal_task_lists.unwrap()

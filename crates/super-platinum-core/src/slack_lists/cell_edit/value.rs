@@ -60,8 +60,9 @@ fn member(column: &Column) -> Result<&'static str, ListError> {
     match column.kind.as_str() {
         "text" | "rich_text" => Ok("rich_text"),
         "number" | "currency" => Ok("number"),
+        "rating" => Ok("rating"),
         "select" | "multi_select" => Ok("select"),
-        "user" => Ok("user"),
+        "user" | "vote" => Ok("user"),
         "channel" => Ok("channel"),
         "link" => Ok("link"),
         "date" | "due_date" | "todo_due_date" => Ok("date"),
@@ -118,6 +119,12 @@ fn raw<'a>(column: &Column, record: &'a Record) -> Result<Option<&'a Value>, Lis
     Ok(result.filter(|value| !value.is_null()))
 }
 fn validate_read(column: &Column, record: &Record) -> Result<(), ListError> {
+    if column.kind == "vote" {
+        return super::super::vote::read(column, record).map(|_| ());
+    }
+    if column.kind == "rating" {
+        return super::super::rating::read(column, record).map(|_| ());
+    }
     if member(column)? == "date" {
         return date::read(record.fields.get(&column.key)).map(|_| ());
     }
@@ -172,6 +179,12 @@ fn validate_read(column: &Column, record: &Record) -> Result<(), ListError> {
     }
 }
 pub(super) fn read(column: &Column, record: &Record) -> Result<CellEditValue, ListError> {
+    if column.kind == "vote" {
+        return super::super::vote::read(column, record).map(CellEditValue::Votes);
+    }
+    if column.kind == "rating" {
+        return super::super::rating::read(column, record).map(CellEditValue::Rating);
+    }
     if member(column)? == "date" {
         return date::read(record.fields.get(&column.key))
             .map(|value| CellEditValue::Date(value.map(str::to_owned)));
@@ -253,6 +266,14 @@ pub(super) fn validate(
     initial: &CellEditValue,
 ) -> Result<(), ListError> {
     match (column.kind.as_str(), desired, initial) {
+        ("rating", CellEditValue::Rating(value), CellEditValue::Rating(_)) => {
+            let options = super::super::RatingOptions::from_column(column)?;
+            if value.is_none_or(|v| (1..=options.max()).contains(&v)) {
+                Ok(())
+            } else {
+                Err(ListError("Choose a rating within this field's maximum."))
+            }
+        }
         ("link", CellEditValue::Link(value), CellEditValue::Link(_)) => {
             super::link::validate(value.as_ref())
         }
@@ -307,13 +328,16 @@ pub(super) fn wire(value: &CellEditValue) -> (&'static str, Value) {
     match value {
         CellEditValue::Link(value) => ("link", super::link::wire(value.as_ref())),
         CellEditValue::Boolean(value) => ("checkbox", json!(value)),
+        CellEditValue::Rating(value) => {
+            ("rating", json!(value.iter().copied().collect::<Vec<_>>()))
+        }
         CellEditValue::RichText(value) => ("rich_text", Value::Array(value.clone())),
         CellEditValue::Number(value) => (
             "number",
             Value::Array(value.iter().cloned().map(Value::Number).collect()),
         ),
         CellEditValue::Select(value) => ("select", json!(value)),
-        CellEditValue::Users(value) => ("user", json!(value)),
+        CellEditValue::Users(value) | CellEditValue::Votes(value) => ("user", json!(value)),
         CellEditValue::Channels(value) => ("channel", json!(value)),
         CellEditValue::Date(value) => (
             "date",

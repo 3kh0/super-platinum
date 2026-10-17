@@ -24,12 +24,28 @@ async fn actual_capture_permit_builder_and_transport_send_both_directions_and_cl
         slack::{SlackClient, api},
         slack_lists::{Document, PersonalTaskLists, ViewSort, ViewSortAttempt, ViewSortChoice},
     };
-    for desired in [Some(false), Some(true), None] {
+    for (kind, desired) in [
+        "number",
+        "text",
+        "select",
+        "checkbox",
+        "date",
+        "created_time",
+        "last_edited_time",
+        "user",
+        "channel",
+        "rating",
+        "email",
+        "phone",
+    ]
+    .into_iter()
+    .flat_map(|kind| [Some(false), Some(true), None].map(|desired| (kind, desired)))
+    {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let document=Document::parse(serde_json::json!({"id":"F1","mode":"list","access":"write","list_metadata":{"schema":[
             {"id":"C_TITLE","key":"NAME","name":"Title","type":"text","options":{"format":"text"},"is_primary_column":true},
-            {"id":"C_TEXT","key":"notes","name":"Notes","type":"number","options":{"precision":2}}],
+            {"id":"C_TEXT","key":"notes","name":"Notes","type":kind,"options":if kind == "number" { serde_json::json!({"precision":2}) } else { serde_json::json!({}) }}],
             "views":[{"id":"V1","name":"Custom","type":"table","columns":[],"sorts":if desired.is_some() { serde_json::json!([]) } else { serde_json::json!([{"key":"notes","ascending":true}]) },"grouping":{}}]}})).unwrap();
         let personal = PersonalTaskLists::from_response(
             &serde_json::json!({"ok":true,"prefs":{"task_lists":"[]","assigned_to_list":""}}),
@@ -38,9 +54,8 @@ async fn actual_capture_permit_builder_and_transport_send_both_directions_and_cl
         let intent = ViewSort::capture(
             &document,
             "V1",
-            desired.map_or(ViewSortChoice::None, |ascending| ViewSortChoice::Number {
-                column_id: "C_TEXT".into(),
-                ascending,
+            desired.map_or(ViewSortChoice::None, |ascending| {
+                ViewSort::choice(document.column("C_TEXT").unwrap(), ascending).unwrap()
             }),
             Some("full"),
             Some(&personal),
@@ -142,7 +157,7 @@ async fn malformed_sorts_or_wrong_wrapper_never_dispatch() {
         r#"[{"key":"notes","ascending":false,"id":"C_TEXT"}]"#,
         r#"[{"key":"notes","ascending":false,"ascending":true}]"#,
         r#"[{"key":"notes"}]"#,
-        r#"[{"key":"a","ascending":false},{"key":"b","ascending":true}]"#,
+        r#"[{"key":"a","ascending":false},{"key":"a","ascending":true}]"#,
     ] {
         let mut r = request(address);
         let RequestBody::Form(fields) = &mut r.body else {
@@ -309,3 +324,5 @@ async fn second_owner_fence_offline_and_cross_form_refuse_without_dispatch() {
             .is_err()
     );
 }
+
+mod ordered;

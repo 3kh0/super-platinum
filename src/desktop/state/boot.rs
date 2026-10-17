@@ -459,6 +459,7 @@ impl ShellState {
             canvas: None,
             canvas_checklist: Default::default(),
             canvas_create: None,
+            canvas_creation: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -610,6 +611,7 @@ impl ShellState {
             canvas: None,
             canvas_checklist: Default::default(),
             canvas_create: None,
+            canvas_creation: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -955,6 +957,7 @@ impl ShellState {
             canvas: None,
             canvas_checklist: Default::default(),
             canvas_create: None,
+            canvas_creation: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -1048,19 +1051,72 @@ impl ShellState {
             | "slack-list-board-move-checkbox-narrow" => {
                 crate::slack_lists::fixture::board_move::install(&mut state, name)
             }
+            "slack-list-field-delete" | "slack-list-field-delete-narrow" => {
+                crate::slack_lists::fixture::field_delete::install(&mut state, name);
+            }
             "slack-list-view-grouping"
             | "slack-list-view-grouping-narrow"
             | "slack-list-board-grouping"
             | "slack-list-board-grouping-narrow" => {
                 crate::slack_lists::fixture::view_grouping::install(&mut state, name);
             }
-            "slack-list-view-sort" | "slack-list-view-sort-narrow" => {
+            "slack-list-view-sort"
+            | "slack-list-view-sort-narrow"
+            | "slack-list-ordered-sort"
+            | "slack-list-ordered-sort-narrow" => {
                 crate::slack_lists::fixture::view_sort::install(&mut state, name);
             }
-            "slack-list-text-field-create"
+            "slack-list-vote-cells"
+            | "slack-list-vote-cells-narrow"
+            | "slack-list-vote-board"
+            | "slack-list-vote-board-narrow"
+            | "slack-list-vote-detail"
+            | "slack-list-vote-detail-narrow" => {
+                crate::slack_lists::fixture::vote::install(&mut state, name);
+            }
+            "slack-list-rating-cells" | "slack-list-rating-cells-narrow" => {
+                crate::slack_lists::fixture::rating::install(&mut state, name);
+            }
+            "slack-list-people-avatars"
+            | "slack-list-people-avatars-narrow"
+            | "slack-list-people-avatars-board"
+            | "slack-list-people-avatars-board-narrow"
+            | "slack-list-people-avatars-detail"
+            | "slack-list-people-avatars-detail-narrow" => {
+                crate::slack_lists::fixture::people_avatars::install(&mut state, name);
+            }
+            "slack-list-people-settings"
+            | "slack-list-people-settings-narrow"
+            | "slack-list-channel-settings"
+            | "slack-list-channel-settings-narrow" => {
+                crate::slack_lists::fixture::entity_settings::install(&mut state, name);
+            }
+            "slack-list-people-defaults-single-create"
+            | "slack-list-people-defaults-single-create-narrow"
+            | "slack-list-people-defaults-multiple-create"
+            | "slack-list-people-defaults-multiple-create-narrow"
+            | "slack-list-people-defaults-null-create"
+            | "slack-list-people-defaults-null-create-narrow"
+            | "slack-list-people-defaults-omitted-create"
+            | "slack-list-people-defaults-omitted-create-narrow"
+            | "slack-list-channel-defaults-single-create"
+            | "slack-list-channel-defaults-single-create-narrow"
+            | "slack-list-channel-defaults-multiple-create"
+            | "slack-list-channel-defaults-multiple-create-narrow"
+            | "slack-list-channel-defaults-null-create"
+            | "slack-list-channel-defaults-null-create-narrow"
+            | "slack-list-channel-defaults-omitted-create"
+            | "slack-list-channel-defaults-omitted-create-narrow"
+            | "slack-list-vote-create-default"
+            | "slack-list-vote-create-default-narrow"
+            | "slack-list-vote-create-custom"
+            | "slack-list-vote-create-custom-narrow"
+            | "slack-list-text-field-create"
             | "slack-list-text-field-create-narrow"
             | "slack-list-number-field-create"
             | "slack-list-number-field-create-narrow"
+            | "slack-list-number-precision-field-create"
+            | "slack-list-number-precision-field-create-narrow"
             | "slack-list-checkbox-field-create"
             | "slack-list-checkbox-field-create-narrow"
             | "slack-list-date-field-create"
@@ -1068,7 +1124,23 @@ impl ShellState {
             | "slack-list-select-field-create"
             | "slack-list-select-field-create-narrow"
             | "slack-list-multi-select-field-create"
-            | "slack-list-multi-select-field-create-narrow" => {
+            | "slack-list-multi-select-field-create-narrow"
+            | "slack-list-people-field-create"
+            | "slack-list-people-field-create-narrow"
+            | "slack-list-link-field-create"
+            | "slack-list-link-field-create-narrow"
+            | "slack-list-channel-field-create"
+            | "slack-list-channel-field-create-narrow"
+            | "slack-list-rating-field-create"
+            | "slack-list-rating-field-create-narrow"
+            | "slack-list-rating-default-field-create"
+            | "slack-list-rating-default-field-create-narrow"
+            | "slack-list-rating-standard-field-create"
+            | "slack-list-rating-standard-field-create-narrow"
+            | "slack-list-rating-custom-field-create"
+            | "slack-list-rating-custom-field-create-narrow"
+            | "slack-list-vote-field-create"
+            | "slack-list-vote-field-create-narrow" => {
                 crate::slack_lists::fixture::text_field_create::install(&mut state, name);
             }
             "slack-list-compound-filter" | "slack-list-compound-filter-narrow" => {
@@ -1503,6 +1575,9 @@ impl ShellState {
                     crate::bookmarks::emoji::fixture(&mut state);
                 }
             }
+            "canvas-creation-durable" | "canvas-creation-durable-narrow" => {
+                crate::canvas_create::fixture::apply(&mut state);
+            }
             "canvas-create" | "canvas-create-narrow" | "canvas-create-error" => {
                 state.main_view = MainView::Files;
                 let mut draft = crate::canvas_create::Draft::fixture(&state);
@@ -1515,6 +1590,8 @@ impl ShellState {
             }
             "canvas"
             | "canvas-narrow"
+            | "canvas-comments"
+            | "canvas-comments-narrow"
             | "canvas-checklist"
             | "canvas-checklist-narrow"
             | "canvas-text"

@@ -124,6 +124,12 @@ pub async fn load(mut state: Signal<ShellState>, query: FilesQuery, page: u32) {
 }
 
 pub fn open(mut state: Signal<ShellState>, file: File) {
+    if crate::canvas_create::departure::request(
+        &mut state.write(),
+        crate::canvas_create::departure::Destination::File(Box::new(file.clone())),
+    ) {
+        return;
+    }
     let deleted = super_platinum_core::file_actions::deleted(&file) || {
         let shell = state.peek();
         shell

@@ -1,0 +1,388 @@
+//! Owned, read-only Canvas thread reader. Never merges virtual-channel messages
+//! into the active conversation or sends read marks, replies, or archive writes.
+use super::checklist::scope::Scope;
+use crate::state::{Overlay, ShellState};
+use dioxus::prelude::*;
+use std::time::Instant;
+use super_platinum_core::{
+    canvas::comments::{Filter, ReplyPage, StreamPage},
+    slack::{Error, api, models::Message},
+};
+pub(crate) mod check;
+pub(in crate::canvas) mod fixture;
+pub(in crate::canvas) mod focus;
+mod pages;
+mod rate;
+use pages::Direction;
+mod view;
+pub(super) use view::Panel;
+#[cfg(test)]
+mod tests;
+
+const MAX_ROWS: usize = 200;
+#[derive(Clone)]
+struct Owner {
+    scope: Scope,
+    file: String,
+    visit: u64,
+}
+impl Owner {
+    fn capture(shell: &ShellState) -> Option<Self> {
+        let value = Self {
+            scope: Scope::capture(shell)?,
+            file: shell.canvas.as_ref()?.id.clone(),
+            visit: shell.shortcut_generation,
+        };
+        value.current(shell).then_some(value)
+    }
+    fn current(&self, shell: &ShellState) -> bool {
+        self.scope.current(shell)
+            && !self.scope.deleted(shell, &self.file)
+            && shell.overlay == Some(Overlay::Canvas)
+            && shell.shortcut_generation == self.visit
+            && shell.canvas.as_ref().is_some_and(|v| v.id == self.file)
+    }
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Query {
+    Stream(Filter),
+    Replies(String),
+}
+#[derive(Default)]
+pub(super) struct State {
+    owner: Option<Owner>,
+    serial: u64,
+    query: Option<Query>,
+    rows: Vec<Row>,
+    cursor: Option<String>,
+    pages: pages::Pages,
+    loading: bool,
+    error: Option<&'static str>,
+    retry_at: Option<Instant>,
+    rate_blocked: bool,
+    filter: Filter,
+    root: Option<Message>,
+}
+struct Row {
+    message: Message,
+    body: crate::model::MessageVm,
+    preview_body: Option<crate::model::MessageVm>,
+}
+#[derive(Clone)]
+struct Ticket {
+    owner: Owner,
+    serial: u64,
+    query: Query,
+    cursor: Option<String>,
+    direction: Direction,
+}
+impl State {
+    fn accepts(&self, shell: &ShellState, ticket: &Ticket) -> bool {
+        ticket.owner.current(shell)
+            && self.serial == ticket.serial
+            && self.query.as_ref() == Some(&ticket.query)
+    }
+    fn cooling(&self) -> bool {
+        self.rate_blocked || self.retry_at.is_some_and(|time| Instant::now() < time)
+    }
+    fn next_serial(&mut self) {
+        self.serial = self.serial.wrapping_add(1);
+    }
+}
+pub(super) fn open(state: Signal<ShellState>, model: Signal<State>) {
+    let filter = model.peek().filter;
+    start(state, model, Query::Stream(filter), false);
+}
+fn start(state: Signal<ShellState>, model: Signal<State>, query: Query, more: bool) {
+    begin(
+        state,
+        model,
+        query,
+        if more {
+            Direction::Next
+        } else {
+            Direction::First
+        },
+    );
+}
+fn begin(state: Signal<ShellState>, mut model: Signal<State>, query: Query, direction: Direction) {
+    let more = direction != Direction::First;
+    let owner = Owner::capture(&state.peek());
+    let Some(owner) = owner else { return };
+    if model
+        .peek()
+        .owner
+        .as_ref()
+        .is_some_and(|previous| !previous.current(&state.peek()))
+    {
+        *model.write() = State::default();
+    }
+    if let Some(wait) = rate::current(&state.peek()) {
+        let mut value = model.write();
+        value.rows.clear();
+        value.root = None;
+        value.cursor = None;
+        value.pages = Default::default();
+        value.next_serial();
+        value.owner = Some(owner.clone());
+        value.query = Some(query);
+        value.loading = false;
+        value.error = Some("Slack asked us to wait before reading more comments.");
+        drop(value);
+        set_wait(state, model, owner, wait);
+        return;
+    }
+    let ticket = {
+        let mut value = model.write();
+        if value.cooling()
+            || value.loading
+            || (direction == Direction::Next && value.cursor.is_none())
+            || (direction == Direction::Previous && value.pages.previous().is_none())
+        {
+            return;
+        }
+        if (more || matches!(query, Query::Replies(_)))
+            && value
+                .owner
+                .as_ref()
+                .is_none_or(|owner| !owner.current(&state.peek()))
+        {
+            return;
+        }
+        if more && value.query.as_ref() != Some(&query) {
+            return;
+        }
+        if !more {
+            if let Query::Replies(root) = &query {
+                let selected = value
+                    .rows
+                    .iter()
+                    .find(|row| row.message.ts.as_ref() == Some(root))
+                    .map(|row| row.message.clone())
+                    .or_else(|| {
+                        value
+                            .root
+                            .as_ref()
+                            .filter(|message| message.ts.as_ref() == Some(root))
+                            .cloned()
+                    });
+                let Some(selected) = selected else { return };
+                value.root = Some(selected);
+            } else {
+                value.root = None;
+            }
+            value.rows.clear();
+            value.cursor = None;
+            value.pages = Default::default();
+        }
+        if let Query::Stream(filter) = query {
+            value.filter = filter;
+        }
+        value.next_serial();
+        value.loading = true;
+        value.error = None;
+        value.query = Some(query.clone());
+        value.owner = Some(owner.clone());
+        Ticket {
+            owner,
+            serial: value.serial,
+            query,
+            cursor: if direction == Direction::Previous {
+                value.pages.previous().unwrap()
+            } else {
+                value.cursor.clone()
+            },
+            direction,
+        }
+    };
+    spawn(async move {
+        fetch(state, model, ticket).await;
+    });
+}
+async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Ticket) {
+    let result = read(state, &ticket).await;
+    if let Err(Error::RateLimited { retry_after_secs }) = &result {
+        if ticket.owner.scope.current(&state.peek()) {
+            rate::remember(&state.peek(), *retry_after_secs);
+        }
+    }
+    if !model.peek().accepts(&state.peek(), &ticket) {
+        return;
+    }
+    match result {
+        Ok(page) => {
+            let shell = state.peek();
+            let Some(workspace) = shell.core.workspaces.get(&ticket.owner.scope.team) else {
+                return;
+            };
+            let mut value = model.write();
+            let (messages, cursor) = match page {
+                Page::Stream(page) => (
+                    page.threads
+                        .into_iter()
+                        .map(|t| (t.root, t.last_reply))
+                        .collect::<Vec<_>>(),
+                    page.cursor,
+                ),
+                Page::Replies(page) => (
+                    page.messages.into_iter().map(|m| (m, None)).collect(),
+                    page.cursor,
+                ),
+            };
+            if messages.len() > MAX_ROWS {
+                value.loading = false;
+                value.error =
+                    Some("This comment page exceeds the supported size. Open the canvas in Slack.");
+                return;
+            }
+            let ids = messages
+                .iter()
+                .filter_map(|(m, _)| m.ts.clone())
+                .collect::<Vec<_>>();
+            if let Err(error) = value.pages.accept(
+                ticket.direction,
+                ticket.cursor.clone(),
+                cursor.as_deref(),
+                &ids,
+            ) {
+                value.loading = false;
+                value.error = Some(error);
+                value.cursor = None;
+                return;
+            }
+            value.rows.clear();
+            for (message, preview) in messages {
+                let row = Row {
+                    body: crate::message_vm::message_vm_with_pending(
+                        workspace,
+                        &message,
+                        &shell.media,
+                        false,
+                    ),
+                    preview_body: preview.as_ref().map(|m| {
+                        crate::message_vm::message_vm_with_pending(
+                            workspace,
+                            m,
+                            &shell.media,
+                            false,
+                        )
+                    }),
+                    message,
+                };
+                if let Some(index) = value
+                    .rows
+                    .iter()
+                    .position(|r| r.message.ts == row.message.ts)
+                {
+                    value.rows[index] = row;
+                } else {
+                    value.rows.push(row);
+                }
+            }
+            value.cursor = cursor;
+            value.loading = false;
+            value.error = None;
+        }
+        Err(error) => {
+            let limited = matches!(error, Error::RateLimited { .. });
+            let mut value = model.write();
+            value.loading = false;
+            value.error = Some(if limited {
+                "Slack asked us to wait before reading more comments."
+            } else {
+                "Comments could not be loaded. Your canvas is unchanged. Retry when ready."
+            });
+            drop(value);
+            if limited {
+                if let Some(wait) = rate::current(&state.peek()) {
+                    set_wait(state, model, ticket.owner, wait);
+                }
+            }
+        }
+    }
+}
+fn set_wait(state: Signal<ShellState>, mut model: Signal<State>, owner: Owner, wait: rate::Wait) {
+    match wait {
+        rate::Wait::Blocked => {
+            model.write().rate_blocked = true;
+        }
+        rate::Wait::Until(deadline) => {
+            model.write().retry_at = Some(deadline);
+            // One owner-bound wake enables explicit retry; it makes no request.
+            spawn(async move {
+                tokio::time::sleep(deadline.saturating_duration_since(Instant::now())).await;
+                if owner.current(&state.peek()) && model.peek().retry_at == Some(deadline) {
+                    model.write().retry_at = None;
+                }
+            });
+        }
+    }
+}
+
+enum Page {
+    Stream(StreamPage),
+    Replies(ReplyPage),
+}
+async fn read(state: Signal<ShellState>, ticket: &Ticket) -> Result<Page, Error> {
+    let invalid = || Error::Api("canvas_comments_unavailable".into());
+    if !ticket.owner.current(&state.peek()) {
+        return Err(invalid());
+    }
+    let response = if crate::fixture::is_fixture() {
+        fixture::response(&state.peek(), ticket)?
+    } else {
+        let ctx = ticket
+            .owner
+            .scope
+            .request(&state.peek())
+            .ok_or_else(invalid)?;
+        api::fetch_canvas_file(
+            &ctx.transport,
+            &ctx.client,
+            &ctx.session,
+            &ticket.owner.file,
+        )
+        .await?;
+        if !ticket.owner.current(&state.peek()) {
+            return Err(invalid());
+        }
+        let request = request(&ctx.client, &ctx.session, ticket)?;
+        ctx.transport.execute(request).await?
+    };
+    let ticket = ticket.clone();
+    tokio::task::spawn_blocking(move || match ticket.query {
+        Query::Stream(_) => StreamPage::parse(&ticket.owner.file, &response).map(Page::Stream),
+        Query::Replies(root) => ReplyPage::parse(
+            &ticket.owner.file,
+            &root,
+            ticket.cursor.is_none(),
+            &response,
+        )
+        .map(Page::Replies),
+    })
+    .await
+    .map_err(|_| invalid())?
+    .map_err(|_| invalid())
+}
+fn request(
+    client: &super_platinum_core::slack::client::SlackClient,
+    session: &super_platinum_core::config::WorkspaceSession,
+    ticket: &Ticket,
+) -> Result<super_platinum_core::slack::client::PreparedRequest, Error> {
+    match &ticket.query {
+        Query::Stream(filter) => api::canvas_comments(
+            client,
+            session,
+            &ticket.owner.file,
+            *filter,
+            ticket.cursor.as_deref(),
+        ),
+        Query::Replies(root) => api::canvas_comment_replies(
+            client,
+            session,
+            &ticket.owner.file,
+            root,
+            ticket.cursor.as_deref(),
+        ),
+    }
+}

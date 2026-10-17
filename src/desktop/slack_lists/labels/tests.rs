@@ -353,3 +353,5 @@ fn grouped_reference_refresh_preserves_instances_and_selected_columns() {
         ));
     }
 }
+
+mod people;

@@ -11,6 +11,12 @@ pub(crate) struct PaletteMatch {
 
 impl ShellState {
     pub fn open_palette(&mut self) {
+        if crate::canvas_create::departure::request(
+            self,
+            crate::canvas_create::departure::Destination::Palette,
+        ) {
+            return;
+        }
         self.shortcut_generation = self.shortcut_generation.wrapping_add(1);
         self.cancel_profile_dm();
         self.cancel_palette_open();

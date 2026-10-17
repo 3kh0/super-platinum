@@ -82,7 +82,7 @@ test('named Text field fixture is wired through catalog, boot and minimum narrow
   const media=readFileSync(path.join(base,'src/desktop/media.rs'),'utf8');
   assertNarrowBinding(media);
   const boot=readFileSync(path.join(base,'src/desktop/state/boot.rs'),'utf8');
-  assert.match(boot,/"slack-list-text-field-create"\s*\|\s*"slack-list-text-field-create-narrow"\s*\|\s*"slack-list-number-field-create"\s*\|\s*"slack-list-number-field-create-narrow"\s*\|\s*"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*\|\s*"slack-list-date-field-create"\s*\|\s*"slack-list-date-field-create-narrow"\s*\|\s*"slack-list-select-field-create"\s*\|\s*"slack-list-select-field-create-narrow"\s*\|\s*"slack-list-multi-select-field-create"\s*\|\s*"slack-list-multi-select-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install\(&mut state, name\);/);
+  assert.match(boot,/"slack-list-text-field-create"\s*\|\s*"slack-list-text-field-create-narrow"\s*\|\s*"slack-list-number-field-create"\s*\|\s*"slack-list-number-field-create-narrow"\s*\|\s*"slack-list-number-precision-field-create"\s*\|\s*"slack-list-number-precision-field-create-narrow"\s*\|\s*"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*\|\s*"slack-list-date-field-create"\s*\|\s*"slack-list-date-field-create-narrow"\s*\|\s*"slack-list-select-field-create"\s*\|\s*"slack-list-select-field-create-narrow"\s*\|\s*"slack-list-multi-select-field-create"\s*\|\s*"slack-list-multi-select-field-create-narrow"\s*\|\s*"slack-list-people-field-create"\s*\|\s*"slack-list-people-field-create-narrow"\s*\|\s*"slack-list-link-field-create"\s*\|\s*"slack-list-link-field-create-narrow"\s*\|\s*"slack-list-channel-field-create"\s*\|\s*"slack-list-channel-field-create-narrow"\s*\|\s*"slack-list-rating-field-create"\s*\|\s*"slack-list-rating-field-create-narrow"\s*\|\s*"slack-list-rating-default-field-create"\s*\|\s*"slack-list-rating-default-field-create-narrow"\s*\|\s*"slack-list-rating-standard-field-create"\s*\|\s*"slack-list-rating-standard-field-create-narrow"\s*\|\s*"slack-list-rating-custom-field-create"\s*\|\s*"slack-list-rating-custom-field-create-narrow"\s*\|\s*"slack-list-vote-field-create"\s*\|\s*"slack-list-vote-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install\(&mut state, name\);/);
   const catalog=readFileSync(path.join(base,'scripts/agent-ui-check.sh'),'utf8');
   assert.match(catalog,/^\s+slack-list-text-field-create slack-list-text-field-create-narrow\s*$/m);
 });
@@ -110,7 +110,7 @@ test('Number fixture keeps named minimum narrow window and the shared boot route
  const media=readFileSync(path.join(base,'src/desktop/media.rs'),'utf8');
  const initial=media.match(/let initial_size = ([\s\S]*?);\r?\n/)?.[1];assert.ok(initial);
  const aliases=[...initial.matchAll(/"([a-z0-9-]+)"/g)].map(m=>m[1]);assert.equal(aliases.filter(v=>v==='slack-list-number-field-create-narrow').length,1);assert.equal(aliases.includes('slack-list-number-field-create'),false);
- const boot=readFileSync(path.join(base,'src/desktop/state/boot.rs'),'utf8');assert.match(boot,/"slack-list-number-field-create"\s*\|\s*"slack-list-number-field-create-narrow"\s*\|\s*"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*\|\s*"slack-list-date-field-create"\s*\|\s*"slack-list-date-field-create-narrow"\s*\|\s*"slack-list-select-field-create"\s*\|\s*"slack-list-select-field-create-narrow"\s*\|\s*"slack-list-multi-select-field-create"\s*\|\s*"slack-list-multi-select-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
+ const boot=readFileSync(path.join(base,'src/desktop/state/boot.rs'),'utf8');assert.match(boot,/"slack-list-number-field-create"\s*\|\s*"slack-list-number-field-create-narrow"\s*\|\s*"slack-list-number-precision-field-create"\s*\|\s*"slack-list-number-precision-field-create-narrow"\s*\|\s*"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*\|\s*"slack-list-date-field-create"\s*\|\s*"slack-list-date-field-create-narrow"\s*\|\s*"slack-list-select-field-create"\s*\|\s*"slack-list-select-field-create-narrow"\s*\|\s*"slack-list-multi-select-field-create"\s*\|\s*"slack-list-multi-select-field-create-narrow"\s*\|\s*"slack-list-people-field-create"\s*\|\s*"slack-list-people-field-create-narrow"\s*\|\s*"slack-list-link-field-create"\s*\|\s*"slack-list-link-field-create-narrow"\s*\|\s*"slack-list-channel-field-create"\s*\|\s*"slack-list-channel-field-create-narrow"\s*\|\s*"slack-list-rating-field-create"\s*\|\s*"slack-list-rating-field-create-narrow"\s*\|\s*"slack-list-rating-default-field-create"\s*\|\s*"slack-list-rating-default-field-create-narrow"\s*\|\s*"slack-list-rating-standard-field-create"\s*\|\s*"slack-list-rating-standard-field-create-narrow"\s*\|\s*"slack-list-rating-custom-field-create"\s*\|\s*"slack-list-rating-custom-field-create-narrow"\s*\|\s*"slack-list-vote-field-create"\s*\|\s*"slack-list-vote-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
  const catalog=readFileSync(path.join(base,'scripts/agent-ui-check.sh'),'utf8');assert.match(catalog,/^\s+slack-list-number-field-create slack-list-number-field-create-narrow\s*$/m);
 });
 
@@ -119,7 +119,7 @@ function assertCheckboxWiring(media,boot,catalog,view) {
  const aliases=[...initial.matchAll(/"([a-z0-9-]+)"/g)].map(m=>m[1]);
  assert.equal(aliases.filter(v=>v==='slack-list-checkbox-field-create-narrow').length,1);
  assert.equal(aliases.includes('slack-list-checkbox-field-create'),false);
- assert.match(boot,/"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*\|\s*"slack-list-date-field-create"\s*\|\s*"slack-list-date-field-create-narrow"\s*\|\s*"slack-list-select-field-create"\s*\|\s*"slack-list-select-field-create-narrow"\s*\|\s*"slack-list-multi-select-field-create"\s*\|\s*"slack-list-multi-select-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
+ assert.match(boot,/"slack-list-checkbox-field-create"\s*\|\s*"slack-list-checkbox-field-create-narrow"\s*\|\s*"slack-list-date-field-create"\s*\|\s*"slack-list-date-field-create-narrow"\s*\|\s*"slack-list-select-field-create"\s*\|\s*"slack-list-select-field-create-narrow"\s*\|\s*"slack-list-multi-select-field-create"\s*\|\s*"slack-list-multi-select-field-create-narrow"\s*\|\s*"slack-list-people-field-create"\s*\|\s*"slack-list-people-field-create-narrow"\s*\|\s*"slack-list-link-field-create"\s*\|\s*"slack-list-link-field-create-narrow"\s*\|\s*"slack-list-channel-field-create"\s*\|\s*"slack-list-channel-field-create-narrow"\s*\|\s*"slack-list-rating-field-create"\s*\|\s*"slack-list-rating-field-create-narrow"\s*\|\s*"slack-list-rating-default-field-create"\s*\|\s*"slack-list-rating-default-field-create-narrow"\s*\|\s*"slack-list-rating-standard-field-create"\s*\|\s*"slack-list-rating-standard-field-create-narrow"\s*\|\s*"slack-list-rating-custom-field-create"\s*\|\s*"slack-list-rating-custom-field-create-narrow"\s*\|\s*"slack-list-vote-field-create"\s*\|\s*"slack-list-vote-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
  assert.match(catalog,/^\s+slack-list-checkbox-field-create slack-list-checkbox-field-create-narrow\s*$/m);
  assert.match(view,/option\s*\{\s*value:\s*"checkbox",\s*selected:\s*field_kind\s*==\s*"checkbox",\s*"Checkbox"\s*\}/);
 }
@@ -135,7 +135,7 @@ test('Checkbox uses the shared selector, static route and exact minimum narrow s
 
 function assertSelectWiring(media,boot,catalog) {
  assert.match(media,/\|\s*"slack-list-select-field-create-narrow"/);
- assert.match(boot,/"slack-list-select-field-create"\s*\|\s*"slack-list-select-field-create-narrow"\s*\|\s*"slack-list-multi-select-field-create"\s*\|\s*"slack-list-multi-select-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
+ assert.match(boot,/"slack-list-select-field-create"\s*\|\s*"slack-list-select-field-create-narrow"\s*\|\s*"slack-list-multi-select-field-create"\s*\|\s*"slack-list-multi-select-field-create-narrow"\s*\|\s*"slack-list-people-field-create"\s*\|\s*"slack-list-people-field-create-narrow"\s*\|\s*"slack-list-link-field-create"\s*\|\s*"slack-list-link-field-create-narrow"\s*\|\s*"slack-list-channel-field-create"\s*\|\s*"slack-list-channel-field-create-narrow"\s*\|\s*"slack-list-rating-field-create"\s*\|\s*"slack-list-rating-field-create-narrow"\s*\|\s*"slack-list-rating-default-field-create"\s*\|\s*"slack-list-rating-default-field-create-narrow"\s*\|\s*"slack-list-rating-standard-field-create"\s*\|\s*"slack-list-rating-standard-field-create-narrow"\s*\|\s*"slack-list-rating-custom-field-create"\s*\|\s*"slack-list-rating-custom-field-create-narrow"\s*\|\s*"slack-list-vote-field-create"\s*\|\s*"slack-list-vote-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
  assert.match(catalog,/slack-list-select-field-create slack-list-select-field-create-narrow/);
 }
 test('Select static aliases use shared Add field route and exact narrow window',()=>{
@@ -153,7 +153,7 @@ test('Multi-select static aliases use only the shared seed and exact narrow mapp
   const aliases=[...initial.matchAll(/"([a-z0-9-]+)"/g)].map(x=>x[1]);
   assert.equal(aliases.filter(x=>x==='slack-list-multi-select-field-create-narrow').length,1);
   assert.equal(aliases.includes('slack-list-multi-select-field-create'),false);
-  assert.match(b,/"slack-list-multi-select-field-create"\s*\|\s*"slack-list-multi-select-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
+  assert.match(b,/"slack-list-multi-select-field-create"\s*\|\s*"slack-list-multi-select-field-create-narrow"\s*\|\s*"slack-list-people-field-create"\s*\|\s*"slack-list-people-field-create-narrow"\s*\|\s*"slack-list-link-field-create"\s*\|\s*"slack-list-link-field-create-narrow"\s*\|\s*"slack-list-channel-field-create"\s*\|\s*"slack-list-channel-field-create-narrow"\s*\|\s*"slack-list-rating-field-create"\s*\|\s*"slack-list-rating-field-create-narrow"\s*\|\s*"slack-list-rating-default-field-create"\s*\|\s*"slack-list-rating-default-field-create-narrow"\s*\|\s*"slack-list-rating-standard-field-create"\s*\|\s*"slack-list-rating-standard-field-create-narrow"\s*\|\s*"slack-list-rating-custom-field-create"\s*\|\s*"slack-list-rating-custom-field-create-narrow"\s*\|\s*"slack-list-vote-field-create"\s*\|\s*"slack-list-vote-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
   assert.match(c,/^\s+slack-list-multi-select-field-create slack-list-multi-select-field-create-narrow\s*$/m);
  };
  check(media,boot,catalog);
@@ -161,3 +161,88 @@ test('Multi-select static aliases use only the shared seed and exact narrow mapp
  assert.throws(()=>check(media,boot.replace('"slack-list-multi-select-field-create-narrow"','"other"'),catalog));
  assert.throws(()=>check(media,boot,catalog.replace('slack-list-multi-select-field-create slack-list-multi-select-field-create-narrow','')));
 });
+
+test('People static aliases retain the shared seed and exact narrow mapping',()=>{
+ const read=p=>readFileSync(path.join(base,p),'utf8');
+ const inputs=[read('src/desktop/media.rs'),read('src/desktop/state/boot.rs'),read('scripts/agent-ui-check.sh')];
+ const check=(media,boot,catalog)=>{
+  const initial=media.match(/let initial_size = ([\s\S]*?);\r?\n/)?.[1];assert.ok(initial);
+  const aliases=[...initial.matchAll(/"([a-z0-9-]+)"/g)].map(m=>m[1]);
+  assert.equal(aliases.filter(x=>x==='slack-list-people-field-create-narrow').length,1);
+  assert.equal(aliases.includes('slack-list-people-field-create'),false);
+  assert.match(boot,/"slack-list-people-field-create"\s*\|\s*"slack-list-people-field-create-narrow"\s*\|\s*"slack-list-link-field-create"\s*\|\s*"slack-list-link-field-create-narrow"\s*\|\s*"slack-list-channel-field-create"\s*\|\s*"slack-list-channel-field-create-narrow"\s*\|\s*"slack-list-rating-field-create"\s*\|\s*"slack-list-rating-field-create-narrow"\s*\|\s*"slack-list-rating-default-field-create"\s*\|\s*"slack-list-rating-default-field-create-narrow"\s*\|\s*"slack-list-rating-standard-field-create"\s*\|\s*"slack-list-rating-standard-field-create-narrow"\s*\|\s*"slack-list-rating-custom-field-create"\s*\|\s*"slack-list-rating-custom-field-create-narrow"\s*\|\s*"slack-list-vote-field-create"\s*\|\s*"slack-list-vote-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
+  assert.match(catalog,/^\s+slack-list-people-field-create slack-list-people-field-create-narrow\s*$/m);
+ };
+ check(...inputs);
+ assert.throws(()=>check(inputs[0].replace('| "slack-list-people-field-create-narrow"',''),...inputs.slice(1)));
+ assert.throws(()=>check(inputs[0],inputs[1].replace('"slack-list-people-field-create-narrow"','"other"'),inputs[2]));
+ assert.throws(()=>check(inputs[0],inputs[1],inputs[2].replace('slack-list-people-field-create slack-list-people-field-create-narrow','')));
+});
+
+test('Link static aliases retain the shared seed and exact narrow mapping',()=>{
+ const read=p=>readFileSync(path.join(base,p),'utf8');
+ const inputs=[read('src/desktop/media.rs'),read('src/desktop/state/boot.rs'),read('scripts/agent-ui-check.sh')];
+ const check=(media,boot,catalog)=>{
+  const initial=media.match(/let initial_size = ([\s\S]*?);\r?\n/)?.[1];assert.ok(initial);
+  const aliases=[...initial.matchAll(/"([a-z0-9-]+)"/g)].map(m=>m[1]);
+  assert.equal(aliases.filter(x=>x==='slack-list-link-field-create-narrow').length,1);
+  assert.equal(aliases.includes('slack-list-link-field-create'),false);
+  assert.match(boot,/"slack-list-link-field-create"\s*\|\s*"slack-list-link-field-create-narrow"\s*\|\s*"slack-list-channel-field-create"\s*\|\s*"slack-list-channel-field-create-narrow"\s*\|\s*"slack-list-rating-field-create"\s*\|\s*"slack-list-rating-field-create-narrow"\s*\|\s*"slack-list-rating-default-field-create"\s*\|\s*"slack-list-rating-default-field-create-narrow"\s*\|\s*"slack-list-rating-standard-field-create"\s*\|\s*"slack-list-rating-standard-field-create-narrow"\s*\|\s*"slack-list-rating-custom-field-create"\s*\|\s*"slack-list-rating-custom-field-create-narrow"\s*\|\s*"slack-list-vote-field-create"\s*\|\s*"slack-list-vote-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
+  assert.match(catalog,/^\s+slack-list-link-field-create slack-list-link-field-create-narrow\s*$/m);
+ };
+ check(...inputs);
+ assert.throws(()=>check(inputs[0].replace('| "slack-list-link-field-create-narrow"',''),...inputs.slice(1)));
+ assert.throws(()=>check(inputs[0],inputs[1].replace('"slack-list-link-field-create-narrow"','"other"'),inputs[2]));
+ assert.throws(()=>check(inputs[0],inputs[1],inputs[2].replace('slack-list-link-field-create slack-list-link-field-create-narrow','')));
+});
+
+test('Channel static aliases retain the shared seed and exact narrow mapping',()=>{
+ const read=p=>readFileSync(path.join(base,p),'utf8');
+ const inputs=[read('src/desktop/media.rs'),read('src/desktop/state/boot.rs'),read('scripts/agent-ui-check.sh')];
+ const check=(media,boot,catalog)=>{
+  const initial=media.match(/let initial_size = ([\s\S]*?);\r?\n/)?.[1];assert.ok(initial);
+  const aliases=[...initial.matchAll(/"([a-z0-9-]+)"/g)].map(m=>m[1]);
+  assert.equal(aliases.filter(x=>x==='slack-list-channel-field-create-narrow').length,1);
+  assert.equal(aliases.includes('slack-list-channel-field-create'),false);
+  assert.match(boot,/"slack-list-channel-field-create"\s*\|\s*"slack-list-channel-field-create-narrow"\s*\|\s*"slack-list-rating-field-create"\s*\|\s*"slack-list-rating-field-create-narrow"\s*\|\s*"slack-list-rating-default-field-create"\s*\|\s*"slack-list-rating-default-field-create-narrow"\s*\|\s*"slack-list-rating-standard-field-create"\s*\|\s*"slack-list-rating-standard-field-create-narrow"\s*\|\s*"slack-list-rating-custom-field-create"\s*\|\s*"slack-list-rating-custom-field-create-narrow"\s*\|\s*"slack-list-vote-field-create"\s*\|\s*"slack-list-vote-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
+  assert.match(catalog,/^\s+slack-list-channel-field-create slack-list-channel-field-create-narrow\s*$/m);
+ };
+ check(...inputs);
+ for(const alias of ["slack-list-rating-default-field-create","slack-list-rating-default-field-create-narrow","slack-list-rating-standard-field-create","slack-list-rating-standard-field-create-narrow","slack-list-rating-custom-field-create","slack-list-rating-custom-field-create-narrow"]) assert.throws(()=>check(inputs[0],inputs[1].replace('"'+alias+'"','"missing-rating-alias"'),inputs[2]));
+ assert.throws(()=>check(inputs[0].replace('| "slack-list-channel-field-create-narrow"',''),...inputs.slice(1)));
+ assert.throws(()=>check(inputs[0],inputs[1].replace('"slack-list-channel-field-create-narrow"','"other"'),inputs[2]));
+ assert.throws(()=>check(inputs[0],inputs[1],inputs[2].replace('slack-list-channel-field-create slack-list-channel-field-create-narrow','')));
+});
+
+
+test('configured Number normal and narrow aliases bind distinct actual initial sizes',()=>{
+ const media=readFileSync(path.join(base,'src/desktop/media.rs'),'utf8');
+ const check=source=>{
+  const initial=source.match(/let initial_size = ([\s\S]*?);\r?\n/)?.[1];assert.ok(initial,'actual initial_size expression');
+  const aliases=[...initial.matchAll(/"([a-z0-9-]+)"/g)].map(m=>m[1]);
+  assert.equal(aliases.filter(x=>x==='slack-list-number-precision-field-create-narrow').length,1);
+  assert.equal(aliases.includes('slack-list-number-precision-field-create'),false);
+  assert.match(initial,/\{\s*WINDOW_MIN_INNER_SIZE\s*\}\s*else\s*\{\s*WINDOW_DEFAULT_INNER_SIZE\s*\}/);
+ };
+ check(media);
+ const needle='| "slack-list-number-precision-field-create-narrow"';
+ assert.throws(()=>check(media.replace(needle,needle+' | "slack-list-number-precision-field-create"')));
+ assert.throws(()=>check(media.replace(needle,'')));
+ assert.throws(()=>check(media.replace(needle,needle+' '+needle)));
+});
+
+
+test('Vote static surfaces keep normal and narrow sizes distinct and shared creation routing',()=>{
+ const media=readFileSync(path.join(base,'src/desktop/media.rs'),'utf8');
+ const branch=media.match(/let initial_size = ([\s\S]*?);\r?\n/)?.[1];assert.ok(branch);
+ for(const suffix of ['field-create','cells','board','detail']){
+  const normal='slack-list-vote-'+suffix,narrow=normal+'-narrow';
+  const names=[...branch.matchAll(/"([a-z0-9-]+)"/g)].map(m=>m[1]);
+  assert.equal(names.filter(v=>v===narrow).length,1);assert.equal(names.includes(normal),false);
+  const catalog=readFileSync(path.join(base,'scripts/agent-ui-check.sh'),'utf8');assert.ok(catalog.includes(normal+' '+narrow));
+ }
+ const boot=readFileSync(path.join(base,'src/desktop/state/boot.rs'),'utf8');
+ assert.match(boot,/"slack-list-vote-field-create"\s*\|\s*"slack-list-vote-field-create-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::text_field_create::install/);
+});
+
+test('dedicated Vote dynamic aliases preserve owned routes and exact narrow sizing',()=>{const boot=readFileSync(path.join(base,'src/desktop/state/boot.rs'),'utf8'),media=readFileSync(path.join(base,'src/desktop/media.rs'),'utf8'),catalog=readFileSync(path.join(base,'scripts/agent-ui-check.sh'),'utf8');const initial=media.match(/let initial_size = ([\s\S]*?);\r?\n/)?.[1];for(const mode of ['default','custom']){const normal='slack-list-vote-create-'+mode,narrow=normal+'-narrow';assert.ok(boot.includes('"'+normal+'"'));assert.ok(boot.includes('"'+narrow+'"'));assert.ok(initial.includes('"'+narrow+'"'));assert.ok(!initial.includes('"'+normal+'"'));assert.ok(catalog.includes(normal+'|'+narrow));}assert.match(catalog,/Use the sealed Vote field-create runner/);});

@@ -2,6 +2,7 @@
 use super::*;
 use serde_json::json;
 use super_platinum_core::slack_lists::{ColumnRename, ColumnRenameAttempt, ColumnRenamePermit};
+pub(crate) mod field_delete;
 pub(crate) mod filter;
 pub(crate) mod fixture;
 pub(crate) mod grouping;
@@ -39,8 +40,11 @@ pub(crate) struct Presentation {
     pub view: Option<String>,
     pub creation: Option<super_platinum_core::slack_lists::ViewLayout>,
     pub text_creation: bool,
+    pub deletion: Option<field_delete::Presentation>,
     pub field_choice: Option<text_create::Choice>,
     pub select_draft: Option<text_create::select::Draft>,
+    pub rating_draft: Option<super_platinum_core::slack_lists::RatingOptions>,
+    pub rating_picker: Option<u64>,
     pub observed_field: Option<text_create::Observed>,
     pub grouping: String,
     pub grouping_options: Vec<(String, String)>,
@@ -122,7 +126,8 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
             .and_then(|v| v.loaded.as_ref())
             .is_some_and(|l| l.document == e.original);
         let population_current = text_create::population_current(shell, e);
-        let editing_ready = owner::available(shell)
+        let editing_ready = (!e.target.is_deletion() || field_delete::permitted(shell))
+            && owner::available(shell)
             && original_current
             && selection_current(shell, e)
             && population_current;
@@ -135,14 +140,18 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
                 || !grouping::projection_current(shell, &e.target))
         {
             "This view changed since grouping was observed. Check current grouping before finishing this review. The request will not be repeated.".into()
-        } else if e.target.is_text_creation()
+        } else if (e.target.is_text_creation() || e.target.is_deletion())
             && e.stage == Stage::Observed
             && !e
                 .review
                 .as_ref()
                 .is_some_and(|p| p.navigation_current(shell))
         {
-            "This List view changed since the field was observed. Check current fields before finishing this review. The create request will not be repeated.".into()
+            if e.target.is_deletion() {
+                "This List view changed since the field was observed. Check current fields before finishing this review. The delete request will not be repeated.".into()
+            } else {
+                "This List view changed since the field was observed. Check current fields before finishing this review. The create request will not be repeated.".into()
+            }
         } else if e.stage == Stage::Editing && e.target.is_text_creation() && !population_current {
             "The loaded items changed. Your field name is kept. Cancel, refresh this List, then review a new field.".into()
         } else if e.target.is_text_creation()
@@ -152,6 +161,8 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
             "The loaded items changed since this request. Check current fields to review the current List; the original creation cannot be confirmed against changed items and will not be repeated.".into()
         } else if e.stage == Stage::Editing && !editing_ready {
             "This List changed or is no longer ready. Cancel, close the List, refresh it, then reopen the editor. Your input is kept until you cancel.".into()
+        } else if e.stage == Stage::Editing && e.sort_pending.is_some() {
+            "Applying the sort change. Save will be available when it finishes.".into()
         } else {
             e.message.clone()
         };
@@ -169,7 +180,16 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
             },
             creation: e.target.creation(),
             text_creation: e.target.is_text_creation(),
+            deletion: field_delete::presentation(e),
             field_choice: e.target.is_text_creation().then_some(e.field_choice),
+            rating_draft: (e.target.is_text_creation()
+                && matches!(
+                    e.field_choice.kind,
+                    super_platinum_core::slack_lists::ColumnCreateKind::Rating
+                        | super_platinum_core::slack_lists::ColumnCreateKind::Vote
+                ))
+            .then(|| e.rating_draft.clone()),
+            rating_picker: e.rating_picker,
             select_draft: (e.target.is_text_creation()
                 && e.field_choice.kind
                     == super_platinum_core::slack_lists::ColumnCreateKind::Select)
@@ -205,13 +225,19 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
             blocked,
             can_check: !blocked && owner::readable(shell),
             checkable: checkable(shell, e),
-            can_confirm: e.stage == Stage::Editing && editing_ready && !blocked,
+            can_confirm: e.stage == Stage::Editing
+                && editing_ready
+                && !blocked
+                && e.sort_pending.is_none(),
             current_fields,
             current_review: if e.target.is_grouping() {
                 grouping::review_current(shell, e)
             } else {
                 e.review.as_ref().is_some_and(|p| {
-                    if e.target.creation().is_some() || e.target.is_text_creation() {
+                    if e.target.creation().is_some()
+                        || e.target.is_text_creation()
+                        || e.target.is_deletion()
+                    {
                         p.navigation_current(shell)
                     } else {
                         p.current(shell)
@@ -346,11 +372,18 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
             return false;
         };
         Some(records)
+    } else if target.is_deletion() {
+        let Some(records) = text_create::bounded_population(shell) else {
+            return false;
+        };
+        Some(records)
     } else {
         None
     };
     let before = target.name(document).unwrap().to_owned();
-    let input = if target.is_text_creation() {
+    let input = if target.is_deletion() {
+        Input::DeleteColumn
+    } else if target.is_text_creation() {
         Input::NewTextField(String::new())
     } else if let Target::Filter(view) = &target {
         let Some(value) = super_platinum_core::slack_lists::ViewFilter::current(document, view)
@@ -395,7 +428,7 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
                 serial: next_id(),
                 job: None,
                 target: target.clone(),
-                view_selection: target.is_view().then(|| {
+                view_selection: (target.is_view() || target.is_deletion()).then(|| {
                     shell
                         .slack_lists
                         .view
@@ -410,7 +443,12 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
                 observed_field: None,
                 field_choice: text_create::Choice::initial(),
                 select_draft: Default::default(),
+                rating_draft: Default::default(),
+                rating_picker: None,
+                entity_draft: None,
                 filter_rows: filter::rows_for(&input),
+                sort_rows: sort::rows_for(&input),
+                sort_pending: None,
                 filter_capture: None,
                 input,
                 visibility_choice: next_id(),
@@ -421,14 +459,16 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
                 original: document.clone(),
                 intent: None,
                 stage: Stage::Editing,
-                message: if target.is_text_creation() {
+                message: if target.is_deletion() {
+                    "Permanently delete the selected field from every view? This app does not offer Undo for field deletion.".into()
+                } else if target.is_text_creation() {
                     "Create one field shared with everyone who has access to this List. Existing items and view settings are kept.".into()
                 } else if target.is_filter() {
                     "Choose conditions that must all match, then Save for everyone. Cancel leaves the saved view unchanged.".into()
                 } else if target.is_grouping() {
                     "Choose a field, or None, then Save for everyone. Cancel leaves the shared view unchanged.".into()
                 } else if target.is_sort() {
-                    "Choose one Number field and direction, or No sort, then Save for everyone. Cancel leaves the saved view unchanged.".into()
+                    "Choose sort fields in priority order, then Save for everyone. Cancel leaves the saved view unchanged.".into()
                 } else if target.is_visibility() {
                     "Choose one field and its visibility, then Save for everyone. Cancel leaves the saved view unchanged.".into()
                 } else if target.is_precision() {
@@ -466,7 +506,8 @@ pub(crate) fn input(mut state: Signal<ShellState>, serial: u64, value: String) {
             .get_mut(&key)
             .filter(|e| e.serial == serial && e.stage == Stage::Editing)
         {
-            if !e.target.is_text_creation()
+            if !e.target.is_deletion()
+                && !e.target.is_text_creation()
                 && !e.target.is_filter()
                 && !e.target.is_sort()
                 && !e.target.is_grouping()
@@ -496,7 +537,7 @@ fn close_entry(shell: &ShellState, serial: u64) -> bool {
             && (!e.target.is_grouping()
                 || e.stage != Stage::Observed
                 || grouping::review_current(shell, &e))
-            && (!e.target.is_text_creation()
+            && (!(e.target.is_text_creation() || e.target.is_deletion())
                 || e.stage != Stage::Observed
                 || e.review
                     .as_ref()
@@ -506,7 +547,10 @@ fn close_entry(shell: &ShellState, serial: u64) -> bool {
                 Stage::Editing | Stage::NotRequested | Stage::Observed
             ) || (matches!(e.stage, Stage::Conflict | Stage::Available)
                 && e.review.as_ref().is_some_and(|p| {
-                    if e.target.creation().is_some() || e.target.is_text_creation() {
+                    if e.target.creation().is_some()
+                        || e.target.is_text_creation()
+                        || e.target.is_deletion()
+                    {
                         p.navigation_current(&shell)
                     } else {
                         p.current(&shell)
@@ -536,6 +580,7 @@ fn prepare(shell: &mut ShellState, serial: u64) -> Option<(Guard, Intent)> {
     if old.serial != serial
         || old.stage != Stage::Editing
         || old.filter_capture.is_some()
+        || old.sort_pending.is_some()
         || (old.target.is_grouping() && !grouping::projection_current(shell, &old.target))
         || !selection_current(shell, &old)
         || !owner::available(shell)
@@ -577,7 +622,9 @@ fn admitted(
     with_registry(|r| {
         let e = r.entries.get_mut(&guard.key).unwrap();
         e.stage = Stage::Saving;
-        e.message = if e.target.is_text_creation() {
+        e.message = if e.target.is_deletion() {
+            "Deleting field...".into()
+        } else if e.target.is_text_creation() {
             format!(
                 "Creating {} field...",
                 text_create::label(e.field_choice.kind)
@@ -631,7 +678,7 @@ fn completed(
                 Stage::Uncertain
             };
             e.raw_reply = result.ok();
-            e.message=if e.target.is_text_creation(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The field request is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_filter(){if not_requested{"The filter request was not sent. Close this editor and review a new attempt."}else{"The shared filter is not confirmed. Check the current filter explicitly. This request will not be sent again."}}else if e.target.is_grouping(){if not_requested{"The grouping request was not sent. Close this editor and review a new attempt."}else{"The shared grouping is not confirmed. Check current grouping explicitly. This request will not be sent again."}}else if e.target.is_sort(){if not_requested{"The sort request was not sent. Close this editor and review a new attempt."}else{"The shared sort is not confirmed. Check the current sort explicitly. This request will not be sent again."}}else if e.target.is_visibility(){if not_requested{"The visibility request was not sent. Close this editor and review a new attempt."}else{"Field visibility is not confirmed. Check the current view explicitly. This request will not be sent again."}}else if e.target.is_precision(){if not_requested{"The number format request was not sent. Close this editor and review a new attempt."}else{"The number format is not confirmed. Check the current format explicitly. This request will not be sent again."}}else if e.target.creation().is_some(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The create request is not confirmed. Check current views explicitly. This request will not be sent again."}}else if not_requested{"The rename was not sent. Close this editor and review the name again."}else{"The rename is not confirmed. Check the current name before doing anything else. This request will not be sent again."}.into();
+            e.message=if e.target.is_deletion(){if not_requested{"The delete request was not sent. Close this editor and review a new attempt."}else{"Field deletion is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_text_creation(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The field request is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_filter(){if not_requested{"The filter request was not sent. Close this editor and review a new attempt."}else{"The shared filter is not confirmed. Check the current filter explicitly. This request will not be sent again."}}else if e.target.is_grouping(){if not_requested{"The grouping request was not sent. Close this editor and review a new attempt."}else{"The shared grouping is not confirmed. Check current grouping explicitly. This request will not be sent again."}}else if e.target.is_sort(){if not_requested{"The sort request was not sent. Close this editor and review a new attempt."}else{"The shared sort is not confirmed. Check the current sort explicitly. This request will not be sent again."}}else if e.target.is_visibility(){if not_requested{"The visibility request was not sent. Close this editor and review a new attempt."}else{"Field visibility is not confirmed. Check the current view explicitly. This request will not be sent again."}}else if e.target.is_precision(){if not_requested{"The number format request was not sent. Close this editor and review a new attempt."}else{"The number format is not confirmed. Check the current format explicitly. This request will not be sent again."}}else if e.target.creation().is_some(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The create request is not confirmed. Check current views explicitly. This request will not be sent again."}}else if not_requested{"The rename was not sent. Close this editor and review the name again."}else{"The rename is not confirmed. Check the current name before doing anything else. This request will not be sent again."}.into();
         }
     });
     // Deliberately no canonical projection and no automatic read or resend.
@@ -644,7 +691,7 @@ fn checkable(shell: &ShellState, e: &registry::Entry) -> bool {
     ) || (e.target.is_grouping()
         && e.stage == Stage::Observed
         && !grouping::review_current(shell, e))
-        || (e.target.is_text_creation()
+        || ((e.target.is_text_creation() || e.target.is_deletion())
             && e.stage == Stage::Observed
             && !e
                 .review
@@ -675,7 +722,9 @@ pub(crate) fn check(mut state: Signal<ShellState>, serial: u64) {
             e.review = None;
             e.available = None;
             e.observed_field = None;
-            e.message = if e.target.is_text_creation() {
+            e.message = if e.target.is_deletion() {
+                "Checking current fields...".into()
+            } else if e.target.is_text_creation() {
                 "Checking current fields...".into()
             } else if e.target.is_filter() {
                 "Checking current shared filter...".into()
@@ -739,6 +788,9 @@ fn checked(
                 view.loaded.as_mut().unwrap().document = loaded.document;
                 view.loaded.as_mut().unwrap().allow_lists = loaded.allow;
                 view.loaded.as_mut().unwrap().personal_task_lists = Some(loaded.personal);
+                if old.target.is_deletion() {
+                    view.loaded.as_mut().unwrap().list_experiments = loaded.experiments;
+                }
                 view.revision = next_id();
                 rebuild_rows(shell);
                 if old.target.is_grouping()
@@ -751,6 +803,12 @@ fn checked(
                 applied = true;
                 if stage == Stage::Available {
                     "A matching new view is now available. Opening it is navigation, not proof this request created it."
+                } else if old.target.is_deletion() {
+                    if stage == Stage::Observed {
+                        "The field is absent from the current schema and every view. This does not prove which request removed it."
+                    } else {
+                        "The returned schema differs from the requested deletion. Review the current fields. The earlier request may still arrive; closing does not repeat or undo it."
+                    }
                 } else if old.target.is_text_creation() {
                     if stage == Stage::Observed {
                         match old.field_choice.kind {
@@ -765,6 +823,21 @@ fn checked(
                             }
                             super_platinum_core::slack_lists::ColumnCreateKind::Select => {
                                 "A matching Select field is now visible in this Table."
+                            }
+                            super_platinum_core::slack_lists::ColumnCreateKind::Vote => {
+                                "A matching Vote field is now visible in this Table."
+                            }
+                            super_platinum_core::slack_lists::ColumnCreateKind::Rating => {
+                                "A matching Rating field is now visible in this Table."
+                            }
+                            super_platinum_core::slack_lists::ColumnCreateKind::ChannelSingleDefault => {
+                                "A matching Channel field is now visible in this Table."
+                            }
+                            super_platinum_core::slack_lists::ColumnCreateKind::Link => {
+                                "A matching Link field is now visible in this Table."
+                            }
+                            super_platinum_core::slack_lists::ColumnCreateKind::PeopleSingleDefault => {
+                                "A matching People field is now visible in this Table."
                             }
                             super_platinum_core::slack_lists::ColumnCreateKind::DateSingleDefault => {
                                 "A matching Date field is now visible in this Table."

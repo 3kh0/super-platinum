@@ -1,268 +1,205 @@
-//! Standalone canvas creation. Drafts and in-flight work outlive the dialog.
+//! Durable standalone Canvas creation. Content custody survives the dialog.
 use crate::{
     icons::{Icon, icon},
-    scheduled::Context,
-    state::{CanvasTarget, Overlay, ShellState},
+    state::{Overlay, ShellState},
 };
 use dioxus::prelude::*;
-use super_platinum_core::slack::{Error, api};
+use std::sync::Arc;
+use super_platinum_core::canvas::creation as domain;
 
-#[derive(Clone, Debug, Default)]
+mod adapter;
+mod controller;
+pub(crate) mod departure;
+mod editor;
+pub(crate) mod fixture;
+#[cfg(test)]
+mod integration_tests;
+mod native;
+mod review;
+pub(crate) use controller::{carry_pending, departure, open};
+pub(crate) use editor::Root;
+
+#[derive(Clone)]
 pub struct Draft {
-    epoch: u64,
-    team: Option<String>,
-    generation: u64,
+    owner: Option<domain::Owner>,
+    visit: String,
+    native_visit: Option<String>,
+    native_failed: bool,
+    editor: Option<Arc<editor::Editor>>,
+    attempt: Option<domain::Attempt>,
     pub title: String,
     pub markdown: String,
     pub busy: bool,
     pub uncertain: bool,
     pub error: Option<String>,
     pub created: Option<String>,
+    loading: bool,
+    close_requested: bool,
+    pending_departure: Option<departure::Pending>,
+    saved: bool,
+    fixture: bool,
+    review: Option<review::View>,
 }
 impl Draft {
-    pub fn fixture(shell: &ShellState) -> Self {
-        Self{title:"Project notes 🦊".into(),markdown:"## Our next release\n\nA **clear** plan, shared with the team.\n\n- [ ] Review the design\n- [x] Draft the proposal\n\n日本語も、そのまま。".into(),..Self::new(shell)}
-    }
-
-    fn matches(&self, shell: &ShellState) -> bool {
-        self.epoch == shell.core.account_epoch && self.team == shell.core.active_team
-    }
-    fn new(shell: &ShellState) -> Self {
+    fn new(owner: Option<domain::Owner>) -> Self {
         Self {
-            epoch: shell.core.account_epoch,
-            team: shell.core.active_team.clone(),
-            generation: shell.shortcut_generation,
-            ..Default::default()
+            owner,
+            visit: uuid::Uuid::new_v4().to_string(),
+            native_visit: None,
+            native_failed: false,
+            editor: None,
+            attempt: None,
+            title: String::new(),
+            markdown: String::new(),
+            busy: false,
+            uncertain: false,
+            error: None,
+            created: None,
+            loading: true,
+            close_requested: false,
+            pending_departure: None,
+            saved: false,
+            fixture: false,
+            review: None,
         }
     }
-}
-
-pub fn open(mut state: Signal<ShellState>) {
-    let mut shell = state.write();
-    shell.shortcut_generation = shell.shortcut_generation.wrapping_add(1);
-    if !shell
-        .canvas_create
-        .as_ref()
-        .is_some_and(|d| d.matches(&shell))
-    {
-        shell.canvas_create = Some(Draft::new(&shell));
+    pub fn fixture(_shell: &ShellState) -> Self {
+        Self { title: "Project notes \u{1f98a}".into(), markdown: "## Our next release\n\nA **clear** plan, shared with the team.\n\n- [ ] Review the design\n- [x] Draft the proposal\n\n\u{65e5}\u{672c}\u{8a9e}\u{3082}\u{3001}\u{305d}\u{306e}\u{307e}\u{307e}\u{3002}".into(),
+            fixture: true, loading: false, ..Self::new(None) }
     }
-    shell.overlay = Some(Overlay::CanvasCreate);
-}
-fn change(mut state: Signal<ShellState>, update: impl FnOnce(&mut Draft)) {
-    let mut shell = state.write();
-    if let Some(draft) = shell
-        .canvas_create
-        .as_mut()
-        .filter(|d| !d.busy && !d.uncertain && d.created.is_none())
-    {
-        update(draft);
-        draft.error = None;
+    fn current(&self, shell: &ShellState) -> bool {
+        self.fixture && crate::fixture::is_fixture()
+            || self
+                .owner
+                .as_ref()
+                .is_some_and(|owner| controller::owner(shell).as_ref() == Some(owner))
     }
-}
-fn open_created(mut state: Signal<ShellState>, id: String, title: String) {
-    state.write().canvas_create = None;
-    crate::canvas::open_target(
-        state,
-        CanvasTarget {
-            id,
-            title,
-            permalink: None,
-        },
-    );
+    fn editable(&self) -> bool {
+        (self.editor.is_some() || self.fixture)
+            && !self.loading
+            && !self.busy
+            && self.review.is_none()
+            && !self.uncertain
+            && self.created.is_none()
+            && !matches!(
+                self.attempt.as_ref().map(|a| a.delivery()),
+                Some(domain::Delivery::Reserved)
+            )
+    }
 }
 
 #[component]
 pub fn CreateDialog(mut state: Signal<ShellState>) -> Element {
+    let mount = use_hook(|| uuid::Uuid::new_v4().to_string());
+    let retire_mount = mount.clone();
+    use_drop(move || native::retire(&retire_mount));
+    let install_mount = mount.clone();
+    use_effect(move || {
+        let shell = state.read();
+        let Some(d) = shell.canvas_create.as_ref().filter(|d| d.current(&shell)) else {
+            return;
+        };
+        if d.loading || d.native_failed || d.native_visit.as_deref() == Some(install_mount.as_str())
+        {
+            return;
+        }
+        let visit = d.visit.clone();
+        let mount = install_mount.clone();
+        let editable = d.editable();
+        adapter::retain(async move {
+            let installed = native::install(&mount, editable).await;
+            let mut shell = state.write();
+            if let Some(d) = shell.canvas_create.as_mut().filter(|d| d.visit == visit) {
+                if installed {
+                    d.native_visit = Some(mount);
+                } else {
+                    d.native_failed = true;
+                    d.error = Some("The editor could not be attached. Retry local save to attach it; your saved draft remains retained.".into());
+                }
+            }
+        });
+    });
+    use_effect(move || {
+        let shell = state.read();
+        let close = shell.canvas_create.as_ref().is_some_and(|d| {
+            d.current(&shell) && d.close_requested && !d.busy && d.native_visit.is_some()
+        });
+        drop(shell);
+        if close {
+            let visit = state.peek().canvas_create.as_ref().unwrap().visit.clone();
+            controller::capture(state, &visit, controller::Action::Close);
+        }
+    });
     let snapshot = state.read();
     let Some(draft) = snapshot
         .canvas_create
         .as_ref()
-        .filter(|d| d.matches(&snapshot))
+        .filter(|d| d.current(&snapshot))
     else {
         return rsx! {};
     };
-    let locked = draft.busy || draft.uncertain || draft.created.is_some();
     let title = draft.title.clone();
     let markdown = draft.markdown.clone();
-    let created = draft.created.clone();
-    let open_title = title.clone();
+    let locked = !draft.editable();
+    let fixture = draft.fixture;
+    let title_visit = draft.visit.clone();
+    let body_visit = draft.visit.clone();
+    let submit_visit = draft.visit.clone();
+    let discard_visit = draft.visit.clone();
+    let retry_visit = draft.visit.clone();
+    let review_visit = draft.visit.clone();
+    let check_visit = draft.visit.clone();
+    let abandon_visit = draft.visit.clone();
+    let open_visit = draft.visit.clone();
+    let new_visit = draft.visit.clone();
+    let reserved_visit = draft.visit.clone();
+    let field_locked = draft.loading || draft.uncertain || draft.created.is_some();
+    let observe_key = draft
+        .editor
+        .as_ref()
+        .map(|editor| format!("{}-{:p}", draft.visit, Arc::as_ptr(editor)))
+        .unwrap_or_default();
     rsx! {
-        div {class:"scrim",onclick:move |_|state.write().dismiss_overlay()}
-        section {id:"shell-overlay-dialog",class:"modal canvas-create-dialog",role:"dialog","aria-label":"New canvas","aria-modal":"true",tabindex:"-1","data-keyboard-dialog":"true","data-dialog-kind":"other","data-dialog-generation":snapshot.shortcut_generation,
-            header {h2 {"New canvas"}button {class:"icon-btn","aria-label":"Close new canvas",onclick:move |_|state.write().dismiss_overlay(),{icon(Icon::Close,"icon")}}}
-            form {onsubmit:move |event|{event.prevent_default();dioxus::core::spawn_forever(create(state));},
-                div {class:"canvas-create-fields",
-                    p {class:"canvas-create-note","Private to you. You can share it later in Slack."}
-                    label {r#for:"canvas-create-title","Name"}
-                    input {id:"canvas-create-title","data-dialog-input":"true",initial_value:"{title}",placeholder:"Untitled canvas",disabled:locked,oninput:move |e|change(state,|d|d.title=e.value())}
-                    label {r#for:"canvas-create-body","Content"}
-                    textarea {id:"canvas-create-body",initial_value:"{markdown}",placeholder:"Start writing…",disabled:locked,"aria-describedby":"canvas-create-hint",oninput:move |e|change(state,|d|d.markdown=e.value())}
-                    p {id:"canvas-create-hint",class:"canvas-create-note","Markdown supported: headings, **bold**, links, lists and checklists."}
-                    if let Some(error)=draft.error.as_ref() {p {class:"canvas-create-error",role:"alert","{error}"}}
-                    if draft.busy {p {role:"status",class:"canvas-create-note","Creating your canvas… You can close this window while it finishes."}}
-                    if created.is_some() {p {role:"status",class:"canvas-create-note","Your canvas is ready."}}
-                }
-                footer {
-                    button {r#type:"button",onclick:move |_|state.write().dismiss_overlay(),"Close"}
-                    button {r#type:"button",disabled:draft.busy,onclick:move |_|{let mut shell=state.write();shell.canvas_create=None;shell.dismiss_overlay();},"Discard draft"}
-                    span {class:"spacer"}
-                    if draft.uncertain {
-                        button {r#type:"button",onclick:move |_|check_files(state),"Check Files"}
-                    } else if let Some(id)=created {
-                        button {r#type:"button",class:"primary",onclick:move |_|open_created(state,id.clone(),open_title.clone()),"Open canvas"}
-                    } else {
-                        button {r#type:"submit",class:"primary",disabled:draft.busy||draft.title.trim().is_empty(),if draft.busy {"Creating…"} else {"Create canvas"}}
+        div { class:"scrim", onclick:move |_|state.write().dismiss_overlay() }
+        section { id:"shell-overlay-dialog", class:"modal canvas-create-dialog", role:"dialog", "aria-label":"New canvas", "aria-modal":"true", tabindex:"-1", "data-keyboard-dialog":"true", "data-dialog-kind":"other", "data-dialog-generation":snapshot.shortcut_generation,
+            header { h2 {"New canvas"} button {class:"icon-btn", "aria-label":"Close new canvas", onclick:move |_|state.write().dismiss_overlay(), {icon(Icon::Close,"icon")}} }
+            if draft.loading { p {role:"status", "Loading your saved canvas draft\u{2026}"} }
+            else {
+                if draft.editor.is_some() { controller::Observe { key:"{observe_key}", state, visit:draft.visit.clone() } }
+                form { onsubmit:move |event| { event.prevent_default(); controller::capture(state,&submit_visit,controller::Action::Create); },
+                    div {class:"canvas-create-fields",
+                        p {class:"canvas-create-note", "Private to you. You can share it later in Slack."}
+                        label {r#for:"canvas-create-title", "Name"}
+                        input {id:"canvas-create-title", "data-canvas-visit":"{mount}", "data-dialog-input":"true", initial_value:"{title}", placeholder:"Untitled canvas", readonly:true, disabled:field_locked, oninput:move |e|controller::change(state,&title_visit,Some(e.value()),None)}
+                        label {r#for:"canvas-create-body", "Content"}
+                        textarea {id:"canvas-create-body", "data-canvas-visit":"{mount}", initial_value:"{markdown}", placeholder:"Start writing\u{2026}", readonly:true, disabled:field_locked, "aria-describedby":"canvas-create-hint", oninput:move |e|controller::change(state,&body_visit,None,Some(e.value()))}
+                        p {id:"canvas-create-hint", class:"canvas-create-note", "Markdown supported: headings, **bold**, links, lists and checklists."}
+                        if let Some(error)=draft.error.as_ref() { p {class:"canvas-create-error", role:"alert", "{error}"} }
+                        {review::render(state,draft)}
+                        if draft.busy { p {role:"status", class:"canvas-create-note", "Retaining your canvas\u{2026}"} }
+                        else if draft.created.is_some() { p {role:"status", class:"canvas-create-note", "Your canvas is ready."} }
+                        else if draft.saved && !fixture { p {role:"status",class:"canvas-create-note", "Draft saved on this device."} }
+                    }
+                    footer {
+                        button {r#type:"button", onclick:move |_|state.write().dismiss_overlay(), "Close"}
+                        if draft.error.is_some() && !fixture { button {r#type:"button",disabled:draft.busy,onclick:move |_|controller::retry(state,&retry_visit),"Retry local save"} }
+                        if !fixture {button {r#type:"button",disabled:draft.busy||draft.review.is_some(),onclick:move |_|controller::capture(state,&review_visit,controller::Action::Review),"Review retained versions"}}
+                        span {class:"spacer"}
+                        if draft.uncertain {
+                            button {r#type:"button",onclick:move |_|controller::check_files(state,&check_visit),"Check Files"}
+                            button {r#type:"button",disabled:draft.busy||fixture,onclick:move |_|controller::archive(state,&abandon_visit),"Keep unresolved draft and start another"}
+                        } else if draft.created.is_some() {
+                            button {r#type:"button",class:"primary",onclick:move |_|controller::open_created(state,&open_visit),"Open canvas"}
+                            button {r#type:"button",disabled:draft.busy||fixture,onclick:move |_|controller::archive(state,&new_visit),"Start a new canvas"}
+                        } else if matches!(draft.attempt.as_ref().map(|a|a.delivery()),Some(domain::Delivery::Reserved)) {
+                            button {r#type:"button",disabled:draft.busy||fixture,onclick:move |_|controller::cancel_reserved(state,&reserved_visit),"Cancel reserved creation"}
+                        } else {
+                            button {r#type:"button",disabled:draft.busy,onclick:move |_|controller::capture(state,&discard_visit,controller::Action::Discard),"Discard draft"}
+                            button {r#type:"submit",class:"primary",disabled:locked||title.trim().is_empty(),"Create canvas"}
+                        }
                     }
                 }
             }
         }
     }
-}
-
-async fn create(mut state: Signal<ShellState>) {
-    let (edit, visit) = {
-        let shell = state.peek();
-        let Some(d) = shell.canvas_create.as_ref().filter(|d| {
-            d.matches(&shell)
-                && !d.busy
-                && !d.uncertain
-                && d.created.is_none()
-                && !d.title.trim().is_empty()
-        }) else {
-            return;
-        };
-        (d.clone(), shell.shortcut_generation)
-    };
-    let Some(ctx) = Context::capture(&state.peek()) else {
-        if let Some(d) = state.write().canvas_create.as_mut() {
-            d.error = Some("Reconnect to create your canvas. Your draft is still here.".into());
-        }
-        return;
-    };
-    let request = match api::canvas_create(&ctx.client, &ctx.session, &edit.title, &edit.markdown) {
-        Ok(r) => r,
-        Err(_) => {
-            if let Some(d) = state.write().canvas_create.as_mut() {
-                d.error =
-                    Some("This canvas is too large. Shorten the content and try again.".into());
-            }
-            return;
-        }
-    };
-    if let Some(d) = state.write().canvas_create.as_mut() {
-        d.busy = true;
-        d.error = None;
-    }
-    let result = ctx
-        .transport
-        .execute(request)
-        .await
-        .and_then(|response| api::created_canvas_id(&response));
-    let mut shell = state.write();
-    // Root-scoped request survives dialog dismissal, but cannot open a document
-    // over a newer visit or contaminate another account/workspace's draft.
-    if !shell
-        .canvas_create
-        .as_ref()
-        .is_some_and(|d| d.matches(&shell) && d.generation == edit.generation)
-    {
-        return;
-    }
-    let current = ctx.current(&shell);
-    let auto_open = current
-        && shell.overlay == Some(Overlay::CanvasCreate)
-        && shell.shortcut_generation == visit;
-    let d = shell.canvas_create.as_mut().unwrap();
-    d.busy = false;
-    match result {
-        Ok(id) => {
-            d.created = Some(id.clone());
-            shell.show_toast("Canvas created");
-            if auto_open {
-                drop(shell);
-                open_created(state, id, edit.title.trim().into());
-            }
-        }
-        Err(error) => {
-            // Link loss can happen after Slack accepted a mutation.
-            d.uncertain = creation_uncertain(&error);
-            d.error=Some(if d.uncertain {
-                "Slack may have created this canvas. Check Files before creating another. Your draft is retained."
-            } else if error.is_offline() {
-                "Reconnect to create your canvas. Your draft is still here."
-            } else {
-                "Slack could not create this canvas. Your draft is still here. Try again."
-            }.into());
-        }
-    }
-}
-
-fn creation_uncertain(error: &Error) -> bool {
-    match error {
-        Error::Api(code) => matches!(
-            code.as_str(),
-            "canvas_created_id_missing" | "internal_error" | "fatal_error" | "service_unavailable"
-        ),
-        Error::RateLimited { .. } => false,
-        _ => true,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn creation_retains_draft_but_never_crosses_account_or_workspace() {
-        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
-        let draft = Draft::fixture(&shell);
-        assert!(draft.matches(&shell));
-        shell.shortcut_generation += 1;
-        assert!(draft.matches(&shell));
-        shell.core.account_epoch += 1;
-        assert!(!draft.matches(&shell));
-        shell.core.account_epoch -= 1;
-        shell.core.active_team = Some("OTHER".into());
-        assert!(!draft.matches(&shell));
-    }
-    #[test]
-    fn lost_creation_responses_cannot_offer_a_duplicate_retry() {
-        assert!(creation_uncertain(&Error::Offline("socket lost".into())));
-        assert!(creation_uncertain(&Error::Transport(
-            "response lost".into()
-        )));
-        assert!(creation_uncertain(&Error::Api(
-            "canvas_created_id_missing".into()
-        )));
-        assert!(creation_uncertain(&Error::Api("internal_error".into())));
-        assert!(creation_uncertain(&Error::Api("fatal_error".into())));
-        assert!(!creation_uncertain(&Error::Api("not_allowed".into())));
-        assert!(!creation_uncertain(&Error::RateLimited {
-            retry_after_secs: Some(2)
-        }));
-    }
-}
-
-fn check_files(mut state: Signal<ShellState>) {
-    {
-        let mut shell = state.write();
-        shell.dismiss_overlay();
-        if let Some(team) = shell.core.active_team.clone() {
-            let epoch = shell.core.account_epoch;
-            shell.core.files.ensure_scope(epoch, &team);
-            shell.core.files.begin(
-                super_platinum_core::files::FilesQuery {
-                    kind: super_platinum_core::files::FileKind::Canvases,
-                    owner: super_platinum_core::files::FileOwner::Yours,
-                    sort: super_platinum_core::files::FileSort::Newest,
-                    ..Default::default()
-                },
-                1,
-            );
-        }
-    }
-    dioxus::core::spawn_forever(crate::bootstrap::load_main_view(
-        state,
-        crate::state::MainView::Files,
-    ));
 }

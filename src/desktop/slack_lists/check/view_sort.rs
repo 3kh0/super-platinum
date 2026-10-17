@@ -1,8 +1,10 @@
-//! Eight captures, three explicit saved-view sort changes, one real retained registry path.
+//! Schema2: legacy eight and ordered fourteen captures through the shared Sort worker.
 use super::*;
 use crate::slack_lists::rename::{self, Stage, fixture as rename_fixture};
 mod harness;
 mod oracle;
+mod ordered;
+mod rows;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     if !rename_fixture::sort_check_enabled() {
         return;
@@ -87,7 +89,14 @@ fn choice(value: &super_platinum_core::slack_lists::ViewSortChoice) -> Value {
     use super_platinum_core::slack_lists::ViewSortChoice;
     match value {
         ViewSortChoice::None => json!({"column":null,"ascending":null}),
+        ViewSortChoice::Ordered(rows) => {
+            json!({"ordered": rows.iter().map(choice).collect::<Vec<_>>()})
+        }
         ViewSortChoice::Number {
+            column_id,
+            ascending,
+        }
+        | ViewSortChoice::Field {
             column_id,
             ascending,
         } => json!({"column":column_id,"ascending":ascending}),
@@ -105,7 +114,7 @@ fn draft(state: Signal<ShellState>) -> Result<Value, String> {
         return Err("Wrong Sort presentation".into());
     }
     Ok(
-        json!({"serial":p.serial,"visit":crate::slack_lists::generation(&shell),"selection":rename::selection(&shell),"choice":s.choice,"original":choice(&s.original),"desired":choice(&s.desired),"current":s.current.as_ref().map(choice)}),
+        json!({"serial":p.serial,"visit":crate::slack_lists::generation(&shell),"selection":rename::selection(&shell),"choice":s.choice,"rows":s.rows,"editable":rename::sort::editable(&shell,p.serial,crate::slack_lists::generation(&shell).unwrap(),s.choice),"original":choice(&s.original),"desired":choice(&s.desired),"current":s.current.as_ref().map(choice)}),
     )
 }
 async fn click(d: &dioxus::desktop::DesktopContext, id: &str) -> Result<(), String> {
@@ -121,77 +130,83 @@ async fn open_choice(
     d: &dioxus::desktop::DesktopContext,
     mode: usize,
 ) -> Result<Value, String> {
-    checked(d, "window.__listViewSort.rememberSort()").await?;
-    click(d, "slack-list-sort").await?;
-    phase(state, Stage::Editing).await?;
-    wait_dom(
-        d,
-        "({ok:document.getElementById('slack-list-sort-field')===document.activeElement})",
-    )
-    .await?;
-    let old = draft(state)?;
-    let field = if mode == 0 { "" } else { "C_NUMBER" };
-    let selected = checked(
-        d,
-        &format!(
-            "window.__listViewSort.select('#slack-list-sort-field',{})",
-            json!(field)
-        ),
-    )
-    .await?;
-    wait_dom(
-        d,
-        &format!(
-            "({{ok:document.getElementById('slack-list-sort-field')?.value==={}}})",
-            json!(field)
-        ),
-    )
-    .await?;
-    // A field change rotates the typed revision. Wait for the actual rerender
-    // before dispatching direction, so the callback captures the new choice.
-    if old["desired"]["column"] != json!(if mode == 0 { None } else { Some("C_NUMBER") }) {
-        wait_dom(d,&format!("({{ok:document.getElementById('slack-list-sort-field')?.dataset.sortChoice!=={}}})",json!(old["choice"].as_u64().unwrap().to_string()))).await?;
-    }
-    let direction = if mode == 2 { "descending" } else { "ascending" };
-    if mode != 0 {
-        checked(
-            d,
-            &format!(
-                "window.__listViewSort.select('#slack-list-sort-direction',{})",
-                json!(direction)
-            ),
-        )
-        .await?;
-    }
-    wait_dom(d,"({ok:!!document.getElementById('slack-list-rename-confirm')&&!document.getElementById('slack-list-rename-confirm').disabled})").await?;
-    let current = draft(state)?;
-    let desired = if mode == 0 {
-        json!({"column":null,"ascending":null})
+    if rename_fixture::ordered_sort_check_enabled() {
+        ordered::open(state, d, mode).await
     } else {
-        json!({"column":"C_NUMBER","ascending":mode==1})
-    };
-    if current["desired"] != desired {
-        return Err("Wrong desired sort after actual select events".into());
+        rows::legacy(state, d, mode).await
     }
-    let dom = checked(d, "window.__listViewSort.draft()").await?;
-    if dom["serial"].as_str() != current["serial"].as_u64().map(|n| n.to_string()).as_deref()
-        || dom["choice"].as_str() != current["choice"].as_u64().map(|n| n.to_string()).as_deref()
-        || dom["field"] != field
-        || dom["direction"] != direction
-    {
-        return Err("Rendered sort callback choice drift".into());
-    }
-    Ok(json!({"model":current,"dom":dom,"selected":selected}))
 }
 struct Proof {
-    docs: [Value; 3],
+    docs: Vec<Value>,
+    ordered: bool,
     population: Value,
     find: Value,
-    ids: [u64; 3],
+    ids: [u64; 4],
     stages: Vec<Value>,
     captures: serde_json::Map<String, Value>,
 }
 impl Proof {
+    fn names(&self) -> &[&str] {
+        if self.ordered {
+            &ordered::STAGES
+        } else {
+            &oracle::STAGES
+        }
+    }
+    fn table(&self, index: usize) -> bool {
+        if self.ordered {
+            matches!(index, 7 | 9 | 11 | 13)
+        } else {
+            matches!(index, 4 | 5 | 7)
+        }
+    }
+    fn exact(
+        &self,
+        l: &Value,
+        count: usize,
+        finished: usize,
+        write: bool,
+        read: bool,
+        server: usize,
+    ) -> Result<(), String> {
+        if self.ordered {
+            ordered::exact(
+                l, count, finished, write, read, server, &self.docs, self.ids,
+            )
+        } else {
+            oracle::exact(
+                l,
+                count,
+                finished,
+                write,
+                read,
+                server,
+                &[
+                    self.docs[0].clone(),
+                    self.docs[1].clone(),
+                    self.docs[2].clone(),
+                ],
+                self.ids[..3].try_into().unwrap(),
+            )
+        }
+    }
+    fn stage_ledger(&self, l: &Value, index: usize) -> Result<(), String> {
+        if self.ordered {
+            let (c, f, s) = ordered::CHECKPOINTS[index];
+            self.exact(l, c, f, index == 3, false, s)
+        } else {
+            oracle::stage(
+                l,
+                index,
+                &[
+                    self.docs[0].clone(),
+                    self.docs[1].clone(),
+                    self.docs[2].clone(),
+                ],
+                self.ids[..3].try_into().unwrap(),
+            )
+        }
+    }
     fn stable(&self, state: Signal<ShellState>, mode: usize) -> Result<(), String> {
         let shell = state.peek();
         let p = crate::slack_lists::presentation(&shell).ok_or("Missing List projection")?;
@@ -212,7 +227,13 @@ impl Proof {
                 _ => None,
             })
             .collect::<Vec<_>>();
-        if ids != oracle::order(mode) {
+        if ids
+            != if self.ordered {
+                ordered::order(mode)
+            } else {
+                oracle::order(mode)
+            }
+        {
             return Err(format!("Wrong projected Sort order: {ids:?}"));
         }
         drop(shell);
@@ -231,26 +252,40 @@ impl Proof {
         name: &str,
     ) -> Result<(), String> {
         let ordinal = self.stages.len();
-        if oracle::STAGES.get(ordinal) != Some(&name) {
+        if self.names().get(ordinal) != Some(&name) {
             return Err("Wrong Sort stage order".into());
         }
-        let mode = [0, 0, 0, 0, 1, 2, 2, 0][ordinal];
+        let mode = if self.ordered {
+            ordered::CANONICAL[ordinal]
+        } else {
+            [0, 0, 0, 0, 1, 2, 2, 0][ordinal]
+        };
         self.stable(state, mode)?;
         let ledger = rename_fixture::snapshot(&state.peek())?;
-        oracle::stage(&ledger, ordinal, &self.docs, self.ids)?;
-        if matches!(ordinal, 4 | 5 | 7) {
+        self.stage_ledger(&ledger, ordinal)?;
+        if self.table(ordinal) {
             checked(d, "window.__listViewSort.revealFirst()").await?;
+        } else {
+            checked(d, "window.__listViewSort.captureView()").await?;
         }
         let geometry = wait_dom(
             d,
             &format!("window.__listViewSort.geometry({})", json!(name)),
         )
         .await?;
-        let model = if matches!(ordinal, 4 | 5 | 7) {
+        let model = if self.table(ordinal) {
             Value::Null
         } else {
             draft(state)?
         };
+        let binding = if model.is_null() {
+            Value::Null
+        } else {
+            checked(d, &format!("window.__listViewSort.sameDraft({model})")).await?
+        };
+        if !model.is_null() && binding["dom"] != geometry["draft"] {
+            return Err("Sort geometry and complete model binding differ".into());
+        }
         let owner = |v: &Value, n: Option<u64>| v.as_str() == n.map(|n| n.to_string()).as_deref();
         if !owner(
             &geometry["owner"]["visit"],
@@ -268,10 +303,15 @@ impl Proof {
         self.captures
             .insert(name.into(), harness::capture(d, name).await?);
         self.stable(state, mode)?;
-        if rename_fixture::snapshot(&state.peek())? != ledger {
+        if !model.is_null() {
+            checked(d, &format!("window.__listViewSort.sameDraft({model})")).await?;
+        }
+        if rename_fixture::snapshot(&state.peek())? != ledger
+            || !model.is_null() && draft(state)? != model
+        {
             return Err("Sort changed during capture".into());
         }
-        self.stages.push(json!({"ordinal":ordinal,"stage":name,"geometry":geometry,"ledger":ledger,"document":document(state)?,"population":population(state)?,"find":find(state)?,"draft":model,"noSession":true,"noTransport":true}));
+        self.stages.push(json!({"ordinal":ordinal,"stage":name,"geometry":geometry,"binding":binding,"ledger":ledger,"document":document(state)?,"population":population(state)?,"find":find(state)?,"draft":model,"noSession":true,"noTransport":true}));
         Ok(())
     }
 }
@@ -281,6 +321,20 @@ async fn run(
 ) -> Result<Value, String> {
     let owner = harness::wait_runner(state).await?;
     checked(d, include_str!("view_sort.js")).await?;
+    checked(d, include_str!("view_sort/rows.js")).await?;
+    checked(d, include_str!("view_sort/geometry.js")).await?;
+    checked(
+        d,
+        &format!(
+            "window.__listViewSort.setMode({})",
+            json!(if rename_fixture::ordered_sort_check_enabled() {
+                "ordered"
+            } else {
+                "legacy"
+            })
+        ),
+    )
+    .await?;
     wait_dom(d,"({ok:!!document.getElementById('slack-list-sort')&&!document.getElementById('slack-list-rename')})").await?;
     if find(state)? != json!({"input":"","applied":"","revision":0}) {
         return Err("Unexpected initial Find".into());
@@ -315,19 +369,30 @@ async fn run(
         return Err("Wrong Sort fixture raw source".into());
     }
     let mut proof = Proof {
-        docs: oracle::documents(&before),
+        docs: if rename_fixture::ordered_sort_check_enabled() {
+            ordered::documents(&before)
+        } else {
+            oracle::documents(&before).to_vec()
+        },
+        ordered: rename_fixture::ordered_sort_check_enabled(),
         population,
         find: find(state)?,
-        ids: [0; 3],
+        ids: [0; 4],
         stages: vec![],
         captures: Default::default(),
     };
     proof.stable(state, 0)?;
-    let canceled = open_choice(state, d, 2).await?;
+    let canceled = if proof.ordered {
+        ordered::prelude(state, d, &mut proof).await?
+    } else {
+        open_choice(state, d, 2).await?
+    };
     click(d, "slack-list-rename-close").await?;
     let cancel_focus = wait_dom(d, "window.__listViewSort.returnedSort()").await?;
     let canceled_ledger = rename_fixture::snapshot(&state.peek())?;
-    if canceled_ledger["requests"] != json!([])
+    if !rename_fixture::sort_registry_empty(&state.peek())
+        || rename::presentation(&state.peek()).is_some()
+        || canceled_ledger["requests"] != json!([])
         || canceled_ledger["responses"] != json!([])
         || canceled_ledger["finished"] != json!([])
     {
@@ -341,11 +406,31 @@ async fn run(
     if asc["model"]["serial"] == canceled["model"]["serial"] {
         return Err("Canceled sort identity reused".into());
     }
-    proof.stage(state, d, "asc-edit").await?;
+    proof
+        .stage(
+            state,
+            d,
+            if proof.ordered {
+                "multi-edit"
+            } else {
+                "asc-edit"
+            },
+        )
+        .await?;
     click(d, "slack-list-rename-confirm").await?;
     phase(state, Stage::Saving).await?;
     pending(state, "writePending").await?;
-    proof.stage(state, d, "asc-saving").await?;
+    proof
+        .stage(
+            state,
+            d,
+            if proof.ordered {
+                "multi-saving"
+            } else {
+                "asc-saving"
+            },
+        )
+        .await?;
     rename_fixture::release(&state.peek(), false)?;
     phase(state, Stage::Uncertain).await?;
     proof.stage(state, d, "uncertain").await?;
@@ -358,7 +443,7 @@ async fn run(
     phase(state, Stage::Checking).await?;
     pending(state, "readPending").await?;
     let held = rename_fixture::snapshot(&state.peek())?;
-    oracle::exact(&held, 8, 2, false, true, 1, &proof.docs, proof.ids)?;
+    proof.exact(&held, 8, 2, false, true, 1)?;
     let captured_loaded = state
         .peek()
         .slack_lists
@@ -402,17 +487,21 @@ async fn run(
     }
     rename_fixture::release(&state.peek(), true)?;
     let obsolete = completed(state, 3).await?;
-    oracle::exact(&obsolete, 8, 3, false, false, 1, &proof.docs, proof.ids)?;
+    proof.exact(&obsolete, 8, 3, false, false, 1)?;
     phase(state, Stage::Uncertain).await?;
     proof.stable(state, 0)?;
     let retained = draft(state)?;
     let mut expected_retained = asc["model"].clone();
     expected_retained["visit"] = json!(new_visit);
     expected_retained["selection"] = json!(new_selection);
+    expected_retained["editable"] = json!(false);
     if retained != expected_retained {
         return Err("Retired check replaced original intent or choice".into());
     }
     let retired = json!({"oldVisit":old_visit,"newVisit":new_visit,"oldSelection":old_selection,"newSelection":new_selection,"oldEpoch":old_epoch,"newEpoch":state.peek().core.account_epoch,"held":held,"setup":setup,"completed":obsolete,"document":document(state)?,"population":self::population(state)?,"find":find(state)?,"reboundFind":rebound_find,"retained":retained});
+    if proof.ordered {
+        proof.stage(state, d, "retired").await?;
+    }
     click(d, "slack-list-rename-check").await?;
     phase(state, Stage::Observed).await?;
     proof.stable(state, 1)?;
@@ -420,11 +509,16 @@ async fn run(
     checked(d, "window.__listViewSort.rememberSort()").await?;
     click(d, "slack-list-rename-close").await?;
     wait_dom(d, "window.__listViewSort.returnedSort()").await?;
-    proof.stage(state, d, "ascending").await?;
+    proof
+        .stage(state, d, if proof.ordered { "multi" } else { "ascending" })
+        .await?;
     let desc = open_choice(state, d, 2).await?;
     proof.ids[1] = desc["model"]["serial"]
         .as_u64()
         .ok_or("Missing Desc serial")?;
+    if proof.ordered {
+        proof.stage(state, d, "reorder-edit").await?;
+    }
     let desc_ack = save_positive(state, d, &proof, 1, 15, 4, 2).await?;
     proof.stable(state, 1)?;
     click(d, "slack-list-rename-check").await?;
@@ -434,14 +528,52 @@ async fn run(
     checked(d, "window.__listViewSort.rememberSort()").await?;
     click(d, "slack-list-rename-close").await?;
     wait_dom(d, "window.__listViewSort.returnedSort()").await?;
-    proof.stage(state, d, "descending").await?;
+    proof
+        .stage(
+            state,
+            d,
+            if proof.ordered {
+                "reordered"
+            } else {
+                "descending"
+            },
+        )
+        .await?;
+    let removed = if proof.ordered {
+        let edit = open_choice(state, d, 3).await?;
+        proof.ids[2] = edit["model"]["serial"]
+            .as_u64()
+            .ok_or("Missing single serial")?;
+        proof.stage(state, d, "remove-edit").await?;
+        let ack = save_positive(state, d, &proof, 2, 22, 6, 3).await?;
+        click(d, "slack-list-rename-check").await?;
+        phase(state, Stage::Observed).await?;
+        proof.stable(state, 3)?;
+        let observed = draft(state)?;
+        checked(d, "window.__listViewSort.rememberSort()").await?;
+        click(d, "slack-list-rename-close").await?;
+        wait_dom(d, "window.__listViewSort.returnedSort()").await?;
+        proof.stage(state, d, "single").await?;
+        json!({"edit":edit,"ack":ack,"observed":observed})
+    } else {
+        Value::Null
+    };
     let clear = open_choice(state, d, 0).await?;
-    proof.ids[2] = clear["model"]["serial"]
+    proof.ids[if proof.ordered { 3 } else { 2 }] = clear["model"]["serial"]
         .as_u64()
         .ok_or("Missing Clear serial")?;
     proof.stage(state, d, "clear-edit").await?;
-    let clear_ack = save_positive(state, d, &proof, 2, 22, 6, 0).await?;
-    proof.stable(state, 2)?;
+    let clear_ack = save_positive(
+        state,
+        d,
+        &proof,
+        if proof.ordered { 3 } else { 2 },
+        if proof.ordered { 29 } else { 22 },
+        if proof.ordered { 8 } else { 6 },
+        0,
+    )
+    .await?;
+    proof.stable(state, if proof.ordered { 3 } else { 2 })?;
     click(d, "slack-list-rename-check").await?;
     phase(state, Stage::Observed).await?;
     proof.stable(state, 0)?;
@@ -453,12 +585,25 @@ async fn run(
     let ledger = rename_fixture::snapshot(&state.peek())?;
     let viewport = checked(d, "({ok:true,viewport:[innerWidth,innerHeight]})").await?;
     proof.stable(state, 0)?;
-    oracle::exact(&ledger, 25, 8, false, false, 0, &proof.docs, proof.ids)?;
+    proof.exact(
+        &ledger,
+        if proof.ordered { 32 } else { 25 },
+        if proof.ordered { 10 } else { 8 },
+        false,
+        false,
+        0,
+    )?;
     if rename_fixture::snapshot(&state.peek())? != ledger {
         return Err("Final Sort ledger drift".into());
     }
+    if !rename_fixture::sort_registry_empty(&state.peek())
+        || rename::presentation(&state.peek()).is_some()
+    {
+        return Err("Final Done retained a Sort entry".into());
+    }
+    let history = checked(d, "window.__listViewSort.history()").await?;
     Ok(
-        json!({"ok":true,"fixture":std::env::var("SUPER_PLATINUM_FIXTURE").unwrap(),"owner":owner,"noSession":true,"noTransport":true,"before":proof.docs[0],"ascending":proof.docs[1],"descending":proof.docs[2],"population":proof.population,"find":proof.find,"firstFind":first_find,"attempts":proof.ids,"cancel":{"draft":canceled,"focus":cancel_focus,"ledger":canceled_ledger},"choices":{"ascending":asc,"descending":desc,"clear":clear},"retiredCheck":retired,"observed":{"ascending":observed_asc,"descending":observed_desc,"clear":observed_clear},"positiveAcks":{"descending":desc_ack,"clear":clear_ack},"stages":proof.stages,"captures":proof.captures,"ledger":ledger,"viewport":viewport["viewport"]}),
+        json!({"ok":true,"schema":2,"registryAbsent":true,"mode":if proof.ordered{"ordered"}else{"legacy"},"removed":removed,"scrolls":history["scrolls"],"fixture":std::env::var("SUPER_PLATINUM_FIXTURE").unwrap(),"owner":owner,"noSession":true,"noTransport":true,"documents":proof.docs,"before":proof.docs[0],"ascending":proof.docs[1],"descending":proof.docs[2],"population":proof.population,"find":proof.find,"firstFind":first_find,"attempts":&proof.ids[..if proof.ordered{4}else{3}],"cancel":{"registryAbsent":true,"presentationAbsent":true,"draft":canceled,"focus":cancel_focus,"ledger":canceled_ledger},"choices":{"ascending":asc,"descending":desc,"clear":clear},"retiredCheck":retired,"observed":{"ascending":observed_asc,"descending":observed_desc,"clear":observed_clear},"positiveAcks":{"descending":desc_ack,"clear":clear_ack},"stages":proof.stages,"captures":proof.captures,"ledger":ledger,"viewport":viewport["viewport"]}),
     )
 }
 async fn save_positive(
@@ -474,30 +619,12 @@ async fn save_positive(
     phase(state, Stage::Saving).await?;
     pending(state, "writePending").await?;
     let held = rename_fixture::snapshot(&state.peek())?;
-    oracle::exact(
-        &held,
-        count,
-        finished,
-        true,
-        false,
-        before,
-        &proof.docs,
-        proof.ids,
-    )?;
+    proof.exact(&held, count, finished, true, false, before)?;
     proof.stable(state, before)?;
     rename_fixture::release(&state.peek(), false)?;
     phase(state, Stage::Uncertain).await?;
     let ack = rename_fixture::snapshot(&state.peek())?;
-    oracle::exact(
-        &ack,
-        count,
-        finished + 1,
-        false,
-        false,
-        after,
-        &proof.docs,
-        proof.ids,
-    )?;
+    proof.exact(&ack, count, finished + 1, false, false, after)?;
     proof.stable(state, before)?;
     let retained =
         rename_fixture::retained_reply(&state.peek()).ok_or("Missing real positive receipt")?;

@@ -198,3 +198,5 @@ fn rich_sanitizer_copies_only_consumed_scalars_and_keeps_plain_fallback() {
         ("Readable".into(), CellContent::Plain)
     );
 }
+
+mod people;

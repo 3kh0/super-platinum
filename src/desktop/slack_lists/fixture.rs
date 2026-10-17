@@ -17,12 +17,16 @@ mod creation;
 mod date_edit;
 mod date_views;
 mod duplicate;
+pub(crate) mod entity_settings;
+pub(crate) mod field_delete;
 pub(crate) mod field_visibility;
 pub(crate) mod find;
 pub(crate) mod hydration;
 mod link_edit;
 pub(crate) mod number_filter;
 pub(crate) mod number_rename;
+pub(crate) mod people_avatars;
+pub(crate) mod rating;
 mod record_detail;
 mod record_open;
 pub(crate) mod text_field_create;
@@ -32,6 +36,7 @@ pub(crate) mod view_filter;
 pub(crate) mod view_grouping;
 pub(crate) mod view_rename;
 pub(crate) mod view_sort;
+pub(crate) mod vote;
 pub(crate) use board_views::{add_board_views, enable_board_tasks, restore_board_views};
 pub(crate) use channel_edit::{add_channel_edits, channel_edit_value, restore_channel_edits};
 pub(super) use creation::dispatch_creation;
@@ -54,7 +59,13 @@ pub(crate) use user_edit::{add_user_edits, restore_user_edits, user_edit_value};
 pub(crate) struct Fixture {
     checkbox: Option<text_field_create::checkbox::State>,
     date: Option<text_field_create::date::State>,
+    number_precision: Option<text_field_create::number_precision::State>,
+    rating: Option<text_field_create::rating::State>,
+    vote: Option<text_field_create::vote::State>,
     select_create: Option<text_field_create::select::State>,
+    people_create: Option<text_field_create::people::State>,
+    link_create: Option<text_field_create::link::State>,
+    channel_create: Option<text_field_create::channel::State>,
     board_move_check: Option<board_move::check::State>,
     board_creation: board_creation::State,
     record_open: record_open::State,
@@ -128,7 +139,13 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     shell.slack_lists.fixture = Some(Fixture {
         checkbox: None,
         date: None,
+        number_precision: None,
+        rating: None,
+        vote: None,
         select_create: None,
+        people_create: None,
+        link_create: None,
+        channel_create: None,
         board_move_check: None,
         board_creation: board_creation::State::default(),
         record_open: record_open::State::default(),
@@ -181,8 +198,34 @@ pub(crate) fn refresh(shell: &mut ShellState) {
         text_field_create::date::fail(shell, error);
         return;
     }
+    if let Err(error) =
+        text_field_create::number_precision::read_input(shell, &attempt, &mut result)
+    {
+        text_field_create::number_precision::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::rating::read_input(shell, &attempt, &mut result) {
+        text_field_create::rating::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::vote::read_input(shell, &attempt, &mut result) {
+        text_field_create::vote::fail(shell, error);
+        return;
+    }
     if let Err(error) = text_field_create::select::read_input(shell, &attempt, &mut result) {
         text_field_create::select::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::people::read_input(shell, &attempt, &mut result) {
+        text_field_create::people::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::link::read_input(shell, &attempt, &mut result) {
+        text_field_create::link::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::channel::read_input(shell, &attempt, &mut result) {
+        text_field_create::channel::fail(shell, error);
         return;
     }
     if let Err(error) = board_move::check::read_input(shell, &attempt, &mut result) {
@@ -197,8 +240,32 @@ pub(crate) fn refresh(shell: &mut ShellState) {
         text_field_create::date::fail(shell, error);
         return;
     }
+    if let Err(error) = text_field_create::number_precision::read_completed(shell, &attempt) {
+        text_field_create::number_precision::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::rating::read_completed(shell, &attempt) {
+        text_field_create::rating::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::vote::read_completed(shell, &attempt) {
+        text_field_create::vote::fail(shell, error);
+        return;
+    }
     if let Err(error) = text_field_create::select::read_completed(shell, &attempt) {
         text_field_create::select::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::people::read_completed(shell, &attempt) {
+        text_field_create::people::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::link::read_completed(shell, &attempt) {
+        text_field_create::link::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::channel::read_completed(shell, &attempt) {
+        text_field_create::channel::fail(shell, error);
         return;
     }
     if let Err(error) = board_move::check::read_completed(shell, &attempt) {
@@ -232,8 +299,33 @@ pub(super) fn dispatch(shell: &mut ShellState, attempt: EditAttempt) {
         text_field_create::date::fail(shell, error);
         return;
     }
+    if let Err(error) = text_field_create::number_precision::preflight(shell, &attempt, &canonical)
+    {
+        text_field_create::number_precision::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::rating::preflight(shell, &attempt, &canonical) {
+        text_field_create::rating::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::vote::preflight(shell, &attempt, &canonical) {
+        text_field_create::vote::fail(shell, error);
+        return;
+    }
     if let Err(error) = text_field_create::select::preflight(shell, &attempt, &canonical) {
         text_field_create::select::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::people::preflight(shell, &attempt, &canonical) {
+        text_field_create::people::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::link::preflight(shell, &attempt, &canonical) {
+        text_field_create::link::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::channel::preflight(shell, &attempt, &canonical) {
+        text_field_create::channel::fail(shell, error);
         return;
     }
     if let Err(error) = board_move::check::preflight(shell, &attempt, &canonical) {
@@ -257,8 +349,32 @@ pub(super) fn dispatch(shell: &mut ShellState, attempt: EditAttempt) {
         text_field_create::date::fail(shell, error);
         return;
     }
+    if let Err(error) = text_field_create::number_precision::request(shell, &attempt, &request) {
+        text_field_create::number_precision::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::rating::request(shell, &attempt, &request) {
+        text_field_create::rating::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::vote::request(shell, &attempt, &request) {
+        text_field_create::vote::fail(shell, error);
+        return;
+    }
     if let Err(error) = text_field_create::select::request(shell, &attempt, &request) {
         text_field_create::select::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::people::request(shell, &attempt, &request) {
+        text_field_create::people::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::link::request(shell, &attempt, &request) {
+        text_field_create::link::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::channel::request(shell, &attempt, &request) {
+        text_field_create::channel::fail(shell, error);
         return;
     }
     if let Err(error) = board_move::check::request(shell, &attempt, &request) {
@@ -312,6 +428,7 @@ pub(crate) fn complete_pending(shell: &mut ShellState) {
                 "checkbox",
                 "rich_text",
                 "number",
+                "rating",
                 "select",
                 "date",
                 "user",
@@ -355,8 +472,33 @@ pub(crate) fn complete_pending(shell: &mut ShellState) {
         text_field_create::date::fail(shell, error);
         return;
     }
+    if let Err(error) = text_field_create::number_precision::completion(shell, &attempt, uncertain)
+    {
+        text_field_create::number_precision::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::rating::completion(shell, &attempt, uncertain) {
+        text_field_create::rating::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::vote::completion(shell, &attempt, uncertain) {
+        text_field_create::vote::fail(shell, error);
+        return;
+    }
     if let Err(error) = text_field_create::select::completion(shell, &attempt, uncertain) {
         text_field_create::select::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::people::completion(shell, &attempt, uncertain) {
+        text_field_create::people::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::link::completion(shell, &attempt, uncertain) {
+        text_field_create::link::fail(shell, error);
+        return;
+    }
+    if let Err(error) = text_field_create::channel::completion(shell, &attempt, uncertain) {
+        text_field_create::channel::fail(shell, error);
         return;
     }
     if let Err(error) = board_move::check::completion(shell, &attempt, uncertain) {

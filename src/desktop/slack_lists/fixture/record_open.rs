@@ -31,6 +31,12 @@ pub(in crate::slack_lists) fn record_open(
         token: "fixture-not-a-token".into(),
     };
     let request = api::lists_records_open(&shell.core.client, &session, list, record);
+    if let Err(error) = text_field_create::rating::record_open(shell, generation, &request) {
+        text_field_create::rating::fail(shell, error);
+    }
+    if let Err(error) = text_field_create::vote::record_open(shell, generation, &request) {
+        text_field_create::vote::fail(shell, error);
+    }
     let mut valid = request.method == "POST"
         && url::Url::parse(&request.url).is_ok_and(|url| url.path() == "/api/lists.records.open");
     valid &= match request.body {

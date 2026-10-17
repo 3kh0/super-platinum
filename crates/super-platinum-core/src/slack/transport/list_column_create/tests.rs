@@ -22,8 +22,8 @@ async fn actual_capture_permit_builder_and_transport_preserve_exact_typed_forms_
         config::WorkspaceSession,
         slack::{SlackClient, api},
         slack_lists::{
-            ColumnCreate, ColumnCreateAttempt, ColumnCreateKind, Document, PersonalTaskLists,
-            RecordsPage, SelectCreateOptions,
+            ColumnCreate, ColumnCreateAttempt, ColumnCreateKind, Document, NumberCreatePrecision,
+            PersonalTaskLists, RatingOptions, RecordsPage, SelectCreateOptions, VoteOptions,
         },
     };
     for (kind, wire_type, wire_options) in [
@@ -33,7 +33,73 @@ async fn actual_capture_permit_builder_and_transport_preserve_exact_typed_forms_
             "number",
             Some(r#"{"precision":0}"#),
         ),
+        (
+            ColumnCreateKind::NumberDefault0,
+            "number",
+            Some(r#"{"precision":1}"#),
+        ),
+        (
+            ColumnCreateKind::NumberDefault0,
+            "number",
+            Some(r#"{"precision":2}"#),
+        ),
+        (
+            ColumnCreateKind::NumberDefault0,
+            "number",
+            Some(r#"{"precision":3}"#),
+        ),
+        (
+            ColumnCreateKind::NumberDefault0,
+            "number",
+            Some(r#"{"precision":4}"#),
+        ),
+        (
+            ColumnCreateKind::NumberDefault0,
+            "number",
+            Some(r#"{"precision":5}"#),
+        ),
+        (
+            ColumnCreateKind::Rating,
+            "rating",
+            Some(r#"{"emoji":":star:","max":1}"#),
+        ),
+        (
+            ColumnCreateKind::Rating,
+            "rating",
+            Some(r#"{"emoji":":star:","max":5}"#),
+        ),
+        (
+            ColumnCreateKind::Rating,
+            "rating",
+            Some(r#"{"emoji":":fixture_custom:","emoji_team_id":"T1","max":3}"#),
+        ),
+        (
+            ColumnCreateKind::Vote,
+            "vote",
+            Some(r#"{"emoji":":sparkling_heart:"}"#),
+        ),
+        (
+            ColumnCreateKind::Vote,
+            "vote",
+            Some(r#"{"emoji":":heart:","emoji_team_id":"T1"}"#),
+        ),
+        (
+            ColumnCreateKind::Vote,
+            "vote",
+            Some(r#"{"emoji":":fixture_custom:","emoji_team_id":"T1"}"#),
+        ),
         (ColumnCreateKind::Checkbox, "checkbox", None),
+        (ColumnCreateKind::Link, "link", None),
+        (
+            ColumnCreateKind::ChannelSingleDefault,
+            "channel",
+            Some(r#"{"default_value":null,"format":"single_entity","show_member_name":true}"#),
+        ),
+        (
+            ColumnCreateKind::PeopleSingleDefault,
+            "user",
+            Some(r#"{"default_value":null,"format":"single_entity","show_member_name":true}"#),
+        ),
         (
             ColumnCreateKind::Select,
             "select",
@@ -66,7 +132,45 @@ async fn actual_capture_permit_builder_and_transport_preserve_exact_typed_forms_
                 &serde_json::json!({"ok":true,"prefs":{"task_lists":"[]","assigned_to_list":""}}),
             )
             .unwrap();
-            let intent = if kind == ColumnCreateKind::Select {
+            let intent = if kind == ColumnCreateKind::NumberDefault0 {
+                ColumnCreate::capture_number(
+                    &document,
+                    &records,
+                    "V1",
+                    name,
+                    NumberCreatePrecision::from_wire(
+                        &serde_json::from_str(wire_options.unwrap()).unwrap(),
+                    )
+                    .unwrap(),
+                    "U1",
+                    Some("full"),
+                    Some(&personal),
+                )
+            } else if kind == ColumnCreateKind::Vote {
+                ColumnCreate::capture_vote(
+                    &document,
+                    &records,
+                    "V1",
+                    name,
+                    VoteOptions::from_wire(&serde_json::from_str(wire_options.unwrap()).unwrap())
+                        .unwrap(),
+                    "U1",
+                    Some("full"),
+                    Some(&personal),
+                )
+            } else if kind == ColumnCreateKind::Rating {
+                ColumnCreate::capture_rating(
+                    &document,
+                    &records,
+                    "V1",
+                    name,
+                    RatingOptions::from_wire(&serde_json::from_str(wire_options.unwrap()).unwrap())
+                        .unwrap(),
+                    "U1",
+                    Some("full"),
+                    Some(&personal),
+                )
+            } else if kind == ColumnCreateKind::Select {
                 ColumnCreate::capture_select(
                     &document,
                     &records,
@@ -123,7 +227,7 @@ async fn actual_capture_permit_builder_and_transport_preserve_exact_typed_forms_
             assert_eq!(fields, &exact);
             assert_eq!(
                 fields.len(),
-                if kind == ColumnCreateKind::Checkbox {
+                if matches!(kind, ColumnCreateKind::Checkbox | ColumnCreateKind::Link) {
                     6
                 } else {
                     7
@@ -402,14 +506,14 @@ async fn second_owner_fence_offline_and_cross_form_refuse_without_dispatch() {
 }
 
 #[tokio::test]
-async fn type_options_cross_pairs_nonzero_and_opaque_number_options_refuse_before_dispatch() {
+async fn type_options_cross_pairs_out_of_range_and_opaque_number_options_refuse_before_dispatch() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let address = listener.local_addr().unwrap();
     let transport = Transport::new("fixture-cookie").unwrap();
     for (kind, options) in [
         ("text", r#"{"precision":0}"#),
         ("number", r#"{"format":"text"}"#),
-        ("number", r#"{"precision":1}"#),
+        ("number", r#"{"precision":6}"#),
         ("number", r#"{"precision":"0"}"#),
         ("number", r#"{"precision":false}"#),
         ("number", r#"{"precision":0.0}"#),
@@ -444,3 +548,12 @@ mod checkbox;
 mod date;
 
 mod select;
+
+mod people;
+
+mod link;
+
+mod channel;
+mod rating;
+
+mod vote;

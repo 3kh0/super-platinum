@@ -142,6 +142,7 @@ pub struct ShellState {
     pub canvas: Option<CanvasTarget>,
     pub(crate) canvas_checklist: crate::canvas::checklist::State,
     pub canvas_create: Option<crate::canvas_create::Draft>,
+    pub canvas_creation: crate::canvas_create::Root,
     pub toast: Option<ToastVm>,
     /// What the rail says about the link to Slack.
     pub connection: ConnectionVm,
@@ -574,6 +575,9 @@ impl ShellState {
     }
 
     pub fn dismiss_overlay(&mut self) {
+        if crate::canvas_create::departure(self) {
+            return;
+        }
         if self.overlay == Some(Overlay::Viewer) {
             crate::file_preview::refresh::close(self);
         }
@@ -630,6 +634,12 @@ impl ShellState {
     }
 
     pub fn open_search(&mut self, conversation: bool) {
+        if crate::canvas_create::departure::request(
+            self,
+            crate::canvas_create::departure::Destination::Search { conversation },
+        ) {
+            return;
+        }
         if !self.signed_in || self.loading {
             return;
         }

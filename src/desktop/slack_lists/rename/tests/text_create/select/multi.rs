@@ -48,6 +48,7 @@ fn observed_multi(s: &mut ShellState) -> (Vec<String>, String) {
     fresh.document.raw["list_metadata"]["schema"][1]["options"] = options.clone();
     fresh.document = Document::parse(fresh.document.raw).unwrap();
     let mut wrong = network::Metadata {
+        experiments: None,
         document: fresh.document.clone(),
         allow: fresh.allow.clone(),
         personal: fresh.personal.clone(),

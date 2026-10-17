@@ -1,9 +1,15 @@
-//! Minimal ordinary Text/Number/Checkbox/Date/Select field creation. Request shape is source-backed; the
+//! Closed ordinary field creation. Request shape is source-backed; the
 //! isolated-addition predicate is a conservative observational subset, not a
 //! captured server normalization contract or proof that this attempt caused it.
 use super::{Column, Document, ListError, PersonalTaskLists, RecordsPage, ViewRename};
 use serde_json::{Value, json};
+mod entity;
+mod number;
+pub use entity::{
+    EntityCreateDefaults, EntityCreateDomain, EntityCreateFormat, EntityCreateOptions,
+};
 mod select;
+pub use number::NumberCreatePrecision;
 pub use select::{SelectCreateFormat, SelectCreateOption, SelectCreateOptions};
 
 /// Closed creation shapes. This is not a type conversion or arbitrary options API.
@@ -13,7 +19,12 @@ pub enum ColumnCreateKind {
     NumberDefault0,
     Checkbox,
     DateSingleDefault,
+    PeopleSingleDefault,
+    ChannelSingleDefault,
+    Link,
     Select,
+    Rating,
+    Vote,
 }
 impl ColumnCreateKind {
     pub fn as_str(self) -> &'static str {
@@ -22,17 +33,27 @@ impl ColumnCreateKind {
             Self::NumberDefault0 => "number",
             Self::Checkbox => "checkbox",
             Self::DateSingleDefault => "date",
+            Self::PeopleSingleDefault => "user",
+            Self::ChannelSingleDefault => "channel",
+            Self::Link => "link",
             Self::Select => "select",
+            Self::Rating => "rating",
+            Self::Vote => "vote",
         }
     }
-    /// Constant wire options. Checkbox omits the member; Select requires the owned
-    /// configuration on ColumnCreate::options and cannot use capture_kind.
+    /// Default wire options. Configured Number and Select use ColumnCreate::options.
+    /// Checkbox and Link omit this member; Select cannot use capture_kind.
     pub fn options(self) -> Option<Value> {
         match self {
             Self::Text => Some(json!({"format":"text"})),
             Self::NumberDefault0 => Some(json!({"precision":0})),
-            Self::Checkbox | Self::Select => None,
+            Self::Checkbox | Self::Link | Self::Select => None,
+            Self::Rating => Some(super::RatingOptions::default().wire()),
+            Self::Vote => Some(super::VoteOptions::default().wire()),
             Self::DateSingleDefault => Some(json!({"format":"single","date_format":"default"})),
+            Self::PeopleSingleDefault | Self::ChannelSingleDefault => {
+                Some(json!({"format":"single_entity","show_member_name":true,"default_value":null}))
+            }
         }
     }
 }
@@ -45,6 +66,10 @@ pub struct ColumnCreate {
     name: String,
     kind: ColumnCreateKind,
     select: Option<SelectCreateOptions>,
+    entity: Option<EntityCreateOptions>,
+    number_precision: NumberCreatePrecision,
+    rating: super::RatingOptions,
+    vote: super::VoteOptions,
     user_id: String,
 }
 fn identity(s: &str) -> bool {
@@ -111,6 +136,76 @@ impl ColumnCreate {
             personal,
         )
     }
+    /// All captured ordinary Number decimals. The legacy kind entry remains default0.
+    pub fn capture_number(
+        document: &Document,
+        records: &RecordsPage,
+        view: &str,
+        name: &str,
+        precision: NumberCreatePrecision,
+        authenticated_user: &str,
+        allow: Option<&str>,
+        personal: Option<&PersonalTaskLists>,
+    ) -> Result<Self, ListError> {
+        let mut intent = Self::capture_kind(
+            document,
+            records,
+            view,
+            name,
+            ColumnCreateKind::NumberDefault0,
+            authenticated_user,
+            allow,
+            personal,
+        )?;
+        intent.number_precision = precision;
+        Ok(intent)
+    }
+    pub fn capture_rating(
+        document: &Document,
+        records: &RecordsPage,
+        view: &str,
+        name: &str,
+        options: super::RatingOptions,
+        authenticated_user: &str,
+        allow: Option<&str>,
+        personal: Option<&PersonalTaskLists>,
+    ) -> Result<Self, ListError> {
+        let mut intent = Self::capture_kind(
+            document,
+            records,
+            view,
+            name,
+            ColumnCreateKind::Rating,
+            authenticated_user,
+            allow,
+            personal,
+        )?;
+        intent.rating = options;
+        Ok(intent)
+    }
+    pub fn capture_vote(
+        document: &Document,
+        records: &RecordsPage,
+        view: &str,
+        name: &str,
+        options: super::VoteOptions,
+        authenticated_user: &str,
+        allow: Option<&str>,
+        personal: Option<&PersonalTaskLists>,
+    ) -> Result<Self, ListError> {
+        let mut intent = Self::capture_kind(
+            document,
+            records,
+            view,
+            name,
+            ColumnCreateKind::Vote,
+            authenticated_user,
+            allow,
+            personal,
+        )?;
+        intent.vote = options;
+        Ok(intent)
+    }
     pub fn capture_select(
         document: &Document,
         records: &RecordsPage,
@@ -133,6 +228,35 @@ impl ColumnCreate {
             personal,
         )
     }
+    /// Freeze ordinary People/Channel options. Domain determines the existing
+    /// kind so the captured type and typed default key cannot disagree.
+    pub fn capture_entity(
+        document: &Document,
+        records: &RecordsPage,
+        view: &str,
+        name: &str,
+        options: EntityCreateOptions,
+        authenticated_user: &str,
+        allow: Option<&str>,
+        personal: Option<&PersonalTaskLists>,
+    ) -> Result<Self, ListError> {
+        let kind = match options.domain() {
+            EntityCreateDomain::People => ColumnCreateKind::PeopleSingleDefault,
+            EntityCreateDomain::Channel => ColumnCreateKind::ChannelSingleDefault,
+        };
+        let mut captured = Self::capture_kind(
+            document,
+            records,
+            view,
+            name,
+            kind,
+            authenticated_user,
+            allow,
+            personal,
+        )?;
+        captured.entity = Some(options);
+        Ok(captured)
+    }
     fn capture_config(
         document: &Document,
         records: &RecordsPage,
@@ -152,6 +276,12 @@ impl ColumnCreate {
             || name.chars().any(char::is_control)
         {
             return Err(ListError(match kind {
+                ColumnCreateKind::Vote => {
+                    "Enter a nonempty Vote field name on one line, at most 256 UTF-16 units."
+                }
+                ColumnCreateKind::Rating => {
+                    "Enter a nonempty Rating field name on one line, at most 256 UTF-16 units."
+                }
                 ColumnCreateKind::Text => {
                     "Enter a nonempty Text field name on one line, at most 256 UTF-16 units."
                 }
@@ -163,6 +293,15 @@ impl ColumnCreate {
                 }
                 ColumnCreateKind::Select => {
                     "Enter a nonempty Select field name on one line, at most 256 UTF-16 units."
+                }
+                ColumnCreateKind::Link => {
+                    "Enter a nonempty Link field name on one line, at most 256 UTF-16 units."
+                }
+                ColumnCreateKind::ChannelSingleDefault => {
+                    "Enter a nonempty Channel field name on one line, at most 256 UTF-16 units."
+                }
+                ColumnCreateKind::PeopleSingleDefault => {
+                    "Enter a nonempty People field name on one line, at most 256 UTF-16 units."
                 }
                 ColumnCreateKind::DateSingleDefault => {
                     "Enter a nonempty Date field name on one line, at most 256 UTF-16 units."
@@ -176,6 +315,10 @@ impl ColumnCreate {
             name: name.into(),
             kind,
             select,
+            entity: None,
+            number_precision: NumberCreatePrecision::default(),
+            rating: Default::default(),
+            vote: Default::default(),
             user_id: authenticated_user.into(),
         })
     }
@@ -197,11 +340,21 @@ impl ColumnCreate {
     pub fn kind(&self) -> ColumnCreateKind {
         self.kind
     }
-    /// Complete immutable options, including the captured Select choice vector.
+    /// Complete immutable options, including captured choice/default vectors.
     pub fn options(&self) -> Option<Value> {
+        if self.kind == ColumnCreateKind::Vote {
+            return Some(self.vote.wire());
+        }
+        if self.kind == ColumnCreateKind::Rating {
+            return Some(self.rating.wire());
+        }
+        if self.kind == ColumnCreateKind::NumberDefault0 {
+            return Some(self.number_precision.wire());
+        }
         self.select
             .as_ref()
             .map(SelectCreateOptions::wire)
+            .or_else(|| self.entity.as_ref().map(EntityCreateOptions::wire))
             .or_else(|| self.kind.options())
     }
     pub fn authenticated_user(&self) -> &str {
@@ -257,6 +410,13 @@ impl ColumnCreate {
             || added.kind != self.kind.as_str()
             || !(if self.kind == ColumnCreateKind::Checkbox {
                 added.ordinary_checkbox_without_options()
+            } else if self.kind == ColumnCreateKind::Link {
+                // Local no-configuration observation policy, not a server normalization
+                // claim. Preserve absent and empty-object raw shapes distinctly.
+                added
+                    .raw
+                    .get("options")
+                    .is_none_or(|v| v.as_object().is_some_and(|m| m.is_empty()))
             } else {
                 self.options().as_ref() == added.raw.get("options")
             })
@@ -473,3 +633,15 @@ mod date_tests;
 
 #[cfg(test)]
 mod select_tests;
+
+#[cfg(test)]
+mod people_tests;
+
+#[cfg(test)]
+mod link_tests;
+
+#[cfg(test)]
+mod channel_tests;
+
+#[cfg(test)]
+mod entity_config_tests;

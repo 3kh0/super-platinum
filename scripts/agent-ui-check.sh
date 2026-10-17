@@ -24,7 +24,9 @@ FIXTURES=(
   bookmarks bookmarks-narrow bookmarks-edit bookmarks-remove bookmarks-error bookmarks-folder bookmarks-folder-remove bookmarks-move
   bookmarks-emoji bookmarks-emoji-narrow
   canvas-create canvas-create-narrow canvas-create-error
+  canvas-creation-durable canvas-creation-durable-narrow
   canvas canvas-narrow canvas-loading canvas-error canvas-rename canvas-rename-error canvas-readonly
+  canvas-comments canvas-comments-narrow
   canvas-checklist canvas-checklist-narrow canvas-checklist-saving canvas-checklist-uncertain
   canvas-text canvas-text-narrow
   canvas-structure canvas-structure-narrow
@@ -93,11 +95,38 @@ FIXTURES=(
   slack-list-compound-filter slack-list-compound-filter-narrow
   slack-list-text-field-create slack-list-text-field-create-narrow
   slack-list-number-field-create slack-list-number-field-create-narrow
+  slack-list-number-precision-field-create slack-list-number-precision-field-create-narrow
   slack-list-checkbox-field-create slack-list-checkbox-field-create-narrow
   slack-list-date-field-create slack-list-date-field-create-narrow
   slack-list-select-field-create slack-list-select-field-create-narrow
   slack-list-multi-select-field-create slack-list-multi-select-field-create-narrow
+  slack-list-people-field-create slack-list-people-field-create-narrow
+  slack-list-link-field-create slack-list-link-field-create-narrow
+  slack-list-channel-field-create slack-list-channel-field-create-narrow
+  slack-list-rating-field-create slack-list-rating-field-create-narrow
+  slack-list-rating-cells slack-list-rating-cells-narrow
+  slack-list-people-defaults-single-create slack-list-people-defaults-single-create-narrow
+  slack-list-people-defaults-multiple-create slack-list-people-defaults-multiple-create-narrow
+  slack-list-people-defaults-null-create slack-list-people-defaults-null-create-narrow
+  slack-list-people-defaults-omitted-create slack-list-people-defaults-omitted-create-narrow
+  slack-list-channel-defaults-single-create slack-list-channel-defaults-single-create-narrow
+  slack-list-channel-defaults-multiple-create slack-list-channel-defaults-multiple-create-narrow
+  slack-list-channel-defaults-null-create slack-list-channel-defaults-null-create-narrow
+  slack-list-channel-defaults-omitted-create slack-list-channel-defaults-omitted-create-narrow
+  slack-list-vote-create-default slack-list-vote-create-default-narrow
+  slack-list-vote-create-custom slack-list-vote-create-custom-narrow
+  slack-list-rating-default-field-create slack-list-rating-default-field-create-narrow
+  slack-list-rating-standard-field-create slack-list-rating-standard-field-create-narrow
+  slack-list-rating-custom-field-create slack-list-rating-custom-field-create-narrow
+  slack-list-vote-field-create slack-list-vote-field-create-narrow
+  slack-list-vote-cells slack-list-vote-cells-narrow
+  slack-list-vote-board slack-list-vote-board-narrow
+  slack-list-vote-detail slack-list-vote-detail-narrow
+  slack-list-people-avatars slack-list-people-avatars-narrow slack-list-people-avatars-board slack-list-people-avatars-board-narrow slack-list-people-avatars-detail slack-list-people-avatars-detail-narrow slack-list-people-settings slack-list-people-settings-narrow
+  slack-list-channel-settings slack-list-channel-settings-narrow
   slack-list-view-sort slack-list-view-sort-narrow
+  slack-list-ordered-sort slack-list-ordered-sort-narrow
+  slack-list-field-delete slack-list-field-delete-narrow
   slack-list-view-grouping slack-list-view-grouping-narrow
   slack-list-board-grouping slack-list-board-grouping-narrow
   slack-list-board-move slack-list-board-move-narrow slack-list-board-move-checkbox slack-list-board-move-checkbox-narrow
@@ -158,6 +187,18 @@ FIXTURES=(
 owned_fixture_route() {
   owned_route=""
   case "$1" in
+    slack-list-people-defaults-single-create|slack-list-people-defaults-single-create-narrow|slack-list-people-defaults-multiple-create|slack-list-people-defaults-multiple-create-narrow|slack-list-people-defaults-null-create|slack-list-people-defaults-null-create-narrow|slack-list-people-defaults-omitted-create|slack-list-people-defaults-omitted-create-narrow|slack-list-channel-defaults-single-create|slack-list-channel-defaults-single-create-narrow|slack-list-channel-defaults-multiple-create|slack-list-channel-defaults-multiple-create-narrow|slack-list-channel-defaults-null-create|slack-list-channel-defaults-null-create-narrow|slack-list-channel-defaults-omitted-create|slack-list-channel-defaults-omitted-create-narrow)
+      owned_route="Use the sealed configured Entity creation runner with owned captures and readiness."
+      return 0 ;;
+    slack-list-vote-create-default|slack-list-vote-create-default-narrow|slack-list-vote-create-custom|slack-list-vote-create-custom-narrow)
+      owned_route="Use the sealed Vote field-create runner with owned captures and readiness."
+      return 0 ;;
+    slack-list-rating-default-field-create|slack-list-rating-default-field-create-narrow|slack-list-rating-standard-field-create|slack-list-rating-standard-field-create-narrow|slack-list-rating-custom-field-create|slack-list-rating-custom-field-create-narrow)
+      owned_route="Use the sealed Rating field-create runner with owned captures and trusted keyboard actions."
+      return 0 ;;
+    slack-list-field-delete|slack-list-field-delete-narrow)
+      owned_route="Use the sealed field deletion runner with owned captures and readiness."
+      return 0 ;;
     slack-list-view-grouping|slack-list-view-grouping-narrow|slack-list-board-grouping|slack-list-board-grouping-narrow)
       owned_route="Use the sealed existing-view Group by runner with owned captures and readiness."
       return 0 ;;

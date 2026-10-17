@@ -87,9 +87,9 @@ fn unsupported_current_rules_are_preserved_and_cannot_be_cleared_or_overwritten(
         json!([{}]),
         json!([{"key":"estimate","ascending":"true"}]),
         json!([{"key":"C_NUMBER","ascending":true}]),
-        json!([{"key":"name","ascending":true}]),
+        json!([{"key":"name","ascending":true,"unknown":true}]),
         json!([{"key":"estimate","ascending":true,"column_id":"C_NUMBER"}]),
-        json!([{"key":"estimate","ascending":true},{"key":"second","ascending":false}]),
+        json!([{"key":"estimate","ascending":true},{"key":"estimate","ascending":false}]),
     ] {
         let mut raw = document().raw;
         raw["list_metadata"]["views"][0]["sorts"] = rules;
@@ -286,3 +286,7 @@ fn observed_sort_reprojects_numeric_order_without_changing_raw_records_or_cursor
         assert_eq!(page, untouched);
     }
 }
+
+mod supported;
+
+mod ordered;

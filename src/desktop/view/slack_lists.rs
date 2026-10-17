@@ -12,15 +12,18 @@ mod editor;
 mod filter;
 mod find;
 mod grouping;
+mod people;
 #[cfg(test)]
 mod picker_tests;
 mod precision;
+mod rating;
 mod record;
 mod rename;
 mod row;
 mod sort;
 mod subitem;
 mod visibility;
+mod vote;
 const PAGE_SIZE: usize = 50;
 const KEYBOARD_HELP: &str = "Arrow keys move between cells; Right and Left expand or collapse items and groups. Space changes a checkbox. Alt+Enter opens item details. F2 edits a cell. Enter opens cell controls; Escape returns to the cell.";
 pub(crate) fn dialog(state: Signal<ShellState>) -> Element {

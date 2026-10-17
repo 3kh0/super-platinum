@@ -53,6 +53,7 @@ tokio = { version = "1", features = [
     "time",
 ] }
 url = "2"
+uuid = { version = "=1.28.0", features = ["v4"] }
 # Same dialog backend/version already used by the pinned Dioxus desktop crate.
 rfd = { version = "0.17.2", default-features = false, features = ["xdg-portal"] }
 # Use dioxus::desktop::{tao, wry} so native types match Dioxus's versions.

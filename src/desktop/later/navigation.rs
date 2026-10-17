@@ -8,6 +8,8 @@ pub(super) struct OpenVisit {
     channel: u64,
     list: u64,
     thread: u64,
+    overlay: Option<crate::state::Overlay>,
+    shortcut: u64,
 }
 impl OpenVisit {
     pub(super) fn begin(shell: &mut ShellState) -> Self {
@@ -17,6 +19,8 @@ impl OpenVisit {
             channel: shell.channel_generation,
             list: shell.core.later.generation,
             thread: shell.thread_generation,
+            overlay: shell.overlay,
+            shortcut: shell.shortcut_generation,
         }
     }
     pub(super) fn current(&self, shell: &ShellState) -> bool {
@@ -25,6 +29,8 @@ impl OpenVisit {
             && shell.channel_generation == self.channel
             && shell.core.later.generation == self.list
             && shell.thread_generation == self.thread
+            && shell.overlay == self.overlay
+            && shell.shortcut_generation == self.shortcut
     }
 }
 
@@ -37,6 +43,12 @@ fn selected_message(mut page: MessagesListPage, key: &SavedKey) -> Option<Messag
 }
 
 pub fn open(mut state: Signal<ShellState>, key: SavedKey) {
+    if crate::canvas_create::departure::request(
+        &mut state.write(),
+        crate::canvas_create::departure::Destination::Later(key.clone()),
+    ) {
+        return;
+    }
     if key.item_type == "file" {
         super::files::open(state, key);
         return;
@@ -215,6 +227,24 @@ mod tests {
         assert!(!visit.current(&shell));
         let visit = OpenVisit::begin(&mut shell);
         shell.main_view = MainView::Home;
+        assert!(!visit.current(&shell));
+    }
+}
+
+#[cfg(test)]
+mod canvas_departure_tests {
+    use super::*;
+    #[test]
+    fn pending_metadata_does_not_cross_a_new_canvas_visit_or_overlay_aba() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        shell.main_view = MainView::Later;
+        shell.overlay = None;
+        let visit = OpenVisit::begin(&mut shell);
+        assert!(visit.current(&shell));
+        shell.overlay = Some(crate::state::Overlay::CanvasCreate);
+        assert!(!visit.current(&shell));
+        shell.shortcut_generation += 1;
+        shell.overlay = None;
         assert!(!visit.current(&shell));
     }
 }

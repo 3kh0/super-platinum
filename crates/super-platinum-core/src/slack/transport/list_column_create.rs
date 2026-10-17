@@ -1,4 +1,4 @@
-//! Exact minimal Text/Number/Checkbox/Date/Select-column-create form, sharing only the established one-attempt HTTP mechanics.
+//! Closed ordinary column-create forms, sharing only the established one-attempt HTTP mechanics.
 use super::*;
 pub type ListColumnCreateFailure = ListColumnRenameFailure;
 impl Transport {
@@ -57,9 +57,17 @@ fn allowed(request: &PreparedRequest) -> bool {
         Some("checkbox") => crate::slack_lists::ColumnCreateKind::Checkbox,
         Some("select") => crate::slack_lists::ColumnCreateKind::Select,
         Some("date") => crate::slack_lists::ColumnCreateKind::DateSingleDefault,
+        Some("user") => crate::slack_lists::ColumnCreateKind::PeopleSingleDefault,
+        Some("channel") => crate::slack_lists::ColumnCreateKind::ChannelSingleDefault,
+        Some("link") => crate::slack_lists::ColumnCreateKind::Link,
+        Some("rating") => crate::slack_lists::ColumnCreateKind::Rating,
+        Some("vote") => crate::slack_lists::ColumnCreateKind::Vote,
         _ => return false,
     };
-    let expected: &[&str] = if kind == crate::slack_lists::ColumnCreateKind::Checkbox {
+    let expected: &[&str] = if matches!(
+        kind,
+        crate::slack_lists::ColumnCreateKind::Checkbox | crate::slack_lists::ColumnCreateKind::Link
+    ) {
         &["token", "list_id", "view_id", "name", "type", "_x_reason"]
     } else {
         &[
@@ -98,6 +106,29 @@ fn allowed(request: &PreparedRequest) -> bool {
             crate::slash_commands::codec::decode(value(5).as_bytes(), 8192)
                 .ok()
                 .is_some_and(|v| crate::slack_lists::SelectCreateOptions::from_wire(&v).is_ok())
+        } else if kind == crate::slack_lists::ColumnCreateKind::Vote {
+            crate::slash_commands::codec::decode(value(5).as_bytes(), 8192)
+                .ok()
+                .is_some_and(|v| crate::slack_lists::VoteOptions::from_wire(&v).is_ok())
+        } else if kind == crate::slack_lists::ColumnCreateKind::Rating {
+            crate::slash_commands::codec::decode(value(5).as_bytes(), 8192)
+                .ok()
+                .is_some_and(|v| crate::slack_lists::RatingOptions::from_wire(&v).is_ok())
+        } else if kind == crate::slack_lists::ColumnCreateKind::NumberDefault0 {
+            crate::slash_commands::codec::decode(value(5).as_bytes(), 8192)
+                .ok()
+                .is_some_and(|v| crate::slack_lists::NumberCreatePrecision::from_wire(&v).is_ok())
+        } else if matches!(
+            kind,
+            crate::slack_lists::ColumnCreateKind::PeopleSingleDefault
+                | crate::slack_lists::ColumnCreateKind::ChannelSingleDefault
+        ) {
+            let domain = if kind == crate::slack_lists::ColumnCreateKind::PeopleSingleDefault {
+                crate::slack_lists::EntityCreateDomain::People
+            } else {
+                crate::slack_lists::EntityCreateDomain::Channel
+            };
+            crate::slack_lists::EntityCreateOptions::decode(domain, value(5).as_bytes()).is_ok()
         } else {
             kind.options().is_none_or(|expected| {
                 crate::slash_commands::codec::decode(value(5).as_bytes(), 8192).ok()
@@ -109,3 +140,6 @@ fn allowed(request: &PreparedRequest) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod entity_tests;

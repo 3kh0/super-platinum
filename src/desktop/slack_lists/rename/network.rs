@@ -11,6 +11,7 @@ pub(super) struct Metadata {
     pub document: Document,
     pub allow: Option<String>,
     pub personal: PersonalTaskLists,
+    pub experiments: Option<super_platinum_core::slack::api::ListExperiments>,
 }
 pub(super) fn positive(value: &Value) -> Result<(), Error> {
     if value.get("ok") != Some(&Value::Bool(true))
@@ -48,6 +49,13 @@ pub(super) fn same_incarnation(a: &Document, b: &Document) -> bool {
             .iter()
             .all(|k| a.raw.get(*k) == b.raw.get(*k))
 }
+fn is_deletion(guard: &Guard) -> bool {
+    with_registry(|r| {
+        r.entries
+            .get(&guard.key)
+            .is_some_and(|e| e.serial == guard.serial && e.target.is_deletion())
+    })
+}
 async fn read(
     state: Signal<ShellState>,
     guard: &Guard,
@@ -64,16 +72,29 @@ async fn read(
             .scope
             .request(&state.peek())
             .ok_or(Error::TransportNotConfigured)?;
-        context
-            .transport
-            .execute_list_column_rename_read(request, || {
-                guard.current(&state.peek(), stage) && !registry::blocked(&guard.key.owner)
-            })
-            .await
-            .map_err(|e| match e {
-                ListColumnRenameReadFailure::NotRequested(e)
-                | ListColumnRenameReadFailure::Unconfirmed(e) => e,
-            })
+        if is_deletion(guard) {
+            context
+                .transport
+                .execute_list_column_delete_read(request, || {
+                    guard.current(&state.peek(), stage) && !registry::blocked(&guard.key.owner)
+                })
+                .await
+                .map_err(|e| match e {
+                    ListColumnRenameFailure::NotRequested(e)
+                    | ListColumnRenameFailure::Unconfirmed(e) => e,
+                })
+        } else {
+            context
+                .transport
+                .execute_list_column_rename_read(request, || {
+                    guard.current(&state.peek(), stage) && !registry::blocked(&guard.key.owner)
+                })
+                .await
+                .map_err(|e| match e {
+                    ListColumnRenameReadFailure::NotRequested(e)
+                    | ListColumnRenameReadFailure::Unconfirmed(e) => e,
+                })
+        }
     };
     if let Err(e) = &result {
         registry::record(&guard.key.owner, e);
@@ -133,7 +154,20 @@ async fn metadata(
     .await?;
     positive(&raw)?;
     let personal = api::parse_list_personal_task_lists(&raw)?;
+    let experiments = if is_deletion(guard) {
+        let raw = read(
+            state,
+            guard,
+            stage,
+            api::list_experiments(&client, &session),
+        )
+        .await?;
+        Some(api::parse_list_experiments(&raw)?)
+    } else {
+        None
+    };
     Ok(Metadata {
+        experiments,
         document,
         allow,
         personal,
@@ -165,6 +199,7 @@ pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) 
         let result = if super::super::fixture::enabled(&state.peek()) {
             fixture::write(state, &guard, permit).await
         } else if let Some(context) = guard.scope.request(&state.peek()) {
+            let deletion = permit.is_deletion();
             let text_creation = permit.is_text_creation();
             let sort = permit.is_sort();
             let grouping = permit.is_grouping();
@@ -177,7 +212,12 @@ pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) 
             let current = || {
                 guard.current(&state.peek(), Stage::Saving) && !registry::blocked(&guard.key.owner)
             };
-            if text_creation {
+            if deletion {
+                context
+                    .transport
+                    .execute_list_column_delete(request, current)
+                    .await
+            } else if text_creation {
                 context
                     .transport
                     .execute_list_column_create(request, current)

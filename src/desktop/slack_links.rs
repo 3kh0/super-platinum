@@ -85,6 +85,12 @@ fn canonical_host(host: &str) -> String {
 }
 
 pub(crate) fn open(mut state: Signal<ShellState>, input: &str) {
+    if crate::canvas_create::departure::request(
+        &mut state.write(),
+        crate::canvas_create::departure::Destination::SlackLink(input.into()),
+    ) {
+        return;
+    }
     let link = match parse::parse(input) {
         Ok(link) => link,
         Err(_) => {
@@ -284,6 +290,9 @@ fn modal_revision(shell: &ShellState) -> Option<(u64, Option<String>)> {
 }
 
 fn select_target(shell: &mut ShellState, channel: &str, anchor: Option<&str>) -> bool {
+    if crate::canvas_create::departure(shell) {
+        return false;
+    }
     if let Some(anchor) = anchor {
         return shell.open_search_result(channel, anchor);
     }

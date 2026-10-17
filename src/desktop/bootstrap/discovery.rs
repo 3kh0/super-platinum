@@ -417,6 +417,12 @@ pub async fn load_more_dms(mut state: Signal<ShellState>) {
 }
 
 pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
+    if crate::canvas_create::departure::request(
+        &mut state.write(),
+        crate::canvas_create::departure::Destination::Surface(target),
+    ) {
+        return;
+    }
     // Each rail tab keeps its own conversation, the way Slack's does: leaving
     // Activity for a channel and coming back shows the item that was being
     // read, not the channel it was left for.

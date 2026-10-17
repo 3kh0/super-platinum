@@ -3,7 +3,7 @@ use std::sync::Arc;
 use super_platinum_core::{config::WorkspaceSession, slack::Transport};
 
 #[derive(Clone)]
-pub(super) struct Scope {
+pub(in crate::canvas) struct Scope {
     account: Option<String>,
     epoch: u64,
     pub team: String,

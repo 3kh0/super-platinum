@@ -86,13 +86,18 @@ fn expand_node(v: &VNode, node: &TemplateNode) -> Vec<Node> {
 }
 
 #[test]
-fn exact_observed_summary_is_outside_body_only_for_select_and_options_remain_locked() {
+fn exact_observed_summary_is_outside_body_for_select_and_number_and_options_remain_locked() {
     for kind in [
         ColumnCreateKind::Select,
         ColumnCreateKind::Text,
         ColumnCreateKind::NumberDefault0,
         ColumnCreateKind::Checkbox,
         ColumnCreateKind::DateSingleDefault,
+        ColumnCreateKind::PeopleSingleDefault,
+        ColumnCreateKind::Link,
+        ColumnCreateKind::ChannelSingleDefault,
+        ColumnCreateKind::Rating,
+        ColumnCreateKind::Vote,
     ] {
         for observed in [false, true] {
             let result = Rc::new(RefCell::new(None));
@@ -107,6 +112,9 @@ fn exact_observed_summary_is_outside_body_only_for_select_and_options_remain_loc
                     let mut view = rename::presentation(&state.peek()).unwrap();
                     // Renderer setup only: production panel() still obtains the actual presentation.
                     view.field_choice.as_mut().unwrap().kind = kind;
+                    view.rating_draft =
+                        matches!(kind, ColumnCreateKind::Rating | ColumnCreateKind::Vote)
+                            .then(Default::default);
                     if kind != ColumnCreateKind::Select {
                         view.select_draft = None;
                     }
@@ -137,11 +145,40 @@ fn exact_observed_summary_is_outside_body_only_for_select_and_options_remain_loc
             let tree = result.borrow_mut().take().unwrap();
             let panel = tree.all("id", "slack-list-rename")[0];
             let body = panel.all("class", "slack-list-editor-body")[0];
+            let selector = body.all("id", "slack-list-new-field-kind")[0];
+            assert_eq!(selector.attr("disabled"), "true");
+            let expected = [
+                ("text", "Text"),
+                ("number", "Number"),
+                ("checkbox", "Checkbox"),
+                ("date", "Date"),
+                ("select", "Select"),
+                ("user", "People"),
+                ("link", "Link"),
+                ("channel", "Channel"),
+                ("rating", "Rating"),
+                ("vote", "Vote"),
+            ];
+            assert_eq!(selector.children.len(), expected.len());
+            for (option, (value, label)) in selector.children.iter().zip(expected) {
+                assert_eq!(option.attr("value"), value);
+                assert_eq!(option.text(), label);
+                assert_eq!(
+                    option.attr("selected"),
+                    (kind.as_str() == value).to_string()
+                );
+            }
+            if kind == ColumnCreateKind::NumberDefault0 {
+                let decimals = body.all("id", "slack-list-new-number-precision");
+                assert_eq!(decimals.len(), 1);
+                assert_eq!(decimals[0].attr("disabled"), "true");
+                assert_eq!(decimals[0].children.len(), 6);
+            }
             let summaries = panel.all("id", "slack-list-text-field-observed");
             assert_eq!(summaries.len(), usize::from(observed));
             assert_eq!(
                 body.all("id", "slack-list-text-field-observed").len(),
-                usize::from(observed && kind != ColumnCreateKind::Select)
+                usize::from(observed && !matches!(kind.as_str(), "select" | "number"))
             );
             if observed {
                 let summary = summaries[0];
@@ -154,7 +191,7 @@ fn exact_observed_summary_is_outside_body_only_for_select_and_options_remain_loc
                         rename::text_create::label(kind)
                     )
                 );
-                if kind == ColumnCreateKind::Select {
+                if matches!(kind.as_str(), "select" | "number") {
                     let index = panel
                         .children
                         .iter()
@@ -234,3 +271,11 @@ fn multi_cardinality_remains_checked_and_locked_in_observed_panel_with_same_summ
         "Observed Select field: Release phase"
     );
 }
+
+mod number_precision;
+
+mod rating;
+
+mod vote;
+
+mod field_delete;

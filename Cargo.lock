@@ -5299,6 +5299,7 @@ dependencies = [
  "super-platinum-core",
  "tokio",
  "url",
+ "uuid",
  "windows",
  "windows-core 0.61.2",
  "winresource",

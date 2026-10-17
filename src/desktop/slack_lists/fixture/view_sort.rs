@@ -4,7 +4,10 @@ use super::*;
 pub(crate) fn install(shell: &mut ShellState, name: &str) {
     assert!(matches!(
         name,
-        "slack-list-view-sort" | "slack-list-view-sort-narrow"
+        "slack-list-view-sort"
+            | "slack-list-view-sort-narrow"
+            | "slack-list-ordered-sort"
+            | "slack-list-ordered-sort-narrow"
     ));
     let server = seed(shell, name);
     if super::super::rename::fixture::sort_check_enabled() {
@@ -50,9 +53,13 @@ mod tests {
     use super::*;
     #[test]
     fn both_static_aliases_preserve_raw_population_hierarchy_and_cursor() {
-        for name in ["slack-list-view-sort", "slack-list-view-sort-narrow"] {
-            let mut shell =
-                ShellState::fixture_variant(crate::media::MediaRegistry::default(), name);
+        for name in [
+            "slack-list-view-sort",
+            "slack-list-view-sort-narrow",
+            "slack-list-ordered-sort",
+            "slack-list-ordered-sort-narrow",
+        ] {
+            let shell = ShellState::fixture_variant(crate::media::MediaRegistry::default(), name);
             assert!(shell.core.session.is_none() && shell.core.transport.is_none());
             let f = shell.slack_lists.fixture.as_ref().unwrap();
             assert_eq!(f.records["records"].as_array().unwrap().len(), 73);
@@ -72,7 +79,7 @@ mod tests {
                 p.sort.unwrap().desired,
                 super_platinum_core::slack_lists::ViewSortChoice::None
             );
-            super::super::super::rename::precision::discard_fixture(&mut shell);
+            super::super::super::rename::fixture::discard_sort_fixture(&shell);
         }
     }
 }

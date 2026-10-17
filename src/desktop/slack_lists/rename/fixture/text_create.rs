@@ -1,16 +1,65 @@
 //! One explicit Text create through the real builder and reducers.
 use super::*;
+mod entity_mode;
+mod rating_mode;
+pub(crate) use entity_mode::EntityCase;
+mod vote;
+use rating_mode::rating_gate;
 use super_platinum_core::slack_lists::ColumnCreateKind;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum FieldCreateMode {
     Text,
     Number,
+    NumberPrecision,
+    Entity(EntityCase),
+    VoteDefault,
+    VoteCustom,
+    RatingDefault,
+    RatingStandard,
+    RatingCustom,
     Checkbox,
     Date,
     Select,
     MultiSelect,
+    People,
+    Link,
+    Channel,
 }
 impl FieldCreateMode {
+    pub(crate) fn is_entity(self) -> bool {
+        matches!(self, Self::Entity(_))
+    }
+    pub(crate) fn is_rating(self) -> bool {
+        matches!(
+            self,
+            Self::RatingDefault | Self::RatingStandard | Self::RatingCustom
+        )
+    }
+    pub(crate) fn rating_max(self) -> u8 {
+        match self {
+            Self::RatingDefault => 1,
+            Self::RatingStandard => 5,
+            Self::RatingCustom => 3,
+            _ => panic!("Not Rating"),
+        }
+    }
+    pub(crate) fn rating_value(self) -> u8 {
+        match self {
+            Self::RatingDefault => 1,
+            Self::RatingStandard => 4,
+            Self::RatingCustom => 2,
+            _ => panic!("Not Rating"),
+        }
+    }
+    pub(crate) fn rating_options(self) -> Value {
+        match self {
+            Self::RatingDefault => json!({"emoji":":star:","max":1}),
+            Self::RatingStandard => json!({"emoji":":heart:","max":5,"emoji_team_id":"T1"}),
+            Self::RatingCustom => json!({"emoji":":fixture_quality:","max":3,"emoji_team_id":"T1"}),
+            _ => panic!("Not Rating"),
+        }
+    }
+
     pub(crate) fn is_select(self) -> bool {
         matches!(self, Self::Select | Self::MultiSelect)
     }
@@ -23,47 +72,100 @@ impl FieldCreateMode {
     }
     pub(crate) fn kind(self) -> ColumnCreateKind {
         match self {
+            Self::Entity(case) => case.kind(),
+            Self::RatingDefault | Self::RatingStandard | Self::RatingCustom => {
+                ColumnCreateKind::Rating
+            }
+            Self::VoteDefault | Self::VoteCustom => ColumnCreateKind::Vote,
             Self::Text => ColumnCreateKind::Text,
-            Self::Number => ColumnCreateKind::NumberDefault0,
+            Self::Number | Self::NumberPrecision => ColumnCreateKind::NumberDefault0,
             Self::Checkbox => ColumnCreateKind::Checkbox,
             Self::Date => ColumnCreateKind::DateSingleDefault,
+            Self::People => ColumnCreateKind::PeopleSingleDefault,
+            Self::Link => ColumnCreateKind::Link,
+            Self::Channel => ColumnCreateKind::ChannelSingleDefault,
             Self::Select | Self::MultiSelect => ColumnCreateKind::Select,
         }
     }
     pub(crate) fn name(self) -> &'static str {
         match self {
+            Self::Entity(case) => {
+                if case.channel() {
+                    "Channel \u{c9}quipe \u{6771}\u{4eac}"
+                } else {
+                    "Reviewer \u{c9}quipe \u{6771}\u{4eac}"
+                }
+            }
+            Self::RatingDefault | Self::RatingStandard | Self::RatingCustom => "Quality",
+            Self::VoteDefault | Self::VoteCustom => "Support Équipe 東京",
             Self::Text => "Release notes",
-            Self::Number => "Release count",
+            Self::Number | Self::NumberPrecision => "Release count",
             Self::Checkbox => "Verified",
             Self::Date => "Target date",
+            Self::People => "Reviewer Équipe 東京",
+            Self::Link => "Reference Équipe 東京",
+            Self::Channel => "Channel Équipe 東京",
             Self::Select | Self::MultiSelect => "Release phase",
         }
     }
     pub(crate) fn observed(self) -> (&'static str, &'static str) {
         match self {
+            Self::Entity(case) => {
+                if case.channel() {
+                    ("C_CHANNEL_OBSERVED", "channel_observed")
+                } else {
+                    ("C_PEOPLE_OBSERVED", "people_observed")
+                }
+            }
+            Self::RatingDefault | Self::RatingStandard | Self::RatingCustom => {
+                ("C_RATING_OBSERVED", "rating_observed")
+            }
+            Self::VoteDefault | Self::VoteCustom => ("C_VOTE_OBSERVED", "vote_observed"),
             Self::Text => ("C_TEXT_OBSERVED", "text_observed"),
-            Self::Number => ("C_NUMBER_OBSERVED", "number_observed"),
+            Self::Number | Self::NumberPrecision => ("C_NUMBER_OBSERVED", "number_observed"),
             Self::Checkbox => ("C_CHECKBOX_OBSERVED", "checkbox_observed"),
             Self::Date => ("C_DATE_OBSERVED", "date_observed"),
+            Self::People => ("C_PEOPLE_OBSERVED", "people_observed"),
+            Self::Link => ("C_LINK_OBSERVED", "link_observed"),
+            Self::Channel => ("C_CHANNEL_OBSERVED", "channel_observed"),
             Self::Select | Self::MultiSelect => ("C_SELECT_OBSERVED", "select_observed"),
         }
     }
     pub(crate) fn prefix(self) -> &'static str {
         match self {
+            Self::Entity(case) => case.prefix(),
+            Self::RatingDefault => "slack-list-rating-default-field-create",
+            Self::RatingStandard => "slack-list-rating-standard-field-create",
+            Self::RatingCustom => "slack-list-rating-custom-field-create",
+            Self::VoteDefault => "slack-list-vote-create-default",
+            Self::VoteCustom => "slack-list-vote-create-custom",
             Self::Text => "slack-list-text-field-create",
             Self::Number => "slack-list-number-field-create",
+            Self::NumberPrecision => "slack-list-number-precision-field-create",
             Self::Checkbox => "slack-list-checkbox-field-create",
             Self::Date => "slack-list-date-field-create",
+            Self::People => "slack-list-people-field-create",
+            Self::Link => "slack-list-link-field-create",
+            Self::Channel => "slack-list-channel-field-create",
             Self::Select => "slack-list-select-field-create",
             Self::MultiSelect => "slack-list-multi-select-field-create",
         }
     }
     pub(crate) fn env_prefix(self) -> &'static str {
         match self {
+            Self::Entity(_) => "SUPER_PLATINUM_LIST_ENTITY_FIELD_CREATE",
+            Self::RatingDefault => "SUPER_PLATINUM_LIST_RATING_FIELD_CREATE",
+            Self::RatingStandard => "SUPER_PLATINUM_LIST_RATING_FIELD_CREATE",
+            Self::RatingCustom => "SUPER_PLATINUM_LIST_RATING_FIELD_CREATE",
+            Self::VoteDefault | Self::VoteCustom => "SUPER_PLATINUM_LIST_VOTE_FIELD_CREATE",
             Self::Text => "SUPER_PLATINUM_LIST_TEXT_FIELD_CREATE",
             Self::Number => "SUPER_PLATINUM_LIST_NUMBER_FIELD_CREATE",
+            Self::NumberPrecision => "SUPER_PLATINUM_LIST_NUMBER_PRECISION_FIELD_CREATE",
             Self::Checkbox => "SUPER_PLATINUM_LIST_CHECKBOX_FIELD_CREATE",
             Self::Date => "SUPER_PLATINUM_LIST_DATE_FIELD_CREATE",
+            Self::People => "SUPER_PLATINUM_LIST_PEOPLE_FIELD_CREATE",
+            Self::Link => "SUPER_PLATINUM_LIST_LINK_FIELD_CREATE",
+            Self::Channel => "SUPER_PLATINUM_LIST_CHANNEL_FIELD_CREATE",
             Self::Select => "SUPER_PLATINUM_LIST_SELECT_FIELD_CREATE",
             Self::MultiSelect => "SUPER_PLATINUM_LIST_MULTI_SELECT_FIELD_CREATE",
         }
@@ -123,7 +225,67 @@ fn mode_gate(
     mode_gate_all(t, n, c, d, None, a)
 }
 pub(crate) fn field_create_mode() -> Option<FieldCreateMode> {
-    mode_gate_multi(
+    if let Some(flag) = std::env::var_os("SUPER_PLATINUM_LIST_ENTITY_FIELD_CREATE_CHECK") {
+        let exclusive = std::env::vars_os().all(|(key, _)| {
+            let key = key.to_string_lossy();
+            !(key.starts_with("SUPER_PLATINUM_") && key.ends_with("_CHECK"))
+                || key == "SUPER_PLATINUM_LIST_ENTITY_FIELD_CREATE_CHECK"
+        });
+        return entity_mode::gate(
+            flag.to_str(),
+            exclusive,
+            std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
+        );
+    }
+    if let Some(flag) = std::env::var_os("SUPER_PLATINUM_LIST_VOTE_FIELD_CREATE_CHECK") {
+        return vote::environment_gate(flag.to_str());
+    }
+    if let Some(flag) = std::env::var_os("SUPER_PLATINUM_LIST_RATING_FIELD_CREATE_CHECK") {
+        let exclusive = [
+            "TEXT",
+            "NUMBER",
+            "NUMBER_PRECISION",
+            "CHECKBOX",
+            "DATE",
+            "SELECT",
+            "MULTI_SELECT",
+            "PEOPLE",
+            "LINK",
+            "CHANNEL",
+        ]
+        .iter()
+        .all(|part| {
+            std::env::var_os(format!("SUPER_PLATINUM_LIST_{part}_FIELD_CREATE_CHECK")).is_none()
+        });
+        return rating_gate(
+            flag.to_str(),
+            exclusive,
+            std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
+        );
+    }
+
+    if let Ok(flag) = std::env::var("SUPER_PLATINUM_LIST_NUMBER_PRECISION_FIELD_CREATE_CHECK") {
+        let old = [
+            "TEXT",
+            "NUMBER",
+            "CHECKBOX",
+            "DATE",
+            "SELECT",
+            "MULTI_SELECT",
+            "PEOPLE",
+            "LINK",
+            "CHANNEL",
+        ];
+        let exclusive = old.iter().all(|part| {
+            std::env::var_os(format!("SUPER_PLATINUM_LIST_{part}_FIELD_CREATE_CHECK")).is_none()
+        });
+        return configured_number_gate(
+            &flag,
+            exclusive,
+            std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
+        );
+    }
+    mode_gate_channel(
         std::env::var("SUPER_PLATINUM_LIST_TEXT_FIELD_CREATE_CHECK")
             .ok()
             .as_deref(),
@@ -140,6 +302,15 @@ pub(crate) fn field_create_mode() -> Option<FieldCreateMode> {
             .ok()
             .as_deref(),
         std::env::var("SUPER_PLATINUM_LIST_MULTI_SELECT_FIELD_CREATE_CHECK")
+            .ok()
+            .as_deref(),
+        std::env::var("SUPER_PLATINUM_LIST_PEOPLE_FIELD_CREATE_CHECK")
+            .ok()
+            .as_deref(),
+        std::env::var("SUPER_PLATINUM_LIST_LINK_FIELD_CREATE_CHECK")
+            .ok()
+            .as_deref(),
+        std::env::var("SUPER_PLATINUM_LIST_CHANNEL_FIELD_CREATE_CHECK")
             .ok()
             .as_deref(),
         std::env::var("SUPER_PLATINUM_FIXTURE").ok().as_deref(),
@@ -241,6 +412,28 @@ fn add_field(server: &mut Value, mode: FieldCreateMode) -> Result<(), Error> {
     if mode.is_select() {
         return Err(Error::Api("fixture_select_needs_owned_options".into()));
     }
+    let board = if mode.is_rating() || mode.is_vote() {
+        let wanted = if mode.is_vote() {
+            "V_VOTE_BOARD"
+        } else {
+            "V_RATING_BOARD"
+        };
+        let views = server["list_metadata"]["views"]
+            .as_array()
+            .ok_or_else(|| Error::Api("fixture_views".into()))?;
+        let matches: Vec<_> = views
+            .iter()
+            .enumerate()
+            .filter(|(_, v)| v["id"] == wanted)
+            .map(|(i, _)| i)
+            .collect();
+        if matches.len() != 1 {
+            return Err(Error::Api("fixture_unique_created_field_board".into()));
+        }
+        Some(matches[0])
+    } else {
+        None
+    };
     let (id, key) = mode.observed();
     let schema = server["list_metadata"]["schema"]
         .as_array_mut()
@@ -249,7 +442,17 @@ fn add_field(server: &mut Value, mode: FieldCreateMode) -> Result<(), Error> {
         return Err(Error::Api("fixture_duplicate".into()));
     }
     let mut column = json!({"id":id,"key":key,"name":mode.name(),"type":mode.kind().as_str(),"opaque":{"fixture":"retained"}});
-    if let Some(options) = mode.kind().options() {
+    if let Some(options) = if let FieldCreateMode::Entity(case) = mode {
+        Some(case.options())
+    } else if mode.is_vote() {
+        Some(mode.vote_options())
+    } else if mode.is_rating() {
+        Some(mode.rating_options())
+    } else if mode == FieldCreateMode::NumberPrecision {
+        Some(json!({"precision":3}))
+    } else {
+        mode.kind().options()
+    } {
         column["options"] = options;
     }
     schema.insert(1, column);
@@ -257,6 +460,12 @@ fn add_field(server: &mut Value, mode: FieldCreateMode) -> Result<(), Error> {
         .as_array_mut()
         .ok_or_else(|| Error::Api("fixture_columns".into()))?;
     columns.insert(1, json!({"id":id,"key":key,"visible":true}));
+    if let Some(board) = board {
+        server["list_metadata"]["views"][board]["columns"]
+            .as_array_mut()
+            .ok_or_else(|| Error::Api("rating_board_columns".into()))?
+            .insert(1, json!({"id":id,"key":key,"visible":true}));
+    }
     Ok(())
 }
 pub(crate) fn text_create_custody(shell: &ShellState) -> Result<Value, String> {
@@ -299,6 +508,15 @@ pub(super) async fn write(
                     && i.desired_name() == mode.name()
                     && i.kind() == mode.kind()
                     && e.field_choice.kind == mode.kind()
+                    && (mode != FieldCreateMode::NumberPrecision
+                        || (e.field_choice.number_precision.value() == 3
+                            && i.options() == Some(json!({"precision":3}))))
+                    && (!mode.is_rating() || i.options() == Some(mode.rating_options()))
+                    && (!mode.is_vote() || i.options() == Some(mode.vote_options()))
+                    && (match mode {
+                        FieldCreateMode::Entity(case) => i.options() == Some(case.options()),
+                        _ => true,
+                    })
                     && e.original_records.as_deref() == Some(i.original_records())
             }
             _ => false,
@@ -340,6 +558,13 @@ pub(super) async fn write(
         None
     };
     let select_wire = select.as_ref().map(Value::to_string);
+    let vote_wire = mode.is_vote().then(|| mode.vote_options().to_string());
+    let entity_wire = if let FieldCreateMode::Entity(case) = mode {
+        Some(case.options().to_string())
+    } else {
+        None
+    };
+    let rating_wire = mode.is_rating().then(|| mode.rating_options().to_string());
     let request = permit.request(&state.peek().core.client, &session());
     let mut expected = vec![
         ("token".into(), "fixture-not-a-token".into()),
@@ -349,9 +574,18 @@ pub(super) async fn write(
         ("type".into(), mode.kind().as_str().into()),
     ];
     let options = match mode {
+        FieldCreateMode::Entity(_) => entity_wire.as_deref(),
+        FieldCreateMode::VoteDefault | FieldCreateMode::VoteCustom => vote_wire.as_deref(),
         FieldCreateMode::Text => Some("{\"format\":\"text\"}"),
         FieldCreateMode::Number => Some("{\"precision\":0}"),
-        FieldCreateMode::Checkbox => None,
+        FieldCreateMode::NumberPrecision => Some("{\"precision\":3}"),
+        FieldCreateMode::RatingDefault
+        | FieldCreateMode::RatingStandard
+        | FieldCreateMode::RatingCustom => rating_wire.as_deref(),
+        FieldCreateMode::Checkbox | FieldCreateMode::Link => None,
+        FieldCreateMode::People | FieldCreateMode::Channel => {
+            Some("{\"default_value\":null,\"format\":\"single_entity\",\"show_member_name\":true}")
+        }
         FieldCreateMode::Select | FieldCreateMode::MultiSelect => select_wire.as_deref(),
         FieldCreateMode::Date => Some("{\"date_format\":\"default\",\"format\":\"single\"}"),
     };
@@ -408,260 +642,7 @@ pub(super) async fn write(
     )))
 }
 #[cfg(test)]
-mod tests {
-    fn mode_gate(
-        text: Option<&str>,
-        number: Option<&str>,
-        alias: Option<&str>,
-    ) -> Option<FieldCreateMode> {
-        super::mode_gate(text, number, None, None, alias)
-    }
-    #[test]
-    fn checkbox_gate_is_exact_and_options_are_absent() {
-        for alias in [
-            "slack-list-checkbox-field-create",
-            "slack-list-checkbox-field-create-narrow",
-        ] {
-            assert_eq!(
-                super::mode_gate(None, None, Some("1"), None, Some(alias)),
-                Some(FieldCreateMode::Checkbox)
-            );
-            for extra in [Some(""), Some("0"), Some("1")] {
-                assert!(super::mode_gate(extra, None, Some("1"), None, Some(alias)).is_none());
-                assert!(super::mode_gate(None, extra, Some("1"), None, Some(alias)).is_none());
-            }
-        }
-        assert!(
-            super::mode_gate(
-                None,
-                None,
-                Some("1"),
-                None,
-                Some("slack-list-text-field-create")
-            )
-            .is_none()
-        );
-        let mut doc =
-            json!({"list_metadata":{"schema":[{"id":"old"}],"views":[{"columns":[{"id":"old"}]}]}});
-        add_field(&mut doc, FieldCreateMode::Checkbox).unwrap();
-        assert!(doc["list_metadata"]["schema"][1].get("options").is_none());
-        assert_eq!(doc["list_metadata"]["schema"][1]["type"], "checkbox");
-    }
-
-    use super::*;
-    #[test]
-    fn only_exact_opted_in_aliases_enable_text_executor() {
-        for alias in [
-            "slack-list-text-field-create",
-            "slack-list-text-field-create-narrow",
-        ] {
-            assert_eq!(
-                mode_gate(Some("1"), None, Some(alias)),
-                Some(FieldCreateMode::Text)
-            );
-            for flag in [None, Some("true"), Some("0"), Some("")] {
-                assert!(mode_gate(flag, None, Some(alias)).is_none());
-            }
-        }
-        for alias in [
-            None,
-            Some("slack-list-field-visibility"),
-            Some("slack-list-text-field-create-extra"),
-        ] {
-            assert!(mode_gate(Some("1"), None, alias).is_none());
-        }
-    }
-    #[test]
-    fn number_gate_is_exact_and_cannot_borrow_text_authority() {
-        for alias in [
-            "slack-list-number-field-create",
-            "slack-list-number-field-create-narrow",
-        ] {
-            assert_eq!(
-                mode_gate(None, Some("1"), Some(alias)),
-                Some(FieldCreateMode::Number)
-            );
-            assert!(mode_gate(Some("1"), Some("1"), Some(alias)).is_none());
-            assert!(mode_gate(Some("1"), None, Some(alias)).is_none());
-            for value in [None, Some("true"), Some("0"), Some("")] {
-                assert!(mode_gate(None, value, Some(alias)).is_none());
-            }
-        }
-        assert!(mode_gate(None, Some("1"), Some("slack-list-text-field-create")).is_none());
-        assert!(
-            mode_gate(
-                None,
-                Some("1"),
-                Some("slack-list-number-field-create-extra")
-            )
-            .is_none()
-        );
-    }
-    #[test]
-    fn number_addition_has_default_zero_precision_without_backfill() {
-        let before = json!({"opaque":7,"list_metadata":{"schema":[{"id":"old","key":"old"}],"views":[{"columns":[{"id":"old","key":"old"}],"opaque":true}]}});
-        let mut after = before.clone();
-        add_field(&mut after, FieldCreateMode::Number).unwrap();
-        assert_eq!(
-            after["list_metadata"]["schema"][1],
-            json!({"id":"C_NUMBER_OBSERVED","key":"number_observed","name":"Release count","type":"number","options":{"precision":0},"opaque":{"fixture":"retained"}})
-        );
-        after["list_metadata"]["schema"]
-            .as_array_mut()
-            .unwrap()
-            .remove(1);
-        after["list_metadata"]["views"][0]["columns"]
-            .as_array_mut()
-            .unwrap()
-            .remove(1);
-        assert_eq!(after, before);
-    }
-    #[test]
-    fn addition_preserves_full_prior_metadata_and_refuses_duplicate() {
-        let before = json!({"opaque":7,"list_metadata":{"schema":[{"id":"old","key":"old","type":"text","opaque":3}],"views":[{"id":"V_FILTER","columns":[{"id":"old","key":"old"}],"sorts":[{"key":"estimate","ascending":true}],"filters":[{"key":"done","operator":"is_not_empty","values":[]}],"info_column_filters":[],"opaque":false}]}});
-        let mut after = before.clone();
-        add_field(&mut after, FieldCreateMode::Text).unwrap();
-        let mut restored = after.clone();
-        restored["list_metadata"]["schema"]
-            .as_array_mut()
-            .unwrap()
-            .remove(1);
-        restored["list_metadata"]["views"][0]["columns"]
-            .as_array_mut()
-            .unwrap()
-            .remove(1);
-        assert_eq!(restored, before);
-        assert!(add_field(&mut after, FieldCreateMode::Text).is_err());
-    }
-    #[test]
-    fn replacement_seed_keeps_full_canonical_population_and_active_find_before_retired_read() {
-        let mut shell = ShellState::fixture_variant(
-            crate::media::MediaRegistry::default(),
-            "slack-list-text-field-create",
-        );
-        let key = Key::current(&shell).unwrap();
-        struct Cleanup(Key);
-        impl Drop for Cleanup {
-            fn drop(&mut self) {
-                with_registry(|r| {
-                    r.entries.remove(&self.0);
-                });
-            }
-        }
-        let _cleanup = Cleanup(key.clone());
-        let e = entry(&shell).unwrap();
-        let v = shell.slack_lists.view.as_mut().unwrap();
-        v.layout.find.input = "Launch item 0".into();
-        v.layout.find.applied = "Launch item 0".into();
-        v.layout.find.revision = 37;
-        crate::slack_lists::rebuild_rows(&mut shell);
-        let saved = shell
-            .slack_lists
-            .view
-            .as_ref()
-            .unwrap()
-            .loaded
-            .clone()
-            .unwrap();
-        let find = shell.slack_lists.view.as_ref().unwrap().layout.find.clone();
-        let (write, intent) = prepare(&mut shell, e.serial).unwrap();
-        admitted(
-            &shell,
-            &write,
-            &intent,
-            &network::Metadata {
-                document: saved.document.clone(),
-                allow: saved.allow_lists.clone(),
-                personal: saved.personal_task_lists.clone().unwrap(),
-            },
-        )
-        .unwrap();
-        crate::slack_lists::rename::completed(
-            &mut shell,
-            &write,
-            Err(ListColumnRenameFailure::Unconfirmed(Error::Transport(
-                "lost".into(),
-            ))),
-        );
-        let guard = Guard::capture_read(&shell, key.clone(), e.serial).unwrap();
-        with_registry(|r| {
-            let e = r.entries.get_mut(&key).unwrap();
-            e.job = Some(guard.job);
-            e.stage = Stage::Checking;
-        });
-        let old_visit = generation(&shell).unwrap();
-        let old_selection = selection(&shell).unwrap();
-        let mut changed = saved.document.raw.clone();
-        add_field(&mut changed, FieldCreateMode::Text).unwrap();
-        crate::slack_lists::close_shell(&mut shell);
-        shell.core.account_epoch += 1;
-        assert!(crate::slack_lists::open_shell(
-            &mut shell,
-            serde_json::from_value(changed.clone()).unwrap()
-        ));
-        let visit = generation(&shell).unwrap();
-        assert_ne!(visit, old_visit);
-        assert_ne!(selection(&shell), Some(old_selection));
-        crate::slack_lists::fixture::refresh(&mut shell);
-        assert!(shell.slack_lists.view.as_ref().unwrap().loaded.is_none());
-        assert!(blocks_read(&shell));
-        let mut wrong = saved.clone();
-        wrong.document = Document::parse(changed.clone()).unwrap();
-        assert!(seed_reopened(&mut shell, visit, wrong, find.clone()).is_err());
-        assert!(seed_reopened(&mut shell, old_visit, saved.clone(), find.clone()).is_err());
-        assert!(seed_reopened(&mut shell, visit, saved.clone(), Default::default()).is_err());
-        let mut wrong_records = saved.clone();
-        wrong_records.records.raw["opaque_fixture_change"] = json!(true);
-        assert!(seed_reopened(&mut shell, visit, wrong_records, find.clone()).is_err());
-        seed_reopened(&mut shell, visit, saved.clone(), find.clone()).unwrap();
-        let same = |s: &ShellState| {
-            let v = s.slack_lists.view.as_ref().unwrap();
-            assert_eq!(v.loaded.as_ref().unwrap().document, saved.document);
-            assert_eq!(v.loaded.as_ref().unwrap().records, saved.records);
-            assert_eq!(
-                (
-                    &v.layout.find.input,
-                    &v.layout.find.applied,
-                    v.layout.find.revision
-                ),
-                (&find.input, &find.applied, find.revision)
-            );
-            assert_eq!(v.layout.selected.as_deref(), Some("V_FILTER"));
-            assert_eq!(
-                v.layout
-                    .entries
-                    .iter()
-                    .filter_map(|e| match e {
-                        crate::slack_lists::layout::TableEntry::Row(r) => Some(r.id.clone()),
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>(),
-                [3, 1, 7, 5]
-                    .into_iter()
-                    .map(|i| format!("R_LIST_{i:03}"))
-                    .collect::<Vec<_>>()
-            );
-        };
-        same(&shell);
-        let retained = entry(&shell).unwrap();
-        assert_eq!(retained.stage, Stage::Checking);
-        assert_eq!(retained.job, Some(guard.job));
-        assert_eq!(retained.serial, e.serial);
-        assert!(!guard.current(&shell, Stage::Checking));
-        assert!(!crate::slack_lists::rename::checked(
-            &mut shell,
-            &guard,
-            Ok(network::Metadata {
-                document: Document::parse(changed).unwrap(),
-                allow: saved.allow_lists.clone(),
-                personal: saved.personal_task_lists.clone().unwrap()
-            })
-        ));
-        same(&shell);
-        assert_eq!(entry(&shell).unwrap().stage, Stage::Uncertain);
-        assert!(seed_reopened(&mut shell, visit, saved.clone(), find.clone()).is_err());
-    }
-}
+mod tests;
 
 pub(crate) fn text_create_registry(shell: &ShellState) -> Result<Value, String> {
     if !field_create_check_enabled() || !enabled(shell) {
@@ -685,3 +666,123 @@ pub(crate) fn close_date_fixture(shell: &ShellState) -> bool {
 mod date_tests;
 
 pub(crate) mod select;
+
+// All CHECK flags are mutually exclusive, including malformed present values.
+fn mode_gate_people(
+    t: Option<&str>,
+    n: Option<&str>,
+    c: Option<&str>,
+    d: Option<&str>,
+    s: Option<&str>,
+    m: Option<&str>,
+    p: Option<&str>,
+    a: Option<&str>,
+) -> Option<FieldCreateMode> {
+    if let Some(p) = p {
+        return (p == "1"
+            && [t, n, c, d, s, m].iter().all(Option::is_none)
+            && matches!(
+                a,
+                Some("slack-list-people-field-create" | "slack-list-people-field-create-narrow")
+            ))
+        .then_some(FieldCreateMode::People);
+    }
+    mode_gate_multi(t, n, c, d, s, m, a)
+}
+#[cfg(test)]
+mod people_tests;
+
+#[cfg(test)]
+pub(crate) fn close_people_fixture(shell: &ShellState) -> bool {
+    let Some(e) = entry(shell) else { return false };
+    e.target == Target::NewTextField("V_FILTER".into())
+        && e.stage == Stage::Editing
+        && e.field_choice.kind == ColumnCreateKind::PeopleSingleDefault
+        && super::super::close_entry(shell, e.serial)
+}
+
+fn mode_gate_link(
+    t: Option<&str>,
+    n: Option<&str>,
+    c: Option<&str>,
+    d: Option<&str>,
+    s: Option<&str>,
+    m: Option<&str>,
+    p: Option<&str>,
+    l: Option<&str>,
+    a: Option<&str>,
+) -> Option<FieldCreateMode> {
+    if l.is_some() {
+        return (l == Some("1")
+            && [t, n, c, d, s, m, p].iter().all(Option::is_none)
+            && matches!(
+                a,
+                Some("slack-list-link-field-create" | "slack-list-link-field-create-narrow")
+            ))
+        .then_some(FieldCreateMode::Link);
+    }
+    mode_gate_people(t, n, c, d, s, m, p, a)
+}
+#[cfg(test)]
+mod link_tests;
+#[cfg(test)]
+pub(crate) fn close_link_fixture(shell: &ShellState) -> bool {
+    let Some(e) = entry(shell) else { return false };
+    e.target == Target::NewTextField("V_FILTER".into())
+        && e.stage == Stage::Editing
+        && e.field_choice.kind == ColumnCreateKind::Link
+        && super::super::close_entry(shell, e.serial)
+}
+
+fn mode_gate_channel(
+    t: Option<&str>,
+    n: Option<&str>,
+    c: Option<&str>,
+    d: Option<&str>,
+    s: Option<&str>,
+    m: Option<&str>,
+    p: Option<&str>,
+    l: Option<&str>,
+    h: Option<&str>,
+    a: Option<&str>,
+) -> Option<FieldCreateMode> {
+    if h.is_some() {
+        return (h == Some("1")
+            && [t, n, c, d, s, m, p, l].iter().all(Option::is_none)
+            && matches!(
+                a,
+                Some("slack-list-channel-field-create" | "slack-list-channel-field-create-narrow")
+            ))
+        .then_some(FieldCreateMode::Channel);
+    }
+    mode_gate_link(t, n, c, d, s, m, p, l, a)
+}
+#[cfg(test)]
+mod channel_tests;
+#[cfg(test)]
+pub(crate) fn close_channel_fixture(shell: &ShellState) -> bool {
+    let Some(e) = entry(shell) else { return false };
+    e.target == Target::NewTextField("V_FILTER".into())
+        && e.stage == Stage::Editing
+        && e.field_choice.kind == ColumnCreateKind::ChannelSingleDefault
+        && super::super::close_entry(shell, e.serial)
+}
+
+fn configured_number_gate(
+    flag: &str,
+    exclusive: bool,
+    alias: Option<&str>,
+) -> Option<FieldCreateMode> {
+    (flag == "1"
+        && exclusive
+        && matches!(
+            alias,
+            Some(
+                "slack-list-number-precision-field-create"
+                    | "slack-list-number-precision-field-create-narrow"
+            )
+        ))
+    .then_some(FieldCreateMode::NumberPrecision)
+}
+#[cfg(test)]
+mod number_precision_tests;

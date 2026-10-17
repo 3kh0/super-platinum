@@ -387,6 +387,33 @@ pub(super) fn begin_editor_shell(
         EditAuthority::RecordDetail(generation),
     )
 }
+pub(crate) fn toggle_vote(
+    mut state: Signal<ShellState>,
+    generation: u64,
+    column: String,
+    intent: super_platinum_core::slack_lists::VoteIntent,
+) {
+    let result = begin_vote_shell(&mut state.write(), generation, &column, intent);
+    match result {
+        Ok(attempt) => network::dispatch(state, attempt),
+        Err(error) => report(&mut state.write(), generation, error),
+    }
+}
+pub(super) fn begin_vote_shell(
+    shell: &mut ShellState,
+    generation: u64,
+    column: &str,
+    intent: super_platinum_core::slack_lists::VoteIntent,
+) -> Result<EditAttempt, &'static str> {
+    let (_, row) = current_record(shell, generation).ok_or("Open this item again.")?;
+    vote::begin(
+        shell,
+        &row,
+        column,
+        EditAuthority::RecordDetail(generation),
+        intent,
+    )
+}
 pub(crate) fn toggle_detail_checkbox(
     mut state: Signal<ShellState>,
     generation: u64,

@@ -20,7 +20,7 @@ function harness() {
   let observerDisconnects=0;
   const root={...element('panel'),dataset:{renameSerial:'7',renameColumn:'',renameView:'V_TABLE',sortView:'V_TABLE'},
     closest:s=>s==='.slack-list-dialog'?dialog:null,contains:e=>e===select,
-    addEventListener:()=>{},querySelector:s=>s==='#slack-list-sort-field:not([disabled])'&&!select.disabled?select:s==='#slack-list-rename-close:not([disabled])'?close:null,
+    addEventListener:()=>{},querySelector:s=>s==='#slack-list-sort-set [data-sort-field]:not([disabled])'&&!select.disabled?select:s==='#slack-list-rename-close:not([disabled])'?close:null,
   };
   dialogs=[dialog,root];
   const document={body,activeElement:body,addEventListener:()=>{},removeEventListener:()=>{},
@@ -56,7 +56,7 @@ test('new top dialog wins over Sort return',()=>{
 test('intervening live interactive focus is preserved',()=>{
   const h=harness();h.arm();h.remove();h.document.activeElement=h.header;h.flush();assert.deepEqual(h.calls,[]);
 });
-test('actual focus helper selects editable Number field',()=>{
+test('actual focus helper selects first editable sort field',()=>{
   const h=harness();vm.runInContext(focus,h.context);h.flush();assert.deepEqual(h.calls,['sort-field']);
 });
 test('actual focus helper does not refocus a current select',()=>{
@@ -72,15 +72,18 @@ function assertNarrowBinding(source) {
   const aliases=[...initial.matchAll(/"([a-z0-9-]+)"/g)].map(m=>m[1]);
   assert.equal(aliases.filter(v=>v==='slack-list-view-sort-narrow').length,1);
   assert.equal(aliases.includes('slack-list-view-sort'),false);
+  assert.equal(aliases.filter(v=>v==='slack-list-ordered-sort-narrow').length,1);
+  assert.equal(aliases.includes('slack-list-ordered-sort'),false);
   assert.match(initial,/\{\s*WINDOW_MIN_INNER_SIZE\s*\}\s*else\s*\{\s*WINDOW_DEFAULT_INNER_SIZE\s*\}/);
 }
 test('named Sort fixture is wired through catalog, boot and minimum narrow size',()=>{
   const media=readFileSync(path.join(base,'src/desktop/media.rs'),'utf8');
   assertNarrowBinding(media);
   const boot=readFileSync(path.join(base,'src/desktop/state/boot.rs'),'utf8');
-  assert.match(boot,/"slack-list-view-sort"\s*\|\s*"slack-list-view-sort-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::view_sort::install\(&mut state, name\);/);
+  assert.match(boot,/"slack-list-view-sort"\s*\|\s*"slack-list-view-sort-narrow"\s*\|\s*"slack-list-ordered-sort"\s*\|\s*"slack-list-ordered-sort-narrow"\s*=>\s*\{\s*crate::slack_lists::fixture::view_sort::install\(&mut state, name\);/);
   const catalog=readFileSync(path.join(base,'scripts/agent-ui-check.sh'),'utf8');
   assert.match(catalog,/^\s+slack-list-view-sort slack-list-view-sort-narrow\s*$/m);
+  assert.match(catalog,/^\s+slack-list-ordered-sort slack-list-ordered-sort-narrow\s*$/m);
 });
 test('source wiring regression rejects the original missing narrow-size branch',()=>{
   const media=readFileSync(path.join(base,'src/desktop/media.rs'),'utf8');

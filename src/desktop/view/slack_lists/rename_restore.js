@@ -5,6 +5,8 @@ function armListRenameReturn(root) {
   if(!dialog||!root.isConnected)return;
   const visit=dialog.dataset.dialogGeneration,serial=root.dataset.renameSerial,column=root.dataset.renameColumn,view=root.dataset.renameView,precision=root.dataset.precisionColumn,visibility=root.dataset.visibilityView,sort=root.dataset.sortView,filter=root.dataset.filterView,grouping=root.dataset.groupingView,textCreate=root.dataset.newTextFieldView;
   const selection=dialog.dataset.viewSelection;
+  const deletion=root.dataset.deleteColumn,deleteOpener=deletion?root.__deleteOpener:null;
+  if(deletion&&(!deleteOpener||deleteOpener.dataset.deleteFieldSelection!==selection))return;
   if(!visit||!serial||(!column&&!view)||(view&&!selection))return;
   const groupingOpener=grouping?root.__groupingOpener:null;
   if(grouping&&(!groupingOpener||groupingOpener.dataset.groupingView!==view))return;
@@ -42,7 +44,11 @@ function armListRenameReturn(root) {
     // A chosen live control or new native user input always wins instead.
     if(active&&active!==document.body&&active.isConnected&&interactive(active)&&!root.contains(active)){stop();return;}
     let header;
-    if(view){
+    if(deletion){
+      if(dialog.dataset.viewSelection!==selection){stop();return;}
+      header=dialog.querySelector('#slack-list-delete-field');
+      if(header!==deleteOpener){stop();return;}
+    }else if(view){
       const picker=dialog.querySelector('#slack-list-view-select');
       if(!picker||picker.value!==view||dialog.dataset.viewSelection!==selection){stop();return;}
       header=grouping?dialog.querySelector('#slack-list-grouping'):textCreate?dialog.querySelector('#slack-list-new-text-field'):filter?dialog.querySelector('#slack-list-filter'):sort?dialog.querySelector('#slack-list-sort'):visibility?dialog.querySelector('#slack-list-fields'):[...dialog.querySelectorAll('[data-rename-view]')].find(e=>e.dataset.renameView===view);

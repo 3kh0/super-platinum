@@ -128,3 +128,63 @@ test('existing return-to-cell behavior remains after cleanup and replacement blo
   assert.equal(h.listeners,0);assert.equal(h.document.activeElement,replaced?h.document.body:cell);assert.equal(!!cell.scrolled,!replaced);
  }
 });
+
+// Model the real selected-row subtree disappearing after its focused Remove
+// callback. No checker action repairs focus; execute the actual MOUNT observer.
+function entities(ids=['a'],users=false){
+ const queryId=users?'slack-list-user-query':'slack-list-channel-query';
+ const h=setup([[queryId,'input'],['slack-list-editor-cancel','button'],...ids.map(id=>['remove-'+id,'button'])]);
+ h.run();const attribute=users?'data-selected-user':'data-selected-channel';
+ const query=h.nodes[0],cancel=h.nodes[1],removes=h.nodes.slice(2);
+ const rows=ids.map((id,i)=>h.attributes({id:'selected-'+id,shown:true,
+   hasAttribute:name=>name===attribute,getAttribute:name=>name===attribute?id:null,
+   querySelector:selector=>selector==='button'?removes[i]:null,
+   contains:node=>node===removes[i],closest:selector=>selector==='.slack-list-entity-picker'?picker:null}));
+ const picker=h.attributes({id:'picker',shown:true,
+   querySelectorAll:selector=>selector==='['+attribute+']'?rows.filter(r=>r.isConnected):[],
+   querySelector:selector=>selector==='#'+queryId?query:null,
+   contains:node=>node===query||rows.some((r,i)=>r.isConnected&&(node===r||node===removes[i]))});
+ const oldContains=h.editor.contains,oldQueryAll=h.editor.querySelectorAll;
+ h.editor.contains=node=>!!node?.isConnected&&(node===picker||rows.includes(node)||oldContains(node));
+ h.editor.querySelectorAll=selector=>oldQueryAll(selector).filter(node=>node.isConnected);
+ removes.forEach((button,i)=>{const old=button.closest;button.closest=selector=>selector==='[data-selected-user],[data-selected-channel]'?rows[i]:old.call(button,selector);});
+ function detach(i,deliver=true,subtree=false){
+  rows[i].isConnected=removes[i].isConnected=false;h.document.activeElement=h.document.body;
+  const removed=subtree?{contains:node=>node===rows[i]||node===removes[i]}:rows[i];
+  const records=[{type:'childList',target:picker,removedNodes:[removed]}];
+  if(deliver)h.mutate(records);return records;
+ }
+ return Object.assign(h,{query,cancel,removes,rows,picker,detach});
+}
+
+test('removing the only focused Channel or People chip restores the owned query without scrolling',()=>{
+ for(const users of [false,true]){const h=entities(['a'],users);h.focus(h.removes[0]);h.detach(0);h.run();assert.equal(h.document.activeElement,h.query);}
+});
+
+test('multi entity removal chooses next then previous surviving Remove then query',()=>{
+ for(const [index,want]of [[0,1],[1,2],[2,1]]){const h=entities(['a','b','c']);h.focus(h.removes[index]);h.detach(index);h.run();assert.equal(h.document.activeElement,h.removes[want]);}
+ const h=entities(['a','b','c']);h.focus(h.removes[1]);h.removes[2].disabled=true;h.detach(1);h.run();assert.equal(h.document.activeElement,h.removes[0]);
+});
+
+test('removed ancestor subtree and delayed delivery keep exact pre-removal custody',()=>{
+ const h=entities();h.focus(h.removes[0]);const records=h.detach(0,false,true);assert.equal(h.document.activeElement,h.document.body);h.mutate(records);h.run();assert.equal(h.document.activeElement,h.query);
+});
+
+test('entity removal never steals intentional focus before delivery or after queueing',()=>{
+ for(const before of [true,false]){const h=entities();h.focus(h.removes[0]);const records=h.detach(0,false);const external=h.attributes({id:'outside',shown:true});if(before)h.focus(external);h.mutate(records);if(!before)h.focus(external);h.run();assert.equal(h.document.activeElement,external);}
+ const h=entities();h.focus(h.removes[0]);h.detach(0);h.focus(h.cancel);h.run();assert.equal(h.document.activeElement,h.cancel);
+});
+
+test('entity removal respects replacement owner, visit, generation and newer modal guards',()=>{
+ for(const change of [h=>h.currentEditor={},h=>h.editor.dataset.editorGeneration='10',h=>h.dialog.dataset.dialogGeneration='8',h=>h.editor.isConnected=false]){const h=entities();h.focus(h.removes[0]);h.detach(0);change(h);h.run();assert.equal(h.document.activeElement,h.document.body);}
+ const h=entities();h.focus(h.removes[0]);h.detach(0);h.dialogs=[h.dialog,h.editor,h.attributes({shown:true})];h.run();assert.equal(h.document.activeElement,h.document.body);
+});
+
+test('hidden or disabled entity query is never focused and detached picker cannot retarget',()=>{
+ for(const change of [h=>h.query.disabled=true,h=>h.query.hidden=true,h=>h.picker.isConnected=false]){const h=entities();h.focus(h.removes[0]);h.detach(0);change(h);h.run();assert.equal(h.document.activeElement,h.cancel);}
+});
+
+test('unrelated removal and surviving enabled focus cannot trigger entity restoration',()=>{
+ const h=entities();h.focus(h.removes[0]);h.mutate([{type:'childList',target:h.picker,removedNodes:[{contains:()=>false}]}]);h.run();assert.equal(h.document.activeElement,h.removes[0]);
+ const g=entities();g.focus(g.removes[0]);const records=g.detach(0,false);g.rows[0].isConnected=g.removes[0].isConnected=true;g.document.activeElement=g.removes[0];g.mutate(records);g.run();assert.equal(g.document.activeElement,g.removes[0]);
+});

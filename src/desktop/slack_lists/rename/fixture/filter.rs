@@ -425,6 +425,7 @@ mod tests {
             &write,
             &intent,
             &network::Metadata {
+                experiments: None,
                 document: saved.document.clone(),
                 allow: saved.allow_lists.clone(),
                 personal: saved.personal_task_lists.clone().unwrap(),
@@ -504,6 +505,7 @@ mod tests {
             &mut shell,
             &guard,
             Ok(network::Metadata {
+                experiments: None,
                 document: Document::parse(changed).unwrap(),
                 allow: saved.allow_lists.clone(),
                 personal: saved.personal_task_lists.clone().unwrap()

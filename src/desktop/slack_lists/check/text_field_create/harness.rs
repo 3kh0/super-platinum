@@ -128,8 +128,24 @@ pub(crate) async fn capture(
     stage: &str,
 ) -> Result<Value, String> {
     if !oracle::STAGES.contains(&stage)
+        && !(rename_fixture::field_create_mode().is_some_and(FieldCreateMode::is_entity)
+            && entity::EXTRA_STAGES.contains(&stage))
+        && !(rename_fixture::field_create_mode().is_some_and(FieldCreateMode::is_vote)
+            && vote::valid_stage(stage))
+        && !(rename_fixture::field_create_mode().is_some_and(FieldCreateMode::is_rating)
+            && rating::valid_stage(stage))
         && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::Checkbox)
             && checkbox::STAGES.contains(&stage))
+        && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::Channel)
+            && (channel::STAGES.contains(&stage)
+                || matches!(stage, "channel-candidates-start" | "channel-candidates-end")))
+        && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::Link)
+            && link::STAGES.contains(&stage))
+        && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::People)
+            && (people::STAGES.contains(&stage)
+                || matches!(stage, "people-candidates-start" | "people-candidates-end")))
+        && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::NumberPrecision)
+            && number_precision::STAGES.contains(&stage))
         && !(rename_fixture::field_create_mode() == Some(FieldCreateMode::Date)
             && date::STAGES.contains(&stage))
         && !(rename_fixture::field_create_mode().is_some_and(FieldCreateMode::is_select)
@@ -307,6 +323,9 @@ mod select_stage_tests {
             FieldCreateMode::Number,
             FieldCreateMode::Checkbox,
             FieldCreateMode::Date,
+            FieldCreateMode::People,
+            FieldCreateMode::Link,
+            FieldCreateMode::Channel,
         ] {
             assert_eq!(creation_stage(mode, legacy.clone(), None).unwrap(), legacy);
             assert_eq!(

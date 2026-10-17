@@ -2,21 +2,50 @@
 use super::*;
 use crate::slack_lists::rename::{self, Stage, fixture as rename_fixture};
 use rename_fixture::FieldCreateMode;
+mod channel;
 mod checkbox;
 mod date;
+mod entity;
 mod harness;
+mod link;
+mod number_precision;
 mod oracle;
+mod people;
+mod rating;
 mod select;
+mod vote;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     let Some(mode) = rename_fixture::field_create_mode() else {
         return;
     };
     dioxus::core::spawn_forever(async move {
-        let receipt = match run(state, &desktop, mode).await {
+        let result = if mode.is_entity() {
+            entity::run(state, &desktop, mode).await
+        } else {
+            run(state, &desktop, mode).await
+        };
+        let receipt = match result {
             Ok(v) => v,
             Err(error) => {
                 let mut receipt = json!({"ok":false,"error":error,"failedLedger":rename_fixture::snapshot(&state.peek()).ok(),"failedDocument":document(state).ok(),"failedPopulation":population(state).ok()});
-                if mode == FieldCreateMode::Checkbox {
+                if mode.is_vote() {
+                    receipt["failedCellLedger"] = vote::failed_snapshot(&state.peek());
+                }
+                if mode.is_rating() {
+                    receipt["failedCellLedger"] = rating::failed_snapshot(&state.peek());
+                }
+                if mode == FieldCreateMode::NumberPrecision {
+                    receipt["failedCellLedger"] = number_precision::failed_snapshot(&state.peek());
+                }
+                if mode == FieldCreateMode::People {
+                    receipt["failedCellLedger"] = people::failed_snapshot(&state.peek());
+                }
+                if mode == FieldCreateMode::Link {
+                    receipt["failedCellLedger"] = link::failed_snapshot(&state.peek());
+                }
+                if mode == FieldCreateMode::Channel {
+                    receipt["failedCellLedger"] = channel::failed_snapshot(&state.peek());
+                } else if mode == FieldCreateMode::Checkbox {
                     receipt["failedCellLedger"] = checkbox::failed_snapshot(&state.peek());
                 } else if mode == FieldCreateMode::Date {
                     receipt["failedCellLedger"] = date::failed_snapshot(&state.peek());
@@ -112,9 +141,31 @@ fn draft(state: Signal<ShellState>) -> Result<Value, String> {
         .observed_field
         .as_ref()
         .map(|v| json!({"id":v.id,"key":v.key,"name":v.name}));
-    Ok(
-        json!({"serial":p.serial,"visit":crate::slack_lists::generation(&shell),"selection":rename::selection(&shell),"name":p.name,"view":"V_FILTER","observed":observed,"kind":choice.kind.as_str(),"choice":choice.revision}),
-    )
+    let mut result = json!({"serial":p.serial,"visit":crate::slack_lists::generation(&shell),"selection":rename::selection(&shell),"name":p.name,"view":"V_FILTER","observed":observed,"kind":choice.kind.as_str(),"choice":choice.revision});
+    if rename_fixture::field_create_mode() == Some(FieldCreateMode::NumberPrecision) {
+        result["numberPrecision"] = json!(choice.number_precision.value());
+    }
+    if rename_fixture::field_create_mode().is_some_and(FieldCreateMode::is_rating) {
+        result["ratingOptions"] = p
+            .rating_draft
+            .as_ref()
+            .map(|o| o.wire())
+            .unwrap_or(Value::Null);
+        result["ratingPicker"] = json!(p.rating_picker);
+    }
+    if rename_fixture::field_create_mode().is_some_and(FieldCreateMode::is_vote) {
+        result["voteOptions"] = match p.rating_draft.as_ref() {
+            Some(o) if o.max() == 1 => {
+                super_platinum_core::slack_lists::VoteOptions::capture(o.emoji(), o.team_id())
+                    .map_err(|_| "Invalid Vote draft")?
+                    .wire()
+            }
+            Some(_) => return Err("Vote draft unexpectedly contains Quantity".into()),
+            None => Value::Null,
+        };
+        result["votePicker"] = json!(p.rating_picker);
+    }
+    Ok(result)
 }
 async fn click(d: &dioxus::desktop::DesktopContext, id: &str) -> Result<(), String> {
     checked(
@@ -201,6 +252,11 @@ async fn open_name(
     } else {
         None
     };
+    let precision = if mode == FieldCreateMode::NumberPrecision {
+        Some(number_precision::creation::configure(state, d).await?)
+    } else {
+        None
+    };
     let before_name = draft(state)?;
     let input = checked(
         d,
@@ -231,9 +287,11 @@ async fn open_name(
     {
         return Err("Actual field input callback did not retain name and exact type choice".into());
     }
-    Ok(
-        json!({"model":model,"dom":dom,"input":input,"activation":activation,"initial":initial,"initialDom":initial_dom,"selected":selected}),
-    )
+    let mut receipt = json!({"model":model,"dom":dom,"input":input,"activation":activation,"initial":initial,"initialDom":initial_dom,"selected":selected});
+    if let Some(precision) = precision {
+        receipt["numberPrecision"] = precision;
+    }
+    Ok(receipt)
 }
 struct Proof {
     mode: FieldCreateMode,
@@ -244,10 +302,26 @@ struct Proof {
     stages: Vec<Value>,
     captures: serde_json::Map<String, Value>,
     select_options: Option<Value>,
+    people_cache: Option<Value>,
+    channel_cache: Option<Value>,
 }
 impl Proof {
     fn stable(&self, state: Signal<ShellState>, mode: usize) -> Result<(), String> {
         let shell = state.peek();
+        if let Some(expected) = self.people_cache.as_ref() {
+            if crate::slack_lists::fixture::text_field_create::people::cache::snapshot(&shell)?
+                != *expected
+            {
+                return Err("People cache drift during creation".into());
+            }
+        }
+        if let Some(expected) = self.channel_cache.as_ref() {
+            if crate::slack_lists::fixture::text_field_create::channel::cache::snapshot(&shell)?
+                != *expected
+            {
+                return Err("Channel cache drift during creation".into());
+            }
+        }
         let p = crate::slack_lists::presentation(&shell).ok_or("Missing List projection")?;
         if shell.core.session.is_some()
             || shell.core.transport.is_some()
@@ -294,7 +368,13 @@ impl Proof {
     ) -> Result<(), String> {
         let actual_ordinal = self.stages.len();
         let ordinal = actual_ordinal
-            .checked_sub(if self.mode.is_select() { 4 } else { 0 })
+            .checked_sub(if self.mode.is_select() {
+                4
+            } else if self.mode.is_rating() || self.mode.is_vote() {
+                2
+            } else {
+                0
+            })
             .ok_or("Missing Select prelude")?;
         if oracle::STAGES.get(ordinal) != Some(&name) {
             return Err("Wrong Text creation stage order".into());
@@ -352,10 +432,18 @@ impl Proof {
                 || c["name"] != self.mode.name()
                 || c["kind"] != self.mode.kind().as_str()
                 || c.get("options")
-                    != self
-                        .select_options
-                        .as_ref()
-                        .or(self.mode.kind().options().as_ref())
+                    != self.select_options.as_ref().or(if self.mode
+                        == FieldCreateMode::NumberPrecision
+                    {
+                        Some(json!({"precision":3}))
+                    } else if self.mode.is_vote() {
+                        Some(self.mode.vote_options())
+                    } else if self.mode.is_rating() {
+                        Some(self.mode.rating_options())
+                    } else {
+                        self.mode.kind().options()
+                    }
+                    .as_ref())
                 || c["choice"] != model["choice"]
                 || c["view"] != "V_FILTER"
                 || c["user"] != "U0"
@@ -375,6 +463,21 @@ impl Proof {
         } else {
             None
         };
+        let vote_dom = if self.mode.is_vote() && ordinal < 6 {
+            Some(vote::creation::verify(state, d, self.mode).await?)
+        } else {
+            None
+        };
+        let rating_dom = if self.mode.is_rating() && ordinal < 6 {
+            Some(rating::creation::verify(state, d, self.mode).await?)
+        } else {
+            None
+        };
+        let number_dom = if self.mode == FieldCreateMode::NumberPrecision && ordinal < 6 {
+            Some(number_precision::creation::verify(state, d).await?)
+        } else {
+            None
+        };
         self.captures
             .insert(name.into(), harness::capture(d, name).await?);
         self.stable(state, mode)?;
@@ -391,7 +494,43 @@ impl Proof {
                 return Err("Select option DOM changed during capture".into());
             }
         }
+        if let Some(expected) = vote_dom.as_ref() {
+            if vote::creation::verify(state, d, self.mode).await? != *expected {
+                return Err("Vote options changed during capture".into());
+            }
+            self.stable(state, mode)?;
+            if rename_fixture::snapshot(&state.peek())? != ledger || draft(state)? != model {
+                return Err("Vote custody changed during configuration capture".into());
+            }
+        }
+        if let Some(expected) = rating_dom.as_ref() {
+            if rating::creation::verify(state, d, self.mode).await? != *expected {
+                return Err("Rating configuration changed during capture".into());
+            }
+            self.stable(state, mode)?;
+            if rename_fixture::snapshot(&state.peek())? != ledger || draft(state)? != model {
+                return Err("Rating custody changed after configuration capture".into());
+            }
+        }
+        if let Some(expected) = number_dom.as_ref() {
+            if number_precision::creation::verify(state, d).await? != *expected {
+                return Err("Number precision changed during capture".into());
+            }
+            self.stable(state, mode)?;
+            if rename_fixture::snapshot(&state.peek())? != ledger || draft(state)? != model {
+                return Err("Number custody changed after precision capture".into());
+            }
+        }
         self.stages.push(harness::creation_stage(self.mode,json!({"ordinal":actual_ordinal,"stage":name,"geometry":geometry,"scrolling":scrolling,"custody":custody,"ledger":ledger,"document":document(state)?,"population":population(state)?,"find":find(state)?,"draft":model,"noSession":true,"noTransport":true}),option_dom)?);
+        if self.mode.is_vote() {
+            self.stages.last_mut().unwrap()["vote"] = vote_dom.unwrap_or(Value::Null);
+        }
+        if self.mode.is_rating() {
+            self.stages.last_mut().unwrap()["rating"] = rating_dom.unwrap_or(Value::Null);
+        }
+        if self.mode == FieldCreateMode::NumberPrecision {
+            self.stages.last_mut().unwrap()["numberPrecision"] = number_dom.unwrap_or(Value::Null);
+        }
         Ok(())
     }
 }
@@ -405,11 +544,23 @@ async fn run(
     checked(
         d,
         &format!(
-            "window.__listTextCreate.configure({})",
-            json!(mode.kind().as_str())
+            "window.__listTextCreate.configure({},{})",
+            json!(mode.kind().as_str()),
+            if mode == FieldCreateMode::NumberPrecision {
+                3
+            } else {
+                0
+            }
         ),
     )
     .await?;
+    if mode == FieldCreateMode::NumberPrecision {
+        checked(
+            d,
+            include_str!("text_field_create/number_precision/creation.js"),
+        )
+        .await?;
+    }
     wait_dom(d,"({ok:!!document.getElementById('slack-list-new-text-field')&&!document.getElementById('slack-list-rename')})").await?;
     if find(state)? != json!({"input":"","applied":"","revision":0}) {
         return Err("Unexpected initial Find".into());
@@ -471,9 +622,43 @@ async fn run(
         stages: vec![],
         captures: Default::default(),
         select_options: None,
+        people_cache: if mode == FieldCreateMode::People {
+            Some(
+                crate::slack_lists::fixture::text_field_create::people::cache::snapshot(
+                    &state.peek(),
+                )?,
+            )
+        } else {
+            None
+        },
+        channel_cache: if mode == FieldCreateMode::Channel {
+            Some(
+                crate::slack_lists::fixture::text_field_create::channel::cache::snapshot(
+                    &state.peek(),
+                )?,
+            )
+        } else {
+            None
+        },
     };
     proof.stable(state, 0)?;
+    if mode.is_vote() {
+        checked(d, include_str!("text_field_create/vote/creation.js")).await?;
+    }
+    if mode.is_rating() {
+        checked(d, include_str!("text_field_create/rating/creation.js")).await?;
+    }
     let canceled = open_name(state, d, mode).await?;
+    let vote_prelude = if mode.is_vote() {
+        Some(vote::creation::prelude(state, d, &mut proof).await?)
+    } else {
+        None
+    };
+    let rating_prelude = if mode.is_rating() {
+        Some(rating::creation::prelude(state, d, &mut proof).await?)
+    } else {
+        None
+    };
     let select_prelude = if mode.is_select() {
         Some(select::options::prelude(state, d, &mut proof).await?)
     } else {
@@ -496,8 +681,22 @@ async fn run(
     }
     proof.stable(state, 0)?;
     let created_choice = open_name(state, d, mode).await?;
+    let vote_configuration = if mode.is_vote() {
+        Some(vote::creation::configure(state, d, mode).await?)
+    } else {
+        None
+    };
+    let rating_configuration = if mode.is_rating() {
+        Some(rating::creation::configure(state, d, mode).await?)
+    } else {
+        None
+    };
     let mut select_configuration = Value::Null;
-    let mut admitted_choice = created_choice["model"].clone();
+    let mut admitted_choice = if mode.is_rating() || mode.is_vote() {
+        draft(state)?
+    } else {
+        created_choice["model"].clone()
+    };
     if mode.is_select() {
         let configured = select::options::fill(state, d).await?;
         let expected = configured["options"].clone();
@@ -660,7 +859,19 @@ async fn run(
     {
         return Err("Done retained an active Text entry".into());
     }
-    let cells = if mode == FieldCreateMode::Checkbox {
+    let cells = if mode.is_vote() {
+        Some(vote::run(state, d, &mut proof).await?)
+    } else if mode.is_rating() {
+        Some(rating::run(state, d, &mut proof).await?)
+    } else if mode == FieldCreateMode::NumberPrecision {
+        Some(number_precision::run(state, d, &mut proof).await?)
+    } else if mode == FieldCreateMode::Channel {
+        Some(channel::run(state, d, &mut proof).await?)
+    } else if mode == FieldCreateMode::Link {
+        Some(link::run(state, d, &mut proof).await?)
+    } else if mode == FieldCreateMode::People {
+        Some(people::run(state, d, &mut proof).await?)
+    } else if mode == FieldCreateMode::Checkbox {
         Some(checkbox::run(state, d, &mut proof).await?)
     } else if mode == FieldCreateMode::Date {
         Some(date::run(state, d, &mut proof).await?)
@@ -676,11 +887,30 @@ async fn run(
         return Err("Checkbox viewport changed after creation".into());
     }
     let mut terminal = json!({"ok":true,"mode":mode.kind().as_str(),"fixture":std::env::var("SUPER_PLATINUM_FIXTURE").unwrap(),"owner":owner,"noSession":true,"noTransport":true,"before":proof.docs[0],"after":proof.docs[1],"population":proof.population,"find":proof.find,"firstFind":first_find,"attempt":proof.id,"cancel":{"draft":canceled,"focus":cancel_focus,"registry":cancel_registry,"ledger":canceled_ledger},"create":created_choice,"retiredCheck":retired,"observed":observed,"doneFocus":done_focus,"doneRegistry":done_registry,"stages":proof.stages,"captures":proof.captures,"ledger":ledger,"viewport":viewport["viewport"]});
+    if mode.is_vote() {
+        terminal["votePrelude"] = vote_prelude.unwrap();
+        terminal["voteConfiguration"] = vote_configuration.unwrap();
+        terminal["voteCase"] = json!(mode.prefix());
+    }
+    if mode.is_rating() {
+        terminal["ratingPrelude"] = rating_prelude.unwrap();
+        terminal["ratingConfiguration"] = rating_configuration.unwrap();
+        terminal["ratingCase"] = json!(mode.prefix());
+    }
     if let Some(prelude) = select_prelude {
         terminal["selectFormat"] = json!(mode.select_format());
         terminal["selectConfiguration"] = select_configuration;
         terminal["selectPrelude"] = prelude;
         terminal["expectedOptions"] = proof.select_options.clone().unwrap();
+    }
+    if let Some(cache) = proof.people_cache {
+        terminal["peopleCache"] = cache;
+    }
+    if let Some(cache) = proof.channel_cache {
+        terminal["channelCache"] = cache;
+    }
+    if mode == FieldCreateMode::NumberPrecision {
+        terminal["numberPrecision"] = json!({"schema":1,"value":3});
     }
     if let Some(cells) = cells {
         terminal["cellWorkflow"] = cells;

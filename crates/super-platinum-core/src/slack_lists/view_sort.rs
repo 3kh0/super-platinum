@@ -1,13 +1,12 @@
-//! Complete zero-or-one Number sort replacement for an ordinary saved Table.
+//! Complete ordered supported-field sort replacement for an ordinary saved Table.
 //! This authoring boundary is deliberately narrower than saved-view read projection.
 use super::{Column, ColumnRename, Document, ListError, PersonalTaskLists, ViewRename};
 use serde_json::{Value, json};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ViewSortChoice {
-    None,
-    Number { column_id: String, ascending: bool },
-}
+mod choice;
+pub use choice::ViewSortChoice;
+// Existing one-attempt transport bounds, not an inferred Slack rule-count limit.
+const MAX_SORT_BYTES: usize = 8192;
 #[derive(Clone, Debug, PartialEq)]
 pub struct ViewSort {
     document: Document,
@@ -22,13 +21,23 @@ fn identity(s: &str) -> bool {
 impl ViewSort {
     /// Borrowed presentation hint. Admission separately checks raw identity and policy.
     pub fn supports_column(column: &Column) -> bool {
-        column.kind == "number"
-            && ColumnRename::supports(column)
-            && identity(&column.id)
+        // Captured Cmmr.Dr permits these kinds. Keep the established Number
+        // precision boundary; Select must have the same valid rank table used
+        // by saved-view projection. Other preserved options do not affect its
+        // existing comparator. Link is absent from Dr; Vote and specialized
+        // assignee/To-do metadata need additional projection/context support.
+        identity(&column.id)
             && identity(&column.key)
+            && match column.kind.as_str() {
+                "number" => ColumnRename::supports(column),
+                "select" => super::saved_views::supports_new_grouping(column),
+                "text" | "checkbox" | "date" | "created_time" | "last_edited_time" | "user"
+                | "channel" | "rating" | "email" | "phone" => true,
+                _ => false,
+            }
     }
     /// None means unsupported, not unsorted. Missing sorts and [] mean unsorted.
-    /// Extra rule members (including optional column_id), null, and multiple rules
+    /// Extra rule members (including optional column_id), null, and duplicate rules
     /// stay untouched: no canonical write semantics for those shapes are claimed.
     pub fn current(document: &Document, view: &str) -> Option<ViewSortChoice> {
         if !identity(view) {
@@ -43,27 +52,64 @@ impl ViewSort {
             return Some(ViewSortChoice::None);
         };
         let rules = value.as_array()?;
-        if rules.is_empty() {
-            return Some(ViewSortChoice::None);
-        }
-        if rules.len() != 1 {
+        if value.to_string().len() > MAX_SORT_BYTES {
             return None;
         }
-        let rule = rules[0].as_object()?;
-        if rule.len() != 2 {
-            return None;
+        let mut seen = std::collections::BTreeSet::new();
+        let mut choices = Vec::with_capacity(rules.len());
+        for raw in rules {
+            let rule = raw.as_object()?;
+            if rule.len() != 2 {
+                return None;
+            }
+            let key = rule.get("key")?.as_str()?;
+            if !seen.insert(key) {
+                return None;
+            }
+            let ascending = rule.get("ascending")?.as_bool()?;
+            let column = document.columns.iter().find(|c| c.key == key)?;
+            choices.push(Self::choice(column, ascending)?);
         }
-        let key = rule.get("key")?.as_str()?;
-        let ascending = rule.get("ascending")?.as_bool()?;
-        let column = document.columns.iter().find(|c| c.key == key)?;
-        if !Self::supports_column(column) {
-            return None;
-        }
-        Some(ViewSortChoice::Number {
-            column_id: column.id.clone(),
-            ascending,
+        Some(ViewSortChoice::from_rules(choices))
+    }
+    /// Canonical authoring choice. Number keeps its existing public discriminant.
+    pub fn choice(column: &Column, ascending: bool) -> Option<ViewSortChoice> {
+        Self::supports_column(column).then(|| {
+            if column.kind == "number" {
+                ViewSortChoice::Number {
+                    column_id: column.id.clone(),
+                    ascending,
+                }
+            } else {
+                ViewSortChoice::Field {
+                    column_id: column.id.clone(),
+                    ascending,
+                }
+            }
         })
     }
+    /// Reject cross-kind aliases before staging or request construction.
+    pub fn valid_choice(document: &Document, desired: &ViewSortChoice) -> bool {
+        Self::wire(document, desired).is_some()
+    }
+    fn wire(document: &Document, desired: &ViewSortChoice) -> Option<Value> {
+        if matches!(desired, ViewSortChoice::Ordered(rows) if rows.len() < 2) {
+            return None;
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        let mut rules = Vec::new();
+        for rule in desired.rules() {
+            let (id, ascending) = rule.field()?;
+            let column = document.column(id)?;
+            if Self::choice(column, ascending).as_ref() != Some(rule) || !seen.insert(&column.key) {
+                return None;
+            }
+            rules.push(json!({"key":column.key,"ascending":ascending}));
+        }
+        let value = Value::Array(rules);
+        (value.to_string().len() <= MAX_SORT_BYTES).then_some(value)
+    }
+
     pub fn capture(
         document: &Document,
         view: &str,
@@ -80,19 +126,9 @@ impl ViewSort {
         if before == desired {
             return Err(ListError("Choose a different sort."));
         }
-        let sorts = match &desired {
-            ViewSortChoice::None => json!([]),
-            ViewSortChoice::Number {
-                column_id,
-                ascending,
-            } => {
-                let column = document
-                    .column(column_id)
-                    .filter(|c| Self::supports_column(c))
-                    .ok_or(ListError("Choose a supported Number field."))?;
-                json!([{ "key": column.key, "ascending": ascending }])
-            }
-        };
+        let sorts = Self::wire(document, &desired).ok_or(ListError(
+            "Choose distinct supported sort fields within the request limit.",
+        ))?;
         let mut expected_metadata = document.raw["list_metadata"].clone();
         let target = expected_metadata["views"]
             .as_array_mut()

@@ -37,6 +37,12 @@ pub(super) fn row(
                             onchange:move |_|crate::slack_lists::toggle_checkbox(state,instance.clone(),column_id.clone(),generation,layout),..checked_attributes}}
                     }else {
                         match &cell.content {
+                            crate::slack_lists::CellContent::Vote{count,voted,tooltip,glyph}=> {
+                                let intent=if *voted {super_platinum_core::slack_lists::VoteIntent::RemoveMyVote}else{super_platinum_core::slack_lists::VoteIntent::AddMyVote};
+                                super::vote::control(state,*count,*voted,tooltip,glyph,media_epoch,false,disabled,false,move ||crate::slack_lists::vote::toggle(state,instance.clone(),column_id.clone(),generation,layout,intent))
+                            },
+                            crate::slack_lists::CellContent::Rating{value,max,glyph}=>super::rating::display(state,*value,*max,glyph,true,media_epoch),
+                            crate::slack_lists::CellContent::People(people)=>rsx!{super::people::PeopleAvatars{state,people:people.clone(),media_epoch}},
                             crate::slack_lists::CellContent::Plain=>rsx!{span{class:"slack-list-cell-text","{cell.text}"}},
                             crate::slack_lists::CellContent::Timestamp{tooltip}=>rsx!{span{class:"slack-list-cell-text slack-list-timestamp",title:"{tooltip}","{cell.text}"}},
                             crate::slack_lists::CellContent::Rich(nodes)=>rsx!{div{class:"slack-list-cell-rich",for node in nodes {{super::super::rich::rich_node(node,media_epoch,state)}}}},

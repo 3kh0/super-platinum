@@ -43,7 +43,13 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
                 onchange:move |_|crate::slack_lists::toggle_detail_checkbox(state,generation,column_id.clone()),..checked}}}
             else if cell.text.is_empty(){rsx!{span{class:"slack-list-detail-empty","Empty"}}}
             else{match &cell.content{
-                crate::slack_lists::CellContent::Plain=>rsx!{span{class:"slack-list-cell-text","{cell.text}"}},
+                crate::slack_lists::CellContent::Vote{count,voted,tooltip,glyph}=> {
+                    let intent=if *voted {super_platinum_core::slack_lists::VoteIntent::RemoveMyVote}else{super_platinum_core::slack_lists::VoteIntent::AddMyVote};
+                    super::vote::control(state,*count,*voted,tooltip,glyph,media_epoch,false,blocked||!cell.editable,true,move ||crate::slack_lists::toggle_detail_vote(state,generation,column_id.clone(),intent))
+                },
+                crate::slack_lists::CellContent::Rating{value,max,glyph}=>super::rating::display(state,*value,*max,glyph,false,media_epoch),
+                            crate::slack_lists::CellContent::People(people)=>rsx!{super::people::PeopleAvatars{state,people:people.clone(),media_epoch}},
+                            crate::slack_lists::CellContent::Plain=>rsx!{span{class:"slack-list-cell-text","{cell.text}"}},
                 crate::slack_lists::CellContent::Timestamp{tooltip}=>rsx!{span{class:"slack-list-cell-text slack-list-timestamp",title:"{tooltip}","{cell.text}"}},
                 crate::slack_lists::CellContent::Rich(nodes)=>rsx!{div{class:"slack-list-cell-rich",for node in nodes{{super::super::rich::rich_node(node,media_epoch,state)}}}},
                 crate::slack_lists::CellContent::Labels(labels)=>rsx!{div{class:"slack-list-cell-labels",for label in labels{span{class:"slack-list-option","{label}"}}}},

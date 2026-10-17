@@ -65,6 +65,12 @@ impl ShellState {
     }
 
     pub fn toggle_self_menu(&mut self) {
+        if crate::canvas_create::departure::request(
+            self,
+            crate::canvas_create::departure::Destination::SelfMenu,
+        ) {
+            return;
+        }
         self.cancel_profile_dm();
         if self.overlay == Some(crate::state::Overlay::SelfMenu) {
             self.overlay = None;
@@ -76,6 +82,14 @@ impl ShellState {
     }
 
     pub fn open_preferences(&mut self) {
+        if crate::canvas_create::departure::request(
+            self,
+            crate::canvas_create::departure::Destination::Settings(
+                crate::state::SettingsSection::Appearance,
+            ),
+        ) {
+            return;
+        }
         self.cancel_profile_dm();
         self.self_menu_notifications_open = false;
         self.settings_section = crate::state::SettingsSection::Appearance;
@@ -250,6 +264,17 @@ impl ShellState {
         ts: Option<&str>,
         thread_ts: Option<&str>,
     ) -> bool {
+        if crate::canvas_create::departure::request(
+            self,
+            crate::canvas_create::departure::Destination::Activity {
+                key: key.clone(),
+                channel: channel.map(str::to_owned),
+                ts: ts.map(str::to_owned),
+                thread: thread_ts.map(str::to_owned),
+            },
+        ) {
+            return false;
+        }
         self.core.activity.selected = Some(key);
         if thread_ts.is_none() {
             self.close_thread();
@@ -267,6 +292,15 @@ impl ShellState {
     /// Opens a search hit. Search is global navigation, so like Slack's own
     /// client it lands in Home rather than inside whichever list was open.
     pub fn open_search_result(&mut self, channel: &str, ts: &str) -> bool {
+        if crate::canvas_create::departure::request(
+            self,
+            crate::canvas_create::departure::Destination::Message {
+                channel: channel.into(),
+                ts: ts.into(),
+            },
+        ) {
+            return false;
+        }
         // Archived/filtered conversations can be known without a projected row.
         // Add the row before navigation, keeping the old draft destination bound.
         if !self.channels.iter().any(|row| row.id == channel) {
@@ -288,12 +322,18 @@ impl ShellState {
     }
 
     pub fn open_later_item(&mut self, channel: &str, ts: &str) -> bool {
+        if crate::canvas_create::departure(self) {
+            return false;
+        }
         self.close_thread();
         self.open_message(channel, ts, ChannelOpen::InSurface)
     }
 
     /// Opens one conversation anchored on a specific message.
     fn open_message(&mut self, channel: &str, ts: &str, open: ChannelOpen) -> bool {
+        if crate::canvas_create::departure(self) {
+            return false;
+        }
         let Some(index) = self
             .channels
             .iter()

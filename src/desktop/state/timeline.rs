@@ -385,6 +385,19 @@ impl ShellState {
     }
 
     pub fn select_workspace(&mut self, index: usize) -> bool {
+        let Some(team) = self
+            .workspaces
+            .get(index)
+            .map(|workspace| workspace.id.clone())
+        else {
+            return false;
+        };
+        if crate::canvas_create::departure::request(
+            self,
+            crate::canvas_create::departure::Destination::Workspace(team),
+        ) {
+            return false;
+        }
         crate::read_preferences::opening::cancel(self);
         self.close_profile();
         self.cancel_palette_open();

@@ -563,3 +563,11 @@ mod date;
 mod number;
 
 mod select;
+
+mod people;
+
+mod link;
+
+mod channel;
+
+mod rating;

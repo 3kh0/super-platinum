@@ -7,43 +7,30 @@
   return true;
  };
  const hit=e=>{if(!visible(e))return false;const r=e.getBoundingClientRect();return [.15,.5,.85].every(x=>[.15,.5,.85].every(y=>{const f=document.elementFromPoint(r.left+r.width*x,r.top+r.height*y);return f===e||e.contains(f);}));};
- const find=()=>q('.slack-list-find input');let opener=null,findNode=null,findRange=null;
- const orders={none:[0,1,2,3,4,5,6,7,8],ascending:[2,3,1,4,7,8,0,5,6],descending:[0,5,8,7,1,4,3,2,6]};
- const rowIds=()=>[...document.querySelectorAll('.slack-list-grid tr[data-row-id]')].map(e=>e.dataset.rowId);
- window.__listViewSort={
-  click(selector){const e=q(selector);e?.scrollIntoView({block:'nearest',inline:'nearest'});if(!e||e.disabled||!hit(e))return{ok:false,selector};e.focus();e.click();return{ok:true,selector,hitPoints:9};},
-  select(selector,value){const e=q(selector);e?.scrollIntoView({block:'nearest',inline:'nearest'});if(!(e instanceof HTMLSelectElement)||e.disabled||!hit(e)||![...e.options].some(o=>o.value===value))return{ok:false,selector};e.focus();Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,value);e.dispatchEvent(new Event('change',{bubbles:true}));return{ok:true,selector,value};},
+ const find=()=>q('.slack-list-find input');let opener=null,findNode=null,findRange=null,mode='legacy',actionNode=null,phaseNode=null;const history=[];
+ const clips=e=>{const out=[];for(let p=e?.parentElement;p;p=p.parentElement){const s=getComputedStyle(p);if(/auto|scroll|hidden|clip/.test(s.overflowX+s.overflowY))out.push({id:p.id||null,class:p.className,rect:rect(p),scroll:[p.scrollLeft,p.scrollTop]});}return out;};
+ const api=window.__listViewSort={
+  rect,visible,hit,
+  mode(){return mode;},
+  phaseFocus(stage){const panel=q('#slack-list-rename'),current=document.activeElement,live=e=>!!e&&e.isConnected&&!e.disabled&&panel?.contains(e);const retained=live(actionNode)?actionNode:live(phaseNode)?phaseNode:null;const allowed=stage.endsWith('-saving')?['slack-list-rename-leave']:['slack-list-rename-leave','slack-list-rename-check'];const ok=live(current)&&allowed.includes(current.id)&&(!retained||current===retained)&&this.focusRing(current).ok;const receipt={ok,focused:current?.id||null,action:actionNode?.id||null,actionRetained:live(actionNode),previousRetained:live(phaseNode),sameRetained:retained?current===retained:null,allowed,ring:this.focusRing(current)};if(ok)phaseNode=current;return receipt;},
+  focusRing(e){
+   if(!e)return{ok:false};
+   const s=getComputedStyle(e),r=e.getBoundingClientRect(),width=parseFloat(s.outlineWidth),offset=parseFloat(s.outlineOffset),out=Math.max(0,width+offset),bounds=[r.left-out,r.top-out,r.right+out,r.bottom+out],ancestors=[];
+   let clipped=bounds.some(v=>!Number.isFinite(v))||bounds[0]<0||bounds[1]<0||bounds[2]>innerWidth||bounds[3]>innerHeight;
+   for(let p=e.parentElement;p;p=p.parentElement){const c=getComputedStyle(p),b=p.getBoundingClientRect(),x=/auto|scroll|hidden|clip/.test(c.overflowX),y=/auto|scroll|hidden|clip/.test(c.overflowY);if(x||y){const edges=[b.left,b.top,b.right,b.bottom];ancestors.push({x,y,bounds:edges});if(edges.some(v=>!Number.isFinite(v))||x&&(bounds[0]<b.left||bounds[2]>b.right)||y&&(bounds[1]<b.top||bounds[3]>b.bottom))clipped=true;}}
+   return{ok:visible(e)&&Number.isFinite(width)&&width>0&&Number.isFinite(offset)&&s.outlineStyle!=='none'&&!clipped,bounds,width,offset,style:s.outlineStyle,clipped,ancestors,viewport:[innerWidth,innerHeight]};
+  },
+  setMode(value){if(!['legacy','ordered'].includes(value)||history.length)return{ok:false};mode=value;return{ok:true,mode};},
+  history(){return{ok:true,schema:2,mode,scrolls:history.slice()};},
+  reveal(e,reason){if(!e?.isConnected)return{ok:false,reason};const before={rect:rect(e),clips:clips(e)},active=document.activeElement,focused=active?.id||null;e.scrollIntoView({block:'nearest',inline:'nearest'});const after={rect:rect(e),clips:clips(e)};const record={index:history.length,reason,target:e.id||null,focusedBefore:focused,focusedAfter:document.activeElement?.id||null,sameActiveElement:document.activeElement===active,before,after};history.push(record);return{ok:visible(e)&&record.sameActiveElement,...record};},
+  click(selector){const e=q(selector),reveal=this.reveal(e,'activate');if(!reveal.ok||e.disabled||!hit(e))return{ok:false,selector,reveal};e.focus();actionNode=e;phaseNode=null;e.click();return{ok:true,selector,hitPoints:9,reveal};},
+  select(selector,value){const e=q(selector),reveal=this.reveal(e,'select');if(!(e instanceof HTMLSelectElement)||!reveal.ok||e.disabled||!hit(e)||![...e.options].some(o=>o.value===value&&!o.disabled))return{ok:false,selector,reveal};e.focus();Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,value);e.dispatchEvent(new Event('change',{bubbles:true}));return{ok:true,selector,value,reveal};},
   query(){const e=find();if(!(e instanceof HTMLInputElement)||e.disabled||!hit(e))return{ok:false};e.focus();Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'Launch item 0');e.dispatchEvent(new Event('input',{bubbles:true}));return{ok:true};},
   bindFind(){const e=find();if(!e||e.value!=='Launch item 0')return{ok:false};findNode=e;findRange=[e.selectionStart,e.selectionEnd,e.selectionDirection];return{ok:true,value:e.value,range:findRange};},
   findRetained(){const e=find();const range=e?[e.selectionStart,e.selectionEnd,e.selectionDirection]:null;return{ok:!!e&&e===findNode&&e.value==='Launch item 0'&&JSON.stringify(range)===JSON.stringify(findRange),sameNode:e===findNode,value:e?.value,range};},
   rememberSort(){opener=q('#slack-list-sort');return{ok:!!opener&&opener.isConnected};},
   returnedSort(){const current=q('#slack-list-sort');return{ok:!!opener&&opener===current&&opener===document.activeElement&&opener.isConnected&&!q('#slack-list-rename'),sameNode:opener===current,focused:opener===document.activeElement};},
-  draft(){const panel=q('#slack-list-rename'),field=q('#slack-list-sort-field'),direction=q('#slack-list-sort-direction');return{ok:!!panel&&!!field&&!!direction,serial:panel?.dataset.renameSerial,choice:field?.dataset.sortChoice,field:field?.value,direction:direction?.value,fieldDisabled:field?.disabled,directionDisabled:direction?.disabled,focused:document.activeElement?.id};},
-  revealFirst(){const e=q('.slack-list-grid tr[data-row-id]');if(!e)return{ok:false};e.scrollIntoView({block:'nearest',inline:'nearest'});return{ok:true};},
-  geometry(stage){
-   const phases={'asc-edit':'Editing','asc-saving':'Saving',uncertain:'Uncertain',stale:'Conflict',ascending:null,descending:null,'clear-edit':'Editing',cleared:null};
-   const mode=stage==='ascending'?'ascending':['descending','clear-edit'].includes(stage)?'descending':'none';
-   const ids=rowIds(),expected=orders[mode].map(i=>`R_LIST_${String(i).padStart(3,'0')}`),ordered=JSON.stringify(ids)===JSON.stringify(expected);
-   const table=phases[stage]===null,editing=['asc-edit','clear-edit'].includes(stage),clear=stage==='clear-edit';
-   const root=q('.slack-list-dialog'),panel=q('#slack-list-rename'),field=q('#slack-list-sort-field'),direction=q('#slack-list-sort-direction'),picker=q('#slack-list-view-select');
-   const phase=panel?.dataset.renameStage||null;
-   const controlIds=table?['slack-list-close','slack-list-sort','slack-list-view-select']:stage==='asc-saving'?['slack-list-rename-leave']:editing?['slack-list-rename-leave','slack-list-rename-close','slack-list-rename-confirm']:stage==='stale'?['slack-list-rename-leave','slack-list-rename-close','slack-list-rename-check']:['slack-list-rename-leave','slack-list-rename-check'];
-   const controls=controlIds.map(id=>{const e=document.getElementById(id);return{id,disabled:!!e?.disabled,hit:hit(e),rect:rect(e)};});
-   const exactButtons=table||JSON.stringify([...panel?.querySelectorAll('button')||[]].map(e=>e.id))===JSON.stringify(controlIds);
-   const selectors=table||field?.value===(clear?'':'C_NUMBER')&&direction?.value==='ascending'&&field.disabled===!editing&&direction.disabled===(!editing||clear)&&visible(field)&&visible(direction)&&(!editing||hit(field)&&(!clear?hit(direction):true));
-   const focused=table?this.returnedSort().ok:editing?document.activeElement===(clear?field:direction):panel?.contains(document.activeElement);
-   const first=q('.slack-list-grid tr[data-row-id]'),primary=first?.querySelector('[data-column-id="C_NAME"]'),number=first?.querySelector('[data-column-id="C_NUMBER"]');
-   const expectedNumber={none:'12.50',ascending:'-3.00',descending:'12.50'}[mode];
-   const numberText=number?.querySelector('.slack-list-cell-text')?.textContent||null;
-   const rowVisible=!table||visible(primary)&&visible(number)&&numberText===expectedNumber;
-   const warnings=[...document.querySelectorAll('.slack-list-warning')].filter(e=>e.textContent.includes('Only part'));
-   const partial=warnings.length===1&&(!table||visible(warnings[0]));
-   const findState=this.findRetained(),findVisible=!table||visible(find());
-   const actualLayout=!!q('.slack-list-grid')&&!q('.slack-list-board'),bounded=visible(root)&&(!panel||visible(panel))&&root.scrollWidth<=root.clientWidth+1;
-   return{ok:Object.hasOwn(phases,stage)&&phase===phases[stage]&&actualLayout&&bounded&&ordered&&selectors&&focused&&partial&&rowVisible&&findState.ok&&findVisible&&exactButtons&&controls.every(c=>!c.disabled&&c.hit)&&picker?.value==='V_SORT'&&picker?.selectedOptions?.[0]?.textContent==='Shared estimates',
-    stage,phase,mode,actualLayout,bounded,ordered,rowIds:ids,owner:{visit:root?.dataset.dialogGeneration,selection:root?.dataset.viewSelection,serial:panel?.dataset.renameSerial||null,view:panel?.dataset.sortView||null},selectors,controls,exactButtons,focused:document.activeElement?.id||null,focusedCorrectly:!!focused,
-    draft:panel?this.draft():null,find:findState,findVisible,partial,partialText:warnings[0]?.textContent||null,rowVisible,first:{id:first?.dataset.rowId,primary:rect(primary),number:rect(number),numberText},selectedView:picker?.value,selectedLabel:picker?.selectedOptions?.[0]?.textContent||null,returnedSort:table?this.returnedSort():null,panel:rect(panel),viewport:[innerWidth,innerHeight]};
-  }
+  revealFirst(){return this.reveal(q('.slack-list-grid tr[data-row-id]'),'table-first-row');},
  };
  return{ok:true};
 })()

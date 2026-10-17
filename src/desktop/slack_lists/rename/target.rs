@@ -1,6 +1,7 @@
 //! One typed registry/dispatch path for names and Number display precision.
 use super::*;
 use super_platinum_core::slack_lists::{ColumnCreate, ColumnCreatePermit};
+use super_platinum_core::slack_lists::{ColumnDelete, ColumnDeletePermit};
 use super_platinum_core::slack_lists::{
     ColumnPrecision, ColumnPrecisionAttempt, ColumnPrecisionPermit, PersonalTaskLists, ViewCreate,
     ViewCreateAttempt, ViewCreatePermit, ViewFieldVisibility, ViewFieldVisibilityAttempt,
@@ -16,6 +17,7 @@ use super_platinum_core::slack_lists::{ViewSort, ViewSortAttempt, ViewSortChoice
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Target {
     Column(String),
+    DeleteColumn(String),
     NewTextField(String),
     Precision(String),
     View(String),
@@ -30,6 +32,7 @@ impl Target {
         match self {
             Self::NewTextField(v)
             | Self::Column(v)
+            | Self::DeleteColumn(v)
             | Self::Precision(v)
             | Self::View(v)
             | Self::Sort(v)
@@ -38,6 +41,9 @@ impl Target {
             Self::NewView(_, _) => None,
             Self::Visibility { view, .. } => Some(view),
         }
+    }
+    pub fn is_deletion(&self) -> bool {
+        matches!(self, Self::DeleteColumn(_))
     }
     pub fn is_text_creation(&self) -> bool {
         matches!(self, Self::NewTextField(_))
@@ -100,7 +106,9 @@ impl Target {
         match self {
             Self::NewView(_, _) | Self::NewTextField(_) => Some(""),
             Self::Visibility { column, .. } => doc.column(column).map(|c| c.name.as_str()),
-            Self::Column(id) | Self::Precision(id) => doc.column(id).map(|c| c.name.as_str()),
+            Self::Column(id) | Self::DeleteColumn(id) | Self::Precision(id) => {
+                doc.column(id).map(|c| c.name.as_str())
+            }
             Self::View(id) | Self::Sort(id) | Self::Filter(id) | Self::Grouping(id) => doc
                 .views
                 .iter()
@@ -123,6 +131,7 @@ impl Target {
                 ViewFieldVisibility::current(doc, view, column).is_some()
             }
             Self::Precision(id) => precision::current(doc, id).is_some(),
+            Self::DeleteColumn(id) => ColumnDelete::supports(doc, id),
             Self::Column(id) => doc.column(id).is_some_and(ColumnRename::supports),
             Self::View(id) => doc
                 .views
@@ -139,7 +148,8 @@ impl Target {
         personal: Option<&PersonalTaskLists>,
     ) -> Result<Intent, super_platinum_core::slack_lists::ListError> {
         let name = input.name().unwrap_or_default();
-        if self.is_text_creation() != matches!(input, Input::NewTextField(_))
+        if self.is_deletion() != matches!(input, Input::DeleteColumn)
+            || self.is_text_creation() != matches!(input, Input::NewTextField(_))
             || self.is_filter() != matches!(input, Input::Filter(_))
             || self.is_sort() != matches!(input, Input::Sort(_))
             || self.is_grouping() != matches!(input, Input::Grouping(_))
@@ -151,6 +161,9 @@ impl Target {
             ));
         }
         match self {
+            Self::DeleteColumn(_) => Err(super_platinum_core::slack_lists::ListError(
+                "Field deletion requires authenticated schema permissions.",
+            )),
             Self::NewTextField(_) => Err(super_platinum_core::slack_lists::ListError(
                 "Text field creation requires its captured item population.",
             )),
@@ -204,6 +217,7 @@ impl Target {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum Input {
+    DeleteColumn,
     Name(String),
     NewTextField(String),
     Precision(u8),
@@ -224,6 +238,7 @@ impl Input {
 #[derive(Clone)]
 pub(super) enum Intent {
     Column(ColumnRename),
+    DeleteColumn(ColumnDelete),
     NewTextField(ColumnCreate),
     Precision(ColumnPrecision),
     View(ViewRename),
@@ -237,6 +252,7 @@ impl Intent {
     pub fn original(&self) -> &Document {
         match self {
             Self::Column(i) => i.original(),
+            Self::DeleteColumn(i) => i.original(),
             Self::NewTextField(i) => i.original(),
             Self::Precision(i) => i.original(),
             Self::View(i) => i.original(),
@@ -249,6 +265,7 @@ impl Intent {
     }
     pub fn input(&self) -> Input {
         match self {
+            Self::DeleteColumn(_) => Input::DeleteColumn,
             Self::Column(i) => Input::Name(i.desired_name().into()),
             Self::NewTextField(i) => Input::NewTextField(i.desired_name().into()),
             Self::View(i) => Input::Name(i.desired_name().into()),
@@ -263,6 +280,7 @@ impl Intent {
     pub fn observes_desired(&self, doc: &Document) -> bool {
         match self {
             Self::Column(i) => i.observes_desired(doc),
+            Self::DeleteColumn(i) => i.observes_desired(doc),
             Self::Precision(i) => i.observes_desired(doc),
             Self::View(i) => i.observes_desired(doc),
             Self::Visibility(i) => i.observes_desired(doc),
@@ -279,6 +297,7 @@ impl Intent {
         personal: &PersonalTaskLists,
     ) -> Option<Permit> {
         match self {
+            Self::DeleteColumn(_) => None, // Authenticated-user admission is mandatory.
             Self::NewTextField(_) => None, // Population/current-user admission is mandatory.
             Self::Grouping(i) => ViewGroupingAttempt::new(i.clone())
                 .admit(doc, allow, Some(personal))
@@ -317,6 +336,7 @@ impl Intent {
 }
 pub(super) enum Permit {
     Column(ColumnRenamePermit),
+    DeleteColumn(ColumnDeletePermit),
     NewTextField(ColumnCreatePermit),
     Precision(ColumnPrecisionPermit),
     View(ViewRenamePermit),
@@ -327,6 +347,9 @@ pub(super) enum Permit {
     Create(ViewCreatePermit),
 }
 impl Permit {
+    pub fn is_deletion(&self) -> bool {
+        matches!(self, Self::DeleteColumn(_))
+    }
     pub fn is_text_creation(&self) -> bool {
         matches!(self, Self::NewTextField(_))
     }
@@ -357,6 +380,9 @@ impl Permit {
         session: &super_platinum_core::config::WorkspaceSession,
     ) -> super_platinum_core::slack::client::PreparedRequest {
         match self {
+            Self::DeleteColumn(p) => {
+                super_platinum_core::slack::api::list_column_delete(client, session, p)
+            }
             Self::NewTextField(p) => {
                 super_platinum_core::slack::api::list_column_create(client, session, p)
             }

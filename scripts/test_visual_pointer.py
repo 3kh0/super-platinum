@@ -26,6 +26,132 @@ class FakeIO:
 
 
 class PointerTests(unittest.TestCase):
+    def test_physical_probe_uses_and_restores_actual_context_helper(self):
+        # Stub only Win32 exports; execute the real existing context manager.
+        for outcome in ("success", "getter_error", "admission_error"):
+            with self.subTest(outcome=outcome):
+                class User:
+                    current = 123
+                    events = []
+                    def SetThreadDpiAwarenessContext(self, value):
+                        raw = value.value if hasattr(value, "value") else value
+                        self.events.append(("context", raw))
+                        if outcome == "admission_error":
+                            return 0
+                        prior, self.current = self.current, raw
+                        return prior
+                    def GetPhysicalCursorPos(self, out):
+                        self.events.append(("getter", self.current))
+                        self_expected = pointer.W.HANDLE(-4).value
+                        if self.current != self_expected:
+                            raise AssertionError("getter escaped PMv2")
+                        if outcome == "getter_error":
+                            raise OSError("physical probe unavailable")
+                        out._obj.x, out._obj.y = 971, 25
+                        return True
+                user = User()
+                probe = pointer.WindowsPointerIO.__new__(pointer.WindowsPointerIO)
+                probe.user = user
+                if outcome == "success":
+                    self.assertEqual(probe.physical_position(), (971, 25))
+                else:
+                    with patch.object(pointer.ctypes, "get_last_error", return_value=5), patch.object(pointer.ctypes, "WinError", return_value=OSError("stub failure")):
+                        with self.assertRaises(OSError):
+                            probe.physical_position()
+                self.assertEqual(user.current, 123)
+                if outcome == "admission_error":
+                    self.assertEqual(user.events, [("context", pointer.W.HANDLE(-4).value)])
+                else:
+                    self.assertEqual(user.events, [("context", pointer.W.HANDLE(-4).value),
+                                                    ("getter", pointer.W.HANDLE(-4).value),
+                                                    ("context", 123)])
+
+    def test_failure_diagnostics_label_raw_probe_apis_and_contexts(self):
+        parked, io, _ = self.fixture()
+        io.clip = True
+        io.physical_position = lambda: (647, 17)
+        io.clip_rect = lambda: (0, 0, 2560, 1600)
+        io.input_desktop = lambda: True
+        with patch.object(pointer.time, "sleep", lambda _: None):
+            with self.assertRaisesRegex(RuntimeError, "Pointer placement differed"):
+                parked.park()
+        diagnostic = parked.data["placement_diagnostic"]
+        self.assertEqual(diagnostic["probes"], {
+            "position": {"api": "GetCursorPos", "thread_dpi_context": "PER_MONITOR_AWARE_V2"},
+            "physical_position": {"api": "GetPhysicalCursorPos", "thread_dpi_context": "PER_MONITOR_AWARE_V2"},
+            "clip_rect_ltrb": {"api": "GetClipCursor", "thread_dpi_context": "PER_MONITOR_AWARE_V2"},
+            "thread_desktop_receives_input": {"api": "GetThreadDesktop/GetUserObjectInformationW(UOI_IO)",
+                                              "thread_dpi_context": "ambient"}})
+        self.assertTrue(all(s["physical_position"]["value"] == (647, 17) for s in diagnostic["samples"]))
+        self.assertTrue(all(s["position"]["value"] == (0, 0) for s in diagnostic["samples"]))
+        self.assertEqual(len(io.moves), 1)
+        self.assertFalse(parked.data["move_observed"])
+
+    def test_failed_move_diagnostics_never_accept_delayed_target_or_retry(self):
+        class Clock:
+            now = 0
+            def monotonic(self): return self.now
+            def sleep(self, seconds): self.now += seconds
+        for observed in ("unchanged", "clipped", "delayed"):
+            with self.subTest(observed=observed):
+                parked, io, _ = self.fixture()
+                clock = Clock()
+                def move(point):
+                    io.moves.append(point)
+                    io.point = (0, 0) if observed == "clipped" else (40, 50)
+                io.move = move
+                io.position = lambda: (600, 125) if observed == "delayed" and clock.now >= .02 else io.point
+                io.physical_position = io.position
+                io.clip_rect = lambda: (0, 0, 2560, 1600)
+                io.input_desktop = lambda: True
+                with patch.object(pointer.time, "monotonic", clock.monotonic), patch.object(pointer.time, "sleep", clock.sleep):
+                    with self.assertRaisesRegex(RuntimeError, "Pointer placement differed"):
+                        parked.park()
+                samples = parked.data["placement_diagnostic"]["samples"]
+                self.assertEqual([s["elapsed_seconds"] for s in samples], [0, .02, .1, .25])
+                self.assertEqual(len(io.moves), 1)
+                self.assertFalse(parked.data["move_observed"])
+                self.assertTrue(parked.data["movement_observed"])
+                self.assertTrue(all(s["thread_desktop_receives_input"] == {"ok": True, "value": True} for s in samples))
+                if observed == "delayed":
+                    self.assertEqual(samples[-1]["position"]["value"], (600, 125))
+                parked.close()
+                self.assertEqual(len(io.moves), 1)
+                self.assertFalse(parked.data["restore_attempted"])
+
+    def test_diagnostic_errors_preserve_original_failure_and_other_probes(self):
+        parked, io, _ = self.fixture()
+        io.clip = True
+        io.physical_position = lambda: (0, 0)
+        def failed(): raise OSError("probe unavailable")
+        io.clip_rect = failed
+        io.input_desktop = lambda: False
+        with patch.object(pointer.time, "sleep", lambda _: None):
+            with self.assertRaisesRegex(RuntimeError, "Pointer placement differed"):
+                parked.park()
+        samples = parked.data["placement_diagnostic"]["samples"]
+        self.assertEqual(len(samples), 4)
+        self.assertTrue(all(s["clip_rect_ltrb"]["ok"] is False for s in samples))
+        self.assertTrue(all(s["physical_position"]["ok"] is True for s in samples))
+        self.assertTrue(all(s["thread_desktop_receives_input"]["value"] is False for s in samples))
+        self.assertEqual(len(io.moves), 1)
+        parked, io, _ = self.fixture()
+        io.clip = True
+        with patch.object(pointer.time, "sleep", side_effect=OSError("clock unavailable")):
+            with self.assertRaisesRegex(RuntimeError, "Pointer placement differed"):
+                parked.park()
+        self.assertEqual(parked.data["placement_diagnostic"]["error_type"], "OSError")
+        self.assertEqual(len(io.moves), 1)
+
+    def test_successful_move_does_not_run_failure_diagnostics(self):
+        parked, io, _ = self.fixture()
+        def forbidden(): raise AssertionError("failure-only probe on successful park")
+        io.physical_position = io.clip_rect = io.input_desktop = forbidden
+        parked.park()
+        self.assertNotIn("placement_diagnostic", parked.data)
+        parked.close()
+        self.assertEqual(len(io.moves), 2)
+
     def test_empty_taskbar_sample_does_not_exempt_later_obstructions_or_failures(self):
         parked, io, window = self.fixture()
         window.update(taskbar_rects=[], taskbar_probe_completed=True)

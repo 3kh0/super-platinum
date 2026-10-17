@@ -1,4 +1,4 @@
-//! Exact zero-or-one Number sort form, sharing only the established one-attempt HTTP mechanics.
+//! Exact distinct ordered sort form, sharing only the established one-attempt HTTP mechanics.
 use super::*;
 pub type ListViewSortFailure = ListColumnRenameFailure;
 impl Transport {
@@ -71,21 +71,21 @@ fn allowed(request: &PreparedRequest) -> bool {
     let Ok(value) = crate::slash_commands::codec::decode(text(3).as_bytes(), 8192) else {
         return false;
     };
-    let Some(items) = value.as_array().filter(|v| v.len() <= 1) else {
+    let Some(items) = value.as_array() else {
         return false;
     };
-    if items.is_empty() {
-        return true;
-    }
-    let Some(item) = items[0].as_object() else {
-        return false;
-    };
-    item.len() == 2
-        && item
-            .get("key")
-            .and_then(Value::as_str)
-            .is_some_and(identity)
-        && item.get("ascending").is_some_and(Value::is_boolean)
+    let mut seen = std::collections::BTreeSet::new();
+    items.iter().all(|value| {
+        let Some(item) = value.as_object() else {
+            return false;
+        };
+        item.len() == 2
+            && item
+                .get("key")
+                .and_then(Value::as_str)
+                .is_some_and(|key| identity(key) && seen.insert(key))
+            && item.get("ascending").is_some_and(Value::is_boolean)
+    })
 }
 #[cfg(test)]
 mod tests;
