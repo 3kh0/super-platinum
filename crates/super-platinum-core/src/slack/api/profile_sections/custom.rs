@@ -4,6 +4,8 @@ use super::*;
 use std::collections::{BTreeMap, HashSet};
 mod pronunciation;
 mod rich;
+pub mod texty;
+pub use rich::context::RichTextContext;
 mod value;
 pub use value::{Country, SectionValue, countries};
 #[cfg(test)]
@@ -29,6 +31,7 @@ pub struct SectionDraft {
     fields: Vec<SectionField>,
     changes: BTreeMap<String, SectionValue>,
     header_pronunciation: bool,
+    rich_fields: BTreeMap<String, RichTextContext>,
 }
 impl SectionDraft {
     pub fn open(snapshot: &OwnProfileSections, id: &str) -> Result<Self, Error> {
@@ -95,10 +98,28 @@ impl SectionDraft {
             fields,
             changes: BTreeMap::new(),
             header_pronunciation: false,
+            rich_fields: BTreeMap::new(),
         })
     }
     pub fn id(&self) -> &str {
         &self.id
+    }
+    /// Bind this field's exact ordered channel-token capture. Invalid lengths
+    /// remain visible for correction; capture performs the final validation.
+    pub fn change_rich(
+        &mut self,
+        id: &str,
+        blocks: Vec<Value>,
+        context: RichTextContext,
+    ) -> Result<(), Error> {
+        if !context.owns(self.snapshot.team_id(), self.snapshot.user_id()) {
+            return Err(invalid(
+                "This rich-text context belongs to another account.",
+            ));
+        }
+        self.change(id, SectionValue::LongText(blocks))?;
+        self.rich_fields.insert(id.to_owned(), context);
+        Ok(())
     }
     pub fn label(&self) -> &str {
         &self.label
@@ -149,6 +170,8 @@ impl SectionDraft {
         {
             return Err(invalid("This profile field cannot be edited."));
         }
+        // A plain edit cannot retain proof from a previous native capture.
+        self.rich_fields.remove(id);
         if field.value.as_ref() == Some(&value) {
             self.changes.remove(id);
         } else {
@@ -166,7 +189,15 @@ impl SectionDraft {
             .find(|f| f.id == id)
             .ok_or_else(|| invalid("The profile field is unavailable."))?;
         if let Some(value) = self.changes.get(id) {
-            value.validate(field)?;
+            if let SectionValue::LongText(blocks) = value {
+                let originals = match &field.value {
+                    Some(SectionValue::LongText(originals)) => originals.as_slice(),
+                    _ => &[],
+                };
+                rich::validate_with(blocks, originals, self.rich_fields.get(id))?;
+            } else {
+                value.validate(field)?;
+            }
         } else if let Some(
             value @ (SectionValue::Text(_)
             | SectionValue::Link { .. }

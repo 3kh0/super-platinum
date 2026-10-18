@@ -8,6 +8,9 @@ use super::transport::Health;
 use super::events::{RawEvent, RtEvent};
 use super::models::{Message as SlackMessage, TeamId};
 
+mod member_subscription;
+pub use member_subscription::{MemberSubscription, MemberSubscriptionError, SubscriptionReceipt};
+
 /// How often the client pings flannel.
 const PING_EVERY: Duration = Duration::from_secs(15);
 
@@ -35,6 +38,7 @@ pub enum RtUpdate {
 #[derive(Debug, Clone)]
 pub struct Connection {
     tx: mpsc::Sender<String>,
+    subscriptions: std::sync::Arc<member_subscription::PendingReplies>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -57,7 +61,10 @@ impl Connection {
     }
 
     pub fn from_sender(tx: mpsc::Sender<String>) -> Self {
-        Self { tx }
+        Self {
+            tx,
+            subscriptions: Default::default(),
+        }
     }
 }
 
@@ -176,12 +183,17 @@ async fn run_connection(
         .map_err(|e| format!("ws upgrade: {e}"))?;
 
     let (tx, mut rx) = mpsc::channel::<String>(64);
+    let connection = Connection::from_sender(tx);
+    // Keep reply custody without retaining an outbound Sender: dropping the
+    // last external Connection must still close rx and end this socket loop.
+    let subscriptions = connection.subscriptions.clone();
+    let _close_pending = subscriptions.close_on_drop();
     if output
         .send((
             params.team.clone(),
             RtUpdate::Connected {
                 generation,
-                connection: Connection { tx },
+                connection,
             },
         ))
         .await
@@ -190,7 +202,6 @@ async fn run_connection(
         return Ok(());
     }
 
-    let mut ping_id: u64 = 0;
     let mut ping = tokio::time::interval(PING_EVERY);
     ping.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     // A link that goes away under an established socket does not error: writes
@@ -210,7 +221,14 @@ async fn run_connection(
                 Some(Ok(wreq::ws::message::Message::Text(text))) => {
                     last_seen = tokio::time::Instant::now();
                     trace_frame(text.as_str());
-                    if let Some(event) = parse_event(text.as_str())
+                    let value = serde_json::from_str::<Value>(text.as_str()).ok();
+                    if let Some(event) = value.and_then(|value| {
+                        if subscriptions.receive(&value) {
+                            None
+                        } else {
+                            parse_event_value(value)
+                        }
+                    })
                         && output
                             .send((
                                 params.team.clone(),
@@ -244,7 +262,8 @@ async fn run_connection(
                         SILENCE_LIMIT.as_secs()
                     ));
                 }
-                ping_id += 1;
+                let ping_id = member_subscription::next_message_id()
+                    .ok_or_else(|| "socket message IDs exhausted".to_owned())?;
                 let frame = format!(r#"{{"type":"ping","id":{ping_id}}}"#);
                 if let Err(e) = socket.send(wreq::ws::message::Message::text(frame)).await {
                     return Err(format!("ping: {e}"));
@@ -298,6 +317,15 @@ async fn link_dropped(health: &mut Option<watch::Receiver<Health>>) {
 
 pub fn parse_event(text: &str) -> Option<RtEvent> {
     let value: Value = serde_json::from_str(text).ok()?;
+    parse_event_value(value)
+}
+
+fn parse_event_value(value: Value) -> Option<RtEvent> {
+    // Replies are correlated by the receiving Connection. An unknown/stale ACK
+    // must not be reinterpreted as a product event even if it carries a type.
+    if member_subscription::is_reply(&value) {
+        return None;
+    }
     let kind = value.get("type").and_then(Value::as_str)?;
     match kind {
         "desktop_notification" => {

@@ -5,6 +5,7 @@ use scraper::{ElementRef, Html, Node, Selector};
 pub mod comments;
 pub mod creation;
 pub mod edit;
+pub mod titles;
 pub mod wire;
 
 pub const MAX_CANVAS_BYTES: usize = 2 * 1024 * 1024;

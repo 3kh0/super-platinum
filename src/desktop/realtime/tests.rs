@@ -287,6 +287,34 @@ fn channel_metadata_is_connection_guarded_and_preserves_other_workspaces_and_dra
 }
 
 #[test]
+fn draft_presence_obeys_socket_generation_and_preserves_composer_buffers() {
+    let mut state = core();
+    state.composer.text = "unsent channel text".into();
+    state.thread_composer.text = "unsent thread text".into();
+    let event = |kind: &str, ts: &str| {
+        RtEvent::Unknown(
+            serde_json::from_value(serde_json::json!({
+                "type":kind,"draft_id":"DrPresence","event_ts":ts,
+                "draft":{"id":"DrPresence","team_id":TEAM,"client_msg_id":"client-presence",
+                    "last_updated_ts":ts,"is_from_composer":false,
+                    "destinations":[{"channel_id":CHANNEL}]}
+            }))
+            .unwrap(),
+        )
+    };
+    apply(&mut state, TEAM, 1, event("draft_create", "10.1"));
+    assert!(!state.workspaces[TEAM].draft_presence.has_channel(CHANNEL));
+    apply(&mut state, TEAM, 0, event("draft_create", "10.1"));
+    assert!(state.workspaces[TEAM].draft_presence.has_channel(CHANNEL));
+    apply(&mut state, TEAM, 1, event("draft_send", "11.1"));
+    assert!(state.workspaces[TEAM].draft_presence.has_channel(CHANNEL));
+    apply(&mut state, TEAM, 0, event("draft_send", "11.1"));
+    assert!(!state.workspaces[TEAM].draft_presence.has_channel(CHANNEL));
+    assert_eq!(state.composer.text, "unsent channel text");
+    assert_eq!(state.thread_composer.text, "unsent thread text");
+}
+
+#[test]
 fn draft_events_are_workspace_and_connection_generation_guarded() {
     let mut core = core();
     let generation = core.workspaces[TEAM].rt_generation;

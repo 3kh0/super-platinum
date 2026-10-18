@@ -1,6 +1,7 @@
 //! Account guarded scheduled-message orchestration.
 pub(crate) mod attachments;
 pub(crate) mod mutation;
+mod presence;
 use crate::state::ShellState;
 use dioxus::prelude::*;
 use std::sync::Arc;
@@ -73,13 +74,20 @@ pub async fn load(mut state: Signal<ShellState>, more: bool) {
     }
     match result {
         Ok(page) => {
-            shell.core.scheduled.apply(generation, page, limit);
+            if shell.core.scheduled.apply(generation, page, limit) {
+                let rows: Vec<_> = shell.core.scheduled.items.values().cloned().collect();
+                for draft in rows {
+                    presence::observe(&mut shell, &ctx.session.team_id, &draft);
+                }
+            }
         }
         Err(error) => {
             shell.core.scheduled.loading = false;
             shell.core.scheduled.error = Some(failure(&error));
         }
     }
+    drop(shell);
+    crate::bootstrap::persist_workspace_metadata(&state, &ctx.session.team_id);
 }
 pub async fn remove(state: Signal<ShellState>, expected: ScheduledMessage) {
     mutation::remove(state, expected).await;
@@ -120,6 +128,7 @@ pub fn saved(mut state: Signal<ShellState>, ctx: &Context, draft: ScheduledMessa
         .scheduled
         .ensure_scope(ctx.epoch, &ctx.session.team_id);
     let scheduled = draft.scheduled();
+    presence::observe(&mut shell, &ctx.session.team_id, &draft);
     shell.core.scheduled.filter = if scheduled {
         super_platinum_core::scheduled::DraftFilter::Scheduled
     } else {
@@ -131,6 +140,8 @@ pub fn saved(mut state: Signal<ShellState>, ctx: &Context, draft: ScheduledMessa
     } else {
         "Draft saved."
     });
+    drop(shell);
+    crate::bootstrap::persist_workspace_metadata(&state, &ctx.session.team_id);
 }
 pub fn failure(error: &super_platinum_core::slack::Error) -> String {
     use super_platinum_core::slack::Error;

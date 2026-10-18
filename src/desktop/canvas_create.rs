@@ -174,11 +174,15 @@ pub fn CreateDialog(mut state: Signal<ShellState>) -> Element {
                         label {r#for:"canvas-create-body", "Content"}
                         textarea {id:"canvas-create-body", "data-canvas-visit":"{mount}", initial_value:"{markdown}", placeholder:"Start writing\u{2026}", readonly:true, disabled:field_locked, "aria-describedby":"canvas-create-hint", oninput:move |e|controller::change(state,&body_visit,None,Some(e.value()))}
                         p {id:"canvas-create-hint", class:"canvas-create-note", "Markdown supported: headings, **bold**, links, lists and checklists."}
-                        if let Some(error)=draft.error.as_ref() { p {class:"canvas-create-error", role:"alert", "{error}"} }
                         {review::render(state,draft)}
-                        if draft.busy { p {role:"status", class:"canvas-create-note", "Retaining your canvas\u{2026}"} }
-                        else if draft.created.is_some() { p {role:"status", class:"canvas-create-note", "Your canvas is ready."} }
-                        else if draft.saved && !fixture { p {role:"status",class:"canvas-create-note", "Draft saved on this device."} }
+                    }
+                    if draft.error.is_some() || draft.busy || draft.created.is_some() || (draft.saved && !fixture) {
+                        div {class:"canvas-create-feedback",
+                            if let Some(error)=draft.error.as_ref() { p {class:"canvas-create-error", role:"alert", "{error}"} }
+                            if draft.busy { p {role:"status", class:"canvas-create-note", "Retaining your canvas\u{2026}"} }
+                            else if draft.created.is_some() { p {role:"status", class:"canvas-create-note", "Your canvas is ready."} }
+                            else if draft.saved && !fixture { p {role:"status",class:"canvas-create-note", "Draft saved on this device."} }
+                        }
                     }
                     footer {
                         button {r#type:"button", onclick:move |_|state.write().dismiss_overlay(), "Close"}

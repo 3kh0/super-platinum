@@ -131,7 +131,11 @@ impl Run {
         {
             // Publish the positive, complete remote row only to this captured
             // queue. The immutable reviewed baseline still controls admission.
-            state.write().core.scheduled.accept_remote(current);
+            let mut shell = state.write();
+            super::presence::observe(&mut shell, &self.context.session.team_id, &current);
+            shell.core.scheduled.accept_remote(current);
+            drop(shell);
+            crate::bootstrap::persist_workspace_metadata(&state, &self.context.session.team_id);
             return Err(Error::Api("draft_has_conflict".into()));
         }
         Ok(current)
@@ -302,6 +306,7 @@ pub(super) async fn remove(mut state: Signal<ShellState>, expected: ScheduledMes
     .await;
     let current = run.lease.current(&state.peek(), &run.context);
     let unknown = run.unknown();
+    let team = run.context.session.team_id.clone();
     run.clear_busy(state);
     drop(run); // settle the captured reservation even if its account is no longer visible
     if !current {
@@ -311,6 +316,7 @@ pub(super) async fn remove(mut state: Signal<ShellState>, expected: ScheduledMes
     shell.core.scheduled.busy.remove(&id);
     match result {
         Ok(()) => {
+            super::presence::retire(&mut shell, &team, &id);
             shell.core.scheduled.items.remove(&id);
             shell.show_toast("Draft deleted.");
         }
@@ -319,6 +325,8 @@ pub(super) async fn remove(mut state: Signal<ShellState>, expected: ScheduledMes
             shell.core.scheduled.error = Some(super::failure(&error));
         }
     }
+    drop(shell);
+    crate::bootstrap::persist_workspace_metadata(&state, &team);
 }
 
 pub(super) async fn act(
@@ -398,6 +406,7 @@ pub(super) async fn act(
     .await;
     let current = run.lease.current(&state.peek(), &run.context);
     let unknown = run.unknown();
+    let team = run.context.session.team_id.clone();
     run.clear_busy(state);
     drop(run);
     if !current {
@@ -407,11 +416,13 @@ pub(super) async fn act(
     shell.core.scheduled.busy.remove(&id);
     match result {
         Ok(Some(draft)) => {
+            super::presence::observe(&mut shell, &team, &draft);
             shell.core.scheduled.accept_remote(draft);
             shell.core.scheduled.filter = super_platinum_core::scheduled::DraftFilter::Drafts;
             shell.show_toast("Schedule canceled. Message saved to drafts.");
         }
         Ok(None) => {
+            super::presence::retire(&mut shell, &team, &id);
             shell.core.scheduled.items.remove(&id);
             shell.show_toast("Message sent.");
         }
@@ -420,4 +431,6 @@ pub(super) async fn act(
             shell.core.scheduled.error = Some(super::failure(&error));
         }
     }
+    drop(shell);
+    crate::bootstrap::persist_workspace_metadata(&state, &team);
 }

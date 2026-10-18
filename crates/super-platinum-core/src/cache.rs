@@ -17,6 +17,8 @@ const SCHEMA_VERSION: i64 = 1;
 #[derive(serde::Deserialize)]
 struct CachedSidebar {
     #[serde(default)]
+    draft_presence: serde_json::Value,
+    #[serde(default)]
     locale: Option<String>,
     #[serde(default)]
     team_plan: Option<String>,
@@ -44,6 +46,7 @@ struct CachedSidebar {
 
 #[derive(serde::Serialize)]
 struct CachedSidebarRef<'a> {
+    draft_presence: serde_json::Value,
     posting_external_teams: serde_json::Value,
     locale: Option<&'a str>,
     team_plan: Option<&'a str>,
@@ -193,6 +196,10 @@ impl Cache {
             locale: None,
             team_plan: None,
             posting_metadata: Default::default(),
+            directory_channels: Default::default(),
+            directory_members: Default::default(),
+            cfm_payload: Default::default(),
+            draft_presence: Default::default(),
             activity_unread_count: None,
             activity_counts: Default::default(),
             dock_counts: Default::default(),
@@ -246,6 +253,7 @@ impl Cache {
             .and_then(|json| serde_json::from_str::<CachedSidebar>(json).ok())
         {
             ws.thread_counts = crate::state::ThreadCountsState::from_cache(sidebar.thread_counts);
+            ws.draft_presence = crate::drafts::presence::Presence::restore(sidebar.draft_presence);
             ws.deleted_files = sidebar.deleted_files;
             ws.sidebar = sidebar.config;
             ws.notifications = sidebar.notifications;
@@ -365,6 +373,7 @@ impl Cache {
                 serde_json::to_string(&ws.recent_channels)?,
                 serde_json::to_string(&ws.frecency)?,
                 serde_json::to_string(&CachedSidebarRef {
+                    draft_presence: ws.draft_presence.persisted(),
                     posting_external_teams: ws.posting_metadata.cached_external_teams(),
                     locale: ws.locale.as_deref(),
                     team_plan: ws.team_plan.as_deref(),
@@ -822,6 +831,24 @@ mod tests {
         assert_eq!(loaded.frecency_score("C1", 1_000_000), 1.0);
         assert_eq!(loaded.usergroups["S1"].handle, "crew");
         assert!(loaded.usergroups["S1"].includes(&ws.self_user_id));
+        // A legacy typed cache has no raw label authority. A later observed
+        // row keeps its exact source through the actual database roundtrip.
+        assert!(loaded.usergroups["S1"].profile_label().is_none());
+        let observed = serde_json::json!({"id":"S1","handle":"@@crew","isNonExistent":true});
+        ws.usergroups.insert(
+            "S1".into(),
+            crate::slack::models::UserGroup::from_observed(&observed).unwrap(),
+        );
+        cache.save_workspace(&ws).unwrap();
+        let restored = cache.load_workspace(&session).unwrap().unwrap();
+        assert_eq!(
+            restored.usergroups["S1"].label_source.as_ref(),
+            Some(&observed)
+        );
+        assert_eq!(
+            restored.usergroups["S1"].profile_label().as_deref(),
+            Some("@unknown-group")
+        );
         ws.usergroups.clear();
         cache.save_workspace(&ws).unwrap();
         assert!(

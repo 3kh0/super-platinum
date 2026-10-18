@@ -17,7 +17,10 @@ use super_platinum_core::{
 };
 pub(crate) mod about;
 mod actions;
+pub(crate) mod autocomplete;
 pub(crate) mod calendar;
+pub(crate) mod cfm_lifecycle;
+pub(crate) mod channel_fetches;
 pub(crate) mod fixture;
 pub(crate) mod inputs;
 pub(crate) mod navigation;
@@ -28,6 +31,8 @@ pub(crate) mod workflows;
 
 #[derive(Default)]
 pub(crate) struct Root {
+    cfm_lifecycle: cfm_lifecycle::Registry,
+    channel_fetches: channel_fetches::Registry,
     about: about::State,
     correlations: Vec<(String, Owner)>,
     workflow_correlations: Vec<workflows::Correlation>,
@@ -335,13 +340,17 @@ pub(crate) fn realtime(s: &mut ShellState, team: &str, generation: u64, event: &
     });
     let changed_self = matches!(event, RtEvent::UserChanged(user)
         if s.app_home.surface.as_ref().is_some_and(|h| h.owner.ctx.session.user_id == user.id));
-    if current_owner && (matches!(event, RtEvent::PreferencesChanged { .. }) || changed_self) {
+    let about_names_changed = about::name_policy_changed(s, team, generation, event);
+    if (current_owner && (matches!(event, RtEvent::PreferencesChanged { .. }) || changed_self))
+        || about_names_changed
+    {
         workflows::entity_names::invalidate(s, team);
     }
     let RtEvent::Unknown(raw) = event else {
         return false;
     };
     if current_owner
+        && !about_names_changed
         && matches!(
             raw.kind.as_str(),
             "team_pref_change" | "enterprise_prefs_updated" | "team_join" | "team_leave"

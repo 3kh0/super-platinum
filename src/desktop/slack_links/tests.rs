@@ -40,6 +40,66 @@ fn add_workspace(shell: &mut ShellState, id: &str, host: &str) {
 }
 
 #[test]
+fn workspace_link_closes_canvas_only_after_accepted_workspace_selection() {
+    for team in ["T1", "T2"] {
+        let mut shell = shell();
+        add_workspace(&mut shell, "T2", "other.slack.com");
+        shell.overlay = Some(Overlay::Canvas);
+        let generation = shell.channel_generation;
+        let visit = Visit::begin(&mut shell, &WorkspaceRef::TeamId(team.into()), true).unwrap();
+        assert_eq!(shell.core.active_team.as_deref(), Some(team));
+        assert_eq!(shell.channel_generation, generation.wrapping_add(1));
+        assert!(shell.overlay.is_none());
+        assert!(visit.current(&shell));
+    }
+
+    let mut shell = shell();
+    shell.overlay = Some(Overlay::Canvas);
+    let generation = shell.channel_generation;
+    let link = shell.slack_link_generation;
+    assert!(Visit::begin(&mut shell, &WorkspaceRef::TeamId("TOTHER".into()), true).is_err());
+    assert_eq!(shell.overlay, Some(Overlay::Canvas));
+    assert_eq!(shell.channel_generation, generation);
+    assert_eq!(shell.slack_link_generation, link);
+
+    // A channel route only reserves its intent here: its later target commit
+    // owns dismissal, so missing metadata cannot prematurely close Canvas.
+    let visit = Visit::begin(&mut shell, &WorkspaceRef::TeamId("T1".into()), false).unwrap();
+    assert_eq!(shell.overlay, Some(Overlay::Canvas));
+    assert!(visit.current(&shell));
+}
+
+#[test]
+fn link_failure_callback_receives_only_specific_safe_failure_wording() {
+    let mut shell = shell();
+    let received = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+    let sink = received.clone();
+    let feedback: FailureFeedback = Some(std::rc::Rc::new(move |_, message| {
+        sink.borrow_mut().push(message.to_owned())
+    }));
+    shell.show_toast("Unrelated status");
+    assert!(received.borrow().is_empty());
+    report_failure(
+        &mut shell,
+        &feedback,
+        &super_platinum_core::slack::Error::Api("private request detail".into()),
+        "Connect to Slack to open this conversation.",
+        "Could not open this conversation.",
+    );
+    assert_eq!(&*received.borrow(), &["Could not open this conversation."]);
+    assert_eq!(
+        shell.toast.as_ref().unwrap().text,
+        "Could not open this conversation."
+    );
+    failure(&mut shell, &None, "Existing caller feedback");
+    assert_eq!(received.borrow().len(), 1);
+    assert_eq!(
+        shell.toast.as_ref().unwrap().text,
+        "Existing caller feedback"
+    );
+}
+
+#[test]
 fn ownership_requires_exact_signed_in_team_or_unique_host() {
     let mut shell = shell();
     assert_eq!(

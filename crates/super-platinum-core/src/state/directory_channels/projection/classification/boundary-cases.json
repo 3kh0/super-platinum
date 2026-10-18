@@ -1,0 +1,3777 @@
+[
+  {
+    "name": "unknown-truthy/0/false",
+    "before": [],
+    "ids": [
+      "C123",
+      "CABSENT"
+    ],
+    "steps": [
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "MiXeD",
+            "isUnknown": true
+          },
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "",
+            "isUnknown": true
+          },
+          {
+            "id": "C123",
+            "name": "MiXeD"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": false
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "isNonExistent": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "NonExistent",
+            "name_truthy": false
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": false
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          },
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown-truthy/0/true",
+    "before": [
+      {
+        "id": "C123",
+        "is_channel": true,
+        "name": "MiXeD",
+        "isUnknown": false,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "ids": [
+      "C123",
+      "CABSENT"
+    ],
+    "steps": [
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "MiXeD",
+            "isUnknown": true
+          },
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "",
+            "isUnknown": true
+          },
+          {
+            "id": "C123",
+            "name": "MiXeD"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": false
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "isNonExistent": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "NonExistent",
+            "name_truthy": false
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": false
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123",
+            "is_channel": true,
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "C123"
+        ],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "C123"
+          },
+          {
+            "id": "C123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "C123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown-truthy/1/false",
+    "before": [],
+    "ids": [
+      "D123",
+      "CABSENT"
+    ],
+    "steps": [
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "D123"
+        ],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "MiXeD",
+            "isUnknown": true
+          },
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "",
+            "isUnknown": true
+          },
+          {
+            "id": "D123",
+            "name": "MiXeD"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "isNonExistent": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          },
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown-truthy/1/true",
+    "before": [
+      {
+        "id": "D123",
+        "is_im": true,
+        "user": "U00000001",
+        "name": "MiXeD",
+        "isUnknown": false,
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_mpim": false,
+        "_name_lc": "mixed",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "ids": [
+      "D123",
+      "CABSENT"
+    ],
+    "steps": [
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "MiXeD",
+            "isUnknown": true
+          },
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "",
+            "isUnknown": true
+          },
+          {
+            "id": "D123",
+            "name": "MiXeD"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "isNonExistent": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123",
+            "is_im": true,
+            "user": "U00000001",
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "D123"
+          },
+          {
+            "id": "D123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "D123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown-truthy/2/false",
+    "before": [],
+    "ids": [
+      "G123",
+      "CABSENT"
+    ],
+    "steps": [
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "MiXeD",
+            "isUnknown": true
+          },
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "",
+            "isUnknown": true
+          },
+          {
+            "id": "G123",
+            "name": "MiXeD"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123",
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "isNonExistent": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          },
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown-truthy/2/true",
+    "before": [
+      {
+        "id": "G123",
+        "is_mpim": true,
+        "members": [
+          "USELF",
+          "U00000001",
+          "U00000002"
+        ],
+        "name": "@MiXeD,PEER",
+        "isUnknown": false,
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": null,
+        "_name_lc": "@mixed,peer",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "ids": [
+      "G123",
+      "CABSENT"
+    ],
+    "steps": [
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "MiXeD",
+            "isUnknown": true
+          },
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "",
+            "isUnknown": true
+          },
+          {
+            "id": "G123",
+            "name": "MiXeD"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123",
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "isNonExistent": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          },
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown-truthy/3/false",
+    "before": [],
+    "ids": [
+      "G123",
+      "CABSENT"
+    ],
+    "steps": [
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "MiXeD",
+            "isUnknown": true
+          },
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "",
+            "isUnknown": true
+          },
+          {
+            "id": "G123",
+            "name": "MiXeD"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "isNonExistent": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          },
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown-truthy/3/true",
+    "before": [
+      {
+        "id": "G123",
+        "is_mpim": true,
+        "members": [
+          "USELF",
+          "U00000001",
+          "U00000002"
+        ],
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "name": "MiXeD",
+        "isUnknown": false,
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": null,
+        "_name_lc": "",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "ids": [
+      "G123",
+      "CABSENT"
+    ],
+    "steps": [
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "MiXeD",
+            "isUnknown": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "MiXeD",
+            "isUnknown": true
+          },
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "",
+            "isUnknown": true
+          },
+          {
+            "id": "G123",
+            "name": "MiXeD"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "isNonExistent": true
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [
+          "G123"
+        ],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123",
+            "is_mpim": true,
+            "members": [
+              "USELF",
+              "U00000001",
+              "U00000002"
+            ],
+            "properties": {
+              "has_custom_mpdm_name": true
+            },
+            "name": "MiXeD",
+            "isUnknown": false
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      },
+      {
+        "incoming": [
+          {
+            "id": "G123"
+          },
+          {
+            "id": "G123"
+          }
+        ],
+        "context": {
+          "members": {
+            "U00000001": {
+              "id": "U00000001",
+              "name": "MiXeD"
+            },
+            "U00000002": {
+              "id": "U00000002",
+              "name": "PEER"
+            }
+          }
+        },
+        "actions": [],
+        "facts": [
+          {
+            "id": "G123",
+            "kind": "Existing",
+            "name_truthy": true
+          },
+          {
+            "id": "CABSENT",
+            "kind": "Absent",
+            "name_truthy": false
+          }
+        ]
+      }
+    ]
+  }
+]

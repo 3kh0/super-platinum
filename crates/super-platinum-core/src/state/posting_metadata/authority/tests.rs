@@ -37,6 +37,60 @@ fn begin(core: &mut CoreAppState) -> BootRead {
     let session = core.session.as_ref().unwrap().workspaces["T1"].clone();
     BootRead::begin(core, &transport, &session).unwrap()
 }
+
+fn full_read(core: &mut CoreAppState) -> BootRead {
+    let transport = core.transport.clone().unwrap();
+    let session = core.session.as_ref().unwrap().workspaces["T1"].clone();
+    BootRead::begin_full(core, &transport, &session).unwrap()
+}
+
+#[test]
+fn normal_boot_seeds_raw_channel_history_but_picker_recovery_does_not() {
+    let mut core = core();
+    let mut raw = raw_boot();
+    raw["users"] = json!([{ "id":"U00000001", "name":"actual-wire-name" }]);
+    assert!(
+        begin(&mut core)
+            .apply(&mut core, raw.clone(), false)
+            .unwrap()
+    );
+    assert!(!core.workspaces["T1"].directory_channels.has_pending());
+    assert!(core.workspaces["T1"].directory_members.cached().is_none());
+    assert!(full_read(&mut core).apply(&mut core, raw, true).unwrap());
+    let workspace = &core.workspaces["T1"];
+    assert!(workspace.directory_channels.has_pending());
+    let cached = workspace.directory_members.cached().unwrap();
+    assert!(cached.to_string().contains("actual-wire-name"));
+    // A source observation is not an invented fully processed collection.
+    let session = &core.session.as_ref().unwrap().workspaces["T1"];
+    assert!(
+        workspace
+            .directory_channels
+            .ready(
+                "fixture-account",
+                session,
+                core.account_epoch,
+                "Q",
+                &workspace.channels
+            )
+            .is_err()
+    );
+}
+
+#[test]
+fn replacement_owner_cannot_seed_shared_raw_history() {
+    let mut core = core();
+    let stale = full_read(&mut core);
+    core.transport = Some(Arc::new(Transport::disconnected_fixture("fixture-cookie")));
+    assert!(!stale.apply(&mut core, raw_boot(), true).unwrap());
+    assert!(core.workspaces["T1"].directory_channels.cached().is_none());
+    assert!(core.workspaces["T1"].directory_members.cached().is_none());
+    let stale = full_read(&mut core);
+    core.active_account = Some("replacement-account".into());
+    core.account_epoch += 1;
+    assert!(!stale.apply(&mut core, raw_boot(), true).unwrap());
+    assert!(core.workspaces["T1"].directory_channels.cached().is_none());
+}
 fn acquired() -> (CoreAppState, Authority) {
     let mut core = core();
     assert!(begin(&mut core).apply(&mut core, raw_boot(), true).unwrap());

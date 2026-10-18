@@ -14,6 +14,8 @@ use super_platinum_core::slack::transport::Health;
 
 use crate::state::{ConnectionStatus, ConnectionVm, ShellState};
 
+pub(crate) mod activity;
+
 /// How long a drop has to last before the rail says anything. A socket that
 /// comes back inside this window is not news worth blinking a spinner over.
 const GRACE: Duration = Duration::from_millis(1_500);

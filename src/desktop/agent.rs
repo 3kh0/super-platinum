@@ -48,6 +48,15 @@ pub async fn serve(
     crate::app_modal::check::start(state, desktop.clone());
     crate::self_status::check::start(state, desktop.clone());
     crate::profile_edit::check::start(state, desktop.clone());
+    crate::app_home::about::management::fixture::check::start(state, desktop.clone());
+    crate::app_home::about::management::activity::fixture::check::start(state, desktop.clone());
+    crate::app_home::channel_fetches::fixture::check::start(state, desktop.clone());
+    crate::profile_edit::sections::fixture::mentions_check::start(state, desktop.clone());
+    crate::profile_edit::sections::fixture::recovery_check::start(state, desktop.clone());
+    crate::profile_edit::sections::fixture::group_recovery_check::start(state, desktop.clone());
+    crate::profile_edit::sections::fixture::member_freshness_check::start(state, desktop.clone());
+    crate::profile_edit::sections::fixture::member_known_check::start(state, desktop.clone());
+    crate::profile_edit::sections::fixture::member_recovery_check::start(state, desktop.clone());
     crate::profile_title::check::start(state, desktop.clone());
     crate::slack_lists::check::start(state, desktop.clone());
     crate::slack_lists::check::delete::start(state, desktop.clone());
@@ -95,6 +104,7 @@ pub async fn serve(
     crate::message_buttons::time_check::start(state, desktop.clone());
     crate::message_buttons::multi_check::start(state, desktop.clone());
     crate::canvas_create::fixture::check::start(state, desktop.clone());
+    crate::canvas::links_check::start(state, desktop.clone());
     crate::canvas::checklist::check::start(state, desktop.clone());
     crate::canvas::comments::check::start(state, desktop.clone());
     crate::file_actions::attachment::check::start(state, desktop.clone());

@@ -60,6 +60,10 @@ pub struct ScheduledMessage {
     pub date_created: i64,
     #[serde(default)]
     pub client_msg_id: String,
+    /// Raw identity selector used by read-only unified-draft presence.
+    /// Null means absent on the wire; it is not a fabricated composer flag.
+    #[serde(default)]
+    pub is_from_composer: serde_json::Value,
     #[serde(default)]
     pub blocks: Vec<serde_json::Value>,
     #[serde(default)]

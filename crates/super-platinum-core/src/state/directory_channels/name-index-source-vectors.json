@@ -1,0 +1,1105 @@
+[
+  {
+    "label": "initial-greatest-keeps-earlier-alias",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "old alias",
+              "user": "U00000001",
+              "is_im": true
+            },
+            {
+              "id": "D00000009",
+              "name": "winner",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "old alias": "old alias",
+          "winner": "winner"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "lesser-peer-update-does-not-remove-old-alias",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "old alias",
+              "user": "U00000001",
+              "is_im": true
+            },
+            {
+              "id": "D00000009",
+              "name": "winner",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "old alias": "old alias",
+          "winner": "winner"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      },
+      {
+        "step": {
+          "kind": "update",
+          "reason": "raw-upsert",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "renamed lower",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "renamed lower": "renamed lower"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 2
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "winner-rename-removes-only-its-reverse-aliases",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "old alias",
+              "user": "U00000001",
+              "is_im": true
+            },
+            {
+              "id": "D00000009",
+              "name": "winner",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "old alias": "old alias",
+          "winner": "winner"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      },
+      {
+        "step": {
+          "kind": "update",
+          "reason": "raw-upsert",
+          "rows": [
+            {
+              "id": "D00000009",
+              "name": "new winner",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "new winner": "new winner"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 2
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "old alias": "D00000001",
+            "U00000001": "D00000009",
+            "new winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "new winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "removing-earlier-row-unconditionally-removes-shared-peer-key",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "old alias",
+              "user": "U00000001",
+              "is_im": true
+            },
+            {
+              "id": "D00000009",
+              "name": "winner",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "old alias": "old alias",
+          "winner": "winner"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      },
+      {
+        "step": {
+          "kind": "remove",
+          "ids": [
+            "D00000001"
+          ]
+        },
+        "lowercase": {},
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {},
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": null,
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "foreign-update-keeps-prior-index",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "old alias",
+              "user": "U00000001",
+              "is_im": true
+            },
+            {
+              "id": "D00000009",
+              "name": "winner",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "old alias": "old alias",
+          "winner": "winner"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      },
+      {
+        "step": {
+          "kind": "update",
+          "reason": "raw-upsert",
+          "rows": [
+            {
+              "id": "D00000009",
+              "name": "foreign",
+              "user": "U00000001",
+              "is_im": true,
+              "fromAnotherTeam": true
+            }
+          ]
+        },
+        "lowercase": {
+          "foreign": "foreign"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 2
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "empty-name-update-keeps-prior-index",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "old alias",
+              "user": "U00000001",
+              "is_im": true
+            },
+            {
+              "id": "D00000009",
+              "name": "winner",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "old alias": "old alias",
+          "winner": "winner"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      },
+      {
+        "step": {
+          "kind": "update",
+          "reason": "raw-upsert",
+          "rows": [
+            {
+              "id": "D00000009",
+              "name": "",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "": ""
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "kind-change-removes-old-im-aliases",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "old alias",
+              "user": "U00000001",
+              "is_im": true
+            },
+            {
+              "id": "D00000009",
+              "name": "winner",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "old alias": "old alias",
+          "winner": "winner"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      },
+      {
+        "step": {
+          "kind": "update",
+          "reason": "raw-upsert",
+          "rows": [
+            {
+              "id": "D00000009",
+              "name": "channel",
+              "is_channel": true
+            }
+          ]
+        },
+        "lowercase": {
+          "channel": "channel"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 2
+        },
+        "map": {
+          "channelsAndGroups": {
+            "channel": "D00000009"
+          },
+          "ims": {
+            "old alias": "D00000001"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "channelsAndGroups": [
+                "channel"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": null,
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "missing-reason-does-not-dispatch-name-update",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "old alias",
+              "user": "U00000001",
+              "is_im": true
+            },
+            {
+              "id": "D00000009",
+              "name": "winner",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "old alias": "old alias",
+          "winner": "winner"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      },
+      {
+        "step": {
+          "kind": "update",
+          "rows": [
+            {
+              "id": "D00000009",
+              "name": "ignored",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "ignored": "ignored"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "unknown-removal-keeps-index",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "old alias",
+              "user": "U00000001",
+              "is_im": true
+            },
+            {
+              "id": "D00000009",
+              "name": "winner",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "old alias": "old alias",
+          "winner": "winner"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      },
+      {
+        "step": {
+          "kind": "remove",
+          "ids": [
+            "D00000077"
+          ]
+        },
+        "lowercase": {},
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000009",
+            "old alias": "D00000001",
+            "winner": "D00000009"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "old alias"
+              ]
+            },
+            "D00000009": {
+              "ims": [
+                "U00000001",
+                "winner"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000009",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "ordinary-unicode-lowercase-name-alias",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "\u0130PEER",
+              "user": "U00000001",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "\u0130PEER": "i\u0307peer"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000001",
+            "i\u0307peer": "D00000001"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "i\u0307peer"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000001",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "lowercase-name-alias-precedes-raw-peer",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "D00000001",
+              "name": "first",
+              "user": "U00000001",
+              "is_im": true
+            },
+            {
+              "id": "D00000002",
+              "name": "u00000001",
+              "user": "U00000002",
+              "is_im": true
+            }
+          ]
+        },
+        "lowercase": {
+          "first": "first",
+          "u00000001": "u00000001"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {
+            "U00000001": "D00000001",
+            "first": "D00000001",
+            "U00000002": "D00000002",
+            "u00000001": "D00000002"
+          },
+          "mpims": {},
+          "reverseMap": {
+            "D00000001": {
+              "ims": [
+                "U00000001",
+                "first"
+              ]
+            },
+            "D00000002": {
+              "ims": [
+                "U00000002",
+                "u00000001"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "D00000002",
+          "U00000002": "D00000002",
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "channel-name-fallback-for-member-selector",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "C00000001",
+              "name": "u00000001",
+              "is_channel": true
+            }
+          ]
+        },
+        "lowercase": {
+          "u00000001": "u00000001"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {
+            "u00000001": "C00000001"
+          },
+          "ims": {},
+          "mpims": {},
+          "reverseMap": {
+            "C00000001": {
+              "channelsAndGroups": [
+                "u00000001"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "C00000001",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "mpim-name-fallback-for-member-selector",
+    "traces": [
+      {
+        "step": {
+          "kind": "initial",
+          "rows": [
+            {
+              "id": "G00000001",
+              "name": "u00000001",
+              "_internal_name": "group",
+              "is_mpim": true
+            }
+          ]
+        },
+        "lowercase": {
+          "u00000001": "u00000001"
+        },
+        "state": {
+          "teamId": "T00000001",
+          "nonce": 1
+        },
+        "map": {
+          "channelsAndGroups": {},
+          "ims": {},
+          "mpims": {
+            "group": "G00000001",
+            "u00000001": "G00000001"
+          },
+          "reverseMap": {
+            "G00000001": {
+              "mpims": [
+                "group",
+                "u00000001"
+              ]
+            }
+          }
+        },
+        "memberLookups": {
+          "U00000001": "G00000001",
+          "U00000002": null,
+          "UABSENT": null
+        }
+      }
+    ]
+  }
+]

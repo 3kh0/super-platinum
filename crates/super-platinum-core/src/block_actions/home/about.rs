@@ -2,7 +2,9 @@
 //! These values carry no account, navigation, experiment or modal authority.
 use super::*;
 mod links;
+mod management;
 mod policy;
+pub use management::WorkflowEntry;
 pub use policy::{Flags, Profile};
 
 /// fZcZ.G uses the actual apps_connection_status assignment, exactly `on`.

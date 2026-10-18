@@ -46,6 +46,23 @@ impl Drop for Entry {
 fn index(target: ComposerTarget) -> usize {
     usize::from(target == ComposerTarget::Thread)
 }
+
+/// Source command reset retires discovery/choice only. Already dispatched
+/// commands and their durable reconciliation retain their original custody.
+pub(crate) fn invalidate_catalogs(account: &str, team: &str) {
+    SLOTS.with_borrow_mut(|slots| {
+        for slot in slots.iter_mut() {
+            let retire = slot.as_ref().is_some_and(|entry| {
+                entry.captured.account.id() == account
+                    && entry.captured.key.team == team
+                    && !matches!(*entry.phase.borrow(), Phase::Running)
+            });
+            if retire {
+                *slot = None;
+            }
+        }
+    });
+}
 fn same(entry: &Rc<Entry>) -> bool {
     SLOTS.with_borrow(|slots| {
         slots[index(entry.captured.target)]

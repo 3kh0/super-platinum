@@ -1,0 +1,13 @@
+[build]
+# Shared by Cargo's crate scheduler and rustc's codegen jobserver.
+jobs = 12
+
+[alias]
+rebuild = "build --locked --profile dev-rebuild --timings"
+
+[target.x86_64-pc-windows-msvc]
+# Rust ships LLD; no separate LLVM installation or machine-specific path needed.
+linker = "rust-lld"
+# Unoptimized desktop startup overflows Windows' default 1 MiB main stack.
+# Reserve address space, retaining the default 4 KiB initial commitment.
+rustflags = ["-C", "link-arg=/STACK:16777216"]

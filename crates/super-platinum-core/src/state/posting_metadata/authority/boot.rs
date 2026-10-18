@@ -9,6 +9,7 @@ pub struct BootRead {
     nonce: Arc<()>,
     previous_self: String,
     channel_revision: u64,
+    channel_boot: Option<crate::state::directory_channels::BootLease>,
 }
 impl BootRead {
     pub fn begin(
@@ -30,7 +31,42 @@ impl BootRead {
             nonce,
             previous_self: workspace.self_user_id.clone(),
             channel_revision: workspace.channel_lifecycle.revision(),
+            channel_boot: None,
         })
+    }
+    /// Normal full bootstrap observes actual raw directory ingress. Picker recovery
+    /// retains `begin` and cannot manufacture a full-bootstrap lifecycle phase.
+    pub fn begin_full(
+        core: &mut CoreAppState,
+        transport: &Arc<Transport>,
+        session: &WorkspaceSession,
+    ) -> Result<Self> {
+        let mut read = Self::begin(core, transport, session)?;
+        if let Some(account) = read.scope.account.as_deref().filter(|s| !s.is_empty())
+            && !session.user_id.is_empty()
+        {
+            read.channel_boot = core
+                .workspaces
+                .get_mut(&session.team_id)
+                .unwrap()
+                .directory_channels
+                .begin_full_boot(account, session, read.scope.epoch)
+                .ok();
+        }
+        Ok(read)
+    }
+    fn finish_full(&mut self, core: &mut CoreAppState) {
+        if let Some(lease) = self.channel_boot.take()
+            && let Some(account) = self.scope.account.as_deref()
+            && let Some(workspace) = core.workspaces.get_mut(&self.scope.session.team_id)
+        {
+            workspace.directory_channels.finish_full_boot(
+                lease,
+                account,
+                &self.scope.session,
+                self.scope.epoch,
+            );
+        }
     }
     pub fn current(&self, core: &CoreAppState) -> bool {
         self.scope.current(core)
@@ -56,7 +92,7 @@ impl BootRead {
     }
     /// Release only this owned attempt. A failed read never fabricates fresh
     /// authority; caller retains the original Slack error and Retry-After.
-    pub fn failed(self, core: &mut CoreAppState) -> bool {
+    pub fn failed(mut self, core: &mut CoreAppState) -> bool {
         if !self.current(core) {
             return false;
         }
@@ -66,13 +102,14 @@ impl BootRead {
             .posting_metadata
             .runtime
             .pending_boot = None;
+        self.finish_full(core);
         true
     }
     /// Adopt an actual raw success. `apply_workspace` is true in normal boot;
     /// picker recovery uses false to refresh only posting metadata, preserving
     /// unrelated timeline/read state. Both paths validate the same owner.
     pub fn apply(
-        self,
+        mut self,
         core: &mut CoreAppState,
         raw: Value,
         apply_workspace: bool,
@@ -88,12 +125,18 @@ impl BootRead {
             .runtime
             .pending_boot = None;
         if raw.get("ok").and_then(Value::as_bool) != Some(true) {
+            self.finish_full(core);
             return Err(slack::Error::Api(
                 "client.userBoot unsuccessful response".into(),
             ));
         }
-        let boot: BootData = serde_json::from_value(raw.clone())
-            .map_err(|_| slack::Error::Api("client.userBoot invalid response".into()))?;
+        let boot: BootData = match serde_json::from_value(raw.clone()) {
+            Ok(boot) => boot,
+            Err(_) => {
+                self.finish_full(core);
+                return Err(slack::Error::Api("client.userBoot invalid response".into()));
+            }
+        };
         // Empty legacy credential user IDs still allow ordinary app bootstrap.
         // They do not mint posting authority until a known identity is acquired
         // by the existing session owner and a fresh bound boot is requested.
@@ -102,6 +145,7 @@ impl BootRead {
             || (!self.scope.session.user_id.is_empty()
                 && boot.self_user.id != self.scope.session.user_id)
         {
+            self.finish_full(core);
             return Err(slack::Error::Api(
                 "client.userBoot identity mismatch".into(),
             ));
@@ -144,6 +188,37 @@ impl BootRead {
         }
         let workspace = core.workspaces.get_mut(&team).unwrap();
         if apply_workspace {
+            if self.channel_boot.is_some()
+                && let Some(account) = self.scope.account.as_deref()
+            {
+                // The raw acquisition is not a complete inventory or positive split-init
+                // version. Refused metadata stays unavailable; ordinary boot still works.
+                let mut channels = workspace.directory_channels.clone();
+                if channels
+                    .observe_boot(
+                        account,
+                        &self.scope.session,
+                        &workspace.channels,
+                        self.scope.epoch,
+                        &raw,
+                    )
+                    .is_ok()
+                {
+                    workspace.directory_channels = channels;
+                }
+                let mut members = workspace.directory_members.clone();
+                if members
+                    .observe_boot(
+                        account,
+                        &self.scope.session,
+                        &workspace.users.keys().cloned().collect(),
+                        &raw,
+                    )
+                    .is_ok()
+                {
+                    workspace.directory_members = members;
+                }
+            }
             workspace.apply_boot(boot);
         }
         workspace.posting_metadata = metadata;
@@ -164,6 +239,7 @@ impl BootRead {
                 .stamps
                 .insert(channel, stamp);
         }
+        self.finish_full(core);
         Ok(true)
     }
 }

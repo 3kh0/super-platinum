@@ -13,7 +13,9 @@ use super_platinum_core::{
 
 use crate::state::{ChannelOpen, ChannelTab, MainView, Overlay, ShellState};
 
+mod guarded;
 mod parse;
+pub(crate) use guarded::{NavigationGuard, open_channel_guarded};
 mod user;
 pub(crate) mod user_check;
 pub(crate) mod user_fixture;
@@ -84,7 +86,38 @@ fn canonical_host(host: &str) -> String {
         .unwrap_or(host)
 }
 
-pub(crate) fn open(mut state: Signal<ShellState>, input: &str) {
+pub(crate) type FailureFeedback = Option<std::rc::Rc<dyn Fn(&ShellState, &str)>>;
+
+fn failure(shell: &mut ShellState, feedback: &FailureFeedback, message: &str) {
+    shell.show_toast(message);
+    if let Some(feedback) = feedback {
+        feedback(shell, message);
+    }
+}
+
+fn report_failure(
+    shell: &mut ShellState,
+    feedback: &FailureFeedback,
+    error: &super_platinum_core::slack::Error,
+    offline: &str,
+    detail: &str,
+) {
+    use super_platinum_core::error::NetworkFailure;
+    shell.report_failure(error, offline, || detail.into());
+    if let Some(feedback) = feedback {
+        feedback(shell, if error.is_offline() { offline } else { detail });
+    }
+}
+
+pub(crate) fn open(state: Signal<ShellState>, input: &str) {
+    open_with_feedback(state, input, None);
+}
+
+pub(crate) fn open_with_feedback(
+    mut state: Signal<ShellState>,
+    input: &str,
+    feedback: FailureFeedback,
+) {
     if crate::canvas_create::departure::request(
         &mut state.write(),
         crate::canvas_create::departure::Destination::SlackLink(input.into()),
@@ -94,15 +127,17 @@ pub(crate) fn open(mut state: Signal<ShellState>, input: &str) {
     let link = match parse::parse(input) {
         Ok(link) => link,
         Err(_) => {
-            state
-                .write()
-                .show_toast("This link is invalid or unsupported.");
+            failure(
+                &mut state.write(),
+                &feedback,
+                "This link is invalid or unsupported.",
+            );
             return;
         }
     };
     if let Link::External { url } = link {
         if crate::media::open_external(&url).is_err() {
-            state.write().show_toast("Could not open this link.");
+            failure(&mut state.write(), &feedback, "Could not open this link.");
         }
         return;
     }
@@ -112,13 +147,13 @@ pub(crate) fn open(mut state: Signal<ShellState>, input: &str) {
             match user::Intent::begin(&mut shell, team, user) {
                 Ok(intent) => intent,
                 Err(message) => {
-                    shell.show_toast(message);
+                    failure(&mut shell, &feedback, message);
                     return;
                 }
             }
         };
         if let Some(intent) = intent {
-            dioxus::core::spawn_forever(user::navigate(state, intent));
+            dioxus::core::spawn_forever(user::navigate(state, intent, feedback));
         }
         return;
     }
@@ -126,7 +161,7 @@ pub(crate) fn open(mut state: Signal<ShellState>, input: &str) {
         Link::Channel { workspace, .. } => workspace.clone(),
         Link::Workspace { team } => WorkspaceRef::TeamId(team.clone()),
         _ => {
-            state.write().show_toast(UNSUPPORTED);
+            failure(&mut state.write(), &feedback, UNSUPPORTED);
             return;
         }
     };
@@ -135,7 +170,7 @@ pub(crate) fn open(mut state: Signal<ShellState>, input: &str) {
         match Visit::begin(&mut shell, &target, matches!(link, Link::Workspace { .. })) {
             Ok(visit) => visit,
             Err(message) => {
-                shell.show_toast(message);
+                failure(&mut shell, &feedback, message);
                 return;
             }
         }
@@ -157,7 +192,7 @@ pub(crate) fn open(mut state: Signal<ShellState>, input: &str) {
                 thread,
                 ..
             } => {
-                navigate(state, visit, channel, message, thread).await;
+                navigate(state, visit, channel, message, thread, feedback).await;
             }
             _ => {}
         }
@@ -197,6 +232,12 @@ impl Visit {
             && !shell.select_workspace(index)
         {
             return Err(UNAVAILABLE);
+        }
+        // A workspace link completes navigation at selection; unlike channel
+        // and user links it has no later select_target commit to close Canvas.
+        // Keep this after selection succeeds so departure refusals stay open.
+        if reset_workspace {
+            shell.overlay = None;
         }
         // Reserve only a link intent: missing metadata must not cancel a
         // foreground history or paging request if this navigation later fails.
@@ -326,6 +367,7 @@ async fn navigate(
     channel: String,
     message: Option<String>,
     thread: Option<String>,
+    feedback: FailureFeedback,
 ) {
     let (known, revision) = {
         let shell = state.peek();
@@ -340,9 +382,11 @@ async fn navigate(
     };
     if !known {
         let Some(transport) = visit.transport.as_ref() else {
-            state
-                .write()
-                .show_toast("Sign in to open this conversation.");
+            failure(
+                &mut state.write(),
+                &feedback,
+                "Sign in to open this conversation.",
+            );
             return;
         };
         let client = state.peek().core.client.clone();
@@ -361,15 +405,17 @@ async fn navigate(
         match result {
             Ok(info) => {
                 if !visit.resolve(&mut shell, &channel, info, revision) {
-                    shell.show_toast("This conversation is unavailable.");
+                    failure(&mut shell, &feedback, "This conversation is unavailable.");
                     return;
                 }
             }
             Err(error) => {
-                shell.report_failure(
+                report_failure(
+                    &mut shell,
+                    &feedback,
                     &error,
                     "Connect to Slack to open this conversation.",
-                    || "Could not open this conversation. It may no longer be accessible.".into(),
+                    "Could not open this conversation. It may no longer be accessible.",
                 );
                 return;
             }
@@ -385,7 +431,7 @@ async fn navigate(
             &channel,
             thread.as_deref().or(message.as_deref()),
         ) {
-            shell.show_toast("This conversation is unavailable.");
+            failure(&mut shell, &feedback, "This conversation is unavailable.");
             return;
         }
         let Ok(next) = Visit::capture(&shell) else {

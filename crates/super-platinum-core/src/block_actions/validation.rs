@@ -29,6 +29,8 @@ pub use multi::{CapturedMessageMulti, CurrentMessageMulti};
 mod radio;
 pub use radio::{CapturedMessageRadio, CurrentMessageRadio};
 mod revision;
+mod workflow_logs;
+pub use workflow_logs::{CapturedWorkflowLogs, CurrentWorkflowLogs, WORKFLOW_LOGS_ACTION};
 mod select;
 pub use select::{CapturedMessageSelect, CurrentMessageSelect};
 
@@ -166,6 +168,7 @@ fn client_owned_action(block_id: &str, action_id: &str) -> bool {
     matches!(
         action_id,
         "setup_slackbot_joiner_channel_preview"
+            | WORKFLOW_LOGS_ACTION
             | "setup_slackbot_joiner_channel_join"
             | "wfb_ai_answer_feedback_positive"
             | "wfb_ai_answer_feedback_negative"

@@ -272,6 +272,12 @@ pub struct Workspace {
     pub team_plan: Option<String>,
     /// Fresh boot posting facts; never restored from the warm cache.
     pub posting_metadata: posting_metadata::Metadata,
+    /// Raw source history and canonical publication witnesses, separate from typed UI maps.
+    pub directory_channels: directory_channels::Store,
+    pub directory_members: directory_members::Store,
+    pub cfm_payload: cfm_payload::Stores,
+    /// Read-only unified-draft identities, separate from recoverable local composers.
+    pub draft_presence: crate::drafts::presence::Presence,
     pub activity_unread_count: Option<u32>,
     pub activity_counts: ActivityCountsState,
     pub dock_counts: DockCountsState,
@@ -318,6 +324,10 @@ impl Workspace {
             locale: None,
             team_plan: None,
             posting_metadata: Default::default(),
+            directory_channels: Default::default(),
+            directory_members: Default::default(),
+            cfm_payload: Default::default(),
+            draft_presence: Default::default(),
             activity_unread_count: None,
             activity_counts: Default::default(),
             dock_counts: Default::default(),
@@ -949,7 +959,10 @@ pub use sidebar_layout::*;
 mod sidebar_prefs;
 pub use sidebar_prefs::*;
 pub mod bots;
+pub mod cfm_payload;
 mod channel_lifecycle;
+pub mod directory_channels;
+pub mod directory_members;
 mod member_list_changes;
 pub mod posting_metadata;
 pub use channel_lifecycle::ChannelLifecycle;

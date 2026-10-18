@@ -463,6 +463,7 @@ impl ShellState {
             canvas_create: None,
             canvas_creation: Default::default(),
             app_home: Default::default(),
+            directory_member_fetches: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -617,6 +618,7 @@ impl ShellState {
             canvas_create: None,
             canvas_creation: Default::default(),
             app_home: Default::default(),
+            directory_member_fetches: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -965,6 +967,7 @@ impl ShellState {
             canvas_create: None,
             canvas_creation: Default::default(),
             app_home: Default::default(),
+            directory_member_fetches: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -1305,6 +1308,27 @@ impl ShellState {
             "profile-sections" | "profile-sections-narrow" => {
                 crate::profile_edit::sections::fixture::install(&mut state)
             }
+            "profile-sections-mentions" | "profile-sections-mentions-narrow" => {
+                crate::profile_edit::sections::fixture::mentions::install(&mut state)
+            }
+            "profile-group-recovery" | "profile-group-recovery-narrow" => {
+                crate::profile_edit::sections::fixture::group_recovery::install(&mut state)
+            }
+            "profile-member-freshness" | "profile-member-freshness-narrow" => {
+                crate::profile_edit::sections::fixture::member_freshness::install(&mut state)
+            }
+            "profile-member-known" | "profile-member-known-narrow" => {
+                crate::profile_edit::sections::fixture::member_known::install(&mut state)
+            }
+            "profile-member-recovery" | "profile-member-recovery-narrow" => {
+                crate::profile_edit::sections::fixture::member_recovery::install(&mut state)
+            }
+            "profile-channel-recovery" | "profile-channel-recovery-narrow" => {
+                crate::profile_edit::sections::fixture::recovery::install(&mut state)
+            }
+            "profile-sections-save" | "profile-sections-save-narrow" => {
+                crate::profile_edit::sections::fixture::install_interaction(&mut state)
+            }
             "profile-edit" | "profile-edit-narrow" => {
                 crate::profile_edit::fixture::install(&mut state)
             }
@@ -1447,6 +1471,24 @@ impl ShellState {
             "app-home" | "app-home-narrow" => crate::app_home::fixture::install(&mut state),
             "app-about" | "app-about-narrow" => {
                 crate::app_home::about::fixture::install(&mut state, false)
+            }
+            "channel-initialization" | "channel-initialization-narrow" => {
+                crate::app_home::channel_fetches::fixture::install(&mut state)
+            }
+            "workflow-managed" | "workflow-managed-narrow" => {
+                crate::app_home::about::management::fixture::install(&mut state, true, false)
+            }
+            "workflow-activity" | "workflow-activity-narrow" => {
+                crate::app_home::about::management::activity::fixture::install(&mut state)
+            }
+            "workflow-activity-members" | "workflow-activity-members-narrow" => {
+                crate::app_home::about::management::activity::members::fixture::install(&mut state);
+            }
+            "workflow-editor" | "workflow-editor-narrow" => {
+                crate::app_home::about::management::fixture::install(&mut state, false, false)
+            }
+            "workflow-reply-loss" | "workflow-reply-loss-narrow" => {
+                crate::app_home::about::management::fixture::install(&mut state, false, true)
             }
             "app-about-connect" | "app-about-connect-narrow" => {
                 crate::app_home::about::fixture::install_modal(&mut state)
@@ -1656,6 +1698,7 @@ impl ShellState {
                 state.refresh_from_core();
                 state.group_panel = Some(crate::usergroups::GroupPanel {
                     id: "S1".into(),
+                    attempt: std::sync::Arc::new(()),
                     loading: false,
                     error: false,
                     channels: name == "usergroup-channels",
@@ -1828,6 +1871,9 @@ impl ShellState {
             }
             "canvas-creation-durable" | "canvas-creation-durable-narrow" => {
                 crate::canvas_create::fixture::apply(&mut state);
+            }
+            "canvas-links" | "canvas-links-narrow" => {
+                crate::canvas::links_check::install(&mut state);
             }
             "canvas-create" | "canvas-create-narrow" | "canvas-create-error" => {
                 state.main_view = MainView::Files;

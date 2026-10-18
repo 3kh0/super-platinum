@@ -47,11 +47,22 @@ def receipt(directory,scenario='editing',phase='exercise'):
     rectangle=dict(left=10,top=10,right=600,bottom=700,width=590,height=690)
     control=dict(left=20,top=650,right=100,bottom=682,width=80,height=32)
     geometry=dict(ok=True,noOverflow=True,footerHitTested=True,dialog=rectangle,viewport=dict(width=1280,height=780),
-                  clientWidth=590,scrollWidth=590,controls=[dict(label='Close',hit=True,rect=control)])
+                  clientWidth=590,scrollWidth=590,controls=[dict(label='Close',hit=True,rect=control)],
+                  fields=dict(left=10,top=60,right=600,bottom=500,width=590,height=440),
+                  footer=dict(left=10,top=640,right=600,bottom=700,width=590,height=60),
+                  feedback=dict(region=None,messages=[]))
+    def measured(stage):
+        value=copy.deepcopy(geometry)
+        messages=R['expected_feedback'](scenario,phase,stage)
+        if messages:
+            value['feedback']=dict(region=dict(left=10,top=570,right=600,bottom=630,width=590,height=60),
+                messages=[dict(role=role,text=text,visible=True,unclipped=True,
+                    rect=dict(left=20,top=575+i*20,right=590,bottom=593+i*20,width=570,height=18)) for i,(role,text) in enumerate(messages)])
+        return value
     value=dict(expected,ok=True,noSession=True,noTransport=True,noLiveNetwork=True,syntheticInput=True,
                isolatedDatabase=str(directory/'fixture.sqlite'),viewport=dict(width=1280,height=780),
                captures={s:str(directory/f"{expected['fixture']}-{phase}-{s}.png") for s in stages},
-               geometry=[copy.deepcopy(geometry) for stage in stages if stage!='closed'],result=result,
+               geometry=[measured(stage) for stage in stages if stage!='closed'],result=result,
                model=dict(uncertain=locked,editable=not locked,delivery=dict(kind='Uncertain') if locked else None),
                syntheticIME=scenario in ('editing','departure') and phase=='exercise',preparedRequests=len(prepared),executedRequests=sum(r["executed"] for r in prepared),
                requests=prepared,inventory=inventory)
@@ -279,6 +290,34 @@ class Validation(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'overflow'):self.validate(e,wrong,s,directory)
         wrong=copy.deepcopy(v);wrong['geometry'][0]=dict(ok=True,noOverflow=True,footerHitTested=True)
         with self.assertRaises(RuntimeError):self.validate(e,wrong,s,directory)
+
+    def test_required_feedback_rejects_absence_changed_copy_or_role(self):
+        directory=Path('/private/canvas-creation-'+'a'*32)
+        for scenario,phase,stage in (('editing','exercise','composing'),('departure','exercise','save-refused'),
+                                     ('late-result','exercise','uncertain'),('late-result','restart','restart')):
+            for kind in ('absent','empty','wrong-copy','wrong-role'):
+                e,v,s=receipt(directory,scenario,phase)
+                stages=('restart',) if phase=='restart' else tuple(x for x in R['STAGES'][scenario] if x!='closed')
+                feedback=v['geometry'][stages.index(stage)]['feedback']
+                if kind=='absent':feedback.update(region=None,messages=[])
+                elif kind=='empty':feedback['messages']=[]
+                elif kind=='wrong-copy':feedback['messages'][0]['text']='Unrelated status'
+                else:feedback['messages'][0]['role']='status'
+                with self.assertRaises(RuntimeError):self.validate(e,v,s,directory)
+
+    def test_feedback_clipping_obscuring_and_footer_overlap_are_rejected(self):
+        directory=Path('/private/canvas-creation-'+'a'*32)
+        for kind in ('hidden','clipped','outside-region','under-footer','over-editor','outside-viewport'):
+            e,v,s=receipt(directory,'departure')
+            geometry=v['geometry'][R['STAGES']['departure'].index('capture-refused')]
+            feedback=geometry['feedback'];message=feedback['messages'][0]
+            if kind=='hidden':message['visible']=False
+            elif kind=='clipped':message['unclipped']=False
+            elif kind=='outside-region':message['rect'].update(top=550,bottom=568)
+            elif kind=='under-footer':feedback['region'].update(top=620,bottom=680)
+            elif kind=='over-editor':feedback['region'].update(top=490,bottom=550)
+            else:message['rect'].update(top=775,bottom=793)
+            with self.assertRaises(RuntimeError):self.validate(e,v,s,directory)
 
     def test_exact_review_disposition_identity(self):
         directory=Path('/private/canvas-creation-'+'a'*32)

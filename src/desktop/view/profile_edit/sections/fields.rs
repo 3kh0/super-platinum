@@ -18,9 +18,9 @@ pub(super) fn Field(
         label{r#for:input_id.clone(),"{field.label}"}
         match value {
             Some(SectionValue::Text(value)) if !field.options.is_empty()=>rsx!{
-                select{id:input_id.clone(),value,disabled,"data-dialog-input":"true",onchange:move |e|controller::change(state,visit,serial,id.clone(),SectionValue::Text(e.value())),
-                    option{value:"","Not set"}
-                    for option in field.options {option{value:option.clone(),"{option}"}}
+                select{id:input_id.clone(),value:value.clone(),disabled,"data-dialog-input":"true",onchange:move |e|controller::change(state,visit,serial,id.clone(),SectionValue::Text(e.value())),
+                    option{value:"",selected:value.is_empty(),"Not set"}
+                    for option in field.options {option{value:option.clone(),selected:option==value,"{option}"}}
                 }
             },
             Some(SectionValue::Text(value))=>rsx!{input{id:input_id.clone(),r#type:"text",value,disabled,"data-dialog-input":"true",oninput:move |e|controller::change(state,visit,serial,id.clone(),SectionValue::Text(e.value()))}},
@@ -79,8 +79,8 @@ fn Location(
         label{"Country (optional)"}
         select{value:values[1].clone(),disabled,"aria-label":"Country (optional)","data-dialog-input":"true",
             onchange:{let id=id.clone();let values=values.clone();move |e|{let mut values=values.clone();values[1]=e.value();location_change(state,visit,serial,id.clone(),values);}},
-            option{value:"","Not set"}
-            for country in countries(){option{value:country.code.clone(),"{country.name}"}}
+            option{value:"",selected:values[1].is_empty(),"Not set"}
+            for country in countries(){option{value:country.code.clone(),selected:country.code==values[1],"{country.name}"}}
         }
         button{r#type:"button",disabled,onclick:move |_|location_change(state,visit,serial,id.clone(),std::array::from_fn(|_|String::new())),"Clear location"}
     }

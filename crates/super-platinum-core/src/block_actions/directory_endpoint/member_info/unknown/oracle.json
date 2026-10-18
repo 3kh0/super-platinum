@@ -1,0 +1,839 @@
+{
+  "scope": "Actual 0mwJ and tyZ7 factories, captured PdIx absent-only upsert contract. Controlled scheduler/timeout and synthetic public path; no real network/cache/currentness execution.",
+  "cases": [
+    {
+      "name": "partial_terminal",
+      "requested": [
+        "U00000002",
+        "U00000001"
+      ],
+      "ephemeral": [
+        {
+          "id": "U00000002",
+          "name": "U00000002",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        },
+        {
+          "id": "U00000001",
+          "name": "U00000001",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "attempts": 1,
+      "events": [
+        {
+          "kind": "known",
+          "rows": [
+            {
+              "id": "U00000001",
+              "name": "actual",
+              "updated": 1
+            }
+          ]
+        },
+        {
+          "kind": "nonexistent",
+          "rows": [
+            {
+              "id": "U00000002",
+              "isNonExistent": true,
+              "files": [],
+              "profile": {
+                "real_name": "",
+                "display_name": "",
+                "avatar_hash": "",
+                "real_name_normalized": "",
+                "display_name_normalized": "",
+                "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+              },
+              "name": "",
+              "is_bot": false,
+              "updated": 0,
+              "is_app_user": false
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "id": "U00000001",
+          "name": "actual",
+          "updated": 1
+        },
+        {
+          "id": "U00000002",
+          "isNonExistent": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "name": "",
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "pending": []
+    },
+    {
+      "name": "all_missing",
+      "requested": [
+        "U00000002",
+        "U00000001"
+      ],
+      "ephemeral": [
+        {
+          "id": "U00000002",
+          "name": "U00000002",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        },
+        {
+          "id": "U00000001",
+          "name": "U00000001",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "attempts": 1,
+      "events": [
+        {
+          "kind": "nonexistent",
+          "rows": [
+            {
+              "id": "U00000002",
+              "isNonExistent": true,
+              "files": [],
+              "profile": {
+                "real_name": "",
+                "display_name": "",
+                "avatar_hash": "",
+                "real_name_normalized": "",
+                "display_name_normalized": "",
+                "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+              },
+              "name": "",
+              "is_bot": false,
+              "updated": 0,
+              "is_app_user": false
+            },
+            {
+              "id": "U00000001",
+              "isNonExistent": true,
+              "files": [],
+              "profile": {
+                "real_name": "",
+                "display_name": "",
+                "avatar_hash": "",
+                "real_name_normalized": "",
+                "display_name_normalized": "",
+                "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+              },
+              "name": "",
+              "is_bot": false,
+              "updated": 0,
+              "is_app_user": false
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "id": "U00000002",
+          "isNonExistent": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "name": "",
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        },
+        {
+          "id": "U00000001",
+          "isNonExistent": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "name": "",
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "pending": []
+    },
+    {
+      "name": "existing_never_replaced",
+      "requested": [
+        "U00000002"
+      ],
+      "ephemeral": [
+        {
+          "id": "U00000002",
+          "name": "U00000002",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "attempts": 1,
+      "events": [
+        {
+          "kind": "nonexistent",
+          "rows": [
+            {
+              "id": "U00000002",
+              "isNonExistent": true,
+              "files": [],
+              "profile": {
+                "real_name": "",
+                "display_name": "",
+                "avatar_hash": "",
+                "real_name_normalized": "",
+                "display_name_normalized": "",
+                "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+              },
+              "name": "",
+              "is_bot": false,
+              "updated": 0,
+              "is_app_user": false
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "id": "U00000001",
+          "name": "retained"
+        },
+        {
+          "id": "U00000002",
+          "isNonExistent": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "name": "",
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "pending": []
+    },
+    {
+      "name": "late_existing_never_replaced",
+      "requested": [
+        "U00000001"
+      ],
+      "ephemeral": [
+        {
+          "id": "U00000001",
+          "name": "U00000001",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "attempts": 1,
+      "events": [
+        {
+          "kind": "nonexistent",
+          "rows": [
+            {
+              "id": "U00000001",
+              "isNonExistent": true,
+              "files": [],
+              "profile": {
+                "real_name": "",
+                "display_name": "",
+                "avatar_hash": "",
+                "real_name_normalized": "",
+                "display_name_normalized": "",
+                "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+              },
+              "name": "",
+              "is_bot": false,
+              "updated": 0,
+              "is_app_user": false
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "id": "U00000001",
+          "name": "late"
+        }
+      ],
+      "pending": []
+    },
+    {
+      "name": "fetch_failure_terminal",
+      "requested": [
+        "U00000001"
+      ],
+      "ephemeral": [
+        {
+          "id": "U00000001",
+          "name": "U00000001",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "attempts": 1,
+      "events": [
+        {
+          "kind": "nonexistent",
+          "rows": [
+            {
+              "id": "U00000001",
+              "isNonExistent": true,
+              "files": [],
+              "profile": {
+                "real_name": "",
+                "display_name": "",
+                "avatar_hash": "",
+                "real_name_normalized": "",
+                "display_name_normalized": "",
+                "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+              },
+              "name": "",
+              "is_bot": false,
+              "updated": 0,
+              "is_app_user": false
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "id": "U00000001",
+          "isNonExistent": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "name": "",
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "pending": []
+    },
+    {
+      "name": "timeout_then_success",
+      "requested": [
+        "U00000001"
+      ],
+      "ephemeral": [
+        {
+          "id": "U00000001",
+          "name": "U00000001",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "attempts": 3,
+      "events": [
+        {
+          "kind": "known",
+          "rows": [
+            {
+              "id": "U00000001",
+              "name": "actual"
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "id": "U00000001",
+          "name": "actual"
+        }
+      ],
+      "pending": []
+    },
+    {
+      "name": "timeout_exhausted",
+      "requested": [
+        "U00000001"
+      ],
+      "ephemeral": [
+        {
+          "id": "U00000001",
+          "name": "U00000001",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "attempts": 3,
+      "events": [
+        {
+          "kind": "nonexistent",
+          "rows": [
+            {
+              "id": "U00000001",
+              "isNonExistent": true,
+              "files": [],
+              "profile": {
+                "real_name": "",
+                "display_name": "",
+                "avatar_hash": "",
+                "real_name_normalized": "",
+                "display_name_normalized": "",
+                "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+              },
+              "name": "",
+              "is_bot": false,
+              "updated": 0,
+              "is_app_user": false
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "id": "U00000001",
+          "isNonExistent": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "name": "",
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "pending": []
+    },
+    {
+      "name": "duplicate_registration",
+      "requested": [
+        "U00000001",
+        "U00000001"
+      ],
+      "ephemeral": [
+        {
+          "id": "U00000001",
+          "name": "U00000001",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        },
+        {
+          "id": "U00000001",
+          "name": "U00000001",
+          "isUnknown": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "attempts": 1,
+      "events": [
+        {
+          "kind": "nonexistent",
+          "rows": [
+            {
+              "id": "U00000001",
+              "isNonExistent": true,
+              "files": [],
+              "profile": {
+                "real_name": "",
+                "display_name": "",
+                "avatar_hash": "",
+                "real_name_normalized": "",
+                "display_name_normalized": "",
+                "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+                "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+              },
+              "name": "",
+              "is_bot": false,
+              "updated": 0,
+              "is_app_user": false
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "id": "U00000001",
+          "isNonExistent": true,
+          "files": [],
+          "profile": {
+            "real_name": "",
+            "display_name": "",
+            "avatar_hash": "",
+            "real_name_normalized": "",
+            "display_name_normalized": "",
+            "image_24": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_32": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_48": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_72": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_192": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_512": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png",
+            "image_1024": "https://source-fixture.invalid/assets/unknown_avatar-0d4e910.png"
+          },
+          "name": "",
+          "is_bot": false,
+          "updated": 0,
+          "is_app_user": false
+        }
+      ],
+      "pending": []
+    }
+  ],
+  "modes": [
+    {
+      "enabled": false,
+      "online": false,
+      "sqlite": false,
+      "mode": 2
+    },
+    {
+      "enabled": false,
+      "online": false,
+      "sqlite": true,
+      "mode": 2
+    },
+    {
+      "enabled": false,
+      "online": true,
+      "sqlite": false,
+      "mode": 2
+    },
+    {
+      "enabled": false,
+      "online": true,
+      "sqlite": true,
+      "mode": 2
+    },
+    {
+      "enabled": true,
+      "online": false,
+      "sqlite": false,
+      "mode": 0
+    },
+    {
+      "enabled": true,
+      "online": false,
+      "sqlite": true,
+      "mode": 0
+    },
+    {
+      "enabled": true,
+      "online": true,
+      "sqlite": false,
+      "mode": 2
+    },
+    {
+      "enabled": true,
+      "online": true,
+      "sqlite": true,
+      "mode": 1
+    }
+  ]
+}

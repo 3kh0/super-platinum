@@ -1,0 +1,289 @@
+{
+  "cases": [
+    {
+      "raw": [
+        {
+          "id": "U00000001",
+          "name": "Bob Smith",
+          "team_id": "T00000001",
+          "profile": {
+            "real_name": "Bob Smith",
+            "display_name": "Bob Smith",
+            "first_name": "Robert",
+            "last_name": "Separate"
+          }
+        },
+        {
+          "id": "U00000002",
+          "name": "Alice Doe",
+          "team_id": "T00000001",
+          "profile": {
+            "real_name": "Alice Doe",
+            "display_name": "Alice Doe",
+            "first_name": "Alicia",
+            "last_name": "Distinct"
+          }
+        }
+      ],
+      "query": "ali",
+      "comparisonNames": [
+        "Bob Smith",
+        "Alice Doe"
+      ],
+      "fields": [
+        "",
+        "Alice Doe",
+        "Alicia",
+        "Bob Smith",
+        "Distinct",
+        "Robert",
+        "Separate",
+        "ali"
+      ],
+      "names": [
+        "Alice Doe",
+        "Bob Smith"
+      ],
+      "state": {
+        "selfId": "U00000999",
+        "teamId": "T00000001",
+        "self": {
+          "facts": {
+            "team": "T00000001"
+          }
+        },
+        "history": {},
+        "modelWeights": {
+          "IS_FLANNEL_FUZZY_PASSTHROUGH": 100
+        },
+        "demotePassthrough": false
+      },
+      "reply": {
+        "generation": "member-rank-false",
+        "locale": "en-US",
+        "collationLocale": "en-US",
+        "lowered": [
+          "",
+          "alice doe",
+          "alicia",
+          "bob smith",
+          "distinct",
+          "robert",
+          "separate",
+          "ali"
+        ],
+        "classes": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "demotePassthrough": false
+      },
+      "ids": [
+        "U00000001",
+        "U00000002"
+      ]
+    },
+    {
+      "raw": [
+        {
+          "id": "U00000001",
+          "name": "Bob Smith",
+          "team_id": "T00000001",
+          "profile": {
+            "real_name": "Bob Smith",
+            "display_name": "Bob Smith",
+            "first_name": "Robert",
+            "last_name": "Separate"
+          }
+        },
+        {
+          "id": "U00000002",
+          "name": "Alice Doe",
+          "team_id": "T00000001",
+          "profile": {
+            "real_name": "Alice Doe",
+            "display_name": "Alice Doe",
+            "first_name": "Alicia",
+            "last_name": "Distinct"
+          }
+        }
+      ],
+      "query": "ali",
+      "comparisonNames": [
+        "Bob Smith",
+        "Alice Doe"
+      ],
+      "fields": [
+        "",
+        "Alice Doe",
+        "Alicia",
+        "Bob Smith",
+        "Distinct",
+        "Robert",
+        "Separate",
+        "ali"
+      ],
+      "names": [
+        "Alice Doe",
+        "Bob Smith"
+      ],
+      "state": {
+        "selfId": "U00000999",
+        "teamId": "T00000001",
+        "self": {
+          "facts": {
+            "team": "T00000001"
+          }
+        },
+        "history": {},
+        "modelWeights": {
+          "IS_FLANNEL_FUZZY_PASSTHROUGH": 100
+        },
+        "demotePassthrough": true
+      },
+      "reply": {
+        "generation": "member-rank-true",
+        "locale": "en-US",
+        "collationLocale": "en-US",
+        "lowered": [
+          "",
+          "alice doe",
+          "alicia",
+          "bob smith",
+          "distinct",
+          "robert",
+          "separate",
+          "ali"
+        ],
+        "classes": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "demotePassthrough": true
+      },
+      "ids": [
+        "U00000002",
+        "U00000001"
+      ]
+    }
+  ],
+  "tieNames": [
+    "",
+    "Name02",
+    "Name10",
+    "Name2",
+    "‍"
+  ],
+  "ties": {
+    "generation": "ties",
+    "locale": "en-US",
+    "collationLocale": "en-US",
+    "demotePassthrough": true,
+    "classes": [
+      [
+        0,
+        0
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        2,
+        3
+      ]
+    ]
+  },
+  "executedSources": [
+    {
+      "id": "3ZH2",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared.3b454575c4abf06c.min.js",
+      "sha256": "684d084650a84c89c914b9a64573b218f2cde37730cb590f8f5efdf757b61b4a"
+    },
+    {
+      "id": "4ucY",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared-client.8da2e1b1875c77ec.min.js",
+      "sha256": "dcda80df00be927806b311324e4221a919d8f248482d717631283863c3f8936c"
+    },
+    {
+      "id": "AVPN",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-vendors-client.926456ec334eda59.min.js",
+      "sha256": "c5eae2bdb9751cd66bce2c10f24c3013815548c68a330599f290d0e3d8606480"
+    },
+    {
+      "id": "J3F/",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared.3b454575c4abf06c.min.js",
+      "sha256": "684d084650a84c89c914b9a64573b218f2cde37730cb590f8f5efdf757b61b4a"
+    },
+    {
+      "id": "LBiy",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared-client.8da2e1b1875c77ec.min.js",
+      "sha256": "dcda80df00be927806b311324e4221a919d8f248482d717631283863c3f8936c"
+    },
+    {
+      "id": "LFws",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-vendors.31e02cff962b4f5f.min.js",
+      "sha256": "f4b6443247b7cb713932b29a223c2d57b008856ef0d5edd1832312a3ae349085"
+    },
+    {
+      "id": "Ojx4",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared.3b454575c4abf06c.min.js",
+      "sha256": "684d084650a84c89c914b9a64573b218f2cde37730cb590f8f5efdf757b61b4a"
+    },
+    {
+      "id": "ayzK",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared.3b454575c4abf06c.min.js",
+      "sha256": "684d084650a84c89c914b9a64573b218f2cde37730cb590f8f5efdf757b61b4a"
+    },
+    {
+      "id": "hNDQ",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared.3b454575c4abf06c.min.js",
+      "sha256": "684d084650a84c89c914b9a64573b218f2cde37730cb590f8f5efdf757b61b4a"
+    },
+    {
+      "id": "jhqG",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared-client.8da2e1b1875c77ec.min.js",
+      "sha256": "dcda80df00be927806b311324e4221a919d8f248482d717631283863c3f8936c"
+    },
+    {
+      "id": "kN/G",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared.3b454575c4abf06c.min.js",
+      "sha256": "684d084650a84c89c914b9a64573b218f2cde37730cb590f8f5efdf757b61b4a"
+    },
+    {
+      "id": "l24D",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared-client.8da2e1b1875c77ec.min.js",
+      "sha256": "dcda80df00be927806b311324e4221a919d8f248482d717631283863c3f8936c"
+    },
+    {
+      "id": "tyx1",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared.3b454575c4abf06c.min.js",
+      "sha256": "684d084650a84c89c914b9a64573b218f2cde37730cb590f8f5efdf757b61b4a"
+    },
+    {
+      "id": "ukdy",
+      "path": "tmp/app-home-workflows-current-source/gantry-v2-shared-client.8da2e1b1875c77ec.min.js",
+      "sha256": "dcda80df00be927806b311324e4221a919d8f248482d717631283863c3f8936c"
+    }
+  ]
+}

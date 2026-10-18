@@ -140,7 +140,28 @@ def rectangle(value, viewport):
             and value['bottom'] <= viewport[1] + 1, 'Measured control/dialog outside viewport')
 
 
-def validate_geometry(value, viewport):
+def expected_feedback(scenario, phase, stage):
+    saved = ('status', 'Draft saved on this device.')
+    uncertain = ('alert', 'Slack may have created this canvas. Its exact draft and delivery receipt are retained. Checking Files does not authorize a retry.')
+    composing = ('alert', 'Finish composing text, then try again.')
+    if phase == 'restart':
+        return (uncertain,) if scenario == 'late-result' else (saved,)
+    return {
+        'editing': {'edited': (saved,), 'native-ahead': (saved,), 'composing': (composing,), 'reopened': (saved,)},
+        'departure': {'returned': (saved,), 'capture-refused': (composing,), 'capture-resumed': (saved,),
+                      'save-refused': (('alert', 'Your text is retained. Save or review it before navigating.'),), 'chosen': (saved,)},
+        'known-unsent-conflict': {'unsent': (saved,), 'conflict': (('alert', 'Your text is retained here. Retry its local save before leaving.'),), 'chosen': (saved,)},
+        'late-result': {'pending': (('status', 'Retaining your canvas\u2026'),), 'created': (('status', 'Your canvas is ready.'),),
+                        'archived': (saved,), 'uncertain': (uncertain,), 'reopened': (uncertain,)},
+    }[scenario].get(stage, ())
+
+
+def inside_rectangle(inner, outer):
+    return inner['left'] >= outer['left'] - 1 and inner['top'] >= outer['top'] - 1 \
+        and inner['right'] <= outer['right'] + 1 and inner['bottom'] <= outer['bottom'] + 1
+
+
+def validate_geometry(value, viewport, required_feedback=()):
     require(value.get('ok') is True and value.get('noOverflow') is True and value.get('footerHitTested') is True,
             'Covered or overflowing controls')
     require(value.get('viewport') == dict(width=viewport[0], height=viewport[1]), 'Geometry viewport mismatch')
@@ -153,6 +174,31 @@ def validate_geometry(value, viewport):
     for control in controls:
         require(isinstance(control.get('label'), str) and control['label'] and control.get('hit') is True, 'Unproven control hit target')
         rectangle(control.get('rect'), viewport)
+    if value.get('kind') == 'palette':
+        return
+    footer, fields, dialog = value.get('footer'), value.get('fields'), value['dialog']
+    rectangle(footer, viewport)
+    rectangle(fields, viewport)
+    require(inside_rectangle(footer, dialog) and inside_rectangle(fields, dialog)
+            and fields['bottom'] <= footer['top'] + 1, 'Editor/footer layout overlaps or escapes dialog')
+    feedback = value.get('feedback')
+    require(isinstance(feedback, dict) and 'region' in feedback and isinstance(feedback.get('messages'), list), 'Missing feedback geometry')
+    region, messages = feedback['region'], feedback['messages']
+    if region is None:
+        require(not messages and not required_feedback, 'Required feedback absent')
+        return
+    rectangle(region, viewport)
+    require(messages and inside_rectangle(region, dialog) and region['bottom'] <= footer['top'] + 1
+            and region['top'] >= fields['bottom'] - 1, 'Feedback region overlaps editor/footer or escapes dialog')
+    observed = []
+    for message in messages:
+        require(isinstance(message, dict) and message.get('role') in ('alert', 'status')
+                and isinstance(message.get('text'), str) and message['text'].strip(), 'Missing feedback copy/role')
+        require(message.get('visible') is True and message.get('unclipped') is True, 'Feedback is hidden, covered or clipped')
+        rectangle(message.get('rect'), viewport)
+        require(inside_rectangle(message['rect'], region), 'Feedback text outside fixed region')
+        observed.append((message['role'], message['text']))
+    require(all(item in observed for item in required_feedback), 'Required feedback absent or changed')
 
 
 def validate_departure_inventory(inventory, body, conflicts):
@@ -271,8 +317,8 @@ def validate_native(expected, directory, receipt, edges, dimensions=None, platfo
             H['png_signature'](path, dimensions)
     geometry = receipt.get('geometry')
     require(isinstance(geometry, list) and len(geometry) == len(stages) - int('closed' in stages), 'Missing stage geometry')
-    for g in geometry:
-        validate_geometry(g, expected_viewport(expected['fixture'], platform))
+    for stage, g in zip((stage for stage in stages if stage != 'closed'), geometry):
+        validate_geometry(g, expected_viewport(expected['fixture'], platform), expected_feedback(scenario, phase, stage))
     result = receipt.get('result', {})
     for k in (('restoredFromStore', 'noReplay') if phase == 'restart' else REQUIRED[scenario]):
         require(result.get(k) is True, f'Missing workflow proof {k}')

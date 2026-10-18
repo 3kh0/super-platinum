@@ -3,6 +3,10 @@ use super::*;
 use crate::slack_links_check::wait_dom;
 use serde_json::json;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    if sections::fixture::interaction_enabled(&state.peek()) {
+        sections::fixture::check::start(state, desktop);
+        return;
+    }
     if !fixture::enabled(&state.peek()) {
         return;
     }

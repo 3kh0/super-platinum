@@ -1,0 +1,1557 @@
+[
+  {
+    "name": "seed",
+    "before": [],
+    "incoming": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "actionUpdates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "source-equal-observation-has-no-action",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "actionUpdates": [],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "flat-property-seed",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "properties": {
+          "label": "same"
+        }
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "label": "same"
+        }
+      }
+    ],
+    "actionUpdates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "label": "same"
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "label": "same"
+        }
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "flat-property-equal-retains-old-reference",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "label": "same"
+        }
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "properties": {
+          "label": "same"
+        }
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "label": "same"
+        }
+      }
+    ],
+    "actionUpdates": [],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "label": "same"
+        }
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "nested-property-seed",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "properties": {
+          "nested": {
+            "value": "same"
+          }
+        }
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "nested": {
+            "value": "same"
+          }
+        }
+      }
+    ],
+    "actionUpdates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "nested": {
+            "value": "same"
+          }
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "nested": {
+            "value": "same"
+          }
+        }
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "fresh-nested-reference-is-an-action",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "nested": {
+            "value": "same"
+          }
+        }
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "properties": {
+          "nested": {
+            "value": "same"
+          }
+        }
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "nested": {
+            "value": "same"
+          }
+        }
+      }
+    ],
+    "actionUpdates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "nested": {
+            "value": "same"
+          }
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "properties": {
+          "nested": {
+            "value": "same"
+          }
+        }
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "array-property-seed",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "metadata": [
+          {
+            "value": "same"
+          }
+        ]
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": [
+          {
+            "value": "same"
+          }
+        ]
+      }
+    ],
+    "actionUpdates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": [
+          {
+            "value": "same"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": [
+          {
+            "value": "same"
+          }
+        ]
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "fresh-array-child-is-an-action",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": [
+          {
+            "value": "same"
+          }
+        ]
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "metadata": [
+          {
+            "value": "same"
+          }
+        ]
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": [
+          {
+            "value": "same"
+          }
+        ]
+      }
+    ],
+    "actionUpdates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": [
+          {
+            "value": "same"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": [
+          {
+            "value": "same"
+          }
+        ]
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "duplicate-rows-compare-original-before",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "name": "new"
+      },
+      {
+        "id": "C1",
+        "name": "c1"
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "new",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "new",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      },
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "actionUpdates": [
+      {
+        "id": "C1",
+        "name": "new",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "new",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "new",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "new",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "new": "new",
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "empty-array-property-seed",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "metadata": []
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": []
+      }
+    ],
+    "actionUpdates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": []
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": []
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "empty-object-shallow-equal-keeps-array-slot",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": []
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "metadata": {}
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": []
+      }
+    ],
+    "actionUpdates": [],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "updated": 1,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "metadata": []
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  }
+]

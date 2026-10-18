@@ -2,6 +2,8 @@ mod window;
 pub(crate) use window::{ChannelRow, channel_rows, project_channel_window};
 mod channel_window_checks;
 pub(crate) use channel_window_checks::fixture as channel_window_fixture;
+#[cfg(test)]
+mod sidebar_selection_tests;
 
 use crate::media::MediaRegistry;
 use crate::model::{ChannelVm, PresenceVm, SidebarSectionVm};
@@ -72,39 +74,48 @@ pub(crate) fn project_channels(
         .collect::<Vec<_>>();
     // Stable id → index map for section rows; do not alpha-sort.
     channels.sort_by(|left, right| left.id.cmp(&right.id));
+    let active_channel = active_id
+        .as_ref()
+        .and_then(|id| channels.iter().position(|channel| &channel.id == id))
+        .unwrap_or(0);
+    let active_for_grouping = channels
+        .get(active_channel)
+        .map(|channel| channel.id.as_str());
+    let sidebar_sections =
+        project_sidebar_sections(workspace, &channels, active_for_grouping, memory);
+    (channels, sidebar_sections, active_channel, active_id)
+}
+
+/// Reproject sections over the current row indices without rebuilding or
+/// reordering conversation rows. Selection can reveal an active preview while
+/// leaving counts, membership, timeline and surface ownership untouched.
+pub(crate) fn project_sidebar_sections(
+    workspace: &super_platinum_core::state::Workspace,
+    channels: &[ChannelVm],
+    active: Option<&str>,
+    memory: &mut super_platinum_core::state::SidebarMemory,
+) -> Vec<SidebarSectionVm> {
     let index_by_id: std::collections::HashMap<&str, usize> = channels
         .iter()
         .enumerate()
         .map(|(index, channel)| (channel.id.as_str(), index))
         .collect();
-    let active_channel = active_id
-        .as_ref()
-        .and_then(|id| index_by_id.get(id.as_str()).copied())
-        .unwrap_or(0);
-    let active_for_grouping = channels
-        .get(active_channel)
-        .map(|channel| channel.id.as_str());
     // Empty sections stay: Slack keeps a heading for Channels, Direct
     // messages and the rest even when every row is filtered out.
-    let sidebar_sections = super_platinum_core::state::grouped_sidebar_sections(
-        workspace,
-        active_for_grouping,
-        memory,
-    )
-    .into_iter()
-    .map(|section| SidebarSectionVm {
-        channel_indices: section
-            .channel_ids
-            .iter()
-            .filter_map(|id| index_by_id.get(id.as_str()).copied())
-            .collect(),
-        id: section.id,
-        kind: section.kind,
-        title: section.title,
-        collapsed: section.collapsed,
-    })
-    .collect();
-    (channels, sidebar_sections, active_channel, active_id)
+    super_platinum_core::state::grouped_sidebar_sections(workspace, active, memory)
+        .into_iter()
+        .map(|section| SidebarSectionVm {
+            channel_indices: section
+                .channel_ids
+                .iter()
+                .filter_map(|id| index_by_id.get(id.as_str()).copied())
+                .collect(),
+            id: section.id,
+            kind: section.kind,
+            title: section.title,
+            collapsed: section.collapsed,
+        })
+        .collect()
 }
 
 #[cfg(test)]

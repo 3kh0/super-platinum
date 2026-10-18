@@ -19,6 +19,10 @@ pub struct UserGroup {
     pub prefs: UserGroupPrefs,
     #[serde(default)]
     pub date_delete: u64,
+    /// Actual directory/socket row used for Profile mention labels. Membership
+    /// placeholders and legacy cached projections have no such observation.
+    #[serde(default)]
+    pub label_source: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -30,6 +34,21 @@ pub struct UserGroupPrefs {
 }
 
 impl UserGroup {
+    pub fn from_observed(raw: &serde_json::Value) -> Result<Self, serde_json::Error> {
+        let mut projected = raw.clone();
+        if raw.get("handle").is_some_and(|value| !value.is_string()) {
+            let handle = profile_label::observed_handle(raw)
+                .or_else(|| profile_label::unknown(raw).then_some(""))
+                .ok_or_else(|| {
+                    <serde_json::Error as serde::de::Error>::custom("Invalid user-group handle")
+                })?;
+            projected["handle"] = serde_json::Value::String(handle.into());
+        }
+        let mut group: Self = serde_json::from_value(projected)?;
+        group.label_source = Some(raw.clone());
+        Ok(group)
+    }
+
     pub fn includes(&self, user: &str) -> bool {
         self.date_delete == 0 && self.users.iter().any(|id| id == user)
     }
@@ -63,7 +82,7 @@ pub fn apply_group_event(
     match event.kind.as_str() {
         "subteam_created" | "subteam_updated" => {
             if let Some(value) = event.rest.get("subteam")
-                && let Ok(mut group) = serde_json::from_value::<UserGroup>(value.clone())
+                && let Ok(mut group) = UserGroup::from_observed(value)
             {
                 if !value.get("users").is_some() {
                     if let Some(old) = groups.get(&group.id) {
@@ -162,8 +181,20 @@ pub fn collect_group_ids(message: &super::Message, ids: &mut std::collections::H
 
 #[derive(Deserialize)]
 pub struct UserGroupsPage {
+    #[serde(deserialize_with = "observed_groups")]
     pub results: Vec<UserGroup>,
 }
+
+fn observed_groups<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Vec<UserGroup>, D::Error> {
+    let rows = Vec::<serde_json::Value>::deserialize(deserializer)?;
+    rows.iter()
+        .map(|row| UserGroup::from_observed(row).map_err(serde::de::Error::custom))
+        .collect()
+}
+
+mod profile_label;
 
 #[cfg(test)]
 mod tests {

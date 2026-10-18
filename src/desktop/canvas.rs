@@ -2,6 +2,8 @@
 //! separate document protocol; the reader never converts exports into writes.
 pub(crate) mod checklist;
 pub(crate) mod comments;
+mod links;
+pub(crate) mod links_check;
 mod loader;
 use loader::load;
 pub(crate) mod surface;
@@ -104,7 +106,9 @@ pub fn CanvasDialog(
                             return Arc::new(comments::annotation::fixture::document());
                         }
                         Arc::new(
-                            CanvasDocument::parse(if text::structure_fixture::requested() {
+                            CanvasDocument::parse(if links_check::requested() {
+                                links_check::HTML
+                            } else if text::structure_fixture::requested() {
                                 text::structure_fixture::HTML
                             } else if text::fixture::requested() {
                                 text::fixture::HTML
@@ -132,6 +136,7 @@ pub fn CanvasDialog(
         }
     });
     let comments = use_signal(comments::State::default);
+    let link_feedback = use_signal(links::Feedback::default);
     let mut comments_open = use_signal(|| {
         comments::fixture::requested() && !comments::annotation::fixture::inline_requested()
     });
@@ -314,6 +319,10 @@ pub fn CanvasDialog(
     let permalink = original.permalink.clone();
     let epoch = state.read().media_epoch;
     let unavailable = embedded && !surface::visible(&state.read(), &original.id);
+    let link_notice = link_feedback
+        .read()
+        .visible(&state.read())
+        .map(str::to_owned);
     rsx! {
         if !embedded {div {class:"scrim",onclick:move |_|state.write().dismiss_overlay()}}
         section {id:if embedded {"channel-canvas-panel"}else{"shell-overlay-dialog"},class:if embedded {"canvas-dialog channel-canvas-panel"}else{"modal canvas-dialog"},role:if embedded {"region"}else{"dialog"},"aria-label":"Canvas: {title}","aria-modal":if embedded {None}else{Some("true")},tabindex:"-1","data-keyboard-dialog":if embedded {None}else{Some("true")},"data-dialog-kind":"other","data-dialog-generation":state.read().shortcut_generation,
@@ -337,6 +346,7 @@ pub fn CanvasDialog(
             }
             if unavailable {p {class:"canvas-status",role:"status","This tab is no longer available. Your edit is kept here; copy it or cancel before changing tabs."}}
             if let Some(notice) = notice {p {class:"canvas-status",role:"status", "{notice}"}}
+            if let Some(message) = link_notice {p {class:"canvas-status",id:"canvas-link-feedback",role:"status","{message}"}}
             if rename.read().is_some() {RenameForm {state,reader,draft:rename,target:rename_target}}
             if *comments_open.read() {comments::Panel {state,model:comments,opened:comments_open}} else {
             div {class:"canvas-scroll","aria-busy":loading,
@@ -347,7 +357,7 @@ pub fn CanvasDialog(
                 }
                 if let Some(document)=snapshot.document.as_ref() {
                     article {class:"canvas-document",
-                        for node in document.nodes.iter().take(shown()) {{render_node(node,state,epoch,mapped,reader,canonical.as_ref(),rename,text_draft,None,comments,comments_open,local_review)}}
+                        for node in document.nodes.iter().take(shown()) {{render_node(node,state,epoch,mapped,reader,canonical.as_ref(),rename,text_draft,None,comments,comments_open,local_review,link_feedback)}}
                         if document.nodes.len()>shown() {button {class:"canvas-more",onclick:move |_|shown+=80,"Show more"}}
                     }
                 } else if loading {
@@ -372,6 +382,7 @@ fn render_node(
     comments: Signal<comments::State>,
     comments_open: Signal<bool>,
     local_review: Signal<Option<checklist::recovery::review::Draft>>,
+    link_feedback: Signal<links::Feedback>,
 ) -> Element {
     let N::Element {
         kind,
@@ -383,7 +394,7 @@ fn render_node(
         return rsx! {"{text}"};
     };
     let image_section = section.as_deref().or(parent_section);
-    let content = || rsx! {for child in children {{render_node(child,state,epoch,checklist,reader,canonical,rename,text_draft,image_section,comments,comments_open,local_review)}}};
+    let content = || rsx! {for child in children {{render_node(child,state,epoch,checklist,reader,canonical,rename,text_draft,image_section,comments,comments_open,local_review,link_feedback)}}};
     match kind {
         K::Group => rsx! {div {{content()}}},
         K::Inline => rsx! {span {{content()}}},
@@ -458,10 +469,16 @@ fn render_node(
         K::Cell { columns, rows, .. } => {
             rsx! {td {colspan:*columns as i64,rowspan:*rows as i64,{content()}}}
         }
-        K::Link(url) => {
-            let destination = url.clone();
-            rsx! {a {href:"{url}",onclick:move |e|{e.prevent_default();let _=crate::media::open_external(&destination);},{content()}}}
-        }
+        K::Link(url) => links::render(
+            state,
+            url,
+            content(),
+            rename,
+            text_draft,
+            local_review,
+            comments_open,
+            link_feedback,
+        ),
         K::Image { url, alt } => comments::annotation::image::render(
             state,
             reader,

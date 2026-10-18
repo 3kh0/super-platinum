@@ -1,0 +1,717 @@
+[
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "",
+    "clientMode": "online",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "@",
+    "clientMode": "online",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "＠",
+    "clientMode": "online",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "#",
+    "clientMode": "online",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "＃",
+    "clientMode": "online",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "/",
+    "clientMode": "online",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "／",
+    "clientMode": "online",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "+",
+    "clientMode": "online",
+    "firstFormatted": "+",
+    "result": {
+      "path": "Remote",
+      "query": "+"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "＋",
+    "clientMode": "online",
+    "firstFormatted": "＋",
+    "result": {
+      "path": "Remote",
+      "query": "＋"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": ":",
+    "clientMode": "online",
+    "firstFormatted": ":",
+    "result": {
+      "path": "Remote",
+      "query": ":"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": " ",
+    "clientMode": "online",
+    "firstFormatted": " ",
+    "result": {
+      "path": "Remote",
+      "query": " "
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "@@Ada",
+    "clientMode": "online",
+    "firstFormatted": "@Ada",
+    "result": {
+      "path": "Remote",
+      "query": "@Ada"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "online",
+    "query": "Ada",
+    "clientMode": "online",
+    "firstFormatted": "Ada",
+    "result": {
+      "path": "Remote",
+      "query": "Ada"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "",
+    "clientMode": "degraded",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "@",
+    "clientMode": "degraded",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "＠",
+    "clientMode": "degraded",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "#",
+    "clientMode": "degraded",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "＃",
+    "clientMode": "degraded",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "/",
+    "clientMode": "degraded",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "／",
+    "clientMode": "degraded",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "+",
+    "clientMode": "degraded",
+    "firstFormatted": "+",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "＋",
+    "clientMode": "degraded",
+    "firstFormatted": "＋",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": ":",
+    "clientMode": "degraded",
+    "firstFormatted": ":",
+    "result": {
+      "path": "Local",
+      "query": ":"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": " ",
+    "clientMode": "degraded",
+    "firstFormatted": " ",
+    "result": {
+      "path": "Local",
+      "query": " "
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "@@Ada",
+    "clientMode": "degraded",
+    "firstFormatted": "@Ada",
+    "result": {
+      "path": "Local",
+      "query": "Ada"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "degraded",
+    "query": "Ada",
+    "clientMode": "degraded",
+    "firstFormatted": "Ada",
+    "result": {
+      "path": "Local",
+      "query": "Ada"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "@",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "＠",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "#",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "＃",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "/",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "／",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "+",
+    "clientMode": "offline",
+    "firstFormatted": "+",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "＋",
+    "clientMode": "offline",
+    "firstFormatted": "＋",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": ":",
+    "clientMode": "offline",
+    "firstFormatted": ":",
+    "result": {
+      "path": "Local",
+      "query": ":"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": " ",
+    "clientMode": "offline",
+    "firstFormatted": " ",
+    "result": {
+      "path": "Local",
+      "query": " "
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "@@Ada",
+    "clientMode": "offline",
+    "firstFormatted": "@Ada",
+    "result": {
+      "path": "Local",
+      "query": "Ada"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "client-offline",
+    "query": "Ada",
+    "clientMode": "offline",
+    "firstFormatted": "Ada",
+    "result": {
+      "path": "Local",
+      "query": "Ada"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "@",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "＠",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "#",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "＃",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "/",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "／",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "+",
+    "clientMode": "offline",
+    "firstFormatted": "+",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "＋",
+    "clientMode": "offline",
+    "firstFormatted": "＋",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": ":",
+    "clientMode": "offline",
+    "firstFormatted": ":",
+    "result": {
+      "path": "Local",
+      "query": ":"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": " ",
+    "clientMode": "offline",
+    "firstFormatted": " ",
+    "result": {
+      "path": "Local",
+      "query": " "
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "@@Ada",
+    "clientMode": "offline",
+    "firstFormatted": "@Ada",
+    "result": {
+      "path": "Local",
+      "query": "Ada"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "service-offline",
+    "query": "Ada",
+    "clientMode": "offline",
+    "firstFormatted": "Ada",
+    "result": {
+      "path": "Local",
+      "query": "Ada"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "@",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "＠",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "#",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "＃",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "/",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "／",
+    "clientMode": "offline",
+    "firstFormatted": "",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "+",
+    "clientMode": "offline",
+    "firstFormatted": "+",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "＋",
+    "clientMode": "offline",
+    "firstFormatted": "＋",
+    "result": {
+      "path": "Local",
+      "query": ""
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": ":",
+    "clientMode": "offline",
+    "firstFormatted": ":",
+    "result": {
+      "path": "Local",
+      "query": ":"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": " ",
+    "clientMode": "offline",
+    "firstFormatted": " ",
+    "result": {
+      "path": "Local",
+      "query": " "
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "@@Ada",
+    "clientMode": "offline",
+    "firstFormatted": "@Ada",
+    "result": {
+      "path": "Local",
+      "query": "Ada"
+    }
+  },
+  {
+    "app": "client-v2",
+    "mode": "missing-connectivity",
+    "query": "Ada",
+    "clientMode": "offline",
+    "firstFormatted": "Ada",
+    "result": {
+      "path": "Local",
+      "query": "Ada"
+    }
+  }
+]

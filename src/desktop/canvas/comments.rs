@@ -114,7 +114,10 @@ impl State {
         self.serial = self.serial.wrapping_add(1);
     }
 }
-pub(super) fn open(state: Signal<ShellState>, mut model: Signal<State>) {
+pub(super) fn open(mut state: Signal<ShellState>, mut model: Signal<State>) {
+    // Comments replace the Canvas body. A previously clicked link must not
+    // finish resolving later and remove this newly opened comment/reply view.
+    cancel_pending_link(&mut state.write());
     selection::clear(&mut model.write());
     if model.peek().query.is_none() {
         if let Some(root) = reply::fixture::initial_root(&state.peek()) {
@@ -135,6 +138,9 @@ pub(super) fn open(state: Signal<ShellState>, mut model: Signal<State>) {
     }
     let filter = model.peek().filter;
     start(state, model, Query::Stream(filter), false);
+}
+fn cancel_pending_link(shell: &mut ShellState) {
+    shell.slack_link_generation = shell.slack_link_generation.wrapping_add(1);
 }
 fn start(state: Signal<ShellState>, model: Signal<State>, query: Query, more: bool) {
     begin(

@@ -31,6 +31,7 @@ FIXTURES=(
   bookmarks-emoji bookmarks-emoji-narrow
   canvas-create canvas-create-narrow canvas-create-error
   canvas-creation-durable canvas-creation-durable-narrow
+  canvas-links canvas-links-narrow
   canvas canvas-narrow canvas-loading canvas-error canvas-rename canvas-rename-error canvas-readonly
   canvas-comments canvas-comments-narrow
   canvas-comment-resolve canvas-comment-resolve-narrow canvas-comment-reply canvas-comment-reply-narrow canvas-comment-rich-reply canvas-comment-rich-reply-narrow canvas-comment-annotation canvas-comment-annotation-narrow canvas-comment-inline canvas-comment-inline-narrow canvas-comment-existing-inline canvas-comment-existing-inline-narrow canvas-comment-archived-inline canvas-comment-archived-inline-narrow canvas-comment-hidden-inline canvas-comment-hidden-inline-narrow canvas-comment-section canvas-comment-section-narrow canvas-comment-section-inline canvas-comment-section-inline-narrow canvas-comment-list canvas-comment-list-narrow canvas-comment-image canvas-comment-image-narrow canvas-comment-table canvas-comment-table-narrow canvas-comment-table-bodies canvas-comment-table-bodies-narrow canvas-comment-blockquote canvas-comment-blockquote-narrow canvas-comment-flexbox canvas-comment-flexbox-narrow canvas-comment-callout canvas-comment-callout-narrow
@@ -87,6 +88,9 @@ FIXTURES=(
   app-shortcuts app-shortcuts-narrow
   app-home app-home-narrow
   app-about app-about-narrow app-about-unknown app-about-unknown-narrow app-about-connect app-about-connect-narrow
+  workflow-managed workflow-managed-narrow workflow-editor workflow-editor-narrow workflow-reply-loss workflow-reply-loss-narrow
+  workflow-activity workflow-activity-narrow
+  channel-initialization channel-initialization-narrow
   app-home-workflow-auth app-home-workflow-auth-narrow
   app-home-workflow-auth-held app-home-workflow-auth-held-narrow
   app-home-workflow-auth-unconfirmed app-home-workflow-auth-unconfirmed-narrow
@@ -190,6 +194,13 @@ FIXTURES=(
   self-status-editor self-status-editor-narrow
   profile-edit profile-edit-narrow
   profile-sections profile-sections-narrow
+  profile-sections-save profile-sections-save-narrow
+  profile-sections-mentions profile-sections-mentions-narrow
+  profile-channel-recovery profile-channel-recovery-narrow
+  profile-member-recovery profile-member-recovery-narrow
+  profile-member-known profile-member-known-narrow
+  profile-member-freshness profile-member-freshness-narrow
+  profile-group-recovery profile-group-recovery-narrow
   profile-pronunciation profile-pronunciation-narrow
   profile-recording profile-recording-narrow
   profile-recording-recovery profile-recording-recovery-narrow

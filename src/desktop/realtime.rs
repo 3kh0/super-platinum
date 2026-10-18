@@ -62,6 +62,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
                     if generation > 1 {
                         workspace.posting_metadata.invalidate();
+                        workspace.draft_presence.invalidate();
                     }
                     workspace.rt_generation = generation;
                     workspace.reset_channel_discovery();
@@ -76,6 +77,11 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     Ok(source) => source,
                     Err(_) => return,
                 };
+                let channel_work =
+                    crate::app_home::channel_fetches::connected(&mut shell, &team, generation);
+                crate::directory_member_fetches::automatic::connected(
+                    &mut shell, &team, generation,
+                );
                 // Nothing replays the frames that arrived while the socket was
                 // down, so whatever happened to the open conversation meanwhile
                 // — a reaction above all, which no later frame mentions again —
@@ -99,6 +105,8 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     .clone()
                     .zip(shell.core.active_channel.clone());
                 drop(shell);
+                crate::app_home::channel_fetches::resume(state, channel_work);
+                crate::directory_member_fetches::automatic::resume(state, &team);
                 if owned_socket
                     .connected(state, accepted_socket, generation)
                     .await
@@ -276,8 +284,15 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     .workspaces
                     .get(&team)
                     .map(|w| w.channel_lifecycle.revision());
+                let draft_revision = shell
+                    .core
+                    .workspaces
+                    .get(&team)
+                    .map(|w| w.draft_presence.revision());
                 let thread_marked = matches!(event.as_ref(), RtEvent::ThreadMarked { .. });
                 let transcript_visible = shell.reading_latest(crate::read_visibility::focused());
+                let activity_names_revision =
+                    crate::app_home::about::management::activity::refresh::policy_revision(&shell);
                 let home_load = crate::app_home::realtime(&mut shell, &team, generation, &event);
                 let modal_load = crate::app_modal::realtime(&mut shell, &team, generation, &event);
                 let list_labels =
@@ -288,6 +303,12 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     if matches!(raw.kind.as_str(), "channel_updated" | "channel_joined" |
                         "group_joined" | "mpim_joined" | "channel_created" | "im_created" |
                         "channel_converted_to_shared" | "group_converted_to_shared"));
+                let channel_event = crate::app_home::channel_fetches::before_event(
+                    &shell, &team, generation, &event,
+                );
+                let member_event = matches!(event.as_ref(), RtEvent::UserChanged(_))
+                    || matches!(event.as_ref(), RtEvent::Unknown(raw) if raw.kind == "user_invalidated");
+                let member_event = member_event.then(|| event.clone());
                 apply_in_view(
                     &mut shell.core,
                     &team,
@@ -295,6 +316,22 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     *event,
                     transcript_visible,
                 );
+                let channel_work =
+                    crate::app_home::channel_fetches::after_event(&mut shell, channel_event);
+                if let Some(event) = member_event {
+                    crate::directory_member_fetches::automatic::event(
+                        &mut shell, &team, generation, &event,
+                    );
+                }
+                let draft_presence_changed = draft_revision
+                    != shell
+                        .core
+                        .workspaces
+                        .get(&team)
+                        .map(|w| w.draft_presence.revision());
+                if draft_presence_changed {
+                    crate::app_home::about::management::activity::drafts_changed(&mut shell, &team);
+                }
                 if let Some((channel, ts)) = upload {
                     crate::messaging::upload_recovery::reconcile(
                         &mut shell,
@@ -355,9 +392,14 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     shell.refresh_dock_badge_for(&team);
                 }
                 drop(shell);
+                crate::app_home::about::management::activity::refresh::after_event(
+                    state,
+                    activity_names_revision,
+                );
                 // Queue while the accepted frame owner is still current, before
                 // the unrelated owned-draft await below can switch accounts.
-                if external_history_event {
+                crate::app_home::channel_fetches::resume(state, channel_work);
+                if external_history_event || draft_presence_changed {
                     crate::bootstrap::persist_workspace_metadata(&state, &team);
                 }
                 if let Some(raw) = owned_draft {
@@ -426,12 +468,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
             RtUpdate::Disconnected { generation } => {
                 owned_socket.disconnected(&mut shell, &team, generation);
                 crate::file_share::connection(&mut shell, &team, generation);
-                if let Some(workspace) = shell.core.workspaces.get_mut(&team)
-                    && generation >= workspace.rt_generation
-                {
-                    workspace.rt = super_platinum_core::state::RealtimeStatus::Disconnected;
-                    workspace.posting_metadata.invalidate();
-                }
+                mark_disconnected(&mut shell, &team, generation);
             }
         }
     }
@@ -439,6 +476,23 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
     let _ = owned_socket
         .close(super_platinum_core::drafts::store::protected::GapReason::Disconnect)
         .await;
+}
+
+/// Apply an owned disconnect without inventing a new accepted connection.
+/// Closed native fixtures use this same transition to exercise pending readers.
+pub(crate) fn mark_disconnected(shell: &mut ShellState, team: &str, generation: u64) -> bool {
+    let Some(workspace) = shell
+        .core
+        .workspaces
+        .get_mut(team)
+        .filter(|workspace| generation >= workspace.rt_generation)
+    else {
+        return false;
+    };
+    workspace.rt = super_platinum_core::state::RealtimeStatus::Disconnected;
+    workspace.posting_metadata.invalidate();
+    crate::directory_member_fetches::automatic::disconnected(shell, team, generation);
+    true
 }
 
 fn worker_source(
@@ -786,8 +840,10 @@ pub(crate) fn apply_in_view(
             }
             if matches!(
                 raw.kind.as_str(),
-                "draft_create" | "draft_update" | "draft_delete"
+                "draft_create" | "draft_update" | "draft_delete" | "draft_send"
             ) {
+                let payload = serde_json::Value::Object(raw.rest.clone().into_iter().collect());
+                let _ = workspace.draft_presence.realtime(team, &raw.kind, &payload);
                 if core.active_team.as_deref() == Some(team) {
                     core.scheduled.ensure_scope(core.account_epoch, team);
                     core.scheduled.apply_event(&raw);

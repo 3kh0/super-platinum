@@ -28,11 +28,47 @@ a bare `cargo run` still runs the client but does not deliver macOS notification
 
 ## Develop
 
-For faster full rebuilds and UI iteration:
+For fast full rebuilds:
+
+```powershell
+# Windows: also parallelizes native TLS compilation with Ninja when available.
+.\scripts\rebuild.ps1
+```
+
+The Windows helper finds Ninja on PATH or in Visual Studio, uses its Multi-Config
+generator to preserve MSVC library paths, defaults to 12 jobs,
+and restores its temporary environment changes afterward. Use `-Jobs 8` to
+reduce concurrency or `-Features 'original-download-native-fixture,protected-native-fixture'`
+for those offline fixture features. It preserves explicit CMake generator settings
+and falls back to the default generator if Ninja is unavailable. Its default
+Ninja build goes under `target/rebuild-ninja-multi/dev-rebuild`; keep that cache for
+subsequent builds. `-TargetDir <path>` overrides the build directory.
+
+On other platforms, or to use the default native build system directly:
 
 ```sh
-cargo build --locked --profile dev-fast --jobs 12 --timings
-cargo run --locked --profile dev-fast --jobs 12
+cargo rebuild
+```
+
+This alias runs `cargo build --locked --profile dev-rebuild --timings`. The
+rebuild profile disables Rust optimization, debug-info generation, and incremental-cache writes,
+and uses 256 codegen units for parallel compilation. Assertions and overflow
+checks remain enabled. Its executable is under `target/dev-rebuild`. Cargo still
+reuses unchanged artifacts; the command does not delete build caches.
+
+The repository defaults to 12 build jobs (override with `--jobs N` or
+`CARGO_BUILD_JOBS`). Windows x64 MSVC builds use Rust's bundled `rust-lld` linker.
+They reserve a 16 MiB main-thread stack (with the default initial commitment),
+which prevents unoptimized desktop startup from overflowing the 1 MiB default.
+Visual Studio Build Tools and the Windows SDK are still required for native
+dependencies. To opt back into Microsoft's linker, pass
+`--config 'target.x86_64-pc-windows-msvc.linker="link.exe"'` to Cargo.
+
+For repeated edits and line-number backtraces:
+
+```sh
+cargo build --locked --profile dev-fast --timings
+cargo run --locked --profile dev-fast
 ```
 
 `dev-fast` skips application and dependency optimization, retains application

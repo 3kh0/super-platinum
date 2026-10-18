@@ -278,6 +278,7 @@ pub fn shell() -> Element {
     // shows the conversation it has open — and DMs and Activity stay on their
     // empty state until a row in their own list opens one.
     let show_timeline = snapshot.conversation_visible();
+    let workflow_entry = crate::app_home::about::management::entry::showing(&snapshot);
     // A conversation is a conversation wherever it is shown: Slack's Activity
     // and DMs panes carry a composer exactly like the channel view does, so a
     // message opened from a notification can be answered where it is read.
@@ -316,20 +317,31 @@ pub fn shell() -> Element {
                 later::LaterPanel { key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}", state }
             }
             if snapshot.main_view == MainView::Scheduled {
-                scheduled::ScheduledPanel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}",state}
+                div {style:if workflow_entry{"display:none"}else{"display:contents"},
+                    scheduled::ScheduledPanel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}",state}
+                }
             }
             if snapshot.main_view == MainView::Files {
-                files::FilesPanel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}",state}
+                div {style:if workflow_entry{"display:none"}else{"display:contents"},
+                    files::FilesPanel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}",state}
+                }
             }
             // A thread opened from Activity replaces the transcript instead of
             // sitting beside it: Slack shows one surface there, not two.
-            if !activity_thread_focus && !matches!(snapshot.main_view, MainView::Files | MainView::Scheduled) {
+            if workflow_entry || (!activity_thread_focus && !matches!(snapshot.main_view, MainView::Files | MainView::Scheduled)) {
                 section { class: "conversation",
+                    if workflow_entry {
+                        {crate::app_home::about::management::panel(state)}
+                    }
                     if show_timeline {
                         header { class: "conversation-header",
+                            style:if workflow_entry{"display:none"}else{"display:flex"},
                             {conversation_header(state, &snapshot, channel_name, huddle.as_ref())}
                         }
-                        {channel_resources::tabs(state, snapshot.channel_tab)}
+                        div {style:if workflow_entry{"display:none"}else{"display:contents"},
+                            {channel_resources::tabs(state, snapshot.channel_tab)}
+                        }
+                        div {id:"workflow-conversation-body",style:if workflow_entry{"display:none"}else{"display:contents"},
                         if snapshot.channel_tab == ChannelTab::AppAbout {
                             {crate::app_home::about::panel(state)}
                         } else if snapshot.channel_tab == ChannelTab::AppHome {
@@ -414,7 +426,8 @@ pub fn shell() -> Element {
                             {composer(state, &snapshot.core.composer.text, channel_name)}
                         }
                         }
-                    } else if matches!(snapshot.main_view, MainView::Unreads | MainView::Threads) {
+                        }
+                    } else if !workflow_entry && matches!(snapshot.main_view, MainView::Unreads | MainView::Threads) {
                         header { class: "conversation-header",
                             h2 {
                                 if snapshot.main_view == MainView::Unreads { "Unreads" }
@@ -422,7 +435,7 @@ pub fn shell() -> Element {
                             }
                         }
                         {secondary_view(state, &snapshot)}
-                    } else {
+                    } else if !workflow_entry {
                         div { class: "main-empty",
                             div { class: "bubble" }
                             p {
@@ -443,6 +456,7 @@ pub fn shell() -> Element {
             if let Some(root) = snapshot.thread_root.as_ref() {
                 aside {
                     class: if activity_thread_focus { "thread-pane wide" } else { "thread-pane" },
+                    style:if workflow_entry{"display:none"}else{"display:flex"},
                     // A file dropped on the thread is a reply in it. Stopping
                     // here keeps the shell's handler from filing it into the
                     // channel composer as well.

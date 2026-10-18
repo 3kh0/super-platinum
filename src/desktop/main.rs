@@ -25,6 +25,7 @@ mod clipboard_check;
 mod completion_check;
 mod composer_emoji;
 mod connection;
+mod directory_member_fetches;
 mod download;
 mod drafts;
 mod emoji_catalog;

@@ -2,6 +2,8 @@
 //! transport authority. The desktop owner checks account, visit and current input
 //! before sending, and retains every sent operation through cancellation.
 mod activity;
+mod activity_export;
+pub mod activity_members;
 pub mod capabilities;
 mod editor;
 mod followup;
@@ -14,6 +16,7 @@ mod trigger;
 pub use activity::{
     ActivityDetail, ActivityDetailRequest, ActivityFilters, ActivityPage, ActivityQuery,
 };
+pub use activity_export::{ACTIVITY_EXPORT_EXPERIMENT, ActivityExport, ActivityExportInitiated};
 pub use editor::{Editor, EditorLoad, ReadKind, ReadRequest};
 pub use followup::{ConnectorApps, EditPermissions, FollowUpPhase, FollowUpPlan, FollowUpStage};
 pub use list::{List, ListPage, ListQuery, ListRow, ListWorkflows, Sort};
@@ -23,6 +26,7 @@ pub use observe::Observation;
 pub use publication::Publication;
 pub use trigger::TriggerUpdate;
 
+pub mod member_hydration;
 use crate::config::WorkspaceSession;
 use crate::slack::{Error, PreparedRequest, SlackClient};
 use serde_json::{Value, json};

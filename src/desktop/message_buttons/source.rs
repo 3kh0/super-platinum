@@ -112,6 +112,37 @@ impl Source {
         Ok(source)
     }
 
+    /// Client-owned navigation needs the exact canonical message, not an app service.
+    pub(crate) fn client_message<'a>(
+        &self,
+        shell: &'a ShellState,
+    ) -> Result<&'a Message, MessageActionError> {
+        let message = self.resolve(shell, true)?;
+        if !revision::matches(message, self.revision.as_ref()) {
+            return Err(MessageActionError::StaleMessage);
+        }
+        Ok(message)
+    }
+    pub(crate) fn client_key(&self, metadata: &BlockElementMetadata) -> String {
+        let bag = match &self.bag {
+            Bag::Timeline => json!(["timeline"]),
+            Bag::Thread { root } => json!(["thread", root]),
+            Bag::Pins { item_key } => json!(["pins", item_key]),
+        };
+        json!([
+            self.owner.account_epoch,
+            self.owner.team_id,
+            self.owner.channel_id,
+            self.owner.message_ts,
+            self.channel_generation,
+            self.bag_generation,
+            bag,
+            metadata.block_id,
+            metadata.action_id
+        ])
+        .to_string()
+    }
+
     pub(crate) fn owner(&self) -> &MessageActionOwner {
         &self.owner
     }

@@ -5,6 +5,8 @@ use super_platinum_core::slack::realtime::{self, ConnectParams};
 use super::common::{credentials, persist_workspace, refresh_history};
 use crate::state::ShellState;
 
+mod channel_metadata;
+
 pub async fn refresh(mut state: Signal<ShellState>) {
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         return;
@@ -18,6 +20,12 @@ pub async fn refresh(mut state: Signal<ShellState>) {
     workspaces.sort_by_key(|session| Some(&session.team_id) != active_team.as_ref());
     for workspace_session in workspaces {
         let team = workspace_session.team_id.clone();
+        let warm = state
+            .peek()
+            .core
+            .workspaces
+            .get(&team)
+            .is_some_and(|w| !w.channels.is_empty());
         let counts_owner = (state.peek().core.account_epoch == refresh_epoch)
             .then(|| {
                 crate::realtime::activity_counts::CountsOwner::capture(
@@ -32,7 +40,7 @@ pub async fn refresh(mut state: Signal<ShellState>) {
             if shell.core.account_epoch != refresh_epoch {
                 return;
             }
-            super_platinum_core::state::posting_metadata::authority::BootRead::begin(
+            super_platinum_core::state::posting_metadata::authority::BootRead::begin_full(
                 &mut shell.core,
                 &transport,
                 &workspace_session,
@@ -47,6 +55,8 @@ pub async fn refresh(mut state: Signal<ShellState>) {
         match transport.execute(request).await {
             Ok(raw) => {
                 let mut shell = state.write();
+                let boot_mode =
+                    crate::directory_member_fetches::automatic::mode::Boot::capture(&raw);
                 match boot_read.apply(&mut shell.core, raw, true) {
                     Ok(true) => {}
                     Ok(false) => continue,
@@ -58,6 +68,7 @@ pub async fn refresh(mut state: Signal<ShellState>) {
                         continue;
                     }
                 }
+                let _ = boot_mode.accepted(&mut shell, &team);
                 shell.core.screen = super_platinum_core::state::Screen::Main;
                 shell.loading = false;
                 shell.refresh_from_core();
@@ -73,6 +84,7 @@ pub async fn refresh(mut state: Signal<ShellState>) {
             }
         }
 
+        crate::app_home::channel_fetches::request_initialization(&mut state.write(), &team, warm);
         if let Some(owner) = &counts_owner {
             owner.refresh_badge_rules(state);
         }
@@ -307,6 +319,11 @@ async fn refresh_channel_metadata(
     workspace_session: &super_platinum_core::config::WorkspaceSession,
     team: &str,
 ) {
+    let Some(owner) =
+        channel_metadata::Owner::capture(&state.peek().core, transport, workspace_session)
+    else {
+        return;
+    };
     let batches = state
         .read()
         .core
@@ -315,26 +332,24 @@ async fn refresh_channel_metadata(
         .map(|workspace| workspace.channels_to_refresh())
         .unwrap_or_default();
     for batch in batches {
-        let revision = state
-            .peek()
-            .core
-            .workspaces
-            .get(team)
-            .map(|w| w.channel_lifecycle.revision())
-            .unwrap_or(0);
+        let Some(read) = owner.begin(&state.peek().core, batch.keys()) else {
+            return;
+        };
         let posting =
-            crate::bootstrap::posting_ingress::capture(&state, transport, workspace_session)
+            crate::bootstrap::posting_ingress::capture(state, transport, workspace_session)
                 .for_channels(batch.keys());
         match api::fetch_generic_info(transport, client, workspace_session, &batch).await {
-            Ok(page) if !page.channels.is_empty() => {
-                posting.channels(&state, &page.channels);
-                if let Some(workspace) = state.write().core.workspaces.get_mut(team) {
-                    workspace.apply_channel_refresh_since(page, revision);
+            Ok(page) => {
+                if !read.accepts(&state.peek().core, &page.channels) {
+                    return;
                 }
+                posting.channels(state, &page.channels);
+                read.refresh(&mut state.write().core, page);
             }
-            Ok(_) => {}
             Err(error) => {
-                eprintln!("super-platinum: conversations.genericInfo failed: {error}");
+                if owner.current(&state.peek().core) {
+                    eprintln!("super-platinum: conversations.genericInfo failed: {error}");
+                }
                 break;
             }
         }
@@ -348,6 +363,11 @@ async fn hydrate_surface_channels(
     workspace_session: &super_platinum_core::config::WorkspaceSession,
     team: &str,
 ) {
+    let Some(owner) =
+        channel_metadata::Owner::capture(&state.peek().core, transport, workspace_session)
+    else {
+        return;
+    };
     let channels = {
         let shell = state.read();
         let Some(workspace) = shell.core.workspaces.get(team) else {
@@ -372,32 +392,58 @@ async fn hydrate_surface_channels(
     if channels.is_empty() {
         return;
     }
-    state.write().core.channel_hydrated.extend(
-        channels
-            .iter()
-            .map(|channel| (team.to_owned(), channel.clone())),
-    );
-    let mut loaded = Vec::new();
     for chunk in channels.chunks(50) {
+        // Another surface may have claimed a later batch while this worker
+        // awaited an earlier one. Reserve only IDs still unclaimed now.
+        let chunk: Vec<_> = {
+            let shell = state.peek();
+            chunk
+                .iter()
+                .filter(|id| {
+                    !shell
+                        .core
+                        .channel_hydrated
+                        .contains(&(team.to_owned(), (*id).clone()))
+                })
+                .cloned()
+                .collect()
+        };
+        if chunk.is_empty() {
+            continue;
+        }
+        let Some(read) = owner.begin(&state.peek().core, &chunk) else {
+            return;
+        };
+        state.write().core.channel_hydrated.extend(
+            chunk
+                .iter()
+                .map(|channel| (team.to_owned(), channel.clone())),
+        );
         let posting =
-            crate::bootstrap::posting_ingress::capture(&state, transport, workspace_session)
-                .for_channels(chunk);
+            crate::bootstrap::posting_ingress::capture(state, transport, workspace_session)
+                .for_channels(&chunk);
         match api::fetch_channels_info(transport, client, workspace_session, chunk.to_vec()).await {
             Ok(channels) => {
-                posting.channels(&state, &channels);
-                loaded.extend(channels);
+                if !read.accepts(&state.peek().core, &channels) {
+                    read.retry_hydration(&mut state.write().core);
+                    return;
+                }
+                posting.channels(state, &channels);
+                let mut shell = state.write();
+                // Missing rows are not successful hydration. Permit a later surface
+                // visit to retry, including a response containing no channel rows.
+                if read.hydrate(&mut shell.core, channels) {
+                    shell.refresh_from_core();
+                }
             }
-            Err(error) => eprintln!("super-platinum: unfurl channel hydration failed: {error}"),
+            Err(error) => {
+                if owner.current(&state.peek().core) {
+                    read.retry_hydration(&mut state.write().core);
+                    eprintln!("super-platinum: unfurl channel hydration failed: {error}");
+                }
+            }
         }
     }
-    if loaded.is_empty() {
-        return;
-    }
-    let mut shell = state.write();
-    if let Some(workspace) = shell.core.workspaces.get_mut(team) {
-        workspace.apply_channels_info(loaded);
-    }
-    shell.refresh_from_core();
 }
 
 fn register_surface_avatars(state: &Signal<ShellState>, team: &str) {
@@ -803,5 +849,8 @@ pub(crate) fn install_loaded(mut state: Signal<ShellState>, mut loaded: ShellSta
     crate::file_share::carry_pending(&mut previous, &mut loaded);
     crate::profile_edit::recording::carry_pending(&mut previous, &mut loaded);
     crate::app_home::workflows::navigation_history::carry(&mut previous, &mut loaded);
+    crate::app_home::about::management::carry_pending(&mut previous, &mut loaded);
+    crate::app_home::channel_fetches::carry(&mut previous, &mut loaded);
+    crate::directory_member_fetches::carry_into_fresh_shell(&mut previous, &mut loaded);
     *previous = loaded;
 }

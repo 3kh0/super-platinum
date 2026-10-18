@@ -1,0 +1,526 @@
+[
+  {
+    "name": "public",
+    "before": [],
+    "incoming": [
+      {
+        "id": "CONE",
+        "is_channel": true
+      }
+    ],
+    "expected": [],
+    "actualSelectorReads": []
+  },
+  {
+    "name": "im",
+    "before": [],
+    "incoming": [
+      {
+        "id": "DONE",
+        "is_im": true,
+        "user": "UONE"
+      }
+    ],
+    "expected": [
+      "UONE"
+    ],
+    "actualSelectorReads": [
+      "UONE"
+    ]
+  },
+  {
+    "name": "im-self",
+    "before": [],
+    "incoming": [
+      {
+        "id": "DONE",
+        "is_im": true,
+        "user": "USELF"
+      }
+    ],
+    "expected": [
+      "USELF"
+    ],
+    "actualSelectorReads": [
+      "USELF"
+    ]
+  },
+  {
+    "name": "mpim-zero",
+    "before": [],
+    "incoming": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": []
+      }
+    ],
+    "expected": [],
+    "actualSelectorReads": []
+  },
+  {
+    "name": "mpim-self-only",
+    "before": [],
+    "incoming": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "USELF"
+        ]
+      }
+    ],
+    "expected": [],
+    "actualSelectorReads": []
+  },
+  {
+    "name": "mpim-one-peer",
+    "before": [],
+    "incoming": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "USELF",
+          "UONE"
+        ]
+      }
+    ],
+    "expected": [
+      "UONE"
+    ],
+    "actualSelectorReads": [
+      "UONE"
+    ]
+  },
+  {
+    "name": "mpim-two-peers",
+    "before": [],
+    "incoming": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "UONE",
+          "USELF",
+          "UTWO"
+        ]
+      }
+    ],
+    "expected": [
+      "UONE",
+      "UTWO"
+    ],
+    "actualSelectorReads": [
+      "UONE",
+      "UTWO"
+    ]
+  },
+  {
+    "name": "mpim-custom",
+    "before": [],
+    "incoming": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "UONE",
+          "UTWO"
+        ],
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "name": "custom"
+      }
+    ],
+    "expected": [],
+    "actualSelectorReads": []
+  },
+  {
+    "name": "im-peer-replaced",
+    "before": [
+      {
+        "id": "DONE",
+        "is_im": true,
+        "user": "UOLD",
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_mpim": false,
+        "name": "UOLD",
+        "_name_lc": "uold",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "DONE",
+        "is_im": true,
+        "user": "UNEW"
+      }
+    ],
+    "expected": [
+      "UNEW"
+    ],
+    "actualSelectorReads": [
+      "UNEW"
+    ]
+  },
+  {
+    "name": "im-becomes-public",
+    "before": [
+      {
+        "id": "DONE",
+        "is_im": true,
+        "user": "UOLD",
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_mpim": false,
+        "name": "UOLD",
+        "_name_lc": "uold",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "DONE",
+        "is_im": false,
+        "is_channel": true
+      }
+    ],
+    "expected": [],
+    "actualSelectorReads": []
+  },
+  {
+    "name": "mpim-members-union",
+    "before": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "UOLD",
+          "USELF"
+        ],
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_name_lc": "",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "UNEW"
+        ]
+      }
+    ],
+    "expected": [
+      "UNEW",
+      "UOLD"
+    ],
+    "actualSelectorReads": [
+      "UNEW",
+      "UOLD"
+    ]
+  },
+  {
+    "name": "partial-members-ignored",
+    "before": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "UOLD",
+          "USELF"
+        ],
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_name_lc": "",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "GONE",
+        "members": [
+          "UNEW"
+        ]
+      }
+    ],
+    "expected": [
+      "UOLD"
+    ],
+    "actualSelectorReads": [
+      "UOLD"
+    ]
+  },
+  {
+    "name": "custom-turned-on",
+    "before": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "UOLD",
+          "USELF"
+        ],
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_name_lc": "",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "GONE",
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "name": "custom"
+      }
+    ],
+    "expected": [],
+    "actualSelectorReads": []
+  },
+  {
+    "name": "custom-turned-off",
+    "before": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "UOLD",
+          "USELF"
+        ],
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "name": "custom",
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "custom",
+        "_name_lc": "custom",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "GONE",
+        "properties": {}
+      }
+    ],
+    "expected": [
+      "UOLD"
+    ],
+    "actualSelectorReads": [
+      "UOLD"
+    ]
+  },
+  {
+    "name": "same-prestate-duplicate",
+    "before": [
+      {
+        "id": "DONE",
+        "is_im": true,
+        "user": "UOLD",
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_mpim": false,
+        "name": "UOLD",
+        "_name_lc": "uold",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "DONE",
+        "is_im": true,
+        "user": "UNEW"
+      },
+      {
+        "id": "DONE"
+      }
+    ],
+    "expected": [
+      "UNEW",
+      "UOLD"
+    ],
+    "actualSelectorReads": [
+      "UNEW",
+      "UOLD"
+    ]
+  },
+  {
+    "name": "same-prestate-new-duplicate",
+    "before": [],
+    "incoming": [
+      {
+        "id": "DONE",
+        "is_im": true,
+        "user": "UNEW"
+      },
+      {
+        "id": "DONE"
+      }
+    ],
+    "expected": [
+      "UNEW"
+    ],
+    "actualSelectorReads": [
+      "UNEW"
+    ]
+  },
+  {
+    "name": "unknown-predecessor-replaced",
+    "before": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "UOLD"
+        ],
+        "isUnknown": true
+      }
+    ],
+    "incoming": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "UNEW"
+        ]
+      }
+    ],
+    "expected": [
+      "UNEW"
+    ],
+    "actualSelectorReads": [
+      "UNEW"
+    ]
+  },
+  {
+    "name": "mpim-precedes-im",
+    "before": [],
+    "incoming": [
+      {
+        "id": "GONE",
+        "is_mpim": true,
+        "members": [
+          "UONE"
+        ],
+        "is_im": true,
+        "user": "UIGNORED"
+      }
+    ],
+    "expected": [
+      "UONE"
+    ],
+    "actualSelectorReads": [
+      "UONE"
+    ]
+  }
+]

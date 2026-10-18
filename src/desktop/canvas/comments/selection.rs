@@ -171,7 +171,7 @@ fn root<'a>(
 }
 
 pub(super) fn open(
-    state: Signal<ShellState>,
+    mut state: Signal<ShellState>,
     mut model: Signal<State>,
     owner: Owner,
     control: String,
@@ -179,6 +179,7 @@ pub(super) fn open(
     if !owner.current(&state.peek()) || control.is_empty() || control.len() > 256 {
         return;
     }
+    cancel_pending_link(&mut state.write());
     // A deliberate current selection supersedes only the view's read. Original
     // reply/resolve/annotation operations live in their separate retained roots.
     {

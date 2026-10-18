@@ -16,11 +16,15 @@ pub(crate) fn MessageAppButton(
 ) -> Element {
     // Source is an ordinary prop, so explicitly track it rather than reading
     // the whole shell from an effect. ensure() peeks and owns request guards.
+    let client_owned = crate::message_buttons::workflow_logs::recognizes(&metadata);
+    let client_key = client_owned.then(|| source.client_key(&metadata));
     let hydration_revision = state.read().message_buttons.hydration_revision;
     use_effect(use_reactive(
-        (&source, &hydration_revision),
-        move |(source, _)| {
-            crate::message_buttons::hydration::ensure(state, source);
+        (&source, &hydration_revision, &client_owned),
+        move |(source, _, client_owned)| {
+            if !client_owned {
+                crate::message_buttons::hydration::ensure(state, source);
+            }
         },
     ));
     let presentation =
@@ -35,16 +39,19 @@ pub(crate) fn MessageAppButton(
         }
     });
     let hover_source = source.clone();
-    rsx! {button {
+    rsx! {span { style:"display:contents", button {
+        "data-workflow-logs-source":client_key.clone(),
         class:if presentation.enabled {style.class().to_owned()}else{format!("{} inert",style.class())},
         disabled:!presentation.enabled,title:"{title}",
         "aria-label":"{accessibility_label}","aria-busy":presentation.busy.to_string(),
-        onmouseenter:move |_|crate::message_buttons::hydration::retry(state,hover_source.clone()),
+        onmouseenter:move |_|{if !client_owned {crate::message_buttons::hydration::retry(state,hover_source.clone());}},
         ondoubleclick:move |event|event.stop_propagation(),
         onclick:move |event|{
             event.stop_propagation();
             crate::message_buttons::click(state,source.clone(),metadata.clone());
         },
         "{label}"
+    }
+    if client_owned {span {class:"workflow-entry-native-notice",role:"status","data-workflow-logs-notice":client_key.clone()}}
     }}
 }

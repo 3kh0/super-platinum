@@ -11,9 +11,11 @@
   if (!current() || pane.dataset.composing !== 'false' || !field.isContentEditable) return null;
   const status = pane.querySelector('#profile-section-rich-status');
   if (status) status.textContent = '';
-  let blocks;
-  try { blocks = window.superPlatinumRichEditor.read(field.id); } catch {}
-  if (!Array.isArray(blocks)) {
+  let captured;
+  try { captured = window.superPlatinumRichEditor.resolved(field); } catch {}
+  if (!captured || !Array.isArray(captured.snapshot?.blocks) || !Array.isArray(captured.tokens) ||
+      captured.snapshot.composing || captured.snapshot.generation !== String(serial) ||
+      !Number.isSafeInteger(captured.snapshot.revision) || captured.snapshot.revision < 0) {
     if (status) status.textContent = 'Could not read this description. Your text is still here. Try again.';
     return null;
   }
@@ -24,7 +26,7 @@
   let expire;
   const expired = new Promise(resolve => expire = resolve);
   const ticket = {
-    blocks, expired,
+    captured, expired,
     release() {
       if (!active) return;
       active = false;

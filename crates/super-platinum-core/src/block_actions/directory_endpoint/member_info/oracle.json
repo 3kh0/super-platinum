@@ -1,0 +1,594 @@
+{
+  "cases": [
+    {
+      "label": "unconditional",
+      "ids": [
+        "U00000001",
+        "U00000002"
+      ],
+      "requests": [
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001",
+              "U00000002"
+            ]
+          }
+        }
+      ],
+      "waits": [],
+      "concurrency": [
+        2
+      ],
+      "result": {
+        "objects": [
+          {
+            "id": "U00000002",
+            "name": "B"
+          },
+          {
+            "id": "U00000001",
+            "name": "A"
+          }
+        ],
+        "failedIds": [],
+        "disconnectedIds": [],
+        "canInteract": {
+          "U00000001": true,
+          "U00000002": false
+        }
+      }
+    },
+    {
+      "label": "chunks100",
+      "ids": [
+        "U00000001",
+        "U00000002",
+        "U00000003",
+        "U00000004",
+        "U00000005",
+        "U00000006",
+        "U00000007",
+        "U00000008",
+        "U00000009",
+        "U00000010",
+        "U00000011",
+        "U00000012",
+        "U00000013",
+        "U00000014",
+        "U00000015",
+        "U00000016",
+        "U00000017",
+        "U00000018",
+        "U00000019",
+        "U00000020",
+        "U00000021",
+        "U00000022",
+        "U00000023",
+        "U00000024",
+        "U00000025",
+        "U00000026",
+        "U00000027",
+        "U00000028",
+        "U00000029",
+        "U00000030",
+        "U00000031",
+        "U00000032",
+        "U00000033",
+        "U00000034",
+        "U00000035",
+        "U00000036",
+        "U00000037",
+        "U00000038",
+        "U00000039",
+        "U00000040",
+        "U00000041",
+        "U00000042",
+        "U00000043",
+        "U00000044",
+        "U00000045",
+        "U00000046",
+        "U00000047",
+        "U00000048",
+        "U00000049",
+        "U00000050",
+        "U00000051",
+        "U00000052",
+        "U00000053",
+        "U00000054",
+        "U00000055",
+        "U00000056",
+        "U00000057",
+        "U00000058",
+        "U00000059",
+        "U00000060",
+        "U00000061",
+        "U00000062",
+        "U00000063",
+        "U00000064",
+        "U00000065",
+        "U00000066",
+        "U00000067",
+        "U00000068",
+        "U00000069",
+        "U00000070",
+        "U00000071",
+        "U00000072",
+        "U00000073",
+        "U00000074",
+        "U00000075",
+        "U00000076",
+        "U00000077",
+        "U00000078",
+        "U00000079",
+        "U00000080",
+        "U00000081",
+        "U00000082",
+        "U00000083",
+        "U00000084",
+        "U00000085",
+        "U00000086",
+        "U00000087",
+        "U00000088",
+        "U00000089",
+        "U00000090",
+        "U00000091",
+        "U00000092",
+        "U00000093",
+        "U00000094",
+        "U00000095",
+        "U00000096",
+        "U00000097",
+        "U00000098",
+        "U00000099",
+        "U00000100",
+        "U00000101"
+      ],
+      "requests": [
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001",
+              "U00000002",
+              "U00000003",
+              "U00000004",
+              "U00000005",
+              "U00000006",
+              "U00000007",
+              "U00000008",
+              "U00000009",
+              "U00000010",
+              "U00000011",
+              "U00000012",
+              "U00000013",
+              "U00000014",
+              "U00000015",
+              "U00000016",
+              "U00000017",
+              "U00000018",
+              "U00000019",
+              "U00000020",
+              "U00000021",
+              "U00000022",
+              "U00000023",
+              "U00000024",
+              "U00000025",
+              "U00000026",
+              "U00000027",
+              "U00000028",
+              "U00000029",
+              "U00000030",
+              "U00000031",
+              "U00000032",
+              "U00000033",
+              "U00000034",
+              "U00000035",
+              "U00000036",
+              "U00000037",
+              "U00000038",
+              "U00000039",
+              "U00000040",
+              "U00000041",
+              "U00000042",
+              "U00000043",
+              "U00000044",
+              "U00000045",
+              "U00000046",
+              "U00000047",
+              "U00000048",
+              "U00000049",
+              "U00000050",
+              "U00000051",
+              "U00000052",
+              "U00000053",
+              "U00000054",
+              "U00000055",
+              "U00000056",
+              "U00000057",
+              "U00000058",
+              "U00000059",
+              "U00000060",
+              "U00000061",
+              "U00000062",
+              "U00000063",
+              "U00000064",
+              "U00000065",
+              "U00000066",
+              "U00000067",
+              "U00000068",
+              "U00000069",
+              "U00000070",
+              "U00000071",
+              "U00000072",
+              "U00000073",
+              "U00000074",
+              "U00000075",
+              "U00000076",
+              "U00000077",
+              "U00000078",
+              "U00000079",
+              "U00000080",
+              "U00000081",
+              "U00000082",
+              "U00000083",
+              "U00000084",
+              "U00000085",
+              "U00000086",
+              "U00000087",
+              "U00000088",
+              "U00000089",
+              "U00000090",
+              "U00000091",
+              "U00000092",
+              "U00000093",
+              "U00000094",
+              "U00000095",
+              "U00000096",
+              "U00000097",
+              "U00000098",
+              "U00000099",
+              "U00000100"
+            ]
+          }
+        },
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000101"
+            ]
+          }
+        }
+      ],
+      "waits": [],
+      "concurrency": [
+        2
+      ],
+      "result": {
+        "objects": [
+          {
+            "id": "U00000100"
+          },
+          {
+            "id": "U00000101"
+          }
+        ],
+        "failedIds": [],
+        "disconnectedIds": [],
+        "canInteract": {}
+      }
+    },
+    {
+      "label": "pending-then-resolved",
+      "ids": [
+        "U00000001"
+      ],
+      "requests": [
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001"
+            ]
+          }
+        },
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001"
+            ]
+          }
+        }
+      ],
+      "waits": [
+        500
+      ],
+      "concurrency": [
+        2,
+        2
+      ],
+      "result": {
+        "objects": [
+          {
+            "id": "U00000001"
+          }
+        ],
+        "failedIds": [],
+        "disconnectedIds": [],
+        "canInteract": {
+          "U00000001": true
+        }
+      }
+    },
+    {
+      "label": "pending-exhausted",
+      "ids": [
+        "U00000001"
+      ],
+      "requests": [
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001"
+            ]
+          }
+        },
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001"
+            ]
+          }
+        },
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001"
+            ]
+          }
+        },
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001"
+            ]
+          }
+        }
+      ],
+      "waits": [
+        500,
+        1000,
+        1500
+      ],
+      "concurrency": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "result": {
+        "objects": [],
+        "failedIds": [
+          "U00000001"
+        ],
+        "disconnectedIds": [],
+        "canInteract": {}
+      }
+    },
+    {
+      "label": "ordered-pages-and-final-map",
+      "ids": [
+        "U00000001",
+        "U00000002"
+      ],
+      "requests": [
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001",
+              "U00000002"
+            ]
+          }
+        },
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001",
+              "U00000002"
+            ],
+            "marker": "more"
+          }
+        }
+      ],
+      "waits": [],
+      "concurrency": [
+        2
+      ],
+      "result": {
+        "objects": [
+          {
+            "id": "U00000002"
+          },
+          {
+            "id": "U00000001"
+          }
+        ],
+        "failedIds": [],
+        "disconnectedIds": [
+          "U00000002"
+        ],
+        "canInteract": {
+          "U00000001": false
+        }
+      }
+    },
+    {
+      "label": "failed-vs-invalid",
+      "ids": [
+        "U00000001",
+        "U00000002"
+      ],
+      "requests": [
+        {
+          "team": "T00000001",
+          "method": "users/info",
+          "args": {
+            "check_interaction": true,
+            "include_profile_only_users": true,
+            "ids": [
+              "U00000001",
+              "U00000002"
+            ]
+          }
+        }
+      ],
+      "waits": [],
+      "concurrency": [
+        2
+      ],
+      "result": {
+        "objects": [],
+        "failedIds": [
+          "U00000002"
+        ],
+        "disconnectedIds": [],
+        "canInteract": {}
+      }
+    }
+  ],
+  "interactions": [
+    {
+      "prior": null,
+      "incoming": null,
+      "result": [
+        {
+          "id": "U00000001",
+          "is_stranger": false
+        }
+      ]
+    },
+    {
+      "prior": null,
+      "incoming": true,
+      "result": [
+        {
+          "id": "U00000001",
+          "is_stranger": false
+        }
+      ]
+    },
+    {
+      "prior": null,
+      "incoming": false,
+      "result": [
+        {
+          "id": "U00000001",
+          "is_stranger": true
+        }
+      ]
+    },
+    {
+      "prior": true,
+      "incoming": null,
+      "result": [
+        {
+          "id": "U00000001",
+          "is_stranger": false
+        }
+      ]
+    },
+    {
+      "prior": true,
+      "incoming": true,
+      "result": [
+        {
+          "id": "U00000001",
+          "is_stranger": false
+        }
+      ]
+    },
+    {
+      "prior": true,
+      "incoming": false,
+      "result": [
+        {
+          "id": "U00000001",
+          "is_stranger": true
+        }
+      ]
+    },
+    {
+      "prior": false,
+      "incoming": null,
+      "result": [
+        {
+          "id": "U00000001",
+          "is_stranger": true
+        }
+      ]
+    },
+    {
+      "prior": false,
+      "incoming": true,
+      "result": [
+        {
+          "id": "U00000001",
+          "is_stranger": false
+        }
+      ]
+    },
+    {
+      "prior": false,
+      "incoming": false,
+      "result": [
+        {
+          "id": "U00000001",
+          "is_stranger": true
+        }
+      ]
+    }
+  ],
+  "disconnectionContract": "nzRy passes original requested IDs as ScqY fifth argument (clear disconnected), then returned disconnectedIds as sixth argument (mark disconnected). No member deletion."
+}

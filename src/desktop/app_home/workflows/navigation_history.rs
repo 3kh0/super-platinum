@@ -2,6 +2,8 @@
 //! No synchronous storage work in selection/render paths. The browser store is
 //! partitioned by the existing opaque account UUID, never by a Slack token.
 use super::*;
+mod read;
+pub(in crate::app_home) use read::capture_for;
 use std::{
     collections::{BTreeMap, VecDeque},
     sync::Mutex,
@@ -41,13 +43,13 @@ struct Shared {
     revision: u64,
 }
 #[derive(Clone)]
-pub(super) struct Witness {
+pub(in crate::app_home) struct Witness {
     account: String,
     shared: Arc<Mutex<Shared>>,
     revision: u64,
 }
 impl Witness {
-    pub(super) fn current(&self, s: &ShellState) -> bool {
+    pub(in crate::app_home) fn current(&self, s: &ShellState) -> bool {
         identity(s).as_deref() == Some(&self.account)
             && s.app_home
                 .workflow_navigation

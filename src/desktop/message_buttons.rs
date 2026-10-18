@@ -52,6 +52,7 @@ pub(crate) mod time_check;
 pub(crate) mod time_fixture;
 pub(crate) mod user_check;
 pub(crate) mod user_fixture;
+pub(crate) mod workflow_logs;
 use source::{Captured, Source};
 #[cfg(test)]
 mod tests;
@@ -77,6 +78,7 @@ pub(crate) struct State {
     inputs: inputs::Cache,
     multi_picker: Option<inputs::multi::Picker>,
     confirmation: Option<Pending>,
+    workflow_logs: Option<workflow_logs::Pending>,
     operations: BTreeMap<Key, Operation>,
 }
 struct Pending {
@@ -166,6 +168,9 @@ pub(crate) fn presentation_for_button(
     source: &Source,
     metadata: &BlockElementMetadata,
 ) -> ButtonState {
+    if let Some(presentation) = workflow_logs::presentation(shell, source, metadata) {
+        return presentation;
+    }
     if let Err(reason) = capture(shell, source, metadata) {
         return ButtonState::unavailable(if hydration::pending(shell, source) {
             "Loading app information\u{2026}"
@@ -239,6 +244,9 @@ pub(crate) struct Confirmation {
     pub busy: bool,
 }
 pub(crate) fn confirmation(shell: &ShellState) -> Option<Confirmation> {
+    if shell.message_buttons.workflow_logs.is_some() {
+        return workflow_logs::confirmation(shell);
+    }
     let pending = shell.message_buttons.confirmation.as_ref()?;
     let confirm = pending.captured.confirmation()?;
     Some(Confirmation {
@@ -252,6 +260,7 @@ pub(crate) fn confirmation(shell: &ShellState) -> Option<Confirmation> {
     })
 }
 pub(crate) fn cancel_local(shell: &mut ShellState) {
+    shell.message_buttons.workflow_logs = None;
     if let Some(pending) = shell.message_buttons.confirmation.take() {
         inputs::invalidate(shell, pending.captured.source());
     }
@@ -263,6 +272,9 @@ pub(crate) fn cancel(mut state: Signal<ShellState>) {
     cancel_local(&mut state.write());
 }
 pub(crate) fn click(mut state: Signal<ShellState>, source: Source, metadata: BlockElementMetadata) {
+    if workflow_logs::click(state, &source, &metadata) {
+        return;
+    }
     let captured = {
         let mut shell = state.write();
         if shell.overlay.is_some() {
@@ -288,6 +300,9 @@ pub(crate) fn click(mut state: Signal<ShellState>, source: Source, metadata: Blo
     dispatch(state, captured);
 }
 pub(crate) fn confirm(mut state: Signal<ShellState>) {
+    if workflow_logs::confirm(state) {
+        return;
+    }
     let captured = {
         let mut shell = state.write();
         if shell.overlay != Some(Overlay::ButtonConfirmation) {

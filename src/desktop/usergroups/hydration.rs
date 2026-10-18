@@ -8,9 +8,21 @@ pub(super) struct Progress {
 }
 
 impl Progress {
+    pub(super) fn receive(
+        &mut self,
+        shell: &mut ShellState,
+        request: &super::ownership::GroupRead,
+        result: Result<Vec<UserGroup>, Error>,
+    ) -> bool {
+        if !request.current(shell) || result.as_ref().is_ok_and(|groups| !request.accepts(groups)) {
+            self.stopped = true;
+            return false;
+        }
+        self.apply(shell, &request.owner.session.team_id, result)
+    }
     /// Keep successful batches visible immediately. An error stops this run
     /// without undoing earlier batches or changing the next call's retry policy.
-    pub(super) fn apply(
+    fn apply(
         &mut self,
         shell: &mut ShellState,
         team: &str,

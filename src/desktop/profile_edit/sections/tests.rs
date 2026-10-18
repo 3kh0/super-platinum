@@ -261,6 +261,7 @@ fn accepted_write_requires_positive_readback_and_never_replays() {
     let read = begin_check(&mut s, a.visit, a.serial).unwrap();
     network::finish_check(&mut s, &read, Ok(response(&a.token.owner, "Changed")));
     assert!(!pending(&s));
+    assert!(!presentation(&s).unwrap().can_keep);
     assert!(
         !s.profile_edit
             .sections
@@ -273,6 +274,122 @@ fn accepted_write_requires_positive_readback_and_never_replays() {
             .dirty()
     );
     assert!(s.profile_edit.fixture.as_ref().unwrap().attempts.is_empty());
+}
+
+#[test]
+fn differing_readback_retains_proposed_fields_until_explicit_keep() {
+    let mut s = shell();
+    let a = changed(&mut s);
+    assert!(network::preflight(
+        &mut s,
+        &a,
+        &response(&a.token.owner, "Original")
+    ));
+    assert!(network::finish_write(&mut s, &a, Ok(())));
+    for _ in 0..2 {
+        let view = presentation(&s).unwrap();
+        let read = begin_check(&mut s, view.visit, view.serial).unwrap();
+        network::finish_check(&mut s, &read, Ok(response(&a.token.owner, "Different")));
+        let view = presentation(&s).unwrap();
+        assert_eq!(view.serial, a.serial);
+        assert!(view.uncertain && view.can_check && view.can_keep && !view.can_save);
+        let form = view.form.unwrap();
+        assert!(form.dirty());
+        assert!(matches!(form.value("E1"), Some(SectionValue::Text(text)) if text == "Changed"));
+        assert!(begin(&mut s, a.visit, a.serial).is_none());
+    }
+    // Reopening still shows the proposed edit, never an accidental replacement
+    // by the differing server values retained for the explicit Keep action.
+    assert!(!intercept_close(&mut s, Some(a.visit)));
+    assert!(open_shell(&mut s, a.visit).is_none());
+    let view = presentation(&s).unwrap();
+    assert!(
+        matches!(view.form.unwrap().value("E1"), Some(SectionValue::Text(text)) if text == "Changed")
+    );
+    assert!(!keep_shell(&mut s, view.visit, view.serial + 1));
+    assert!(pending(&s));
+    assert!(keep_shell(&mut s, view.visit, view.serial));
+    assert!(!pending(&s));
+    assert!(presentation(&s).is_none());
+    let entry = &s.profile_edit.sections.entries[&a.token.owner];
+    assert!(entry.message.is_none());
+    assert!(entry.checked.is_some());
+}
+
+#[test]
+fn later_matching_readback_confirms_retained_proposal() {
+    let mut s = shell();
+    let a = changed(&mut s);
+    assert!(network::preflight(
+        &mut s,
+        &a,
+        &response(&a.token.owner, "Original")
+    ));
+    network::finish_write(&mut s, &a, Err(Error::Transport("lost response".into())));
+    let read = begin_check(&mut s, a.visit, a.serial).unwrap();
+    network::finish_check(&mut s, &read, Ok(response(&a.token.owner, "Different")));
+    let read = begin_check(&mut s, a.visit, a.serial).unwrap();
+    network::finish_check(&mut s, &read, Ok(response(&a.token.owner, "Changed")));
+    let view = presentation(&s).unwrap();
+    assert!(!view.uncertain && !view.can_save && !view.can_keep);
+    assert_ne!(view.serial, a.serial);
+    assert!(!view.form.unwrap().dirty());
+    assert!(!pending(&s));
+}
+
+#[test]
+fn disconnected_section_fixture_exercises_actual_request_and_readback() {
+    let mut s = ShellState::fixture(crate::media::MediaRegistry::default());
+    fixture::install_interaction(&mut s);
+    assert!(fixture::interaction_enabled(&s));
+    for (outcome, expected_attempts, expected_reads) in [
+        (fixture::Outcome::Saved, 1, 1),
+        (fixture::Outcome::Rejected, 2, 1),
+        (fixture::Outcome::Uncertain, 3, 1),
+    ] {
+        let v = presentation(&s).unwrap();
+        let text = format!("Edit {expected_attempts}");
+        assert!(change_shell(
+            &mut s,
+            v.visit,
+            v.serial,
+            "text",
+            SectionValue::Text(text.clone())
+        ));
+        let a = begin(&mut s, v.visit, v.serial).unwrap();
+        s.profile_edit.sections.fixture.as_mut().unwrap().outcome = outcome;
+        fixture::save(&mut s, a);
+        assert!(begin(&mut s, v.visit, v.serial).is_none());
+        fixture::complete(&mut s);
+        let f = s.profile_edit.sections.fixture.as_ref().unwrap();
+        assert_eq!(f.attempts.len(), expected_attempts);
+        assert_eq!(f.reads, expected_reads);
+        let view = presentation(&s).unwrap();
+        let form = view.form.unwrap();
+        assert!(matches!(form.value("text"), Some(SectionValue::Text(value)) if value == &text));
+        assert!(
+            matches!(form.value("locked"), Some(SectionValue::Text(value)) if value == "Preserved organization value")
+        );
+    }
+    let view = presentation(&s).unwrap();
+    let a = begin_check(&mut s, view.visit, view.serial).unwrap();
+    fixture::check(&mut s, a);
+    let view = presentation(&s).unwrap();
+    assert!(view.can_keep && view.uncertain);
+    assert!(
+        matches!(view.form.unwrap().value("text"), Some(SectionValue::Text(value)) if value == "Edit 3")
+    );
+    assert_eq!(
+        s.profile_edit
+            .sections
+            .fixture
+            .as_ref()
+            .unwrap()
+            .attempts
+            .len(),
+        3
+    );
+    assert!(s.core.session.is_none() && s.core.transport.is_none());
 }
 #[test]
 fn unknown_outcome_survives_close_and_reopen_with_read_only_recovery() {

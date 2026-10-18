@@ -1,0 +1,2904 @@
+[
+  {
+    "name": "new public/defaults/deletions",
+    "before": [],
+    "incoming": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "latest": {
+          "ts": "7"
+        },
+        "last_read": "5",
+        "unread_count": 9,
+        "is_shared": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ]
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c2": "c2"
+    }
+  },
+  {
+    "name": "first slot and final duplicate",
+    "before": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true
+      },
+      {
+        "id": "C2",
+        "name": "renamed",
+        "is_channel": true
+      },
+      {
+        "id": "C1",
+        "name": "last",
+        "is_channel": true
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      },
+      {
+        "id": "C2",
+        "name": "renamed",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "renamed",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      },
+      {
+        "id": "C1",
+        "name": "last",
+        "is_channel": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "last",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C2",
+        "name": "renamed",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "renamed",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      },
+      {
+        "id": "C1",
+        "name": "last",
+        "is_channel": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "last",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1",
+      "renamed": "renamed",
+      "last": "last"
+    }
+  },
+  {
+    "name": "duplicate processing uses original prebatch row",
+    "before": [],
+    "incoming": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "topic": {
+          "value": "first"
+        }
+      },
+      {
+        "id": "C1",
+        "name": "second",
+        "is_channel": true
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "topic": {
+          "value": "first"
+        },
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      },
+      {
+        "id": "C1",
+        "name": "second",
+        "is_channel": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "second",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "second",
+        "is_channel": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "second",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1",
+      "second": "second"
+    }
+  },
+  {
+    "name": "empty retains store",
+    "before": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [],
+    "rows": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {}
+  },
+  {
+    "name": "same row remains same source value",
+    "before": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c2": "c2"
+    }
+  },
+  {
+    "name": "existing partial preserves omitted fields",
+    "before": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C2",
+        "purpose": {
+          "value": "new"
+        }
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {
+          "value": "new"
+        },
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {
+          "value": "new"
+        },
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c2": "c2"
+    }
+  },
+  {
+    "name": "missing zero pinned count stays absent",
+    "before": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C2",
+        "pinned_items_count": 0
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c2": "c2"
+    }
+  },
+  {
+    "name": "explicit nonzero pinned count retained",
+    "before": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C2",
+        "pinned_items_count": 3
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "pinned_items_count": 3
+      }
+    ],
+    "rows": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false,
+        "pinned_items_count": 3
+      }
+    ],
+    "lowercase": {
+      "c2": "c2"
+    }
+  },
+  {
+    "name": "new IM derives actual peer name",
+    "before": [],
+    "incoming": [
+      {
+        "id": "D1",
+        "user": "UPEER",
+        "is_im": true
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {
+        "UPEER": {
+          "id": "UPEER",
+          "name": "ÅLICE"
+        }
+      }
+    },
+    "updates": [
+      {
+        "id": "D1",
+        "user": "UPEER",
+        "is_im": true,
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_mpim": false,
+        "name": "ÅLICE",
+        "_name_lc": "ålice",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "D1",
+        "user": "UPEER",
+        "is_im": true,
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_mpim": false,
+        "name": "ÅLICE",
+        "_name_lc": "ålice",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "ÅLICE": "ålice"
+    }
+  },
+  {
+    "name": "unknown IM peer retains user fallback",
+    "before": [],
+    "incoming": [
+      {
+        "id": "D1",
+        "user": "UPEER",
+        "is_im": true
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {
+        "UPEER": {
+          "id": "UPEER",
+          "isUnknown": true,
+          "name": "wrong"
+        }
+      }
+    },
+    "updates": [
+      {
+        "id": "D1",
+        "user": "UPEER",
+        "is_im": true,
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_mpim": false,
+        "name": "UPEER",
+        "_name_lc": "upeer",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "D1",
+        "user": "UPEER",
+        "is_im": true,
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_mpim": false,
+        "name": "UPEER",
+        "_name_lc": "upeer",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "UPEER": "upeer"
+    }
+  },
+  {
+    "name": "new MPIM self excluded and exact observed peers retained",
+    "before": [],
+    "incoming": [
+      {
+        "id": "G1",
+        "name": "mpdm-internal",
+        "is_mpim": true,
+        "members": [
+          "USELF",
+          "UA",
+          "UB"
+        ]
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {
+        "UA": {
+          "id": "UA",
+          "name": "ann"
+        },
+        "UB": {
+          "id": "UB",
+          "name": "bob",
+          "isExternal": true,
+          "team_id": "TOTHER"
+        }
+      }
+    },
+    "updates": [
+      {
+        "id": "G1",
+        "name": "@ann,bob_TOTHER",
+        "is_mpim": true,
+        "members": [
+          "USELF",
+          "UA",
+          "UB"
+        ],
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "mpdm-internal",
+        "_name_lc": "@ann,bob_tother",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "G1",
+        "name": "@ann,bob_TOTHER",
+        "is_mpim": true,
+        "members": [
+          "USELF",
+          "UA",
+          "UB"
+        ],
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "mpdm-internal",
+        "_name_lc": "@ann,bob_tother",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "@ann,bob_TOTHER": "@ann,bob_tother"
+    }
+  },
+  {
+    "name": "new custom MPIM",
+    "before": [],
+    "incoming": [
+      {
+        "id": "G1",
+        "name": "Custom Name",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ],
+        "properties": {
+          "has_custom_mpdm_name": true
+        }
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "G1",
+        "name": "Custom Name",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ],
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "Custom Name",
+        "_name_lc": "custom name",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "G1",
+        "name": "Custom Name",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ],
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "Custom Name",
+        "_name_lc": "custom name",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "Custom Name": "custom name"
+    }
+  },
+  {
+    "name": "MPIM incoming-first membership union",
+    "before": [
+      {
+        "id": "G1",
+        "name": "Custom Name",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ],
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "Custom Name",
+        "_name_lc": "custom name",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UB",
+          "UC"
+        ],
+        "name": "Changed",
+        "properties": {
+          "has_custom_mpdm_name": true
+        }
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "G1",
+        "name": "Changed",
+        "is_mpim": true,
+        "members": [
+          "UB",
+          "UC",
+          "UA"
+        ],
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "Changed",
+        "_name_lc": "changed",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "G1",
+        "name": "Changed",
+        "is_mpim": true,
+        "members": [
+          "UB",
+          "UC",
+          "UA"
+        ],
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "Changed",
+        "_name_lc": "changed",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "Changed": "changed"
+    }
+  },
+  {
+    "name": "nonMPIM members update ignored",
+    "before": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C2",
+        "members": [
+          "UA"
+        ]
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C2",
+        "name": "c2",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE",
+          null,
+          "TTWO"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO",
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [
+          "TONE",
+          "TTHREE",
+          "TTHREE"
+        ],
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c2",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedLimitedTeamIds": [
+          "TONE",
+          "TTHREE"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c2": "c2"
+    }
+  },
+  {
+    "name": "noncustom MPIM incoming name ignored",
+    "before": [
+      {
+        "id": "G1",
+        "name": "Custom Name",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ],
+        "properties": {},
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "Custom Name",
+        "_name_lc": "custom name",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "incoming": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "name": "ignored"
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {
+        "UA": {
+          "id": "UA",
+          "name": "ann"
+        },
+        "UB": {
+          "id": "UB",
+          "name": "bob"
+        }
+      }
+    },
+    "updates": [
+      {
+        "id": "G1",
+        "name": "@ann,bob",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ],
+        "properties": {},
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "Custom Name",
+        "_name_lc": "@ann,bob",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "G1",
+        "name": "@ann,bob",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ],
+        "properties": {},
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": "Custom Name",
+        "_name_lc": "@ann,bob",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "@ann,bob": "@ann,bob"
+    }
+  },
+  {
+    "name": "public archive revokes membership",
+    "before": [],
+    "incoming": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_member": true,
+        "is_archived": true
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_member": false,
+        "is_archived": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_member": false,
+        "is_archived": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "observed retain archive assignment",
+    "before": [],
+    "incoming": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_member": true,
+        "is_archived": true
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": true,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_member": true,
+        "is_archived": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_member": true,
+        "is_archived": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "private archive preserves membership",
+    "before": [],
+    "incoming": [
+      {
+        "id": "G1",
+        "name": "g1",
+        "is_channel": true,
+        "is_private": true,
+        "is_member": true,
+        "is_archived": true
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "G1",
+        "name": "g1",
+        "is_channel": true,
+        "is_private": true,
+        "is_member": true,
+        "is_archived": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "_name_lc": "g1",
+        "topic": {},
+        "purpose": {},
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "G1",
+        "name": "g1",
+        "is_channel": true,
+        "is_private": true,
+        "is_member": true,
+        "is_archived": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "_name_lc": "g1",
+        "topic": {},
+        "purpose": {},
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "g1": "g1"
+    }
+  },
+  {
+    "name": "placeholder replaced",
+    "before": [
+      {
+        "id": "C1",
+        "isUnknown": true,
+        "name": "old",
+        "ignored": "old"
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "truthy name clears nonexistent",
+    "before": [],
+    "incoming": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "isNonExistent": true
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "isNonExistent": false,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "isNonExistent": false,
+        "is_general": false,
+        "is_group": false,
+        "is_mpim": false,
+        "is_im": false,
+        "is_org_mandatory": false,
+        "is_org_default": false,
+        "_name_lc": "c1",
+        "topic": {},
+        "purpose": {},
+        "is_member": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "boot migration cleared on absent incoming flag",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_migrating": true
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1"
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": true,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_migrating": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "_name_lc": "c1",
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_migrating": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "_name_lc": "c1",
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "ordinary update retains migration",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_migrating": true
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1"
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_migrating": true,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "_name_lc": "c1",
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "is_migrating": true,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "_name_lc": "c1",
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "equal raw arrays preserve derived companion",
+    "before": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE"
+        ],
+        "internalTeamIds": [
+          "TONE"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [],
+        "connectedLimitedTeamIds": []
+      }
+    ],
+    "incoming": [
+      {
+        "id": "C1",
+        "purpose": {}
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TTWO",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE"
+        ],
+        "internalTeamIds": [
+          "TONE"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [],
+        "connectedLimitedTeamIds": [],
+        "purpose": {},
+        "_name_lc": "c1",
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "C1",
+        "name": "c1",
+        "is_channel": true,
+        "internal_team_ids": [
+          "TONE"
+        ],
+        "internalTeamIds": [
+          "TONE"
+        ],
+        "connected_team_ids": [
+          "TONE",
+          "TTWO"
+        ],
+        "connectedTeamIds": [
+          "TTWO"
+        ],
+        "connected_limited_team_ids": [],
+        "connectedLimitedTeamIds": [],
+        "purpose": {},
+        "_name_lc": "c1",
+        "isNonExistent": false,
+        "isUnknown": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "c1": "c1"
+    }
+  },
+  {
+    "name": "custom name lowercase differs from absent unknown name",
+    "before": [],
+    "incoming": [
+      {
+        "id": "G2",
+        "is_mpim": true,
+        "name": "CASE",
+        "isUnknown": true,
+        "properties": {
+          "has_custom_mpdm_name": true
+        }
+      }
+    ],
+    "context": {
+      "selfId": "USELF",
+      "currentTeam": "TONE",
+      "omitTeam": "TONE",
+      "bootInFlight": false,
+      "retainArchived": false,
+      "members": {}
+    },
+    "updates": [
+      {
+        "id": "G2",
+        "is_mpim": true,
+        "name": "CASE",
+        "isUnknown": false,
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": null,
+        "_name_lc": "",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "G2",
+        "is_mpim": true,
+        "name": "CASE",
+        "isUnknown": false,
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "is_general": false,
+        "is_channel": false,
+        "is_group": false,
+        "is_im": false,
+        "_internal_name": null,
+        "_name_lc": "",
+        "topic": {},
+        "purpose": {},
+        "is_member": true,
+        "opened_this_session": false,
+        "scroll_top": -1,
+        "history_is_being_fetched": false,
+        "unread_highlights": [],
+        "unreads": [],
+        "has_fetched_history_after_scrollback": false,
+        "internalTeamIds": [],
+        "connectedLimitedTeamIds": [],
+        "connectedTeamIds": [],
+        "isNonExistent": false,
+        "fromAnotherTeam": false
+      }
+    ],
+    "lowercase": {
+      "": "",
+      "CASE": "case"
+    }
+  }
+]

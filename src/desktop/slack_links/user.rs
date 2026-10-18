@@ -3,7 +3,9 @@
 //! Retained client: B C/0c 638648 sends known humans to jhdg.AS;
 //! S toUserDMAndProfile 1534985 sets {memberId, showDM:true} (export 1552561).
 //! Offsets are Unicode characters in the hash-verified tmp/sb/js assets.
-use super::{Visit, WorkspaceRef, resolve_team, select_target};
+use super::{
+    FailureFeedback, Visit, WorkspaceRef, failure, report_failure, resolve_team, select_target,
+};
 use crate::state::ShellState;
 use dioxus::prelude::*;
 use super_platinum_core::slack::{
@@ -187,7 +189,11 @@ impl Intent {
     }
 }
 
-pub(super) async fn navigate(mut state: Signal<ShellState>, intent: Intent) {
+pub(super) async fn navigate(
+    mut state: Signal<ShellState>,
+    intent: Intent,
+    feedback: FailureFeedback,
+) {
     let cached = {
         let shell = state.peek();
         if !intent.current(&shell) {
@@ -218,17 +224,21 @@ pub(super) async fn navigate(mut state: Signal<ShellState>, intent: Intent) {
                 super::user_fixture::execute(state, request, &intent.user).await
             } else if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
                 intent.release(&mut state.write());
-                state
-                    .write()
-                    .show_toast("No direct message channel is loaded yet.");
+                failure(
+                    &mut state.write(),
+                    &feedback,
+                    "No direct message channel is loaded yet.",
+                );
                 return;
             } else if let Some(transport) = intent.visit.transport.as_ref() {
                 transport.execute(request).await
             } else {
                 intent.release(&mut state.write());
-                state
-                    .write()
-                    .show_toast("Sign in to open this direct message.");
+                failure(
+                    &mut state.write(),
+                    &feedback,
+                    "Sign in to open this direct message.",
+                );
                 return;
             };
             // Preserve metadata from the existing request instead of discarding
@@ -255,16 +265,18 @@ pub(super) async fn navigate(mut state: Signal<ShellState>, intent: Intent) {
                 Ok(committed) => committed,
                 Err(message) => {
                     intent.release(&mut shell);
-                    shell.show_toast(message);
+                    failure(&mut shell, &feedback, message);
                     false
                 }
             },
             Err(error) => {
                 intent.release(&mut shell);
-                shell.report_failure(
+                report_failure(
+                    &mut shell,
+                    &feedback,
                     &error,
                     "Connect to Slack to open this direct message.",
-                    || "Could not open this direct message. Try again.".into(),
+                    "Could not open this direct message. Try again.",
                 );
                 false
             }

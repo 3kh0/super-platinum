@@ -25,6 +25,7 @@ impl SectionDraft {
             fields: vec![field],
             changes: BTreeMap::new(),
             header_pronunciation: true,
+            rich_fields: BTreeMap::new(),
         })
     }
     /// Retain the closed editing scope through readback/reopen. Custom open

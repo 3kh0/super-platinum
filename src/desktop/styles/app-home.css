@@ -2,7 +2,49 @@
 .app-home { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .app-home-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; }
 .app-home-toolbar h2 { margin: 0; font-size: var(--text-lg); font-weight: 600; }
+.workflow-management > .app-home-toolbar { flex-wrap: wrap; }
+.workflow-management > .app-home-toolbar > .spacer { flex: 1; }
+.workflow-management > .app-home-toolbar > button { flex: none; }
 .app-home-content { flex: 1; min-height: 0; overflow: auto; padding: 16px; }
 .app-home-notice { flex: none; margin: 0; padding: 8px 16px; font-size: var(--text-sm); color: var(--muted); }
 .app-home-confirm { flex: none; padding: 16px; background: var(--surface-raised); }
 .app-home-confirm button { margin-right: 8px; min-height: 32px; }
+.workflow-management-fields {display:flex;flex-direction:column;gap:8px;}
+.workflow-management-fields label {font-size:var(--text-sm);font-weight:600;}
+.workflow-management-fields :is(input,textarea),.workflow-management-filters :is(input,select) {min-width:0;width:100%;background:var(--surface-raised);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-md);padding:6px 8px;}
+.workflow-management-fields input,.workflow-management-filters :is(input,select) {height:var(--control-height);}
+.workflow-management-fields textarea {min-height:80px;resize:vertical;}
+.workflow-management-feedback {flex:none;padding:0 16px;font-size:var(--text-sm);overflow-wrap:anywhere;}
+.workflow-management-feedback p {margin:4px 0;}
+.workflow-management-outcome {color:var(--muted);}
+.workflow-management-actions,.workflow-management-filters {display:flex;flex-wrap:wrap;gap:8px;flex:none;padding:8px 16px;}
+.workflow-management-actions button,.workflow-management-filters button,.workflow-management-row {min-height:var(--control-height);}
+.workflow-management button:disabled {opacity:.55;cursor:default;}
+.workflow-management-filters input {flex:1 1 180px;}
+.workflow-management-filters select {flex:1 1 140px;width:auto;}
+.workflow-management-row {display:flex;justify-content:space-between;gap:12px;width:100%;padding:8px;text-align:left;}
+.workflow-management-activity h3,.workflow-management-activity h4 {margin:0;font-size:var(--text-md);}
+.workflow-activity-content {padding:0 16px 16px;overflow-wrap:anywhere;}
+.workflow-activity-filters {padding:8px 0;align-items:end;gap:8px;}
+.workflow-activity-filters label {display:flex;flex-direction:column;gap:4px;flex:1 1 145px;min-width:0;font-size:var(--text-sm);}
+.workflow-activity-filters label :is(input,select) {flex:none;width:100%;}
+.workflow-activity-hint {font-size:var(--text-sm);margin:4px 0 12px;}
+.workflow-activity-results {list-style:none;padding:0;margin:8px 0;}
+.workflow-activity-results li {padding:8px 0;border-bottom:1px solid var(--border);}
+.workflow-activity-results .workflow-management-row {flex-wrap:wrap;align-items:center;}
+.workflow-activity-results .workflow-management-row span:last-child {flex-basis:100%;}
+.workflow-activity-steps {padding-left:24px;}
+.workflow-activity-steps li {padding:8px 0;}
+.workflow-activity-steps li > span {margin-right:8px;}
+.workflow-management-activity .workflow-management-actions {column-gap:16px;}
+#workflow-activity-export-notice:empty, #workflow-activity-export-native-notice:empty, #workflow-activity-navigation-notice:empty {display:none;}
+.workflow-activity-feedback {flex:none;margin:4px 0;padding:0 16px;font-size:var(--text-sm);overflow-wrap:anywhere;}
+.workflow-activity-channel-label {display:inline-flex;align-items:baseline;gap:2px;max-width:100%;vertical-align:baseline;}
+.workflow-activity-channel-icon {flex:none;align-self:center;}
+.workflow-activity-channel-name {min-width:0;overflow-wrap:anywhere;}
+.workflow-activity-user--deactivated {color:var(--muted);}
+.workflow-activity-user-deactivated {margin-inline-start:4px;font-weight:400;}
+
+.workflow-entry-native-notice {font-size:var(--text-sm);overflow-wrap:anywhere;}
+.workflow-entry-native-notice:empty {display:none;}
+#workflow-entry-navigation-notice:empty {display:none;}

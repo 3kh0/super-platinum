@@ -1,0 +1,725 @@
+{
+  "members": [
+    {
+      "label": "human",
+      "user": {
+        "id": "U00000001",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        }
+      },
+      "profile": {},
+      "eligible": true
+    },
+    {
+      "label": "guest",
+      "user": {
+        "id": "U00000001",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_restricted": true
+      },
+      "profile": {},
+      "eligible": true
+    },
+    {
+      "label": "external",
+      "user": {
+        "id": "U00000001",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "external": true
+      },
+      "profile": {},
+      "eligible": true
+    },
+    {
+      "label": "self",
+      "user": {
+        "id": "U00000001",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_self": true
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "slackbot",
+      "user": {
+        "id": "USLACKBOT",
+        "is_bot": true,
+        "profile": {
+          "api_app_id": "A1"
+        }
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "ordinary-bot",
+      "user": {
+        "id": "U00000001",
+        "is_bot": true,
+        "profile": {
+          "api_app_id": "A1"
+        }
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "app-user",
+      "user": {
+        "id": "U00000001",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_app_user": true
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "deleted",
+      "user": {
+        "id": "U00000001",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "deleted": true
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "workflow",
+      "user": {
+        "id": "U00000001",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_workflow_bot": true
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "profile-only",
+      "user": {
+        "id": "U00000001",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_profile_only_user": true
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "security",
+      "user": {
+        "id": "U00000001",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_slacksecuritybot": true
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "search",
+      "user": {
+        "id": "USEARCH",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        }
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "channel-expert",
+      "user": {
+        "id": "UCHANNELEXPERT",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        }
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "system",
+      "user": {
+        "id": "USLACK",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        }
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "external-guest",
+      "user": {
+        "id": "U00000001",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_restricted": true,
+        "restricted_user_type": "external_guest"
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "ordinary-agent",
+      "user": {
+        "id": "U00000001",
+        "is_bot": true,
+        "profile": {
+          "api_app_id": "A1"
+        }
+      },
+      "profile": {
+        "is_agent_app": true
+      },
+      "eligible": true
+    },
+    {
+      "label": "ai-is-not-agent",
+      "user": {
+        "id": "U00000001",
+        "is_bot": true,
+        "profile": {
+          "api_app_id": "A1"
+        }
+      },
+      "profile": {
+        "is_ai_app": true
+      },
+      "eligible": false
+    },
+    {
+      "label": "security-system-id",
+      "user": {
+        "id": "USLACKSECURITY",
+        "is_bot": false,
+        "profile": {
+          "api_app_id": "A1"
+        }
+      },
+      "profile": {},
+      "eligible": false
+    },
+    {
+      "label": "agentforce-denied",
+      "user": {
+        "id": "U00000001",
+        "is_bot": true,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_agentforce_bot": true
+      },
+      "profile": {
+        "is_agent_app": true,
+        "agentforce": {},
+        "bot_user": {
+          "id": "U00000001"
+        }
+      },
+      "eligible": false
+    },
+    {
+      "label": "agentforce-accessible",
+      "user": {
+        "id": "U00000001",
+        "is_bot": true,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_agentforce_bot": true
+      },
+      "profile": {
+        "is_agent_app": true,
+        "agentforce": {},
+        "bot_user": {
+          "id": "U00000001"
+        }
+      },
+      "eligible": true
+    },
+    {
+      "label": "agentforce-default",
+      "user": {
+        "id": "U00000001",
+        "is_bot": true,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_agentforce_bot": true
+      },
+      "profile": {
+        "is_agent_app": true,
+        "agentforce": {},
+        "bot_user": {
+          "id": "U00000001"
+        }
+      },
+      "eligible": true
+    },
+    {
+      "label": "agentforce-nonclient",
+      "user": {
+        "id": "U00000001",
+        "is_bot": true,
+        "profile": {
+          "api_app_id": "A1"
+        },
+        "is_agentforce_bot": true
+      },
+      "profile": {
+        "is_agent_app": true,
+        "agentforce": {},
+        "bot_user": {
+          "id": "U00000001"
+        }
+      },
+      "eligible": true
+    }
+  ],
+  "queries": [
+    {
+      "raw": "Ada",
+      "remote": "Ada",
+      "local": "Ada"
+    },
+    {
+      "raw": "@Ada",
+      "remote": "Ada",
+      "local": "Ada"
+    },
+    {
+      "raw": "@@Ada",
+      "remote": "@Ada",
+      "local": "Ada"
+    },
+    {
+      "raw": "＠Ada",
+      "remote": "Ada",
+      "local": "Ada"
+    },
+    {
+      "raw": "#Ada",
+      "remote": "Ada",
+      "local": "Ada"
+    },
+    {
+      "raw": "/Ada",
+      "remote": "Ada",
+      "local": "Ada"
+    },
+    {
+      "raw": ":Ada",
+      "remote": ":Ada",
+      "local": ":Ada"
+    },
+    {
+      "raw": "+Ada",
+      "remote": "+Ada",
+      "local": "Ada"
+    },
+    {
+      "raw": "++Ada",
+      "remote": "++Ada",
+      "local": "+Ada"
+    },
+    {
+      "raw": "",
+      "remote": "",
+      "local": ""
+    },
+    {
+      "raw": "  Ada  ",
+      "remote": "  Ada  ",
+      "local": "  Ada  "
+    }
+  ],
+  "requests": [
+    {
+      "query": "Ada",
+      "captured": [
+        {
+          "owner": "T00000001",
+          "query": {
+            "include_profile_only_users": true,
+            "query": "Ada",
+            "count": 20,
+            "fuzz": 1,
+            "enable_workspace_ranking": true,
+            "filter": "NOT deactivated"
+          }
+        }
+      ],
+      "response": {
+        "members": [
+          {
+            "id": "U00000001",
+            "is_stranger": false
+          },
+          {
+            "id": "U00000002",
+            "is_profile_only_user": true,
+            "is_stranger": true
+          }
+        ]
+      }
+    },
+    {
+      "query": "",
+      "captured": [
+        {
+          "owner": "T00000001",
+          "query": {
+            "include_profile_only_users": true,
+            "query": "",
+            "count": 20,
+            "fuzz": 1,
+            "enable_workspace_ranking": true,
+            "filter": "NOT deactivated"
+          }
+        }
+      ],
+      "response": {
+        "members": [
+          {
+            "id": "U00000001",
+            "is_stranger": false
+          },
+          {
+            "id": "U00000002",
+            "is_profile_only_user": true,
+            "is_stranger": true
+          }
+        ]
+      }
+    },
+    {
+      "query": ":Ada",
+      "captured": [
+        {
+          "owner": "T00000001",
+          "query": {
+            "include_profile_only_users": true,
+            "query": ":Ada",
+            "count": 20,
+            "fuzz": 1,
+            "enable_workspace_ranking": true,
+            "filter": "NOT deactivated"
+          }
+        }
+      ],
+      "response": {
+        "members": [
+          {
+            "id": "U00000001",
+            "is_stranger": false
+          },
+          {
+            "id": "U00000002",
+            "is_profile_only_user": true,
+            "is_stranger": true
+          }
+        ]
+      }
+    }
+  ],
+  "paging": [
+    {
+      "initial": [
+        {
+          "results": [
+            {
+              "id": "U00000001"
+            }
+          ],
+          "next_marker": "next"
+        },
+        {
+          "results": [
+            {
+              "id": "U00000002"
+            }
+          ]
+        }
+      ],
+      "result": {
+        "query": {
+          "query": "Ada",
+          "count": 20,
+          "marker": "next"
+        },
+        "objects": [
+          {
+            "id": "U00000001"
+          },
+          {
+            "id": "U00000002"
+          }
+        ],
+        "failedIds": [],
+        "pendingIds": [],
+        "invalidIds": [],
+        "membershipIds": [],
+        "disconnectedIds": [],
+        "canInteract": {}
+      },
+      "calls": [
+        {
+          "owner": "T00000001",
+          "method": "users/search",
+          "args": {
+            "query": "Ada",
+            "count": 20
+          }
+        },
+        {
+          "owner": "T00000001",
+          "method": "users/search",
+          "args": {
+            "query": "Ada",
+            "count": 20,
+            "marker": "next"
+          }
+        }
+      ]
+    },
+    {
+      "initial": [
+        {
+          "results": [
+            {
+              "id": "U00000001"
+            },
+            {
+              "id": "U00000002"
+            },
+            {
+              "id": "U00000003"
+            },
+            {
+              "id": "U00000004"
+            },
+            {
+              "id": "U00000005"
+            },
+            {
+              "id": "U00000006"
+            },
+            {
+              "id": "U00000007"
+            },
+            {
+              "id": "U00000008"
+            },
+            {
+              "id": "U00000009"
+            },
+            {
+              "id": "U00000010"
+            },
+            {
+              "id": "U00000011"
+            },
+            {
+              "id": "U00000012"
+            },
+            {
+              "id": "U00000013"
+            },
+            {
+              "id": "U00000014"
+            },
+            {
+              "id": "U00000015"
+            },
+            {
+              "id": "U00000016"
+            },
+            {
+              "id": "U00000017"
+            },
+            {
+              "id": "U00000018"
+            },
+            {
+              "id": "U00000019"
+            },
+            {
+              "id": "U00000020"
+            },
+            {
+              "id": "U00000021"
+            },
+            {
+              "id": "U00000022"
+            }
+          ],
+          "next_marker": "server"
+        }
+      ],
+      "result": {
+        "query": {
+          "query": "Ada",
+          "count": 20
+        },
+        "objects": [
+          {
+            "id": "U00000001"
+          },
+          {
+            "id": "U00000002"
+          },
+          {
+            "id": "U00000003"
+          },
+          {
+            "id": "U00000004"
+          },
+          {
+            "id": "U00000005"
+          },
+          {
+            "id": "U00000006"
+          },
+          {
+            "id": "U00000007"
+          },
+          {
+            "id": "U00000008"
+          },
+          {
+            "id": "U00000009"
+          },
+          {
+            "id": "U00000010"
+          },
+          {
+            "id": "U00000011"
+          },
+          {
+            "id": "U00000012"
+          },
+          {
+            "id": "U00000013"
+          },
+          {
+            "id": "U00000014"
+          },
+          {
+            "id": "U00000015"
+          },
+          {
+            "id": "U00000016"
+          },
+          {
+            "id": "U00000017"
+          },
+          {
+            "id": "U00000018"
+          },
+          {
+            "id": "U00000019"
+          },
+          {
+            "id": "U00000020"
+          }
+        ],
+        "failedIds": [],
+        "pendingIds": [],
+        "invalidIds": [],
+        "membershipIds": [],
+        "disconnectedIds": [],
+        "canInteract": {},
+        "next_marker": "U00000021"
+      },
+      "calls": [
+        {
+          "owner": "T00000001",
+          "method": "users/search",
+          "args": {
+            "query": "Ada",
+            "count": 20
+          }
+        }
+      ]
+    },
+    {
+      "initial": [
+        {
+          "results": {
+            "z": [
+              {
+                "id": "U00000002"
+              }
+            ],
+            "a": [
+              {
+                "id": "U00000001"
+              }
+            ]
+          }
+        }
+      ],
+      "result": {
+        "query": {
+          "query": "Ada",
+          "count": 20
+        },
+        "objects": [
+          {
+            "id": "U00000002"
+          },
+          {
+            "id": "U00000001"
+          }
+        ],
+        "failedIds": [],
+        "pendingIds": [],
+        "invalidIds": [],
+        "membershipIds": [],
+        "disconnectedIds": [],
+        "canInteract": {}
+      },
+      "calls": [
+        {
+          "owner": "T00000001",
+          "method": "users/search",
+          "args": {
+            "query": "Ada",
+            "count": 20
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -237,11 +237,14 @@ pub(super) fn finish_check(
             e.message=Some(if matched{"Profile fields saved."}else{"Slack currently shows different values. Check again, or keep the current section without sending another change."}.into());
             if matched {
                 e.pending = None;
+                let d = shell.profile_edit.sections.draft.as_mut().unwrap();
+                d.form = a.intent.draft().reopen(&snapshot).ok();
+                d.snapshot = Some(snapshot);
+                d.serial = next_id();
             }
-            let d = shell.profile_edit.sections.draft.as_mut().unwrap();
-            d.form = a.intent.draft().reopen(&snapshot).ok();
-            d.snapshot = Some(snapshot);
-            d.serial = next_id();
+            // A differing read is evidence about the server, not permission to
+            // discard the proposed edit. Keep both the visible draft and its
+            // predecessor until confirmation or explicit Keep current section.
         }
         result => {
             e.retry_at = e.retry_at.max(result.as_ref().err().map_or(0, cooldown));

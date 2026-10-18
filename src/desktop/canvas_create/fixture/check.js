@@ -105,7 +105,18 @@
     if(operation==='geometry'){
       const r=rect(d),footer=[...d.querySelectorAll('footer button')].filter(b=>!b.disabled);
       const bounded=r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;
-      return {ok:bounded&&d.scrollWidth<=d.clientWidth+1&&footer.length>0&&footer.every(hit),dialog:r,
+      const region=d.querySelector('.canvas-create-feedback'),f=rect(d.querySelector('footer')),scroll=rect(d.querySelector('.canvas-create-fields'));
+      const inside=(a,b)=>a.left>=b.left-1&&a.top>=b.top-1&&a.right<=b.right+1&&a.bottom<=b.bottom+1;
+      const messages=[...d.querySelectorAll('.canvas-create-feedback > [role],.canvas-create-fields > [role]')].map(e=>{
+        const measured=rect(e),style=getComputedStyle(e);
+        const corners=[[measured.left+1,measured.top+1],[measured.right-1,measured.bottom-1]];
+        const unobscured=corners.every(([x,y])=>{const a=document.elementFromPoint(x,y);return a===e||e.contains(a);});
+        return {role:e.getAttribute('role'),text:e.textContent,rect:measured,
+          visible:!!region&&region.contains(e)&&style.visibility==='visible'&&style.display!=='none'&&Number(style.opacity)>0&&inside(measured,r)&&inside(measured,{left:0,top:0,right:innerWidth,bottom:innerHeight})&&measured.bottom<=f.top+1&&unobscured,
+          unclipped:e.scrollHeight<=e.clientHeight+1&&e.scrollWidth<=e.clientWidth+1};
+      });
+      const feedback={region:region?rect(region):null,messages};
+      return {ok:bounded&&d.scrollWidth<=d.clientWidth+1&&footer.length>0&&footer.every(hit)&&messages.every(m=>m.visible&&m.unclipped),dialog:r,feedback,footer:f,fields:scroll,
         clientWidth:d.clientWidth,scrollWidth:d.scrollWidth,noOverflow:d.scrollWidth<=d.clientWidth+1,footerHitTested:footer.every(hit),viewport:{width:innerWidth,height:innerHeight},
         controls:footer.map(b=>({label:b.textContent.trim(),rect:rect(b),hit:hit(b)}))};
     }

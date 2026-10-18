@@ -165,6 +165,15 @@ pub async fn refresh(state: Signal<ShellState>) {
         return;
     }
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+        // This named closed scenario exercises a fresh About owner and its
+        // guarded fixture responses. Every other fixture stays disconnected.
+        if state.peek().channel_tab == ChannelTab::AppAbout
+            && crate::app_home::about::management::activity::fixture::channel::enabled(
+                &state.peek(),
+            )
+        {
+            crate::app_home::about::refresh(state).await;
+        }
         return;
     }
     let Some(channel) = state.peek().core.active_channel.clone() else {

@@ -1,4 +1,7 @@
 //! EVxR discovers routing separately from the logical T/E credential context.
+pub mod channel_info;
+pub mod member_info;
+pub mod usergroup_info;
 use crate::{
     config::WorkspaceSession,
     slack::{Error, PreparedRequest, SlackClient},
@@ -74,7 +77,7 @@ impl DirectoryEndpoint {
         w: &WorkspaceSession,
         now: Instant,
         path: &str,
-        mut body: Value,
+        body: Value,
     ) -> Result<PreparedRequest, Error> {
         if !body.is_object()
             || !self.current(w, now)
@@ -82,6 +85,15 @@ impl DirectoryEndpoint {
         {
             return Err(invalid());
         }
+        self.observed_request(client, w, path, body)
+    }
+    fn observed_request(
+        &self,
+        client: &SlackClient,
+        w: &WorkspaceSession,
+        path: &str,
+        mut body: Value,
+    ) -> Result<PreparedRequest, Error> {
         // EVxR uses its logical store identity, not enterprise membership, to
         // add enterprise_token. The observed endpoint independently routes it.
         let mut scoped = w.clone();

@@ -1,6 +1,8 @@
 //! Lazy account-owned autocomplete observations. No timer grants data or authority.
 //! The actual source permits a cold/stale snapshot while an owned read refreshes.
 use super::*;
+mod consumer;
+pub(in crate::app_home) use consumer::capture_for;
 use super_platinum_core::{
     block_actions::home::workflow::directory_observations as observed,
     composer_emoji::{model::Model, ranking::SimilarityCache},
@@ -13,11 +15,16 @@ const PENDING: Duration = Duration::from_secs(30);
 struct Account {
     context: Arc<Context>,
     account: Option<String>,
+    cookie: String,
 }
 impl Account {
     fn current(&self, s: &ShellState) -> bool {
         self.context.current(s)
             && self.account == s.core.active_account
+            && s.core
+                .session
+                .as_ref()
+                .is_some_and(|session| session.d_cookie == self.cookie)
             && s.core
                 .session
                 .as_ref()
@@ -90,14 +97,14 @@ pub(in crate::app_home) struct Cache {
     similarity: Arc<std::sync::Mutex<SimilarityCache>>,
 }
 #[derive(Clone)]
-pub(super) struct Snapshot {
+pub(in crate::app_home) struct Snapshot {
     owner: Account,
-    pub(super) model: Arc<Model>,
-    pub(super) offline: Arc<observed::Offline>,
-    pub(super) similarity: Arc<std::sync::Mutex<SimilarityCache>>,
+    pub(in crate::app_home) model: Arc<Model>,
+    pub(in crate::app_home) offline: Arc<observed::Offline>,
+    pub(in crate::app_home) similarity: Arc<std::sync::Mutex<SimilarityCache>>,
 }
 impl Snapshot {
-    pub(super) fn current(&self, s: &ShellState) -> bool {
+    pub(in crate::app_home) fn current(&self, s: &ShellState) -> bool {
         self.owner.current(s)
     }
 }
@@ -105,6 +112,27 @@ impl Snapshot {
 enum Kind {
     Model,
     Offline,
+}
+
+/// Preserve the same-byte property order only where it was actually observed.
+/// Older synthetic Value fixtures remain useful for scores, but cannot mint a
+/// stable-tie request hint from sorted-map serialization.
+enum Reply {
+    Value(Value),
+    Offline(Value, Option<Vec<String>>),
+}
+impl Reply {
+    fn raw(self) -> Value {
+        match self {
+            Self::Value(raw) | Self::Offline(raw, _) => raw,
+        }
+    }
+    fn offline(self) -> Result<observed::Offline, observed::Error> {
+        match self {
+            Self::Value(raw) => observed::Offline::decode(&raw),
+            Self::Offline(raw, keys) => observed::Offline::decode_ordered(&raw, keys.as_deref()),
+        }
+    }
 }
 
 /// Called from the owned async query path, never from render. Capture the
@@ -128,6 +156,13 @@ pub(super) fn capture(
                 owner: Account {
                     context: origin.owner.ctx.clone(),
                     account: s.core.active_account.clone(),
+                    cookie: s
+                        .core
+                        .session
+                        .as_ref()
+                        .ok_or_else(unavailable)?
+                        .d_cookie
+                        .clone(),
                 },
                 model: Slot::cold(Model::fallback()),
                 offline: Slot::cold(observed::Offline::default()),
@@ -200,7 +235,42 @@ fn refresh(mut state: Signal<ShellState>, origin: Origin, kind: Kind, token: u64
                 }
             }
         };
-        let result = io::read(state, &origin, request).await;
+        let result = if matches!(kind, Kind::Offline) && !crate::fixture::is_fixture() {
+            let owner = {
+                let s = state.peek();
+                let Some(cache) = s
+                    .app_home
+                    .workflow_ranking
+                    .as_ref()
+                    .filter(|c| c.owner.current(&s))
+                else {
+                    return;
+                };
+                cache.owner.clone()
+            };
+            origin
+                .owner
+                .ctx
+                .transport
+                .execute_autocomplete_offline_current(request, || {
+                    let s = state.peek();
+                    owner.current(&s)
+                        && s.app_home.workflow_ranking.as_ref().is_some_and(|cache| {
+                            cache.owner.current(&s)
+                                && cache
+                                    .offline
+                                    .pending
+                                    .is_some_and(|(actual, _)| actual == token)
+                        })
+                })
+                .await
+                .map(|response| {
+                    let (raw, keys) = response.into_parts();
+                    Reply::Offline(raw, keys)
+                })
+        } else {
+            io::read(state, &origin, request).await.map(Reply::Value)
+        };
         let mut s = state.write();
         if let Err(error) = &result {
             failure(&mut s, &origin.owner.ctx, error);
@@ -226,7 +296,8 @@ fn refresh(mut state: Signal<ShellState>, origin: Origin, kind: Kind, token: u64
             Kind::Model => {
                 let (value, error) = match result {
                     Ok(raw) => (
-                        observed::decode_model(&raw).map(|v| v.unwrap_or_else(Model::fallback)),
+                        observed::decode_model(&raw.raw())
+                            .map(|v| v.unwrap_or_else(Model::fallback)),
                         None,
                     ),
                     Err(error) => (Ok(Model::fallback()), Some(error)),
@@ -235,7 +306,7 @@ fn refresh(mut state: Signal<ShellState>, origin: Origin, kind: Kind, token: u64
             }
             Kind::Offline => {
                 let (value, error) = match result {
-                    Ok(raw) => (observed::Offline::decode(&raw), None),
+                    Ok(raw) => (raw.offline(), None),
                     Err(error) => (Ok(observed::Offline::default()), Some(error)),
                 };
                 cache.offline.settle(token, now, value, error);
@@ -294,6 +365,7 @@ mod tests {
         let owner = Account {
             context: Arc::new(Context::capture(&s).unwrap()),
             account: s.core.active_account.clone(),
+            cookie: s.core.session.as_ref().unwrap().d_cookie.clone(),
         };
         assert!(owner.current(&s));
         let team = owner.context.session.team_id.clone();

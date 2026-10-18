@@ -44,7 +44,7 @@ fn SectionEditor(state: Signal<ShellState>) -> Element {
                             for field in form.fields() {
                                 fields::Field{key:"{serial}-{field.id}",state,visit,serial,field:field.clone(),
                                     value:form.value(&field.id).cloned(),locked,error:form.validation(&field.id).err().map(|_|"Check this field's value or length.".to_owned()),
-                                    onrich:move |id|{let key=rich_visit()+1;rich_visit.set(key);rich.set(Some((id,key)));}}
+                                    onrich:move |id:String|{let key=rich_visit()+1;rich_visit.set(key);controller::rich::open(state,visit,serial,&id,key);rich.set(Some((id,key)));}}
                             }
                         }
                     } else {
@@ -52,11 +52,18 @@ fn SectionEditor(state: Signal<ShellState>) -> Element {
                             button{r#type:"button",class:"profile-section-choice",disabled:locked,onclick:move |_|controller::select(state,visit,serial,id.clone()),"{label}"}
                         }
                     }
-                    if leaving().is_some(){p{class:"profile-edit-notice",role:"alert","Discard the changes to these profile fields?"}}
-                    if let Some(message)=v.message {p{class:"profile-edit-notice",role:"status","{message}"}}
-                    if v.uncertain {p{class:"profile-edit-notice","Checking reads your saved section. It does not send the change again."}}
                 }
                 footer{
+                    if leaving().is_some() || v.message.is_some() || v.uncertain {
+                        div{class:"profile-section-feedback",
+                            if leaving().is_some(){
+                                p{class:"profile-edit-notice",role:"alert","Discard the changes to these profile fields?"}
+                            } else {
+                                if let Some(message)=v.message {p{class:"profile-edit-notice",role:"status","{message}"}}
+                                if v.uncertain {p{class:"profile-edit-notice","Checking reads your saved section. It does not send the change again."}}
+                            }
+                        }
+                    }
                     if let Some(close)=leaving(){
                         button{r#type:"button",onclick:move |_|leaving.set(None),"Keep editing"}
                         button{r#type:"button",onclick:move |_|{leaving.set(None);if close{profile_edit::close(state,visit);}else{controller::back(state,visit,serial);}},"Discard changes"}
@@ -83,16 +90,24 @@ fn rich_pane(
 ) -> Element {
     let serialized = serde_json::to_string(&blocks).unwrap();
     let label = "Profile description".to_owned();
-    let labels = {
-        let shell = state.peek();
-        shell
-            .core
-            .active_team
-            .as_ref()
-            .and_then(|team| shell.core.workspaces.get(team))
-            .map(|w| crate::view::rich_editor::mention_labels(w, &blocks))
-            .unwrap_or_else(|| "{}".into())
-    };
+    let labels = controller::rich::labels(&state.peek(), visit, serial, &id, key);
+    if labels.is_none() {
+        let retry_id = id.clone();
+        let recovering = controller::rich::recovering(&state.peek(), visit, serial);
+        let status = if recovering {
+            "Loading mention names. Your description is unchanged."
+        } else {
+            "Mention names are unavailable or changed while opening. Your description is unchanged. Retry to load member, channel, and group details."
+        };
+        return rsx! {
+            div{id:"profile-section-rich-pane","data-rich-visit":key,
+                p{id:"profile-section-rich-status",role:"status","{status}"}
+                button{r#type:"button",disabled:locked||recovering,onclick:move |_|{controller::rich::retry(state,visit,serial,&retry_id,key);},"Retry description"}
+                button{r#type:"button",disabled:locked,onclick:move |_|{controller::rich::cancel(state,visit,serial);rich.set(None);},"Cancel description edit"}
+            }
+        };
+    }
+    let labels = labels.unwrap();
     rsx! {
         div{key:"rich-{key}",id:"profile-section-rich-pane","data-rich-visit":key,"data-composing":"false",
             onmounted:move |_|{dioxus::document::eval(&format!("const pane=document.getElementById('profile-section-rich-pane');if(pane?.dataset.richVisit==='{key}'){{pane.addEventListener('compositionstart',()=>pane.dataset.composing='true');pane.addEventListener('compositionend',()=>pane.dataset.composing='false');}}"));},
@@ -105,10 +120,10 @@ fn rich_pane(
                     let deadline=std::time::Instant::now()+std::time::Duration::from_secs(2);
                     let mut eval=dioxus::document::eval(&format!("await ({BRIDGE})(({CAPTURE}),{visit},{serial},{key},dioxus);"));
                     let mut accepted=false;
-                    if let Ok(Ok(Some(blocks)))=tokio::time::timeout(std::time::Duration::from_secs(2),eval.recv::<Option<Vec<serde_json::Value>>>()).await {
+                    if let Ok(Ok(Some(captured)))=tokio::time::timeout(std::time::Duration::from_secs(2),eval.recv::<Option<controller::rich::Capture>>()).await {
                         if std::time::Instant::now()>=deadline {return;}
                         if rich.peek().as_ref()==Some(&(id.clone(),key))&&controller::presentation(&state.peek()).is_some_and(|v|v.visit==visit&&v.serial==serial&&!v.busy&&!v.uncertain){
-                            if controller::use_description(state,visit,serial,&id,blocks){rich.set(None);accepted=true;}
+                            if controller::rich::accept(state,visit,serial,&id,key,captured){rich.set(None);accepted=true;}
                         }
                     }
                     // Only an admitted snapshot or explicit safe refusal may
@@ -116,7 +131,7 @@ fn rich_pane(
                     let _=eval.send(accepted);
                 });
             },"Use description"}
-            button{r#type:"button",disabled:locked,onclick:move |_|rich.set(None),"Cancel description edit"}
+            button{r#type:"button",disabled:locked,onclick:move |_|{controller::rich::cancel(state,visit,serial);rich.set(None);},"Cancel description edit"}
             p{id:"profile-section-rich-status",role:"status"}
         }
     }

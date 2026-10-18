@@ -2,6 +2,7 @@
 use crate::{ComposerState, domain::ComposerAttachment};
 use std::collections::BTreeMap;
 pub mod codec;
+pub mod presence;
 mod projection;
 pub mod store;
 pub mod sync;

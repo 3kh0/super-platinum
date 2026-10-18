@@ -55,19 +55,35 @@ pub use list_view_reorder::ListViewReorderFailure;
 mod list_column_rename_read;
 pub use list_column_rename::ListColumnRenameFailure;
 pub use list_column_rename_read::ListColumnRenameReadFailure;
+mod activity_member_search;
+mod channel_read_dispatch;
+mod directory_channel_info;
+mod directory_member_info;
+mod directory_response;
+mod directory_usergroup_info;
 mod list_record_delete;
 mod mention_search;
 mod notification_preferences;
 mod notification_schedule;
+mod offline_features;
 mod own_profile;
 mod own_profile_photo;
 mod own_profile_recording;
 mod presentation_notifications;
+mod profile_channel_search;
 mod profile_sections;
 mod read_preferences;
 mod read_shortcuts;
 mod slash_command;
 mod upload_readback;
+mod workflow_management;
+pub use channel_read_dispatch::{ChannelReadAttempt, ChannelReadReceipt, ChannelReadResponse};
+pub use directory_response::DirectoryResponse as ActivityMemberResponse;
+pub use directory_response::DirectoryResponse as AutocompleteOfflineResponse;
+pub use directory_response::DirectoryResponse as DirectoryMemberInfoResponse;
+pub use directory_response::DirectoryResponse as DirectoryUsergroupInfoResponse;
+pub use directory_response::DirectoryResponse as DirectoryChannelInfoResponse;
+pub use directory_response::DirectoryResponse as ProfileChannelSearchResponse;
 pub use list_record_delete::ListDeleteFailure;
 pub(super) use notification_preferences::notification_preferences_success;
 
@@ -419,6 +435,70 @@ impl Transport {
         http: &wreq::Client,
         file_share_rate_limit: bool,
     ) -> Result<Value, Error> {
+        self.execute_once_using_decode_mode(
+            req,
+            structured_block_response,
+            http,
+            file_share_rate_limit,
+            None,
+        )
+        .await
+    }
+
+    async fn execute_once_using_decode_mode(
+        &self,
+        req: &PreparedRequest,
+        structured_block_response: bool,
+        http: &wreq::Client,
+        file_share_rate_limit: bool,
+        ordered_keys: Option<&mut Option<Vec<String>>>,
+    ) -> Result<Value, Error> {
+        self.execute_once_using_observed_decode_mode(
+            req,
+            structured_block_response,
+            http,
+            file_share_rate_limit,
+            ordered_keys,
+            None,
+            None,
+        )
+        .await
+    }
+
+    async fn execute_once_using_observed_decode_mode(
+        &self,
+        req: &PreparedRequest,
+        structured_block_response: bool,
+        http: &wreq::Client,
+        file_share_rate_limit: bool,
+        ordered_keys: Option<&mut Option<Vec<String>>>,
+        receipt: Option<&ChannelReadReceipt>,
+        original_bytes: Option<&mut Option<String>>,
+    ) -> Result<Value, Error> {
+        self.execute_once_using_field_decode_mode(
+            req,
+            structured_block_response,
+            http,
+            file_share_rate_limit,
+            ordered_keys,
+            receipt,
+            original_bytes,
+            "results",
+        )
+        .await
+    }
+
+    async fn execute_once_using_field_decode_mode(
+        &self,
+        req: &PreparedRequest,
+        structured_block_response: bool,
+        http: &wreq::Client,
+        file_share_rate_limit: bool,
+        ordered_keys: Option<&mut Option<Vec<String>>>,
+        receipt: Option<&ChannelReadReceipt>,
+        original_bytes: Option<&mut Option<String>>,
+        ordered_field: &str,
+    ) -> Result<Value, Error> {
         self.http()?;
         let req_url = req.url.clone();
         let mut builder = match req.method {
@@ -441,7 +521,15 @@ impl Transport {
             RequestBody::Json(value) => builder.json(value),
         };
 
-        let response = builder.send().await.map_err(|error| {
+        let response = if let Some(receipt) = receipt {
+            let request = builder
+                .build()
+                .map_err(|_| Error::Offline("channel read request was not built".into()))?;
+            receipt.observe(http.execute(request)).await
+        } else {
+            builder.send().await
+        }
+        .map_err(|error| {
             let error = if structured_block_response {
                 error.without_uri()
             } else {
@@ -477,18 +565,35 @@ impl Transport {
             });
         }
 
-        let value: Value =
-            if url::Url::parse(&req.url).is_ok_and(|url| url.path() == "/api/blocks.suggestions") {
-                read_suggestions_body(response).await?
+        let value: Value = if let Some(keys) = ordered_keys {
+            let ordered = if ordered_field == "results" {
+                directory_response::read_body(response, status).await?
             } else {
-                response.json().await.map_err(|e| {
-                    if structured_block_response {
-                        Error::Transport("invalid block interaction JSON response".into())
-                    } else {
-                        Error::Transport(format!("decode ({status}): {e}"))
-                    }
-                })?
+                directory_response::read_body_field(response, status, ordered_field).await?
             };
+            *keys = ordered.keys;
+            ordered.raw
+        } else if let Some(original_bytes) = original_bytes {
+            let bytes = response
+                .text()
+                .await
+                .map_err(|_| Error::Transport("invalid split response bytes".into()))?;
+            let value = serde_json::from_str(&bytes)
+                .map_err(|_| Error::Transport("invalid split response JSON".into()))?;
+            *original_bytes = Some(bytes);
+            value
+        } else if url::Url::parse(&req.url).is_ok_and(|url| url.path() == "/api/blocks.suggestions")
+        {
+            read_suggestions_body(response).await?
+        } else {
+            response.json().await.map_err(|e| {
+                if structured_block_response {
+                    Error::Transport("invalid block interaction JSON response".into())
+                } else {
+                    Error::Transport(format!("decode ({status}): {e}"))
+                }
+            })?
+        };
 
         // This narrow read owner must retain the actual header even when Slack
         // reports a rate limit inside a successful HTTP response.

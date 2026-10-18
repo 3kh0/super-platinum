@@ -1,4 +1,7 @@
 use super::*;
+mod rich_channels;
+mod rich_groups;
+mod rich_users;
 fn workspace() -> WorkspaceSession {
     WorkspaceSession {
         team_id: "T1".into(),

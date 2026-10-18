@@ -5,7 +5,7 @@ const EDITOR: &str = include_str!("../rich_editor.js");
 
 /// Resolve only identities referenced by this draft; the original blocks stay
 /// untouched and unknown tokens keep the editor's existing inert fallback.
-pub(super) fn mention_labels(
+pub(crate) fn mention_labels(
     workspace: &super_platinum_core::state::Workspace,
     blocks: &[serde_json::Value],
 ) -> String {

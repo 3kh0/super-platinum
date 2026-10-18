@@ -49,11 +49,15 @@ fn owner(released: oneshot::Receiver<()>, unlock: impl FnOnce()) -> impl Future<
 pub(crate) async fn lock_owned(state: Signal<ShellState>, visit: actions::Key) -> Option<Release> {
     // Keep the existing mount/sequence/value capture and lock acknowledgment.
     let eval = super::lock(state, visit).await?;
+    Some(retain(eval))
+}
+
+pub(crate) fn retain(eval: dioxus::document::Eval) -> Release {
     let (release, released) = pair();
     dioxus::core::spawn_forever(owner(released, move || {
         let _ = eval.send(());
     }));
-    Some(release)
+    release
 }
 
 #[cfg(test)]

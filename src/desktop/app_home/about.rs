@@ -4,11 +4,13 @@ use super_platinum_core::block_actions::home::about::{Connection, Flags, Info, P
 mod actions;
 mod description;
 pub(crate) mod fixture;
+pub(crate) mod management;
 mod view;
 pub(crate) use view::panel;
 
 #[derive(Default)]
 pub(super) struct State {
+    management: management::State,
     surface: Option<Surface>,
     attempts: Vec<actions::Attempt>,
     correlations: Vec<(String, Owner)>,
@@ -105,6 +107,34 @@ fn read_current(s: &ShellState, key: Key) -> bool {
             .as_ref()
             .is_some_and(|h| !cooling(s, &h.owner.ctx))
 }
+/// About owns Activity independently of App Home. Name preferences arriving
+/// on this owner's socket must retire its observed policy as well.
+pub(super) fn name_policy_changed(
+    s: &ShellState,
+    team: &str,
+    generation: u64,
+    event: &RtEvent,
+) -> bool {
+    // Workflow documents additionally bind the selected account ID. About's
+    // shared context alone checks epoch/transport/credentials, not that ID.
+    if !management::showing(s) {
+        return false;
+    }
+    let Some(h) = s.app_home.about.surface.as_ref().filter(|h| {
+        h.owner.current(s) && h.owner.ctx.session.team_id == team && h.owner.rt == generation
+    }) else {
+        return false;
+    };
+    match event {
+        RtEvent::PreferencesChanged { .. } => true,
+        RtEvent::UserChanged(user) => user.id == h.owner.ctx.session.user_id,
+        RtEvent::Unknown(raw) => matches!(
+            raw.kind.as_str(),
+            "team_pref_change" | "enterprise_prefs_updated" | "team_join" | "team_leave"
+        ),
+        _ => false,
+    }
+}
 pub(super) fn clear(s: &mut ShellState) {
     s.app_home.about.surface = None;
 }
@@ -121,10 +151,13 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
         let ingress =
             crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
                 .for_channels([&owner.channel]);
-        let raw = ctx
-            .transport
-            .execute(home::fetch(&ctx.client, &ctx.session, &owner.channel)?)
-            .await?;
+        let raw = request(
+            state,
+            key,
+            &owner,
+            home::fetch(&ctx.client, &ctx.session, &owner.channel)?,
+        )
+        .await?;
         if !read_current(&state.peek(), key) {
             return Ok(None);
         }
@@ -141,10 +174,13 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
         ) {
             ingress.channels(&state, &[channel]);
         }
-        let raw = ctx
-            .transport
-            .execute(Info::request(&ctx.client, &ctx.session, &home.app)?)
-            .await?;
+        let raw = request(
+            state,
+            key,
+            &owner,
+            Info::request(&ctx.client, &ctx.session, &home.app)?,
+        )
+        .await?;
         if !read_current(&state.peek(), key) {
             return Ok(None);
         }
@@ -157,36 +193,43 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
                 return Ok(None);
             }
         }
-        let raw = ctx
-            .transport
-            .execute(
-                super_platinum_core::block_actions::app_eligibility::profile_request(
-                    &ctx.client,
-                    &ctx.session,
-                    &home.app,
-                )?,
-            )
-            .await?;
+        let raw = request(
+            state,
+            key,
+            &owner,
+            super_platinum_core::block_actions::app_eligibility::profile_request(
+                &ctx.client,
+                &ctx.session,
+                &home.app,
+            )?,
+        )
+        .await?;
         if !read_current(&state.peek(), key) {
             return Ok(None);
         }
         let profile = Profile::decode(&home.app, raw)?;
         // Reuse the existing authenticated experiment request; absence of a
         // completed assignment response never turns the feature on.
-        let raw = ctx
-            .transport
-            .execute(api::list_experiments(&ctx.client, &ctx.session))
-            .await?;
+        let raw = request(
+            state,
+            key,
+            &owner,
+            api::list_experiments(&ctx.client, &ctx.session),
+        )
+        .await?;
         if !read_current(&state.peek(), key) {
             return Ok(None);
         }
         let flags = Flags::decode(&raw)?;
         let enabled = flags.connection;
         let connection = if enabled {
-            let raw = ctx
-                .transport
-                .execute(Connection::request(&ctx.client, &ctx.session, &home.app)?)
-                .await?;
+            let raw = request(
+                state,
+                key,
+                &owner,
+                Connection::request(&ctx.client, &ctx.session, &home.app)?,
+            )
+            .await?;
             if !read_current(&state.peek(), key) {
                 return Ok(None);
             }
@@ -228,6 +271,20 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
         }
     }
 }
+async fn request(
+    state: Signal<ShellState>,
+    key: Key,
+    owner: &Owner,
+    request: super_platinum_core::slack::PreparedRequest,
+) -> Result<serde_json::Value, Error> {
+    if !read_current(&state.peek(), key) || !owner.current(&state.peek()) {
+        return Err(Error::Api("app_about_read_retired".into()));
+    }
+    if crate::fixture::is_fixture() {
+        return fixture::read_response(&state.peek(), &request);
+    }
+    owner.ctx.transport.execute(request).await
+}
 fn adopt_info(s: &mut ShellState, key: Key, home: Home, info: Info) -> bool {
     if !read_current(s, key) || home.app != info.app() {
         return false;
@@ -267,7 +324,7 @@ fn begin_read(s: &mut ShellState) -> Option<(Owner, Key)> {
         connection_enabled: None,
         loading: true,
         notice: None,
-        fixture: false,
+        fixture: fixture::read_enabled(s),
     });
     Some((owner, Key { id, revision }))
 }

@@ -1,0 +1,202 @@
+{
+  "jitter": [
+    {
+      "unit": 0,
+      "js_text": "0",
+      "nonexistent": 1440,
+      "absent": 1
+    },
+    {
+      "unit": 0.5,
+      "js_text": "0.5",
+      "nonexistent": 1809,
+      "absent": 2
+    },
+    {
+      "unit": 0.25,
+      "js_text": "0.25",
+      "nonexistent": 1621,
+      "absent": 1
+    },
+    {
+      "unit": 0.75,
+      "js_text": "0.75",
+      "nonexistent": 1982,
+      "absent": 2
+    },
+    {
+      "unit": 0.1,
+      "js_text": "0.1",
+      "nonexistent": 1514,
+      "absent": 1
+    },
+    {
+      "unit": 0.01,
+      "js_text": "0.01",
+      "nonexistent": 1448,
+      "absent": 1
+    },
+    {
+      "unit": 0.001,
+      "js_text": "0.001",
+      "nonexistent": 1441,
+      "absent": 1
+    },
+    {
+      "unit": 1e-06,
+      "js_text": "0.000001",
+      "nonexistent": 1441,
+      "absent": 1
+    },
+    {
+      "unit": 1e-07,
+      "js_text": "1e-7",
+      "nonexistent": 1441,
+      "absent": 1
+    },
+    {
+      "unit": 1.1e-07,
+      "js_text": "1.1e-7",
+      "nonexistent": 1441,
+      "absent": 1
+    },
+    {
+      "unit": 1e-12,
+      "js_text": "1e-12",
+      "nonexistent": 1441,
+      "absent": 1
+    },
+    {
+      "unit": 5e-324,
+      "js_text": "5e-324",
+      "nonexistent": 1440,
+      "absent": 1
+    },
+    {
+      "unit": 0.1234567890123456,
+      "js_text": "0.1234567890123456",
+      "nonexistent": 1529,
+      "absent": 1
+    },
+    {
+      "unit": 0.9999999999999999,
+      "js_text": "0.9999999999999999",
+      "nonexistent": 2160,
+      "absent": 2
+    }
+  ],
+  "cases": [
+    {
+      "name": "coalesced-failed-read-marks-current-rows",
+      "ids": [
+        "C00000001",
+        "C00000002"
+      ],
+      "marker_age": 1809,
+      "remaining": [
+        "C00000001"
+      ],
+      "notifications": 1
+    },
+    {
+      "name": "queued-same-id-removed-new-id-delayed",
+      "second_ids": [
+        "C00000002"
+      ],
+      "second_at": 1200
+    },
+    {
+      "name": "connection-change-requeues",
+      "calls": 2,
+      "fresh": [
+        "C00000001"
+      ]
+    },
+    {
+      "name": "get-fresh-does-not-reset-version-finally-does",
+      "fresh": [
+        "C00000001"
+      ],
+      "calls": 1
+    },
+    {
+      "name": "pause-does-not-cancel-reserved-turn-timeout-marks",
+      "calls": 1,
+      "fresh": [
+        "C00000001"
+      ],
+      "notifications": 1
+    },
+    {
+      "name": "burst-strict-window",
+      "notifications": 6
+    },
+    {
+      "name": "actual-lru-existing-key-write-at-capacity",
+      "size": 99,
+      "evicted": "T:C00000000"
+    },
+    {
+      "name": "keyboard-pause-strict-deadline",
+      "at": 3000
+    }
+  ],
+  "pause_cases": [
+    {
+      "name": "orphan-clears-timed-and-later-indefinite",
+      "paused": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "orphan-clears-indefinite",
+      "paused": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "same-deadline-orphan-not-cancelled",
+      "paused": [
+        false
+      ]
+    },
+    {
+      "name": "owned-predecessor-cancelled",
+      "paused": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "sentinel-collision-0",
+      "paused": [
+        true
+      ]
+    },
+    {
+      "name": "sentinel-collision-100",
+      "paused": [
+        false
+      ]
+    }
+  ],
+  "inventory_case": {
+    "count": 10000,
+    "last": [
+      "C00000003",
+      "C00000001"
+    ],
+    "first": [
+      "C00000000",
+      "C00000002",
+      "C00000004",
+      "C00000005"
+    ]
+  }
+}

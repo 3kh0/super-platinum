@@ -15,16 +15,39 @@ function fixture(){
   const nodes=new Map([['shell-overlay-dialog',root],['profile-section-rich',field]]);
   let reads=0;
   const blocks=[{type:'rich_text',elements:[]}];
-  const editor={read(){reads++;return blocks;}};
+  const captured={snapshot:{blocks,revision:0,composing:false,generation:'2'},tokens:[]};
+  const editor={resolved(node){assert.equal(node,field);reads++;return captured;}};
   const capture=vm.runInNewContext(source,{document:{getElementById:id=>nodes.get(id)},window:{superPlatinumRichEditor:editor},setTimeout(fn,ms){assert.equal(ms,5000);timers.set(++next,fn);return next;},clearTimeout:id=>timers.delete(id)});
   const expire=()=>{for(const [id,fn]of [...timers]){timers.delete(id);fn();}};
-  return {button,disabled,field,pane,root,nodes,blocks,capture,status,timers,expire,editor,reads:()=>reads};
+  return {button,disabled,field,pane,root,nodes,blocks,captured,capture,status,timers,expire,editor,reads:()=>reads};
 }
 test('exact current native read seals input and restores original button state',()=>{
   const f=fixture(),ticket=f.capture(1,2,3);
-  assert.equal(ticket.blocks,f.blocks);assert.equal(f.reads(),1);
+  assert.equal(ticket.captured,f.captured);assert.equal(f.reads(),1);
   assert.equal(f.field.isContentEditable,false);assert.equal(f.button.disabled,true);
   ticket.release();assert.equal(f.field.isContentEditable,true);assert.equal(f.button.disabled,false);assert.equal(f.disabled.disabled,true);
+});
+
+test('resolved duplicate witnesses and canonical labels reach the bridge unchanged',async()=>{
+  const f=fixture();
+  f.captured.tokens=[1,2].map(index=>({value:{type:'channel',channel_id:'CMENTION01',fixture_occurrence:index},label:'#project-harbor'}));
+  f.captured.snapshot.blocks=[{type:'rich_text',elements:[{type:'rich_text_section',elements:f.captured.tokens.map(t=>t.value)}]}];
+  let sent;
+  await bridge(f.capture,1,2,3,{send:v=>sent=v,recv:async()=>true});
+  assert.equal(sent,f.captured);
+  assert.deepEqual(sent.tokens.map(t=>t.value.fixture_occurrence),[1,2]);
+  assert.deepEqual(sent.tokens.map(t=>t.label),['#project-harbor','#project-harbor']);
+});
+
+test('malformed or stale resolved snapshot refuses without sealing or timers',()=>{
+  for(const alter of [f=>f.captured.snapshot.blocks=null,f=>f.captured.tokens=null,
+      f=>f.captured.snapshot.composing=true,f=>f.captured.snapshot.generation='9',
+      f=>f.captured.snapshot.revision=-1,f=>f.captured.snapshot.revision=NaN,
+      f=>f.captured.snapshot.revision=Number.MAX_SAFE_INTEGER+1]){
+    const f=fixture();alter(f);assert.equal(f.capture(1,2,3),null);
+    assert.equal(f.field.isContentEditable,true);assert.equal(f.button.disabled,false);
+    assert.equal(f.timers.size,0);assert.match(f.status.textContent,/Your text is still here/);
+  }
 });
 test('IME, locked, readonly and wrong generation refuse before reading',()=>{
   for(const alter of [f=>f.pane.dataset.composing='true',f=>f.root.dataset.sectionLocked='true',f=>f.field.contentEditable='false',f=>f.root.dataset.dialogGeneration='8',f=>f.root.dataset.sectionSerial='8',f=>f.pane.dataset.richVisit='8']){
@@ -39,7 +62,7 @@ test('replaced dialog, editor or rich visit cannot be unlocked by an old ticket'
 test('detached predecessor is never read',()=>{const f=fixture();f.field.isConnected=false;assert.equal(f.capture(1,2,3),null);assert.equal(f.reads(),0);});
 
 test('native read failure preserves text and reports recovery without sealing',async()=>{
-  const f=fixture();f.editor.read=()=>{throw Error('read');};
+  const f=fixture();f.editor.resolved=()=>{throw Error('read');};
   let sent;
   await bridge(f.capture,1,2,3,{send:v=>sent=v,recv:()=>assert.fail('no ticket')});
   assert.equal(sent,null);assert.equal(f.field.contentEditable,'true');
@@ -51,7 +74,7 @@ test('send failure releases exact ticket immediately and reports recovery',async
   assert.equal(f.disabled.disabled,true);assert.match(f.status.textContent,/text is still here/);assert.equal(f.timers.size,0);
 });
 test('recv rejection after send retains seal until watchdog, never authorizing late host data',async()=>{
-  const f=fixture();const done=bridge(f.capture,1,2,3,{send:v=>assert.equal(v,f.blocks),recv:()=>Promise.reject(Error('recv'))});
+  const f=fixture();const done=bridge(f.capture,1,2,3,{send:v=>assert.equal(v,f.captured),recv:()=>Promise.reject(Error('recv'))});
   await Promise.resolve();await Promise.resolve();
   assert.equal(f.field.contentEditable,'false');assert.equal(f.timers.size,1);
   f.expire();await done;assert.equal(f.field.contentEditable,'true');assert.match(f.status.textContent,/Try again/);

@@ -244,8 +244,8 @@
     snapshots.set(value, {node,model,blocks:clone(blocks),revision:model.revision,composing:model.composing,generation:model.expectedGeneration});
     return value;
   }
-  // Profile length is based on canonical per-occurrence labels, not editable
-  // DOM text. Return only labels remembered at mount or exact completion
+  // Capture canonical per-occurrence labels for profile validation, never
+  // editable DOM text. Return only labels remembered at mount or exact completion
   // admission. The profile caller still checks every pair against its own
   // account/visit/catalog proof before constructing a renderer-neutral context.
   function resolved(node) {

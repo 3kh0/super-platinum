@@ -35,6 +35,15 @@ debug = "line-tables-only"
 opt-level = 0
 debug = false
 
+# Full rebuilds do not benefit from writing an incremental dependency graph.
+# Keep dev-fast for repeated edits and its line-number backtraces.
+[profile.dev-rebuild]
+inherits = "dev-fast"
+incremental = false
+debug = false
+# Disabling incremental otherwise reduces Cargo's default to 16 codegen units.
+codegen-units = 256
+
 [profile.release]
 opt-level = 3
 lto = true

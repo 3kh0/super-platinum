@@ -23,6 +23,9 @@ pub(crate) async fn load_environment(media: MediaRegistry) -> ShellState {
 }
 
 pub(crate) async fn initialize(mut state: Signal<ShellState>) {
+    dioxus::core::spawn_forever(async {
+        let _ = crate::app_home::cfm_lifecycle::install_listener().await;
+    });
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_none() {
         let media = state.read().media.clone();
         let mut loaded = load_environment(media).await;
@@ -35,6 +38,7 @@ pub(crate) async fn initialize(mut state: Signal<ShellState>) {
             crate::slack_lists::completion::carry_pending(&mut previous, &mut loaded);
             crate::slack_lists::reminder::carry_pending(&mut previous, &mut loaded);
             crate::app_home::workflows::navigation_history::carry(&mut previous, &mut loaded);
+            crate::directory_member_fetches::carry_into_fresh_shell(&mut previous, &mut loaded);
             *previous = loaded;
         }
         crate::performance::record(crate::performance::StartupStage::CacheLoaded);

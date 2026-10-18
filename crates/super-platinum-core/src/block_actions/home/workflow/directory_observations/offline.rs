@@ -46,6 +46,10 @@ pub struct Offline {
     mpdm: Option<Map<String, Value>>,
     affinity: BTreeMap<String, f64>,
     priority: BTreeMap<String, f64>,
+    // None means the numeric scores were decoded without original property
+    // order. Such a snapshot still supplies scores, but cannot supply Texty's
+    // stable-tie top-channel request hint.
+    processed_channels: Option<Vec<String>>,
 }
 
 impl Default for Offline {
@@ -62,6 +66,7 @@ impl Default for Offline {
             mpdm: None,
             affinity: BTreeMap::new(),
             priority: BTreeMap::new(),
+            processed_channels: Some(Vec::new()),
         }
     }
 }
@@ -179,7 +184,38 @@ impl Offline {
         out.mpdm = metadata(&value["users_has_mpdmed"])?;
         out.affinity = scores(&value["user_affinity"])?;
         out.priority = scores(&value["channel_priority_90d"])?;
+        if !out.priority.is_empty() {
+            out.processed_channels = None;
+        }
         Ok(out)
+    }
+    /// Same-response Object.keys order, supplied by the transport decoder.
+    /// zbK1 sorts descending, keeps source order for ties and takes fifty IDs.
+    pub fn decode_ordered(value: &Value, keys: Option<&[String]>) -> Result<Self, Error> {
+        let mut out = Self::decode(value)?;
+        let Some(raw) = value.get("channel_priority_90d").filter(|v| !v.is_null()) else {
+            return if keys.is_none() {
+                Ok(out)
+            } else {
+                Err(Error::Offline)
+            };
+        };
+        let raw = raw.as_object().ok_or(Error::Offline)?;
+        let keys = keys.ok_or(Error::Offline)?;
+        let unique = keys.iter().collect::<std::collections::BTreeSet<_>>();
+        if unique.len() != keys.len() || unique != raw.keys().collect() {
+            return Err(Error::Offline);
+        }
+        let mut ordered = keys.to_vec();
+        ordered.sort_by(|a, b| out.priority[b].partial_cmp(&out.priority[a]).unwrap());
+        ordered.truncate(50);
+        out.processed_channels = Some(ordered);
+        Ok(out)
+    }
+    /// An empty cold observation is source-defined, not a claim that this
+    /// account's cache or query is current. Those guards belong to the caller.
+    pub fn processed_top_channels(&self) -> Result<&[String], Error> {
+        self.processed_channels.as_deref().ok_or(Error::Offline)
     }
     pub fn entity_ctr(&self, entity: Entity) -> f64 {
         self.ctr
@@ -222,3 +258,6 @@ impl Offline {
         self.priority.get(id).copied().unwrap_or(0.0)
     }
 }
+
+#[cfg(test)]
+mod priority_tests;

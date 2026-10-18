@@ -1,4 +1,6 @@
 use super::*;
+pub(super) mod context;
+mod delta;
 
 // Bound editor input work and payload size while retaining opaque original nodes.
 const MAX_NODES: usize = 10_000;
@@ -6,6 +8,13 @@ const MAX_BYTES: usize = 1_048_576;
 const MAX_DEPTH: usize = 32;
 
 pub(super) fn validate(blocks: &[Value], originals: &[Value]) -> Result<(), Error> {
+    validate_with(blocks, originals, None)
+}
+pub(super) fn validate_with(
+    blocks: &[Value],
+    originals: &[Value],
+    context: Option<&context::RichTextContext>,
+) -> Result<(), Error> {
     let mut budget = (MAX_NODES, MAX_BYTES);
     for block in blocks {
         bounded(block, 0, &mut budget)?;
@@ -14,7 +23,7 @@ pub(super) fn validate(blocks: &[Value], originals: &[Value]) -> Result<(), Erro
     for block in blocks {
         node(block, Position::Root, originals, existing)?;
     }
-    if measured_length(blocks)? > 5000 {
+    if measured_length_with(blocks, context)? > 5000 {
         return Err(invalid(
             "Use 5,000 characters or fewer for this profile field.",
         ));
@@ -151,36 +160,39 @@ fn contains(original: &Value, wanted: &Value) -> bool {
 // In particular an existing trailing newline must not be counted twice, and
 // adjacent link runs with identical attributes count the URL only once.
 pub(super) fn measured_length(blocks: &[Value]) -> Result<usize, Error> {
-    // Retain adjacent attributed text before measuring, as Quill Delta.insert
-    // merges adjacent string operations with identical attributes.
+    measured_length_with(blocks, None)
+}
+fn measured_length_with(
+    blocks: &[Value],
+    context: Option<&context::RichTextContext>,
+) -> Result<usize, Error> {
     #[derive(Default)]
-    struct Ops {
-        values: Vec<(String, Option<String>, [bool; 6])>,
+    struct Ops<'a> {
+        context: Option<&'a context::RichTextContext>,
+        delta: delta::Delta,
+        cursor: usize,
     }
-    impl Ops {
+    impl Ops<'_> {
         fn insert(&mut self, text: String, url: Option<String>, style: [bool; 6]) {
-            if text.is_empty() {
-                return;
-            }
-            if let Some((old, link, attrs)) = self.values.last_mut()
-                && *link == url
-                && *attrs == style
-            {
-                old.push_str(&text);
-                return;
-            }
-            self.values.push((text, url, style));
+            self.delta
+                .insert(text, delta::Kind::Text { link: url }, style);
         }
         fn newline(&mut self) {
-            self.insert("\n".into(), None, [false; 6]);
+            self.delta.newline();
         }
         fn trailing(&self) -> bool {
-            self.values.last().is_some_and(|v| v.0.ends_with('\n'))
+            self.delta.trailing()
         }
         fn inline(&mut self, value: &Value, list: bool, code: bool) -> Result<(), Error> {
             let text = |key: &str| value[key].as_str().unwrap_or("");
             let attrs = ["bold", "italic", "underline", "strike", "code", "unlink"]
                 .map(|key| value["style"][key] == true);
+            if let Some(context) = self.context
+                && let Some((text, kind)) = context.resolve_next(value, &mut self.cursor)?
+            {
+                self.delta.insert(text, kind, attrs);
+                return Ok(());
+            }
             match text("type") {
                 "text" => self.insert(
                     if list {
@@ -245,7 +257,10 @@ pub(super) fn measured_length(blocks: &[Value]) -> Result<usize, Error> {
                 .ok_or_else(|| invalid("Malformed rich text."))?,
         );
     }
-    let mut ops = Ops::default();
+    let mut ops = Ops {
+        context,
+        ..Default::default()
+    };
     let mut previous = "";
     for (index, block) in elements.into_iter().enumerate() {
         let kind = block["type"].as_str().unwrap_or("");
@@ -290,16 +305,8 @@ pub(super) fn measured_length(blocks: &[Value]) -> Result<usize, Error> {
     if !ops.trailing() {
         ops.newline();
     }
-    Ok(ops
-        .values
-        .iter()
-        .map(|(text, link, _)| {
-            text.encode_utf16().count()
-                + link
-                    .as_ref()
-                    .filter(|url| *url != text)
-                    .map_or(0, |url| url.encode_utf16().count())
-        })
-        .sum::<usize>()
-        .saturating_sub(1))
+    if let Some(context) = context {
+        context.finish_sequence(ops.cursor)?;
+    }
+    Ok(ops.delta.length())
 }

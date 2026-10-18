@@ -1,0 +1,446 @@
+[
+  {
+    "name": "astral UTF16",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "A🚀B"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 4
+  },
+  {
+    "name": "plain final newline only",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "A\n\n"
+      }
+    ],
+    "expected": 2
+  },
+  {
+    "name": "link distinct text",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "title",
+        "link": "https://e.invalid"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 22
+  },
+  {
+    "name": "merged equal link attributes",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "title",
+        "link": "https://e.invalid"
+      },
+      {
+        "kind": "text",
+        "text": " more",
+        "link": "https://e.invalid"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 27
+  },
+  {
+    "name": "link same as URL",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "https://e.invalid",
+        "link": "https://e.invalid"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 17
+  },
+  {
+    "name": "adjacent same canonical mention",
+    "ops": [
+      {
+        "kind": "mention",
+        "text": "@One",
+        "id": "U123",
+        "label": "@One"
+      },
+      {
+        "kind": "mention",
+        "text": "@One",
+        "id": "U123",
+        "label": "@One"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 4
+  },
+  {
+    "name": "styled same mention remains distinct",
+    "ops": [
+      {
+        "kind": "mention",
+        "text": "@One",
+        "id": "U123",
+        "label": "@One"
+      },
+      {
+        "kind": "mention",
+        "text": "@One",
+        "id": "U123",
+        "label": "@One",
+        "bold": true
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 8
+  },
+  {
+    "name": "same ID different labels",
+    "ops": [
+      {
+        "kind": "mention",
+        "text": "@One",
+        "id": "U123",
+        "label": "@One"
+      },
+      {
+        "kind": "mention",
+        "text": "@Two",
+        "id": "U123",
+        "label": "@Two"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 8
+  },
+  {
+    "name": "different mentions",
+    "ops": [
+      {
+        "kind": "mention",
+        "text": "@One",
+        "id": "U123",
+        "label": "@One"
+      },
+      {
+        "kind": "mention",
+        "text": "@Two",
+        "id": "U45",
+        "label": "@Two"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 7
+  },
+  {
+    "name": "mention then plain label",
+    "ops": [
+      {
+        "kind": "mention",
+        "text": "@One",
+        "id": "U123",
+        "label": "@One"
+      },
+      {
+        "kind": "text",
+        "text": "@One"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 8
+  },
+  {
+    "name": "broadcast resets preceding accumulated length",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "a long prefix"
+      },
+      {
+        "kind": "mention",
+        "text": "@here",
+        "id": "BKhere",
+        "label": "@here"
+      },
+      {
+        "kind": "text",
+        "text": " tail"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 10
+  },
+  {
+    "name": "consecutive same broadcast merges inserted label",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "prefix"
+      },
+      {
+        "kind": "mention",
+        "text": "@channel",
+        "id": "BKchannel",
+        "label": "@channel"
+      },
+      {
+        "kind": "mention",
+        "text": "@channel",
+        "id": "BKchannel",
+        "label": "@channel"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 16
+  },
+  {
+    "name": "unverified resets prefix",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "prefix"
+      },
+      {
+        "kind": "mention",
+        "text": "@unknown",
+        "id": "UNVERIFIED",
+        "label": "@unknown"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 8
+  },
+  {
+    "name": "empty mention ID uses display",
+    "ops": [
+      {
+        "kind": "mention",
+        "text": "@unknown",
+        "id": "",
+        "label": "@unknown"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 8
+  },
+  {
+    "name": "file slug counts display label",
+    "ops": [
+      {
+        "kind": "slug",
+        "text": "Quarterly 🚀",
+        "identity": "file/F1"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 12
+  },
+  {
+    "name": "emoji embed shortcode length",
+    "ops": [
+      {
+        "kind": "emoji",
+        "text": ":thumbsup::skin-tone-3:"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 23
+  },
+  {
+    "name": "adjacent emoji embeds remain individual",
+    "ops": [
+      {
+        "kind": "emoji",
+        "text": ":heart:"
+      },
+      {
+        "kind": "emoji",
+        "text": ":heart:"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 14
+  },
+  {
+    "name": "unknown unicode converted plain",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "😀"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 2
+  },
+  {
+    "name": "emoji final operation does not lose a unit",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "start"
+      },
+      {
+        "kind": "emoji",
+        "text": ":heart:"
+      }
+    ],
+    "expected": 12
+  },
+  {
+    "name": "BKeveryone",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "prefix"
+      },
+      {
+        "kind": "mention",
+        "text": "@label",
+        "id": "BKeveryone",
+        "label": "@label"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 6
+  },
+  {
+    "name": "BKgroup",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "prefix"
+      },
+      {
+        "kind": "mention",
+        "text": "@label",
+        "id": "BKgroup",
+        "label": "@label"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 6
+  },
+  {
+    "name": "BKsf:accountteam",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "prefix"
+      },
+      {
+        "kind": "mention",
+        "text": "@label",
+        "id": "BKsf:accountteam",
+        "label": "@label"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 6
+  },
+  {
+    "name": "BKsf:dealteam",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "prefix"
+      },
+      {
+        "kind": "mention",
+        "text": "@label",
+        "id": "BKsf:dealteam",
+        "label": "@label"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 6
+  },
+  {
+    "name": "BKassistant:einstein",
+    "ops": [
+      {
+        "kind": "text",
+        "text": "prefix"
+      },
+      {
+        "kind": "mention",
+        "text": "@label",
+        "id": "BKassistant:einstein",
+        "label": "@label"
+      },
+      {
+        "kind": "text",
+        "text": "\n"
+      }
+    ],
+    "expected": 6
+  }
+]

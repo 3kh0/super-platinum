@@ -8,7 +8,12 @@ pub(crate) fn hold_local(shell: &mut ShellState, generation: u64) -> bool {
     {
         return false;
     }
-    shell.canvas_checklist.local_editor = Some(generation);
+    if shell.canvas_checklist.local_editor != Some(generation) {
+        // A link may still be resolving metadata. Opening an editor is a newer
+        // user action; its eventual response must not navigate away from it.
+        shell.slack_link_generation = shell.slack_link_generation.wrapping_add(1);
+        shell.canvas_checklist.local_editor = Some(generation);
+    }
     true
 }
 pub(crate) fn release_local(shell: &mut ShellState, generation: u64) {
@@ -123,6 +128,20 @@ pub(crate) fn install_fixture(shell: &mut ShellState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn acquiring_canvas_editor_cancels_pending_link_once() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        let generation = shell.shortcut_generation;
+        let link = shell.slack_link_generation;
+        assert!(hold_local(&mut shell, generation));
+        assert_ne!(shell.slack_link_generation, link);
+        let reserved = shell.slack_link_generation;
+        assert!(hold_local(&mut shell, generation));
+        assert_eq!(shell.slack_link_generation, reserved);
+        release_local(&mut shell, generation);
+        assert!(hold_local(&mut shell, generation));
+        assert_ne!(shell.slack_link_generation, reserved);
+    }
     #[test]
     fn embedded_owner_requires_exact_channel_route_and_visible_surface() {
         let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());

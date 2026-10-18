@@ -1,0 +1,795 @@
+[
+  {
+    "name": "permanent-short-circuit-object",
+    "kind": "init",
+    "data": {
+      "ok": true,
+      "self": {
+        "id": "U1",
+        "name": "self"
+      },
+      "team": {
+        "id": "T00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "prefs": {
+        "all_notifications_prefs": "{\"channels\":{\"C1\":{\"muted\":true,\"temp_mute_expiration_ts\":{\"value\":2000}}}}"
+      }
+    },
+    "input_bytes": "{\"ok\":true,\"self\":{\"id\":\"U1\",\"name\":\"self\"},\"team\":{\"id\":\"T00000001\"},\"workspaces\":[{\"id\":\"T00000001\"}],\"prefs\":{\"all_notifications_prefs\":\"{\\\"channels\\\":{\\\"C1\\\":{\\\"muted\\\":true,\\\"temp_mute_expiration_ts\\\":{\\\"value\\\":2000}}}}\"}}",
+    "observations": {
+      "team": "T00000001",
+      "enterprise": null,
+      "workspace_ids": [
+        "T00000001"
+      ],
+      "auth_workspace_ids": [
+        "T00000001"
+      ],
+      "temp_mute_enabled": true,
+      "unix_seconds": 1000,
+      "screen_reader_enabled": false
+    },
+    "fail_at": null,
+    "effects": [
+      {
+        "kind": "self_id",
+        "payload": {
+          "user_id": "U1"
+        }
+      },
+      {
+        "kind": "screen_reader_enabled",
+        "payload": false
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "member_upsert",
+        "payload": {
+          "members": [
+            {
+              "id": "U1",
+              "name": "self"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "internal_workspaces",
+        "payload": {
+          "internalIds": [
+            "T00000001"
+          ]
+        }
+      },
+      {
+        "kind": "user_prefs",
+        "payload": {
+          "all_notifications_prefs": {
+            "channels": {
+              "C1": {
+                "muted": true,
+                "temp_mute_expiration_ts": {
+                  "value": 2000
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "kind": "muted_channels",
+        "payload": {
+          "C1": true
+        }
+      },
+      {
+        "kind": "temp_mute_timer",
+        "payload": {
+          "C1": {
+            "muted": true,
+            "temp_mute_expiration_ts": {
+              "value": 2000
+            }
+          }
+        }
+      },
+      {
+        "kind": "hidden_users",
+        "payload": {}
+      }
+    ],
+    "failed": false
+  },
+  {
+    "name": "number-inf",
+    "kind": "init",
+    "data": {
+      "ok": true,
+      "self": {
+        "id": "U1",
+        "name": "self"
+      },
+      "team": {
+        "id": "T00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "prefs": {
+        "all_notifications_prefs": "{\"channels\":{\"C1\":{\"muted\":false,\"temp_mute_expiration_ts\":\"inf\"}}}"
+      }
+    },
+    "input_bytes": "{\"ok\":true,\"self\":{\"id\":\"U1\",\"name\":\"self\"},\"team\":{\"id\":\"T00000001\"},\"workspaces\":[{\"id\":\"T00000001\"}],\"prefs\":{\"all_notifications_prefs\":\"{\\\"channels\\\":{\\\"C1\\\":{\\\"muted\\\":false,\\\"temp_mute_expiration_ts\\\":\\\"inf\\\"}}}\"}}",
+    "observations": {
+      "team": "T00000001",
+      "enterprise": null,
+      "workspace_ids": [
+        "T00000001"
+      ],
+      "auth_workspace_ids": [
+        "T00000001"
+      ],
+      "temp_mute_enabled": true,
+      "unix_seconds": 1000,
+      "screen_reader_enabled": false
+    },
+    "fail_at": null,
+    "effects": [
+      {
+        "kind": "self_id",
+        "payload": {
+          "user_id": "U1"
+        }
+      },
+      {
+        "kind": "screen_reader_enabled",
+        "payload": false
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "member_upsert",
+        "payload": {
+          "members": [
+            {
+              "id": "U1",
+              "name": "self"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "internal_workspaces",
+        "payload": {
+          "internalIds": [
+            "T00000001"
+          ]
+        }
+      },
+      {
+        "kind": "user_prefs",
+        "payload": {
+          "all_notifications_prefs": {
+            "channels": {
+              "C1": {
+                "muted": false,
+                "temp_mute_expiration_ts": "inf"
+              }
+            }
+          }
+        }
+      },
+      {
+        "kind": "hidden_users",
+        "payload": {}
+      }
+    ],
+    "failed": false
+  },
+  {
+    "name": "number-+inf",
+    "kind": "init",
+    "data": {
+      "ok": true,
+      "self": {
+        "id": "U1",
+        "name": "self"
+      },
+      "team": {
+        "id": "T00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "prefs": {
+        "all_notifications_prefs": "{\"channels\":{\"C1\":{\"muted\":false,\"temp_mute_expiration_ts\":\"+inf\"}}}"
+      }
+    },
+    "input_bytes": "{\"ok\":true,\"self\":{\"id\":\"U1\",\"name\":\"self\"},\"team\":{\"id\":\"T00000001\"},\"workspaces\":[{\"id\":\"T00000001\"}],\"prefs\":{\"all_notifications_prefs\":\"{\\\"channels\\\":{\\\"C1\\\":{\\\"muted\\\":false,\\\"temp_mute_expiration_ts\\\":\\\"+inf\\\"}}}\"}}",
+    "observations": {
+      "team": "T00000001",
+      "enterprise": null,
+      "workspace_ids": [
+        "T00000001"
+      ],
+      "auth_workspace_ids": [
+        "T00000001"
+      ],
+      "temp_mute_enabled": true,
+      "unix_seconds": 1000,
+      "screen_reader_enabled": false
+    },
+    "fail_at": null,
+    "effects": [
+      {
+        "kind": "self_id",
+        "payload": {
+          "user_id": "U1"
+        }
+      },
+      {
+        "kind": "screen_reader_enabled",
+        "payload": false
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "member_upsert",
+        "payload": {
+          "members": [
+            {
+              "id": "U1",
+              "name": "self"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "internal_workspaces",
+        "payload": {
+          "internalIds": [
+            "T00000001"
+          ]
+        }
+      },
+      {
+        "kind": "user_prefs",
+        "payload": {
+          "all_notifications_prefs": {
+            "channels": {
+              "C1": {
+                "muted": false,
+                "temp_mute_expiration_ts": "+inf"
+              }
+            }
+          }
+        }
+      },
+      {
+        "kind": "hidden_users",
+        "payload": {}
+      }
+    ],
+    "failed": false
+  },
+  {
+    "name": "number-Infinity",
+    "kind": "init",
+    "data": {
+      "ok": true,
+      "self": {
+        "id": "U1",
+        "name": "self"
+      },
+      "team": {
+        "id": "T00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "prefs": {
+        "all_notifications_prefs": "{\"channels\":{\"C1\":{\"muted\":false,\"temp_mute_expiration_ts\":\"Infinity\"}}}"
+      }
+    },
+    "input_bytes": "{\"ok\":true,\"self\":{\"id\":\"U1\",\"name\":\"self\"},\"team\":{\"id\":\"T00000001\"},\"workspaces\":[{\"id\":\"T00000001\"}],\"prefs\":{\"all_notifications_prefs\":\"{\\\"channels\\\":{\\\"C1\\\":{\\\"muted\\\":false,\\\"temp_mute_expiration_ts\\\":\\\"Infinity\\\"}}}\"}}",
+    "observations": {
+      "team": "T00000001",
+      "enterprise": null,
+      "workspace_ids": [
+        "T00000001"
+      ],
+      "auth_workspace_ids": [
+        "T00000001"
+      ],
+      "temp_mute_enabled": true,
+      "unix_seconds": 1000,
+      "screen_reader_enabled": false
+    },
+    "fail_at": null,
+    "effects": [
+      {
+        "kind": "self_id",
+        "payload": {
+          "user_id": "U1"
+        }
+      },
+      {
+        "kind": "screen_reader_enabled",
+        "payload": false
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "member_upsert",
+        "payload": {
+          "members": [
+            {
+              "id": "U1",
+              "name": "self"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "internal_workspaces",
+        "payload": {
+          "internalIds": [
+            "T00000001"
+          ]
+        }
+      },
+      {
+        "kind": "user_prefs",
+        "payload": {
+          "all_notifications_prefs": {
+            "channels": {
+              "C1": {
+                "muted": false,
+                "temp_mute_expiration_ts": "Infinity"
+              }
+            }
+          }
+        }
+      },
+      {
+        "kind": "muted_channels",
+        "payload": {
+          "C1": true
+        }
+      },
+      {
+        "kind": "temp_mute_timer",
+        "payload": {
+          "C1": {
+            "muted": false,
+            "temp_mute_expiration_ts": "Infinity"
+          }
+        }
+      },
+      {
+        "kind": "hidden_users",
+        "payload": {}
+      }
+    ],
+    "failed": false
+  },
+  {
+    "name": "number-﻿2000﻿",
+    "kind": "init",
+    "data": {
+      "ok": true,
+      "self": {
+        "id": "U1",
+        "name": "self"
+      },
+      "team": {
+        "id": "T00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "prefs": {
+        "all_notifications_prefs": "{\"channels\":{\"C1\":{\"muted\":false,\"temp_mute_expiration_ts\":\"﻿2000﻿\"}}}"
+      }
+    },
+    "input_bytes": "{\"ok\":true,\"self\":{\"id\":\"U1\",\"name\":\"self\"},\"team\":{\"id\":\"T00000001\"},\"workspaces\":[{\"id\":\"T00000001\"}],\"prefs\":{\"all_notifications_prefs\":\"{\\\"channels\\\":{\\\"C1\\\":{\\\"muted\\\":false,\\\"temp_mute_expiration_ts\\\":\\\"﻿2000﻿\\\"}}}\"}}",
+    "observations": {
+      "team": "T00000001",
+      "enterprise": null,
+      "workspace_ids": [
+        "T00000001"
+      ],
+      "auth_workspace_ids": [
+        "T00000001"
+      ],
+      "temp_mute_enabled": true,
+      "unix_seconds": 1000,
+      "screen_reader_enabled": false
+    },
+    "fail_at": null,
+    "effects": [
+      {
+        "kind": "self_id",
+        "payload": {
+          "user_id": "U1"
+        }
+      },
+      {
+        "kind": "screen_reader_enabled",
+        "payload": false
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "member_upsert",
+        "payload": {
+          "members": [
+            {
+              "id": "U1",
+              "name": "self"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "internal_workspaces",
+        "payload": {
+          "internalIds": [
+            "T00000001"
+          ]
+        }
+      },
+      {
+        "kind": "user_prefs",
+        "payload": {
+          "all_notifications_prefs": {
+            "channels": {
+              "C1": {
+                "muted": false,
+                "temp_mute_expiration_ts": "﻿2000﻿"
+              }
+            }
+          }
+        }
+      },
+      {
+        "kind": "muted_channels",
+        "payload": {
+          "C1": true
+        }
+      },
+      {
+        "kind": "temp_mute_timer",
+        "payload": {
+          "C1": {
+            "muted": false,
+            "temp_mute_expiration_ts": "﻿2000﻿"
+          }
+        }
+      },
+      {
+        "kind": "hidden_users",
+        "payload": {}
+      }
+    ],
+    "failed": false
+  },
+  {
+    "name": "number-0x10000000000000000",
+    "kind": "init",
+    "data": {
+      "ok": true,
+      "self": {
+        "id": "U1",
+        "name": "self"
+      },
+      "team": {
+        "id": "T00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "prefs": {
+        "all_notifications_prefs": "{\"channels\":{\"C1\":{\"muted\":false,\"temp_mute_expiration_ts\":\"0x10000000000000000\"}}}"
+      }
+    },
+    "input_bytes": "{\"ok\":true,\"self\":{\"id\":\"U1\",\"name\":\"self\"},\"team\":{\"id\":\"T00000001\"},\"workspaces\":[{\"id\":\"T00000001\"}],\"prefs\":{\"all_notifications_prefs\":\"{\\\"channels\\\":{\\\"C1\\\":{\\\"muted\\\":false,\\\"temp_mute_expiration_ts\\\":\\\"0x10000000000000000\\\"}}}\"}}",
+    "observations": {
+      "team": "T00000001",
+      "enterprise": null,
+      "workspace_ids": [
+        "T00000001"
+      ],
+      "auth_workspace_ids": [
+        "T00000001"
+      ],
+      "temp_mute_enabled": true,
+      "unix_seconds": 1000,
+      "screen_reader_enabled": false
+    },
+    "fail_at": null,
+    "effects": [
+      {
+        "kind": "self_id",
+        "payload": {
+          "user_id": "U1"
+        }
+      },
+      {
+        "kind": "screen_reader_enabled",
+        "payload": false
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "member_upsert",
+        "payload": {
+          "members": [
+            {
+              "id": "U1",
+              "name": "self"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "internal_workspaces",
+        "payload": {
+          "internalIds": [
+            "T00000001"
+          ]
+        }
+      },
+      {
+        "kind": "user_prefs",
+        "payload": {
+          "all_notifications_prefs": {
+            "channels": {
+              "C1": {
+                "muted": false,
+                "temp_mute_expiration_ts": "0x10000000000000000"
+              }
+            }
+          }
+        }
+      },
+      {
+        "kind": "muted_channels",
+        "payload": {
+          "C1": true
+        }
+      },
+      {
+        "kind": "temp_mute_timer",
+        "payload": {
+          "C1": {
+            "muted": false,
+            "temp_mute_expiration_ts": "0x10000000000000000"
+          }
+        }
+      },
+      {
+        "kind": "hidden_users",
+        "payload": {}
+      }
+    ],
+    "failed": false
+  },
+  {
+    "name": "empty-enterprise-fallback",
+    "kind": "init",
+    "data": {
+      "ok": true,
+      "self": {
+        "id": "U1",
+        "name": "self"
+      },
+      "team": {
+        "id": "T00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "account_types": {
+        "is_admin": [
+          "T2"
+        ]
+      }
+    },
+    "input_bytes": "{\"ok\":true,\"self\":{\"id\":\"U1\",\"name\":\"self\"},\"team\":{\"id\":\"T00000001\"},\"workspaces\":[{\"id\":\"T00000001\"}],\"account_types\":{\"is_admin\":[\"T2\"]}}",
+    "observations": {
+      "team": "T00000001",
+      "enterprise": "",
+      "workspace_ids": [
+        "T00000001"
+      ],
+      "auth_workspace_ids": [
+        "T00000001"
+      ],
+      "temp_mute_enabled": true,
+      "unix_seconds": 1000,
+      "screen_reader_enabled": false
+    },
+    "fail_at": null,
+    "effects": [
+      {
+        "kind": "self_id",
+        "payload": {
+          "user_id": "U1"
+        }
+      },
+      {
+        "kind": "screen_reader_enabled",
+        "payload": false
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "team_upsert",
+        "payload": {
+          "team": {
+            "id": "T00000001"
+          }
+        }
+      },
+      {
+        "kind": "member_upsert",
+        "payload": {
+          "members": [
+            {
+              "id": "U1",
+              "name": "self"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "primary_owner",
+        "payload": {
+          "teamId": "T2",
+          "value": false
+        }
+      },
+      {
+        "kind": "owner",
+        "payload": {
+          "teamId": "T2",
+          "value": false
+        }
+      },
+      {
+        "kind": "admin",
+        "payload": {
+          "teamId": "T2",
+          "value": true
+        }
+      },
+      {
+        "kind": "account_types",
+        "payload": {
+          "teamId": "T00000001",
+          "teamIds": [
+            "T2"
+          ]
+        }
+      },
+      {
+        "kind": "internal_workspaces",
+        "payload": {
+          "internalIds": [
+            "T00000001"
+          ]
+        }
+      }
+    ],
+    "failed": false
+  }
+]

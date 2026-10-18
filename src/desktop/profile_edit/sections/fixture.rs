@@ -1,6 +1,24 @@
 //! Named disconnected layout fixture. Synthetic sections only; no credentials,
 //! Transport or production write adapter is installed by this fixture.
 use super::*;
+pub(crate) mod check;
+pub(crate) mod group_recovery;
+pub(crate) mod group_recovery_check;
+mod interaction;
+pub(crate) mod member_freshness;
+pub(crate) mod member_freshness_check;
+pub(crate) mod member_known;
+pub(crate) mod member_known_check;
+pub(crate) mod member_recovery;
+pub(crate) mod member_recovery_check;
+pub(crate) mod mentions;
+pub(crate) mod mentions_check;
+pub(crate) mod recovery;
+pub(crate) mod recovery_check;
+pub(super) use interaction::{Interaction, check, load, save};
+pub(crate) use interaction::{
+    Outcome, complete, enabled as interaction_enabled, install_interaction,
+};
 pub(crate) fn install_pronunciation(shell: &mut ShellState) {
     install(shell);
     let d = shell.profile_edit.sections.draft.as_ref().unwrap();

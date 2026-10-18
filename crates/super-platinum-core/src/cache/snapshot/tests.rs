@@ -126,6 +126,79 @@ fn metadata_snapshot_never_retains_other_team_transcripts_or_live_runtime() {
 }
 
 #[test]
+fn draft_presence_metadata_roundtrip_retains_transcripts_and_excludes_draft_contents() {
+    let cache = Cache::open(":memory:").unwrap();
+    let mut ws = workspace();
+    cache.save_workspace(&ws).unwrap();
+    let before_messages = rows(&cache, "messages");
+    let before_read_state = rows(&cache, "channel_state");
+    ws.draft_presence
+        .observe(&json!({"id":"DRAFT","client_msg_id":"client-draft",
+        "last_updated_ts":"1.1","destinations":[{"channel_id":"C"}],
+        "blocks":[{"text":"PRIVATE_DRAFT_BODY"}],"file_ids":["PRIVATE_FILE"]}))
+        .unwrap();
+    WorkspaceSnapshot::metadata(&ws).save(&cache).unwrap();
+    let session = WorkspaceSession {
+        team_id: "T".into(),
+        user_id: "U".into(),
+        enterprise_id: None,
+        name: "test".into(),
+        url: "https://example.slack.com".into(),
+        token: "synthetic".into(),
+    };
+    for mut restored in [
+        cache.load_workspace(&session).unwrap().unwrap(),
+        cache.load_workspace_for_startup(&session).unwrap().unwrap(),
+    ] {
+        assert!(restored.draft_presence.has_channel("C"));
+        assert_eq!(restored.draft_presence.revision(), 0);
+        let saved = restored.draft_presence.persisted().to_string();
+        assert!(!saved.contains("PRIVATE_DRAFT_BODY"));
+        assert!(!saved.contains("PRIVATE_FILE"));
+        let read = crate::drafts::presence::Read::begin(&mut restored.draft_presence);
+        assert!(read.needs_purge());
+        restored.draft_presence.invalidate();
+        assert!(!read.current(&restored.draft_presence));
+        assert!(restored.draft_presence.has_channel("C"));
+    }
+    assert_eq!(rows(&cache, "messages"), before_messages);
+    assert_eq!(rows(&cache, "channel_state"), before_read_state);
+}
+
+#[test]
+fn legacy_or_malformed_draft_presence_cache_preserves_other_sidebar_metadata() {
+    let cache = Cache::open(":memory:").unwrap();
+    cache.save_workspace(&workspace()).unwrap();
+    let session = WorkspaceSession {
+        team_id: "T".into(),
+        user_id: "U".into(),
+        enterprise_id: None,
+        name: "test".into(),
+        url: "https://example.slack.com".into(),
+        token: "synthetic".into(),
+    };
+    for sidebar in [
+        json!({"priority_section":true}),
+        json!({"priority_section":true,"draft_presence":{"invalid":true}}),
+    ] {
+        cache
+            .conn
+            .execute(
+                "update workspaces set sidebar = ?1 where team_id = ?2",
+                rusqlite::params![sidebar.to_string(), session.team_id],
+            )
+            .unwrap();
+        let restored = cache.load_workspace(&session).unwrap().unwrap();
+        assert!(restored.priority_sidebar_section);
+        assert_eq!(restored.draft_presence.persisted(), json!([]));
+        assert_eq!(
+            restored.messages["C"].last_read.as_deref(),
+            Some("0.000001")
+        );
+    }
+}
+
+#[test]
 #[ignore = "paired CPU-only snapshot benchmark; no Slack or disk persistence"]
 fn metadata_snapshot_clone_cost() {
     let mut ws = workspace();

@@ -287,6 +287,22 @@ pub fn rank(
     cache: &mut SimilarityCache,
     collate: impl Fn(&str, &str) -> Ordering,
 ) -> Result<Vec<Ranked>, Error> {
+    Ok(rank_observed(query, groups, options, context, cache, collate)?.rows)
+}
+/// Preserve the exact channel latest-selector reads made on the model shortlist.
+/// This is an observation for the owning consumer, never selection authority.
+pub struct Observation {
+    pub rows: Vec<Ranked>,
+    pub channel_latest_ids: Vec<String>,
+}
+pub fn rank_observed(
+    query: &str,
+    groups: &Value,
+    options: &Options,
+    context: &Context<'_>,
+    cache: &mut SimilarityCache,
+    collate: impl Fn(&str, &str) -> Ordering,
+) -> Result<Observation, Error> {
     if !context.now_ms.is_finite() {
         return Err(Error::InvalidClock);
     }
@@ -402,6 +418,11 @@ pub fn rank(
     }
     ordered.truncate(shortlist);
     let prepared = prepare::suggestions(query, &normalized, ordered, context, options)?;
+    let channel_latest_ids = prepared
+        .iter()
+        .filter(|row| row["suggestionType"] == "channel-navigation")
+        .map(|row| text(&row["id"]).to_owned())
+        .collect();
     let mut feature_vectors = std::collections::BTreeMap::new();
     for row in &prepared {
         feature_vectors.insert(
@@ -488,5 +509,8 @@ pub fn rank(
         results = partition_first(results, |r| truth(&r.row["isSelf"]));
     }
     results.truncate(options.limit);
-    Ok(results)
+    Ok(Observation {
+        rows: results,
+        channel_latest_ids,
+    })
 }

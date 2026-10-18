@@ -1,0 +1,1144 @@
+{
+  "scope": "Actual XbX7 effective-profile/custom-fields/derived-profile/derived-member-name subset plus An8m; native preservation is a separately labelled adaptation, not Wr32 replacement.",
+  "cases": [
+    {
+      "label": "self-omitted-on-false",
+      "input": {
+        "id": "USELF1234",
+        "profile": {
+          "display_name": "Fresh"
+        }
+      },
+      "before": {
+        "id": "USELF1234",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": false,
+      "normalized": {
+        "id": "USELF1234",
+        "profile": {
+          "display_name": "Fresh"
+        }
+      },
+      "profile": {
+        "display_name": "Fresh",
+        "email": "prior@example.invalid",
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "",
+        "display_name_normalized": "Fresh",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "fresh",
+        "_display_name_normalized_lc": "fresh",
+        "_email_normalized_lc": "prior@example.invalid"
+      },
+      "renderer": {
+        "fields": [
+          "",
+          "Fresh",
+          "prior@example.invalid"
+        ],
+        "lowered": [
+          "",
+          "fresh",
+          "prior@example.invalid"
+        ]
+      }
+    },
+    {
+      "label": "self-omitted-on-true",
+      "input": {
+        "id": "USELF1234",
+        "profile": {
+          "display_name": "Fresh"
+        }
+      },
+      "before": {
+        "id": "USELF1234",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": true,
+      "normalized": {
+        "id": "USELF1234",
+        "profile": {
+          "display_name": "Fresh"
+        },
+        "is_stranger": false
+      },
+      "profile": {
+        "display_name": "Fresh",
+        "email": "prior@example.invalid",
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "",
+        "display_name_normalized": "Fresh",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "fresh",
+        "_display_name_normalized_lc": "fresh",
+        "_email_normalized_lc": "prior@example.invalid"
+      },
+      "renderer": {
+        "fields": [
+          "",
+          "Fresh",
+          "prior@example.invalid"
+        ],
+        "lowered": [
+          "",
+          "fresh",
+          "prior@example.invalid"
+        ]
+      }
+    },
+    {
+      "label": "self-null-on-false",
+      "input": {
+        "id": "USELF1234",
+        "profile": {
+          "email": null,
+          "fields": null
+        }
+      },
+      "before": {
+        "id": "USELF1234",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": false,
+      "normalized": {
+        "id": "USELF1234",
+        "profile": {
+          "email": null,
+          "fields": null
+        }
+      },
+      "profile": {
+        "email": "prior@example.invalid",
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": "prior@example.invalid"
+      },
+      "renderer": {
+        "fields": [
+          "",
+          "prior@example.invalid"
+        ],
+        "lowered": [
+          "",
+          "prior@example.invalid"
+        ]
+      }
+    },
+    {
+      "label": "self-null-on-true",
+      "input": {
+        "id": "USELF1234",
+        "profile": {
+          "email": null,
+          "fields": null
+        }
+      },
+      "before": {
+        "id": "USELF1234",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": true,
+      "normalized": {
+        "id": "USELF1234",
+        "profile": {
+          "email": null,
+          "fields": null
+        },
+        "is_stranger": false
+      },
+      "profile": {
+        "email": "prior@example.invalid",
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": "prior@example.invalid"
+      },
+      "renderer": {
+        "fields": [
+          "",
+          "prior@example.invalid"
+        ],
+        "lowered": [
+          "",
+          "prior@example.invalid"
+        ]
+      }
+    },
+    {
+      "label": "self-omitted-off-false",
+      "input": {
+        "id": "USELF1234",
+        "profile": {}
+      },
+      "before": {
+        "id": "USELF1234",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": false,
+      "normalize": false,
+      "normalized": {
+        "id": "USELF1234",
+        "profile": {}
+      },
+      "profile": {
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          ""
+        ],
+        "lowered": [
+          ""
+        ]
+      }
+    },
+    {
+      "label": "self-omitted-off-true",
+      "input": {
+        "id": "USELF1234",
+        "profile": {}
+      },
+      "before": {
+        "id": "USELF1234",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": false,
+      "normalize": true,
+      "normalized": {
+        "id": "USELF1234",
+        "profile": {},
+        "is_stranger": false
+      },
+      "profile": {
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          ""
+        ],
+        "lowered": [
+          ""
+        ]
+      }
+    },
+    {
+      "label": "self-explicit-empty-false",
+      "input": {
+        "id": "USELF1234",
+        "profile": {
+          "email": "",
+          "fields": {}
+        }
+      },
+      "before": {
+        "id": "USELF1234",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": false,
+      "normalized": {
+        "id": "USELF1234",
+        "profile": {
+          "email": "",
+          "fields": {}
+        }
+      },
+      "profile": {
+        "email": "",
+        "fields": {},
+        "real_name_normalized": "",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          ""
+        ],
+        "lowered": [
+          ""
+        ]
+      }
+    },
+    {
+      "label": "self-explicit-empty-true",
+      "input": {
+        "id": "USELF1234",
+        "profile": {
+          "email": "",
+          "fields": {}
+        }
+      },
+      "before": {
+        "id": "USELF1234",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": true,
+      "normalized": {
+        "id": "USELF1234",
+        "profile": {
+          "email": "",
+          "fields": {}
+        },
+        "is_stranger": false
+      },
+      "profile": {
+        "email": "",
+        "fields": {},
+        "real_name_normalized": "",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          ""
+        ],
+        "lowered": [
+          ""
+        ]
+      }
+    },
+    {
+      "label": "nonself-omitted-false",
+      "input": {
+        "id": "UOTHER123",
+        "profile": {}
+      },
+      "before": {
+        "id": "UOTHER123",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": false,
+      "normalized": {
+        "id": "UOTHER123",
+        "profile": {}
+      },
+      "profile": {
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          ""
+        ],
+        "lowered": [
+          ""
+        ]
+      }
+    },
+    {
+      "label": "nonself-omitted-true",
+      "input": {
+        "id": "UOTHER123",
+        "profile": {}
+      },
+      "before": {
+        "id": "UOTHER123",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": true,
+      "normalized": {
+        "id": "UOTHER123",
+        "profile": {},
+        "is_stranger": false
+      },
+      "profile": {
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          ""
+        ],
+        "lowered": [
+          ""
+        ]
+      }
+    },
+    {
+      "label": "profile-only-stranger-false",
+      "input": {
+        "id": "UOTHER123",
+        "is_profile_only_user": true,
+        "is_stranger": true,
+        "profile": {}
+      },
+      "before": {
+        "id": "UOTHER123",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": false,
+      "normalized": {
+        "id": "UOTHER123",
+        "is_profile_only_user": true,
+        "is_stranger": true,
+        "profile": {}
+      },
+      "profile": {
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          ""
+        ],
+        "lowered": [
+          ""
+        ]
+      }
+    },
+    {
+      "label": "profile-only-stranger-true",
+      "input": {
+        "id": "UOTHER123",
+        "is_profile_only_user": true,
+        "is_stranger": true,
+        "profile": {}
+      },
+      "before": {
+        "id": "UOTHER123",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": true,
+      "normalized": {
+        "id": "UOTHER123",
+        "is_profile_only_user": true,
+        "is_stranger": true,
+        "profile": {}
+      },
+      "profile": {
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "",
+        "_real_name_normalized_lc": "",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          ""
+        ],
+        "lowered": [
+          ""
+        ]
+      }
+    },
+    {
+      "label": "visible-external-normalized-false",
+      "input": {
+        "id": "UOTHER123",
+        "is_stranger": true,
+        "profile": {
+          "real_name": "Visible"
+        }
+      },
+      "before": {
+        "id": "UOTHER123",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": false,
+      "normalized": {
+        "id": "UOTHER123",
+        "is_stranger": true,
+        "profile": {
+          "real_name": "Visible"
+        }
+      },
+      "profile": {
+        "real_name": "Visible",
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "Visible",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "visible",
+        "_real_name_normalized_lc": "visible",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          "",
+          "Visible"
+        ],
+        "lowered": [
+          "",
+          "visible"
+        ]
+      }
+    },
+    {
+      "label": "visible-external-normalized-true",
+      "input": {
+        "id": "UOTHER123",
+        "is_stranger": true,
+        "profile": {
+          "real_name": "Visible"
+        }
+      },
+      "before": {
+        "id": "UOTHER123",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": true,
+      "normalized": {
+        "id": "UOTHER123",
+        "is_stranger": false,
+        "profile": {
+          "real_name": "Visible"
+        }
+      },
+      "profile": {
+        "real_name": "Visible",
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "Visible",
+        "display_name_normalized": "",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": "",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "visible",
+        "_real_name_normalized_lc": "visible",
+        "_display_name_lc": "",
+        "_display_name_normalized_lc": "",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          "",
+          "Visible"
+        ],
+        "lowered": [
+          "",
+          "visible"
+        ]
+      }
+    },
+    {
+      "label": "unicode-distinct-false",
+      "input": {
+        "id": "UOTHER123",
+        "name": "USER",
+        "profile": {
+          "real_name": "ÉLODIE ØSTER",
+          "display_name": "Ægir Straße",
+          "first_name": "FIRST",
+          "last_name": "LAST",
+          "email": "UPPER@EXAMPLE.INVALID"
+        }
+      },
+      "before": {
+        "id": "UOTHER123",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": false,
+      "normalized": {
+        "id": "UOTHER123",
+        "name": "USER",
+        "profile": {
+          "real_name": "ÉLODIE ØSTER",
+          "display_name": "Ægir Straße",
+          "first_name": "FIRST",
+          "last_name": "LAST",
+          "email": "UPPER@EXAMPLE.INVALID"
+        }
+      },
+      "profile": {
+        "real_name": "ÉLODIE ØSTER",
+        "display_name": "Ægir Straße",
+        "first_name": "FIRST",
+        "last_name": "LAST",
+        "email": "UPPER@EXAMPLE.INVALID",
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "ELODIE OSTER",
+        "display_name_normalized": "Aegir Strasse"
+      },
+      "derived": {
+        "_name_lc": "user",
+        "_first_name_lc": "first",
+        "_last_name_lc": "last",
+        "_real_name_lc": "élodie øster",
+        "_real_name_normalized_lc": "elodie oster",
+        "_display_name_lc": "ægir straße",
+        "_display_name_normalized_lc": "aegir strasse",
+        "_email_normalized_lc": "upper@example.invalid"
+      },
+      "renderer": {
+        "fields": [
+          "USER",
+          "FIRST",
+          "LAST",
+          "ÉLODIE ØSTER",
+          "Ægir Straße",
+          "UPPER@EXAMPLE.INVALID"
+        ],
+        "lowered": [
+          "user",
+          "first",
+          "last",
+          "élodie øster",
+          "ægir straße",
+          "upper@example.invalid"
+        ]
+      }
+    },
+    {
+      "label": "unicode-distinct-true",
+      "input": {
+        "id": "UOTHER123",
+        "name": "USER",
+        "profile": {
+          "real_name": "ÉLODIE ØSTER",
+          "display_name": "Ægir Straße",
+          "first_name": "FIRST",
+          "last_name": "LAST",
+          "email": "UPPER@EXAMPLE.INVALID"
+        }
+      },
+      "before": {
+        "id": "UOTHER123",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": true,
+      "normalized": {
+        "id": "UOTHER123",
+        "name": "USER",
+        "profile": {
+          "real_name": "ÉLODIE ØSTER",
+          "display_name": "Ægir Straße",
+          "first_name": "FIRST",
+          "last_name": "LAST",
+          "email": "UPPER@EXAMPLE.INVALID"
+        },
+        "is_stranger": false
+      },
+      "profile": {
+        "real_name": "ÉLODIE ØSTER",
+        "display_name": "Ægir Straße",
+        "first_name": "FIRST",
+        "last_name": "LAST",
+        "email": "UPPER@EXAMPLE.INVALID",
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "ELODIE OSTER",
+        "display_name_normalized": "Aegir Strasse"
+      },
+      "derived": {
+        "_name_lc": "user",
+        "_first_name_lc": "first",
+        "_last_name_lc": "last",
+        "_real_name_lc": "élodie øster",
+        "_real_name_normalized_lc": "elodie oster",
+        "_display_name_lc": "ægir straße",
+        "_display_name_normalized_lc": "aegir strasse",
+        "_email_normalized_lc": "upper@example.invalid"
+      },
+      "renderer": {
+        "fields": [
+          "USER",
+          "FIRST",
+          "LAST",
+          "ÉLODIE ØSTER",
+          "Ægir Straße",
+          "UPPER@EXAMPLE.INVALID"
+        ],
+        "lowered": [
+          "user",
+          "first",
+          "last",
+          "élodie øster",
+          "ægir straße",
+          "upper@example.invalid"
+        ]
+      }
+    },
+    {
+      "label": "literal-whitespace-false",
+      "input": {
+        "id": "UOTHER123",
+        "name": " Raw ",
+        "profile": {
+          "real_name": "   ",
+          "display_name": " X  Y "
+        }
+      },
+      "before": {
+        "id": "UOTHER123",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": false,
+      "normalized": {
+        "id": "UOTHER123",
+        "name": " Raw ",
+        "profile": {
+          "real_name": "   ",
+          "display_name": " X  Y "
+        }
+      },
+      "profile": {
+        "real_name": "   ",
+        "display_name": " X  Y ",
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "   ",
+        "display_name_normalized": " X  Y ",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": " raw ",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "   ",
+        "_real_name_normalized_lc": "   ",
+        "_display_name_lc": " x  y ",
+        "_display_name_normalized_lc": " x  y ",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          " Raw ",
+          "",
+          "   ",
+          " X  Y "
+        ],
+        "lowered": [
+          " raw ",
+          "",
+          "   ",
+          " x  y "
+        ]
+      }
+    },
+    {
+      "label": "literal-whitespace-true",
+      "input": {
+        "id": "UOTHER123",
+        "name": " Raw ",
+        "profile": {
+          "real_name": "   ",
+          "display_name": " X  Y "
+        }
+      },
+      "before": {
+        "id": "UOTHER123",
+        "updated": 1,
+        "profile": {
+          "real_name": "Prior Real",
+          "display_name": "Prior Display",
+          "email": "prior@example.invalid",
+          "fields": {
+            "X": "keep"
+          },
+          "unknown_profile": 7
+        }
+      },
+      "self": "USELF1234",
+      "preserve": true,
+      "normalize": true,
+      "normalized": {
+        "id": "UOTHER123",
+        "name": " Raw ",
+        "profile": {
+          "real_name": "   ",
+          "display_name": " X  Y "
+        },
+        "is_stranger": false
+      },
+      "profile": {
+        "real_name": "   ",
+        "display_name": " X  Y ",
+        "fields": {
+          "X": "keep"
+        },
+        "real_name_normalized": "   ",
+        "display_name_normalized": " X  Y ",
+        "first_name": "",
+        "last_name": ""
+      },
+      "derived": {
+        "_name_lc": " raw ",
+        "_first_name_lc": "",
+        "_last_name_lc": "",
+        "_real_name_lc": "   ",
+        "_real_name_normalized_lc": "   ",
+        "_display_name_lc": " x  y ",
+        "_display_name_normalized_lc": " x  y ",
+        "_email_normalized_lc": ""
+      },
+      "renderer": {
+        "fields": [
+          " Raw ",
+          "",
+          "   ",
+          " X  Y "
+        ],
+        "lowered": [
+          " raw ",
+          "",
+          "   ",
+          " x  y "
+        ]
+      }
+    }
+  ]
+}

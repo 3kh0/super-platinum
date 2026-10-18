@@ -6,7 +6,7 @@ use super_platinum_core::block_actions::form::{InputKind, parse_datetime_local};
 mod lease;
 #[cfg(test)]
 pub(crate) use lease::test_pair;
-pub(crate) use lease::{Release, lock_owned};
+pub(crate) use lease::{Release, lock_owned, retain};
 #[derive(Default)]
 pub(crate) struct State {
     entries: std::collections::BTreeMap<(FormOwner, InputKey), Entry>,

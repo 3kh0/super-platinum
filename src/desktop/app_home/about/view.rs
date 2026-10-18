@@ -4,6 +4,9 @@ use serde_json::Value;
 use super_platinum_core::MediaAssetKind;
 
 pub(crate) fn panel(mut state: Signal<ShellState>) -> Element {
+    if management::showing(&state.peek()) {
+        return management::panel(state);
+    }
     let s = state.read();
     let Some(h) = s
         .app_home
@@ -48,6 +51,7 @@ pub(crate) fn panel(mut state: Signal<ShellState>) -> Element {
     let action_status = actions::status(&s);
     let cooldown = cooling(&s, &h.owner.ctx);
     let configuration = profile_link(&s, key, ProfileLink::Configuration).is_some();
+    let workflow_configuration = management::capture(&s, key).is_some();
     let report = profile_link(&s, key, ProfileLink::Report).is_some();
     let profile_links_disabled = loading || h.fixture || s.overlay.is_some();
     let epoch = s.media_epoch;
@@ -140,7 +144,8 @@ pub(crate) fn panel(mut state: Signal<ShellState>) -> Element {
             if ready{button{class:"app-about-screenshot",onclick:move |_|open_external(state,key,&url),img{src:media.webview_uri_at(epoch),alt:"App screenshot"}}}else{div{class:"app-about-screenshot-placeholder",role:"status","Loading screenshot…"}}
           }}}}
           section{class:"app-about-links",h3{"Learn more and support"}
-            if configuration{button{disabled:profile_links_disabled,onclick:move |_|open_profile_link(state,key,ProfileLink::Configuration),"Configuration"}}
+            if workflow_configuration{button{id:"workflow-configuration",disabled:loading||cooldown,onclick:move |_|management::open(state,key),"Configuration"}}
+            else if configuration{button{disabled:profile_links_disabled,onclick:move |_|open_profile_link(state,key,ProfileLink::Configuration),"Configuration"}}
             for (field,label) in [("support_url","Get app support"),("home_url","Visit developer website"),("privacy_link","Privacy policy"),("youtube_url","Watch app video")]{
               if let Some(url)=info.text(field).and_then(external){button{onclick:move |_|open_external(state,key,&url),"{label}"}}
             }

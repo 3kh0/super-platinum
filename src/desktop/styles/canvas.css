@@ -63,7 +63,8 @@
 .modal.canvas-create-dialog { top:50%; left:50%; transform:translate(-50%,-50%); width:min(680px,calc(100vw - 32px)); max-height:calc(100vh - 40px); padding:0; display:flex; flex-direction:column; overflow:hidden; }
 .modal.canvas-create-dialog > header { flex-shrink:0; padding:16px 20px; margin:0; }
 .canvas-create-dialog form { display:flex; flex-direction:column; min-height:0; }
-.canvas-create-fields { display:flex; flex-direction:column; overflow:auto; padding:0 20px 20px; gap:8px; }
+.canvas-create-fields { display:flex; flex-direction:column; min-height:0; overflow:auto; padding:0 20px 20px; gap:8px; }
+.canvas-create-feedback { flex-shrink:0; display:flex; flex-direction:column; gap:var(--space-1); padding:var(--space-2) calc(var(--space-4) + var(--space-1)); overflow-wrap:anywhere; }
 .canvas-create-fields label { color:var(--text); font-size:var(--text-sm); margin-top:8px; }
 .canvas-create-fields input,.canvas-create-fields textarea { width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:8px; padding:8px 12px; background:var(--surface); color:var(--text); font:inherit; }
 .canvas-create-fields textarea { min-height:180px; height:260px; resize:vertical; line-height:1.6; }

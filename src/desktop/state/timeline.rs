@@ -359,6 +359,15 @@ impl ShellState {
             && let Some(workspace) = self.core.workspaces.get_mut(&team)
         {
             workspace.remember_visit(&channel_id);
+            // Metadata lookup can append a conversation after the last sidebar
+            // projection. Re-evaluate active-preview placement over the existing
+            // row indices without refreshing the timeline or changing membership.
+            self.sidebar_sections = crate::channel_vm::project_sidebar_sections(
+                workspace,
+                &self.channels,
+                Some(&channel_id),
+                &mut self.sidebar_memory,
+            );
         }
         self.surfaces.insert(
             self.main_view,

@@ -6,7 +6,7 @@
   }
   let sent = false;
   try {
-    dioxus.send(ticket.blocks);
+    dioxus.send(ticket.captured);
     sent = true;
     // A dropped Rust task must not keep the surviving editor sealed forever.
     // Rust's strictly checked two-second deadline precedes the five-second

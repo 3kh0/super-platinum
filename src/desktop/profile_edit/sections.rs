@@ -6,6 +6,7 @@ use super_platinum_core::slack::api::custom as protocol;
 mod directory;
 pub(crate) mod fixture;
 mod network;
+pub(crate) mod rich;
 pub(crate) use directory::{people, person_name, query_people, query_tags, tags};
 #[cfg(test)]
 mod tests;
@@ -14,6 +15,7 @@ mod tests;
 pub(crate) struct State {
     draft: Option<SectionPane>,
     entries: BTreeMap<Owner, SectionEntry>,
+    fixture: Option<fixture::Interaction>,
 }
 #[derive(Clone)]
 struct SectionPane {
@@ -25,6 +27,10 @@ struct SectionPane {
     loading: bool,
     message: Option<String>,
     directory: directory::Directory,
+    rich: Option<rich::Session>,
+    rich_opening: u64,
+    rich_reading: bool,
+    rich_recovery: Option<rich::RecoveryLease>,
 }
 #[derive(Clone)]
 struct SectionAttempt {
@@ -133,9 +139,12 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<View> {
             && !competing(shell, &d.token.owner)
             && d.form.as_ref().is_some_and(|f| f.capture().is_ok()),
         can_check: !cooling && pending.is_some_and(|a| a.phase == Phase::Uncertain),
-        can_keep: !busy && entry.is_some_and(|e| e.checked.is_some()),
-        message: entry
-            .and_then(|e| e.message.clone())
+        can_keep: !busy && pending.is_some() && entry.is_some_and(|e| e.checked.is_some()),
+        message: pending
+            .is_none()
+            .then(|| d.rich.as_ref().and_then(rich::notice))
+            .flatten()
+            .or_else(|| entry.and_then(|e| e.message.clone()))
             .or_else(|| d.message.clone()),
     })
 }
@@ -156,7 +165,11 @@ fn open_form(
 pub(crate) fn open(mut state: Signal<ShellState>, visit: u64) {
     let started = { open_shell(&mut state.write(), visit) };
     if let Some((token, serial)) = started {
-        dioxus::core::spawn_forever(network::load(state, token, visit, serial));
+        if fixture::interaction_enabled(&state.peek()) {
+            fixture::load(&mut state.write(), &token, visit, serial);
+        } else {
+            dioxus::core::spawn_forever(network::load(state, token, visit, serial));
+        }
     }
 }
 fn open_shell(shell: &mut ShellState, visit: u64) -> Option<(Token, u64)> {
@@ -183,7 +196,7 @@ fn open_shell(shell: &mut ShellState, visit: u64) -> Option<(Token, u64)> {
     let retained = entry.and_then(|e| e.pending.as_ref());
     let cooling = entry.is_some_and(|e| e.retry_at > now());
     let serial = next_id();
-    shell.profile_edit.sections.draft = Some(SectionPane {
+    let pane = SectionPane {
         token: token.clone(),
         visit,
         serial,
@@ -192,7 +205,15 @@ fn open_shell(shell: &mut ShellState, visit: u64) -> Option<(Token, u64)> {
         loading: !cooling && retained.is_none(),
         message: cooling.then(|| "Slack asked us to wait before loading again.".into()),
         directory: Default::default(),
-    });
+        rich: None,
+        rich_opening: 0,
+        rich_reading: false,
+        rich_recovery: None,
+    };
+    if let Some(previous) = shell.profile_edit.sections.draft.as_mut() {
+        rich::retire_recovery(previous);
+    }
+    shell.profile_edit.sections.draft = Some(pane);
     (!cooling && retained.is_none()).then_some((token, serial))
 }
 pub(crate) fn select(mut state: Signal<ShellState>, visit: u64, serial: u64, id: String) {
@@ -208,7 +229,9 @@ pub(crate) fn select(mut state: Signal<ShellState>, visit: u64, serial: u64, id:
     };
     match open_form(snapshot, &id) {
         Ok(form) => {
+            rich::retire_recovery(d);
             d.form = Some(form);
+            d.rich = None;
             d.serial = next_id();
             d.message = None;
         }
@@ -239,6 +262,7 @@ fn change_shell(
     let d = shell.profile_edit.sections.draft.as_mut().unwrap();
     let changed = d.form.as_mut().is_some_and(|f| f.change(id, value).is_ok());
     if changed {
+        rich::retire_recovery(d);
         d.message = None;
     }
     changed
@@ -261,7 +285,11 @@ pub(crate) fn use_description(
 pub(crate) fn save(mut state: Signal<ShellState>, visit: u64, serial: u64) {
     let started = { begin(&mut state.write(), visit, serial) };
     if let Some(a) = started {
-        dioxus::core::spawn_forever(network::save(state, a));
+        if fixture::interaction_enabled(&state.peek()) {
+            fixture::save(&mut state.write(), a);
+        } else {
+            dioxus::core::spawn_forever(network::save(state, a));
+        }
     }
 }
 fn begin(shell: &mut ShellState, visit: u64, serial: u64) -> Option<SectionAttempt> {
@@ -290,6 +318,7 @@ fn begin(shell: &mut ShellState, visit: u64, serial: u64) -> Option<SectionAttem
     e.checked = None;
     e.message = None;
     e.pending = Some(a.clone());
+    rich::retire_recovery(shell.profile_edit.sections.draft.as_mut().unwrap());
     Some(a)
 }
 fn entry_mut<'a>(shell: &'a mut ShellState, a: &SectionAttempt) -> Option<&'a mut SectionEntry> {
@@ -307,7 +336,11 @@ fn entry_mut<'a>(shell: &'a mut ShellState, a: &SectionAttempt) -> Option<&'a mu
 pub(crate) fn check(mut state: Signal<ShellState>, visit: u64, serial: u64) {
     let started = { begin_check(&mut state.write(), visit, serial) };
     if let Some(a) = started {
-        dioxus::core::spawn_forever(network::check(state, a));
+        if fixture::interaction_enabled(&state.peek()) {
+            fixture::check(&mut state.write(), a);
+        } else {
+            dioxus::core::spawn_forever(network::check(state, a));
+        }
     }
 }
 fn begin_check(shell: &mut ShellState, visit: u64, serial: u64) -> Option<SectionAttempt> {
@@ -328,9 +361,11 @@ fn begin_check(shell: &mut ShellState, visit: u64, serial: u64) -> Option<Sectio
     Some(a.clone())
 }
 pub(crate) fn keep(mut state: Signal<ShellState>, visit: u64, serial: u64) {
-    let mut shell = state.write();
-    if !presentation(&shell).is_some_and(|v| v.visit == visit && v.serial == serial && v.can_keep) {
-        return;
+    keep_shell(&mut state.write(), visit, serial);
+}
+fn keep_shell(shell: &mut ShellState, visit: u64, serial: u64) -> bool {
+    if !presentation(shell).is_some_and(|v| v.visit == visit && v.serial == serial && v.can_keep) {
+        return false;
     }
     let owner = shell
         .profile_edit
@@ -341,19 +376,22 @@ pub(crate) fn keep(mut state: Signal<ShellState>, visit: u64, serial: u64) {
         .token
         .owner
         .clone();
-    shell
-        .profile_edit
-        .sections
-        .entries
-        .get_mut(&owner)
-        .unwrap()
-        .pending = None;
+    let entry = shell.profile_edit.sections.entries.get_mut(&owner).unwrap();
+    entry.pending = None;
+    entry.message = None;
+    if let Some(previous) = shell.profile_edit.sections.draft.as_mut() {
+        rich::retire_recovery(previous);
+    }
     shell.profile_edit.sections.draft = None;
+    true
 }
 pub(crate) fn back(mut state: Signal<ShellState>, visit: u64, serial: u64) {
     let mut shell = state.write();
     if !presentation(&shell).is_some_and(|v| v.visit == visit && v.serial == serial && !v.busy) {
         return;
+    }
+    if let Some(previous) = shell.profile_edit.sections.draft.as_mut() {
+        rich::retire_recovery(previous);
     }
     shell.profile_edit.sections.draft = None;
 }
@@ -378,6 +416,9 @@ pub(super) fn intercept_close(shell: &mut ShellState, visit: Option<u64>) -> boo
             e.pending = None;
         }
     }
+    if let Some(previous) = shell.profile_edit.sections.draft.as_mut() {
+        rich::retire_recovery(previous);
+    }
     shell.profile_edit.sections.draft = None;
     false
 }
@@ -392,6 +433,9 @@ fn poll_at(shell: &mut ShellState, timestamp: i64) -> bool {
         .as_ref()
         .is_some_and(|d| !current(shell, &d.token, d.visit, d.serial));
     if stale {
+        if let Some(previous) = shell.profile_edit.sections.draft.as_mut() {
+            rich::retire_recovery(previous);
+        }
         shell.profile_edit.sections.draft = None;
     }
     let retired: Vec<_> = shell

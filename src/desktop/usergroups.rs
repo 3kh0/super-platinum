@@ -4,73 +4,146 @@ use dioxus::prelude::*;
 use super_platinum_core::slack::api;
 
 mod hydration;
+mod ownership;
+pub(crate) mod recovery;
+
+use crate::directory_member_fetches::Context;
+use ownership::{GroupRead, UsersRead};
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub(crate) struct GroupPanel {
     pub id: String,
+    pub(crate) attempt: Arc<()>,
     pub loading: bool,
     pub error: bool,
     pub channels: bool,
 }
 
 pub(crate) async fn open(mut state: Signal<ShellState>, id: String) {
-    let Some(team) = state.read().core.active_team.clone() else {
-        return;
-    };
-    {
+    let attempt = Arc::new(());
+    let (team, owner) = {
         let mut shell = state.write();
+        let Some(team) = shell.core.active_team.clone() else {
+            return;
+        };
+        let owner = Context::capture(&shell, &team).ok().map(Arc::new);
         shell.close_profile();
         shell.profile_hover = None;
         shell.group_panel = Some(GroupPanel {
             id: id.clone(),
+            attempt: attempt.clone(),
             loading: true,
             error: false,
             channels: false,
         });
-    }
+        (team, owner)
+    };
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
-        state.write().group_panel.as_mut().unwrap().loading = false;
+        if let Some(panel) = state
+            .write()
+            .group_panel
+            .as_mut()
+            .filter(|p| ownership::same_panel(p, &id, &attempt))
+        {
+            panel.loading = false;
+        }
         return;
     }
+    let Some(owner) = owner else {
+        if let Some(panel) = state
+            .write()
+            .group_panel
+            .as_mut()
+            .filter(|p| ownership::same_panel(p, &id, &attempt))
+        {
+            panel.loading = false;
+            panel.error = true;
+        }
+        return;
+    };
+    let current = |shell: &ShellState| ownership::panel_current(shell, &owner, &id, &attempt);
     let result = async {
-        let (transport, client, sessions) = crate::bootstrap::credentials(&state)?;
-        let session = sessions.into_iter().find(|s| s.team_id == team)?;
-        let groups = api::fetch_usergroups_info(&transport, &client, &session, vec![id.clone()])
-            .await
-            .ok()?;
+        let request = GroupRead::capture(&state.peek(), owner.clone(), std::slice::from_ref(&id))?;
+        if !current(&state.peek()) {
+            return None;
+        }
+        let groups = api::fetch_usergroups_info(
+            &owner.transport,
+            &owner.client,
+            &owner.session,
+            vec![id.clone()],
+        )
+        .await
+        .ok()?;
+        if !current(&state.peek()) || !request.current(&state.peek()) || !request.accepts(&groups) {
+            return None;
+        }
         let mut group = groups.into_iter().find(|g| g.id == id)?;
-        let members = api::fetch_usergroup_members(&transport, &client, &session, &group)
-            .await
-            .ok()?;
+        let members =
+            api::fetch_usergroup_members(&owner.transport, &owner.client, &owner.session, &group)
+                .await
+                .ok()?;
         group.users = members.clone();
         group.members_loaded = true;
-        if let Some(workspace) = state.write().core.workspaces.get_mut(&team) {
-            workspace.usergroups.insert(id.clone(), group);
-        }
+        let users_request = {
+            let mut shell = state.write();
+            if !current(&shell) || !request.current(&shell) {
+                return None;
+            }
+            shell
+                .core
+                .workspaces
+                .get_mut(&team)?
+                .usergroups
+                .insert(id.clone(), group);
+            let installed = GroupRead::capture(&shell, owner.clone(), std::slice::from_ref(&id))?;
+            UsersRead::capture(&shell, installed, &members)?
+        };
         let mut users = Vec::new();
         for chunk in members.chunks(100) {
-            users.extend(
-                api::fetch_users_info(&transport, &client, &session, chunk.to_vec())
-                    .await
-                    .ok()?,
-            );
+            if !current(&state.peek()) || !users_request.current(&state.peek()) {
+                return None;
+            }
+            let page = api::fetch_users_info(
+                &owner.transport,
+                &owner.client,
+                &owner.session,
+                chunk.to_vec(),
+            )
+            .await
+            .ok()?;
+            if !current(&state.peek())
+                || !users_request.current(&state.peek())
+                || page.iter().any(|user| !chunk.contains(&user.id))
+            {
+                return None;
+            }
+            users.extend(page);
         }
-        if let Some(workspace) = state.write().core.workspaces.get_mut(&team) {
-            workspace
+        {
+            let mut shell = state.write();
+            if !current(&shell) || !users_request.current(&shell) || !users_request.accepts(&users)
+            {
+                return None;
+            }
+            shell
+                .core
+                .workspaces
+                .get_mut(&team)?
                 .users
                 .extend(users.into_iter().map(|u| (u.id.clone(), u)));
+        }
+        if !current(&state.peek()) {
+            return None;
         }
         crate::bootstrap::persist_workspace_metadata(&state, &team);
         Some(())
     }
     .await;
     let mut shell = state.write();
-    if shell.core.active_team.as_ref() != Some(&team) {
+    if !ownership::finish(&mut shell, &owner, &id, &attempt, result.is_some()) {
         return;
-    }
-    if let Some(panel) = shell.group_panel.as_mut().filter(|p| p.id == id) {
-        panel.loading = false;
-        panel.error = result.is_none();
     }
     shell.refresh_from_core();
 }
@@ -78,8 +151,11 @@ pub(crate) async fn open(mut state: Signal<ShellState>, id: String) {
 /// Resolve only groups seen in cached messages or the signed-in user's boot
 /// membership list. Edge metadata omits membership, so preserve that separately.
 pub(crate) async fn hydrate(mut state: Signal<ShellState>, team: &str) {
-    let ids = {
+    let (owner, ids) = {
         let shell = state.read();
+        let Ok(owner) = Context::capture(&shell, team) else {
+            return;
+        };
         let Some(workspace) = shell.core.workspaces.get(team) else {
             return;
         };
@@ -100,40 +176,44 @@ pub(crate) async fn hydrate(mut state: Signal<ShellState>, team: &str) {
             super_platinum_core::slack::models::collect_group_ids(message, &mut ids);
         }
         ids.extend(workspace.usergroups.keys().cloned());
-        ids.into_iter()
+        let ids = ids
+            .into_iter()
             .filter(|id| {
                 workspace
                     .usergroups
                     .get(id)
-                    .is_none_or(|g| g.handle.is_empty())
+                    .is_none_or(|g| g.label_source.is_none() || g.handle.is_empty())
             })
-            .collect::<Vec<_>>()
+            .collect::<Vec<_>>();
+        (Arc::new(owner), ids)
     };
     if ids.is_empty() {
         return;
     }
-    let Some((transport, client, sessions)) = crate::bootstrap::credentials(&state) else {
-        return;
-    };
-    let Some(session) = sessions.into_iter().find(|s| s.team_id == team) else {
-        return;
-    };
     let mut hydration = hydration::Progress::default();
     for chunk in ids.chunks(100) {
-        let result =
-            api::fetch_usergroups_info(&transport, &client, &session, chunk.to_vec()).await;
+        let Some(request) = GroupRead::capture(&state.peek(), owner.clone(), chunk) else {
+            return;
+        };
+        let result = api::fetch_usergroups_info(
+            &owner.transport,
+            &owner.client,
+            &owner.session,
+            chunk.to_vec(),
+        )
+        .await;
         // No write borrow (and thus no render notification) for an empty page.
         if result.as_ref().is_ok_and(Vec::is_empty) {
-            if !state.peek().core.workspaces.contains_key(team) {
+            if !request.current(&state.peek()) {
                 return;
             }
             continue;
         }
-        if !hydration.apply(&mut state.write(), team, result) {
+        if !hydration.receive(&mut state.write(), &request, result) {
             return;
         }
     }
-    if hydration.should_persist() {
+    if hydration.should_persist() && owner.current(&state.peek()) {
         crate::bootstrap::persist_workspace_metadata(&state, team);
     }
 }

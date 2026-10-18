@@ -54,7 +54,7 @@ def run_fixture(spec, fixture, binary, captures):
                 "binary": str(binary.resolve()), "ok": False}
     try:
         with NativeFixture(fixture, captures / f"{fixture}.log", binary,
-                           {spec.flag: "1"}) as native:
+                           {spec.flag: "1", "SUPER_PLATINUM_UI_CAPTURE_DIR": str(captures.resolve())}) as native:
             evidence["pid"] = native.process.pid
             try:
                 deadline = time.monotonic() + spec.timeout
