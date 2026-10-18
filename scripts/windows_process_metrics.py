@@ -225,8 +225,13 @@ class OwnedProcessTree:
     def __enter__(self):
         return self
 
-    def __exit__(self, *exception):
-        self.close()
+    def __exit__(self, _kind, primary, _traceback):
+        try:
+            self.close()
+        except BaseException as error:
+            if primary is None:
+                raise
+            primary.add_note(f"Process handle cleanup also failed: {type(error).__name__}: {error}")
 
 
 def summarize(before, after, window_start_filetime):

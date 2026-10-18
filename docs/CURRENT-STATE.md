@@ -1,10 +1,22 @@
 # Current state and handoff
 
-Checkpoint: 2026-10-18T03:14:49.952331+00:00. **The single V9 integration milestone is complete: all 13 gates passed, exact V9 source is installed, and its matching Windows dev executable is verified.** Full Slack parity and native acceptance remain separate backlog; later feature drafts remain paused.
+Checkpoint: 2026-10-18 UTC. **The bounded offline Windows idle/scroll milestone is verified.** The committed V9 integration/build and build-speed work remain complete. Wider Slack parity remains separate backlog; no further feature work is active.
+
+## Completed offline idle/scroll milestone
+
+[Actual results and inspected PNGs](../tmp/idle-scroll-native-20261018/inspection.json): one normalized idle run (5-second settle, 15-second quiet window, 64,000-entry completion directory) and three 10,001-row channel scroll runs passed. All four native processes exited with zero cleanup errors; pointer restoration and complete idle counter coverage were verified. Root read all ten original PNGs: populated idle transcript/composer and populated immediate/+1s/+3s scroll panes, with no blank pane or hover overlay. Scroll p95: **6.2, 6.2, 12.0 ms** (81/82/79 frames). Idle owned-process CPU: **0.109375 seconds across the 15-second sample**. These are bounded synthetic baselines, not a whole-app or comparative speed claim.
+
+The actual tracked workers now preserve primary failures through secondary cleanup/output errors and fail on standalone finalization errors. Existing idle correction and scroll-v3 were inspected first; their wrapper pure tests passed (12/15). Corrected worker/process suites passed **39 focused methods**: idle 7, scroll 7, process identity 8, fixture cleanup 17. `git diff --check` passed. No Rust source changed, so Cargo compilation/tests and the completed thirteen V9 gates were not rerun.
+
+[Binary matching check](../tmp/idle-scroll-native-20261018/binary-check.json) verified the optimized `dev` executable `tmp/combined-v9-main-build-parallel4/native.exe` against every current compiled input. The manifest differs only by the unused `dev-fast` profile; other differences are external Python harness/tests. Its hash remains `ebffb73bd0bccb431cb3870d29407889fdcf89ec6b5a36c2e81b09702719ac21`. No unoptimized `dev-fast` performance result was used, no cache was removed, and no compiler was started.
+
+Historical failed wrappers/receipts remain intact. Their prospective binding hardcodes cancelled `combined-v9-main-build1`, so these runs used corrected `scripts/measure-idle-windows-native.py` and `scripts/measure-channel-scroll-native.py` directly with the explicitly verified optimized binary, fresh output directories, and the existing receipt validators. No new binding framework was introduced. Native sessions 88090 (idle) and 78106 (scroll) exited 0; post-run compiler/app process observation was empty.
+
+Only Python harness/test changes and this handoff are uncommitted. No live Slack writes/calls, notifications, package registration, push, deployment or commit occurred. Stop this milestone here; remaining parity is listed below.
 
 ## Verified installation and executable
 
-Workspace: `C:\Users\mortar\Documents\GitHub\super-platinum`, branch `main`, HEAD `4d19f3f08ba2c00321075e48b0b8d3da3db3a272`. Installation is uncommitted. Preserve all installed changes, documents, ignored drafts, caches and failed receipts.
+Workspace: `C:\Users\mortar\Documents\GitHub\super-platinum`, branch `main`, HEAD `98789ff4342cf828a941c20fdbfaf086b316f2ca` (`optimize dry builds`). The V9 integration and build-speed follow-ups are committed; the worktree was clean when this native-check milestone began. Preserve all installed changes, documents, ignored drafts, caches and failed receipts.
 
 - **Installed V9: 3,913 files, 900 installation targets.** [Actual receipt](../tmp/combined-v9-main-install1/result.json), SHA256 `4f47727d8ce6ae87d7e17383bd899b9b93fb364a12bbcc93b8fcba09efe613c3`; [installed inventory](../tmp/combined-v9-main-install1/after.json). Reviewed source inventory SHA256 `d2a3e2bd1c28e91aa0fe897adb676babdafe4f2b209c78cc0ca3041d6db789b9`.
 - **All 13 gates verified:** [validation closure](../tmp/combined-v9-runtime-sequence2/result.json), SHA256 `75b3cc44070448e6089ee9eaf4b6af47d63763655775e725fca90e9635b9ff26`.
@@ -50,7 +62,7 @@ Ignored tests are explicitly marked manual benchmarks or interoperability export
 
 Preserve the [V8 failed desktop gate](../tmp/board-canvas-current30-v8-desktop-tests1/gate.json) (3,144/1/7) and the [interrupted original V9 focused log](../tmp/board-canvas-current30-v9-desktop-focused1/cargo-1.log) (unknown outcome). The successful successor did not overwrite or relabel them. [Validation events](../tmp/combined-v9-runtime-sequence2/events.ndjson) retain their hashes. Installation backups and document snapshots remain under `tmp/combined-v9-main-install1/`.
 
-Native wrappers remain held: [idle reproduction](../tmp/v9-idle-finality-root-repro1/result.json) and [scroll reproduction](../tmp/scroll-v2-result-write-root-repro1/result.json). Source clearance does not override these holds. No live Slack writes, calls, device/audio action, notifications or package registration were performed.
+Historical failure evidence remains unchanged: [idle reproduction](../tmp/v9-idle-finality-root-repro1/result.json) and [scroll reproduction](../tmp/scroll-v2-result-write-root-repro1/result.json). The corrected active workers and actual native outcomes are documented above; obsolete prospective bindings remain historical. No live Slack writes, calls, device/audio action, notifications or package registration were performed.
 
 ## Stopped owners and unintegrated changes
 
@@ -65,7 +77,7 @@ Checkpoint links retain exact file identities, tests and resume details. Source-
 | activity_core | [Profile checkpoint](../tmp/profile-rich-fixture-titles-work/checkpoint.json): five mutable File/Canvas/date fixture files over reviewed metadata fixture; composition, Rust/native checks pending. |
 | board_heading_review; field_delete_core/desktop | [Comments handoff](../tmp/list-record-comments-pause-checkpoint1/HANDOFF.json): 4,149-file uncompiled parent; editor modes disabled, emoji allocation-budget HOLD, unadopted leaves and missing exact ECharts asset evidence. |
 | activity_desktop | [Cold notification checkpoint](../tmp/windows-notification-package-cold-work/PAUSED-CHECKPOINT.json): 11 draft files; publisher release acknowledgment unwired; nine Rust tests unrun. |
-| save_dialog_review; interaction_review | [Idle correction](../tmp/idle-native-combined-v9-finality-prep/manifest.json) `bf72b40a…`: 12 pure tests pass, review pending. `tmp/channel-scroll-native-combined-v9-v3-prep/` remains mutable/unreviewed. [Review handoff](../tmp/interaction-review-pause-handoff-20261017/handoff.json) preserves holds and queued reviews. |
+| save_dialog_review; interaction_review | [Idle correction](../tmp/idle-native-combined-v9-finality-prep/manifest.json): 12 wrapper tests pass; scroll-v3: 15 wrapper tests pass. Corrected active workers and native checks passed as documented above. Historical prospective bindings remain unused. [Review handoff](../tmp/interaction-review-pause-handoff-20261017/handoff.json) preserves other queued reviews. |
 
 Other review agents (`list_bindings`, `workflow_runner`, `workflow_uia`, `slash_perf_probe`) are stopped; their reviews are referenced by these handoffs. No new feature assignments remain active. These are historical ownership labels, not currently addressable agents; `/root` holds the handoff for future resumption. Their checkpoint files report empty live handles.
 
@@ -73,4 +85,4 @@ Other review agents (`list_bindings`, `workflow_runner`, `workflow_uia`, `slash_
 
 After this installation/build milestone is verified, report remaining parity separately; do not silently resume feature work. Historical accepted slices and unresolved workflows remain in [the acceptance table](parity-worklog.md#workstreams-and-acceptance-evidence) and [dated evidence](parity-worklog.md#verified-evidence-and-open-failures).
 
-Preserve user changes, drafts, sessions, frozen candidates and failed receipts. No cleanup/reset, token logging, live Slack writes/huddles, device/audio action, notification, signing/trust/package registration or guessed publisher identity. Package identity/migration and later OS invocation authorization remain unresolved. Keep idle/scroll holds until corrected and reviewed. Native verification requires original-process ownership, a matching build, cleanup evidence and inspected PNGs. Follow [repository guidance](../AGENTS.md) and [design system](design-system.md). No commit or native capture was made during this milestone.
+Preserve user changes, drafts, sessions, frozen candidates and failed receipts. No cleanup/reset, token logging, live Slack writes/huddles, device/audio action, notification, signing/trust/package registration or guessed publisher identity. Package identity/migration and later OS invocation authorization remain unresolved. Preserve old idle/scroll failure receipts; use the corrected active workers and verified outcomes above. Native verification requires original-process ownership, a matching build, cleanup evidence and inspected PNGs. Follow [repository guidance](../AGENTS.md) and [design system](design-system.md). No commit was made during this milestone; ten offline native captures were inspected.

@@ -81,7 +81,14 @@ class NormalizedObservation:
         if args.normalize_pointer:
             self.pointer = FixturePointer(self.observe, self.verify_identity)
             self.data["pointer"] = self.pointer.data
-            stack.callback(self.pointer.close)
+            def restore_pointer(_kind, primary, _traceback):
+                try:
+                    self.pointer.close()
+                except BaseException as error:
+                    if primary is None:
+                        raise
+                    primary.add_note(f"Pointer restoration also failed: {type(error).__name__}: {error}")
+            stack.push(restore_pointer)
             self.pointer.park()
             self.pointer.settle(self.fixture, self.visual.fingerprint)
         self.verify_identity()
@@ -161,9 +168,24 @@ def measure(args):
             "No live Slack traffic, hardware power control, GPU memory, or performance improvement is established.",
         ],
     }
+    fixture = None
+    primary = None
+
+    def failed(stage, error):
+        nonlocal primary
+        evidence["ok"] = False
+        if primary is None:
+            primary = error
+            evidence["error"] = str(error)
+        else:
+            primary.add_note(f"{stage} also failed: {type(error).__name__}: {error}")
+        evidence.setdefault("finalization_errors", []).append(
+            {"stage": stage, "error": str(error)})
+
     try:
-        with NativeFixture(args.fixture, directory / f"{name}.log", binary,
-                           {"SUPER_PLATINUM_STARTUP_TRACE": "1"}) as fixture:
+        fixture = NativeFixture(args.fixture, directory / f"{name}.log", binary,
+                                {"SUPER_PLATINUM_STARTUP_TRACE": "1"})
+        with fixture:
             evidence["fixture_pid"] = fixture.process.pid
             evidence["paint_snapshot"] = startup_snapshot(fixture)
             with OwnedProcessTree(fixture.process.pid) as tree, ExitStack() as stack:
@@ -211,15 +233,44 @@ def measure(args):
                 if pointer["movement_observed"] or not pointer["restore_observed"]:
                     evidence["normalization"]["inconclusive"] = True
                     raise RuntimeError("Pointer movement or incomplete restoration; idle sample is inconclusive")
-            evidence["ok"] = True
+        # NativeFixture may retain a nonfatal cleanup error. Sampling success
+        # is not a completed run until the owned process and cleanup close.
+        evidence["cleanup_errors"] = list(fixture.cleanup_errors)
+        evidence["process_exited"] = (fixture.process is not None
+                                      and fixture.process.poll() is not None)
+        if not evidence["process_exited"] or evidence["cleanup_errors"]:
+            raise RuntimeError("Idle fixture process or cleanup did not close cleanly")
+        evidence["ok"] = True
     except BaseException as error:
+        primary = error
         evidence.update(ok=False, error=str(error))
-        raise
     finally:
+        # Preserve closure observations even when startup or measurement failed.
+        try:
+            evidence["cleanup_errors"] = list(fixture.cleanup_errors) if fixture else []
+        except BaseException as error:
+            failed("cleanup observation", error)
+        try:
+            evidence["process_exited"] = (fixture is not None and fixture.process is not None
+                                          and fixture.process.poll() is not None)
+        except BaseException as error:
+            evidence["process_exited"] = False
+            evidence["closure_observation_error"] = str(error)
+            failed("process closure observation", error)
+        if primary is None and (not evidence["process_exited"] or evidence.get("cleanup_errors")):
+            failed("fixture closure", RuntimeError("Idle fixture process or cleanup did not close cleanly"))
         destination = directory / f"{name}.json"
-        destination.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
-        print(json.dumps({"receipt": str(destination), "ok": evidence["ok"],
-                          "measurement": evidence.get("measurement"), "error": evidence.get("error")}), flush=True)
+        try:
+            destination.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+        except BaseException as error:
+            failed("receipt write", error)
+        try:
+            print(json.dumps({"receipt": str(destination), "ok": evidence["ok"],
+                              "measurement": evidence.get("measurement"), "error": evidence.get("error")}), flush=True)
+        except BaseException as error:
+            failed("summary output", error)
+    if primary is not None:
+        raise primary.with_traceback(primary.__traceback__)
 
 
 def main():

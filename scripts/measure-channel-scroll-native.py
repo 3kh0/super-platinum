@@ -80,8 +80,8 @@ class ScrollCursor:
             if self.placed != point:
                 raise RuntimeError("Cursor placement was clipped; no normalized sample")
             return self
-        except BaseException:
-            self.close()
+        except BaseException as error:
+            self._close_preserving(error)
             raise
 
     def check(self, pid, stage):
@@ -128,8 +128,16 @@ class ScrollCursor:
             self.user.SetThreadDpiAwarenessContext(self.dpi)
             self.dpi = None
 
-    def __exit__(self, *_):
-        self.close()
+    def _close_preserving(self, primary):
+        try:
+            self.close()
+        except BaseException as error:
+            if primary is None:
+                raise
+            primary.add_note(f"Cursor cleanup also failed: {type(error).__name__}: {error}")
+
+    def __exit__(self, _kind, error, _traceback):
+        self._close_preserving(error)
 
 
 def main():
@@ -156,10 +164,13 @@ def main():
                     "platform": platform.platform(), "ok": False,
                     "scope": "disconnected native channel auto-scroll; no thread workload",
                     "cursor": cursor.data}
+        fixture = None
+        primary = None
         try:
-            with cursor, NativeFixture("channel-window-10000", captures / f"{name}.log", binary,
-                             {"SUPER_PLATINUM_PERF_SCROLL": "1",
-                              "SUPER_PLATINUM_STARTUP_TRACE": "1"}) as fixture:
+            with cursor, (fixture := NativeFixture(
+                    "channel-window-10000", captures / f"{name}.log", binary,
+                    {"SUPER_PLATINUM_PERF_SCROLL": "1",
+                     "SUPER_PLATINUM_STARTUP_TRACE": "1"})):
                 try:
                     cursor.check(fixture.process.pid, "after_startup")
                     # Auto-scroll performs one top/bottom sweep. Wait for the final
@@ -199,21 +210,45 @@ def main():
                                       ("timeline", "profile_hover", "screen")},
                             "scroll_samples": len(later["performance"]["scroll_frame_ms"]),
                         })
-                    artifact["ok"] = True
-                    print(json.dumps({"label": args.label, "run": run,
-                                      "summaries": metrics["summaries"]}), flush=True)
-                except BaseException:
+                except BaseException as sample_error:
                     try:
                         fixture.capture(captures / f"{name}-failure.png")
-                    except (OSError, RuntimeError):
-                        pass  # Preserve the original startup/assertion failure.
+                    except BaseException as capture_error:
+                        # Capture is diagnostic; the sample failure stays primary.
+                        sample_error.add_note(
+                            f"Failure screenshot also failed: {type(capture_error).__name__}: {capture_error}")
                     raise
         except BaseException as error:
+            primary = error
             artifact.update(ok=False, error=f"{type(error).__name__}: {error}")
-            raise
         finally:
-            (captures / f"{name}.json").write_text(
-                json.dumps(artifact, indent=2) + chr(10), encoding="utf-8")
+            # A completed sample is not a successful run until both contexts
+            # exit. NativeFixture can retain nonfatal temporary cleanup errors.
+            artifact["cleanup_errors"] = list(fixture.cleanup_errors) if fixture else []
+            try:
+                artifact["process_exited"] = (fixture is not None and fixture.process is not None
+                                              and fixture.process.poll() is not None)
+            except BaseException as error:
+                artifact["process_exited"] = False
+                artifact["closure_observation_error"] = f"{type(error).__name__}: {error}"
+            # Preserve a primary startup/sample/exit exception and its receipt.
+            # This block never raises a secondary observation failure over it.
+            if "error" not in artifact:
+                artifact["ok"] = artifact["process_exited"] and not artifact["cleanup_errors"]
+                if not artifact["ok"]:
+                    artifact["error"] = "Scroll fixture process or cleanup did not close cleanly"
+                    primary = RuntimeError(artifact["error"])
+            try:
+                (captures / f"{name}.json").write_text(
+                    json.dumps(artifact, indent=2) + chr(10), encoding="utf-8")
+            except BaseException as error:
+                if primary is None:
+                    raise
+                primary.add_note(f"Result could not be written: {type(error).__name__}: {error}")
+        if primary is not None:
+            raise primary.with_traceback(primary.__traceback__)
+        print(json.dumps({"label": args.label, "run": run,
+                          "summaries": metrics["summaries"]}), flush=True)
 
 
 if __name__ == "__main__":
