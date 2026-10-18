@@ -1,4 +1,8 @@
 //! Captured g5os/quL6/NGtd App Home identity; no renderer or network authority.
+pub mod about;
+pub mod calendar;
+pub mod navigation;
+pub mod workflow;
 use crate::config::WorkspaceSession;
 use crate::slack::{Error, PreparedRequest, SlackClient};
 use serde_json::{Value, json};
@@ -25,6 +29,7 @@ pub struct Button {
     action_id: String,
     raw: Value,
     action: Value,
+    state: Option<Value>,
 }
 fn invalid() -> Error {
     Error::Api("app_home_invalid".into())
@@ -152,7 +157,29 @@ impl View {
         })
     }
     pub fn button(&self, block: &str, action: &str, user: &str) -> Result<Button, Error> {
-        if self.has_controls()
+        self.capture_button(block, action, user, None)
+    }
+    pub fn button_with_form(
+        &self,
+        block: &str,
+        action: &str,
+        user: &str,
+        form: &super::form::home::HomeForm,
+    ) -> Result<Button, Error> {
+        if form.raw_view() != &self.raw {
+            return Err(invalid());
+        }
+        let state = form.state().map_err(|_| invalid())?;
+        self.capture_button(block, action, user, Some(state))
+    }
+    fn capture_button(
+        &self,
+        block: &str,
+        action: &str,
+        user: &str,
+        state: Option<Value>,
+    ) -> Result<Button, Error> {
+        if (state.is_none() && self.has_controls())
             || block.trim().is_empty()
             || action.trim().is_empty()
             || block.starts_with("widget:")
@@ -200,6 +227,7 @@ impl View {
             action_id: action.into(),
             raw: raw.clone(),
             action: wire,
+            state,
         })
     }
 }
@@ -212,6 +240,17 @@ impl Button {
     }
     pub fn action(&self) -> &Value {
         &self.action
+    }
+    pub fn same_action(&self, other: &Self) -> bool {
+        self.user == other.user
+            && self.view == other.view
+            && self.block == other.block
+            && self.action_id == other.action_id
+    }
+    pub fn same_form(&self, form: &super::form::home::HomeForm) -> bool {
+        self.state.as_ref().is_none_or(|state| {
+            form.raw_view() == &self.view.raw && form.state().as_ref().is_ok_and(|v| v == state)
+        })
     }
     pub fn same_view(&self, v: &View) -> bool {
         &self.view == v
@@ -245,6 +284,9 @@ impl Button {
             ("client_token", token.into()),
             ("_x_reason", "dispatch_action_to_developer".into()),
         ];
+        if let Some(state) = &self.state {
+            fields.push(("state", state.to_string()));
+        }
         if let Some(bot) = optional(&self.view.raw, "bot_id")? {
             fields.push(("service_id", bot))
         }

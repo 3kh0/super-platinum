@@ -78,6 +78,14 @@
    const order=board?[...document.querySelectorAll('.slack-list-card[data-row-id]')].map(e=>e.dataset.rowId):detailStage?null:ids();const ordered=order===null||JSON.stringify(order)===JSON.stringify(['R_LIST_003','R_LIST_001','R_LIST_007','R_LIST_005']);
    const find=findState();return{ok:!!mode&&visible(root)&&root.scrollWidth<=root.clientWidth+1&&actualLayout&&ordered&&exact&&messagesExact&&local&&focus.ok&&footerStable&&displayed.ok&&find.ok&&picker?.value===expectedView&&picker.selectedOptions?.[0]?.textContent===(expectedView==='V_FILTER'?'Shared checklist':'Rating board'),stage,owner:{visit:root?.dataset.dialogGeneration,selection:root?.dataset.viewSelection,generation:p?.dataset.editorGeneration||null},controls,exact,alerts,messagesExact,local,value:isEditor?value():null,focus,footerStable,displayed,actualLayout,order,ordered,find,selectedView:picker?.value,selectedLabel:picker?.selectedOptions?.[0]?.textContent,detail:detail()?{row:detail().dataset.recordId,generation:detail().dataset.detailGeneration,openGeneration:detail().dataset.detailOpenGeneration}:null,viewport:[innerWidth,innerHeight],actions:actions.slice()};
   },
+  keyboardFocus(g){
+   const save=q('#slack-list-editor-save'),target=buttons()[0];
+   if(!this.noop(g).ok||!save||document.activeElement!==save||disabled(save)||!panel()?.contains(save)||!target||disabled(target))return{ok:false};
+   const scrolling=reveal(target,'center');
+   if(!owner(g)||document.activeElement!==save||!hit(target)||!ring(target))return{ok:false,scrolling};
+   target.focus();
+   return{ok:owner(g)&&value()===null&&document.activeElement===target&&buttons()[0]===target&&ring(target),scrolling,generation:String(g),targetChoice:target.dataset.ratingChoice,focusOnly:true};
+  },
   keyboardTools(){return{owner,value,buttons,panel,ring};}
  };
  return{ok:true};

@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 
+pub mod scheduled;
 pub mod store;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

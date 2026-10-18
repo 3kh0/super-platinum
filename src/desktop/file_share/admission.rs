@@ -1,4 +1,5 @@
 use super::*;
+mod reads;
 use super_platinum_core::{
     config::WorkspaceSession,
     slack::{SlackClient, Transport, models::File},
@@ -19,6 +20,8 @@ enum Backend {
         transport: Arc<Transport>,
     },
     Fixture(fixture::Capability),
+    #[cfg(feature = "protected-native-fixture")]
+    Hosted(Arc<crate::drafts::protected::production::hosted_native::Run>),
 }
 #[derive(Clone)]
 pub(super) struct Context {
@@ -30,6 +33,21 @@ pub(super) struct Context {
 }
 impl Context {
     pub fn capture(shell: &ShellState) -> Option<Self> {
+        #[cfg(feature = "protected-native-fixture")]
+        if crate::drafts::protected::production::hosted_native::named() {
+            let run = crate::drafts::protected::production::hosted_native::capture(shell)?;
+            return Some(Self {
+                key: Key {
+                    account: run.scope().account_id.clone(),
+                    team: run.scope().key.team.clone(),
+                    user: "U1".into(),
+                },
+                epoch: run.epoch(),
+                backend: Backend::Hosted(run.clone()),
+                client: SlackClient::default(),
+                session: run.session(),
+            });
+        }
         if let Some(capability) = &shell.file_share_fixture {
             return capability.current(shell).then(|| Self {
                 key: capability.key(),
@@ -81,6 +99,8 @@ impl Context {
                     },
                 ) => cookie == next_cookie && Arc::ptr_eq(transport, next_transport),
                 (Backend::Fixture(a), Backend::Fixture(b)) => a.same_identity(b),
+                #[cfg(feature = "protected-native-fixture")]
+                (Backend::Hosted(a), Backend::Hosted(b)) => Arc::ptr_eq(a, b),
                 _ => false,
             };
             backend
@@ -100,25 +120,44 @@ impl Context {
     pub async fn file_info(&self, id: &str) -> Result<Value, Error> {
         match &self.backend {
             Backend::Live { transport, .. } => {
-                transport
-                    .execute(api::file_info(&self.client, &self.session, id))
+                self.live_read(transport, api::file_info(&self.client, &self.session, id))
                     .await
             }
             Backend::Fixture(capability) => capability.file_info(id).await,
+            #[cfg(feature = "protected-native-fixture")]
+            Backend::Hosted(run) => run.read(api::file_info(&self.client, &self.session, id)),
+        }
+    }
+    pub(super) async fn hosted_picker_search(
+        &self,
+        text: &str,
+        kind: api::HostedFileKind,
+        page: u32,
+    ) -> Result<Value, Error> {
+        let request = api::hosted_picker_search(&self.client, &self.session, text, kind, page)?;
+        match &self.backend {
+            Backend::Live { transport, .. } => self.live_read(transport, request).await,
+            Backend::Fixture(_) => Err(Error::Api("hosted_picker_fixture_not_installed".into())),
+            #[cfg(feature = "protected-native-fixture")]
+            Backend::Hosted(run) => run.read(request),
         }
     }
     pub async fn channel_info(&self, id: &str) -> Result<Value, Error> {
         match &self.backend {
             Backend::Live { transport, .. } => {
-                transport
-                    .execute(api::conversations_info(
-                        &self.client,
-                        &self.session,
-                        id.to_owned(),
-                    ))
-                    .await
+                self.live_read(
+                    transport,
+                    api::conversations_info(&self.client, &self.session, id.to_owned()),
+                )
+                .await
             }
             Backend::Fixture(capability) => capability.channel_info(id).await,
+            #[cfg(feature = "protected-native-fixture")]
+            Backend::Hosted(run) => run.read(api::conversations_info(
+                &self.client,
+                &self.session,
+                id.to_owned(),
+            )),
         }
     }
     pub async fn peer_info(&self, id: &str) -> Result<Value, Error> {
@@ -132,15 +171,44 @@ impl Context {
                 .map_err(|_| {
                     Error::Transport("File share peer request could not be prepared".into())
                 })?;
-                transport.execute(request).await
+                self.live_read(transport, request).await
             }
             Backend::Fixture(capability) => capability.peer_info(id).await,
+            #[cfg(feature = "protected-native-fixture")]
+            Backend::Hosted(_) => Err(Error::Api("closed_hosted_fixture_route_refused".into())),
+        }
+    }
+    pub async fn direct_lookup(&self) -> Result<Value, Error> {
+        let request = api::file_share_im_list(&self.client, &self.session);
+        match &self.backend {
+            Backend::Live { transport, .. } => self.live_read(transport, request).await,
+            Backend::Fixture(capability) => capability.direct_lookup(request).await,
+            #[cfg(feature = "protected-native-fixture")]
+            Backend::Hosted(_) => Err(Error::Api("closed_hosted_fixture_route_refused".into())),
+        }
+    }
+    pub async fn open_direct(&self, user: &str) -> Result<Value, Error> {
+        let recipients = super_platinum_core::direct_messages::Recipients::new(
+            &[user.to_owned()],
+            &self.session.user_id,
+        )
+        .map_err(|_| Error::Api("invalid_file_share_recipient".into()))?;
+        let request = api::conversations_open_recipients(&self.client, &self.session, &recipients);
+        match &self.backend {
+            Backend::Live { transport, .. } => {
+                transport.execute_file_share_direct_open(request).await
+            }
+            Backend::Fixture(capability) => capability.open_direct(request).await,
+            #[cfg(feature = "protected-native-fixture")]
+            Backend::Hosted(_) => Err(Error::Api("closed_hosted_fixture_route_refused".into())),
         }
     }
     pub async fn after_begin(&self, receipt: &Receipt) -> Result<(), Error> {
         match &self.backend {
             Backend::Live { .. } => Ok(()),
             Backend::Fixture(capability) => capability.after_begin(receipt).await,
+            #[cfg(feature = "protected-native-fixture")]
+            Backend::Hosted(_) => Err(Error::Api("closed_hosted_fixture_route_refused".into())),
         }
     }
     pub async fn share(
@@ -151,6 +219,8 @@ impl Context {
         match &self.backend {
             Backend::Live { transport, .. } => transport.execute_draft_mutation(request).await,
             Backend::Fixture(capability) => capability.share(receipt, request).await,
+            #[cfg(feature = "protected-native-fixture")]
+            Backend::Hosted(_) => Err(Error::Api("closed_hosted_fixture_route_refused".into())),
         }
     }
 }
@@ -246,6 +316,7 @@ pub(crate) fn destinations(shell: &ShellState, query: &str) -> Vec<Destination> 
     else {
         return vec![];
     };
+    let person_query = query;
     let query = query.trim().trim_start_matches('#').to_lowercase();
     let candidates = team
         .channels
@@ -272,12 +343,17 @@ pub(crate) fn destinations(shell: &ShellState, query: &str) -> Vec<Destination> 
             result.insert(index, (rank, destination));
         }
     }
-    result
+    let mut result = result
         .into_iter()
         .map(|(_, destination)| destination)
-        .collect()
+        .collect::<Vec<_>>();
+    new_direct::append_people(shell, person_query, &mut result);
+    result
 }
 pub(super) fn selected(shell: &ShellState, id: &str) -> Option<Destination> {
+    if id.starts_with("person:") {
+        return new_direct::selected_person(shell, id);
+    }
     let context = Context::capture(shell)?;
     let workspace = shell.core.workspaces.get(&context.key.team)?;
     let channel = workspace.channels.get(id)?;

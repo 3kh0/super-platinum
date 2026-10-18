@@ -121,6 +121,8 @@ pub fn open(mut state: Signal<ShellState>, key: SavedKey) {
             .get(&ctx.session.team_id)
             .is_some_and(|workspace| workspace.channels.contains_key(&key.item_id));
         if !known_channel {
+            let posting =
+                crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session);
             let result = api::fetch_channels_info(
                 &ctx.transport,
                 &ctx.client,
@@ -139,6 +141,7 @@ pub fn open(mut state: Signal<ShellState>, key: SavedKey) {
                             .show_toast("This conversation is unavailable.");
                         return;
                     };
+                    posting.channels(&state, std::slice::from_ref(&channel));
                     if let Some(workspace) =
                         state.write().core.workspaces.get_mut(&ctx.session.team_id)
                     {

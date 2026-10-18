@@ -330,10 +330,14 @@ pub fn shell() -> Element {
                             {conversation_header(state, &snapshot, channel_name, huddle.as_ref())}
                         }
                         {channel_resources::tabs(state, snapshot.channel_tab)}
-                        if snapshot.channel_tab == ChannelTab::AppHome {
+                        if snapshot.channel_tab == ChannelTab::AppAbout {
+                            {crate::app_home::about::panel(state)}
+                        } else if snapshot.channel_tab == ChannelTab::AppHome {
                             {crate::app_home::view::panel(state)}
                         } else if snapshot.channel_tab == ChannelTab::Canvas {
                             crate::canvas::surface::Panel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}-{snapshot.channel_generation}-{snapshot.shortcut_generation}",state}
+                        } else if crate::channel_tabs::selection::folder_selected(&snapshot) {
+                            crate::channel_tabs::folder::Panel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}-{snapshot.channel_generation}",state}
                         } else if snapshot.channel_tab == ChannelTab::Bookmarks {
                             crate::bookmarks::BookmarksPanel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}",state,channel:active_channel_id.to_owned()}
                         } else if snapshot.channel_tab == ChannelTab::Pins {

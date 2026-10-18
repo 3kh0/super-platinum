@@ -54,7 +54,7 @@ pub(in crate::canvas::edit) fn bootstrap(
     ])?)
 }
 
-pub(super) fn validate(
+pub(in crate::canvas::edit) fn validate(
     wire: &RawMessage,
     section: &Section,
     draft: &TextDraft,

@@ -802,11 +802,24 @@ pub async fn open_dm(
     workspace: &WorkspaceSession,
     user: UserId,
 ) -> Result<ChannelId, Error> {
+    Ok(open_dm_channel(transport, client, workspace, user)
+        .await?
+        .id)
+}
+
+/// The same conversations.open request, retaining the actual returned channel
+/// metadata for owned ingress before callers select only its ID.
+pub async fn open_dm_channel(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    user: UserId,
+) -> Result<Channel, Error> {
     let value = transport
         .execute(conversations_open(client, workspace, user))
         .await?;
     let opened: OpenedConversation = decode(value, "conversations.open")?;
-    Ok(opened.channel.id)
+    Ok(opened.channel)
 }
 
 pub async fn open_direct_conversation(

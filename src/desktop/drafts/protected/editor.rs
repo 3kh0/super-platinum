@@ -11,6 +11,7 @@ pub(crate) struct Editor {
     changed: tokio::sync::Notify,
     pub(super) owned_write: Mutex<Option<Arc<super::owned_editor::Write>>>,
     pub(super) identity: Arc<()>,
+    pub(super) hosted: Arc<super::owned_hosted::Composer>,
     pub(super) retention_id: String,
 }
 pub(super) struct State {
@@ -118,6 +119,7 @@ impl Editor {
             changed: tokio::sync::Notify::new(),
             owned_write: Mutex::default(),
             identity: Arc::new(()),
+            hosted: Arc::new(super::owned_hosted::Composer::default()),
             retention_id,
         })
     }

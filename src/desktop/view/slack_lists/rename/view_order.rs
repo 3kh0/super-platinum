@@ -26,14 +26,29 @@ pub(super) fn actions(state: Signal<ShellState>, visit: u64) -> Element {
     }
 }
 pub(super) fn fields(p: rename::view_order::Presentation) -> Element {
+    let hint = if p.lanes {
+        "This changes the shared lane order for everyone with access."
+    } else {
+        "This changes the shared custom view order for everyone with access. Built-in views stay in their own section."
+    };
+    let heading = if p.lanes {
+        "Current lanes"
+    } else {
+        "Current custom views"
+    };
+    let movement = if p.lanes {
+        format!("Move {} {}.", p.name, p.direction)
+    } else {
+        format!("Move {} {} by one place.", p.name, p.direction)
+    };
     rsx! {
-        p { id:"slack-list-view-order-move", class:"slack-list-editor-item", "Move {p.name} {p.direction} by one place." }
-        p { class:"slack-list-editor-hint", "This changes the shared custom view order for everyone with access. Built-in views stay in their own section." }
+        p { id:"slack-list-view-order-move", class:"slack-list-editor-item", "{movement}" }
+        p { class:"slack-list-editor-hint", "{hint}" }
         p { "Before" }
         ol { id:"slack-list-view-order-before", for (id,name) in p.before { li { "data-view-id":"{id}", "{name}" } } }
         p { "After saving" }
         ol { id:"slack-list-view-order-after", for (id,name) in p.after { li { "data-view-id":"{id}", "{name}" } } }
-        p { "Current custom views" }
+        p { "{heading}" }
         if let Some(current)=p.current {
             ol { id:"slack-list-view-order-current", for (id,name) in current { li { "data-view-id":"{id}", "{name}" } } }
         } else { p { id:"slack-list-view-order-current", "The current order is unavailable for this operation." } }

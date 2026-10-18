@@ -58,3 +58,35 @@ fn text_budget_is_utf16_and_empty_send_is_not_authority() {
     assert!(!valid_text("bad\0"));
     assert!(ReplyIntent::capture("T1", "U1", &f, &r, " ", &id).is_err());
 }
+
+#[test]
+fn rich_ack_proves_complete_blocks_and_preserves_v1_records() {
+    let (file, root) = data();
+    let id = uuid::Uuid::new_v4().to_string();
+    let mut blocks = super::super::content::plain("same words");
+    blocks[0]["elements"][0]["elements"][0]["style"] = json!({"bold":true});
+    let intent = ReplyIntent::capture_rich("T1", "U1", &file, &root, blocks.clone(), &id).unwrap();
+    let record = serde_json::to_value(intent.record()).unwrap();
+    assert_eq!(record["version"], 2);
+    let restored: ReplyRecord = serde_json::from_value(record).unwrap();
+    assert!(restored.validate().is_ok());
+    assert_eq!(restored.blocks().unwrap(), blocks);
+    let mut raw = json!({"ok":true,"channel":"C123","ts":"1700000001.000100",
+        "message":{"type":"message","channel":"C123","thread_ts":"1700000000.000100",
+        "ts":"1700000001.000100","client_msg_id":id,"text":"server fallback","blocks":blocks}});
+    raw["message"]["blocks"][0]["block_id"] = json!("server-generated");
+    assert!(intent.clone().accept(&raw).is_ok());
+    let mut wrong = raw.clone();
+    wrong["message"]["blocks"][0]["elements"][0]["elements"][0]["style"]["bold"] = json!(false);
+    assert!(intent.clone().accept(&wrong).is_err());
+    wrong["message"]["text"] = json!("same words");
+    assert!(intent.clone().accept(&wrong).is_err());
+    raw["message"].as_object_mut().unwrap().remove("blocks");
+    assert!(intent.accept(&raw).is_err());
+    let plain = ReplyIntent::capture("T1", "U1", &file, &root, "legacy", &id).unwrap();
+    let v1 = serde_json::to_value(plain.record()).unwrap();
+    assert!(v1.get("blocks").is_none());
+    let restored: ReplyRecord = serde_json::from_value(v1).unwrap();
+    assert!(restored.validate().is_ok());
+    assert!(restored.blocks().is_none());
+}

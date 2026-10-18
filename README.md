@@ -28,6 +28,21 @@ a bare `cargo run` still runs the client but does not deliver macOS notification
 
 ## Develop
 
+For faster full rebuilds and UI iteration:
+
+```sh
+cargo build --locked --profile dev-fast --jobs 12 --timings
+cargo run --locked --profile dev-fast --jobs 12
+```
+
+`dev-fast` skips application and dependency optimization, retains application
+line numbers for backtraces, and omits dependency debug symbols. Debug assertions,
+overflow checks, and incremental compilation remain enabled. It trades runtime
+speed and variable-level debugging for shorter builds; use the ordinary `dev`
+profile for performance investigations or full debugger support. Its artifacts
+live separately under `target/dev-fast`, so keep that directory between builds.
+The 12 jobs are logical workers, not a guarantee of 12 busy physical cores.
+
 ```sh
 cargo fmt --check
 cargo check --locked

@@ -106,7 +106,8 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<View> {
     let busy = d.loading || p.is_some_and(|p| p.phase != Phase::Uncertain);
     let uncertain = p.is_some();
     let cooling = entry.is_some_and(|e| e.retry_at > now());
-    let conflict = sections::pending(shell)
+    let conflict = recording::pending(shell)
+        || sections::pending(shell)
         || crate::self_status::blocks_profile_edit(shell)
         || crate::profile_title::blocks_profile_writes(shell)
         || shell
@@ -182,7 +183,11 @@ pub(crate) fn open(mut state: Signal<ShellState>, visit: u64) {
 }
 /// Returns a load only after the same admission used by the actual open action.
 fn open_shell(shell: &mut ShellState, visit: u64) -> Option<(Token, u64)> {
-    if sections::active(shell) || sections::pending(shell) {
+    if recording::active(shell)
+        || recording::pending(shell)
+        || sections::active(shell)
+        || sections::pending(shell)
+    {
         return None;
     }
     let capture = {

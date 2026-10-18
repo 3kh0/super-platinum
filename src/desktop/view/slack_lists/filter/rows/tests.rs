@@ -51,7 +51,7 @@ fn two_number_nodes_survive_value_render_and_removing_another_stable_row() {
             let draft = use_signal(initial);
             slot.set(Some(draft));
             let p = draft.read().clone();
-            rsx! {Conditions{state,serial:7,visit:1,p,editable:true}}
+            rsx! {Conditions{state,serial:7,visit:1,p,editable:true,local:false}}
         },
         copy,
     );
@@ -107,7 +107,7 @@ fn actual_over_cap_input_text_is_carried_to_operator_epoch_without_old_value_rev
             let draft = use_signal(initial);
             slot.set(Some(draft));
             let p = draft.read().clone();
-            rsx! {Conditions{state,serial:7,visit:1,p,editable:true}}
+            rsx! {Conditions{state,serial:7,visit:1,p,editable:true,local:false}}
         },
         copy,
     );
@@ -175,7 +175,7 @@ fn actual_select_checkbox_nodes_survive_epoch_toggle_and_removal_of_number_neigh
             });
             slot.set(Some(draft));
             let p = draft.read().clone();
-            rsx! {Conditions{state,serial:7,visit:1,p,editable:true}}
+            rsx! {Conditions{state,serial:7,visit:1,p,editable:true,local:false}}
         },
         copy,
     );
@@ -264,7 +264,7 @@ fn calendar_node_survives_sibling_removal_and_preset_removes_only_calendar_contr
             });
             slot.set(Some(draft));
             let p = draft.read().clone();
-            rsx! {Conditions{state,serial:7,visit:1,p,editable:true}}
+            rsx! {Conditions{state,serial:7,visit:1,p,editable:true,local:false}}
         },
         copy,
     );

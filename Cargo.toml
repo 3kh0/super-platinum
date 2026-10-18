@@ -24,6 +24,17 @@ opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
 
+# Fast full rebuilds and UI iteration; use dev for runtime performance profiling.
+[profile.dev-fast]
+inherits = "dev"
+opt-level = 0
+debug = "line-tables-only"
+
+# Override the inherited level-3 dependency optimization as well.
+[profile.dev-fast.package."*"]
+opt-level = 0
+debug = false
+
 [profile.release]
 opt-level = 3
 lto = true

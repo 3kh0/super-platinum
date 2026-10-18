@@ -1,7 +1,14 @@
 //! Channel tab inventory and exact intents. Unknown siblings are never rewritten.
-//! The first authoring slice supports ordinary Canvas tabs, not knowledge canvases.
+//! Ordinary Canvas intents and a separate two-service knowledge removal protocol.
+pub mod folder;
 mod intent;
 pub use intent::{Access, Action, Intent, Observation, can_share_request};
+mod knowledge;
+pub use knowledge::{KnowledgeRemoval, KnowledgeStage};
+mod enterprise;
+pub use enterprise::ChannelPermissionRead;
+mod manager;
+pub use manager::ManagerRead;
 mod permission;
 pub use permission::{Permission, permission};
 use serde_json::Value;
@@ -74,11 +81,17 @@ impl Inventory {
     pub fn row(&self, key: &str) -> Option<&Value> {
         self.rows.iter().find(|r| id(r) == Some(key))
     }
-    pub fn canvas(&self, key: &str) -> Result<&Value, Fault> {
+    /// Shared readable Canvas identity; knowledge status changes its removal
+    /// workflow, not which document the existing Canvas renderer can display.
+    pub fn canvas_record(&self, key: &str) -> Result<&Value, Fault> {
         let row = self.row(key).ok_or(Fault::Missing)?;
         if row["type"] != "canvas" || !tab_id(key) || file_id(row).is_none() {
             return Err(Fault::Unsupported);
         }
+        Ok(row)
+    }
+    pub fn canvas(&self, key: &str) -> Result<&Value, Fault> {
+        let row = self.canvas_record(key)?;
         // Knowledge removal also disables a separate service. It cannot use this
         // ordinary removeTab path. Missing/malformed enabled metadata is not false.
         if self

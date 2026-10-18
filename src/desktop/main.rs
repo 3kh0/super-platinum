@@ -125,6 +125,25 @@ fn main() {
             std::process::exit(2);
         }
     }
+    if fixture::protected_hosted_requested() {
+        #[cfg(not(feature = "protected-native-fixture"))]
+        {
+            eprintln!("protected-hosted-composer: fixture feature required");
+            std::process::exit(2);
+        }
+        #[cfg(feature = "protected-native-fixture")]
+        if !drafts::protected::production::hosted_native::enabled()
+            || fixture::protected_requested()
+            || fixture::protected_owned_requested()
+            || fixture::protected_enrollment_requested()
+            || fixture::protected_adoption_requested()
+            || fixture::protected_slash_requested()
+            || fixture::protected_baseline_requested()
+        {
+            eprintln!("protected-hosted-composer: exact exclusive fixture opt-in required");
+            std::process::exit(2);
+        }
+    }
     if fixture::protected_baseline_requested() {
         #[cfg(not(feature = "protected-native-fixture"))]
         {
@@ -263,6 +282,8 @@ fn app() -> Element {
     use_context_provider(|| state);
     let attachment_operations = use_signal(scheduled::attachments::Operations::default);
     use_context_provider(|| attachment_operations);
+    let scheduled_forwards = use_signal(forward::scheduled::Registry::default);
+    use_context_provider(|| scheduled_forwards);
     read_visibility::use_focus_read_marks(state);
     #[cfg(target_os = "macos")]
     notification::attention::use_cleanup();

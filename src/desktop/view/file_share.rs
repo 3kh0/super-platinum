@@ -18,7 +18,7 @@ fn destination_icon(shell: &ShellState, destination: &file_share::Destination) -
         .and_then(|team| shell.core.workspaces.get(team))
         .and_then(|w| w.channels.get(&destination.id))
         .is_some_and(|c| c.is_im || c.is_mpim);
-    if direct {
+    if direct || destination.id.starts_with("person:") {
         Icon::DirectMessages
     } else if destination.private {
         Icon::Lock
@@ -220,7 +220,7 @@ pub(crate) fn FileShareDialog(mut state: Signal<ShellState>) -> Element {
                         }
                         if matches.read().is_empty() {p {class:"file-share-hint",role:"status","No available conversations match."}}
                     }
-                    p {class:"file-share-hint","Choose a joined channel or an open direct message in this workspace."}
+                    p {class:"file-share-hint","Choose a conversation or search for a person in this workspace."}
                 }
                 if dialog.editor_ready {
                     super::rich_editor::RichEditor {id:"file-share-note",label:"Add a message (optional)",blocks,autofocus:false,allow_lists:true,disabled:!editable}

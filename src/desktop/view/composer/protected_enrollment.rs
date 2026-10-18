@@ -60,6 +60,16 @@ pub(crate) async fn capture_baseline(
 ) -> Result<Capture, Error> {
     capture_with_policy(state, target, expected, Policy::Baseline).await
 }
+pub(crate) async fn capture_hosted(
+    state: Signal<ShellState>,
+    target: ComposerTarget,
+    expected: &LocalDraft,
+) -> Result<Capture, Error> {
+    if target != ComposerTarget::Channel {
+        return Err(Error::Unsupported);
+    }
+    capture_with_policy(state, target, expected, Policy::Hosted).await
+}
 async fn capture_with_policy(
     state: Signal<ShellState>,
     target: ComposerTarget,
@@ -71,12 +81,7 @@ async fn capture_with_policy(
         let key = s.composer_key(target).ok_or(Error::Stale)?;
         let mount = field::current(&s, target).ok_or(Error::Stale)?;
         if !policy.same(&local(&s, target), expected)
-            || !s
-                .core
-                .drafts
-                .items
-                .get(&key)
-                .is_some_and(|v| policy.same(v, expected))
+            || !policy.present(s.core.drafts.items.get(&key), expected)
         {
             return Err(Error::ReviewRequired);
         }
@@ -140,11 +145,9 @@ impl Capture {
             && s.draft_writes.view_id == self.view
             && s.composer_key(self.target).as_ref() == Some(&self.key)
             && self.policy.same(&local(s, self.target), &self.local)
-            && s.core
-                .drafts
-                .items
-                .get(&self.key)
-                .is_some_and(|v| self.policy.same(v, &self.local))
+            && self
+                .policy
+                .present(s.core.drafts.items.get(&self.key), &self.local)
     }
     /// Preparation already owns this exact Editor. A late native input event
     /// becomes its retained alternate before admission refuses; never clear or
@@ -198,6 +201,32 @@ impl Capture {
     }
 }
 impl Admission {
+    pub(crate) fn release(self) -> Capture {
+        let Self { capture, lease } = self;
+        drop(lease);
+        capture
+    }
+    pub(crate) async fn clear_hosted(
+        &self,
+        editor: &crate::drafts::protected::editor::Editor,
+    ) -> Result<(), Error> {
+        if self.capture.policy != Policy::Hosted || !self.current(&self.capture.state.peek()) {
+            return Err(Error::Stale);
+        }
+        let hosted = editor.hosted();
+        let after = hosted.clear_basis(editor)?;
+        if !self.matches(
+            &self.capture.state.peek(),
+            editor.scope(),
+            editor.snapshot().view.local(),
+        ) {
+            return Err(Error::Stale);
+        }
+        match self.lease.clear().await {
+            protected_admission::Clear::Applied => hosted.cleared(editor, &after),
+            _ => Err(Error::ReviewRequired),
+        }
+    }
     pub(crate) fn matches(
         &self,
         shell: &ShellState,

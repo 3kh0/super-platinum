@@ -30,6 +30,7 @@ pub(crate) mod operation;
 mod outcome;
 mod owned_baseline;
 mod owned_editor;
+pub(crate) mod owned_hosted;
 #[cfg(feature = "protected-native-fixture")]
 pub(crate) mod owned_native;
 mod owned_release;

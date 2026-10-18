@@ -17,6 +17,7 @@ pub fn tabs(state: Signal<ShellState>, selected: ChannelTab) -> Element {
         nav {class:"channel-tabs","aria-label":"Conversation tabs",
             if crate::app_home::eligible(&state.read()) {
                 button {class:if selected==ChannelTab::AppHome {"active"}else{""},"aria-pressed":selected==ChannelTab::AppHome,onclick:move |_|crate::channel_resources::select(state,ChannelTab::AppHome),"Home"}
+                button {class:if selected==ChannelTab::AppAbout {"active"}else{""},"aria-pressed":selected==ChannelTab::AppAbout,onclick:move |_|crate::channel_resources::select(state,ChannelTab::AppAbout),"About"}
             }
             button {class:if selected == ChannelTab::Messages {"active"} else {""},"aria-pressed":selected==ChannelTab::Messages,
                 onclick:move |_|crate::channel_resources::select(state,ChannelTab::Messages),"Messages"}

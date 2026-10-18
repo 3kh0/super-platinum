@@ -66,10 +66,11 @@ requestAnimationFrame(()=>{
  // Capture the opener before hiding the layout can blur it. Scope it to this
  // file visit; a late detail mount must never consume another dialog's target.
  dialog.addEventListener('click',event=>{
-   const open=event.target.closest('.slack-list-record-open');if(!open)return;
+   const open=event.target.closest('.slack-list-record-open,.slack-list-remind-cell');if(!open)return;
    const row=open.closest('[data-instance-id]');if(!row)return;
    const active=document.activeElement?.closest?.('td,.slack-list-card-field');
-   const cell=active&&row.contains(active)?active:row.querySelector('td,.slack-list-card-field');
+   const cell=open.matches('.slack-list-remind-cell')?open.closest('td,.slack-list-card-field'):
+     active&&row.contains(active)?active:row.querySelector('td,.slack-list-card-field');
    dialog.__listRecordOrigin={visit:dialog.dataset.dialogGeneration,record:row.dataset.rowId,instance:row.dataset.instanceId,column:cell?.dataset.columnId,cell};
  },true);
  dialog.addEventListener('click',event=>{

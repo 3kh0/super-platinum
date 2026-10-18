@@ -6,6 +6,7 @@ pub(super) fn Rules(
     visit: u64,
     p: sort::Presentation,
     editable: bool,
+    local: bool,
 ) -> Element {
     let mut add = use_signal(String::new);
     let structure = p.choice;
@@ -50,7 +51,11 @@ pub(super) fn Rules(
             }
         }
         p{id:"slack-list-sort-current",class:"slack-list-editor-hint","Original: {original}. Current: {current}."}
-        p{class:"slack-list-editor-hint","Save changes this shared Table for everyone with access. Only currently loaded items can be ordered here; stored values are kept."}
+        if local {
+            p{class:"slack-list-editor-hint","Apply changes your current view. Use Save to share these refinements. Only currently loaded items can be ordered here; stored values are kept."}
+        } else {
+            p{class:"slack-list-editor-hint","Save changes this shared Table for everyone with access. Only currently loaded items can be ordered here; stored values are kept."}
+        }
     }
 }
 fn row_fields(

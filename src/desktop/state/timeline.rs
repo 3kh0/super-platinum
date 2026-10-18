@@ -351,6 +351,7 @@ impl ShellState {
         self.channel_generation = self.channel_generation.wrapping_add(1);
         self.loading_older = false;
         self.core.active_channel = Some(channel_id.clone());
+        crate::app_home::workflows::navigation_history::record(self, &channel_id);
         crate::canvas::checklist::close_visit(self);
         crate::channel_tabs::selection::ordinary_open(self);
         self.sync_composer_drafts();

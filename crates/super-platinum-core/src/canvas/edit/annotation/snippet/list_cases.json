@@ -1,0 +1,387 @@
+[
+  {
+    "name": "bullet-two",
+    "style": 5,
+    "children": [
+      {
+        "id": "a",
+        "indent": 0,
+        "html": "one"
+      },
+      {
+        "id": "b",
+        "indent": 0,
+        "html": "<b>two</b>"
+      }
+    ],
+    "html": "<ul><li>one</li><li><b>two</b></li></ul>",
+    "rich": [
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "one"
+              }
+            ]
+          },
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "two",
+                "style": {
+                  "bold": true
+                }
+              }
+            ]
+          }
+        ],
+        "style": "bullet",
+        "indent": 0
+      }
+    ],
+    "markdown": "* one\n* *two*\n\n"
+  },
+  {
+    "name": "numbered-depth",
+    "style": 6,
+    "children": [
+      {
+        "id": "a",
+        "indent": 0,
+        "html": "one"
+      },
+      {
+        "id": "b",
+        "indent": 1,
+        "html": "nested<br>line"
+      },
+      {
+        "id": "c",
+        "indent": 2,
+        "html": "deep"
+      },
+      {
+        "id": "d",
+        "indent": 0,
+        "html": "last"
+      }
+    ],
+    "html": "<ol><li style=\"list-style-type:decimal\">one</li><ol><li style=\"list-style-type:lower-alpha\">nested<br>line</li><ol><li style=\"list-style-type:lower-roman\">deep</li></ol></ol><li style=\"list-style-type:decimal\">last</li></ol>",
+    "rich": [
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "one"
+              }
+            ]
+          }
+        ],
+        "style": "ordered",
+        "indent": 0
+      },
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "nested"
+              },
+              {
+                "type": "text",
+                "text": "\n"
+              },
+              {
+                "type": "text",
+                "text": "line"
+              }
+            ]
+          }
+        ],
+        "style": "ordered",
+        "indent": 1
+      },
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "deep"
+              }
+            ]
+          }
+        ],
+        "style": "ordered",
+        "indent": 2
+      },
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "last"
+              }
+            ]
+          }
+        ],
+        "style": "ordered",
+        "indent": 0
+      }
+    ],
+    "markdown": "1. one\n    1. nested\n        line\n        1. deep\n2. last\n\n"
+  },
+  {
+    "name": "check-mixed",
+    "style": 7,
+    "children": [
+      {
+        "id": "a",
+        "indent": 0,
+        "html": "open"
+      },
+      {
+        "id": "b",
+        "indent": 0,
+        "html": "done",
+        "checked": true
+      },
+      {
+        "id": "c",
+        "indent": 0,
+        "html": "done too",
+        "checked": true
+      },
+      {
+        "id": "d",
+        "indent": 1,
+        "html": "nested"
+      }
+    ],
+    "html": "<div data-section-style=\"7\"><ul><li role=\"checkbox\">open</li><li class=\"checked\" role=\"checkbox\">done</li><li class=\"checked\" role=\"checkbox\">done too</li><ul><li role=\"checkbox\">nested</li></ul></ul></div>",
+    "rich": [
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "open"
+              }
+            ]
+          }
+        ],
+        "style": "unchecked",
+        "indent": 0
+      },
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "done"
+              }
+            ]
+          },
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "done too"
+              }
+            ]
+          }
+        ],
+        "style": "checked",
+        "indent": 0
+      },
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "nested"
+              }
+            ]
+          }
+        ],
+        "style": "unchecked",
+        "indent": 1
+      }
+    ],
+    "markdown": "* open\n* done\n* done too\n    * nested\n\n"
+  },
+  {
+    "name": "empty",
+    "style": 5,
+    "children": [],
+    "html": "",
+    "rich": [],
+    "markdown": ""
+  },
+  {
+    "name": "empty-child",
+    "style": 5,
+    "children": [
+      {
+        "id": "a",
+        "indent": 0,
+        "html": ""
+      }
+    ],
+    "html": "<ul><li></li></ul>",
+    "rich": [
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": ""
+              }
+            ]
+          }
+        ],
+        "style": "bullet",
+        "indent": 0
+      }
+    ],
+    "markdown": "* \n\n"
+  },
+  {
+    "name": "jump-indent",
+    "style": 5,
+    "children": [
+      {
+        "id": "a",
+        "indent": 2,
+        "html": "deep first"
+      },
+      {
+        "id": "b",
+        "indent": 0,
+        "html": "top"
+      }
+    ],
+    "html": "<ul><ul><ul><li>deep first</li></ul></ul><li>top</li></ul>",
+    "rich": [
+      {
+        "type": "rich_text_list",
+        "elements": [],
+        "style": "bullet",
+        "indent": 0
+      },
+      {
+        "type": "rich_text_list",
+        "elements": [],
+        "style": "bullet",
+        "indent": 1
+      },
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "deep first"
+              }
+            ]
+          }
+        ],
+        "style": "bullet",
+        "indent": 2
+      },
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "top"
+              }
+            ]
+          }
+        ],
+        "style": "bullet",
+        "indent": 0
+      }
+    ],
+    "markdown": "        * deep first\n* top\n\n"
+  },
+  {
+    "name": "filter-child",
+    "style": 6,
+    "filterChildId": "b",
+    "children": [
+      {
+        "id": "a",
+        "indent": 0,
+        "html": "one"
+      },
+      {
+        "id": "b",
+        "indent": 1,
+        "html": "selected"
+      }
+    ],
+    "html": "<ol><ol><li style=\"list-style-type:lower-alpha\">selected</li></ol></ol>",
+    "rich": [
+      {
+        "type": "rich_text_list",
+        "elements": [],
+        "style": "ordered",
+        "indent": 0
+      },
+      {
+        "type": "rich_text_list",
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "text",
+                "text": "selected"
+              }
+            ]
+          }
+        ],
+        "style": "ordered",
+        "indent": 1
+      }
+    ],
+    "markdown": "    1. selected\n\n"
+  }
+]

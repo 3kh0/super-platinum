@@ -118,13 +118,13 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         // would fail, and the loader would spend the outage burning through
         // each picture's retry backoff.
         let sweep = media_sweep.due(now)
-            && shell.media.has_pending()
-            && !shell.media.is_loading()
             && shell
                 .core
                 .transport
                 .as_ref()
-                .is_none_or(|transport| transport.health() != Health::Offline);
+                .is_some_and(|transport| transport.health() != Health::Offline)
+            && !shell.media.is_loading()
+            && shell.media.has_pending();
         let transport = sweep.then(|| shell.core.transport.clone()).flatten();
         let close_pending = !shell.app_modal_closes.is_empty();
         let list_viewing = crate::slack_lists::lifecycle::plan(

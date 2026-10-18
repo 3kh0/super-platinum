@@ -11,6 +11,10 @@ pub(super) async fn load(
     mut reader: Signal<Reader>,
     target: CanvasTarget,
 ) {
+    if comments::annotation::fixture::inline_requested() {
+        comments::annotation::fixture::refresh_reader(&mut state.write(), &mut reader.write());
+        return;
+    }
     if text::structure_fixture::enabled(&state.peek()) {
         let mut shell = state.write();
         text::structure_fixture::refresh(&mut shell);

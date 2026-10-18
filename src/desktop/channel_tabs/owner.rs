@@ -105,6 +105,59 @@ impl Owner {
             _ => Err(super_platinum_core::slack::Error::TransportNotConfigured),
         }
     }
+    /// Fresh positive channel-manager proof, scoped to the original UI owner.
+    /// Presentation permission is never reused as authority for a later write.
+    pub async fn read_permission(
+        &self,
+        state: Signal<ShellState>,
+        raw: &Value,
+    ) -> Result<Permission, super_platinum_core::slack::Error> {
+        use super_platinum_core::{
+            channel_tabs::{ChannelPermissionRead, ManagerRead},
+            slack::Error,
+        };
+        if !self.current(&state.peek()) {
+            return Err(Error::Api("tabs_owner_changed".into()));
+        }
+        let local = self.permission(raw);
+        if local != Permission::Unavailable {
+            return Ok(local);
+        }
+        let mut facts = PostingFacts::new(self.key.channel.clone());
+        facts.observe(raw, Some(&self.member));
+        let Ok(read) = ManagerRead::capture(raw, &self.member, &facts) else {
+            let Ok(read) = ChannelPermissionRead::capture(raw, &self.member, &facts, &self.session)
+            else {
+                return Ok(local);
+            };
+            let discovery = read
+                .discovery(&self.client, &self.session)
+                .map_err(|_| Error::Api("tabs_owner_changed".into()))?;
+            let endpoint = self.execute(discovery).await?;
+            if !self.current(&state.peek()) {
+                return Err(Error::Api("tabs_owner_changed".into()));
+            }
+            let request = read
+                .request(&self.client, &self.session, &endpoint)
+                .map_err(|_| Error::Api("tabs_endpoint_response_unconfirmed".into()))?;
+            let response = self.execute(request).await?;
+            if !self.current(&state.peek()) {
+                return Err(Error::Api("tabs_owner_changed".into()));
+            }
+            return read
+                .permission(&response)
+                .map_err(|_| Error::Api("tabs_permission_response_unconfirmed".into()));
+        };
+        let request = read
+            .request(&self.client, &self.session)
+            .map_err(|_| Error::Api("tabs_owner_changed".into()))?;
+        let response = self.execute(request).await?;
+        if !self.current(&state.peek()) {
+            return Err(Error::Api("tabs_owner_changed".into()));
+        }
+        read.permission(&response)
+            .map_err(|_| Error::Api("tabs_manager_response_unconfirmed".into()))
+    }
     pub fn permission(&self, raw: &Value) -> Permission {
         let mut facts = PostingFacts::new(self.key.channel.clone());
         facts.observe(raw, Some(&self.member));
@@ -112,7 +165,7 @@ impl Owner {
             raw,
             &self.member,
             &facts,
-            self.session.enterprise_id.is_some(),
+            self.session.enterprise_id.is_some() || self.session.team_id.starts_with('E'),
             self.plan.as_deref(),
         )
     }

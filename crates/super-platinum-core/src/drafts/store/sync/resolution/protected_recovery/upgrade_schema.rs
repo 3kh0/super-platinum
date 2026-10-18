@@ -2,6 +2,10 @@
 use super::*;
 use snapshot::{Cell, Image};
 const UPLOADS: &[&str] = &["upload_journal_identity", "upload_receipts"];
+const HOSTED: &[&str] = &[
+    "composer_draft_hosted_format",
+    "composer_draft_hosted_records",
+];
 const SLASH: &[&str] = &["sp_slash_meta", "sp_slash_intents", "sp_slash_cooldowns"];
 pub(super) const HISTORY_SQL: &str = "CREATE TABLE composer_draft_migration_receipt(singleton INTEGER PRIMARY KEY CHECK(singleton=1),version INTEGER NOT NULL CHECK(version=1),account TEXT NOT NULL,id TEXT NOT NULL,source TEXT NOT NULL,result TEXT NOT NULL)";
 
@@ -35,6 +39,17 @@ pub(super) fn classify(image: &Image, account: &str) -> Result<Class, AppError> 
     }
     let uploads = group(image, UPLOADS)?;
     let slash = group(image, SLASH)?;
+    let hosted = group(image, HOSTED)?;
+    let hosted_editor = image.tables.contains_key("composer_draft_hosted_drafts");
+    let hosted_cleanup = image
+        .tables
+        .contains_key("composer_draft_hosted_completions");
+    if hosted_cleanup && !hosted_editor {
+        return Err(invalid("orphan hosted completion schema"));
+    }
+    if hosted_editor && !hosted {
+        return Err(invalid("orphan hosted editor schema"));
+    }
     let protected = image
         .tables
         .contains_key("composer_draft_continuity_format");
@@ -50,7 +65,11 @@ pub(super) fn classify(image: &Image, account: &str) -> Result<Class, AppError> 
         .tables
         .contains_key("composer_draft_migration_receipt");
     let local_only = image.tables.len() == 1 && image.tables.contains_key("composer_drafts");
-    if (binding && !slash) || (completed && !binding) || (history && !protected) {
+    if (binding && !slash)
+        || (completed && !binding)
+        || (history && !protected)
+        || (hosted && !protected)
+    {
         return Err(invalid("orphan upgrade sidecar"));
     }
     let mut expected = ordinary()?;
@@ -76,6 +95,14 @@ pub(super) fn classify(image: &Image, account: &str) -> Result<Class, AppError> 
             return Err(invalid("unsupported slash format"));
         }
         slash_intent::upgrade_reference(&mut expected, account, version, completed)?;
+    }
+    if hosted {
+        if marker(image, "composer_draft_hosted_format")? != 1 {
+            return Err(invalid("unsupported hosted format"));
+        }
+        let tx = adapter_atomic::begin(&expected.0)?;
+        hosted_files::upgrade_reference(&tx, account, hosted_editor, hosted_cleanup)?;
+        tx.commit()?;
     }
     if history {
         expected.0.execute_batch(HISTORY_SQL)?;
@@ -180,6 +207,16 @@ pub(super) fn classify(image: &Image, account: &str) -> Result<Class, AppError> 
     }
     if slash {
         slash_intent::upgrade_audit(&shadow.0, account, binding, completed)?;
+    }
+    if hosted_cleanup {
+        hosted_files::cleanup::all(&shadow.0, account)?;
+    }
+    if hosted_editor {
+        hosted_files::editor::all(&shadow.0, account)?;
+    }
+    if hosted {
+        hosted_files::retained(&shadow, account)
+            .map_err(|_| invalid("invalid hosted inventory"))?;
     }
     if history {
         validate_history(image, account)?;

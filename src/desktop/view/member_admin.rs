@@ -349,11 +349,14 @@ async fn change(
     let revision = state.peek().core.workspaces[&ctx.session.team_id]
         .channel_lifecycle
         .revision();
+    let posting = crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+        .for_channels([&channel]);
     let info =
         api::fetch_conversation_details(&ctx.transport, &ctx.client, &ctx.session, channel).await?;
     if !ctx.current(&state.peek()) {
         return Err(Error::Api("account_changed".into()));
     }
+    posting.channels(&state, std::slice::from_ref(&info));
     let info = {
         let mut shell = state.write();
         let info = shell
@@ -398,12 +401,15 @@ async fn refresh_info(mut state: Signal<ShellState>, ctx: Option<&Context>, chan
     let revision = state.peek().core.workspaces[&ctx.session.team_id]
         .channel_lifecycle
         .revision();
+    let posting = crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+        .for_channels([&channel]);
     if let Ok(info) =
         api::fetch_conversation_details(&ctx.transport, &ctx.client, &ctx.session, channel).await
     {
         if !ctx.current(&state.peek()) {
             return;
         }
+        posting.channels(&state, std::slice::from_ref(&info));
         {
             let mut shell = state.write();
             shell

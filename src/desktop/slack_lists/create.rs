@@ -88,6 +88,12 @@ fn receipt(shell: &ShellState) -> Option<&Receipt> {
         .get(&key)
         .filter(|r| r.attempt.scope.stable_current(shell))
 }
+pub(super) fn blocks_target(shell: &ShellState, scope: &Scope, list: &str) -> bool {
+    let key = (scope.stable_owner(), list.to_owned());
+    shell.slack_lists.create.receipts.contains_key(&key)
+        || retained::contains(&key)
+        || subitem::blocks_target(scope, list)
+}
 pub(crate) fn blocks_mutation(shell: &ShellState) -> bool {
     legacy_blocks_mutation(shell) || subitem::blocks(shell)
 }
@@ -116,6 +122,9 @@ fn unavailable_for(shell: &ShellState, duplicate: bool) -> Option<&'static str> 
     if shell.slack_lists.operations.contains_key(&view.id)
         || blocks_mutation(shell)
         || delete::blocks_mutation(shell)
+        || reminder::blocks_mutation(shell)
+        || completion::blocks_mutation(shell)
+        || editor::assignment::blocks_mutation(shell)
         || rename::blocks_mutation(shell)
     {
         return Some("Wait for the current change to be confirmed.");
@@ -311,6 +320,9 @@ pub(super) fn validate(
 ) -> Result<(), &'static str> {
     if !attempt.current(shell)
         || delete::blocks_mutation(shell)
+        || reminder::blocks_mutation(shell)
+        || completion::blocks_mutation(shell)
+        || editor::assignment::blocks_mutation(shell)
         || rename::blocks_mutation(shell)
         || shell
             .slack_lists

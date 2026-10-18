@@ -75,10 +75,12 @@ pub(crate) fn install(shell: &mut ShellState) {
     );
     if conversation != fixture::Conversation::Channel {
         let workspace = shell.core.workspaces.get_mut(fixture::TEAM).unwrap();
-        workspace.channels.insert(
-            conversation.id().into(),
-            serde_json::from_value(conversation.raw()).unwrap(),
-        );
+        if conversation != fixture::Conversation::NewDirect {
+            workspace.channels.insert(
+                conversation.id().into(),
+                serde_json::from_value(conversation.raw()).unwrap(),
+            );
+        }
         workspace.users.insert(
             "U00000002".into(),
             serde_json::from_value(fixture::peer()).unwrap(),

@@ -2,12 +2,16 @@
 //!
 //! Preserving this data does not authorize or implement interaction dispatch.
 
+pub mod app_eligibility;
+pub mod directory_endpoint;
 pub mod external;
 pub mod form;
 pub mod home;
 pub mod message_state;
 mod metadata;
 pub mod modal;
+pub mod name_policy;
+pub mod posting_policy;
 pub mod validation;
 
 pub use metadata::{
@@ -17,3 +21,6 @@ pub use metadata::{
 
 /// Ordinary installed-app shortcuts use the app modal correlation path.
 pub mod shortcuts;
+
+/// Source-derived workflow management acquisition and operation plans.
+pub mod workflow_management;

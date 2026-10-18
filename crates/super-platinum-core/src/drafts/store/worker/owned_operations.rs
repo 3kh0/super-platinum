@@ -1,7 +1,10 @@
 //! Explicit initialized Owned route. No default Client conversion or drain API.
 use super::super::admission as a;
 use super::*;
+#[path = "owned_inventory_retry.rs"]
+mod inventory_retry;
 use crate::drafts::store::protected as p;
+pub use inventory_retry::InventoryAcknowledgment;
 
 pub use a::{
     CheckpointInput, GapInput, LocalOutcome, LocalWriteInput, MutationInput, OpenInput,
@@ -441,6 +444,9 @@ pub use family_retirement::*;
 #[path = "owned_upload.rs"]
 mod upload;
 pub use upload::*;
+#[path = "owned_hosted.rs"]
+mod hosted;
+pub use hosted::*;
 
 #[path = "owned_observation.rs"]
 mod observation;

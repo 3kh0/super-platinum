@@ -9,6 +9,7 @@ mod link_check;
 mod people;
 mod recovery;
 mod recovery_check;
+pub(crate) mod scheduled;
 use super_platinum_core::{
     config::WorkspaceSession,
     slack::{SlackClient, Transport, api},
@@ -145,6 +146,7 @@ fn close(mut state: Signal<ShellState>) {
 #[component]
 pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
     let target = use_hook(|| state.peek().forward_target.clone()).unwrap();
+    let editor_visit = use_hook(scheduled::next_editor_visit);
     let mut query = use_signal(|| {
         if std::env::var("SUPER_PLATINUM_FIXTURE").is_ok_and(|s| s.starts_with("forward-people")) {
             "alex".into()
@@ -152,7 +154,17 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
             String::new()
         }
     });
-    let mut selected = use_signal(Vec::<Destination>::new);
+    let mut selected = use_signal(move || {
+        if scheduled::layout_fixture() {
+            destinations(&state.peek(), "", &[])
+                .into_iter()
+                .filter(|d| d.id == "C2")
+                .take(1)
+                .collect()
+        } else {
+            vec![]
+        }
+    });
     let mut active = use_signal(|| 0usize);
     let mut sending = use_signal(|| false);
     let mut copying = use_signal(|| false);
@@ -249,7 +261,7 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
     };
     rsx! {
         div {class:"scrim",onclick:move |_|if !sending(){close(state)}}
-        section {id:"forward-dialog","data-keyboard-dialog":"true","data-dialog-kind":"forward","data-dialog-generation":dialog_id.clone(),"data-escape-local":"true","data-forward-id":dialog_id,class:"modal forward-dialog",role:"dialog","aria-modal":"true","aria-labelledby":"forward-title",
+        section {id:"forward-dialog","data-editor-generation":"{editor_visit}","data-keyboard-dialog":"true","data-dialog-kind":"forward","data-dialog-generation":dialog_id.clone(),"data-escape-local":"true","data-scheduled-forward-busy":sending(),"data-scheduled-forward-owner":dialog_id.clone(),"data-forward-id":dialog_id,class:"modal forward-dialog",role:"dialog","aria-modal":"true","aria-labelledby":"forward-title",
             onmounted:move |_|{dioxus::core::spawn_forever(check::run(state));dioxus::core::spawn_forever(link_check::run(state));dioxus::core::spawn_forever(recovery_check::run(state));},
             onkeydown:move |event|if event.key()==Key::Escape {event.stop_propagation();if !sending(){close(state)}},
             header {
@@ -294,7 +306,7 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
             }
             }
             if !target.recovery_only {
-            if saved.read().loaded {crate::view::rich_editor::RichEditor {id:"forward-note",autofocus:false,label:"Add a message (optional)",blocks:initial_blocks,disabled:sending()||deliveries.read().uncertain()}}
+            if saved.read().loaded {crate::view::rich_editor::RichEditor {id:"forward-note",autofocus:false,label:"Add a message (optional)",blocks:initial_blocks,disabled:sending()||deliveries.read().uncertain(),expected_generation:Some(editor_visit)}}
             if deliveries.read().uncertain() {p {class:"forward-hint","Saved notes are shown with their delivery records below."}}
             if saved.read().mixed_notes() {p {class:"forward-hint","These saved forwards have different notes. Resolve their delivery before forwarding to another conversation."}}
             div {class:"forward-preview",
@@ -304,6 +316,7 @@ pub fn ForwardDialog(mut state: Signal<ShellState>) -> Element {
                 {crate::view::rich::attachment_embeds(state,snapshot.media_epoch,&preview.attachments)}
             }
             if private {p {class:"forward-hint","Recipients will see a copy of this private message."}}
+            scheduled::Controls {state,selected,busy:sending,error,dialog_id:target.id.clone(),private}
             }
             if !saved.read().loaded {
                 if saved.read().load_failed {button {onclick:move |_|{saved.write().load_failed=false;error.set(String::new());spawn(recovery::load(state,retry_target.clone(),saved,deliveries,error));},"Retry saved forwards"}}

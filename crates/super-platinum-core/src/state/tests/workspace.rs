@@ -146,6 +146,7 @@ fn prune_typing_drops_stale() {
         self_user_id: "USELF".into(),
         locale: None,
         team_plan: None,
+        posting_metadata: Default::default(),
         activity_unread_count: None,
         activity_counts: Default::default(),
         dock_counts: Default::default(),

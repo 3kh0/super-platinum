@@ -37,6 +37,7 @@ pub(crate) fn install(s: &mut ShellState) {
         rt: s.core.workspaces[&team].rt_generation,
         source: None,
         related: vec![team.clone()],
+        home: None,
     };
     let catalog=domain::Catalog::decode(json!({"ok":true,"app_actions":[{"app_id":"A_REVIEW","app_name":"Release reviews","teams":[team],"actions":[
         {"action_id":"review","type":"global_action","name":"Review release","description":"Open the app’s release form"},

@@ -78,6 +78,11 @@ impl Read {
         if !self.current(&state.peek().core) {
             return;
         }
+        let posting = crate::bootstrap::posting_ingress::capture(
+            &state,
+            &self.scope.transport,
+            &self.scope.session,
+        );
         let result = api::fetch_conversation_details(
             &self.scope.transport,
             &self.scope.client,
@@ -85,6 +90,7 @@ impl Read {
             &self.channel,
         )
         .await;
+        let observed = result.as_ref().ok().cloned();
         let changed = {
             let mut shell = state.write();
             if !self.current(&shell.core) {
@@ -107,6 +113,9 @@ impl Read {
             changed
         };
         if changed {
+            if let Some(channel) = observed {
+                posting.channels(&state, std::slice::from_ref(&channel));
+            }
             crate::bootstrap::persist_workspace(&state, &self.scope.session.team_id);
         }
     }
@@ -160,6 +169,9 @@ pub(crate) async fn reconcile(mut state: Signal<ShellState>, team: String, gener
         let revision = state.peek().core.workspaces[&team]
             .channel_lifecycle
             .revision();
+        let posting =
+            crate::bootstrap::posting_ingress::capture(&state, &scope.transport, &scope.session)
+                .for_channels(batch.keys());
         let result =
             api::fetch_generic_info(&scope.transport, &scope.client, &scope.session, &batch).await;
         if !scope.current(&state.peek().core) {
@@ -167,6 +179,7 @@ pub(crate) async fn reconcile(mut state: Signal<ShellState>, team: String, gener
         }
         match result {
             Ok(page) if !page.channels.is_empty() => {
+                posting.channels(&state, &page.channels);
                 let mut shell = state.write();
                 shell
                     .core

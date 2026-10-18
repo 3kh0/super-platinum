@@ -143,9 +143,35 @@ impl ViewFilter {
         if before == desired {
             return Err(ListError("Choose a different filter."));
         }
+        let filters = Self::local_values(document, &desired)?;
+        let mut expected_metadata = document.raw["list_metadata"].clone();
+        let target = expected_metadata["views"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|v| v["id"] == view)
+            .unwrap();
+        target["filters"] = filters.clone();
+        // Both arrays are explicit on the wire. Do not normalize absent readback
+        // properties into empty arrays when deciding whether the result was observed.
+        target["info_column_filters"] = json!([]);
+        Ok(Self {
+            document: document.clone(),
+            view_id: view.into(),
+            desired,
+            filters,
+            expected_metadata,
+        })
+    }
+    /// Pure ordinary-rule conversion shared by local refinements and shared Save.
+    /// Caller owns raw identity/policy; this returns data, never a request permit.
+    pub(super) fn local_values(
+        document: &Document,
+        desired: &ViewFilterChoice,
+    ) -> Result<Value, ListError> {
         let rows = desired.conditions();
         if rows.len() > MAX_FILTER_CONDITIONS
-            || matches!(&desired, ViewFilterChoice::All(v) if v.len()<2)
+            || matches!(desired, ViewFilterChoice::All(v) if v.len()<2)
         {
             return Err(ListError("Use at most eight filter conditions."));
         }
@@ -215,24 +241,7 @@ impl ViewFilter {
         if serde_json::to_vec(&filters).map_or(true, |v| v.len() > 8192) {
             return Err(ListError("These filter conditions are too large."));
         }
-        let mut expected_metadata = document.raw["list_metadata"].clone();
-        let target = expected_metadata["views"]
-            .as_array_mut()
-            .unwrap()
-            .iter_mut()
-            .find(|v| v["id"] == view)
-            .unwrap();
-        target["filters"] = filters.clone();
-        // Both arrays are explicit on the wire. Do not normalize absent readback
-        // properties into empty arrays when deciding whether the result was observed.
-        target["info_column_filters"] = json!([]);
-        Ok(Self {
-            document: document.clone(),
-            view_id: view.into(),
-            desired,
-            filters,
-            expected_metadata,
-        })
+        Ok(filters)
     }
     pub fn original(&self) -> &Document {
         &self.document

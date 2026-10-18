@@ -18,6 +18,8 @@ pub(super) fn row(
                 {
                     let instance=row.instance_id.clone();let edit_instance=instance.clone();let detail_instance=instance.clone();
                     let toggle_row=row.id.clone();let column_id=cell.column_id.clone();let edit_column=column_id.clone();
+            let reminder_action=crate::slack_lists::task_date::reminder_for(&state.read(), &row.id, &cell.column_id);
+            let reminder_reason=crate::slack_lists::task_date::reminder_reason(&state.read());
                     let label=view.columns.get(column_index).map(|column|column.label.as_str()).unwrap_or("Value");
                     let primary=view.columns.get(column_index).is_some_and(|column|column.primary);
                     let pinned=view.columns.get(column_index).is_some_and(|column|column.pinned);
@@ -28,7 +30,7 @@ pub(super) fn row(
                     let indent=format!("padding-inline-start: {}px",row.depth.min(8)*16);
                     let mutation=view.mutation.as_ref().filter(|m|m.record_id==row.id&&m.column_id==cell.column_id);
                     let pending=mutation.is_some_and(|m|!m.uncertain);let uncertain=mutation.is_some_and(|m|m.uncertain);
-                    let disabled=!cell.editable||view.mutation.is_some()||view.loading||view.stale||crate::slack_lists::delete::blocks_mutation(&state.read());
+                    let disabled=!cell.editable||view.mutation.is_some()||view.loading||view.stale||crate::slack_lists::delete::blocks_mutation(&state.read())||crate::slack_lists::completion::blocks_mutation(&state.read());
                     let checked_attributes=vec![Attribute::new("checked",cell.checkbox.unwrap_or(false),None,true)];
                     let content=if primary&&cell.text.trim().is_empty()&&cell.checkbox.is_none() {
                         rsx!{span{class:"slack-list-cell-text","{item}"}}
@@ -69,9 +71,11 @@ pub(super) fn row(
                                 button{r#type:"button",class:"slack-list-record-open",tabindex:"-1","aria-label":"Open {item}",title:"Open item details (Alt+Enter)",
                                     onclick:move |_|crate::slack_lists::open_record_detail(state,detail_instance.clone(),generation,layout),{icon(Icon::Expand,"icon")}}
                             }
-                            if cell.can_edit&&cell.checkbox.is_none(){
+                            if reminder_action {button{r#type:"button",class:"slack-list-edit-cell slack-list-remind-cell",tabindex:"-1",disabled:reminder_reason.is_some(),"aria-label":"Remind me, {item}",title:reminder_reason.unwrap_or("Remind me (F2)"),
+                    onclick:move |_|crate::slack_lists::task_date::open_reminder(state,edit_instance.clone(),edit_column.clone(),generation,layout),{icon(Icon::Schedule,"icon")}}}
+                else if cell.can_edit&&cell.checkbox.is_none(){
                                 button{r#type:"button",class:"slack-list-edit-cell",tabindex:"-1","aria-label":"Edit {label}, {item}",title:"Edit cell (F2)",
-                                    disabled:view.mutation.is_some()||view.loading||view.stale||crate::slack_lists::delete::blocks_mutation(&state.read()),
+                                    disabled:view.mutation.is_some()||view.loading||view.stale||crate::slack_lists::delete::blocks_mutation(&state.read())||crate::slack_lists::completion::blocks_mutation(&state.read()),
                                     onclick:move |_|crate::slack_lists::begin_cell_editor(state,edit_instance.clone(),edit_column.clone(),generation,layout),
                                     {icon(Icon::Compose,"icon")}}
                             }

@@ -1,4 +1,4 @@
-//! Existing-root plain replies. Root-owned entries outlive panel/account visits.
+//! Existing-root rich replies. Root-owned entries outlive panel/account visits.
 use super::*;
 use std::path::PathBuf;
 use super_platinum_core::{
@@ -16,8 +16,11 @@ use super_platinum_core::{
 };
 pub(super) mod check;
 mod delivery;
+mod departure;
 pub(super) mod fixture;
+mod native;
 mod view;
+pub(super) use departure::back_to_canvas;
 pub(super) use view::Composer;
 #[cfg(test)]
 mod tests;
@@ -51,6 +54,8 @@ struct Entry {
     disk: Disk,
     root: String,
     text: String,
+    blocks: Option<Vec<serde_json::Value>>,
+    native: Option<native::Mounted>,
     serial: u64,
     capture: String,
     inventory: Option<ReplyInventory>,
@@ -65,6 +70,7 @@ struct Entry {
     locked: Option<ReplyReceipt>,
     history: Option<Vec<ReplyHistory>>,
     retired_text: Option<String>,
+    retired_blocks: Option<Vec<serde_json::Value>>,
 }
 enum Outcome {
     NotSent(ReplyReceipt),
@@ -147,7 +153,8 @@ impl Binding {
     }
 }
 fn durably_idle(e: &Entry) -> bool {
-    !e.loading
+    e.native.is_none()
+        && !e.loading
         && !e.saving
         && !e.sending
         && e.error.is_none()
@@ -156,7 +163,9 @@ fn durably_idle(e: &Entry) -> bool {
         && !e.native_busy
         && e.inventory.as_ref().is_some_and(|i| match i.drafts() {
             [] => e.text.is_empty(),
-            [d] => e.text == d.text() && e.capture == d.capture(),
+            [d] => {
+                e.text == d.text() && e.capture == d.capture() && e.blocks.as_deref() == d.blocks()
+            }
             _ => false,
         })
 }
@@ -204,6 +213,8 @@ fn bind(mut state: Signal<ShellState>, model: Signal<State>) -> Option<Binding> 
                     disk,
                     root: root.clone(),
                     text: String::new(),
+                    blocks: None,
+                    native: None,
                     serial: 0,
                     capture: uuid::Uuid::new_v4().to_string(),
                     inventory: None,
@@ -218,6 +229,7 @@ fn bind(mut state: Signal<ShellState>, model: Signal<State>) -> Option<Binding> 
                     locked: None,
                     history: None,
                     retired_text: None,
+                    retired_blocks: None,
                 });
             id
         }
@@ -248,7 +260,10 @@ fn load(mut state: Signal<ShellState>, binding: Binding) {
         let scope = request.0.scope.clone();
         let result = request
             .0
-            .work(move |j| j.reply_inventory(&scope, &root))
+            .work(move |j| {
+                fixture::seed_rich(j, &scope, &root)?;
+                j.reply_inventory(&scope, &root)
+            })
             .await;
         let mut shell = state.write();
         let Some(e) = entry_mut(&mut shell, &binding.id) else {
@@ -260,6 +275,7 @@ fn load(mut state: Signal<ShellState>, binding: Binding) {
                 if e.serial == request.2 {
                     e.text = if let [draft] = inventory.drafts() {
                         e.capture = draft.capture().into();
+                        e.blocks = draft.blocks().map(<[_]>::to_vec);
                         draft.text().into()
                     } else {
                         String::new()
@@ -290,7 +306,9 @@ fn change(mut state: Signal<ShellState>, model: Signal<State>, binding: &Binding
             return;
         }
         e.text = text;
+        e.blocks = None;
         e.retired_text = None;
+        e.retired_blocks = None;
         e.serial = e.serial.wrapping_add(1);
         e.capture = uuid::Uuid::new_v4().to_string();
         e.reviewed = false;
@@ -307,7 +325,10 @@ fn save(mut state: Signal<ShellState>, id: String) {
         if e.saving
             || e.loading
             || e.inventory.is_none()
-            || e.retired_text.as_ref() == Some(&e.text)
+            || e.blocks.as_ref().is_some_and(|b| {
+                super_platinum_core::canvas::comments::content::fallback(b).is_err()
+            })
+            || retired(e)
         {
             return;
         }
@@ -319,11 +340,11 @@ fn save(mut state: Signal<ShellState>, id: String) {
                 let shell = state.peek();
                 let Some(e) = entry(&shell, &id) else { return };
                 let inventory = e.inventory.as_ref().unwrap();
-                if inventory
-                    .drafts()
-                    .iter()
-                    .any(|d| d.capture() == e.capture && d.text() == e.text)
-                {
+                if inventory.drafts().iter().any(|d| {
+                    d.capture() == e.capture
+                        && d.text() == e.text
+                        && d.blocks() == e.blocks.as_deref()
+                }) {
                     break;
                 }
                 // A newer input arriving while a stale-write conflict commits
@@ -333,10 +354,11 @@ fn save(mut state: Signal<ShellState>, id: String) {
                 } else {
                     None
                 };
-                if prior
-                    .as_ref()
-                    .is_some_and(|d| d.text() == e.text && d.capture() == e.capture)
-                {
+                if prior.as_ref().is_some_and(|d| {
+                    d.text() == e.text
+                        && d.capture() == e.capture
+                        && d.blocks() == e.blocks.as_deref()
+                }) {
                     break;
                 }
                 (
@@ -346,6 +368,7 @@ fn save(mut state: Signal<ShellState>, id: String) {
                     e.capture.clone(),
                     e.text.clone(),
                     e.serial,
+                    e.blocks.clone(),
                 )
             };
             let scope = request.0.scope.clone();
@@ -353,11 +376,22 @@ fn save(mut state: Signal<ShellState>, id: String) {
             let prior = request.2;
             let capture = request.3;
             let text = request.4;
+            let blocks = request.6;
             let result = request
                 .0
                 .work(move |j| {
-                    let saved =
-                        j.save_reply_draft(&scope, &root, prior.as_ref(), &capture, &text)?;
+                    let saved = match blocks {
+                        Some(blocks) => j.save_rich_reply_draft(
+                            &scope,
+                            &root,
+                            prior.as_ref(),
+                            &capture,
+                            blocks,
+                        )?,
+                        None => {
+                            j.save_reply_draft(&scope, &root, prior.as_ref(), &capture, &text)?
+                        }
+                    };
                     Ok((saved, j.reply_inventory(&scope, &root)?))
                 })
                 .await;
@@ -394,6 +428,9 @@ fn save(mut state: Signal<ShellState>, id: String) {
     });
 }
 fn retry(mut state: Signal<ShellState>, binding: Binding) {
+    if native::retry(state, binding.clone()) {
+        return;
+    }
     if let Some(e) = entry_mut(&mut state.write(), &binding.id) {
         e.error = None;
     }
@@ -417,7 +454,7 @@ fn choose_version(
         let Some(e) = entry_mut(&mut shell, &binding.id) else {
             return;
         };
-        if e.saving || e.sending || e.loading {
+        if e.saving || e.sending || e.loading || e.native.is_some() {
             return;
         }
         let Some(inventory) = e.inventory.clone() else {
@@ -444,6 +481,7 @@ fn choose_version(
         match result {
             Ok((Some(draft), inventory)) if e.serial == request.2 => {
                 e.text = draft.text().into();
+                e.blocks = draft.blocks().map(<[_]>::to_vec);
                 e.capture = draft.capture().into();
                 adopt(e, inventory);
                 e.serial = e.serial.wrapping_add(1);
@@ -465,7 +503,10 @@ pub(in crate::canvas) fn pending_for_current_file(shell: &ShellState) -> bool {
                     && e.disk.scope.workspace == shell.core.active_team.as_deref().unwrap_or("")
                     && e.disk.scope.user == shell.self_account.user_id
                     && e.disk.scope.file == file.id
-                    && (e.sending
+                    && (e.native.is_some()
+                        || e.saving
+                        || e.native_busy
+                        || e.sending
                         || e.locked.is_some()
                         || e.inventory.as_ref().is_some_and(|i| i.attempt().is_some()))
             })
@@ -515,4 +556,8 @@ fn history(mut state: Signal<ShellState>, model: Signal<State>, binding: Binding
             }
         }
     });
+}
+
+fn retired(e: &Entry) -> bool {
+    e.retired_text.as_ref() == Some(&e.text) && e.retired_blocks == e.blocks
 }

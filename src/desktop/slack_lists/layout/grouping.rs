@@ -1,5 +1,5 @@
 //! Current-document grouping identity, independent of authoring eligibility.
-//! No persistent/local grouping override. The cache is bounded by current views.
+//! Includes local read refinements. The cache is bounded by current views.
 use super::*;
 
 #[derive(Clone, PartialEq)]
@@ -70,7 +70,17 @@ pub(super) fn reconcile(view: &mut View) -> bool {
     let Some(loaded) = view.loaded.as_ref() else {
         return false;
     };
-    let doc = &loaded.document;
+    // Provider order is intentionally separate: a local lane move must not
+    // discard collapsed groups. Group/layout refinements do change identity.
+    let effective = if view.layout.refinements.is_empty() {
+        None
+    } else {
+        match view.layout.refinements.all_document(&loaded.document) {
+            Ok(document) => Some(document),
+            Err(_) => return false,
+        }
+    };
+    let doc = effective.as_ref().unwrap_or(&loaded.document);
     let mut present: BTreeMap<&str, Vec<&Value>> = BTreeMap::new();
     for raw in &doc.views {
         if let Some(id) = raw.get("id").and_then(Value::as_str) {

@@ -128,6 +128,7 @@ pub fn open_search_hit(mut state: Signal<ShellState>, hit: SearchResultVm) {
                 .get(team)
                 .map(|w| w.channel_lifecycle.revision())
                 .unwrap_or(0);
+            let posting = crate::bootstrap::posting_ingress::capture(&state, &transport, &session);
             let result =
                 api::fetch_conversation_info(&transport, &client, &session, hit.channel_id.clone())
                     .await;
@@ -137,6 +138,9 @@ pub fn open_search_hit(mut state: Signal<ShellState>, hit: SearchResultVm) {
             }
             match result {
                 Ok(channel) => {
+                    if channel.id == hit.channel_id {
+                        posting.channels(&state, std::slice::from_ref(&channel));
+                    }
                     if !visit.resolve(&mut state.write(), &hit.channel_id, channel, revision) {
                         visit.release(&mut state.write());
                         state

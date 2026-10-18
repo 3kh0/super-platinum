@@ -6,6 +6,7 @@ use crate::state::{ComposerTarget, ShellState};
 
 mod commands;
 mod field;
+mod hosted;
 
 pub(crate) fn field_mount_token(shell: &ShellState, target: ComposerTarget) -> Option<String> {
     field::current(shell, target).map(|lease| lease.token.clone())
@@ -41,6 +42,10 @@ async fn choose_attachments(mut state: Signal<ShellState>, target: ComposerTarge
     ) != scope
     {
         shell.show_toast("The conversation changed. Choose the files again to attach them here.");
+        return;
+    }
+    if crate::drafts::protected::production::hosted::present(&shell, target) {
+        shell.show_toast("Remove the attached Slack files before uploading from this computer.");
         return;
     }
     shell.add_attachments(files.into_iter().map(|file| file.path().to_owned()), target);
@@ -211,6 +216,7 @@ pub(crate) fn composer(state: Signal<ShellState>, text: &str, channel_name: &str
             super::completion::ComposerCompletion {state,target:ComposerTarget::Channel,field_id:"channel-composer"}
             {commands::panel(state, ComposerTarget::Channel)}
             {format_toolbar(state, ComposerTarget::Channel)}
+            hosted::HostedChips {state}
             if !composer_attachments.is_empty() {
                 div { class: "attachment-chips",
                     for attachment in composer_attachments.iter() {
@@ -219,10 +225,7 @@ pub(crate) fn composer(state: Signal<ShellState>, text: &str, channel_name: &str
                 }
             }
             div { class: "composer-row",
-                button { class: "composer-icon-btn", title: "Attach files", "aria-label":"Attach files",
-                    onclick:move |_|{spawn(choose_attachments(state,ComposerTarget::Channel));},
-                    {crate::icons::icon(crate::icons::Icon::Add, "icon sm")}
-                }
+                hosted::AttachmentControl {state}
                 button { class:"composer-icon-btn", title:"App shortcuts", "aria-label":"App shortcuts",
                     onclick:{let expected=field_key.clone();move |_|crate::message_buttons::shortcuts::open_global(state,ComposerTarget::Channel,&expected)},
                     {crate::icons::icon(crate::icons::Icon::GridView,"icon sm")}

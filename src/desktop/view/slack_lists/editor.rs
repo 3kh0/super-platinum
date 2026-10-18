@@ -4,6 +4,8 @@ use crate::{
     state::ShellState,
 };
 use dioxus::prelude::*;
+mod assignment;
+pub(super) use assignment::recovery_notice as assignment_recovery;
 pub(super) mod entities;
 mod link;
 
@@ -41,7 +43,8 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
     let row_id = serde_json::to_string(&editor.row_id).unwrap();
     let column_id = serde_json::to_string(&editor.column_id).unwrap();
     let disabled = editor.disabled || reading();
-    let busy = editor.saving || reading();
+    let busy =
+        editor.saving || reading() || editor.assignment.as_ref().is_some_and(|review| review.busy);
     let save_disabled = disabled || editor.stale;
     let kind = editor.kind.clone();
     let initial = editor.original.clone();
@@ -82,7 +85,7 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
             h3 { id:"slack-list-editor-title","Edit {editor.column_label}" }
             p {class:"slack-list-editor-item","{editor.row_label}"}
             div { class:"slack-list-editor-body",
-                match editor.kind {
+                if let Some(review)=editor.assignment.clone() {assignment::AssignmentReview {state,review}} else {match editor.kind {
                     EditorKind::BoardMove => rsx! {},
                     EditorKind::RichText => rsx! {super::super::rich_editor::RichEditor {id:"slack-list-rich-draft",label:editor.column_label.clone(),blocks,labels,disabled,expected_generation:Some(generation)}},
                     EditorKind::Rating => if let Some(options) = editor.rating.as_ref() {
@@ -142,7 +145,7 @@ pub(super) fn CellEditor(state: Signal<ShellState>, editor: EditorView, visit: u
                     EditorKind::Channel | EditorKind::MultiChannel => rsx! {entities::EntityPicker {
                         state,generation,selected,initial:editor.choices.clone(),directory:editor.directory.clone(),kind:crate::slack_lists::entities::Kind::Channels,multi:editor.kind==EditorKind::MultiChannel,disabled
                     }},
-                }
+                }}
             }
             if let Some(message)=error.read().as_ref().or(editor.error.as_ref()) {p {class:"slack-list-error",role:"alert","{message}"}}
             div {class:"slack-list-editor-actions",
@@ -294,3 +297,6 @@ const MOUNT: &str = r#"function mountListCellEditor(generation,visit,rowId,colum
    editor.dataset.focusPhase=editor.contains(document.activeElement)?'focused':'focus-rejected';
  });
 }"#;
+
+#[cfg(test)]
+mod date_tests;

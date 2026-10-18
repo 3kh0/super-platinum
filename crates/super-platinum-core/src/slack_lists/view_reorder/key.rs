@@ -7,7 +7,7 @@ const DIGITS: &[u8] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrst
 pub(super) const MAX_KEY_BYTES: usize = 1024;
 const LIMIT: u64 = 10_000_000_000;
 
-pub(super) fn valid(key: &str) -> bool {
+pub(in crate::slack_lists) fn valid(key: &str) -> bool {
     let bytes = key.as_bytes();
     (10..=MAX_KEY_BYTES).contains(&bytes.len())
         && bytes[..10].iter().all(u8::is_ascii_digit)
@@ -75,7 +75,10 @@ fn midpoint(left: &[u8], right: Option<&[u8]>) -> Result<Vec<u8>, ListError> {
     Ok(out)
 }
 
-pub(super) fn between(left: Option<&str>, right: Option<&str>) -> Result<String, ListError> {
+pub(in crate::slack_lists) fn between(
+    left: Option<&str>,
+    right: Option<&str>,
+) -> Result<String, ListError> {
     if left.is_some_and(|key| !valid(key))
         || right.is_some_and(|key| !valid(key))
         || left.zip(right).is_some_and(|(left, right)| left >= right)

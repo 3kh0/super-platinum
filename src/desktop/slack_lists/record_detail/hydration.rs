@@ -56,6 +56,9 @@ impl Attempt {
             && !create::blocks_mutation(shell)
             && !rename::blocks_mutation(shell)
             && !delete::blocks_mutation(shell)
+            && !reminder::blocks_mutation(shell)
+            && !completion::blocks_mutation(shell)
+            && !editor::assignment::blocks_mutation(shell)
             && !shell.slack_lists.operations.contains_key(&self.list)
             && shell.slack_lists.view.as_ref().is_some_and(|view| {
                 view.id == self.list

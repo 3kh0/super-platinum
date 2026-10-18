@@ -3,6 +3,9 @@
 (() => {
   if (window.superPlatinumRichEditor) return;
   const editors = new WeakMap();
+  const carets = new WeakMap();
+  let completionSequence = 0;
+  const snapshots = new WeakMap();
   const clone = value => JSON.parse(JSON.stringify(value));
   const knownStyles = ['bold', 'italic', 'strike', 'code'];
   const blockTags = new Set(['DIV', 'P', 'BLOCKQUOTE', 'PRE', 'UL', 'OL']);
@@ -14,7 +17,7 @@
     if (!root || editors.has(root)) return;
     const originals = new WeakMap();
     const initial = clone(blocks);
-    const model = { originals, initial, dirty: false, revision: 0, composing: false, expectedGeneration, previousFocus: document.activeElement };
+    const model = { originals, tokenLabels: new WeakMap(), completionAtoms: new WeakSet(), initial, dirty: false, revision: 0, composing: false, expectedGeneration, previousFocus: document.activeElement };
     editors.set(root, model);
     const remember = (element, value) => { originals.set(element, clone(value)); return element; };
     function inline(value) {
@@ -31,10 +34,12 @@
       const element = remember(document.createElement('span'), value);
       element.contentEditable = 'false';
       element.className = 'rich-editor-token';
-      element.textContent = labels[value.user_id || value.channel_id || value.usergroup_id || value.name]
+      const exactLabel = labels[JSON.stringify(value)];
+      element.textContent = typeof exactLabel === 'string' ? exactLabel : labels[value.user_id || value.channel_id || value.usergroup_id || value.name]
         || value.fallback || value.text || (value.type === 'emoji' ? `:${value.name}:`
           : value.type === 'user' ? `@${value.user_id}` : value.type === 'channel' ? `#${value.channel_id}`
           : value.type === 'broadcast' ? `@${value.range}` : 'Embedded content');
+      model.tokenLabels.set(element,element.textContent);
       return element;
     }
     function block(value) {
@@ -48,6 +53,7 @@
       }
       const element = remember(document.createElement(tag), value);
       if (value.type === 'rich_text') element.className = 'rich-editor-block';
+      if (value.type === 'rich_text_section') element.className = 'rich-editor-section';
       if (value.type === 'rich_text_list') {
         element.style.marginLeft = `${Math.max(0, Math.min(8, value.indent || 0)) * 16}px`;
         if (tag === 'ol' && value.offset) element.start = value.offset + 1;
@@ -66,7 +72,32 @@
     root.replaceChildren(...blocks.map(block));
     if (!root.childNodes.length) root.append(block({type: 'rich_text', elements: [{type: 'rich_text_section', elements: []}]}));
     const changed = () => {model.dirty = true;model.revision = model.revision === Number.MAX_SAFE_INTEGER ? null : model.revision === null ? null : model.revision + 1;};
-    root.addEventListener('input', changed);
+    model.replace = (blocks, nextLabels) => {
+      const oldLabels = labels;
+      try {
+        const initial = clone(blocks);
+        labels = nextLabels;
+        const nodes = initial.map(block);
+        if (!nodes.length) nodes.push(block({type:'rich_text',elements:[{type:'rich_text_section',elements:[]}]}));
+        root.replaceChildren(...nodes);
+        changed();
+        model.initial = initial;
+        model.dirty = false;
+        return true;
+      } catch { labels = oldLabels; return false; }
+    };
+    root.addEventListener('input', event => {
+      restoreCompletionAtoms(root,model,event);
+      acceptCompletionInsertion(root,model);changed();
+      const rejected=model.rejectedCompletion;
+      if(rejected&&event.isTrusted){
+        if(event.inputType==='historyUndo')rejected.history=true;
+        else if(event.inputType==='historyRedo'){rejected.recovered=false;rejected.history=true;}
+        // An actual new edit after verified undo abandons the native redo branch.
+        // Merely dispatching input or typing while still fenced cannot clear it.
+        else if(rejected.recovered&&root.innerHTML!==rejected.recoveredHTML)model.rejectedCompletion=null;
+      }
+    });
     root.addEventListener('compositionstart', () => {model.composing=true;changed();});
     root.addEventListener('compositionend', () => {model.composing=false;changed();});
     root.addEventListener('paste', event => {
@@ -91,8 +122,25 @@
     if (autofocus) root.focus();
   }
   function read(id) {
-    const root = document.getElementById(id), model = root && editors.get(root);
+    // A retained exact node may be read after unmount for final draft custody.
+    // An ID keeps its existing current-document lookup semantics.
+    const root = typeof id === 'string' ? document.getElementById(id) : id;
+    const model = root && editors.get(root);
     if (!model) throw new Error('The editor is not ready.');
+    if(model.completionInsertion&&!model.completionInsertion.accepted)throw new Error('The completion is still retaining its typed identity.');
+    const rejected=model.rejectedCompletion;
+    if(rejected&&!rejected.recovered){
+      const mayRecover=rejected.history;rejected.history=false;
+      if(!mayRecover||root.innerHTML!==rejected.html)throw new Error('Undo the incomplete completion before saving.');
+      // Private recursion bypasses only this exact failure fence, never pending
+      // insertion provenance. No public unguarded reader or DOM rewrite exists.
+      model.rejectedCompletion=null;
+      try{
+        const value=read(root);
+        if(JSON.stringify(value)!==rejected.blocks)throw new Error('The original rich content has not been restored.');
+        rejected.recovered=true;rejected.recoveredHTML=root.innerHTML;return value;
+      }finally{model.rejectedCompletion=rejected;}
+    }
     if (!model.dirty) return clone(model.initial);
     const originals = model.originals;
     function styles(element, inherited) {
@@ -121,6 +169,7 @@
         }
         if (node.nodeType !== Node.ELEMENT_NODE) continue;
         const original = originals.get(node);
+        if (!original && (node.classList.contains('rich-editor-token') || node.classList.contains('rich-editor-completion-run') || node.hasAttribute('data-rich-completion-insert'))) throw new Error('Embedded content lost its typed identity. Undo the change before saving.');
         if (original && !['text', 'link'].includes(original.type) && node.contentEditable === 'false') {
           result.push(clone(original)); continue;
         }
@@ -186,6 +235,304 @@
       else pending.push(node);
     }
     flush(); return result;
+  }
+  function snapshot(node) {
+    const model = node && editors.get(node);
+    if (!model) return null;
+    const blocks = read(node);
+    const value = {blocks, revision:model.revision, composing:model.composing, generation:model.expectedGeneration};
+    snapshots.set(value, {node,model,blocks:clone(blocks),revision:model.revision,composing:model.composing,generation:model.expectedGeneration});
+    return value;
+  }
+  // Profile length is based on canonical per-occurrence labels, not editable
+  // DOM text. Return only labels remembered at mount or exact completion
+  // admission. The profile caller still checks every pair against its own
+  // account/visit/catalog proof before constructing a renderer-neutral context.
+  function resolved(node) {
+    const snap=snapshot(node),model=node&&editors.get(node);
+    if(!snap||!model)return null;
+    const tokens=[];let count=0;
+    function visit(parent){
+      for(const child of parent.childNodes){
+        if(++count>10000)throw new Error('The rich label capture is too large.');
+        const raw=model.originals.get(child);
+        if(raw&&child.contentEditable==='false'){
+          const label=model.tokenLabels.get(child);
+          if(typeof label!=='string')throw new Error('The rich label is unavailable.');
+          tokens.push({value:clone(raw),label});
+        }else if(child.nodeType===Node.ELEMENT_NODE)visit(child);
+      }
+    }
+    visit(node);
+    // The ordinary clean read can return its immutable initial value. Refuse a
+    // silent DOM replacement/removal instead of pairing that value with labels
+    // belonging to a different tree. Array order and all raw metadata matter.
+    const expected=[];let budget=10000;
+    function raw(values){
+      for(const value of values){
+        if(--budget<0)throw new Error('The rich label capture is too large.');
+        if(['rich_text','rich_text_section','rich_text_list','rich_text_quote','rich_text_preformatted'].includes(value.type)){
+          if(!Array.isArray(value.elements))throw new Error('The rich structure is unavailable.');
+          raw(value.elements);
+        }else if(!['text','link'].includes(value.type))expected.push(value);
+      }
+    }
+    raw(snap.blocks);
+    if(JSON.stringify(expected)!==JSON.stringify(tokens.map(t=>t.value)))throw new Error('The rich labels no longer match the captured content.');
+    return {snapshot:snap,tokens};
+  }
+  function replace(node, expected, blocks, labels = {}) {
+    const proof = expected && snapshots.get(expected), model = node && editors.get(node);
+    if (!proof || proof.node !== node || proof.model !== model || !node.isConnected
+      || document.getElementById(node.id) !== node || node.contentEditable !== 'true'
+      || proof.composing || model.composing || model.revision === null || proof.revision !== model.revision
+      || proof.generation !== model.expectedGeneration
+      || (model.expectedGeneration !== null && node.closest('[data-editor-generation]')?.dataset.editorGeneration !== String(model.expectedGeneration))
+      || node.closest('.rich-editor')?.querySelector('.rich-link-controls')?.hidden === false
+      || !Array.isArray(blocks) || !labels || typeof labels !== 'object' || Array.isArray(labels)) return null;
+    if (JSON.stringify(read(node)) !== JSON.stringify(proof.blocks)) return null;
+    if (!model.replace(blocks, labels)) return null;
+    // Successful replacement spends the ticket; old receipts cannot clear a
+    // newer edit, even if the resulting text later returns to the same value.
+    snapshots.delete(expected);
+    return snapshot(node);
+  }
+  // Exact mounted-caret ownership for completion. Plain text is query data only;
+  // the returned object is an opaque ticket, never reconstructible authority.
+  function caret(node) {
+    const model=node&&editors.get(node), selection=getSelection();
+    if(!completionCurrent(node,model)||document.activeElement!==node||!selection?.isCollapsed||selection.rangeCount!==1)return null;
+    const range=selection.getRangeAt(0), at=range.startContainer;
+    if(at.nodeType!==Node.TEXT_NODE||!node.contains(at)||at.parentElement.closest('[contenteditable=false]'))return null;
+    let scope=at.parentElement;
+    while(scope!==node&&!blockTags.has(scope.tagName)&&scope.tagName!=='LI')scope=scope.parentElement;
+    const parts=[];let seen=false,before='',after='',count=0,blocked=false;
+    function walk(current) {
+      if(++count>10000)throw new Error('Completion context is too large.');
+      if(current.nodeType===Node.TEXT_NODE) {
+        if(current===at){before+=current.data.slice(0,range.startOffset);parts.push({node:current,end:range.startOffset});after+=current.data.slice(range.startOffset);seen=true;}
+        else if(!seen){before+=current.data;parts.push({node:current,end:current.length});}
+        else if(!blocked)after+=current.data;
+        return;
+      }
+      if(current.nodeType!==Node.ELEMENT_NODE)return;
+      if(current!==scope&&(current.contentEditable==='false'||current.tagName==='BR'||blockTags.has(current.tagName)||current.tagName==='LI')) {
+        if(seen)blocked=true;else{before='';parts.length=0;}return;
+      }
+      for(const child of current.childNodes)walk(child);
+    }
+    try{walk(scope);}catch{return null;}
+    if(!seen||before.length+after.length>1048576)return null;
+    const value={before,after,revision:model.revision,generation:model.expectedGeneration,composing:false};
+    carets.set(value,{node,model,scope,parts,at,offset:range.startOffset,before,after,blocks:JSON.stringify(read(node)),html:node.innerHTML,revision:model.revision,generation:model.expectedGeneration});
+    return value;
+  }
+  function completionCurrent(node,model) {
+    return !!model&&node.isConnected&&document.getElementById(node.id)===node&&node.contentEditable==='true'
+      &&!model.composing&&model.revision!==null
+      &&(model.expectedGeneration===null||node.closest('[data-editor-generation]')?.dataset.editorGeneration===String(model.expectedGeneration))
+      &&node.closest('.rich-editor')?.querySelector('.rich-link-controls')?.hidden!==false;
+  }
+  function completionValue(value) {
+    if(!value||typeof value!=='object'||Array.isArray(value))return null;
+    const id=key=>typeof value[key]==='string'&&value[key].length>0;
+    const valid=value.type==='text'?typeof value.text==='string'
+      :value.type==='user'?id('user_id'):value.type==='channel'?id('channel_id')
+      :value.type==='usergroup'?id('usergroup_id'):value.type==='broadcast'?['here','channel','everyone'].includes(value.range)
+      :value.type==='emoji'?id('name'):['file','canvas','list_record'].includes(value.type)?id('file_id'):false;
+    if(!valid)return null;
+    try{const serialized=JSON.stringify(value);return serialized.length<=1048576?JSON.parse(serialized):null;}catch{return null;}
+  }
+  function completionStyle(node,root,model) {
+    const chain=[];for(let e=node.parentElement;e&&e!==root;e=e.parentElement)chain.unshift(e);
+    let style={...model.originals.get(node)?.style};for(const flag of knownStyles)delete style[flag];
+    for(const e of chain){
+      const retained={...model.originals.get(e)?.style};for(const flag of knownStyles)delete retained[flag];Object.assign(style,retained);
+      if(['B','STRONG'].includes(e.tagName)||Number(e.style.fontWeight)>=600||e.style.fontWeight==='bold')style.bold=true;
+      if(['I','EM'].includes(e.tagName)||e.style.fontStyle==='italic')style.italic=true;
+      if(['S','STRIKE','DEL'].includes(e.tagName)||e.style.textDecoration.includes('line-through'))style.strike=true;
+      if(e.tagName==='CODE'||e.getAttribute('face')==='monospace'||e.style.fontFamily==='monospace')style.code=true;
+      if(e.getAttribute('face')==='inherit'||e.style.fontFamily==='inherit')delete style.code;
+      if(e.style.fontWeight==='normal'||e.style.fontWeight==='400')delete style.bold;
+      if(e.style.fontStyle==='normal')delete style.italic;
+    }
+    return style;
+  }
+  // Attaching metadata occurs inside the synchronous native command, before later
+  // input listeners can capture the inserted document. The marker itself carries
+  // no token identity and is never accepted without this private pending command.
+  function acceptCompletionInsertion(root,model) {
+    const pending=model.completionInsertion;if(!pending||pending.accepted)return;
+    const matches=[...root.querySelectorAll('[data-rich-completion-insert]')];
+    if(matches.length!==pending.runs.length)return;
+    if(matches.some((node,i)=>node.getAttribute('data-rich-completion-insert')!==pending.marker+'-'+i
+      ||node.tagName!==pending.runs[i].tag||node.textContent!==pending.runs[i].label
+      ||node.hasAttribute('contenteditable')||!pending.scope.contains(node)))return;
+    for(let i=0;i<matches.length;i++){
+      const node=matches[i];node.removeAttribute('data-rich-completion-insert');
+      model.originals.set(node,clone(pending.runs[i].value));pending.runs[i].node=node;
+      if(pending.runs[i].atomic){model.tokenLabels.set(node,pending.runs[i].resolvedLabel??pending.runs[i].label);model.completionAtoms.add(node);node.contentEditable='false';}
+    }
+    pending.accepted=true;placeAfterCompletionAtom(root,model);
+  }
+  // Native history keeps these exact admitted nodes but can undo their atomic
+  // attribute separately from insertion. Restore only private node provenance,
+  // before input consumers; never reconstruct identity from editable DOM data.
+  function restoreCompletionAtoms(root,model,event) {
+    if(!event.isTrusted||!['historyUndo','historyRedo'].includes(event.inputType))return;
+    for(const node of root.querySelectorAll('*')){
+      if(!model.completionAtoms.has(node))continue;
+      const value=model.originals.get(node);
+      if(value&&!['text','link'].includes(value.type))node.contentEditable='false';
+    }
+    placeAfterCompletionAtom(root,model);
+  }
+  // Native insertion/history can leave its caret inside the admitted run's text.
+  // Repair selection only through private exact-node provenance, never labels,
+  // classes or serialized token data. This is not another editing command.
+  function placeAfterCompletionAtom(root,model) {
+    const selection=getSelection();
+    if(!selection?.isCollapsed||selection.rangeCount!==1||!root.contains(selection.anchorNode))return;
+    let node=selection.anchorNode.nodeType===Node.ELEMENT_NODE?selection.anchorNode:selection.anchorNode.parentElement;
+    for(;node&&node!==root;node=node.parentElement){
+      if(!model.completionAtoms.has(node)||node.contentEditable!=='false')continue;
+      const value=model.originals.get(node);if(!value||['text','link'].includes(value.type))continue;
+      const range=document.createRange();range.setStartAfter(node);range.collapse(true);
+      selection.removeAllRanges();selection.addRange(range);return;
+    }
+  }
+  function completionRun(value,label,style,atomic,marker,index) {
+    // A generated inert inline tag avoids Chromium's special removal of span
+    // wrappers during native style normalization. It has no custom-element
+    // implementation and carries no raw token data; admission still checks it.
+    const element=document.createElement(value.type==='link'?'a':'sp-rich-run');
+    element.className=atomic?'rich-editor-token':'rich-editor-completion-run';
+    // Insert an editable inline run so native paragraph merging can reach its
+    // text. A noneditable fragment can be hoisted outside the containing block.
+    // Exact marker admission makes it atomic before any consumer input capture;
+    // no node move or second editing command is needed, including on undo/redo.
+    if(value.type==='link')element.setAttribute('href',value.url);
+    element.textContent=label;element.setAttribute('data-rich-completion-insert',marker+'-'+index);
+    element.style.fontWeight=style.bold?'bold':'normal';element.style.fontStyle=style.italic?'italic':'normal';
+    element.style.textDecoration=style.strike?'line-through':'none';element.style.fontFamily=style.code?'monospace':'inherit';
+    return {value,label,tag:element.tagName,atomic,html:element.outerHTML,node:null};
+  }
+  // Replace from the same paragraph's start: native MoveParagraph otherwise
+  // recreates a leading single run and loses opaque node provenance. Copy only
+  // this exact current prefix; stage its private raw metadata alongside the new
+  // completion. The untouched suffix keeps its original nodes and metadata.
+  function completionPrefix(scope,start,offset,model,marker) {
+    const tags=new Set(['SPAN','SP-RICH-RUN','A','STRONG','B','EM','I','S','STRIKE','DEL','FONT','CODE','U','BR']);
+    const runs=[];let stopped=false,count=0,units=0;
+    const retain=(element,value,atomic)=>{
+      const run={value:clone(value),label:'',tag:element.tagName,atomic,node:null};
+      element.setAttribute('data-rich-completion-insert',marker+'-'+runs.length);runs.push(run);return run;
+    };
+    function copy(source,inheritedSource={}){
+      if(stopped)return null;if(++count>10000)throw new Error('Completion prefix is too large.');
+      if(source.nodeType===Node.TEXT_NODE){
+        const text=source.data.slice(0,source===start?offset:source.length);
+        if(source===start)stopped=true;if(!text)return null;
+        if((units+=text.length)>1048576)throw new Error('Completion prefix is too large.');
+        const original=model.originals.get(source);
+        if(!original)return document.createTextNode(text);
+        const element=document.createElement('sp-rich-run'),value={...inheritedSource,...original,type:'text',text};delete value.url;
+        if(value.style){value.style={...value.style};for(const key of knownStyles)delete value.style[key];if(!Object.keys(value.style).length)delete value.style;}
+        element.textContent=text;const run=retain(element,value,false);run.label=text;return element;
+      }
+      if(source.nodeType!==Node.ELEMENT_NODE)throw new Error('Unsupported completion prefix node.');
+      if(!tags.has(source.tagName))throw new Error('Unsupported completion prefix wrapper.');
+      const original=model.originals.get(source),atomic=!!original&&!['text','link'].includes(original.type);
+      if(source.contentEditable==='false'&&!atomic)throw new Error('Unowned completion prefix token.');
+      const element=document.createElement(original&&source.tagName==='SPAN'?'sp-rich-run':source.tagName.toLowerCase());
+      element.style.cssText=source.style.cssText;
+      for(const attr of ['href','face','color','size','dir'])if(source.hasAttribute(attr))element.setAttribute(attr,source.getAttribute(attr));
+      if(atomic)element.className='rich-editor-token';
+      const markStart=runs.length,run=original?retain(element,original,atomic):null;
+      if(atomic){
+        const label=model.tokenLabels.get(source);if(typeof label!=='string')throw new Error('Completion prefix label lost its provenance.');
+        run.resolvedLabel=label;
+      }
+      if(atomic){
+        if(source===start)throw new Error('Completion starts inside an opaque token.');
+        element.textContent=source.textContent;if((units+=element.textContent.length)>1048576)throw new Error('Completion prefix is too large.');
+      }else{
+        const children=[...source.childNodes],limit=source===start?offset:children.length;
+        for(let i=0;i<limit&&!stopped;i++){const child=copy(children[i],original?.type==='text'?original:inheritedSource);if(child)element.append(child);}
+        if(source===start)stopped=true;
+      }
+      if(!atomic&&element.tagName!=='BR'&&!element.childNodes.length){runs.length=markStart;return null;}
+      if(run)run.label=element.textContent;return element;
+    }
+    const container=document.createElement('div'),children=[...scope.childNodes];
+    if(scope===start){for(let i=0;i<offset;i++){const child=copy(children[i]);if(child)container.append(child);}stopped=true;}
+    else for(const child of children){const next=copy(child);if(next)container.append(next);if(stopped)break;}
+    if(!stopped||container.innerHTML.length>2097152)throw new Error('Completion prefix is unavailable.');
+    return {runs,html:container.innerHTML};
+  }
+  function complete(node,ticket,replaceLength,value,label,suffix=' ') {
+    const proof=ticket&&carets.get(ticket),model=node&&editors.get(node),selection=getSelection();
+    if(!proof||proof.node!==node||proof.model!==model||!completionCurrent(node,model)||document.activeElement!==node
+      ||proof.revision!==model.revision||proof.generation!==model.expectedGeneration
+      ||!selection?.isCollapsed||selection.rangeCount!==1||selection.anchorNode!==proof.at||selection.anchorOffset!==proof.offset
+      ||completionSequence===Number.MAX_SAFE_INTEGER
+      ||!Number.isSafeInteger(replaceLength)||replaceLength<1||replaceLength>proof.before.length
+      ||typeof label!=='string'||label.length>1048576||!['',' '].includes(suffix)
+      ||proof.html!==node.innerHTML||proof.blocks!==JSON.stringify(read(node)))return null;
+    const token=completionValue(value);if(!token)return null;
+    let remaining=proof.before.length-replaceLength,start=null,offset=0;
+    for(const part of proof.parts){if(remaining<part.end){start=part.node;offset=remaining;break;}remaining-=part.end;}
+    if(!start||!node.contains(start))return null;
+    // Never split one UTF-16 surrogate pair when consuming a source match.
+    const split=(text,i)=>i>0&&i<text.length&&/[\uD800-\uDBFF]/.test(text[i-1])&&/[\uDC00-\uDFFF]/.test(text[i]);
+    if(split(start.data,offset)||split(proof.at.data,proof.offset))return null;
+    const range=document.createRange();range.setStart(start,offset);range.setEnd(proof.at,proof.offset);
+    if(range.toString()!==proof.before.slice(-replaceLength)||/[\r\n]/.test(range.toString()))return null;
+    // TabComplete.getInheritableFormats reads at matchIndex + 1, then clears
+    // existing mention/slug attributes. At a text-run boundary this is the next
+    // character's formatting; an end-of-context caret uses its retained run.
+    let formatNode=start,formatRemaining=proof.before.length-replaceLength+1;
+    for(const part of proof.parts){if(formatRemaining<part.end){formatNode=part.node;break;}formatNode=part.node;formatRemaining-=part.end;}
+    const style=completionStyle(formatNode,node,model);
+    const plain=token.type==='text'||style.code||!!formatNode.parentElement.closest('a,pre');
+    const text=token.type==='text'?token.text:label;
+    if(!plain&&Object.keys(style).length)token.style={...token.style,...style};
+    const marker=String(++completionSequence);let prefix;
+    try{prefix=completionPrefix(proof.scope,start,offset,model,marker);}catch{return null;}
+    const runs=prefix.runs;
+    if(plain){
+      const anchor=formatNode.parentElement.closest('a');
+      let inline=anchor?{...model.originals.get(anchor),type:'link',url:anchor.getAttribute('href')||'',text:text+suffix}:{type:'text',text:text+suffix};
+      if(Object.keys(style).length)inline.style=style;else delete inline.style;
+      runs.push(completionRun(inline,text+suffix,style,false,marker,runs.length));
+    }else{
+      if(!label)return null;
+      runs.push(completionRun(token,label,style,true,marker,runs.length));
+      if(suffix)runs.push(completionRun({type:'text',text:suffix,...(Object.keys(style).length?{style}:{})},suffix,style,false,marker,runs.length));
+    }
+    range.setStart(proof.scope,0);
+    model.completionInsertion={marker,runs,scope:proof.scope,accepted:false};
+    const html=prefix.html+runs.filter(run=>run.html!==undefined).map(run=>run.html).join('');
+    carets.delete(ticket);selection.removeAllRanges();selection.addRange(range);
+    const revision=model.revision;let changed=false,inserted=null;
+    try{
+      changed=document.execCommand('insertHTML',false,html);
+      acceptCompletionInsertion(node,model);inserted=model.completionInsertion.accepted;
+      if(inserted)placeAfterCompletionAtom(node,model);
+    }finally{
+      const failed=!changed||!model.completionInsertion.accepted;
+      model.completionInsertion=null;
+      if(failed){
+        model.rejectedCompletion={html:proof.html,blocks:proof.blocks,recovered:false,history:true};
+        // A command that made no change needs no undo. Compare exact rich bytes,
+        // otherwise consume this one immediate check and require native history.
+        try{read(node);}catch{}
+      }
+    }
+    if(!changed)return null;
+    model.dirty=true;if(model.revision===revision)model.revision=model.revision===Number.MAX_SAFE_INTEGER?null:model.revision+1;
+    if(!inserted)throw new Error('The completion could not retain its typed identity. Undo this insertion before saving.');
+    return snapshot(node);
   }
   // DOM selection belongs to this mounted editor, not a later element with the
   // same id. Link UI is typed markup; this listener owns only editing/focus.
@@ -353,6 +700,15 @@
     root.focus();
     if (['bold','italic','strikeThrough','insertUnorderedList','insertOrderedList'].includes(command)) document.execCommand(command);
   }
+  // A committing caller may seal this exact node after reading. Ordinary read
+  // keeps its historical behavior; committing callers refuse unfinished input.
+  function readForCommit(id) {
+    const root=document.getElementById(id), model=root&&editors.get(root);
+    if(!root?.isConnected || !model || model.composing || model.revision===null ||
+       root.closest('.rich-editor')?.querySelector('.rich-link-controls')?.hidden===false)
+      throw new Error('Finish the current composition or link edit before saving.');
+    return read(id);
+  }
   function restoreFocus(id) {const root=document.getElementById(id);const previous=root && editors.get(root)?.previousFocus;if(previous?.isConnected)previous.focus();}
-  window.superPlatinumRichEditor = {mount, read, format, restoreFocus};
+  window.superPlatinumRichEditor = {mount, read, readForCommit, snapshot, resolved, replace, caret, complete, format, restoreFocus};
 })();

@@ -45,3 +45,18 @@
 
 /* Keep the destination focus ring inside its box at the body scrollport edge. */
 #file-share-destination:focus-visible { outline-offset: -3px; }
+
+/* Hosted composer: bounded files, one scroll owner and stable controls. */
+.hosted-attach-menu {position:absolute;bottom:48px;left:0;z-index:20;display:flex;flex-direction:column;background:var(--surface-raised);box-shadow:var(--shadow-popover);border-radius:var(--radius-md);padding:var(--space-2);}
+.hosted-attach-menu button {min-height:var(--control-height);text-align:left;padding:0 var(--space-3);}
+.hosted-attach-menu button:hover {background:var(--hover-overlay);}
+.hosted-picker-types,.hosted-picker-pages {display:flex;gap:var(--space-2);flex-wrap:wrap;margin:var(--space-2) 0;align-items:center;}
+.hosted-picker-types button {min-height:var(--control-height);padding:0 var(--space-2);border-radius:var(--radius-sm);}
+.hosted-picker-types button[aria-pressed="true"] {background:var(--selection-bg);}
+.hosted-picker-results {max-height:320px;overflow-y:auto;margin:var(--space-2) 0;}
+.hosted-picker-pages {justify-content:space-between;}
+.hosted-composer-files {max-height:160px;overflow-y:auto;padding:var(--space-2) 0;}
+.hosted-composer-file {display:flex;align-items:center;gap:var(--space-2);min-height:var(--control-height);}
+.hosted-composer-file > span {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hosted-composer-file button {flex-shrink:0;min-height:var(--control-height);font-size:var(--text-sm);}
+@media (max-height:500px) {.hosted-picker-results {max-height:160px;}}

@@ -247,15 +247,17 @@ pub fn open_profile_dm(mut state: Signal<ShellState>, user: String) {
             shell.show_toast("Sign in to open this direct message.");
             return;
         };
-        let result = api::open_dm(&transport, &client, &session, visit.user.clone()).await;
+        let posting = crate::bootstrap::posting_ingress::capture(&state, &transport, &session);
+        let result = api::open_dm_channel(&transport, &client, &session, visit.user.clone()).await;
         if !visit.current(&state.peek()) {
             visit.release(&mut state.write());
             return;
         }
         match result {
-            Ok(id) => {
-                let opened = visit.finish(&mut state.write(), id);
+            Ok(channel) => {
+                let opened = visit.finish(&mut state.write(), channel.id.clone());
                 if opened {
+                    posting.channels(&state, std::slice::from_ref(&channel));
                     super::refresh_selected_channel(state).await;
                 } else {
                     let mut shell = state.write();

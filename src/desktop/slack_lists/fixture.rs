@@ -5,9 +5,15 @@ use super_platinum_core::{
     config::WorkspaceSession,
     slack::{api, client::RequestBody},
 };
+pub(crate) mod board_card_extended;
+pub(crate) mod board_card_order;
+pub(crate) mod board_choice_options;
 pub(crate) mod board_creation;
+pub(crate) mod board_group_delete;
 pub(crate) mod board_heading;
+pub(crate) mod board_lane_order;
 pub(crate) mod board_move;
+pub(crate) mod board_refinement;
 mod board_views;
 mod channel_edit;
 pub(crate) mod column_precision;
@@ -29,7 +35,9 @@ pub(crate) mod people_avatars;
 pub(crate) mod rating;
 mod record_detail;
 mod record_open;
+pub(crate) mod refinement_save;
 pub(crate) mod select_filter;
+pub(crate) mod task_date;
 pub(crate) mod text_field_create;
 mod user_edit;
 pub(crate) mod view_create;
@@ -59,6 +67,9 @@ pub(crate) use user_edit::{add_user_edits, restore_user_edits, user_edit_value};
 
 #[derive(Clone)]
 pub(crate) struct Fixture {
+    personal_completion: bool,
+    task_date: task_date::State,
+    date_personal: Option<PersonalTaskLists>,
     checkbox: Option<text_field_create::checkbox::State>,
     date: Option<text_field_create::date::State>,
     number_precision: Option<text_field_create::number_precision::State>,
@@ -92,10 +103,10 @@ fn loaded(fixture: &Fixture) -> Loaded {
         records: RecordsPage::parse(fixture.records.clone()).expect("fixture records"),
         allow_lists: Some("full".into()),
         list_experiments: Some(fixture.experiments),
-        personal_task_lists: PersonalTaskLists::from_response(
-            &json!({"ok":true,"prefs":{"task_lists":"[]","assigned_to_list":""}}),
+        personal_task_lists: fixture.date_personal.clone().or_else(|| PersonalTaskLists::from_response(
+            &json!({"ok":true,"prefs":{"task_lists":if fixture.personal_completion {"[\"F_LIST_FIXTURE\"]"}else{"[]"},"assigned_to_list":""}}),
         )
-        .ok(),
+        .ok()),
     }
 }
 pub(crate) fn install(shell: &mut ShellState, name: &str) {
@@ -139,6 +150,9 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     }).collect::<Vec<_>>();
     let file: File = serde_json::from_value(document.clone()).expect("fixture file");
     shell.slack_lists.fixture = Some(Fixture {
+        personal_completion: false,
+        task_date: task_date::State::default(),
+        date_personal: None,
         checkbox: None,
         date: None,
         number_precision: None,
@@ -383,6 +397,8 @@ pub(super) fn dispatch(shell: &mut ShellState, attempt: EditAttempt) {
         board_move::check::fail(shell, error);
         return;
     }
+    editor::assignment::fixture::dynamic::cell_request(shell, &attempt, &request);
+    task_date::request(shell, &attempt, &request);
     let no_retry = !request.retry_safe();
     let valid = match request.body {
         RequestBody::Form(fields) => {
@@ -735,3 +751,109 @@ pub(super) fn deletion_restore(shell: &mut ShellState, restored: &[Value]) {
 }
 
 pub(crate) mod subitem;
+
+// Reminder fixture observations stay behind the existing disconnected gate.
+pub(super) fn enable_reminders(shell: &mut ShellState) {
+    assert!(enabled(shell));
+    shell
+        .slack_lists
+        .fixture
+        .as_mut()
+        .unwrap()
+        .experiments
+        .lists_in_later = true;
+}
+pub(super) fn observe_reminder(
+    shell: &mut ShellState,
+    row: &str,
+    item: Option<&super_platinum_core::later::SavedItem>,
+) {
+    assert!(enabled(shell));
+    let records = shell.slack_lists.fixture.as_mut().unwrap().records["records"]
+        .as_array_mut()
+        .unwrap();
+    let record = records.iter_mut().find(|r| r["id"] == row).unwrap();
+    if let Some(item) = item {
+        record["saved"] = json!({"is_archived":item.is_archived,"state":item.state,"date_due":item.date_due,
+            "date_completed":item.date_completed,"todo_state":item.todo_state});
+    } else {
+        record.as_object_mut().unwrap().remove("saved");
+    }
+}
+
+// Closed disconnected setup for personal-completion acceptance; production
+// preferences and raw Lists are never inferred from these fixture identifiers.
+pub(super) fn completion_setup(shell: &mut ShellState) {
+    if !enabled(shell) {
+        return;
+    }
+    let f = shell.slack_lists.fixture.as_mut().unwrap();
+    f.personal_completion = true;
+    f.document["list_metadata"]["schema"].as_array_mut().unwrap().extend([
+        json!({"id":"C_TODO_DONE","key":"todo_completed","name":"To-do complete","type":"todo_completed"}),
+        json!({"id":"C_TODO_REF","key":"todo_ref","name":"To-do source","type":"reference"})
+    ]);
+    for (i, record) in f.records["records"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .enumerate()
+    {
+        record["fields"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"key":"todo_completed","checkbox":false}));
+        if i == 0 {
+            record["fields"].as_array_mut().unwrap().push(json!({"key":"todo_ref","reference":[{"list_record":{"list_id":"F_TODO_SOURCE","row_id":"R_SOURCE"}}]}));
+        }
+    }
+    refresh(shell);
+}
+pub(super) fn completion_observe(shell: &mut ShellState, record: &str, checked: bool) {
+    if !enabled(shell) {
+        return;
+    }
+    let f = shell.slack_lists.fixture.as_mut().unwrap();
+    let row = f.records["records"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|r| r["id"] == record)
+        .unwrap();
+    let field = row["fields"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|f| f["key"] == "todo_completed")
+        .unwrap();
+    field["checkbox"] = json!(checked);
+}
+
+/// Named static assignee review keeps its disconnected backend consistent with
+/// the rendered page, so explicit Not Now still uses the real cell adapter.
+pub(crate) fn replace_assignment_seed(shell: &mut ShellState, document: Value, records: Value) {
+    assert!(enabled(shell) && shell.core.session.is_none() && shell.core.transport.is_none());
+    let fixture = shell.slack_lists.fixture.as_mut().expect("List fixture");
+    fixture.document = document;
+    fixture.records = records;
+    refresh(shell);
+}
+
+/// Disconnected policy evidence is shared by draft capture and fresh preflight.
+pub(crate) fn replace_task_date_seed(
+    shell: &mut ShellState,
+    document: Value,
+    records: Value,
+    personal: PersonalTaskLists,
+) {
+    assert!(enabled(shell) && shell.core.session.is_none() && shell.core.transport.is_none());
+    shell.slack_lists.fixture.as_mut().unwrap().date_personal = Some(personal);
+    replace_assignment_seed(shell, document, records);
+}
+pub(crate) fn task_date_mode(shell: &mut ShellState, todos: bool, reminders: bool) {
+    assert!(enabled(shell));
+    let fixture = shell.slack_lists.fixture.as_mut().unwrap();
+    fixture.experiments.todos = todos;
+    fixture.experiments.lists_in_later = reminders;
+    refresh(shell);
+}

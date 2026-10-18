@@ -32,6 +32,9 @@ pub(crate) async fn initialize(mut state: Signal<ShellState>) {
             crate::canvas_create::carry_pending(&mut previous, &mut loaded);
             crate::canvas::comments::carry_pending(&mut previous, &mut loaded);
             crate::channel_tabs::carry(&mut previous, &mut loaded);
+            crate::slack_lists::completion::carry_pending(&mut previous, &mut loaded);
+            crate::slack_lists::reminder::carry_pending(&mut previous, &mut loaded);
+            crate::app_home::workflows::navigation_history::carry(&mut previous, &mut loaded);
             *previous = loaded;
         }
         crate::performance::record(crate::performance::StartupStage::CacheLoaded);

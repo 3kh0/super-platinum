@@ -121,13 +121,7 @@ pub(crate) async fn capture(
     d: &dioxus::desktop::DesktopContext,
     stage: &str,
 ) -> Result<Value, String> {
-    if !(if rename_fixture::ordered_sort_check_enabled() {
-        ordered::STAGES.as_slice()
-    } else {
-        oracle::STAGES.as_slice()
-    })
-    .contains(&stage)
-    {
+    if !refinement::names().contains(&stage) {
         return Err("Invalid capture stage".into());
     }
     let (directory, owner) = configuration()?;

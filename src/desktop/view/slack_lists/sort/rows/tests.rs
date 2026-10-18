@@ -51,7 +51,7 @@ fn keyed_sort_row_survives_priority_reorder_and_removing_a_different_row() {
             let draft = use_signal(initial);
             slot.set(Some(draft));
             let p = draft.read().clone();
-            rsx! {Rules{state,serial:7,visit:1,p,editable:true}}
+            rsx! {Rules{state,serial:7,visit:1,p,editable:true,local:false}}
         },
         copy,
     );

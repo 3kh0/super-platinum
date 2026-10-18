@@ -172,6 +172,11 @@ pub(super) fn resume(mut state: Signal<ShellState>, mut progress: Signal<Progres
         let mut error = None;
         if !known {
             if let Some(ctx) = ctx {
+                let posting = crate::bootstrap::posting_ingress::capture(
+                    &state,
+                    &ctx.transport,
+                    &ctx.session,
+                );
                 match api::fetch_conversation_info(
                     &ctx.transport,
                     &ctx.client,
@@ -181,6 +186,11 @@ pub(super) fn resume(mut state: Signal<ShellState>, mut progress: Signal<Progres
                 .await
                 {
                     Ok(channel) => {
+                        if channel.id == key.channel
+                            && visit.current(&state.peek(), &progress.peek())
+                        {
+                            posting.channels(&state, std::slice::from_ref(&channel));
+                        }
                         if !visit.resolve(&mut state.write(), &progress.peek(), channel, revision) {
                             error = Some(
                                 "This conversation is unavailable. Your draft is still saved.",

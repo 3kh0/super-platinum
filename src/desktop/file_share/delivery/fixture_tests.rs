@@ -1,4 +1,5 @@
 //! Same Worker and journal; only the browser-owned note extraction is injected.
+mod new_direct;
 use super::*;
 use crate::file_share::fixture::{self, Capability, Case};
 use serde_json::json;

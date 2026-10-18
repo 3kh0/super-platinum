@@ -5,6 +5,7 @@ mod discovery;
 mod history;
 mod palette_navigation;
 mod persist;
+pub(crate) mod posting_ingress;
 mod profile_navigation;
 mod search;
 mod search_navigation;

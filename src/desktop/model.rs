@@ -5,6 +5,7 @@ pub enum ChannelTab {
     #[default]
     Messages,
     AppHome,
+    AppAbout,
     Files,
     Links,
     Pins,

@@ -2,7 +2,9 @@
 //! cancel, refresh, or readback. In-flight receipts live outside this local draft.
 use super::*;
 use std::sync::Arc;
+pub(crate) mod assignment;
 mod channels;
+pub(crate) mod date;
 mod link;
 pub(crate) use link::normalization_slot as link_normalization_slot;
 pub(crate) mod entities;
@@ -46,6 +48,7 @@ pub(crate) struct EditorView {
     pub saving: bool,
     pub stale: bool,
     pub error: Option<String>,
+    pub assignment: Option<assignment::Presentation>,
 }
 #[derive(Clone)]
 pub(super) struct Draft {
@@ -58,6 +61,7 @@ pub(super) struct Draft {
     document_raw: Arc<Value>,
     record_raw: Arc<Value>,
     column_raw: Arc<Value>,
+    date_policy: Option<date::Policy>,
     row_label: String,
     column_label: String,
     kind: EditorKind,
@@ -77,6 +81,11 @@ pub(super) fn presentation(shell: &ShellState) -> Option<EditorView> {
         || view.unavailable
         || view.revision != draft.revision
         || view.generation != draft.visit;
+    let date_changed = draft.date_policy.is_some_and(|policy| {
+        view.loaded
+            .as_ref()
+            .is_none_or(|loaded| !policy.current(loaded, &draft.row_id))
+    });
     let own_mutation = mutation.filter(|mutation| draft.attempt == Some(mutation.attempt.serial));
     let outcome = own_mutation
         .filter(|mutation| mutation.phase == Phase::Uncertain)
@@ -88,7 +97,11 @@ pub(super) fn presentation(shell: &ShellState) -> Option<EditorView> {
             }
             .to_owned()
         })
-        .or_else(|| draft.attempt.and_then(|_| view.error.clone()));
+        .or_else(|| draft.attempt.and_then(|_| view.error.clone()))
+        .or_else(|| {
+            date_changed
+                .then(|| "Your task date settings changed. Cancel and reopen the item.".into())
+        });
     let hidden = !draft
         .authority
         .admits(view, &draft.row_id, &draft.column_id);
@@ -109,10 +122,17 @@ pub(super) fn presentation(shell: &ShellState) -> Option<EditorView> {
         link_name_seed: draft.link_name_seed.clone(),
         choices: draft.choices.clone(),
         directory: draft.directory.presentation(),
-        disabled: stale || hidden || view.loading || view.retry_at > now() || mutation.is_some(),
+        disabled: stale
+            || date_changed
+            || hidden
+            || view.loading
+            || view.retry_at > now()
+            || mutation.is_some()
+            || assignment::blocks_mutation(shell),
         saving: mutation.is_some_and(|mutation| mutation.phase != Phase::Uncertain),
         stale,
         error,
+        assignment: assignment::presentation(shell),
     })
 }
 pub(crate) fn begin_cell_editor(
@@ -161,6 +181,9 @@ pub(super) fn begin_with_authority(
     if rename::blocks_mutation(shell)
         || create::blocks_mutation(shell)
         || delete::blocks_mutation(shell)
+        || reminder::blocks_mutation(shell)
+        || completion::blocks_mutation(shell)
+        || !assignment::can_open(shell, row, column)
         || view.editor.is_some()
         || shell.slack_lists.operations.contains_key(&view.id)
     {
@@ -197,8 +220,10 @@ pub(super) fn begin_with_authority(
             "date" | "due_date" | "todo_due_date" => EditorKind::Date,
             "select" | "multi_select" if column.is_multi_select() => EditorKind::MultiSelect,
             "select" => EditorKind::Select,
-            "user" if column.is_multi_user() => EditorKind::MultiUser,
-            "user" => EditorKind::User,
+            "user" | "assignee" | "todo_assignee" if column.is_multi_user() => {
+                EditorKind::MultiUser
+            }
+            "user" | "assignee" | "todo_assignee" => EditorKind::User,
             "channel" if column.is_multi_channel() => EditorKind::MultiChannel,
             "channel" => EditorKind::Channel,
             "link" => EditorKind::Link,
@@ -208,6 +233,18 @@ pub(super) fn begin_with_authority(
     let original = if board {
         board_move::input(loaded, record, column)
             .ok_or("This lane value cannot be safely moved.")?
+    } else if matches!(column.kind.as_str(), "assignee" | "todo_assignee") {
+        column
+            .task_edit_value(
+                record,
+                loaded
+                    .personal_task_lists
+                    .as_ref()
+                    .ok_or("Refresh your task preferences before assigning.")?,
+            )
+            .map_err(|_| "This assignee cannot be safely edited.")?
+    } else if date::supports(column) {
+        date::input(loaded, record, column)?
     } else {
         column
             .edit_value(
@@ -292,10 +329,15 @@ pub(super) fn begin_with_authority(
         document_raw: Arc::new(loaded.document.raw.clone()),
         record_raw: Arc::new(record.raw.clone()),
         column_raw: Arc::new(column.raw.clone()),
+        date_policy: date::calendar_policy(loaded, record, column)?,
         row_label: visible.label.clone(),
         column_label: column.name.clone(),
         kind,
-        original: Arc::new(original),
+        original: Arc::new(
+            assignment::selected(shell, row, &column.id)
+                .map(CellEditValue::Users)
+                .unwrap_or(original),
+        ),
         rating,
         link_name_seed,
         choices: Arc::new(choices),
@@ -325,6 +367,10 @@ pub(crate) fn save_editor(
     {
         return;
     }
+    if assignment::is_assignee(&state.peek(), generation) {
+        assignment::start(state, generation, value);
+        return;
+    }
     let result = begin_save(&mut state.write(), generation, value);
     match result {
         Ok(attempt) => network::dispatch(state, attempt),
@@ -347,7 +393,18 @@ pub(super) fn begin_save(
     generation: u64,
     value: CellEditValue,
 ) -> Result<EditAttempt, &'static str> {
+    begin_save_verified(shell, generation, value, None)
+}
+fn begin_save_verified(
+    shell: &mut ShellState,
+    generation: u64,
+    value: CellEditValue,
+    verified: Option<CellEdit>,
+) -> Result<EditAttempt, &'static str> {
     poll(shell);
+    if verified.is_none() && assignment::blocks_mutation(shell) {
+        return Err("Check the retained assignment before saving another edit.");
+    }
     let view = shell
         .slack_lists
         .view
@@ -370,6 +427,8 @@ pub(super) fn begin_save(
     if rename::blocks_mutation(shell)
         || create::blocks_mutation(shell)
         || delete::blocks_mutation(shell)
+        || reminder::blocks_mutation(shell)
+        || completion::blocks_mutation(shell)
         || shell.slack_lists.operations.contains_key(&view.id)
     {
         return Err("Check the previous change before saving another edit.");
@@ -396,8 +455,25 @@ pub(super) fn begin_save(
     {
         return Err("This cell or your access changed. Reopen it before saving.");
     }
-    let edit = if matches!(draft.authority, EditAuthority::BoardMove(_)) {
+    if draft
+        .date_policy
+        .is_some_and(|policy| !policy.current(loaded, &draft.row_id))
+    {
+        return Err("Your task date settings changed. Cancel and reopen the item.");
+    }
+    let edit = if let Some(edit) = verified {
+        edit.revalidate(
+            &loaded.document,
+            &loaded.records,
+            loaded.allow_lists.as_deref(),
+            loaded.personal_task_lists.as_ref(),
+        )
+        .map_err(|_| "The checked assignment is no longer current.")?;
+        edit
+    } else if matches!(draft.authority, EditAuthority::BoardMove(_)) {
         board_move::capture(loaded, &draft.row_id, &draft.column_id, value)?
+    } else if draft.kind == EditorKind::Date {
+        date::capture(loaded, &draft.row_id, &draft.column_id, value)?
     } else {
         CellEdit::capture(
             &loaded.document,
@@ -413,6 +489,7 @@ pub(super) fn begin_save(
     let attempt = EditAttempt {
         selection_generation: view.layout.selection_generation,
         authority: draft.authority,
+        date_policy: draft.date_policy,
         scope: shell
             .slack_lists
             .scope
@@ -446,6 +523,15 @@ pub(crate) fn cancel_editor(mut state: Signal<ShellState>, generation: u64) {
     cancel_shell(&mut state.write(), generation);
 }
 pub(super) fn cancel_shell(shell: &mut ShellState, generation: u64) -> bool {
+    if shell
+        .slack_lists
+        .view
+        .as_ref()
+        .and_then(|v| v.editor.as_ref())
+        .is_some_and(|d| d.generation == generation)
+    {
+        assignment::cancel(shell);
+    }
     let Some(view) = shell.slack_lists.view.as_mut() else {
         return false;
     };

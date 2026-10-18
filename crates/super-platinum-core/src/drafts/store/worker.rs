@@ -33,6 +33,7 @@ enum Request {
     StoreUpgrade(Box<super::protected::upgrade::Command>),
     SlashJournal(Box<crate::slash_commands::journal::Command>),
     SlashProtected(Box<super::protected::slash_runtime::Command>),
+    Hosted(Box<super::protected::hosted_files::runtime::Command>),
     Protected(Box<super::protected::commands::Command>),
     Upload(uploads::Command),
     ReadLocalReview(Scope, Reply<LocalReview>),
@@ -262,6 +263,29 @@ impl Worker {
                                 || pending.failed.contains(&account)
                                 || pending.blocked.contains(&account)
                                 || pending.updates.keys().any(|(owner, _)| owner == &account)
+                                || pending
+                                    .requests
+                                    .iter()
+                                    .any(|r| r.slash_fence_account() == Some(account.as_str()));
+                            drop(pending);
+                            (*command).execute(Ok(&mut store), blocked, activity)
+                        }
+                        Err(_) => {
+                            (*command).execute(Err(super::protected::Error::Storage), false, 0)
+                        }
+                    }
+                }
+                Request::Hosted(command) => {
+                    let account = command.account().to_owned();
+                    match open(&account) {
+                        Ok(mut store) => {
+                            let pending = self.pending.lock().unwrap();
+                            let activity = pending.upgrade_generation;
+                            let blocked = self.slash_failed_inputs(&pending)
+                                || slash_detached.get(&account).is_some_and(|n| *n > 0)
+                                || pending.failed.contains(&account)
+                                || pending.blocked.contains(&account)
+                                || pending.updates.keys().any(|(a, _)| a == &account)
                                 || pending
                                     .requests
                                     .iter()

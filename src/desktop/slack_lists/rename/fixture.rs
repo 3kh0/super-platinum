@@ -1,8 +1,16 @@
 //! Exact named synthetic HTTP boundary. Same builders, positive decoder and reducers.
 use super::*;
+pub(crate) mod board_choice;
+pub(crate) mod board_choice_options;
+pub(crate) mod card_extended;
+pub(crate) mod card_order;
 pub(crate) mod field_delete;
 mod filter;
+pub(crate) mod group_delete;
 pub(crate) mod grouping;
+pub(crate) mod lane_order;
+pub(crate) mod refinement;
+pub(crate) mod sort_refinement;
 mod text_create;
 pub(crate) mod view_order;
 pub(crate) use text_create::select as select_create;
@@ -43,7 +51,13 @@ struct Ledger {
     precision_file_once: Option<Value>,
     finished: Vec<Value>,
     server: Option<Value>,
+    board_records: Option<Value>,
+    card_records_once: Option<Value>,
+    group_delete_cells_pending: Option<tokio::sync::oneshot::Sender<()>>,
     select_options: Option<(u64, Value)>,
+    refinement_preferences: Option<Value>,
+    refinement_child_pending: Option<tokio::sync::oneshot::Sender<()>>,
+    refinement_events: Vec<Value>,
 }
 fn ledger() -> &'static Mutex<Ledger> {
     static LEDGER: OnceLock<Mutex<Ledger>> = OnceLock::new();
@@ -142,7 +156,12 @@ pub(super) fn enabled(shell: &ShellState) -> bool {
         || grouping::check_enabled()
         || field_create_check_enabled()
         || field_delete::check_enabled()
-        || view_order::check_enabled())
+        || view_order::check_enabled()
+        || lane_order::check_enabled()
+        || (board_choice::check_enabled() || board_choice_options::check_enabled())
+        || (card_order::check_enabled() || card_extended::check_enabled())
+        || group_delete::check_enabled()
+        || refinement::check_enabled())
         && super::super::fixture::enabled(shell)
         && shell.core.session.is_none()
         && shell.core.transport.is_none()
@@ -199,7 +218,11 @@ pub(super) async fn read(
     if !enabled(&state.peek()) || !guard.current(&state.peek(), stage) {
         return Err(Error::Api("fixture_retired".into()));
     }
-    if view_order::check_enabled() {
+    if view_order::check_enabled()
+        || lane_order::check_enabled()
+        || refinement::check_enabled()
+        || sort_check_enabled()
+    {
         view_order::read_form(&request)?;
     }
     let delete_policy = if field_delete::check_enabled() {
@@ -207,6 +230,12 @@ pub(super) async fn read(
     } else {
         None
     };
+    if (board_choice::check_enabled() || board_choice_options::check_enabled())
+        || (card_order::check_enabled() || card_extended::check_enabled())
+        || group_delete::check_enabled()
+    {
+        board_choice::read_form(&request)?;
+    }
     let path = record(request)?;
     let (raw, held) = {
         let mut l = ledger().lock().unwrap();
@@ -214,7 +243,25 @@ pub(super) async fn read(
             "/api/files.info" => {
                 json!({"ok":true,"file":l.file_response(stage, precision_check_enabled() || number_rename_check_enabled() || visibility_check_enabled() || sort_check_enabled() || filter_check_enabled()
         || grouping::check_enabled() || field_create_check_enabled() || field_delete::check_enabled()
-        || view_order::check_enabled())})
+        || view_order::check_enabled() || lane_order::check_enabled() || (board_choice::check_enabled() || board_choice_options::check_enabled()) || (card_order::check_enabled() || card_extended::check_enabled()) || group_delete::check_enabled()
+        || refinement::check_enabled())})
+            }
+            "/api/lists.records.list"
+                if (board_choice::check_enabled() || board_choice_options::check_enabled())
+                    || (card_order::check_enabled() || card_extended::check_enabled())
+                    || group_delete::check_enabled() =>
+            {
+                if stage == Stage::Checking
+                    && ((card_order::check_enabled() || card_extended::check_enabled())
+                        || group_delete::check_enabled())
+                    && l.card_records_once.is_some()
+                {
+                    l.card_records_once.take().unwrap()
+                } else {
+                    l.board_records
+                        .clone()
+                        .ok_or_else(|| Error::Api("fixture_board_records_missing".into()))?
+                }
             }
             "/api/experiments.getByUser" => delete_policy
                 .ok_or_else(|| Error::Api("fixture_delete_policy_not_configured".into()))?,
@@ -260,6 +307,33 @@ pub(super) async fn write(
         return Err(ListColumnRenameFailure::NotRequested(
             Error::TransportNotConfigured,
         ));
+    }
+    if matches!(&permit, Permit::Refinement(_)) {
+        if sort_check_enabled() {
+            return sort_refinement::write(state, guard, permit).await;
+        }
+        return refinement::write(state, guard, permit).await;
+    }
+    if matches!(
+        &permit,
+        Permit::GroupDeleteSchema(_) | Permit::GroupDeleteCells(_)
+    ) {
+        return group_delete::write(state, guard, permit).await;
+    }
+    if permit.is_card_order() && card_extended::check_enabled() {
+        return card_extended::write(state, guard, permit).await;
+    }
+    if permit.is_card_order() {
+        return card_order::write(state, guard, permit).await;
+    }
+    if permit.is_board_choice() && board_choice_options::check_enabled() {
+        return board_choice_options::write(state, guard, permit).await;
+    }
+    if permit.is_board_choice() {
+        return board_choice::write(state, guard, permit).await;
+    }
+    if permit.is_lane_order() {
+        return lane_order::write(state, guard, permit).await;
     }
     if permit.is_reorder() {
         return view_order::write(state, guard, permit).await;
@@ -370,6 +444,11 @@ pub(super) fn finished(guard: &Guard, kind: &str, applied: bool) {
         || field_create_check_enabled()
         || field_delete::check_enabled()
         || view_order::check_enabled()
+        || lane_order::check_enabled()
+        || (board_choice::check_enabled() || board_choice_options::check_enabled())
+        || (card_order::check_enabled() || card_extended::check_enabled())
+        || group_delete::check_enabled()
+        || refinement::check_enabled()
     {
         ledger()
             .lock()

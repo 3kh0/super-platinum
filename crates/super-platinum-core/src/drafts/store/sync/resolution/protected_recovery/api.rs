@@ -1,5 +1,7 @@
 //! Typed protected storage boundary. No activation, SQL closure or raw state save.
 use super::*;
+#[path = "api_hosted_files.rs"]
+pub(crate) mod hosted_files;
 #[path = "api_types.rs"]
 mod types;
 pub use types::*;
@@ -69,8 +71,12 @@ pub(super) fn validate_slash_remote_read(
 ) -> Result<(), AppError> {
     slash_intent::validate_remote_read(conn, id, record)
 }
-pub(super) fn slash_guard(conn: &Connection, scope: &Scope) -> Result<(), AppError> {
+pub(super) fn slash_only_guard(conn: &Connection, scope: &Scope) -> Result<(), AppError> {
     slash_intent::guard(conn, scope)
+}
+pub(super) fn slash_guard(conn: &Connection, scope: &Scope) -> Result<(), AppError> {
+    slash_intent::guard(conn, scope)?;
+    hosted_files::guard(conn, scope)
 }
 
 #[path = "api_store_upgrade.rs"]

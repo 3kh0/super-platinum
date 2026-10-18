@@ -148,7 +148,7 @@ mod tests {
         assert!(
             row.cells
                 .iter()
-                .any(|cell| cell.column_id == "C_EDIT_TASK_USER" && !cell.can_edit)
+                .any(|cell| cell.column_id == "C_EDIT_TASK_USER" && cell.can_edit)
         );
         restore_user_edits(&mut shell, snapshot);
         assert_eq!(

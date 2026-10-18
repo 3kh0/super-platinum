@@ -292,3 +292,47 @@ fn actual_run_refuses_old_info_after_changed_or_retired_queue_evidence() {
     });
     dom.rebuild_in_place();
 }
+
+#[test]
+fn retained_conflict_resolution_releases_only_its_original_shared_reservation() {
+    let mut dom = VirtualDom::new(|| {
+        let state = use_signal(shell);
+        let mut operations = use_signal(Operations::default);
+        use_hook(move || {
+            let owner = Owner::capture(&state.peek(), "D1").unwrap();
+            let lease = operations.write().reserve_other(owner.clone()).unwrap();
+            let mut run = Run::editor(state, operations, lease.clone(), Action::Edit).unwrap();
+            // The retained workflow keeps this Run until its original write is
+            // reconciled; no second transport request is constructed here.
+            run.dispatched = true;
+            operations.write().detach_other(&lease).unwrap();
+            assert!(operations.peek().blocked(&owner));
+            run.resolved_retained_conflict();
+            assert!(!operations.peek().blocked(&owner));
+            assert!(run.settled);
+            let replacement = operations.write().reserve_other(owner.clone()).unwrap();
+            operations
+                .write()
+                .begin_other(&replacement, Action::Delete)
+                .unwrap();
+            run.resolved_retained_conflict();
+            drop(run);
+            assert_eq!(
+                operations
+                    .peek()
+                    .other_snapshot(&replacement)
+                    .unwrap()
+                    .phase,
+                Phase::Running
+            );
+            assert!(operations.peek().blocked(&owner));
+            operations
+                .write()
+                .settle_other(&replacement, Outcome::NotDispatched)
+                .unwrap();
+            operations.write().release_other(&replacement).unwrap();
+        });
+        rsx! { div {} }
+    });
+    dom.rebuild_in_place();
+}

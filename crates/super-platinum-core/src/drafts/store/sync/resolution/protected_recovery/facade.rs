@@ -70,6 +70,22 @@ pub(super) fn admitted(
     current: &ProtectedReview,
 ) -> Result<(), AppError> {
     api::slash_guard(conn, &current.review.scope)?;
+    admitted_basis(conn, lease, current)
+}
+pub(super) fn admitted_hosted(
+    conn: &Connection,
+    lease: &LiveLease,
+    current: &ProtectedReview,
+) -> Result<(), AppError> {
+    api::slash_only_guard(conn, &current.review.scope)?;
+    api::hosted_files::dispatch_guard(conn, &current.review.scope)?;
+    admitted_basis(conn, lease, current)
+}
+fn admitted_basis(
+    conn: &Connection,
+    lease: &LiveLease,
+    current: &ProtectedReview,
+) -> Result<(), AppError> {
     storage::lease_scope(lease, &current.review.scope)?;
     let team = storage::team(conn, &lease.team)?;
     clean(current)?;

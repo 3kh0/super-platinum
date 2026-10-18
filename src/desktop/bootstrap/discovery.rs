@@ -160,6 +160,9 @@ pub(crate) async fn refresh_open_profile(mut state: Signal<ShellState>, user: St
         .get(&team)
         .map(|w| w.channel_lifecycle.revision())
         .unwrap_or(0);
+    let posting =
+        crate::bootstrap::posting_ingress::capture(&state, &transport, &workspace_session)
+            .for_channels(&missing_dm_ids);
     let (recent_channels, hydrated_emojis) = tokio::join!(
         async {
             if missing_dm_ids.is_empty() {
@@ -188,6 +191,7 @@ pub(crate) async fn refresh_open_profile(mut state: Signal<ShellState>, user: St
         visit.retire(&mut state.write());
         return;
     }
+    posting.channels(&state, &recent_channels);
     let mut shell = state.write();
     let profile_error = profile
         .as_ref()

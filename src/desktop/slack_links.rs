@@ -346,12 +346,18 @@ async fn navigate(
             return;
         };
         let client = state.peek().core.client.clone();
+        let posting = crate::bootstrap::posting_ingress::capture(&state, transport, &visit.session);
         let result =
             api::fetch_conversation_info(transport, &client, &visit.session, channel.clone()).await;
-        let mut shell = state.write();
-        if !visit.current(&shell) {
+        if !visit.current(&state.peek()) {
             return;
         }
+        if let Ok(info) = &result
+            && info.id == channel
+        {
+            posting.channels(&state, std::slice::from_ref(info));
+        }
+        let mut shell = state.write();
         match result {
             Ok(info) => {
                 if !visit.resolve(&mut shell, &channel, info, revision) {

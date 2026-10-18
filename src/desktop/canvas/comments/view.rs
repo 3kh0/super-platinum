@@ -22,7 +22,7 @@ pub(in crate::canvas) fn Panel(
     rsx! {
         section {id:"canvas-comments",class:"canvas-comments","aria-label":"Canvas comments",
             nav {class:"canvas-comments-toolbar","aria-label":"Comment navigation",
-                button {id:"canvas-comments-back","data-canvas-comment-action":"back",onclick:move |_|{let mut value=model.write();value.next_serial();value.loading=false;drop(value);opened.set(false);},"Back to canvas"}
+                button {id:"canvas-comments-back","data-canvas-comment-action":"back",onclick:move |_|reply::back_to_canvas(state,model,opened),"Back to canvas"}
                 if !stream {button {id:"canvas-comments-all","data-canvas-comment-action":"all",disabled,onclick:move |_|open(state,model),"All threads"}}
                 if stream {label {"Filter"
                     select {id:"canvas-comments-filter","data-canvas-comment-action":"filter",value:value.filter.wire(),disabled,
@@ -37,6 +37,10 @@ pub(in crate::canvas) fn Panel(
                 else {
                     if value.review.is_none() {if let Some(error)=value.error {p {class:"canvas-comments-error",role:"alert","{error}"}}}
                     if value.loading {p {role:"status","Loading comments..."}}
+                    if value.selected_control.is_some() {
+                        p {role:"status","Finding the selected comment. If it is not on this page, use Next page."}
+                        button {id:"canvas-comments-selection-cancel","data-canvas-comment-action":"all",disabled,onclick:move |_|open(state,model),"Show all threads"}
+                    }
                     if !value.loading&&value.error.is_none()&&value.rows.is_empty() {
                         p {id:"canvas-comments-empty",match value.filter {Filter::Unread=>"No unread comments",Filter::Resolved=>"There are no resolved threads",Filter::Recent=>"Nobody has added any comments"}}
                     }
@@ -44,6 +48,7 @@ pub(in crate::canvas) fn Panel(
                         button {id:"canvas-comment-review-open","data-canvas-comment-action":"review",onclick:move |_|mutation::review::open(state,model),"Review unconfirmed change"}
                     }
                     {mutation::review::view(state, model)}
+                    if stream && value.review.is_none() && value.selected_control.is_none() {annotation::Author{state,model}}
                     if value.review.is_none() {for row in &value.rows {
                         article {class:"canvas-comment",key:"{row.body.id}","data-comment-ts":row.body.ts.clone(),
                             {body(&row.body,state,epoch)}
@@ -68,7 +73,7 @@ pub(in crate::canvas) fn Panel(
                     if value.cursor.is_some() {
                         button {id:"canvas-comments-more","data-canvas-comment-action":"more",disabled,onclick:move |_|{if let Some(query)=query.clone(){start(state,model,query,true);}},"Next page"}
                     }
-                    if value.review.is_none() && !stream {reply::Composer {state,model}}
+                    if value.review.is_none() && !stream && selection::reply_ready(&value) {reply::Composer {state,model}}
                 }
             }
             {mutation::review::actions(state, model)}

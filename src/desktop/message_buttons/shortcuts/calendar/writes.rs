@@ -83,37 +83,49 @@ fn response(result: &Result<serde_json::Value, Error>, room: bool) -> Settlement
     }
 }
 pub(super) fn create(mut state: Signal<ShellState>, id: u64) {
-    let job = {
-        let mut s = state.write();
-        let Some(event) = actions::event(&s, id) else {
-            return;
-        };
-        let Some(c) = active(&s, id) else {
-            return;
-        };
-        let Some(account) = c.account.as_ref() else {
-            return;
-        };
-        let ctx = context(&s, id).unwrap();
-        let Ok(request) = cal::create(&ctx.client, &ctx.session, c.provider, account, &event)
-        else {
-            return;
-        };
-        let Some((ctx, attempt)) = admit(&mut s, id, Write::Event(event)) else {
-            if let Some(c) = active_mut(&mut s, id) {
-                c.notice = Some(
-                    "This request is already pending or unconfirmed. It cannot be repeated.".into(),
-                );
+    // Capture owned data before yielding; no Signal borrow crosses the DOM await.
+    let Some(expected) = native::Snapshot::capture(&state.peek(), id) else {
+        return;
+    };
+    dioxus::core::spawn_forever(async move {
+        let Some(lease) = native::lock(id, &expected).await else {
+            let mut s = state.write();
+            if editable(&s, id) {
+                active_mut(&mut s, id).unwrap().notice = Some("Finish entering valid date and time values, then try Create again. Your draft has been retained.".into());
             }
             return;
         };
-        let c = active_mut(&mut s, id).unwrap();
-        c.stage = Stage::Creating;
-        c.attempt = Some(attempt);
-        c.notice = None;
-        (ctx, attempt, request)
+        let job = {
+            let mut s = state.write();
+            if native::Snapshot::capture(&s, id).as_ref() != Some(&expected) {
+                return;
+            }
+            prepare_event(&mut s, id)
+        };
+        if let Some(job) = job {
+            dispatch(state, id, job, None, Some(lease));
+        }
+    });
+}
+fn prepare_event(s: &mut ShellState, id: u64) -> Option<(Arc<Context>, u64, PreparedRequest)> {
+    let event = actions::event(s, id)?;
+    let c = active(s, id)?;
+    let account = c.account.as_ref()?;
+    let ctx = context(s, id)?;
+    let request = cal::create(&ctx.client, &ctx.session, c.provider, account, &event).ok()?;
+    let Some((ctx, attempt)) = admit(s, id, Write::Event(event)) else {
+        if let Some(c) = active_mut(s, id) {
+            c.notice = Some(
+                "This request is already pending or unconfirmed. It cannot be repeated.".into(),
+            );
+        }
+        return None;
     };
-    dispatch(state, id, job, None);
+    let c = active_mut(s, id)?;
+    c.stage = Stage::Creating;
+    c.attempt = Some(attempt);
+    c.notice = None;
+    Some((ctx, attempt, request))
 }
 pub(super) fn room(mut state: Signal<ShellState>, id: u64, app: String) {
     let job = {
@@ -167,15 +179,17 @@ pub(super) fn room(mut state: Signal<ShellState>, id: u64, app: String) {
         c.notice = None;
         (ctx, attempt, request)
     };
-    dispatch(state, id, job, Some(app));
+    dispatch(state, id, job, Some(app), None);
 }
 fn dispatch(
     mut state: Signal<ShellState>,
     id: u64,
     (ctx, attempt, request): (Arc<Context>, u64, PreparedRequest),
     room: Option<String>,
+    lease: Option<native::Lease>,
 ) {
     dioxus::core::spawn_forever(async move {
+        let _lease = lease;
         let admitted = {
             let s = state.peek();
             !cooling(&s, &ctx)
@@ -241,6 +255,14 @@ fn dispatch(
                 Settlement::Created(link) => {
                     c.stage = Stage::Created;
                     c.provider_link = link;
+                    c.app_link =
+                        result
+                            .as_ref()
+                            .ok()
+                            .and_then(|raw| match cal::event_result(raw) {
+                                cal::EventResult::Created { app_link, .. } => app_link,
+                                _ => None,
+                            });
                     c.notice = Some("Event created.".into());
                 }
                 Settlement::Unknown => {
@@ -257,6 +279,11 @@ fn dispatch(
                         Some("The calendar declined this event. Your draft is retained.".into());
                 }
             }
+        }
+        let navigated = navigation::shared(&mut s, id, attempt);
+        drop(s);
+        if navigated {
+            crate::bootstrap::refresh_selected_channel(state).await;
         }
     });
 }

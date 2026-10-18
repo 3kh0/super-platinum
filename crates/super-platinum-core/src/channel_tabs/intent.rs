@@ -10,6 +10,9 @@ pub enum Access {
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
+    AddFolder {
+        label: String,
+    },
     AddCanvas {
         file: String,
         label: String,
@@ -32,6 +35,7 @@ pub enum Action {
 pub struct Intent {
     base: Inventory,
     action: Action,
+    created_folder: Option<Value>,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Observation {
@@ -42,6 +46,11 @@ pub enum Observation {
 impl Intent {
     pub fn capture(base: Inventory, action: Action) -> Result<Self, Fault> {
         match &action {
+            Action::AddFolder { label } => {
+                if label.is_empty() || label.trim() != label || !valid_label(label) {
+                    return Err(Fault::Shape);
+                }
+            }
             Action::AddCanvas {
                 file, label, after, ..
             } => {
@@ -57,7 +66,10 @@ impl Intent {
                 anchor(&base, after, None)?;
             }
             Action::Rename { id, label } => {
-                let row = base.canvas(id)?;
+                let row = editable(&base, id)?;
+                if row["type"] == "folder" && (label.is_empty() || label.trim() != label) {
+                    return Err(Fault::Shape);
+                }
                 if super::label(row) == label {
                     return Err(Fault::Changed);
                 }
@@ -66,7 +78,7 @@ impl Intent {
                 }
             }
             Action::Move { id, after } => {
-                base.canvas(id)?;
+                editable(&base, id)?;
                 anchor(&base, after, Some(id))?;
                 let index = base
                     .rows
@@ -82,7 +94,11 @@ impl Intent {
                 base.canvas(id)?;
             }
         }
-        Ok(Self { base, action })
+        Ok(Self {
+            base,
+            action,
+            created_folder: None,
+        })
     }
     pub fn base(&self) -> &Inventory {
         &self.base
@@ -100,6 +116,18 @@ impl Intent {
     pub fn request(&self, client: &SlackClient, session: &WorkspaceSession) -> PreparedRequest {
         let mut fields = vec![("channel_id", self.base.channel.clone())];
         let endpoint = match &self.action {
+            Action::AddFolder { label } => {
+                // Same existing request builder as the retained folder creator;
+                // creation does not dispatch conversations.addTab.
+                return crate::slack::api::bookmark_folder_save(
+                    client,
+                    session,
+                    &self.base.channel,
+                    None,
+                    label,
+                )
+                .expect("validated folder title");
+            }
             Action::AddCanvas {
                 file,
                 label,
@@ -130,6 +158,52 @@ impl Intent {
         };
         client.rest_form(session, endpoint, fields)
     }
+    /// Retain actual creation response identity before checking UI ownership.
+    /// A same-name row can never substitute for this returned bookmark ID.
+    pub fn acknowledge(&mut self, raw: &Value) -> Result<(), Fault> {
+        let Action::AddFolder { label } = &self.action else {
+            return Ok(());
+        };
+        if raw["ok"] != true || raw.get("error").is_some_and(|v| !v.is_null()) {
+            return Err(Fault::Shape);
+        }
+        let bookmark = raw.get("bookmark").ok_or(Fault::Shape)?;
+        let id = bookmark["id"]
+            .as_str()
+            .filter(|s| {
+                !s.is_empty() && s.len() <= 128 && s.bytes().all(|c| c.is_ascii_alphanumeric())
+            })
+            .ok_or(Fault::Shape)?;
+        if bookmark["type"] != "local_folder"
+            || bookmark["title"].as_str() != Some(label)
+            || bookmark
+                .get("channel_id")
+                .is_some_and(|v| !v.is_null() && v.as_str() != Some(self.base.channel()))
+            || serde_json::to_vec(bookmark)
+                .map_err(|_| Fault::Shape)?
+                .len()
+                > 64 * 1024
+            || self.base.rows().iter().any(|r| {
+                r.pointer("/data/folder_bookmark_id")
+                    .and_then(Value::as_str)
+                    == Some(id)
+            })
+        {
+            return Err(Fault::Shape);
+        }
+        if self
+            .created_folder
+            .as_ref()
+            .is_some_and(|old| old != bookmark)
+        {
+            return Err(Fault::Changed);
+        }
+        self.created_folder = Some(bookmark.clone());
+        Ok(())
+    }
+    pub fn created_folder(&self) -> Option<&str> {
+        self.created_folder.as_ref()?.get("id")?.as_str()
+    }
     /// Positive readback only. Absence after an uncertain request never proves
     /// it was unsent and never returns permission to replay that request.
     pub fn observe(&self, current: &Inventory) -> Observation {
@@ -148,6 +222,38 @@ impl Intent {
         }
         let mut expected = self.base.rows.clone();
         match &self.action {
+            Action::AddFolder { label } => {
+                let Some(bookmark) = self.created_folder() else {
+                    return Observation::Changed;
+                };
+                let added = current
+                    .rows
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, row)| {
+                        row["type"] == "folder"
+                            && row
+                                .pointer("/data/folder_bookmark_id")
+                                .and_then(Value::as_str)
+                                == Some(bookmark)
+                            && super::label(row) == label
+                            && id(row).is_some_and(tab_id)
+                    })
+                    .collect::<Vec<_>>();
+                if added.len() != 1 {
+                    return Observation::Changed;
+                }
+                let (index, row) = added[0];
+                if self.base.rows.iter().any(|old| id(old) == id(row)) {
+                    return Observation::Changed;
+                }
+                // Preserve every existing sibling and its relative position. The
+                // response owns the new tab's actual position; none was requested.
+                if index > expected.len() {
+                    return Observation::Changed;
+                }
+                expected.insert(index, row.clone());
+            }
             Action::Rename { id: key, label } => {
                 let row = expected.iter_mut().find(|r| id(r) == Some(key)).unwrap();
                 row["label"] = label.clone().into();
@@ -198,6 +304,18 @@ impl Intent {
         }
     }
 }
+fn editable<'a>(base: &'a Inventory, id: &str) -> Result<&'a Value, Fault> {
+    if base.row(id).is_some_and(|r| r["type"] == "folder") {
+        if !tab_id(id) {
+            return Err(Fault::Unsupported);
+        }
+        super::folder::Folder::capture(base, id)?;
+        base.row(id).ok_or(Fault::Missing)
+    } else {
+        base.canvas(id)
+    }
+}
+
 fn valid_label(s: &str) -> bool {
     s.encode_utf16().count() <= 256 && !s.contains('\0')
 }

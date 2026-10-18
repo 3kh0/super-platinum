@@ -136,9 +136,9 @@ pub(super) fn project(
     {
         lanes.sort_by(|a, b| {
             if sort.ascending {
-                a.1.cmp(&b.1)
+                a.1.encode_utf16().cmp(b.1.encode_utf16())
             } else {
-                b.1.cmp(&a.1)
+                b.1.encode_utf16().cmp(a.1.encode_utf16())
             }
         });
     }

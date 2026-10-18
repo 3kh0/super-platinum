@@ -1,10 +1,15 @@
 // Arm synchronously in the native Done/Cancel click, before Dioxus removes the
 // panel. A single RAF is insufficient: it can precede the asynchronous unmount.
 function armListRenameReturn(root) {
+  if(root.dataset.refinementSave){root.__armRefinementReturn?.(false);return;}
+  if(root.dataset.groupDelete){window.__listBoardGroupDeleteReturn?.arm(root);return;}
+  if(["left","right"].includes(root.dataset.reorderDirection)){window.__listLaneOrderReturn?.arm(root);return;}
+  if(root.dataset.boardChoice){window.__listBoardChoiceReturn?.arm(root);return;}
   const dialog=root.closest('.slack-list-dialog');
   if(!dialog||!root.isConnected)return;
   const visit=dialog.dataset.dialogGeneration,serial=root.dataset.renameSerial,column=root.dataset.renameColumn,view=root.dataset.renameView,precision=root.dataset.precisionColumn,visibility=root.dataset.visibilityView,sort=root.dataset.sortView,filter=root.dataset.filterView,grouping=root.dataset.groupingView,textCreate=root.dataset.newTextFieldView;
   const selection=dialog.dataset.viewSelection;
+  const cardClose=root.dataset.cardOrder?dialog.querySelector("#slack-list-close"):null;
   const reorder=root.dataset.reorderDirection,reorderOpener=root.__reorderOpener;
   if(reorder&&(!reorderOpener||reorderOpener.dataset.reorderSelection!==selection||reorderOpener.dataset.reorderView!==view||reorderOpener.dataset.reorderDirection!==reorder))return;
   const deletion=root.dataset.deleteColumn,deleteOpener=deletion?root.__deleteOpener:null;
@@ -46,7 +51,11 @@ function armListRenameReturn(root) {
     // A chosen live control or new native user input always wins instead.
     if(active&&active!==document.body&&active.isConnected&&interactive(active)&&!root.contains(active)){stop();return;}
     let header;
-    if(deletion){
+    if(root.dataset.cardOrder){
+      const picker=dialog.querySelector("#slack-list-view-select");
+      if(dialog.dataset.viewSelection!==selection||picker?.value!==view||dialog.querySelector("#slack-list-close")!==cardClose){stop();return;}
+      header=cardClose;
+    }else if(deletion){
       if(dialog.dataset.viewSelection!==selection){stop();return;}
       header=dialog.querySelector('#slack-list-delete-field');
       if(header!==deleteOpener){stop();return;}

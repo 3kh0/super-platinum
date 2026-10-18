@@ -3,22 +3,43 @@ use super_platinum_core::slack::{PreparedRequest, models::User};
 pub(super) fn person(s: &ShellState, ctx: &Context, id: &str) -> Option<Person> {
     let w = s.core.workspaces.get(&ctx.session.team_id)?;
     let u = w.users.get(id)?;
-    eligible(u, &ctx.session.user_id).then(|| Person {
+    let c = s
+        .message_buttons
+        .shortcuts
+        .dialog
+        .as_ref()?
+        .calendar
+        .as_ref()?;
+    agents::eligible(c, u, &ctx.session).then(|| Person {
         id: id.into(),
         label: super_platinum_core::state::display_name(Some(u), id),
     })
 }
 pub(super) fn eligible(u: &User, self_id: &str) -> bool {
-    u.id != self_id
+    base_eligible(u, self_id)
+        && !super_platinum_core::block_actions::app_eligibility::agents::slackbot::is_slackbot(u)
         && !u.is_bot
+        && u.extra.get("is_app_user") != Some(&serde_json::Value::Bool(true))
+        && u.extra.get("is_agentforce_bot") != Some(&serde_json::Value::Bool(true))
+}
+pub(super) fn base_eligible(u: &User, self_id: &str) -> bool {
+    u.id != self_id
+        && [
+            "is_app_user",
+            "is_agentforce_bot",
+            "is_slackbot",
+            "is_workflow_bot",
+            "is_profile_only_user",
+            "is_slacksecuritybot",
+        ]
+        .iter()
+        .all(|key| matches!(u.extra.get(*key), None | Some(serde_json::Value::Bool(_))))
         && !u.deleted
         && super_platinum_core::block_actions::form::valid_message_user(&u.id)
         && !matches!(u.id.as_str(), "USEARCH" | "UCHANNELEXPERT" | "USLACK")
         && ![
-            "is_app_user",
             "is_workflow_bot",
             "is_profile_only_user",
-            "is_agentforce_bot",
             "is_slacksecuritybot",
         ]
         .iter()
@@ -29,7 +50,7 @@ pub(super) fn eligible(u: &User, self_id: &str) -> bool {
                 .and_then(serde_json::Value::as_str)
                 == Some("external_guest"))
 }
-pub(super) fn initial_guests(s: &ShellState, id: u64) -> Vec<Person> {
+fn initial_users(s: &ShellState, id: u64) -> Vec<User> {
     let Some(d) = s
         .message_buttons
         .shortcuts
@@ -70,8 +91,44 @@ pub(super) fn initial_guests(s: &ShellState, id: u64) -> Vec<Person> {
     let mut seen = std::collections::BTreeSet::new();
     ids.into_iter()
         .filter(|id| seen.insert(id.clone()))
-        .filter_map(|id| person(s, &d.owner.ctx, &id))
+        .filter_map(|id| w.users.get(&id).cloned())
         .collect()
+}
+pub(super) fn initial_guests(s: &ShellState, id: u64) -> Vec<Person> {
+    let Some(ctx) = s
+        .message_buttons
+        .shortcuts
+        .dialog
+        .as_ref()
+        .filter(|d| d.id == id)
+        .map(|d| &d.owner.ctx)
+    else {
+        return vec![];
+    };
+    initial_users(s, id)
+        .into_iter()
+        .filter(|u| eligible(u, &ctx.session.user_id))
+        .map(|u| Person {
+            id: u.id.clone(),
+            label: super_platinum_core::state::display_name(Some(&u), &u.id),
+        })
+        .collect()
+}
+async fn initial_agent_guests(mut state: Signal<ShellState>, id: u64, ctx: &Context) {
+    let users = initial_users(&state.peek(), id);
+    agents::hydrate(state, id, 0, ctx, users.clone()).await;
+    let mut s = state.write();
+    let Some(c) = active_mut(&mut s, id).filter(|c| c.stage == Stage::Loading) else {
+        return;
+    };
+    c.guests = users
+        .iter()
+        .filter(|u| agents::eligible(c, u, &ctx.session))
+        .map(|u| Person {
+            id: u.id.clone(),
+            label: super_platinum_core::state::display_name(Some(u), &u.id),
+        })
+        .collect();
 }
 pub(super) fn share_choices(
     s: &ShellState,
@@ -152,7 +209,8 @@ pub(super) fn start(mut state: Signal<ShellState>, id: u64, ctx: Arc<Context>) {
             c.provider
         };
         let result:Result<bool,Error>=async{
-            let flag=cal::modern(&read(state,id,&ctx,api::list_experiments(&ctx.client,&ctx.session)).await?)?;
+            let assignments=read(state,id,&ctx,api::list_experiments(&ctx.client,&ctx.session)).await?;
+            let flag=cal::modern(&assignments)?;
             let account=if flag {cal::Account::Modern}else{
                 let raw=read(state,id,&ctx,cal::user_info(&ctx.client,&ctx.session,provider)).await?;
                 match cal::connection(&raw)?{
@@ -173,6 +231,7 @@ pub(super) fn start(mut state: Signal<ShellState>, id: u64, ctx: Arc<Context>) {
                 let preference=read(state,id,&ctx,cal::share_preference(&ctx.client,&ctx.session)).await.and_then(|r|cal::share_enabled(&r));
                 if let Some(c)=active_mut(&mut state.write(),id){match preference{Ok(value)=>c.share=value,Err(_)=>{c.share=false;c.notice=Some("Sharing preference could not be loaded. Sharing is off for this draft until you choose it.".into());}}}
             }
+            initial_agent_guests(state,id,&ctx).await;
             default_guests(state,id,&ctx).await;
             if let Some(c)=active_mut(&mut state.write(),id){c.stage=Stage::Editing;}Ok(true)
         }.await;
@@ -180,6 +239,14 @@ pub(super) fn start(mut state: Signal<ShellState>, id: u64, ctx: Arc<Context>) {
             Ok(true) => {
                 slots(state, id);
                 guests(state, id, String::new());
+                let legacy = {
+                    let s = state.peek();
+                    active(&s, id)
+                        .is_some_and(|c| matches!(c.account, Some(cal::Account::Legacy { .. })))
+                };
+                if legacy {
+                    sharing::search(state, id, String::new());
+                }
             }
             Ok(false) => {}
             Err(_) => {
@@ -238,6 +305,33 @@ async fn default_guests(mut state: Signal<ShellState>, id: u64, ctx: &Context) {
     let result =
         api::fetch_conversation_members(&ctx.transport, &ctx.client, &ctx.session, &channel, None)
             .await;
+    if let Ok(page) = &result {
+        if page.members.len() >= 10
+            || page
+                .response_metadata
+                .as_ref()
+                .and_then(|m| m.next_cursor.as_ref())
+                .is_some_and(|c| !c.is_empty())
+        {
+            return;
+        }
+        let users = {
+            let s = state.peek();
+            let Some(w) = s.core.workspaces.get(&ctx.session.team_id) else {
+                return;
+            };
+            page.members
+                .iter()
+                .filter_map(|id| {
+                    w.users
+                        .get(id)
+                        .or_else(|| page.users.iter().find(|u| u.id == *id))
+                        .cloned()
+                })
+                .collect()
+        };
+        agents::hydrate(state, id, 0, ctx, users).await;
+    }
     let mut s = state.write();
     retain_limit(&mut s, ctx, result.as_ref().err());
     if !current(&s, id) {
@@ -256,14 +350,18 @@ async fn default_guests(mut state: Signal<ShellState>, id: u64, ctx: &Context) {
         let guests = page
             .members
             .iter()
-            .filter_map(|id| {
-                person(&s, ctx, id).or_else(|| {
+            .filter_map(|member| {
+                person(&s, ctx, member).or_else(|| {
                     page.users
                         .iter()
-                        .find(|u| u.id == *id && eligible(u, &ctx.session.user_id))
+                        .find(|u| {
+                            u.id == *member
+                                && active(&s, id)
+                                    .is_some_and(|c| agents::eligible(c, u, &ctx.session))
+                        })
                         .map(|u| Person {
-                            id: id.clone(),
-                            label: super_platinum_core::state::display_name(Some(u), id),
+                            id: member.clone(),
+                            label: super_platinum_core::state::display_name(Some(u), member),
                         })
                 })
             })
@@ -363,75 +461,100 @@ pub(super) fn guests(mut state: Signal<ShellState>, id: u64, query: String) {
         {
             return;
         }
-        let request=ctx.client.edge_json(&ctx.session,"users/search",serde_json::json!({"query":query,"count":24,"fuzz":1,"enable_workspace_ranking":true,"filter":"NOT deactivated"}));
-        let result = match request {
-            Ok(r) => read(state, id, &ctx, r).await,
-            Err(_) => Err(cal::invalid()),
+        let result = directory::read(state, id, directory::Query::Guests(generation), &ctx,
+            "users/search",serde_json::json!({"query":query,"count":24,"fuzz":1,"enable_workspace_ranking":true,"filter":"NOT deactivated"})).await;
+        let users: Vec<User> = {
+            let s = state.peek();
+            if !active(&s, id)
+                .is_some_and(|c| c.guest_generation == generation && c.stage == Stage::Editing)
+            {
+                return;
+            }
+            let mut users = cached_guest_users(&s, &ctx, &query);
+            if let Ok(raw) = result {
+                if let Some(rows) = raw
+                    .get("results")
+                    .and_then(serde_json::Value::as_array)
+                    .filter(|v| v.len() <= 512)
+                {
+                    for raw in rows.iter().take(24) {
+                        if let Ok(user) = serde_json::from_value::<User>(raw.clone()) {
+                            if !users.iter().any(|u| u.id == user.id) {
+                                users.push(user);
+                            }
+                        }
+                    }
+                }
+            }
+            users
         };
+        agents::hydrate(state, id, generation, &ctx, users.clone()).await;
         let mut s = state.write();
         if !active(&s, id)
             .is_some_and(|c| c.guest_generation == generation && c.stage == Stage::Editing)
         {
             return;
         }
-        let mut found = Vec::new();
-        if let Ok(raw) = result {
-            if let Some(rows) = raw
-                .get("results")
-                .and_then(serde_json::Value::as_array)
-                .filter(|v| v.len() <= 512)
-            {
-                for raw in rows.iter().take(24) {
-                    if let Ok(u) = serde_json::from_value::<User>(raw.clone()) {
-                        if eligible(&u, &ctx.session.user_id)
-                            && s.core
-                                .workspaces
-                                .get(&ctx.session.team_id)
-                                .and_then(|w| w.users.get(&u.id))
-                                .is_none_or(|known| eligible(known, &ctx.session.user_id))
-                        {
-                            found.push(Person {
-                                id: u.id.clone(),
-                                label: super_platinum_core::state::display_name(Some(&u), &u.id),
-                            });
-                        }
-                    }
-                }
-            }
-        }
+        let found: Vec<Person> = users
+            .iter()
+            .filter_map(|u| {
+                let known = s
+                    .core
+                    .workspaces
+                    .get(&ctx.session.team_id)
+                    .and_then(|w| w.users.get(&u.id))
+                    .unwrap_or(u);
+                agents::eligible(active(&s, id)?, known, &ctx.session).then(|| Person {
+                    id: known.id.clone(),
+                    label: super_platinum_core::state::display_name(Some(known), &known.id),
+                })
+            })
+            .collect();
         let c = active_mut(&mut s, id).unwrap();
         c.guest_loading = false;
-        for person in found {
-            if !c.guest_choices.iter().any(|p| p.id == person.id) {
-                c.guest_choices.push(person);
-            }
-        }
+        c.guest_choices = found;
         c.guest_choices.truncate(64);
     });
 }
 fn cached_guests(s: &ShellState, ctx: &Context, query: &str) -> Vec<Person> {
+    let Some(c) = s
+        .message_buttons
+        .shortcuts
+        .dialog
+        .as_ref()
+        .and_then(|d| d.calendar.as_ref())
+    else {
+        return vec![];
+    };
+    cached_guest_users(s, ctx, query)
+        .into_iter()
+        .filter(|u| agents::eligible(c, u, &ctx.session))
+        .map(|u| Person {
+            id: u.id.clone(),
+            label: super_platinum_core::state::display_name(Some(&u), &u.id),
+        })
+        .collect()
+}
+fn cached_guest_users(s: &ShellState, ctx: &Context, query: &str) -> Vec<User> {
     let Some(w) = s.core.workspaces.get(&ctx.session.team_id) else {
         return vec![];
     };
     let q = query.trim().to_lowercase();
-    let mut rows: Vec<Person> = Vec::with_capacity(65);
+    let mut rows: Vec<(String, User)> = Vec::with_capacity(65);
     for u in w
         .users
         .values()
-        .filter(|u| eligible(u, &ctx.session.user_id))
+        .filter(|u| base_eligible(u, &ctx.session.user_id))
     {
-        let person = Person {
-            id: u.id.clone(),
-            label: super_platinum_core::state::display_name(Some(u), &u.id),
-        };
-        if !q.is_empty() && !person.label.to_lowercase().contains(&q) {
+        let label = super_platinum_core::state::display_name(Some(u), &u.id);
+        if !q.is_empty() && !label.to_lowercase().contains(&q) {
             continue;
         }
-        let at = rows.partition_point(|old| (&old.label, &old.id) <= (&person.label, &person.id));
+        let at = rows.partition_point(|(old_label, old)| (old_label, &old.id) <= (&label, &u.id));
         if at < 64 {
-            rows.insert(at, person);
+            rows.insert(at, (label, u.clone()));
             rows.truncate(64);
         }
     }
-    rows
+    rows.into_iter().map(|(_, u)| u).collect()
 }

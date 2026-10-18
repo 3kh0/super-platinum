@@ -28,6 +28,7 @@ pub(crate) struct Presentation {
     pub rows: Arc<Vec<Arc<RowView>>>,
     pub total_rows: usize,
     pub loading: bool,
+    pub pending_refinement: bool,
     pub error: Option<String>,
     pub incomplete: bool,
     pub read_only_reason: Option<String>,
@@ -126,6 +127,7 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
         rows: view.rows.clone(),
         total_rows: view.all_rows.len(),
         loading: view.loading,
+        pending_refinement: view.layout.pending_refinement.is_some(),
         error: view
             .error
             .clone()
@@ -221,6 +223,18 @@ pub(super) fn project_cells(
                 .document
                 .editable(loaded.allow_lists.as_deref())
                 .then(|| {
+                    if column.kind == "todo_completed"
+                        && loaded
+                            .personal_task_lists
+                            .as_ref()
+                            .is_some_and(|p| p.contains(&loaded.document.id))
+                    {
+                        return loaded.personal_task_lists.as_ref().and_then(|p| {
+                            column
+                                .personal_completion_value(row, &loaded.document.id, p)
+                                .ok()
+                        });
+                    }
                     column.checkbox_input_value_with_policy(
                         row,
                         &loaded.document.id,
@@ -253,11 +267,20 @@ pub(super) fn project_cells(
                             )
                             .is_ok()),
                 can_edit: loaded.document.editable(loaded.allow_lists.as_deref())
-                    && column.editable_value(
-                        row,
-                        &loaded.document.id,
-                        loaded.personal_task_lists.as_ref(),
-                    ),
+                    && if matches!(column.kind.as_str(), "assignee" | "todo_assignee") {
+                        loaded
+                            .personal_task_lists
+                            .as_ref()
+                            .is_some_and(|personal| column.task_edit_value(row, personal).is_ok())
+                    } else if editor::date::supports(column) {
+                        editor::date::input(loaded, row, column).is_ok()
+                    } else {
+                        column.editable_value(
+                            row,
+                            &loaded.document.id,
+                            loaded.personal_task_lists.as_ref(),
+                        )
+                    },
                 content,
             }
         })

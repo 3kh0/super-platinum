@@ -204,7 +204,14 @@ pub(crate) fn finish_at(
     let mut old = entry(shell)?;
     old.input = Input::Filter(ViewFilterChoice::from_conditions(desired));
     let loaded = shell.slack_lists.view.as_ref()?.loaded.as_ref()?;
-    if loaded.document != old.original {
+    if !local_refinement::original_current(shell, &old) {
+        return None;
+    }
+    if old.local_refinement.is_some() {
+        if !capture.current_at(shell, now.max(Instant::now())) {
+            return None;
+        }
+        local_refinement::finish(shell, &old);
         return None;
     }
     let intent = text_create::capture(shell, &old, loaded).ok()?;

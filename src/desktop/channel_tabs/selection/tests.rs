@@ -281,3 +281,41 @@ fn home_history_rechecks_bot_eligibility_before_admitting_a_retained_route() {
     shell.channel_tab = ChannelTab::AppHome;
     assert_eq!(current(&shell), Some(Route::Resource(ChannelTab::AppHome)));
 }
+
+#[test]
+fn enabled_knowledge_target_uses_readable_identity_without_ordinary_mutation_authority() {
+    for changed in [
+        json!([]),
+        json!([{"id":"Ct00000001","type":"future_resource"}]),
+        json!([{"id":"Ct00000001","type":"canvas","data":{"file_id":"F00000009"}}]),
+    ] {
+        let mut shell = shell();
+        crate::channel_tabs::fixture::install_knowledge(&mut shell);
+        let base = inventory(&shell).unwrap();
+        assert!(base.canvas("Ct00000001").is_err());
+        let route = canvas(&shell);
+        choose(&mut shell, route);
+        let resolved = target(&shell).expect("enabled knowledge remains readable");
+        assert_eq!(resolved.id, "F00000001");
+        assert_eq!(resolved.title, "Channel Knowledge");
+        assert!(
+            Intent::capture(
+                base.clone(),
+                Action::Remove {
+                    id: "Ct00000001".into()
+                }
+            )
+            .is_err()
+        );
+        let key = key(&shell).unwrap();
+        let mut properties = base.properties().clone();
+        properties["tabz"] = changed;
+        let raw = json!({"id":key.channel,"properties":properties});
+        shell.channel_tabs.entries.get_mut(&key).unwrap().inventory =
+            Some(Inventory::from_channel(&raw).unwrap());
+        assert!(
+            target(&shell).is_none(),
+            "retained selection cannot rebind or reopen a removed tab"
+        );
+    }
+}

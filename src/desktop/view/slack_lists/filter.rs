@@ -8,10 +8,13 @@ mod number;
 mod rows;
 mod select;
 
-pub(super) fn action(state: Signal<ShellState>, visit: u64) -> Element {
-    let selection = rename::selection(&state.read()).unwrap_or_default();
-    let disabled = !filter::can_open(&state.read());
-    rsx! {button{id:"slack-list-filter",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,title:"Save conditions for this shared Table",onclick:move |_|filter::open(state,visit,selection),{icon(Icon::Filter,"icon")}span{"Filter"}}}
+pub(super) fn action(state: Signal<ShellState>, _visit: u64) -> Element {
+    let stamp = crate::slack_lists::refinement::toolbar::stamp(&state.read());
+    let disabled = !crate::slack_lists::rename::local_refinement::can_open(
+        &state.read(),
+        crate::slack_lists::rename::local_refinement::Kind::Filter,
+    );
+    rsx! {button{id:"slack-list-filter",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,title:"Filter your current view",onclick:move |_|crate::slack_lists::rename::local_refinement::open_stamped(state,crate::slack_lists::rename::local_refinement::Kind::Filter,stamp.clone()),{icon(Icon::Filter,"icon")}span{"Filter"}}}
 }
 fn name<'a>(id: &str, choices: &'a [(String, String)]) -> &'a str {
     choices
@@ -117,8 +120,9 @@ pub(super) fn fields(
     visit: u64,
     p: filter::Presentation,
     editable: bool,
+    local: bool,
 ) -> Element {
-    rsx! {rows::Conditions{state,serial,visit,p,editable}}
+    rsx! {rows::Conditions{state,serial,visit,p,editable,local}}
 }
 pub(super) fn confirm(
     state: Signal<ShellState>,

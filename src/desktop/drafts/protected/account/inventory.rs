@@ -31,6 +31,7 @@ struct Editor {
     state: ownership::Stamp,
     serial: u64,
     released: Option<(Arc<local_writer::LocalWriter>, ownership::Stamp)>,
+    hosted: ownership::Stamp,
     write_slot: ownership::Stamp,
     write: Option<(Arc<super::super::owned_editor::Write>, ownership::Stamp)>,
 }
@@ -122,8 +123,10 @@ impl Editor {
                 Ok::<_, ownership::Error>((writer, stamp))
             })
             .transpose()?;
+        let hosted = original.hosted.ownership_stamp()?;
         Ok(Self {
             original,
+            hosted,
             state,
             serial,
             released,
@@ -132,6 +135,7 @@ impl Editor {
         })
     }
     fn validate(&self) -> Result<(), ownership::Error> {
+        self.original.hosted.validate_ownership(&self.hosted)?;
         self.original.state.validate(&self.state)?;
         if let Some((writer, stamp)) = &self.released {
             writer.validate_ownership(stamp)?;

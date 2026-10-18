@@ -8,6 +8,7 @@ use serde_json::Value;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ListExperiments {
     pub schema_owner_only: bool,
+    pub lists_in_later: bool,
     pub sub_tasks: bool,
     pub grid_todos: bool,
     pub todos: bool,
@@ -55,6 +56,7 @@ pub fn parse_list_experiments(response: &Value) -> Result<ListExperiments, Error
     };
     Ok(ListExperiments {
         schema_owner_only: enabled("lists_schema_owner_only")?,
+        lists_in_later: enabled("lists_in_later")?,
         sub_tasks: enabled("lists_sub_tasks")?,
         grid_todos: enabled("lists_grid_todos")?,
         todos: enabled("todos")?,

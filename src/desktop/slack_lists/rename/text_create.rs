@@ -283,6 +283,11 @@ pub(super) fn capture(
     entry: &registry::Entry,
     loaded: &Loaded,
 ) -> Result<Intent, ListError> {
+    if entry.local_refinement.is_some() {
+        return Err(ListError(
+            "Local refinements cannot dispatch a shared edit.",
+        ));
+    }
     if entry.target.is_deletion() {
         return field_delete::capture(shell, entry, loaded);
     }

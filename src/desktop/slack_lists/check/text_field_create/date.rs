@@ -92,7 +92,8 @@ fn stable(
             return Err("Date model phase/original changed".into());
         }
         if index == 0
-            && model["error"] != "This value cannot be saved. Check the value and choices."
+            && model["error"]
+                != "This date cannot be saved. Check the date and your current access."
         {
             return Err("Missing Date no-op proof".into());
         }
@@ -206,7 +207,7 @@ async fn noop(
     let dom = wait_dom(d, &format!("window.__listDateCreate.noop({g})")).await?;
     let model = editor(&state.peek())?;
     if model["generation"] != g
-        || model["error"] != "This value cannot be saved. Check the value and choices."
+        || model["error"] != "This date cannot be saved. Check the date and your current access."
         || model["original"] != Value::Null
         || model["disabled"] != false
         || cells::snapshot(&state.peek())? != before

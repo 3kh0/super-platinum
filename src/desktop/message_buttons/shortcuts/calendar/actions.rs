@@ -45,6 +45,7 @@ pub(super) fn edit(mut state: Signal<ShellState>, id: u64, field: Field, value: 
                     return;
                 }
                 c.date = value;
+                c.time_revision = super::super::super::next_id();
                 c.start = None;
                 c.end = None;
                 c.start_text.clear();
@@ -94,6 +95,7 @@ pub(super) fn mode(mut state: Signal<ShellState>, id: u64, custom: bool) {
             return;
         }
         c.custom = custom;
+        c.time_revision = super::super::super::next_id();
         c.start = None;
         c.end = None;
         c.start_text.clear();
@@ -113,6 +115,7 @@ pub(super) fn slot(mut state: Signal<ShellState>, id: u64, value: String) {
     let Some(slot) = c.slots.iter().find(|slot| slot.start == start) else {
         return;
     };
+    c.time_revision = super::super::super::next_id();
     c.start = Some(slot.start);
     c.end = Some(slot.end);
     c.start_text = cal::time::label(slot.start);
@@ -122,6 +125,9 @@ pub(super) fn guest(mut state: Signal<ShellState>, id: u64, user: String, remove
     {
         let mut s = state.write();
         if !editable(&s, id) {
+            return;
+        }
+        if !remove && !agents::selected_current(&s, id, &user) {
             return;
         }
         let c = active_mut(&mut s, id).unwrap();
@@ -217,13 +223,10 @@ pub(super) fn event(s: &ShellState, id: u64) -> Option<cal::Event> {
                 .then(|| ts.clone())
         })
         .unwrap_or_default();
-    let workspace = s.core.workspaces.get(&d.owner.ctx.session.team_id)?;
-    if c.guests.iter().any(|p| {
-        workspace
-            .users
-            .get(&p.id)
-            .is_some_and(|u| !load::eligible(u, &d.owner.ctx.session.user_id))
-    }) {
+    if c.guests
+        .iter()
+        .any(|p| !agents::selected_current(s, id, &p.id))
+    {
         return None;
     }
     let e = cal::Event {

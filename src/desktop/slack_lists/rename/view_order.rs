@@ -5,6 +5,7 @@ pub(crate) use super_platinum_core::slack_lists::ViewReorderDirection as Directi
 
 #[derive(Clone)]
 pub(crate) struct Presentation {
+    pub lanes: bool,
     pub direction: &'static str,
     pub name: String,
     pub before: Vec<(String, String)>,
@@ -47,6 +48,9 @@ fn named(doc: &Document, ids: &[String]) -> Option<Vec<(String, String)>> {
         .collect()
 }
 pub(super) fn presentation(shell: &ShellState, e: &registry::Entry) -> Option<Presentation> {
+    if e.target.is_lane_order() {
+        return lane_order::presentation(shell, e);
+    }
     let Target::Reorder(id, direction) = &e.target else {
         return None;
     };
@@ -66,6 +70,7 @@ pub(super) fn presentation(shell: &ShellState, e: &registry::Entry) -> Option<Pr
         .as_ref()
         .and_then(|l| named(&l.document, &ViewReorder::current_order(&l.document).ok()?));
     Some(Presentation {
+        lanes: false,
         direction: match direction {
             Direction::Up => "up",
             Direction::Down => "down",

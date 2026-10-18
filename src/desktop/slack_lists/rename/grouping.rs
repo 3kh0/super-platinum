@@ -45,7 +45,7 @@ pub(crate) fn can_open(shell: &ShellState) -> bool {
     can_target(shell, &Target::Grouping(id.into()))
 }
 pub(crate) fn open(mut state: Signal<ShellState>, visit: u64, selection: u64) {
-    open_shell(&mut state.write(), visit, selection);
+    local_refinement::open(state, local_refinement::Kind::Grouping, visit, selection);
 }
 pub(crate) fn open_shell(shell: &mut ShellState, visit: u64, selection: u64) -> bool {
     if super::selection(shell) != Some(selection) || !can_open(shell) {
@@ -100,13 +100,7 @@ pub(super) fn change(
         {
             return false;
         }
-        if shell
-            .slack_lists
-            .view
-            .as_ref()
-            .and_then(|v| v.loaded.as_ref())
-            .is_none_or(|l| l.document != e.original)
-        {
+        if !local_refinement::original_current(shell, e) {
             return false;
         }
         let Target::Grouping(view) = &e.target else {
@@ -138,12 +132,8 @@ pub(super) fn presentation(shell: &ShellState, e: &registry::Entry) -> Option<Pr
     Some(Presentation {
         original: ViewGrouping::current(&e.original, view)?,
         desired: desired.clone(),
-        current: shell
-            .slack_lists
-            .view
-            .as_ref()
-            .and_then(|v| v.loaded.as_ref())
-            .and_then(|l| ViewGrouping::current(&l.document, view)),
+        current: local_refinement::current_document(shell, e)
+            .and_then(|doc| ViewGrouping::current(doc, view)),
         choices: choices(&e.original),
         choice: e.grouping_choice,
     })

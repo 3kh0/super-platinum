@@ -130,16 +130,19 @@ fn validate_content(scope: &DraftScope, content: &Content) -> Result<(), AppErro
     if !content.note.is_empty() {
         FileShareNote::new(content.note.clone()).map_err(|_| invalid())?;
     }
-    if content
-        .destination
-        .as_ref()
-        .is_some_and(|d| !api_shape(&d.id, b"CGD", 9) || d.name.is_empty() || d.name.len() > 16_384)
-    {
+    if content.destination.as_ref().is_some_and(|d| {
+        !(api_shape(&d.id, b"CGD", 9)
+            || d.id
+                .strip_prefix("person:")
+                .is_some_and(|id| api_shape(id, b"U", 9)))
+            || d.name.is_empty()
+            || d.name.len() > 16_384
+    }) {
         return Err(invalid());
     }
     Ok(())
 }
-fn encode(draft: &Draft) -> Result<String, AppError> {
+pub(super) fn encode(draft: &Draft) -> Result<String, AppError> {
     validate_content(&draft.scope, &draft.content)?;
     if uuid::Uuid::parse_str(&draft.token).is_err() || draft.revision == 0 {
         return Err(invalid());

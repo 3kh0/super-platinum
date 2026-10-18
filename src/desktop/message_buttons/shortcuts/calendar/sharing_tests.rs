@@ -35,6 +35,11 @@ fn sharing_selection_requires_exact_current_remote_or_cached_destination_and_que
     c.share_channel = "CCAL".into();
     c.share_selected = Some(remote);
     c.share_generation = 7;
+    posting::test_acquire(
+        &mut s,
+        id,
+        vec![json!({"id":"CCAL","is_channel":true,"name":"Remote"})],
+    );
     assert_eq!(resolve(&s, id).as_deref(), Some("CCAL"));
     assert!(query_current(&s, id, 7));
     assert!(!query_current(&s, id, 6));
@@ -50,9 +55,10 @@ fn sharing_selection_requires_exact_current_remote_or_cached_destination_and_que
 }
 #[test]
 fn posting_restrictions_are_not_replaced_by_membership_or_search_presence() {
-    let (s, id) = super::super::tests::setup();
+    let (mut s, id) = super::super::tests::setup();
     let ctx = context(&s, id).unwrap();
     let allowed = json!({"id":"CCAL","is_channel":true,"is_member":false,"is_ext_shared":false});
+    posting::test_acquire(&mut s, id, vec![allowed.clone()]);
     assert!(channel(
         &s,
         &ctx,
@@ -69,10 +75,12 @@ fn posting_restrictions_are_not_replaced_by_membership_or_search_presence() {
     ] {
         let mut raw = allowed.clone();
         raw[key] = value;
+        posting::test_acquire(&mut s, id, vec![raw.clone()]);
         assert!(!channel(&s, &ctx, &serde_json::from_value(raw).unwrap()));
     }
     let mut raw = allowed;
     raw["properties"] = json!({"posting_restricted_to":{"role":["all"]}});
+    posting::test_acquire(&mut s, id, vec![raw.clone()]);
     assert!(channel(&s, &ctx, &serde_json::from_value(raw).unwrap()));
 }
 #[test]

@@ -279,7 +279,9 @@ impl Queue {
         }
         let commit = matches!(
             action,
-            upgrade::Action::Commit(_) | upgrade::Action::InitializeSlash(_)
+            upgrade::Action::Commit(_)
+                | upgrade::Action::InitializeSlash(_)
+                | upgrade::Action::InitializeHosted(_)
         );
         let (mut command, receiver) = upgrade::Command::new(self.owner.clone(), action);
         configure(&mut command);

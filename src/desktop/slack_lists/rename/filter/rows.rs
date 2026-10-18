@@ -72,7 +72,7 @@ pub(super) fn ready(shell: &ShellState, serial: u64, visit: u64) -> Option<Key> 
         || e.stage != Stage::Editing
         || e.filter_capture.is_some()
         || !selection_current(shell, &e)
-        || shell.slack_lists.view.as_ref()?.loaded.as_ref()?.document != e.original
+        || !local_refinement::original_current(shell, &e)
         || ViewFilter::current(&e.original, view).is_none()
     {
         return None;

@@ -117,7 +117,7 @@ fn directory_completion_cannot_replace_new_query_cancelled_draft_or_account() {
     }
 }
 #[test]
-fn single_clear_and_cardinality_use_existing_cell_guard_while_tasks_remain_readonly() {
+fn single_clear_and_cardinality_keep_generic_task_save_closed() {
     let mut shell = shell();
     let generation = open(&mut shell, "C_EDIT_USER");
     assert!(
@@ -133,8 +133,15 @@ fn single_clear_and_cardinality_use_existing_cell_guard_while_tasks_remain_reado
     assert_eq!(attempt.edit.cells()[0]["user"], json!([]));
     super::super::cancel_shell(&mut shell, generation);
     let visit = shell.slack_lists.view.as_ref().unwrap().generation;
+    assert!(super::super::begin_shell(&mut shell, "R_LIST_000", "C_EDIT_TASK_USER", visit).is_ok());
+    let generation = super::super::presentation(&shell).unwrap().generation;
     assert!(
-        super::super::begin_shell(&mut shell, "R_LIST_000", "C_EDIT_TASK_USER", visit).is_err()
+        super::super::begin_save(
+            &mut shell,
+            generation,
+            CellEditValue::Users(vec!["U00000002".into()])
+        )
+        .is_err()
     );
 }
 #[test]

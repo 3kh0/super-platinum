@@ -29,7 +29,7 @@ impl Journal {
         {
             return Ok(None);
         }
-        let total:i64=tx.query_row("SELECT (SELECT count(*) FROM receipts)+(SELECT count(*) FROM comment_receipts)+(SELECT count(*) FROM reply_attempts)",[],|r|r.get(0))?;
+        let total:i64=tx.query_row("SELECT (SELECT count(*) FROM receipts)+(SELECT count(*) FROM comment_receipts)+(SELECT count(*) FROM reply_attempts)+(SELECT count(*) FROM annotation_attempts)",[],|r|r.get(0))?;
         let used: bool = tx.query_row(
             "SELECT EXISTS(SELECT 1 FROM reply_history WHERE id=?1)",
             [&value.id],

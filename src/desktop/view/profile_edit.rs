@@ -8,9 +8,13 @@ use crate::{
 use dioxus::prelude::*;
 use super_platinum_core::profile_text::Field;
 mod photo;
+mod recording;
 mod sections;
 
 pub(crate) fn profile_edit(state: Signal<ShellState>) -> Element {
+    if profile_edit::recording::presentation(&state.read()).is_some() {
+        return recording::view(state);
+    }
     if profile_edit::sections::presentation(&state.read()).is_some() {
         return sections::view(state);
     }
@@ -42,6 +46,7 @@ fn ProfileEditor(state: Signal<ShellState>) -> Element {
                     if view.loading {p {id:"profile-edit-loading",role:"status","Loading your profile and editing permissions…"}}
                     else {
                         button {id:"profile-edit-photo",r#type:"button",disabled:locked,onclick:move |_|profile_edit::photo::open(state,visit),"Change profile photo"}
+                        button {id:"profile-edit-recording",r#type:"button",disabled:locked,onclick:move |_|profile_edit::recording::open(state,visit),"Name recording"}
                         button {id:"profile-edit-sections",r#type:"button",disabled:locked,onclick:move |_|profile_edit::sections::open(state,visit),"Edit profile fields"}
                         for field in view.fields {
                             ProfileField {key:"{visit}-{field.field.key()}",state,visit,field:field.field,value:field.value,allowed:field.allowed,

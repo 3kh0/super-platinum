@@ -13,6 +13,7 @@ pub use steps::{
     CheckpointInput, LocalOutcome, LocalWriteInput, MutationInput, PreserveInput, ReleaseInput,
     SendInput, WriteOutcome,
 };
+pub(in crate::drafts::store::worker) use steps::{HostedClaimed, HostedCompletion};
 #[path = "completion_prerequisites.rs"]
 mod prerequisites;
 pub(in crate::drafts::store::worker) use prerequisites::TakeoverInput;

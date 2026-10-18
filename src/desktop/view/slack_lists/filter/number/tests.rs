@@ -54,7 +54,7 @@ fn harness() -> (VirtualDom, Draft, Mutations) {
                     epoch: choice,
                 }],
             };
-            super::super::fields(state, 7, 1, p, true)
+            super::super::fields(state, 7, 1, p, true, false)
         },
         copy,
     );

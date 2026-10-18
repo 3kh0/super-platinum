@@ -264,7 +264,7 @@ fn v1_migration_preserves_receipts_cooldown_and_reopens_v2() {
         j.conn
             .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
             .unwrap(),
-        2
+        4
     );
     drop(j);
     assert!(t.open().draft(&scope(0)).unwrap().as_ref() == Some(&d));
@@ -718,3 +718,4 @@ fn two_current_connections_preserve_ordered_claims_and_equal_text_aba() {
 }
 
 mod direct;
+mod person;

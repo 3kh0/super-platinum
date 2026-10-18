@@ -125,7 +125,7 @@ impl Journal {
     pub fn comment(&self, owner: &Scope) -> Result<Option<CommentReceipt>, AppError> {
         let tx = self.conn.unchecked_transaction()?;
         // A structural receipt is a whole-file write lock, not comment authority.
-        if super::replies::present(&tx, owner)? {
+        if super::annotations::present(&tx, owner)? || super::replies::present(&tx, owner)? {
             return Err(invalid());
         }
         let occupied: bool = tx.query_row(
@@ -153,7 +153,7 @@ impl Journal {
             return Err(invalid());
         }
         let count: i64 = tx.query_row(
-            "SELECT (SELECT count(*) FROM receipts)+(SELECT count(*) FROM comment_receipts)+(SELECT count(*) FROM reply_attempts)",
+            "SELECT (SELECT count(*) FROM receipts)+(SELECT count(*) FROM comment_receipts)+(SELECT count(*) FROM reply_attempts)+(SELECT count(*) FROM annotation_attempts)",
             [],
             |r| r.get(0),
         )?;

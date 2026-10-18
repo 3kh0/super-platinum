@@ -91,13 +91,16 @@ pub(super) fn inspect(
 ) -> Result<ArchiveReview, ArchiveError> {
     let tx = db(adapter_atomic::begin(&store.0))?;
     db(history::require(&tx, &expected.scope().account_id))?;
-    db(archive_storage::audit(&tx, &expected.scope().account_id))?;
+    let phase = db(archive_storage::read_phase(
+        &tx,
+        &expected.scope().account_id,
+    ))?;
     let current = views::exact(&tx, expected).map_err(|_| ArchiveError::Stale)?;
     if current.row().state().has_remote_identity_history() {
         return Err(ArchiveError::NeedsRemoteReview);
     }
     db(local_only(&current))?;
-    let (binding, raw) = db(bindings::exact(&tx, current.scope(), intent))?;
+    let (binding, raw) = db(phase.binding(current.scope(), intent))?;
     if binding.enrollment != current.row().lineage().enrollment()
         || !db(history::active(&tx, current.scope(), intent, &raw))?
     {
@@ -133,19 +136,14 @@ pub(super) fn inspect(
     ))? {
         return Err(ArchiveError::Stale);
     }
-    let (_, settlement) = db(completion::settlement_raw(&tx, current.scope(), intent))?;
-    let attestation = db(archive_storage::attestation_raw(
-        &tx,
-        &current.scope().account_id,
-        intent,
-    ))?
-    .ok_or(ArchiveError::Pending)?;
+    let (_, settlement) = db(phase.settlement(current.scope(), intent))?;
+    let attestation = phase.attestation(intent).ok_or(ArchiveError::Pending)?;
     let review = ArchiveReview {
         scope: current.scope().clone(),
         intent: intent.into(),
-        binding: raw,
-        settlement,
-        attestation,
+        binding: raw.to_owned(),
+        settlement: settlement.to_owned(),
+        attestation: attestation.to_owned(),
         current,
         writer: writer.id().into(),
         serial,
@@ -153,6 +151,7 @@ pub(super) fn inspect(
         stream: stream.clone(),
         team,
     };
+    drop(phase);
     db(tx.commit())?;
     Ok(review)
 }
@@ -185,7 +184,7 @@ fn archive(
     }
     let tx = db(adapter_atomic::begin(&store.0))?;
     db(history::require(&tx, &review.scope.account_id))?;
-    db(archive_storage::audit(&tx, &review.scope.account_id))?;
+    let phase = db(archive_storage::read_phase(&tx, &review.scope.account_id))?;
     if let Some(raw) = db(history::archived(&tx, &review.intent))? {
         let saved: archive_storage::ArchivedRecord = db(wire::strict(&raw))?;
         if saved.binding != review.binding
@@ -201,6 +200,7 @@ fn archive(
         {
             return Err(ArchiveError::Stale);
         }
+        drop(phase);
         db(tx.commit())?;
         return Ok(Archived { record: saved });
     }
@@ -236,19 +236,9 @@ fn archive(
     if writer.as_deref() != Some(review.writer_receipt.as_str()) {
         return Err(ArchiveError::Stale);
     }
-    let (terminal, settlement) = db(completion::settlement_raw(
-        &tx,
-        &review.scope,
-        &review.intent,
-    ))?;
+    let (terminal, settlement) = db(phase.settlement(&review.scope, &review.intent))?;
     if settlement != review.settlement
-        || db(archive_storage::attestation_raw(
-            &tx,
-            &review.scope.account_id,
-            &review.intent,
-        ))?
-        .as_deref()
-            != Some(review.attestation.as_str())
+        || phase.attestation(&review.intent) != Some(review.attestation.as_str())
     {
         return Err(ArchiveError::Stale);
     }
@@ -266,6 +256,11 @@ fn archive(
         }
         _ => return Err(ArchiveError::Pending),
     };
+    // No validated evidence survives the first write. protected_retire and
+    // move_active still perform their ordinary validation; move_active ends in
+    // a fresh full audit of the written history before this transaction commits.
+    let terminal = terminal.clone();
+    drop(phase);
     let retired = db(slash_journal::protected_retire(
         &tx,
         &review.scope.account_id,

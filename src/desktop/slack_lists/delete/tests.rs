@@ -377,3 +377,19 @@ fn stale_ui_callbacks_cannot_report_into_replaced_detail_or_account() {
         Some("Current detail notice")
     );
 }
+
+#[test]
+fn completion_target_lookup_retains_delete_confirmation_and_receipt_off_view() {
+    let mut s = shell();
+    let scope = s.slack_lists.scope.clone().unwrap();
+    let detail = record_detail::presentation(s.slack_lists.view.as_ref().unwrap()).unwrap();
+    let serial = begin_shell(&mut s, detail.generation).unwrap();
+    assert!(blocks_target(&s, &scope, "F_LIST_FIXTURE"));
+    confirm_shell(&mut s, serial).unwrap();
+    s.slack_lists.view.as_mut().unwrap().id = "F_OTHER".into();
+    assert!(blocks_target(&s, &scope, "F_LIST_FIXTURE"));
+    assert!(!blocks_target(&s, &scope, "F_OTHER"));
+    s.core.active_account = Some("foreign".into());
+    let foreign = Scope::capture(&s).unwrap();
+    assert!(!blocks_target(&s, &foreign, "F_LIST_FIXTURE"));
+}

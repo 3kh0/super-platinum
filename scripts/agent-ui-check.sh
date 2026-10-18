@@ -24,12 +24,16 @@ FIXTURES=(
   bookmarks bookmarks-narrow bookmarks-edit bookmarks-remove bookmarks-error bookmarks-folder bookmarks-folder-remove bookmarks-move
   channel-canvas-surface channel-canvas-surface-narrow
   channel-tabs-canvas channel-tabs-canvas-narrow
+  channel-tabs-manager channel-tabs-manager-narrow
+  channel-tabs-enterprise channel-tabs-enterprise-narrow
+  channel-tabs-knowledge channel-tabs-knowledge-narrow
+  channel-tabs-folder channel-tabs-folder-narrow channel-tabs-folder-manage channel-tabs-folder-manage-narrow
   bookmarks-emoji bookmarks-emoji-narrow
   canvas-create canvas-create-narrow canvas-create-error
   canvas-creation-durable canvas-creation-durable-narrow
   canvas canvas-narrow canvas-loading canvas-error canvas-rename canvas-rename-error canvas-readonly
   canvas-comments canvas-comments-narrow
-  canvas-comment-resolve canvas-comment-resolve-narrow canvas-comment-reply canvas-comment-reply-narrow
+  canvas-comment-resolve canvas-comment-resolve-narrow canvas-comment-reply canvas-comment-reply-narrow canvas-comment-rich-reply canvas-comment-rich-reply-narrow canvas-comment-annotation canvas-comment-annotation-narrow canvas-comment-inline canvas-comment-inline-narrow canvas-comment-existing-inline canvas-comment-existing-inline-narrow canvas-comment-archived-inline canvas-comment-archived-inline-narrow canvas-comment-hidden-inline canvas-comment-hidden-inline-narrow canvas-comment-section canvas-comment-section-narrow canvas-comment-section-inline canvas-comment-section-inline-narrow canvas-comment-list canvas-comment-list-narrow canvas-comment-image canvas-comment-image-narrow canvas-comment-table canvas-comment-table-narrow canvas-comment-table-bodies canvas-comment-table-bodies-narrow canvas-comment-blockquote canvas-comment-blockquote-narrow canvas-comment-flexbox canvas-comment-flexbox-narrow canvas-comment-callout canvas-comment-callout-narrow
   canvas-checklist canvas-checklist-narrow canvas-checklist-saving canvas-checklist-uncertain
   canvas-text canvas-text-narrow
   canvas-structure canvas-structure-narrow
@@ -44,6 +48,8 @@ FIXTURES=(
   forward-links forward-links-narrow
   forward forward-narrow forward-error forward-partial forward-partial-narrow forward-people forward-people-narrow
   forward-recovery forward-recovery-narrow
+  forward-scheduled forward-scheduled-narrow
+  forward-scheduled-dynamic forward-scheduled-dynamic-narrow
   scheduled scheduled-empty scheduled-error scheduled-edit scheduled-send-confirm
   schedule-clear schedule-clear-narrow schedule-clear-thread
   drafts drafts-empty drafts-edit drafts-conflict drafts-no-destination channel-details channel-create channel-leave channel-leave-last channel-join channel-join-composer
@@ -51,6 +57,7 @@ FIXTURES=(
   local-drafts local-drafts-loading local-drafts-error local-drafts-error-narrow
   new-dm new-dm-selected new-dm-pending new-dm-error new-dm-narrow
   profile-hover-card profile-pane profile-dm-opening profile-vip-pending profile-pane-rich-fields
+  profile-loading profile-loading-narrow
   profile-pane-min-width dm-header-compact
   channel-thread-profile-headers channel-huddle huddle-connected huddle-invite
   huddle-video huddle-video-expanded huddle-settings huddle-people huddle-captions
@@ -62,7 +69,7 @@ FIXTURES=(
   appearance-blue-steel appearance-paper-bag appearance-custom-background
   image-viewer-upload image-viewer-embed-compact gif-picker-attachment
   pdf-preview pdf-preview-narrow pdf-preview-error pdf-preview-search-long
-  file-share file-share-narrow file-share-dm file-share-dm-narrow file-share-group-dm file-share-group-dm-narrow file-share-pressure file-share-pressure-narrow file-share-draft-reopen
+  file-share file-share-narrow file-share-dm file-share-dm-narrow file-share-group-dm file-share-group-dm-narrow file-share-new-dm file-share-new-dm-narrow file-share-pressure file-share-pressure-narrow file-share-draft-reopen
   message-file-actions message-file-actions-narrow
   viewer-actions-files viewer-actions-message viewer-actions-narrow viewer-actions-pdf
   file-actions file-actions-narrow file-actions-channel-narrow file-rename file-rename-narrow file-rename-channel-narrow file-recovery file-recovery-narrow file-preview-renamed-files file-preview-renamed-message
@@ -79,8 +86,24 @@ FIXTURES=(
   multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout button-metadata button-metadata-narrow block-control-values block-control-values-narrow
   app-shortcuts app-shortcuts-narrow
   app-home app-home-narrow
+  app-about app-about-narrow app-about-unknown app-about-unknown-narrow app-about-connect app-about-connect-narrow
+  app-home-workflow-auth app-home-workflow-auth-narrow
+  app-home-workflow-auth-held app-home-workflow-auth-held-narrow
+  app-home-workflow-auth-unconfirmed app-home-workflow-auth-unconfirmed-narrow
+  app-home-workflow-auth-rate-limit app-home-workflow-auth-rate-limit-narrow
+  app-home-workflow app-home-workflow-narrow
+  app-home-workflow-held app-home-workflow-held-narrow
+  app-home-workflow-unconfirmed app-home-workflow-unconfirmed-narrow
+  app-home-workflow-rate-limit app-home-workflow-rate-limit-narrow
+  app-home-workflow-meeting-known app-home-workflow-meeting-known-narrow
+  app-home-workflow-meeting-all-day app-home-workflow-meeting-all-day-narrow
+  app-home-workflow-meeting-title-only app-home-workflow-meeting-title-only-narrow
+  app-home-workflow-meeting-status-unavailable app-home-workflow-meeting-status-unavailable-narrow
+  app-home-workflow-meeting-disconnected app-home-workflow-meeting-disconnected-narrow
   app-calendar app-calendar-narrow app-calendar-modern app-calendar-modern-narrow
   app-calendar-connect app-calendar-connect-narrow app-calendar-uncertain app-calendar-uncertain-narrow
+  app-home-inputs app-home-inputs-narrow
+  app-home-calendar app-home-calendar-narrow
   app-modal-form app-modal-form-narrow app-modal-lifecycle app-modal-lifecycle-narrow
   app-modal-users app-modal-users-narrow
   app-modal-user app-modal-user-narrow
@@ -135,12 +158,32 @@ FIXTURES=(
   slack-list-channel-settings slack-list-channel-settings-narrow
   slack-list-view-sort slack-list-view-sort-narrow
   slack-list-ordered-sort slack-list-ordered-sort-narrow
+  slack-list-task-date slack-list-task-date-narrow slack-list-task-reminder-route slack-list-task-reminder-route-narrow
+  slack-list-task-assignment slack-list-task-assignment-narrow
+  slack-list-task-assignment-recovery slack-list-task-assignment-recovery-narrow
+  slack-list-todo-completion
+  slack-list-todo-completion-narrow
+  slack-list-todo-reminder slack-list-todo-reminder-narrow
   slack-list-field-delete slack-list-field-delete-narrow
   slack-list-view-grouping slack-list-view-grouping-narrow
   slack-list-board-grouping slack-list-board-grouping-narrow
   slack-list-board-move slack-list-board-move-narrow slack-list-board-move-checkbox slack-list-board-move-checkbox-narrow
   slack-list-find slack-list-find-narrow slack-list-find-board slack-list-find-board-narrow slack-list-find-empty slack-list-find-empty-narrow
   slack-list-view-rename slack-list-view-rename-narrow
+  slack-list-board-card-drag slack-list-board-card-drag-narrow
+  slack-list-board-card-cross slack-list-board-card-cross-narrow
+  slack-list-board-card-tail slack-list-board-card-tail-narrow
+  slack-list-board-group-delete slack-list-board-group-delete-narrow
+  slack-list-board-choice slack-list-board-choice-narrow
+  slack-list-board-choice-add slack-list-board-choice-add-narrow
+  slack-list-board-choice-color slack-list-board-choice-color-narrow
+  slack-list-board-local-order slack-list-board-local-order-narrow
+  slack-list-board-refinement-save slack-list-board-refinement-save-narrow
+  slack-list-board-refinement-save-new slack-list-board-refinement-save-new-narrow
+  slack-list-board-refinement-save-lost slack-list-board-refinement-save-lost-narrow
+  slack-list-board-refinement slack-list-board-refinement-narrow
+  slack-list-board-refinement-new slack-list-board-refinement-new-narrow
+  slack-list-board-lane-order slack-list-board-lane-order-narrow
   slack-list-view-order slack-list-view-order-narrow
   slack-list-view-create slack-list-view-create-narrow
   slack-list-subitem-create slack-list-subitem-create-narrow slack-list-subitem-uncertain slack-list-subitem-uncertain-narrow
@@ -148,6 +191,11 @@ FIXTURES=(
   profile-edit profile-edit-narrow
   profile-sections profile-sections-narrow
   profile-pronunciation profile-pronunciation-narrow
+  profile-recording profile-recording-narrow
+  profile-recording-recovery profile-recording-recovery-narrow
+  profile-recording-cleanup profile-recording-cleanup-narrow
+  profile-recording-upload profile-recording-upload-narrow
+  profile-recording-cancelled profile-recording-cancelled-narrow
   profile-photo profile-photo-narrow
   profile-title profile-title-narrow
   message-radio-buttons message-radio-buttons-narrow
@@ -200,6 +248,9 @@ FIXTURES=(
 owned_fixture_route() {
   owned_route=""
   case "$1" in
+    app-home-workflow-auth|app-home-workflow-auth-narrow|app-home-workflow-auth-held|app-home-workflow-auth-held-narrow|app-home-workflow-auth-unconfirmed|app-home-workflow-auth-unconfirmed-narrow|app-home-workflow-auth-rate-limit|app-home-workflow-auth-rate-limit-narrow|app-home-workflow|app-home-workflow-narrow|app-home-workflow-held|app-home-workflow-held-narrow|app-home-workflow-unconfirmed|app-home-workflow-unconfirmed-narrow|app-home-workflow-rate-limit|app-home-workflow-rate-limit-narrow|app-home-workflow-meeting-*)
+      owned_route="Requires the protected-test-support workflow native driver; an initial static capture does not verify the workflow."
+      return 0 ;;
     slack-list-people-defaults-single-create|slack-list-people-defaults-single-create-narrow|slack-list-people-defaults-multiple-create|slack-list-people-defaults-multiple-create-narrow|slack-list-people-defaults-null-create|slack-list-people-defaults-null-create-narrow|slack-list-people-defaults-omitted-create|slack-list-people-defaults-omitted-create-narrow|slack-list-channel-defaults-single-create|slack-list-channel-defaults-single-create-narrow|slack-list-channel-defaults-multiple-create|slack-list-channel-defaults-multiple-create-narrow|slack-list-channel-defaults-null-create|slack-list-channel-defaults-null-create-narrow|slack-list-channel-defaults-omitted-create|slack-list-channel-defaults-omitted-create-narrow)
       owned_route="Use the sealed configured Entity creation runner with owned captures and readiness."
       return 0 ;;
@@ -224,7 +275,7 @@ owned_fixture_route() {
     file-preview-refresh-check|file-preview-refresh-check-narrow)
       owned_route="Use the sealed file-preview refresh runner with its owned marker and Save sentinel."
       return 0 ;;
-    file-share|file-share-narrow|file-share-dm|file-share-dm-narrow|file-share-group-dm|file-share-group-dm-narrow|file-share-draft-reopen|file-share-pressure|file-share-pressure-narrow)
+    file-share|file-share-narrow|file-share-dm|file-share-dm-narrow|file-share-group-dm|file-share-group-dm-narrow|file-share-new-dm|file-share-new-dm-narrow|file-share-draft-reopen|file-share-pressure|file-share-pressure-narrow)
       owned_route="Use the sealed Share native runner with an owned capability marker and private journals."
       return 0 ;;
     original-download-save-workflow)

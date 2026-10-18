@@ -1,10 +1,13 @@
 use super::*;
 use crate::slack_lists::rename::sort;
 use super_platinum_core::slack_lists::ViewSortChoice;
-pub(super) fn action(state: Signal<ShellState>, visit: u64) -> Element {
-    let selection = crate::slack_lists::rename::selection(&state.read()).unwrap_or_default();
-    let disabled = !sort::can_open(&state.read());
-    rsx! {button{id:"slack-list-sort",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,title:"Save ordered field sorts for this shared Table",onclick:move |_|sort::open(state,visit,selection),{icon(Icon::Sort,"icon")}span{"Sort"}}}
+pub(super) fn action(state: Signal<ShellState>, _visit: u64) -> Element {
+    let stamp = crate::slack_lists::refinement::toolbar::stamp(&state.read());
+    let disabled = !crate::slack_lists::rename::local_refinement::can_open(
+        &state.read(),
+        crate::slack_lists::rename::local_refinement::Kind::Sort,
+    );
+    rsx! {button{id:"slack-list-sort",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,title:"Sort your current view",onclick:move |_|crate::slack_lists::rename::local_refinement::open_stamped(state,crate::slack_lists::rename::local_refinement::Kind::Sort,stamp.clone()),{icon(Icon::Sort,"icon")}span{"Sort"}}}
 }
 fn label(choice: Option<&ViewSortChoice>, choices: &[(String, String)]) -> String {
     match choice {
@@ -47,8 +50,9 @@ pub(super) fn fields(
     visit: u64,
     p: sort::Presentation,
     editable: bool,
+    local: bool,
 ) -> Element {
-    rsx! { rows::Rules{state,serial,visit,p,editable} }
+    rsx! { rows::Rules{state,serial,visit,p,editable,local} }
 }
 fn parse_direction(value: &str) -> Option<bool> {
     match value {

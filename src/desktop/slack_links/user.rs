@@ -197,10 +197,19 @@ pub(super) async fn navigate(mut state: Signal<ShellState>, intent: Intent) {
         }
         intent.cached(&shell)
     };
+    let mut posting = None;
+    let mut observed = None;
     let channel = match cached {
         Ok(Some(channel)) => Ok(channel),
         Err(message) => Err(Error::Api(message.into())),
         Ok(None) => {
+            if let Some(transport) = intent.visit.transport.as_ref() {
+                posting = Some(crate::bootstrap::posting_ingress::capture(
+                    &state,
+                    transport,
+                    &intent.visit.session,
+                ));
+            }
             let client = state.peek().core.client.clone();
             let request =
                 api::conversations_open(&client, &intent.visit.session, intent.user.clone());
@@ -226,7 +235,10 @@ pub(super) async fn navigate(mut state: Signal<ShellState>, intent: Intent) {
             // the recipient identity through the id-only open_dm adapter.
             match response {
                 Ok(value) => serde_json::from_value::<OpenedConversation>(value)
-                    .map(|response| response.channel)
+                    .map(|response| {
+                        observed = Some(response.channel.clone());
+                        response.channel
+                    })
                     .map_err(|_| Error::Api("invalid_direct_conversation_response".into())),
                 Err(error) => Err(error),
             }
@@ -259,6 +271,9 @@ pub(super) async fn navigate(mut state: Signal<ShellState>, intent: Intent) {
         }
     };
     if committed {
+        if let (Some(posting), Some(channel)) = (posting, observed) {
+            posting.channels(&state, std::slice::from_ref(&channel));
+        }
         // Both existing hydrators capture their own destination before yielding;
         // neither is sequenced behind the other's potentially slow network work.
         tokio::join!(

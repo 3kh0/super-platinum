@@ -16,12 +16,51 @@ struct Record {
 }
 static RECORD: OnceLock<Mutex<Record>> = OnceLock::new();
 static WAKE: OnceLock<tokio::sync::Notify> = OnceLock::new();
-pub(in crate::canvas) fn requested() -> bool {
+pub(in crate::canvas) fn plain_requested() -> bool {
     crate::fixture::is_fixture()
         && matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
             Ok("canvas-comment-reply" | "canvas-comment-reply-narrow")
         )
+}
+pub(in crate::canvas) fn rich_requested() -> bool {
+    crate::fixture::is_fixture()
+        && matches!(
+            std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
+            Ok("canvas-comment-rich-reply" | "canvas-comment-rich-reply-narrow")
+        )
+}
+pub(in crate::canvas) fn requested() -> bool {
+    plain_requested() || rich_requested() || super::super::annotation::fixture::requested()
+}
+pub(in crate::canvas) fn initial_root(shell: &ShellState) -> Option<Message> {
+    (rich_requested() && eligible(shell)).then(|| root(false))
+}
+pub(super) fn seed_rich(
+    j: &mut Journal,
+    scope: &DiskScope,
+    ts: &str,
+) -> Result<(), super_platinum_core::error::AppError> {
+    if !rich_requested() {
+        return Ok(());
+    }
+    let inventory = j.reply_inventory(scope, ts)?;
+    if rich_requested()
+        && scope.file == "Ffixture"
+        && ts == TS
+        && inventory.drafts().is_empty()
+        && inventory.attempt().is_none()
+    {
+        // Stable fixture capture: its retired tombstone prevents reseeding a sent
+        // or deliberately discarded version on a later inventory load.
+        let _=j.save_rich_reply_draft(scope,ts,None,"a615065e-a780-4622-b9b8-9335e84e2edf",vec![json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":[
+            {"type":"text","text":"Review the ","style":{"bold":true}},
+            {"type":"link","url":"https://example.invalid/plan","text":"launch plan","style":{"italic":true}},
+            {"type":"text","text":" with "},{"type":"user","user_id":"U1"},
+            {"type":"text","text":"\nKeep the exact formatting and \u{1f600}."}
+        ]}]})])?;
+    }
+    Ok(())
 }
 fn eligible(shell: &ShellState) -> bool {
     requested()
@@ -31,6 +70,9 @@ fn eligible(shell: &ShellState) -> bool {
         && shell.canvas.as_ref().is_some_and(|c| c.id == "Ffixture")
 }
 pub(super) fn path(shell: &ShellState) -> Option<PathBuf> {
+    if super::super::annotation::fixture::requested() {
+        return super::super::annotation::fixture::path(shell);
+    }
     if !eligible(shell)
         || std::env::var("SUPER_PLATINUM_CANVAS_COMMENT_REPLY_CHECK").as_deref() != Ok("1")
     {
@@ -65,6 +107,13 @@ fn root(archived: bool) -> Message {
     serde_json::from_value(json!({"type":"message","channel":"Cfixture","ts":TS,"subtype":"document_comment_root","user":"U1","text":"Review this existing Canvas comment thread.","reply_count":1,"document_comment":{"thread_id":"fixture-comment-1","is_archived":archived}})).unwrap()
 }
 pub(super) fn canonical(shell: &ShellState, binding: &Binding) -> Result<(File, Message), Error> {
+    if super::super::annotation::fixture::requested() {
+        return super::super::annotation::fixture::reply_canonical(
+            shell,
+            &binding.owner,
+            &binding.root,
+        );
+    }
     let session = session(shell)?;
     if path(shell).is_none() || !binding.owner.current(shell) {
         return Err(Error::Api("fixture_owner".into()));
@@ -93,6 +142,9 @@ pub(super) async fn execute(
     binding: &Binding,
     intent: ReplyIntent,
 ) -> Result<ReplyAccepted, CanvasEditFailure> {
+    if super::super::annotation::fixture::requested() {
+        return super::super::annotation::fixture::reply(&state.peek(), &binding.owner, intent);
+    }
     let mode = {
         let shell = state.peek();
         let session = session(&shell).map_err(CanvasEditFailure::NotSent)?;
@@ -136,7 +188,10 @@ pub(super) async fn execute(
     let raw = {
         let mut record = RECORD.get_or_init(Default::default).lock().unwrap();
         let ts = format!("171981{:04}.000100", record.messages.len() + 1);
-        let msg = json!({"type":"message","channel":"Cfixture","thread_ts":TS,"ts":ts,"user":intent.record().user(),"text":intent.record().text(),"client_msg_id":intent.record().client_msg_id()});
+        let mut msg = json!({"type":"message","channel":"Cfixture","thread_ts":TS,"ts":ts,"user":intent.record().user(),"text":intent.record().text(),"client_msg_id":intent.record().client_msg_id()});
+        if let Some(blocks) = intent.record().blocks() {
+            msg["blocks"] = json!(blocks);
+        }
         record.messages.push(msg.clone());
         json!({"ok":true,"channel":"Cfixture","ts":ts,"message":msg})
     };
@@ -150,6 +205,9 @@ pub(super) async fn execute(
         .map_err(|_| CanvasEditFailure::Uncertain(Error::Api("fixture_ack".into())))
 }
 pub(in crate::canvas) fn response(shell: &ShellState, ticket: &Ticket) -> Result<Value, Error> {
+    if super::super::annotation::fixture::requested() {
+        return super::super::annotation::fixture::response(shell, ticket);
+    }
     let session = session(shell)?;
     let mut record = RECORD.get_or_init(Default::default).lock().unwrap();
     record.requests.push(wire(super::super::request(

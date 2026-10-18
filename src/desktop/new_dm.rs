@@ -218,6 +218,8 @@ fn submit(mut state: Signal<ShellState>, mut picker: Signal<Picker>) {
     }
     // The task belongs to this component and is canceled when its dialog unmounts.
     spawn(async move {
+        let posting =
+            crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session);
         let result =
             api::open_direct_conversation(&ctx.transport, &ctx.client, &ctx.session, &recipients)
                 .await;
@@ -230,7 +232,10 @@ fn submit(mut state: Signal<ShellState>, mut picker: Signal<Picker>) {
         }
         match result {
             Ok(channel) => {
-                if finish(&mut state.write(), channel, &recipients) {
+                let observed = channel.clone();
+                let finished = finish(&mut state.write(), channel, &recipients);
+                if finished {
+                    posting.channels(&state, std::slice::from_ref(&observed));
                     drop(p);
                     dioxus::core::spawn_forever(crate::bootstrap::refresh_selected_channel(state));
                 } else {

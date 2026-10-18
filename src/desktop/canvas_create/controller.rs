@@ -274,13 +274,7 @@ pub(super) fn Observe(mut state: Signal<ShellState>, visit: String) -> Element {
                     let Some(d) = shell.canvas_create.as_mut().filter(|d| d.visit == visit) else {
                         return;
                     };
-                    d.saved = s.saved;
-                    if s.failed {
-                        d.error = Some(
-                            "Your text is retained here. Retry its local save before leaving."
-                                .into(),
-                        );
-                    }
+                    project_editor(d, &s);
                 }
                 if changed.changed().await.is_err() {
                     return;
@@ -289,6 +283,17 @@ pub(super) fn Observe(mut state: Signal<ShellState>, visit: String) -> Element {
         }
     });
     rsx! {}
+}
+
+// A capture release also notifies this observer. Keep action-specific recovery
+// guidance published by the controller; the observer supplies only a fallback.
+pub(super) fn project_editor(draft: &mut Draft, snapshot: &super::editor::Snapshot) {
+    draft.saved = snapshot.saved;
+    if snapshot.failed {
+        draft.error.get_or_insert_with(|| {
+            "Your text is retained here. Retry its local save before leaving.".into()
+        });
+    }
 }
 
 /// Return an owned result before projecting an error into this same Signal.

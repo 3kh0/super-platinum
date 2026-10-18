@@ -78,7 +78,8 @@ pub(crate) fn pending(shell: &ShellState) -> bool {
         .is_some_and(|e| e.pending.is_some())
 }
 fn competing(shell: &ShellState, owner: &Owner) -> bool {
-    photo::pending(shell)
+    recording::pending(shell)
+        || photo::pending(shell)
         || crate::profile_title::blocks_profile_writes(shell)
         || crate::self_status::blocks_profile_edit(shell)
         || shell
@@ -165,7 +166,9 @@ fn open_shell(shell: &mut ShellState, visit: u64) -> Option<(Token, u64)> {
         .as_ref()
         .filter(|d| d.visit == visit && draft_current(shell, &d.token, visit))?;
     let token = d.token.clone();
-    if photo::presentation(shell).is_some()
+    if recording::active(shell)
+        || recording::pending(shell)
+        || photo::presentation(shell).is_some()
         || competing(shell, &token.owner)
         || (shell.profile_edit.sections.entries.len() >= 16
             && !shell

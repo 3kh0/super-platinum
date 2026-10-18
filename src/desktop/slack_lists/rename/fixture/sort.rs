@@ -40,10 +40,7 @@ fn gate(flag: Option<&str>, alias: Option<&str>) -> bool {
 }
 pub(crate) fn seed_sort(shell: &ShellState, server: Value) {
     assert!(sort_check_enabled() && enabled(shell));
-    *ledger().lock().unwrap() = Ledger {
-        server: Some(server),
-        ..Default::default()
-    };
+    sort_refinement::seed(shell, server);
 }
 pub(crate) fn stale_sort_file(shell: &ShellState) -> Result<(), String> {
     if !sort_check_enabled() || !enabled(shell) {

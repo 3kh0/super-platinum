@@ -17,7 +17,9 @@ pub(crate) struct Key {
     pub revision: u64,
 }
 fn capture(s: &ShellState, key: Key, m: &BlockElementMetadata) -> Option<(Owner, Button)> {
-    if m.source != super_platinum_core::block_actions::BlockElementSource::Button {
+    if workflows::locked(s)
+        || m.source != super_platinum_core::block_actions::BlockElementSource::Button
+    {
         return None;
     }
     let h = s.app_home.surface.as_ref()?;
@@ -27,19 +29,29 @@ fn capture(s: &ShellState, key: Key, m: &BlockElementMetadata) -> Option<(Owner,
         || s.overlay.is_some()
         || h.loading
         || h.confirmation.is_some()
+        || !inputs::ready(s)
+        || h.calendar_confirmation.is_some()
         || cooling(s, &h.owner.ctx)
     {
         return None;
     }
-    let b = h
-        .view
-        .as_ref()?
-        .button(
+    let view = h.view.as_ref()?;
+    let b = if let Some(form) = inputs::form(s).filter(|f| !f.fields.is_empty()) {
+        view.button_with_form(
+            m.block_id.as_deref()?,
+            m.action_id.as_deref()?,
+            &h.owner.ctx.session.user_id,
+            form,
+        )
+        .ok()?
+    } else {
+        view.button(
             m.block_id.as_deref()?,
             m.action_id.as_deref()?,
             &h.owner.ctx.session.user_id,
         )
-        .ok()?;
+        .ok()?
+    };
     // Raw metadata remains the authority; DOM only names its owned key.
     if b.raw().get("value").and_then(serde_json::Value::as_str) != m.value.as_deref() {
         return None;
@@ -47,13 +59,22 @@ fn capture(s: &ShellState, key: Key, m: &BlockElementMetadata) -> Option<(Owner,
     if s.app_home.attempts.iter().any(|a| {
         a.owner.ctx.epoch == h.owner.ctx.epoch
             && a.owner.ctx.session.team_id == h.owner.ctx.session.team_id
-            && a.button == b
+            && a.button.same_action(&b)
     }) {
         return None;
     }
     Some((h.owner.clone(), b))
 }
 pub(crate) fn enabled(s: &ShellState, key: Key, m: &BlockElementMetadata) -> bool {
+    if workflows::enabled(s, key, m) {
+        return true;
+    }
+    if workflows::locked(s) {
+        return false;
+    }
+    if calendar::enabled(s, key, m) {
+        return true;
+    }
     capture(s, key, m).is_some()
         && s.app_home
             .attempts
@@ -63,6 +84,15 @@ pub(crate) fn enabled(s: &ShellState, key: Key, m: &BlockElementMetadata) -> boo
             < 64
 }
 pub(crate) fn click(mut state: Signal<ShellState>, key: Key, m: BlockElementMetadata) {
+    if workflows::click(state, key, &m) {
+        return;
+    }
+    if workflows::locked(&state.peek()) {
+        return;
+    }
+    if calendar::click(state, key, &m) {
+        return;
+    }
     let Some((_, button)) = capture(&state.peek(), key, &m) else {
         return;
     };
@@ -116,9 +146,11 @@ fn dispatch_current(s: &ShellState, id: u64, key: Key) -> bool {
         && h.revision == key.revision
         && !h.loading
         && h.confirmation.is_none()
+        && h.calendar_confirmation.is_none()
         && s.overlay.is_none()
         && !cooling(s, &a.owner.ctx)
         && h.view.as_ref().is_some_and(|v| a.button.same_view(v))
+        && inputs::form(s).is_none_or(|form| a.button.same_form(form))
 }
 fn launch(mut state: Signal<ShellState>, key: Key, button: Button) {
     let url = button
@@ -138,6 +170,7 @@ fn launch(mut state: Signal<ShellState>, key: Key, button: Button) {
             || h.loading
             || cooling(&s, &h.owner.ctx)
             || !h.view.as_ref().is_some_and(|v| button.same_view(v))
+            || inputs::form(&s).is_some_and(|form| !button.same_form(form))
         {
             return;
         }
@@ -148,15 +181,26 @@ fn launch(mut state: Signal<ShellState>, key: Key, button: Button) {
             .retain(|a| a.owner.ctx.epoch == owner.ctx.epoch);
         if s.app_home.attempts.len() >= 64
             || s.app_home.attempts.iter().any(|a| {
-                a.owner.ctx.session.team_id == owner.ctx.session.team_id && a.button == button
+                a.owner.ctx.session.team_id == owner.ctx.session.team_id
+                    && a.button.same_action(&button)
             })
         {
             return;
         }
         if fixture {
-            if crate::fixture::is_fixture() {
-                fixture::activate(&mut s, &button)
-            }
+            drop(s);
+            dioxus::core::spawn_forever(async move {
+                if let Some(lease) = inputs::native::lock(state, key).await {
+                    let mut s = state.write();
+                    if crate::fixture::is_fixture()
+                        && inputs::current(&s, key)
+                        && inputs::form(&s).is_some_and(|f| button.same_form(f))
+                    {
+                        fixture::activate(&mut s, &button);
+                    }
+                    let _ = lease.send(());
+                }
+            });
             return;
         }
         let Some(token) = crate::app_modal::register_action_with_context(
@@ -192,11 +236,26 @@ fn launch(mut state: Signal<ShellState>, key: Key, button: Button) {
     };
     dioxus::core::spawn_forever(async move {
         let (owner, id, token, request) = prepared;
-        if !dispatch_current(&state.peek(), id, key) {
+        let Some(native_lease) = inputs::native::lock(state, key).await else {
             let mut s = state.write();
             s.app_home.attempts.retain(|a| a.id != id);
             crate::app_modal::reject_action(&mut s, &token);
             return;
+        };
+        if !dispatch_current(&state.peek(), id, key) {
+            let _ = native_lease.send(());
+            let mut s = state.write();
+            s.app_home.attempts.retain(|a| a.id != id);
+            crate::app_modal::reject_action(&mut s, &token);
+            return;
+        }
+        // The URL side effect shares the exact final native admission.
+        if let Some(url) = url {
+            let allowed = crate::slack_links::button_url_allowed(&state.peek(), &url);
+            match allowed {
+                Ok(()) => crate::slack_links::open(state, &url),
+                Err(reason) => state.write().show_toast(reason),
+            }
         }
         let result = owner
             .ctx
@@ -204,6 +263,7 @@ fn launch(mut state: Signal<ShellState>, key: Key, button: Button) {
             .execute_block_interaction(request)
             .await
             .and_then(|r| api::decode_block_action_response(&r));
+        let _ = native_lease.send(());
         let mut s = state.write();
         if let Err(e) = &result {
             failure(&mut s, &owner.ctx, e)
@@ -236,14 +296,6 @@ fn launch(mut state: Signal<ShellState>, key: Key, button: Button) {
             s.app_home.surface.as_mut().unwrap().notice=Some(match result{Ok(api::BlockActionResponse::Accepted)=>"Action received by the app. A form or updated Home content may follow.",Ok(api::BlockActionResponse::Rejected(_))=>"The app declined this action.",Err(_) if unsent=>"The action was not sent. Wait for connectivity or the rate limit before trying again.",Err(_)=>"The app has not confirmed this action. It will not be sent again."}.into())
         }
     });
-    // Same user-requested URL order as the existing ordinary app button path.
-    if let Some(url) = url {
-        let allowed = crate::slack_links::button_url_allowed(&state.peek(), &url);
-        match allowed {
-            Ok(()) => crate::slack_links::open(state, &url),
-            Err(reason) => state.write().show_toast(reason),
-        }
-    }
 }
 fn button_view_app(b: &Button) -> String {
     b.app_id().into()

@@ -10,6 +10,7 @@ use super_platinum_core::{
     canvas::comments::{Filter, ReplyPage, StreamPage},
     slack::{Error, api, models::Message},
 };
+pub(in crate::canvas) mod annotation;
 pub(crate) mod check;
 pub(in crate::canvas) mod fixture;
 pub(in crate::canvas) mod focus;
@@ -17,6 +18,7 @@ pub(in crate::canvas) mod mutation;
 mod pages;
 mod rate;
 pub(in crate::canvas) mod reply;
+mod selection;
 use pages::Direction;
 mod view;
 pub(super) use view::Panel;
@@ -29,6 +31,7 @@ mod tests;
 pub(crate) fn carry_pending(previous: &mut ShellState, loaded: &mut ShellState) {
     reply::carry_pending(previous, loaded);
     mutation::carry_pending(previous, loaded);
+    annotation::carry_pending(previous, loaded);
 }
 
 const MAX_ROWS: usize = 200;
@@ -62,6 +65,8 @@ enum Query {
 }
 #[derive(Default)]
 pub(super) struct State {
+    selected_control: Option<selection::Pending>,
+    selected_thread: Option<selection::Selected>,
     owner: Option<Owner>,
     serial: u64,
     query: Option<Query>,
@@ -109,7 +114,25 @@ impl State {
         self.serial = self.serial.wrapping_add(1);
     }
 }
-pub(super) fn open(state: Signal<ShellState>, model: Signal<State>) {
+pub(super) fn open(state: Signal<ShellState>, mut model: Signal<State>) {
+    selection::clear(&mut model.write());
+    if model.peek().query.is_none() {
+        if let Some(root) = reply::fixture::initial_root(&state.peek()) {
+            let owner = Owner::capture(&state.peek());
+            if let Some(owner) = owner {
+                let Some(ts) = root.ts.clone() else {
+                    return;
+                };
+                {
+                    let mut value = model.write();
+                    value.owner = Some(owner);
+                    value.root = Some(root);
+                }
+                start(state, model, Query::Replies(ts), false);
+                return;
+            }
+        }
+    }
     let filter = model.peek().filter;
     start(state, model, Query::Stream(filter), false);
 }
@@ -139,6 +162,7 @@ fn begin(state: Signal<ShellState>, mut model: Signal<State>, query: Query, dire
     }
     if let Some(wait) = rate::current(&state.peek()) {
         let mut value = model.write();
+        selection::before_read(&state.peek(), &mut value, &query);
         value.rows.clear();
         value.root = None;
         value.cursor = None;
@@ -174,20 +198,9 @@ fn begin(state: Signal<ShellState>, mut model: Signal<State>, query: Query, dire
         }
         if !more {
             if let Query::Replies(root) = &query {
-                let selected = value
-                    .rows
-                    .iter()
-                    .find(|row| row.message.ts.as_ref() == Some(root))
-                    .map(|row| row.message.clone())
-                    .or_else(|| {
-                        value
-                            .root
-                            .as_ref()
-                            .filter(|message| message.ts.as_ref() == Some(root))
-                            .cloned()
-                    });
-                let Some(selected) = selected else { return };
-                value.root = Some(selected);
+                if !selection::begin_replies(&state.peek(), &mut value, root) {
+                    return;
+                }
             } else {
                 value.root = None;
             }
@@ -195,6 +208,7 @@ fn begin(state: Signal<ShellState>, mut model: Signal<State>, query: Query, dire
             value.cursor = None;
             value.pages = Default::default();
         }
+        selection::before_read(&state.peek(), &mut value, &query);
         if let Query::Stream(filter) = query {
             value.filter = filter;
         }
@@ -231,6 +245,12 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
     }
     match result {
         Ok((page, file)) => {
+            // A selected annotation remains bound to the actual numeric root
+            // through every reply read, before projection or write admission.
+            if !selection::admit_page(&state.peek(), &model.peek(), &ticket, &page) {
+                selection::refuse(&mut model.write());
+                return;
+            }
             mutation::load(state, model, &ticket).await;
             if !model.peek().accepts(&state.peek(), &ticket) {
                 return;
@@ -311,6 +331,7 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
             value.cursor = cursor;
             value.loading = false;
             value.error = None;
+            selection::accepted(&mut value, &ticket);
         }
         Err(error) => {
             let limited = matches!(error, Error::RateLimited { .. });
@@ -324,12 +345,13 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
             drop(value);
             if limited {
                 if let Some(wait) = rate::current(&state.peek()) {
-                    set_wait(state, model, ticket.owner, wait);
+                    set_wait(state, model, ticket.owner.clone(), wait);
                 }
             }
         }
     }
     mutation::after_read(state, model).await;
+    selection::after_read(state, model, &ticket);
 }
 fn set_wait(state: Signal<ShellState>, mut model: Signal<State>, owner: Owner, wait: rate::Wait) {
     match wait {
@@ -424,4 +446,5 @@ fn request(
 pub(crate) fn install_fixture(shell: &mut ShellState) {
     mutation::fixture::install(shell);
     reply::fixture::install(shell);
+    annotation::fixture::install(shell);
 }

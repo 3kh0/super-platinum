@@ -1,5 +1,7 @@
 //! Account-owned channel tab operations; no mutation replay on refresh/remount.
 pub(crate) mod fixture;
+pub(crate) mod folder;
+pub(crate) mod knowledge;
 mod owner;
 pub(crate) mod selection;
 use owner::Owner;
@@ -25,10 +27,12 @@ pub(crate) struct Root {
 }
 #[derive(Default)]
 pub(crate) struct Entry {
+    pub(crate) folder: folder::State,
     pub(crate) inventory: Option<Inventory>,
     pub(crate) permission: Option<Permission>,
     pub(crate) busy: bool,
     pub(crate) pending: Option<Intent>,
+    pub(crate) knowledge: Option<super_platinum_core::channel_tabs::KnowledgeRemoval>,
     serial: u64,
     pub(crate) notice: String,
     retry_at: Option<Instant>,
@@ -79,7 +83,11 @@ impl Visit {
     }
 }
 pub(crate) fn refresh(state: Signal<ShellState>, visit: &Visit) {
-    start(state, visit, None);
+    if entry(&state.peek()).is_some_and(|e| e.knowledge.is_some()) {
+        knowledge::start(state, visit, None, false);
+    } else {
+        start(state, visit, None);
+    }
 }
 pub(crate) fn start(
     mut state: Signal<ShellState>,
@@ -109,11 +117,11 @@ pub(crate) fn start(
     let serial = {
         let mut shell = state.write();
         let root = &mut shell.channel_tabs;
-        if root
-            .entries
-            .get(&owner.key)
-            .is_some_and(|e| e.busy || e.cooling || (intent.is_some() && e.pending.is_some()))
-        {
+        if root.entries.get(&owner.key).is_some_and(|e| {
+            e.busy
+                || e.cooling
+                || (intent.is_some() && (e.pending.is_some() || e.knowledge.is_some()))
+        }) {
             return;
         }
         if !root.entries.contains_key(&owner.key) && root.entries.len() >= 32 {
@@ -121,7 +129,9 @@ pub(crate) fn start(
             let candidate = root
                 .entries
                 .iter()
-                .find(|(_, e)| !e.busy && !e.cooling && e.pending.is_none())
+                .find(|(_, e)| {
+                    !e.busy && !e.cooling && e.pending.is_none() && e.knowledge.is_none()
+                })
                 .map(|(k, _)| k.clone());
             let Some(candidate) = candidate else {
                 return;

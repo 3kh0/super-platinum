@@ -44,6 +44,7 @@ pub(crate) struct Discovery {
     session: Session,
     registry: Arc<registry::Registry>,
     keys: Vec<DraftKey>,
+    hosted: Option<Arc<durable::Loaded>>,
     status: Status,
     generation: u64,
     load: Option<Load>,
@@ -57,6 +58,7 @@ impl Default for Discovery {
             session: Session::default(),
             registry: Arc::default(),
             keys: vec![],
+            hosted: None,
             status: Status::Inactive,
             generation: 0,
             load: None,
@@ -113,6 +115,7 @@ impl Discovery {
         // even when a replacement shell has the same account and epoch.
         self.registry = Arc::default();
         self.keys.clear();
+        self.hosted = None;
         self.load = None;
         self.status = Status::Inactive;
     }
@@ -145,6 +148,15 @@ impl Discovery {
     pub fn keys(&self, shell: &ShellState) -> Option<&[DraftKey]> {
         (self.selection(shell).is_ok() && self.status == Status::Ready)
             .then_some(self.keys.as_slice())
+    }
+    pub(crate) fn hosted(
+        &self,
+        shell: &ShellState,
+    ) -> Option<&durable::owned_store::HostedInventory> {
+        self.selection(shell).ok()?;
+        (self.status == Status::Ready)
+            .then(|| self.hosted.as_ref().map(|v| v.hosted()))
+            .flatten()
     }
     pub fn recovery(&self, shell: &ShellState) -> Option<&[durable::RecoverySummary]> {
         let selected = self.selection(shell).ok()?;
@@ -228,6 +240,7 @@ impl Discovery {
         let views = model::views(selected.account.id(), &loaded)?;
         self.session.accept_load(load.ticket, &loaded)?;
         self.keys = views.into_keys().collect();
+        self.hosted = Some(loaded);
         self.status = Status::Ready;
         Ok(())
     }

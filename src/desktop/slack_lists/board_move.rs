@@ -181,6 +181,9 @@ pub(crate) fn can_open(shell: &ShellState, instance: &str) -> bool {
         || rename::blocks_mutation(shell)
         || create::blocks_mutation(shell)
         || delete::blocks_mutation(shell)
+        || reminder::blocks_mutation(shell)
+        || completion::blocks_mutation(shell)
+        || editor::assignment::blocks_mutation(shell)
         || shell.slack_lists.operations.contains_key(&view.id)
         || cell_receipts::capacity(shell).is_err()
     {

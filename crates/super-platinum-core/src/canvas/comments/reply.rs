@@ -1,4 +1,4 @@
-//! Plain-text replies to an existing, writable Canvas comment root.
+//! Exact plain or rich replies to an existing, writable Canvas comment root.
 //! A durable record is inert; only deliberate capture creates a send intent.
 use super::*;
 use crate::slack::models::File;
@@ -18,6 +18,8 @@ pub struct ReplyRecord {
     file: String,
     root: Value,
     text: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    blocks: Option<Vec<Value>>,
     client_msg_id: String,
 }
 pub struct ReplyAccepted {
@@ -86,10 +88,26 @@ impl ReplyIntent {
             file: canonical(file, root)?,
             root: serde_json::to_value(root).map_err(|_| Invalid::Message)?,
             text: text.into(),
+            blocks: None,
             client_msg_id: client_msg_id.into(),
         };
         record.validate()?;
         Ok(Self { record })
+    }
+    pub fn capture_rich(
+        workspace: &str,
+        user: &str,
+        file: &File,
+        root: &Message,
+        blocks: Vec<Value>,
+        client_msg_id: &str,
+    ) -> Result<Self, Invalid> {
+        let text = super::content::fallback(&blocks)?;
+        let mut intent = Self::capture(workspace, user, file, root, &text, client_msg_id)?;
+        intent.record.version = 2;
+        intent.record.blocks = Some(blocks);
+        intent.record.validate()?;
+        Ok(intent)
     }
     pub fn record(&self) -> &ReplyRecord {
         &self.record
@@ -118,7 +136,10 @@ impl ReplyIntent {
             || message.ts.as_deref() != raw.get("ts").and_then(Value::as_str)
             || message.thread_ts.as_deref() != Some(self.record.root_ts())
             || message.client_msg_id.as_deref() != Some(self.record.client_msg_id())
-            || message.text.as_deref() != Some(self.record.text())
+            || match &self.record.blocks {
+                None => message.text.as_deref() != Some(self.record.text()),
+                Some(blocks) => !super::content::confirmed(blocks, &message.blocks),
+            }
         {
             return Err(Invalid::Message);
         }
@@ -130,7 +151,14 @@ impl ReplyIntent {
 }
 impl ReplyRecord {
     pub fn validate(&self) -> Result<(), Invalid> {
-        if self.version != 1
+        let content_valid = match (self.version, &self.blocks) {
+            (1, None) => true,
+            (2, Some(blocks)) => {
+                super::content::fallback(blocks).is_ok_and(|text| text == self.text)
+            }
+            _ => false,
+        };
+        if !content_valid
             || !valid_owner(&self.workspace)
             || !valid_owner(&self.user)
             || !valid_text(&self.text)
@@ -178,6 +206,9 @@ impl ReplyRecord {
     }
     pub fn text(&self) -> &str {
         &self.text
+    }
+    pub fn blocks(&self) -> Option<&[Value]> {
+        self.blocks.as_deref()
     }
     pub fn client_msg_id(&self) -> &str {
         &self.client_msg_id

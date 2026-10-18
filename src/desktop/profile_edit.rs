@@ -18,6 +18,7 @@ mod lifecycle;
 mod model;
 mod network;
 pub(crate) mod photo;
+pub(crate) mod recording;
 pub(crate) mod sections;
 use lifecycle::*;
 use model::Owner;
@@ -32,6 +33,7 @@ pub(crate) struct State {
     draft: Option<Draft>,
     photo: photo::State,
     sections: sections::State,
+    recording: recording::State,
     entries: BTreeMap<Owner, Entry>,
     pub(crate) fixture: Option<fixture::Fixture>,
 }
@@ -64,6 +66,7 @@ pub(crate) struct Presentation {
 }
 pub(crate) fn blocks_status(shell: &ShellState) -> bool {
     sections::pending(shell)
+        || recording::pending(shell)
         || photo::pending(shell)
         || Owner::capture(shell)
             .and_then(|o| shell.profile_edit.entries.get(&o))
@@ -79,8 +82,11 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
     let pending = entry.and_then(|e| e.pending.as_ref());
     let busy = pending.is_some_and(|a| a.phase != Phase::Uncertain);
     let uncertain = pending.is_some_and(|a| matches!(a.phase, Phase::Uncertain | Phase::Checking));
-    let status_conflict = sections::active(shell)
+    let status_conflict = recording::active(shell)
+        || recording::pending(shell)
+        || sections::active(shell)
         || sections::pending(shell)
+        || recording::pending(shell)
         || photo::pending(shell)
         || crate::self_status::blocks_profile_edit(shell)
         || crate::profile_title::blocks_profile_writes(shell);
@@ -187,7 +193,10 @@ pub(crate) fn close_shell(shell: &mut ShellState) {
     close_visit(shell, None);
 }
 fn close_visit(shell: &mut ShellState, visit: Option<u64>) {
-    if sections::intercept_close(shell, visit) || photo::intercept_close(shell, visit) {
+    if recording::intercept_close(shell, visit)
+        || sections::intercept_close(shell, visit)
+        || photo::intercept_close(shell, visit)
+    {
         return;
     }
     let Some(draft) = shell.profile_edit.draft.as_ref() else {
@@ -285,7 +294,7 @@ pub(crate) fn reload(mut state: Signal<ShellState>, visit: u64) {
     }
 }
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
-    let photo_changed = sections::poll(shell) | photo::poll(shell);
+    let photo_changed = recording::poll(shell) | sections::poll(shell) | photo::poll(shell);
     let stale = shell
         .profile_edit
         .draft

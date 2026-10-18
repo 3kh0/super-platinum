@@ -20,6 +20,13 @@ pub(super) use presentation::{Child, project_children, project_reason};
 pub(crate) use presentation::{children, presentation, reason};
 pub(crate) use registry::Stage;
 use registry::{Entry, Key, entry, with};
+pub(super) fn blocks_target(scope: &Scope, list: &str) -> bool {
+    let key = Key {
+        owner: scope.stable_owner(),
+        list: list.into(),
+    };
+    with(|r| r.entries.contains_key(&key))
+}
 pub(crate) fn blocks(shell: &ShellState) -> bool {
     Key::current(shell).is_some_and(|k| with(|r| r.entries.contains_key(&k)))
 }
@@ -47,6 +54,9 @@ fn available(shell: &ShellState, checking: bool) -> bool {
         && v.retry_at <= now()
         && !blocked(shell)
         && !delete::blocks_mutation(shell)
+        && !reminder::blocks_mutation(shell)
+        && !completion::blocks_mutation(shell)
+        && !editor::assignment::blocks_mutation(shell)
         && !rename::blocks_mutation(shell)
         && !create::legacy_blocks_mutation(shell)
         && !shell.slack_lists.operations.contains_key(&v.id)
@@ -480,4 +490,9 @@ pub(crate) fn selection_stamp(shell: &ShellState) -> Option<u64> {
         .view
         .as_ref()
         .map(|v| v.layout.selection_generation)
+}
+
+#[cfg(test)]
+pub(super) fn completion_test_available(shell: &ShellState) -> bool {
+    available(shell, false)
 }

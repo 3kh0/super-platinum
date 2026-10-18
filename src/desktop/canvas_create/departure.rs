@@ -22,6 +22,7 @@ pub(crate) enum Destination {
     Canvas(CanvasTarget),
     File(Box<File>),
     SlackLink(String),
+    AppHome(super_platinum_core::block_actions::home::navigation::Target),
     SignIn,
     SwitchAccount(String),
     RemoveAccount(String),
@@ -184,6 +185,7 @@ impl Continuation {
             Destination::Canvas(target) => crate::canvas::open_target(state, target),
             Destination::File(file) => crate::files::open(state, *file),
             Destination::SlackLink(input) => crate::slack_links::open(state, &input),
+            Destination::AppHome(target) => crate::app_home::navigation::open(state, target),
             Destination::Later(key) => crate::later::open(state, key),
             Destination::Pinned { channel, message } => crate::pins::open(state, channel, *message),
             Destination::Message { channel, ts } => {

@@ -281,4 +281,5 @@ pub(crate) use owned_attempt::RegisteredMutation;
 #[cfg(test)]
 mod owned_route_fixture;
 
+mod hosted;
 mod slash;

@@ -171,16 +171,20 @@ mod tests {
     struct Owned(PathBuf);
     impl Owned {
         fn new() -> Self {
-            let root = std::env::temp_dir().join(format!(
-                "precision-marker-test-{}-{}",
-                std::process::id(),
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos()
-            ));
-            std::fs::create_dir(&root).unwrap();
-            Self(root)
+            use std::sync::atomic::{AtomicU64, Ordering};
+            static NEXT: AtomicU64 = AtomicU64::new(0);
+            loop {
+                let root = std::env::temp_dir().join(format!(
+                    "number-rename-marker-test-{}-{}",
+                    std::process::id(),
+                    NEXT.fetch_add(1, Ordering::Relaxed)
+                ));
+                match std::fs::create_dir(&root) {
+                    Ok(()) => return Self(root),
+                    Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                    Err(error) => panic!("Cannot create owned test directory: {error}"),
+                }
+            }
         }
         fn write(&self, name: &str, value: &Value) {
             std::fs::write(self.0.join(name), serde_json::to_vec(value).unwrap()).unwrap();

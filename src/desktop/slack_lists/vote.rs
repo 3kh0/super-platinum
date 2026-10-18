@@ -79,6 +79,9 @@ pub(super) fn begin(
     if rename::blocks_mutation(shell)
         || create::blocks_mutation(shell)
         || delete::blocks_mutation(shell)
+        || reminder::blocks_mutation(shell)
+        || completion::blocks_mutation(shell)
+        || editor::assignment::blocks_mutation(shell)
         || shell.slack_lists.operations.contains_key(&view.id)
         || view.editor.is_some()
     {
@@ -106,6 +109,7 @@ pub(super) fn begin(
     )
     .map_err(|_| "Your vote or access changed. Refresh before trying again.")?;
     let attempt = EditAttempt {
+        date_policy: None,
         selection_generation: view.layout.selection_generation,
         authority,
         scope,

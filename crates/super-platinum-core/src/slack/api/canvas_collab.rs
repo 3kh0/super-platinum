@@ -6,6 +6,8 @@ use crate::canvas::wire::{self, EncodedField, LoadDataResponse, RawMessage, Sect
 use serde_json::Value;
 use std::collections::HashSet;
 
+mod annotation;
+pub use annotation::{canvas_annotation, execute_canvas_annotation};
 mod edit;
 mod replacement_edit;
 mod structure_edit;

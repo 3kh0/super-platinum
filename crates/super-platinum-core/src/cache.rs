@@ -44,6 +44,7 @@ struct CachedSidebar {
 
 #[derive(serde::Serialize)]
 struct CachedSidebarRef<'a> {
+    posting_external_teams: serde_json::Value,
     locale: Option<&'a str>,
     team_plan: Option<&'a str>,
     deleted_files: &'a std::collections::HashSet<String>,
@@ -191,6 +192,7 @@ impl Cache {
             self_user_id,
             locale: None,
             team_plan: None,
+            posting_metadata: Default::default(),
             activity_unread_count: None,
             activity_counts: Default::default(),
             dock_counts: Default::default(),
@@ -225,6 +227,20 @@ impl Cache {
             channel_lifecycle: Default::default(),
         };
 
+        // Restore only positive routing history. Runtime authority stays absent.
+        // Malformed stored data cannot silently become a known empty store.
+        match sidebar
+            .as_deref()
+            .map(serde_json::from_str::<serde_json::Value>)
+        {
+            None => ws.posting_metadata.restore_cached_external_teams(None),
+            Some(Ok(value)) if value.is_object() => ws
+                .posting_metadata
+                .restore_cached_external_teams(value.get("posting_external_teams")),
+            _ => ws
+                .posting_metadata
+                .restore_cached_external_teams(Some(&serde_json::Value::Null)),
+        }
         if let Some(sidebar) = sidebar
             .as_deref()
             .and_then(|json| serde_json::from_str::<CachedSidebar>(json).ok())
@@ -349,6 +365,7 @@ impl Cache {
                 serde_json::to_string(&ws.recent_channels)?,
                 serde_json::to_string(&ws.frecency)?,
                 serde_json::to_string(&CachedSidebarRef {
+                    posting_external_teams: ws.posting_metadata.cached_external_teams(),
                     locale: ws.locale.as_deref(),
                     team_plan: ws.team_plan.as_deref(),
                     deleted_files: &ws.deleted_files,
@@ -578,6 +595,60 @@ mod tests {
             name: "Test".into(),
             url: "https://test.slack.com".into(),
             token: "xoxc-test".into(),
+        }
+    }
+
+    #[test]
+    fn external_positive_cache_roundtrip_survives_metadata_snapshot_without_authority() {
+        let cache = Cache::open(":memory:").unwrap();
+        let session = session();
+        let mut workspace = Workspace::from_session(&session);
+        let history = serde_json::json!({"version":1,"saved":{"state":"positive","owner":{"team":"T1","user":"U_SELF"},"ids":["T9"]}});
+        workspace
+            .posting_metadata
+            .restore_cached_external_teams(Some(&history));
+        WorkspaceSnapshot::metadata(&workspace)
+            .save(&cache)
+            .unwrap();
+        for loaded in [
+            cache.load_workspace(&session).unwrap().unwrap(),
+            cache.load_workspace_for_startup(&session).unwrap().unwrap(),
+        ] {
+            assert_eq!(loaded.posting_metadata.cached_external_teams(), history);
+        }
+        let mut different = session.clone();
+        different.team_id = "T2".into();
+        assert!(cache.load_workspace(&different).unwrap().is_none());
+    }
+
+    #[test]
+    fn legacy_external_cache_is_empty_while_malformed_existing_history_remains_invalid() {
+        let cache = Cache::open(":memory:").unwrap();
+        let session = session();
+        cache
+            .save_workspace(&Workspace::from_session(&session))
+            .unwrap();
+        for (sidebar, expected) in [
+            (r#"{}"#, "uninitialized"),
+            (r#"{"posting_external_teams":null}"#, "invalid"),
+            (
+                r#"{"posting_external_teams":{"version":99,"saved":{"state":"uninitialized"}}}"#,
+                "invalid",
+            ),
+            ("broken json", "invalid"),
+        ] {
+            cache
+                .conn
+                .execute(
+                    "update workspaces set sidebar = ?1 where team_id = ?2",
+                    params![sidebar, session.team_id],
+                )
+                .unwrap();
+            let loaded = cache.load_workspace(&session).unwrap().unwrap();
+            assert_eq!(
+                loaded.posting_metadata.cached_external_teams()["saved"]["state"],
+                expected
+            );
         }
     }
 

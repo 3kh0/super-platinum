@@ -10,7 +10,7 @@ pub(crate) struct CanvasRoute {
 }
 impl CanvasRoute {
     pub fn capture(base: &Inventory, id: &str) -> Option<Self> {
-        let row = base.canvas(id).ok()?;
+        let row = base.canvas_record(id).ok()?;
         Some(Self {
             tab: id.into(),
             file: super_platinum_core::channel_tabs::file_id(row)?.into(),
@@ -24,19 +24,24 @@ impl CanvasRoute {
 pub(crate) enum Route {
     Resource(ChannelTab),
     Canvas(CanvasRoute),
+    Folder(super_platinum_core::channel_tabs::folder::Folder),
 }
 impl Route {
     pub fn tab(&self) -> ChannelTab {
         match self {
             Self::Resource(tab) => *tab,
             Self::Canvas(_) => ChannelTab::Canvas,
+            Self::Folder(_) => ChannelTab::Bookmarks,
         }
     }
     fn valid(&self, shell: &ShellState) -> bool {
         match self {
-            Self::Resource(ChannelTab::AppHome) => crate::app_home::eligible(shell),
+            Self::Resource(ChannelTab::AppHome | ChannelTab::AppAbout) => {
+                crate::app_home::eligible(shell)
+            }
             Self::Resource(tab) => *tab != ChannelTab::Canvas,
             Self::Canvas(route) => inventory(shell).is_some_and(|base| route.current(&base)),
+            Self::Folder(route) => inventory(shell).is_some_and(|base| route.current(&base)),
         }
     }
 }
@@ -71,18 +76,30 @@ pub(crate) fn can_mutate(shell: &ShellState, action: &Action) -> bool {
 }
 pub(crate) fn removal_pending(shell: &ShellState) -> bool {
     selected_identity(shell).is_some_and(|route| {
-        entry(shell)
-            .and_then(|e| e.pending.as_ref())
-            .is_some_and(|i| matches!(i.action(),Action::Remove{id} if id==&route.tab))
+        entry(shell).is_some_and(|e| {
+            e.pending
+                .as_ref()
+                .is_some_and(|i| matches!(i.action(),Action::Remove{id} if id==&route.tab))
+                || e.knowledge.as_ref().is_some_and(|i| i.id() == route.tab)
+        })
     })
 }
 
 pub(crate) fn current(shell: &ShellState) -> Option<Route> {
-    if shell.channel_tab != ChannelTab::Canvas {
+    if shell.channel_tab != ChannelTab::Canvas && !folder_selected(shell) {
         return Some(Route::Resource(shell.channel_tab));
     }
     let h = shell.channel_tabs.navigation.entries.get(&key(shell)?)?;
     h.routes.get(h.index).filter(|r| r.valid(shell)).cloned()
+}
+pub(crate) fn folder_selected(shell: &ShellState) -> bool {
+    if shell.channel_tab != ChannelTab::Bookmarks {
+        return false;
+    }
+    key(shell)
+        .and_then(|key| shell.channel_tabs.navigation.entries.get(&key))
+        .and_then(|h| h.routes.get(h.index))
+        .is_some_and(|r| matches!(r, Route::Folder(_)))
 }
 pub(crate) fn target(shell: &ShellState) -> Option<CanvasTarget> {
     let Route::Canvas(route) = current(shell)? else {
@@ -96,7 +113,7 @@ pub(crate) fn target(shell: &ShellState) -> Option<CanvasTarget> {
         return None;
     }
     let base = inventory(shell)?;
-    let label = super_platinum_core::channel_tabs::label(base.canvas(&route.tab).ok()?);
+    let label = super_platinum_core::channel_tabs::label(base.canvas_record(&route.tab).ok()?);
     Some(CanvasTarget {
         id: route.file,
         title: if label.is_empty() {
@@ -210,10 +227,16 @@ pub(crate) fn open(state: Signal<ShellState>, visit: &Visit, base: Inventory, id
     if !visit.current(&state.peek()) || inventory(&state.peek()).as_ref() != Some(&base) {
         return;
     }
-    let Some(route) = CanvasRoute::capture(&base, &id) else {
-        return;
-    };
-    crate::channel_resources::select_route(state, Route::Canvas(route), Some(visit.clone()), None);
+    let route = CanvasRoute::capture(&base, &id)
+        .map(Route::Canvas)
+        .or_else(|| {
+            super_platinum_core::channel_tabs::folder::Folder::capture(&base, &id)
+                .ok()
+                .map(Route::Folder)
+        });
+    if let Some(route) = route {
+        crate::channel_resources::select_route(state, route, Some(visit.clone()), None);
+    }
 }
 
 /// Auto-selection is a consequence of this visit's just-confirmed Add only.
@@ -231,18 +254,22 @@ pub(super) fn confirmed_added(
     {
         return None;
     }
-    let Action::AddCanvas { file, .. } = intent.action() else {
-        return None;
-    };
-    current
-        .rows()
-        .iter()
-        .find(|row| {
-            file_id(row) == Some(file.as_str())
-                && id(row).is_some_and(|id| intent.base().row(id).is_none())
-        })
-        .and_then(id)
-        .map(str::to_owned)
+    let candidate = current.rows().iter().find(|row| {
+        let identity = match intent.action() {
+            Action::AddCanvas { file, .. } => file_id(row) == Some(file.as_str()),
+            Action::AddFolder { .. } => {
+                row["type"] == "folder"
+                    && intent.created_folder().is_some_and(|bookmark| {
+                        row.pointer("/data/folder_bookmark_id")
+                            .and_then(serde_json::Value::as_str)
+                            == Some(bookmark)
+                    })
+            }
+            _ => false,
+        };
+        identity && id(row).is_some_and(|id| intent.base().row(id).is_none())
+    });
+    candidate.and_then(id).map(str::to_owned)
 }
 
 #[cfg(test)]

@@ -23,6 +23,7 @@ fn render(mut state: Signal<ShellState>, id: u64) -> Element {
     };
     let c = Presentation::capture(calendar);
     let owned = current(&s, id);
+    let navigating = crate::app_home::navigation::pending_id(&s).is_some();
     let editing = editable(&s, id);
     let rate_limited = cooling(&s, &d.owner.ctx);
     let share_unavailable = editing
@@ -37,8 +38,8 @@ fn render(mut state: Signal<ShellState>, id: u64) -> Element {
     drop(s);
     rsx! {
         div{class:"scrim",onclick:move |_|close(&mut state.write(),id,false)}
-        section{id:"app-shortcut-dialog",class:"modal app-modal calendar-shortcut-dialog",role:"dialog","aria-modal":"true","aria-label":"Create event","data-keyboard-dialog":"true","data-dialog-generation":id,"data-dialog-kind":"other",tabindex:"-1",
-            onmounted:move |_|{dioxus::document::eval(&include_str!("../focus.js").replace("__OWNER__",&id.to_string()));},
+        section{id:"app-shortcut-dialog",class:"modal app-modal calendar-shortcut-dialog",role:"dialog","aria-modal":"true","aria-label":"Create event","data-keyboard-dialog":"true","data-dialog-generation":id,"data-dialog-kind":"other","data-calendar-editing":editing,"data-calendar-ready":ready,tabindex:"-1",
+            onmounted:move |_|{dioxus::document::eval(&format!("{}\ninstallCalendarAdmission({id});\n{}",include_str!("native.js"),include_str!("../focus.js").replace("__OWNER__",&id.to_string())));},
             onkeydown:move |e|{if e.key()==Key::Escape{e.stop_propagation();close(&mut state.write(),id,false);}},
             header{h2{"Create event"}button{id:"app-shortcut-close",title:"Close","aria-label":"Close",onclick:move |_|close(&mut state.write(),id,false),{crate::icons::icon(crate::icons::Icon::Close,"icon")}}}
             div{class:"app-modal-body",
@@ -51,6 +52,7 @@ fn render(mut state: Signal<ShellState>, id: u64) -> Element {
                     if let Some(url)=c.auth_url.clone(){button{class:"primary",disabled:!owned,onclick:move |_|external(&state.peek(),id,&url),"Connect calendar"}}
                 }
                 if c.account.is_some() && stage!=Stage::Loading{
+                    fieldset{id:"calendar-fields",style:"border:0;margin:0;padding:0;min-width:0",disabled:!editing,"data-calendar-enabled":editing,
                     div{class:"app-modal-field",label{class:"app-modal-label",r#for:"calendar-title","Title ",span{class:"app-modal-required","(optional)"}}
                         input{id:"calendar-title",initial_value:"{c.title}",disabled:!editing,autocomplete:"off",oninput:move |e|actions::edit(state,id,Field::Title,e.value())}}
                     div{class:"app-modal-field",label{class:"app-modal-label",r#for:"calendar-guest-query","Guests ",span{class:"app-modal-required","(optional)"}}
@@ -73,7 +75,7 @@ fn render(mut state: Signal<ShellState>, id: u64) -> Element {
                     }
                     div{class:"calendar-time-fields",
                         div{class:"app-modal-field",label{class:"app-modal-label",r#for:"calendar-date","Date"}
-                            input{id:"calendar-date",r#type:"date",value:"{c.date}",disabled:!editing,oninput:move |e|actions::edit(state,id,Field::Date,e.value())}}
+                            input{id:"calendar-date",r#type:"date",initial_value:"{c.date}",disabled:!editing,oninput:move |e|actions::edit(state,id,Field::Date,e.value())}}
                         div{class:"app-modal-field",label{class:"app-modal-label",r#for:"calendar-mode","Time selection"}
                             select{id:"calendar-mode",value:if c.custom{"custom"}else{"suggested"},disabled:!editing,onchange:move |e|actions::mode(state,id,e.value()=="custom"),option{value:"suggested","Suggested times"}option{value:"custom","Custom time"}}}
                     }
@@ -97,11 +99,12 @@ fn render(mut state: Signal<ShellState>, id: u64) -> Element {
                                 for slot in c.slots.clone(){option{key:"{slot.start}",value:"{slot.start}","{cal::time::label(slot.start)}"}}
                             }
                         }
-                        div{class:"calendar-time-fields",
-                            div{class:"app-modal-field",label{class:"app-modal-label",r#for:"calendar-start","Start time"}input{id:"calendar-start",r#type:"time",value:"{c.start_text}",disabled:!editing,oninput:move |e|actions::edit(state,id,Field::Start,e.value())}}
-                            div{class:"app-modal-field",label{class:"app-modal-label",r#for:"calendar-end","End time"}input{id:"calendar-end",r#type:"time",value:"{c.end_text}",disabled:!editing,oninput:move |e|actions::edit(state,id,Field::End,e.value())}}
+                        for revision in [c.time_revision] {
+                        div{key:"time-{revision}",class:"calendar-time-fields",
+                            div{class:"app-modal-field",label{class:"app-modal-label",r#for:"calendar-start","Start time"}input{id:"calendar-start",r#type:"time",initial_value:"{c.start_text}",disabled:!editing,oninput:move |e|actions::edit(state,id,Field::Start,e.value())}}
+                            div{class:"app-modal-field",label{class:"app-modal-label",r#for:"calendar-end","End time"}input{id:"calendar-end",r#type:"time",initial_value:"{c.end_text}",disabled:!editing,oninput:move |e|actions::edit(state,id,Field::End,e.value())}}
                         }
-                    }
+                    }}
                     if c.slot_loading{p{role:"status","Fetching availability…"}}
                     if let Some(notice)=c.slot_notice.clone(){p{role:"status","{notice}"}}
                     if c.start.zip(c.end).is_some_and(|(a,b)|a>=b){p{role:"alert","End time must be later than start time."}}
@@ -117,7 +120,7 @@ fn render(mut state: Signal<ShellState>, id: u64) -> Element {
                         textarea{id:"calendar-description",initial_value:"{c.description}",disabled:!editing,oninput:move |e|actions::edit(state,id,Field::Description,e.value())}}
                     if !modern{
                         div{class:"app-modal-field",
-                            label{class:"app-modal-option",input{r#type:"checkbox",checked:c.share,disabled:!editing||c.preference_pending.is_some(),onchange:move |e|actions::share(state,id,e.checked())}span{"Share this meeting"}}
+                            label{class:"app-modal-option",input{id:"calendar-share",r#type:"checkbox",checked:c.share,disabled:!editing||c.preference_pending.is_some(),onchange:move |e|actions::share(state,id,e.checked())}span{"Share this meeting"}}
                             label{class:"app-modal-label",r#for:"calendar-share-query","Find conversation"}
                             input{id:"calendar-share-query",initial_value:"{c.share_query}",disabled:!editing||!c.share,oninput:move |e|actions::share_query(state,id,e.value())}
                             if c.share_loading{p{role:"status","Searching conversations..."}}
@@ -128,8 +131,11 @@ fn render(mut state: Signal<ShellState>, id: u64) -> Element {
                         }
                     }
                 }
+                }
                 if let Some(notice)=c.notice.clone(){p{role:"status","{notice}"}}
                 if stage==Stage::Created{if let Some(url)=c.provider_link.clone(){button{disabled:!owned,onclick:move |_|external(&state.peek(),id,&url),"Open event in calendar"}}}
+                if stage==Stage::Created && c.app_link.is_some(){button{disabled:!owned||navigating,onclick:move |_|navigation::app_home(state,id),"Open app Home"}}
+                if stage==Stage::Created{{crate::app_home::navigation::status(state)}}
                 if c.confirm_close{div{role:"alert",p{"Discard this event draft? Any conference already created will remain."}button{onclick:move |_|{if let Some(c)=active_mut(&mut state.write(),id){c.confirm_close=false;}},"Keep editing"}button{onclick:move |_|close(&mut state.write(),id,true),"Discard draft"}}}
             }
             footer{button{onclick:move |_|close(&mut state.write(),id,false),if stage==Stage::Editing{"Cancel"}else{"Close"}}span{class:"spacer"}
@@ -161,6 +167,7 @@ struct Presentation {
     duration: u16,
     start: Option<i64>,
     end: Option<i64>,
+    time_revision: u64,
     start_text: String,
     end_text: String,
     slots: Vec<SlotOption>,
@@ -178,6 +185,7 @@ struct Presentation {
     preference_pending: Option<u64>,
     notice: Option<String>,
     provider_link: Option<String>,
+    app_link: Option<String>,
     confirm_close: bool,
 }
 #[derive(Clone, Copy)]
@@ -224,6 +232,7 @@ impl Presentation {
             duration: c.duration,
             start: c.start,
             end: c.end,
+            time_revision: c.time_revision,
             start_text: c.start_text.clone(),
             end_text: c.end_text.clone(),
             slots: c
@@ -249,6 +258,7 @@ impl Presentation {
             preference_pending: c.preference_pending,
             notice: c.notice.clone(),
             provider_link: c.provider_link.clone(),
+            app_link: c.app_link.clone(),
             confirm_close: c.confirm_close,
         }
     }

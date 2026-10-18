@@ -28,6 +28,14 @@ pub(crate) struct Owner {
 impl Owner {
     pub fn capture(shell: &ShellState, draft: &str) -> Option<Self> {
         if crate::fixture::is_fixture() {
+            if crate::forward::scheduled::fixture::owns_draft(shell, draft) {
+                return Some(Self {
+                    account: crate::forward::scheduled::fixture::ACCOUNT.into(),
+                    team: "T1".into(),
+                    user: "U00000001".into(),
+                    draft: draft.into(),
+                });
+            }
             return fixture::owner(shell, draft);
         }
         let account = shell.core.active_account.clone()?;

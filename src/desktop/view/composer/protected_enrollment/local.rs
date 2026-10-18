@@ -5,18 +5,33 @@ use super_platinum_core::drafts::LocalDraft;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(in crate::view::composer) enum Policy {
     Plain,
+    Hosted,
     Baseline,
 }
 impl Policy {
     pub(in crate::view::composer) fn admits(self, local: &LocalDraft) -> bool {
         match self {
-            Self::Plain => local.attachments.is_empty(),
+            Self::Plain | Self::Hosted => local.attachments.is_empty(),
             Self::Baseline => local.attachments.iter().all(|a| {
                 !a.uploading
                     && a.upload_started.is_none()
                     && a.upload_cancel.is_none()
                     && a.upload_progress.is_none()
             }),
+        }
+    }
+    pub(in crate::view::composer) fn present(
+        self,
+        saved: Option<&LocalDraft>,
+        expected: &LocalDraft,
+    ) -> bool {
+        match saved {
+            Some(saved) => self.same(saved, expected),
+            None => {
+                self == Self::Hosted
+                    && expected.composer == Default::default()
+                    && expected.attachments.is_empty()
+            }
         }
     }
     pub(in crate::view::composer) fn same(self, a: &LocalDraft, b: &LocalDraft) -> bool {

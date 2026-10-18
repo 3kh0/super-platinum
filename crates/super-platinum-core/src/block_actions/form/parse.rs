@@ -235,7 +235,7 @@ fn find_stateful(value: &Value, unsupported: &mut Vec<String>) {
     }
 }
 
-fn input(
+pub(super) fn input(
     element: &Value,
     ordinary_modal: bool,
     origin_conversation: Option<&str>,

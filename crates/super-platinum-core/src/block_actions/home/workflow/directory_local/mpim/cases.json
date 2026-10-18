@@ -1,0 +1,1989 @@
+[
+  {
+    "label": "named before member-list requirement",
+    "raw_query": "launch",
+    "normalized_query": "launch",
+    "matcher_query": "launch",
+    "subqueries": [
+      "launch"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "name": "Launch Group",
+        "properties": {
+          "has_custom_mpdm_name": true
+        }
+      }
+    ],
+    "named_norm": {
+      "G1": "launch group"
+    },
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": false,
+        "passthrough": false,
+        "by_member": null,
+        "subqueries": null
+      }
+    ]
+  },
+  {
+    "label": "named disabled cannot bypass missing members",
+    "raw_query": "launch",
+    "normalized_query": "launch",
+    "matcher_query": "launch",
+    "subqueries": [
+      "launch"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "name": "Launch Group",
+        "properties": {
+          "has_custom_mpdm_name": true
+        }
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "external named off",
+    "raw_query": "launch",
+    "normalized_query": "launch",
+    "matcher_query": "launch",
+    "subqueries": [
+      "launch"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "is_ext_shared": true,
+        "name": "Launch Group",
+        "properties": {
+          "has_custom_mpdm_name": true
+        }
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "external named on",
+    "raw_query": "launch",
+    "normalized_query": "launch",
+    "matcher_query": "launch",
+    "subqueries": [
+      "launch"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "is_ext_shared": true,
+        "name": "Launch Group",
+        "properties": {
+          "has_custom_mpdm_name": true
+        }
+      }
+    ],
+    "named_norm": {
+      "G1": "launch group"
+    },
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": false,
+        "passthrough": false,
+        "by_member": null,
+        "subqueries": null
+      }
+    ]
+  },
+  {
+    "label": "two members satisfy two pieces",
+    "raw_query": "alice bob",
+    "normalized_query": "alice bob",
+    "matcher_query": "alice bob",
+    "subqueries": [
+      "alice",
+      "bob"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": null,
+        "passthrough": false,
+        "by_member": {
+          "UA": {
+            "score_details": {
+              "real_name": 0
+            }
+          },
+          "UB": {
+            "score_details": {
+              "real_name": 0
+            }
+          }
+        },
+        "subqueries": [
+          [
+            {
+              "id": "UA",
+              "score": 0
+            },
+            {
+              "id": "UB",
+              "score": null
+            }
+          ],
+          [
+            {
+              "id": "UA",
+              "score": null
+            },
+            {
+              "id": "UB",
+              "score": 0
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "label": "reverse group query",
+    "raw_query": "bob|alice",
+    "normalized_query": "bob|alice",
+    "matcher_query": "bob|alice",
+    "subqueries": [
+      "bob",
+      "alice"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": null,
+        "passthrough": false,
+        "by_member": {
+          "UB": {
+            "score_details": {
+              "real_name": 0
+            }
+          },
+          "UA": {
+            "score_details": {
+              "real_name": 0
+            }
+          }
+        },
+        "subqueries": [
+          [
+            {
+              "id": "UA",
+              "score": null
+            },
+            {
+              "id": "UB",
+              "score": 0
+            }
+          ],
+          [
+            {
+              "id": "UA",
+              "score": 0
+            },
+            {
+              "id": "UB",
+              "score": null
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "label": "one leading at stripped",
+    "raw_query": "@alice, @bob",
+    "normalized_query": "@alice, @bob",
+    "matcher_query": "@alice, @bob",
+    "subqueries": [
+      "alice",
+      "bob"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": null,
+        "passthrough": false,
+        "by_member": {
+          "UA": {
+            "score_details": {
+              "real_name": 0
+            }
+          },
+          "UB": {
+            "score_details": {
+              "real_name": 0
+            }
+          }
+        },
+        "subqueries": [
+          [
+            {
+              "id": "UA",
+              "score": 0
+            },
+            {
+              "id": "UB",
+              "score": null
+            }
+          ],
+          [
+            {
+              "id": "UA",
+              "score": null
+            },
+            {
+              "id": "UB",
+              "score": 0
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "label": "one piece remains unmatched",
+    "raw_query": "alice absent",
+    "normalized_query": "alice absent",
+    "matcher_query": "alice absent",
+    "subqueries": [
+      "alice",
+      "absent"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "self excluded",
+    "raw_query": "self",
+    "normalized_query": "self",
+    "matcher_query": "self",
+    "subqueries": [
+      "self"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "US"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "unknown excluded",
+    "raw_query": "alice",
+    "normalized_query": "alice",
+    "matcher_query": "alice",
+    "subqueries": [
+      "alice"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UX",
+          "missing"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "sum all finite peers not only query winner",
+    "raw_query": "anna",
+    "normalized_query": "anna",
+    "matcher_query": "anna",
+    "subqueries": [
+      "anna"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UZ",
+          "UY"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 2,
+        "exact": null,
+        "passthrough": false,
+        "by_member": {
+          "UZ": {
+            "score_details": {
+              "real_name": 1
+            }
+          },
+          "UY": {
+            "score_details": {
+              "real_name": 1
+            }
+          }
+        },
+        "subqueries": [
+          [
+            {
+              "id": "UZ",
+              "score": 1
+            },
+            {
+              "id": "UY",
+              "score": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "label": "sum four finite peers exceeds fuzzy limit",
+    "raw_query": "anna",
+    "normalized_query": "anna",
+    "matcher_query": "anna",
+    "subqueries": [
+      "anna"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UZ",
+          "UY",
+          "UW",
+          "UV"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "duplicate peer rows retained but score map unique",
+    "raw_query": "anna",
+    "normalized_query": "anna",
+    "matcher_query": "anna",
+    "subqueries": [
+      "anna"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UZ",
+          "UZ"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 1,
+        "exact": null,
+        "passthrough": false,
+        "by_member": {
+          "UZ": {
+            "score_details": {
+              "real_name": 1
+            }
+          }
+        },
+        "subqueries": [
+          [
+            {
+              "id": "UZ",
+              "score": 1
+            },
+            {
+              "id": "UZ",
+              "score": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "label": "at only is empty submatcher not no submatchers",
+    "raw_query": "@",
+    "normalized_query": "@",
+    "matcher_query": "@",
+    "subqueries": [
+      ""
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": []
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "delimiter only gives zero submatchers",
+    "raw_query": ",",
+    "normalized_query": ",",
+    "matcher_query": ",",
+    "subqueries": [],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": []
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": null,
+        "passthrough": false,
+        "by_member": {},
+        "subqueries": []
+      }
+    ]
+  },
+  {
+    "label": "missing member list refuses raw G",
+    "raw_query": "G1",
+    "normalized_query": "g1",
+    "matcher_query": "g1",
+    "subqueries": [
+      "g1"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "empty actual member list permits raw G",
+    "raw_query": "G1",
+    "normalized_query": "g1",
+    "matcher_query": "g1",
+    "subqueries": [
+      "g1"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": []
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": null,
+        "passthrough": false,
+        "by_member": null,
+        "subqueries": null
+      }
+    ]
+  },
+  {
+    "label": "raw G case sensitive",
+    "raw_query": "g1",
+    "normalized_query": "g1",
+    "matcher_query": "g1",
+    "subqueries": [
+      "g1"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": []
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "generic server G passthrough only",
+    "raw_query": "absent",
+    "normalized_query": "absent",
+    "matcher_query": "absent",
+    "subqueries": [
+      "absent"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": []
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [
+      "G1"
+    ],
+    "passthrough": true,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 2,
+        "exact": null,
+        "passthrough": true,
+        "by_member": {},
+        "subqueries": [
+          []
+        ]
+      }
+    ]
+  },
+  {
+    "label": "workflow has no remote G passthrough",
+    "raw_query": "absent",
+    "normalized_query": "absent",
+    "matcher_query": "absent",
+    "subqueries": [
+      "absent"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": []
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "name failure falls back to peers",
+    "raw_query": "alice",
+    "normalized_query": "alice",
+    "matcher_query": "alice",
+    "subqueries": [
+      "alice"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UA"
+        ],
+        "name": "Launch Group",
+        "properties": {
+          "has_custom_mpdm_name": true
+        }
+      }
+    ],
+    "named_norm": {
+      "G1": "launch group"
+    },
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": null,
+        "passthrough": false,
+        "by_member": {
+          "UA": {
+            "score_details": {
+              "real_name": 0
+            }
+          }
+        },
+        "subqueries": [
+          [
+            {
+              "id": "UA",
+              "score": 0
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "label": "named exact ignores member exact avoidance",
+    "raw_query": "Launch Group",
+    "normalized_query": "launch group",
+    "matcher_query": "launch group",
+    "subqueries": [
+      "launch",
+      "group"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [],
+        "name": "Launch Group",
+        "properties": {
+          "has_custom_mpdm_name": true
+        }
+      }
+    ],
+    "named_norm": {
+      "G1": "launch group"
+    },
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": true,
+        "passthrough": false,
+        "by_member": null,
+        "subqueries": null
+      }
+    ]
+  },
+  {
+    "label": "unknown group skips name but uses actual members",
+    "raw_query": "alice",
+    "normalized_query": "alice",
+    "matcher_query": "alice",
+    "subqueries": [
+      "alice"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UA"
+        ],
+        "name": "Launch Group",
+        "properties": {
+          "has_custom_mpdm_name": true
+        },
+        "isUnknown": true
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": null,
+        "passthrough": false,
+        "by_member": {
+          "UA": {
+            "score_details": {
+              "real_name": 0
+            }
+          }
+        },
+        "subqueries": [
+          [
+            {
+              "id": "UA",
+              "score": 0
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "label": "deleted peer follows MPIM predicate not member eligibility",
+    "raw_query": "alice",
+    "normalized_query": "alice",
+    "matcher_query": "alice",
+    "subqueries": [
+      "alice"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice",
+        "deleted": true
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UA"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": null,
+        "passthrough": false,
+        "by_member": {
+          "UA": {
+            "score_details": {
+              "real_name": 0
+            }
+          }
+        },
+        "subqueries": [
+          [
+            {
+              "id": "UA",
+              "score": 0
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "label": "predicate before empty query",
+    "raw_query": "",
+    "normalized_query": "",
+    "matcher_query": "",
+    "subqueries": [],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UA",
+          "UB"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [
+      "G1"
+    ],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": true,
+    "match_email": false,
+    "expected": []
+  },
+  {
+    "label": "empty query before missing member list",
+    "raw_query": "",
+    "normalized_query": "",
+    "matcher_query": "",
+    "subqueries": [],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": true,
+    "match_email": false,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": null,
+        "passthrough": false,
+        "by_member": null,
+        "subqueries": null
+      }
+    ]
+  },
+  {
+    "label": "email main query is shared by every submatcher",
+    "raw_query": "mail test",
+    "normalized_query": "mail test",
+    "matcher_query": "mail test",
+    "subqueries": [
+      "mail",
+      "test"
+    ],
+    "users": {
+      "UA": {
+        "id": "UA",
+        "_real_name_normalized_lc": "alice"
+      },
+      "UB": {
+        "id": "UB",
+        "_real_name_normalized_lc": "bob"
+      },
+      "US": {
+        "id": "US",
+        "_real_name_normalized_lc": "self",
+        "is_self": true
+      },
+      "UX": {
+        "id": "UX",
+        "isUnknown": true
+      },
+      "UZ": {
+        "id": "UZ",
+        "_real_name_normalized_lc": "z anna"
+      },
+      "UY": {
+        "id": "UY",
+        "_real_name_normalized_lc": "y anna"
+      },
+      "UW": {
+        "id": "UW",
+        "_real_name_normalized_lc": "w anna"
+      },
+      "UV": {
+        "id": "UV",
+        "_real_name_normalized_lc": "v anna"
+      },
+      "UE": {
+        "id": "UE",
+        "_real_name_normalized_lc": "zebra",
+        "_email_normalized_lc": "mail test@example.com"
+      }
+    },
+    "items": [
+      {
+        "id": "G1",
+        "is_mpim": true,
+        "members": [
+          "UE"
+        ]
+      }
+    ],
+    "named_norm": {},
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "match_email": true,
+    "expected": [
+      {
+        "id": "G1",
+        "score": 0,
+        "exact": null,
+        "passthrough": false,
+        "by_member": {
+          "UE": {
+            "score_details": {
+              "email": 0
+            }
+          }
+        },
+        "subqueries": [
+          [
+            {
+              "id": "UE",
+              "score": 0
+            }
+          ],
+          [
+            {
+              "id": "UE",
+              "score": 0
+            }
+          ]
+        ]
+      }
+    ]
+  }
+]

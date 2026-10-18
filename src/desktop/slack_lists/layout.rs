@@ -38,6 +38,9 @@ pub(crate) enum TableEntry {
 pub(super) struct Layout {
     pub generation: u64,
     pub grouping_revision: u64,
+    pub refinements: refinement::State,
+    pub pending_refinement: Option<String>,
+    pub board_order: Option<super_platinum_core::slack_lists::BoardLaneOrderDraft>,
     grouping: grouping::State,
     pub find: find::State,
     pub selection_generation: u64,
@@ -64,6 +67,9 @@ impl Default for Layout {
         Self {
             generation: next_id(),
             grouping_revision: 0,
+            board_order: None,
+            refinements: Default::default(),
+            pending_refinement: None,
             grouping: Default::default(),
             find: Default::default(),
             selection_generation: next_id(),
@@ -147,6 +153,17 @@ fn rebuild_inner(view: &mut View, workspace: Option<&Workspace>) {
     let Some(loaded) = view.loaded.as_ref() else {
         return;
     };
+    // An ACK-created ID is selected immediately without inventing its contents.
+    // Only an independent metadata observation can release this loading state.
+    if view.layout.pending_refinement.is_some() {
+        view.layout.columns = Default::default();
+        view.layout.entries = Default::default();
+        view.layout.lanes = Default::default();
+        view.rows = Default::default();
+        view.layout.matched = 0;
+        view.layout.notice = Some("Loading the saved view…".into());
+        return;
+    }
     if view.layout.selection.is_none() {
         if let Ok(mut selection) =
             saved_views::DefaultSelection::new(&loaded.document, None, false, None)
@@ -158,7 +175,19 @@ fn rebuild_inner(view: &mut View, workspace: Option<&Workspace>) {
             view.layout.selection = Some(selection);
         }
     }
-    let catalog = saved_views::catalog(&loaded.document);
+    let effective = refinement::read_document(
+        loaded,
+        &view.layout.refinements,
+        view.layout.selected.as_deref(),
+        view.layout.board_order.as_ref(),
+    );
+    // Errors remain in catalog and become an unsupported-view notice. The
+    // fallback here supplies only date/schema context, never displayed rows.
+    let document = effective.as_deref().unwrap_or(&loaded.document);
+    let catalog = effective
+        .as_ref()
+        .map_err(Clone::clone)
+        .and_then(|doc| saved_views::catalog(doc));
     view.layout.choices = Arc::new(
         catalog
             .as_ref()
@@ -185,7 +214,7 @@ fn rebuild_inner(view: &mut View, workspace: Option<&Workspace>) {
     });
     date_context::prepare(
         &mut view.layout.dates,
-        &loaded.document,
+        document,
         selected,
         view.layout.last_read_timestamp,
     );
@@ -217,49 +246,8 @@ fn rebuild_inner(view: &mut View, workspace: Option<&Workspace>) {
                     .into(),
             }
         })?;
-        if loaded
-            .document
-            .raw
-            .pointer("/list_metadata/todo_mode")
-            .is_some_and(|value| !value.is_boolean())
-        {
-            return Err(saved_views::UnsupportedView {
-                reason: "This saved view has an unsupported task-mode setting.".into(),
-            });
-        }
-        let saved_completed = match selected.raw.get("show_completed_items") {
-            None | Some(Value::Null) => None,
-            Some(Value::Bool(value)) => Some(*value),
-            Some(_) => {
-                return Err(saved_views::UnsupportedView {
-                    reason: "This saved view has an unsupported completed-items setting.".into(),
-                });
-            }
-        };
-        let mut context = context(loaded, workspace, view.layout.collapsed.get(id));
-        context.find = find::query(loaded, workspace, &view.layout.find.applied)?;
-        context.date = view.layout.dates.context.clone();
-        context.date_uses_timestamps = date_context::uses_timestamps(loaded);
-        let policy = saved_views::CompletionPolicy::resolve(
-            context.todo_mode,
-            loaded
-                .list_experiments
-                .as_ref()
-                .map(|flags| flags.grid_todos),
-            loaded
-                .personal_task_lists
-                .as_ref()
-                .map(|policy| policy.contains(&loaded.document.id)),
-            loaded
-                .list_experiments
-                .as_ref()
-                .map(|flags| flags.todos_rollback),
-            saved_completed,
-            None,
-        )?;
-        context.apply_todo_completion_rules = Some(policy.apply_rules);
-        context.effective_show_completed = Some(policy.effective_show_completed);
-        saved_views::project(&loaded.document, &loaded.records, selected, &context)
+        let context = projection_context(view, loaded, workspace, &selected.raw)?;
+        saved_views::project(document, &loaded.records, selected, &context)
     });
     match result {
         Ok(projected) => {
@@ -286,7 +274,7 @@ fn rebuild_inner(view: &mut View, workspace: Option<&Workspace>) {
                     checkbox_heading: (projected.layout == saved_views::ProjectionLayout::Board)
                         .then(|| {
                             board_heading::for_lane(
-                                &loaded.document,
+                                document,
                                 projected.view_id.as_deref(),
                                 group.key.as_deref(),
                             )
@@ -352,6 +340,61 @@ fn rebuild_inner(view: &mut View, workspace: Option<&Workspace>) {
             view.rows = Default::default();
         }
     }
+}
+pub(super) fn projection_context(
+    view: &View,
+    loaded: &Loaded,
+    workspace: Option<&Workspace>,
+    raw: &Value,
+) -> Result<saved_views::ProjectionContext, saved_views::UnsupportedView> {
+    let id = raw["id"]
+        .as_str()
+        .ok_or_else(|| saved_views::UnsupportedView {
+            reason: "The saved view identity is unavailable.".into(),
+        })?;
+    if loaded
+        .document
+        .raw
+        .pointer("/list_metadata/todo_mode")
+        .is_some_and(|value| !value.is_boolean())
+    {
+        return Err(saved_views::UnsupportedView {
+            reason: "This saved view has an unsupported task-mode setting.".into(),
+        });
+    }
+    let saved_completed = match raw.get("show_completed_items") {
+        None | Some(Value::Null) => None,
+        Some(Value::Bool(value)) => Some(*value),
+        Some(_) => {
+            return Err(saved_views::UnsupportedView {
+                reason: "This saved view has an unsupported completed-items setting.".into(),
+            });
+        }
+    };
+    let mut context = context(loaded, workspace, view.layout.collapsed.get(id));
+    context.find = find::query(loaded, workspace, &view.layout.find.applied)?;
+    context.date = view.layout.dates.context.clone();
+    context.date_uses_timestamps = date_context::uses_timestamps(loaded);
+    let policy = saved_views::CompletionPolicy::resolve(
+        context.todo_mode,
+        loaded
+            .list_experiments
+            .as_ref()
+            .map(|flags| flags.grid_todos),
+        loaded
+            .personal_task_lists
+            .as_ref()
+            .map(|policy| policy.contains(&loaded.document.id)),
+        loaded
+            .list_experiments
+            .as_ref()
+            .map(|flags| flags.todos_rollback),
+        saved_completed,
+        None,
+    )?;
+    context.apply_todo_completion_rules = Some(policy.apply_rules);
+    context.effective_show_completed = Some(policy.effective_show_completed);
+    Ok(context)
 }
 pub(super) fn fallback_entries(view: &mut View) {
     record_detail::reconcile(view);

@@ -348,6 +348,7 @@ pub(super) use completion::{
     ReservedBaseline, ReservedCheck, ReservedObservation, SendClaimed, SendConsumed, SendPrepared,
     Step, StepState, TakeoverInput,
 };
+pub(in crate::drafts::store::worker) use completion::{HostedClaimed, HostedCompletion};
 
 pub use completion::{
     CheckpointInput, GapInput, LocalOutcome, LocalWriteInput, MutationInput, OpenInput,

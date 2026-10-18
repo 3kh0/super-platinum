@@ -18,6 +18,8 @@ pub(super) fn execute(
                 }
                 let opened = open(account).map_err(|_| Error::Storage)?;
                 adapter_schema::require(&opened.0).map_err(|_| Error::WrongFormat)?;
+                faults::before_commit(faults::FaultPoint::InventoryRead)
+                    .map_err(|_| Error::Storage)?;
                 loading::load(&opened, account, LoadMode::Current, &pending)
                     .map(std::sync::Arc::new)
             })();

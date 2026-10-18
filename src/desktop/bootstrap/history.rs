@@ -7,7 +7,19 @@ use crate::state::ShellState;
 
 mod read_opening;
 
-pub async fn refresh_selected_channel(mut state: Signal<ShellState>) {
+pub fn refresh_selected_channel(
+    state: Signal<ShellState>,
+) -> impl std::future::Future<Output = ()> {
+    // Capture the account before the outer future's first poll as well. A
+    // replacement cannot redirect an already accepted navigation's write.
+    let navigation = crate::app_home::workflows::navigation_history::flush(state);
+    async move {
+        dioxus::prelude::spawn(navigation);
+        refresh_selected_channel_inner(state).await;
+    }
+}
+
+async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
     let (team, channel, scope) = {
         let state = state.read();
         let (Some(team), Some(channel)) = (

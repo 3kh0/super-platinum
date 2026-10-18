@@ -309,6 +309,11 @@ pub(crate) fn search(mut state: Signal<ShellState>, ticket: Ticket, query: Strin
                 return;
             }
         }
+        let posting = crate::bootstrap::posting_ingress::capture(
+            &state,
+            &context.transport,
+            &context.session,
+        );
         let result = if let Some(filter) = &ticket.filter {
             directory::fetch_conversations(&context, &query, filter).await
         } else {
@@ -316,6 +321,13 @@ pub(crate) fn search(mut state: Signal<ShellState>, ticket: Ticket, query: Strin
                 .await
                 .map(|users| (users, vec![]))
         };
+        let accepted = {
+            let shell = state.peek();
+            directory::owner_current(&shell, &context) && request_current(&shell, serial, revision)
+        };
+        if accepted && let Ok((_, channels)) = &result {
+            posting.channels(&state, channels);
+        }
         let mut shell = state.write();
         if !directory::owner_current(&shell, &context) {
             return;

@@ -3,14 +3,18 @@ use super::*;
 use crate::slack_lists::{CellEdit, CheckboxEdit, Document, PersonalTaskLists, RecordsPage};
 use serde_json::Value;
 
+mod board_record_move;
+pub use board_record_move::*;
 mod column_create;
 mod column_delete;
 mod column_precision;
 mod column_rename;
 pub use column_delete::*;
+mod board_lane_order;
 mod field_visibility;
 mod view_filter;
 mod view_grouping;
+pub use board_lane_order::*;
 pub use column_create::*;
 mod view_sort;
 pub use view_filter::*;
@@ -37,6 +41,8 @@ mod records;
 pub use records::*;
 mod viewing;
 pub use viewing::*;
+mod todo;
+pub use todo::*;
 mod defaults;
 pub use defaults::*;
 
@@ -361,3 +367,17 @@ mod tests {
         );
     }
 }
+
+mod board_choice;
+pub use board_choice::list_board_choice;
+
+mod board_group_delete;
+pub use board_group_delete::{list_board_group_delete_cells, list_board_group_delete_schema};
+
+mod view_refinement_save;
+pub use view_refinement_save::list_view_refinement_save;
+
+mod default_view_preference;
+pub use default_view_preference::{
+    list_default_view_preference, list_default_view_preference_read,
+};

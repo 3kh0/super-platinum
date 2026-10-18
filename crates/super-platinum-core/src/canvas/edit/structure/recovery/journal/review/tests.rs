@@ -228,7 +228,7 @@ fn version_one_migration_preserves_exact_active_body_and_account() {
         j.conn
             .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
             .unwrap(),
-        4
+        5
     );
     assert!(j.get(receipt.checkpoint.scope()).unwrap().as_ref() == Some(&receipt));
     assert_eq!(archive_count(&j), 0);

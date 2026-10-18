@@ -297,3 +297,88 @@ fn failed_saved_departure_releases_signal_before_error_projection() {
     drop(shell);
     editor.release_capture(&capture);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn failed_departure_feedback_survives_capture_release_observation() {
+    tokio::task::LocalSet::new()
+        .run_until(async {
+            for observe_before_error in [false, true] {
+                let temp = Temp::new();
+                let (mut shell, editor) = temp.shell();
+                let visit = visit(&shell);
+                let generation = shell.shortcut_generation;
+                assert!(request(&mut shell, Destination::Palette));
+                let mut store =
+                    domain::Store::open(temp.path.join("private.sqlite"), temp.owner.account())
+                        .unwrap();
+                let foreign = store
+                    .save(
+                        &editor.snapshot().base,
+                        &uuid::Uuid::new_v4().to_string(),
+                        content("other writer"),
+                    )
+                    .unwrap();
+                let capture = editor.reserve_capture().unwrap();
+                let serial = editor
+                    .retain_capture(&capture, content("our retained text"))
+                    .unwrap();
+                assert!(
+                    tokio::time::timeout(Duration::from_secs(5), editor.saved(serial))
+                        .await
+                        .unwrap()
+                        .is_err()
+                );
+                editor.release_capture(&capture);
+                let snapshot = editor.snapshot();
+                assert!(snapshot.failed && snapshot.capture.is_none());
+                let (dom, mut state) = mounted(shell);
+                let message = "Your text is retained. Save or review it before navigating.";
+                dom.in_runtime(|| {
+                    if observe_before_error {
+                        controller::project_editor(
+                            state.write().canvas_create.as_mut().unwrap(),
+                            &snapshot,
+                        );
+                        assert_eq!(
+                            state
+                                .peek()
+                                .canvas_create
+                                .as_ref()
+                                .unwrap()
+                                .error
+                                .as_deref(),
+                            Some(
+                                "Your text is retained here. Retry its local save before leaving."
+                            )
+                        );
+                    }
+                    controller::update_error(state, &visit, message);
+                    // The release notification may be consumed after update_error.
+                    controller::project_editor(
+                        state.write().canvas_create.as_mut().unwrap(),
+                        &snapshot,
+                    );
+                    controller::project_editor(
+                        state.write().canvas_create.as_mut().unwrap(),
+                        &snapshot,
+                    );
+                });
+                let shell = state.peek();
+                let draft = shell.canvas_create.as_ref().unwrap();
+                assert_eq!(draft.error.as_deref(), Some(message));
+                assert_eq!(draft.visit, visit);
+                assert!(!draft.busy && !draft.close_requested && draft.pending_departure.is_none());
+                assert_eq!(shell.overlay, Some(Overlay::CanvasCreate));
+                assert_eq!(shell.shortcut_generation, generation);
+                assert!(Arc::ptr_eq(draft.editor.as_ref().unwrap(), &editor));
+                assert!(!draft.saved);
+                assert!(snapshot.content == content("our retained text"));
+                assert_eq!(shell.canvas_creation.delivery.tickets(&temp.owner).len(), 1);
+                assert!(store.active(&temp.owner).unwrap() == Some(foreign));
+                let conflicts = store.conflicts(&temp.owner).unwrap();
+                assert_eq!(conflicts.len(), 1);
+                assert!(conflicts[0].content() == &content("our retained text"));
+            }
+        })
+        .await;
+}

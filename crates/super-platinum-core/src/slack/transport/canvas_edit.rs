@@ -10,6 +10,17 @@ pub enum CanvasEditFailure {
 }
 
 impl Transport {
+    pub async fn execute_canvas_comment_bootstrap(
+        &self,
+        req: PreparedRequest,
+    ) -> Result<Vec<u8>, CanvasEditFailure> {
+        if !bootstrap_allowed(&req) {
+            return Err(CanvasEditFailure::NotSent(Error::Api(
+                "unsupported_canvas_bootstrap".into(),
+            )));
+        }
+        self.execute_canvas_write(req).await
+    }
     pub async fn execute_canvas_edit(
         &self,
         req: PreparedRequest,
@@ -159,12 +170,87 @@ impl Transport {
     }
 }
 
+mod annotation_guard;
+fn bootstrap_allowed(req: &PreparedRequest) -> bool {
+    let RequestBody::Form(fields) = &req.body else {
+        return false;
+    };
+    if fields.len() != 8 {
+        return false;
+    }
+    let map = fields
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    if map.len() != 8
+        || map.keys().any(|k| {
+            !matches!(
+                *k,
+                "token"
+                    | "channel"
+                    | "ts"
+                    | "latest"
+                    | "limit"
+                    | "inclusive"
+                    | "content_snippet"
+                    | "cached_latest_updates"
+            )
+        })
+    {
+        return false;
+    }
+    let Some(channel) = map.get("channel").and_then(|v| v.strip_prefix('C')) else {
+        return false;
+    };
+    let Some(control) = map.get("ts").and_then(|v| v.strip_prefix("Qpc:t:")) else {
+        return false;
+    };
+    let control = format!("temp:{control}");
+    let snippet = map.get("content_snippet").and_then(|s| {
+        if s.len() > 192 * 1024 {
+            None
+        } else {
+            serde_json::from_str::<serde_json::Value>(s).ok()
+        }
+    });
+    if crate::canvas::comments::channel(&format!("F{channel}")).is_err()
+        || map.get("token").is_none_or(|s| s.is_empty())
+        || map
+            .get("latest")
+            .is_none_or(|s| !crate::canvas::comments::bootstrap::valid_latest(s))
+        || map.get("limit") != Some(&"28")
+        || map.get("inclusive") != Some(&"true")
+        || map.get("cached_latest_updates") != Some(&"{}")
+        || snippet
+            .as_ref()
+            .is_none_or(|s| !annotation_guard::snippet(s, &control))
+    {
+        return false;
+    }
+    let Ok(mut url) = url::Url::parse(&req.url) else {
+        return false;
+    };
+    if req.method != "POST"
+        || url.path() != "/api/conversations.replies"
+        || !annotation_guard::query(&url)
+        || url.fragment().is_some()
+    {
+        return false;
+    }
+    url.set_path("/canvas/-/edit-document");
+    // Reuse the established Slack-host/loopback-test endpoint policy without
+    // broadening the ordinary retry-safe conversations.replies executor.
+    let mut probe = req.clone();
+    probe.url = url.into();
+    allowed(&probe)
+}
+
 fn reply_allowed(req: &PreparedRequest) -> bool {
     let RequestBody::Form(fields) = &req.body else {
         return false;
     };
     let mut seen = std::collections::HashSet::new();
-    if fields.len() != 6
+    if !matches!(fields.len(), 6 | 7)
         || fields.iter().any(|(key, value)| {
             !seen.insert(key.as_str())
                 || match key.as_str() {
@@ -176,6 +262,20 @@ fn reply_allowed(req: &PreparedRequest) -> bool {
                     }
                     "thread_ts" => !crate::canvas::comments::timestamp(value),
                     "client_msg_id" => uuid::Uuid::parse_str(value).is_err(),
+                    "blocks" => {
+                        value.len() > crate::canvas::comments::content::MAX_BLOCK_BYTES
+                            || serde_json::from_str::<Vec<serde_json::Value>>(value)
+                                .ok()
+                                .and_then(|blocks| {
+                                    crate::canvas::comments::content::fallback(&blocks).ok()
+                                })
+                                .is_none_or(|text| {
+                                    fields
+                                        .iter()
+                                        .find(|(k, _)| k == "text")
+                                        .is_none_or(|(_, v)| v != &text)
+                                })
+                    }
                     "reply_broadcast" => value != "false",
                     "text" => {
                         value.trim().is_empty()
@@ -190,7 +290,18 @@ fn reply_allowed(req: &PreparedRequest) -> bool {
     let Ok(mut url) = url::Url::parse(&req.url) else {
         return false;
     };
-    if url.path() != "/api/chat.postMessage" {
+    if ![
+        "token",
+        "channel",
+        "thread_ts",
+        "client_msg_id",
+        "reply_broadcast",
+        "text",
+    ]
+    .iter()
+    .all(|key| seen.contains(key))
+        || url.path() != "/api/chat.postMessage"
+    {
         return false;
     }
     url.set_path("/canvas/-/edit-document");

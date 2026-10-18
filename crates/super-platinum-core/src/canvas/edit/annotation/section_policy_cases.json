@@ -1,0 +1,77 @@
+[
+  {
+    "name": "empty",
+    "rtml": "",
+    "empty": true
+  },
+  {
+    "name": "one break",
+    "rtml": "<br>",
+    "empty": true
+  },
+  {
+    "name": "two breaks",
+    "rtml": "<br><br>",
+    "empty": false
+  },
+  {
+    "name": "ordinary spaces",
+    "rtml": " <b> </b>",
+    "empty": true
+  },
+  {
+    "name": "nbsp",
+    "rtml": "&#160;",
+    "empty": true
+  },
+  {
+    "name": "zero width space",
+    "rtml": "&#8203;",
+    "empty": true
+  },
+  {
+    "name": "zero width nonjoiner",
+    "rtml": "&#8204;",
+    "empty": false
+  },
+  {
+    "name": "bom with break",
+    "rtml": "&#65279;<br>",
+    "empty": true
+  },
+  {
+    "name": "wide space",
+    "rtml": "&#12288;",
+    "empty": true
+  },
+  {
+    "name": "plain content",
+    "rtml": "x",
+    "empty": false
+  },
+  {
+    "name": "styled emoji",
+    "rtml": "<b>😀</b>",
+    "empty": false
+  },
+  {
+    "name": "line separator",
+    "rtml": "&#8232;",
+    "empty": true
+  },
+  {
+    "name": "hair space",
+    "rtml": "&#8202;",
+    "empty": true
+  },
+  {
+    "name": "word joiner",
+    "rtml": "&#8288;",
+    "empty": false
+  },
+  {
+    "name": "two breaks with space",
+    "rtml": "<br> <br>",
+    "empty": false
+  }
+]

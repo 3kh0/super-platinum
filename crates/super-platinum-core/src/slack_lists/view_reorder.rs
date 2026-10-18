@@ -3,7 +3,7 @@
 use super::{Document, ListError, PersonalTaskLists, ViewRename};
 use serde_json::{Value, json};
 
-mod key;
+pub(super) mod key;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ViewReorderDirection {
     Up,

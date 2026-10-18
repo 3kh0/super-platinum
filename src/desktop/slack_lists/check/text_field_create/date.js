@@ -52,7 +52,7 @@
   return result;
  }
  function owner(generation){return editor&&editor===panel()&&editor.isConnected&&dateInput===input()&&dateInput?.isConnected&&editor.dataset.editorGeneration===String(generation)&&dateInput.type==='date';}
- const noOp='This value cannot be saved. Check the value and choices.';
+ const noOp='This date cannot be saved. Check the date and your current access.';
  window.__listDateCreate={
   initial(){const e=cell(),scrolling=reveal(e),button=e?.querySelector('.slack-list-edit-cell');return{ok:!!e&&!!button&&!button.disabled&&hit(button)&&visible(e)&&helper.findRetained().ok&&ids().join(',')==='R_LIST_003,R_LIST_001,R_LIST_007,R_LIST_005',scrolling};},
   open(){const e=cell(),button=e?.querySelector('.slack-list-edit-cell'),scrolling=reveal(e);if(panel()||!e||!button||button.disabled||!hit(button))return{ok:false,scrolling};sourceCell=e;sourceInstance=e.closest('[data-instance-id]')?.dataset.instanceId;e.focus();if(document.activeElement!==e||!sourceInstance)return{ok:false};e.dispatchEvent(new KeyboardEvent('keydown',{key:'F2',bubbles:true,cancelable:true}));const a={ok:true,kind:'open',row:'R_LIST_003',column:'C_DATE_OBSERVED',instance:sourceInstance,scrolling};actions.push(a);return a;},

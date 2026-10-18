@@ -113,6 +113,16 @@ fn key(shell: &ShellState) -> Option<Key> {
 fn receipt(shell: &ShellState) -> Option<&Receipt> {
     shell.slack_lists.delete.receipts.get(&key(shell)?)
 }
+pub(super) fn blocks_target(shell: &ShellState, scope: &Scope, list: &str) -> bool {
+    let key = (scope.stable_owner(), list.to_owned());
+    shell.slack_lists.delete.receipts.contains_key(&key)
+        || shell
+            .slack_lists
+            .delete
+            .confirmation
+            .as_ref()
+            .is_some_and(|c| c.attempt.key() == key)
+}
 pub(crate) fn blocks_mutation(shell: &ShellState) -> bool {
     receipt(shell).is_some()
         || shell
@@ -137,6 +147,9 @@ fn unavailable(shell: &ShellState) -> Option<&'static str> {
         || shell.slack_lists.operations.contains_key(&view.id)
         || create::blocks_mutation(shell)
         || rename::blocks_mutation(shell)
+        || reminder::blocks_mutation(shell)
+        || completion::blocks_mutation(shell)
+        || editor::assignment::blocks_mutation(shell)
         || blocks_mutation(shell)
     {
         return Some("Finish the current change before deleting an item.");
@@ -366,6 +379,9 @@ pub(super) fn confirm_shell(
             .contains_key(&attempt.key())
         || create::blocks_mutation(shell)
         || rename::blocks_mutation(shell)
+        || reminder::blocks_mutation(shell)
+        || completion::blocks_mutation(shell)
+        || editor::assignment::blocks_mutation(shell)
         || shell
             .slack_lists
             .operations

@@ -1,0 +1,907 @@
+[
+  {
+    "label": "ordinary current exact",
+    "raw_query": "launch",
+    "normalized_query": "launch",
+    "matcher_query": "launch",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch"
+      }
+    ],
+    "display": {
+      "C1": "launch"
+    },
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": true,
+        "previous": null,
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "source order retained",
+    "raw_query": "launch",
+    "normalized_query": "launch",
+    "matcher_query": "launch",
+    "items": [
+      {
+        "id": "C2",
+        "is_channel": true,
+        "name": "launch"
+      },
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch"
+      }
+    ],
+    "display": {
+      "C2": "launch",
+      "C1": "launch"
+    },
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C2",
+        "score": 0,
+        "exact": true,
+        "previous": null,
+        "best": null,
+        "passthrough": false
+      },
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": true,
+        "previous": null,
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "raw ID last and case-sensitive",
+    "raw_query": "C1",
+    "normalized_query": "c1",
+    "matcher_query": "c1",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "other"
+      }
+    ],
+    "display": {
+      "C1": "other"
+    },
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": null,
+        "previous": null,
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "lowercase ID does not fallback",
+    "raw_query": "c1",
+    "normalized_query": "c1",
+    "matcher_query": "c1",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "other"
+      }
+    ],
+    "display": {
+      "C1": "other"
+    },
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": []
+  },
+  {
+    "label": "old match retains Infinity",
+    "raw_query": "old",
+    "normalized_query": "old",
+    "matcher_query": "old",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "zzz",
+        "previous_names": [
+          "old"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "zzz"
+    },
+    "previous": {
+      "old": "old"
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": null,
+        "exact": false,
+        "previous": [
+          {
+            "name": "old",
+            "score": 0
+          }
+        ],
+        "best": "old",
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "previous disabled",
+    "raw_query": "old",
+    "normalized_query": "old",
+    "matcher_query": "old",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "zzz",
+        "previous_names": [
+          "old"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "zzz"
+    },
+    "previous": {
+      "old": "old"
+    },
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": []
+  },
+  {
+    "label": "best previous first equal minimum",
+    "raw_query": "old",
+    "normalized_query": "old",
+    "matcher_query": "old",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "zzz",
+        "previous_names": [
+          "Old",
+          "OLD"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "zzz"
+    },
+    "previous": {
+      "Old": "old",
+      "OLD": "old"
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": null,
+        "exact": false,
+        "previous": [
+          {
+            "name": "Old",
+            "score": 0
+          },
+          {
+            "name": "OLD",
+            "score": 0
+          }
+        ],
+        "best": "Old",
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "matching current omits best previous",
+    "raw_query": "launch",
+    "normalized_query": "launch",
+    "matcher_query": "launch",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch",
+        "previous_names": [
+          "Launch"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "launch"
+    },
+    "previous": {
+      "Launch": "launch"
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": true,
+        "previous": [
+          {
+            "name": "Launch",
+            "score": 0
+          }
+        ],
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "mpdm history excluded",
+    "raw_query": "old",
+    "normalized_query": "old",
+    "matcher_query": "old",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "zzz",
+        "previous_names": [
+          "mpdm-old"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "zzz"
+    },
+    "previous": {
+      "mpdm-old": "mpdm-old"
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": []
+  },
+  {
+    "label": "mpdm prefix case sensitive",
+    "raw_query": "mpdm",
+    "normalized_query": "mpdm",
+    "matcher_query": "mpdm",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "zzz",
+        "previous_names": [
+          "MPDM-old"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "zzz"
+    },
+    "previous": {
+      "MPDM-old": "mpdm-old"
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": null,
+        "exact": false,
+        "previous": [
+          {
+            "name": "MPDM-old",
+            "score": 0
+          }
+        ],
+        "best": "MPDM-old",
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "previous exact empty fast path",
+    "raw_query": "",
+    "normalized_query": "",
+    "matcher_query": "",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "zzz",
+        "previous_names": [
+          ""
+        ]
+      }
+    ],
+    "display": {
+      "C1": "zzz"
+    },
+    "previous": {
+      "": ""
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": null,
+        "exact": false,
+        "previous": [
+          {
+            "name": "",
+            "score": 0
+          }
+        ],
+        "best": "",
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "empty before name and metadata",
+    "raw_query": "",
+    "normalized_query": "",
+    "matcher_query": "",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch",
+        "previous_names": [
+          "old"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "launch"
+    },
+    "previous": {
+      "old": "old"
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": true,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": null,
+        "previous": null,
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "deny before empty",
+    "raw_query": "",
+    "normalized_query": "",
+    "matcher_query": "",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch"
+      }
+    ],
+    "display": {
+      "C1": "launch"
+    },
+    "previous": {},
+    "search_previous": false,
+    "deny": [
+      "C1"
+    ],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": true,
+    "prefer_exact": true,
+    "expected": []
+  },
+  {
+    "label": "file before raw ID",
+    "raw_query": "C1",
+    "normalized_query": "c1",
+    "matcher_query": "c1",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch",
+        "is_file": true
+      }
+    ],
+    "display": {},
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": []
+  },
+  {
+    "label": "unknown before empty",
+    "raw_query": "",
+    "normalized_query": "",
+    "matcher_query": "",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch",
+        "isUnknown": true
+      }
+    ],
+    "display": {},
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": true,
+    "prefer_exact": true,
+    "expected": []
+  },
+  {
+    "label": "nonexistent before raw ID",
+    "raw_query": "C1",
+    "normalized_query": "c1",
+    "matcher_query": "c1",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch",
+        "isNonExistent": true
+      }
+    ],
+    "display": {},
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": []
+  },
+  {
+    "label": "huddle before raw ID",
+    "raw_query": "C1",
+    "normalized_query": "c1",
+    "matcher_query": "c1",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch",
+        "properties": {
+          "huddles": {
+            "is_huddle_channel": true
+          }
+        }
+      }
+    ],
+    "display": {},
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": []
+  },
+  {
+    "label": "server passthrough retains previous metadata",
+    "raw_query": "absent",
+    "normalized_query": "absent",
+    "matcher_query": "absent",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch",
+        "previous_names": [
+          "old"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "launch"
+    },
+    "previous": {
+      "old": "old"
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [
+      "C1"
+    ],
+    "passthrough": true,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 2,
+        "exact": false,
+        "previous": [
+          {
+            "name": "old",
+            "score": null
+          }
+        ],
+        "best": null,
+        "passthrough": true
+      }
+    ]
+  },
+  {
+    "label": "server ID alone insufficient",
+    "raw_query": "absent",
+    "normalized_query": "absent",
+    "matcher_query": "absent",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch"
+      }
+    ],
+    "display": {
+      "C1": "launch"
+    },
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [
+      "C1"
+    ],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": []
+  },
+  {
+    "label": "previous match before server passthrough",
+    "raw_query": "old",
+    "normalized_query": "old",
+    "matcher_query": "old",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "zzz",
+        "previous_names": [
+          "old"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "zzz"
+    },
+    "previous": {
+      "old": "old"
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [
+      "C1"
+    ],
+    "passthrough": true,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": null,
+        "exact": false,
+        "previous": [
+          {
+            "name": "old",
+            "score": 0
+          }
+        ],
+        "best": "old",
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "raw ID fallback drops failed previous metadata",
+    "raw_query": "C1",
+    "normalized_query": "c1",
+    "matcher_query": "c1",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "zzz",
+        "previous_names": [
+          "old"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "zzz"
+    },
+    "previous": {
+      "old": "old"
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": null,
+        "previous": null,
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "disabled exact flag",
+    "raw_query": "launch",
+    "normalized_query": "launch",
+    "matcher_query": "launch",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch"
+      }
+    ],
+    "display": {
+      "C1": "launch"
+    },
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": false,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": null,
+        "previous": null,
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "record name strips source prefix",
+    "raw_query": "launch",
+    "normalized_query": "launch",
+    "matcher_query": "launch",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "prefixZC:ABC:launch",
+        "properties": {
+          "record_channel": {
+            "record_id": "R"
+          }
+        }
+      }
+    ],
+    "display": {
+      "C1": "launch"
+    },
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": true,
+        "previous": null,
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "meeting absent event formatted raw name",
+    "raw_query": "weekly standup",
+    "normalized_query": "weekly standup",
+    "matcher_query": "weekly standup",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "mc:1:weekly-standup-2026-10-17-0900"
+      }
+    ],
+    "display": {
+      "C1": "weekly standup"
+    },
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": true,
+        "previous": null,
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "missing ordinary name localized unknown-channel",
+    "raw_query": "unknown",
+    "normalized_query": "unknown",
+    "matcher_query": "unknown",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": null
+      }
+    ],
+    "display": {
+      "C1": "unknown-channel"
+    },
+    "previous": {},
+    "search_previous": false,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": false,
+        "previous": null,
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  },
+  {
+    "label": "all previous excluded keeps empty metadata",
+    "raw_query": "launch",
+    "normalized_query": "launch",
+    "matcher_query": "launch",
+    "items": [
+      {
+        "id": "C1",
+        "is_channel": true,
+        "name": "launch",
+        "previous_names": [
+          "mpdm-old"
+        ]
+      }
+    ],
+    "display": {
+      "C1": "launch"
+    },
+    "previous": {
+      "mpdm-old": "mpdm-old"
+    },
+    "search_previous": true,
+    "deny": [],
+    "remote": [],
+    "passthrough": false,
+    "allow_empty": false,
+    "prefer_exact": true,
+    "expected": [
+      {
+        "id": "C1",
+        "score": 0,
+        "exact": true,
+        "previous": [],
+        "best": null,
+        "passthrough": false
+      }
+    ]
+  }
+]

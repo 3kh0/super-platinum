@@ -1,0 +1,786 @@
+[
+  {
+    "label": "timestamp shadows noncallable toString",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": 0
+        }
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "ts",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "ts"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": 0
+        },
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "nested timestamp arrays propagate shadow",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": [
+          [
+            {
+              "toString": null
+            }
+          ]
+        ]
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "ts",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "ts"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": [
+          [
+            {
+              "toString": null
+            }
+          ]
+        ],
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "primary view shadows toString",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": {
+          "toString": "C12345678"
+        },
+        "ts": 1234567
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "primaryView",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "primaryView"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": {
+          "toString": "C12345678"
+        },
+        "ts": 1234567,
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "nested primary arrays propagate shadow",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": [
+          [
+            {
+              "toString": false
+            }
+          ]
+        ],
+        "ts": 1234567
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "primaryView",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "primaryView"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": [
+          [
+            {
+              "toString": false
+            }
+          ]
+        ],
+        "ts": 1234567,
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "ordinary object still yields NaN",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {}
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": {
+      "C12345678": {
+        "ts": null,
+        "position": 1
+      }
+    },
+    "error": null,
+    "trace": [],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {},
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "valueOf shadow retains inherited toString",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "valueOf": 0
+        }
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": {
+      "C12345678": {
+        "ts": null,
+        "position": 1
+      }
+    },
+    "error": null,
+    "trace": [],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "valueOf": 0
+        },
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "nested ordinary object still yields NaN",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": [
+          [
+            {}
+          ]
+        ]
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": {
+      "C12345678": {
+        "ts": null,
+        "position": 1
+      }
+    },
+    "error": null,
+    "trace": [],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": [
+          [
+            {}
+          ]
+        ],
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "ordinary primary object simply nonmatching",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": {},
+        "ts": 1234567
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": {},
+    "error": null,
+    "trace": [],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": {},
+        "ts": 1234567,
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "array primary channel still matches",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": [
+          "C12345678"
+        ],
+        "ts": 1234567
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": {
+      "C12345678": {
+        "ts": 1234.567,
+        "position": 1
+      }
+    },
+    "error": null,
+    "trace": [],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": [
+          "C12345678"
+        ],
+        "ts": 1234567,
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "foreign team bypasses primary coercion",
+    "rows": [
+      {
+        "teamId": "T2",
+        "primaryView": {
+          "toString": 0
+        },
+        "ts": 1234567
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": {},
+    "error": null,
+    "trace": [],
+    "after": [
+      {
+        "teamId": "T2",
+        "primaryView": {
+          "toString": 0
+        },
+        "ts": 1234567,
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "nonchannel bypasses timestamp coercion",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "view",
+        "ts": {
+          "toString": 0
+        }
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": {},
+    "error": null,
+    "trace": [],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "view",
+        "ts": {
+          "toString": 0
+        },
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "duplicate ID bypasses later timestamp coercion",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": 1234567
+      },
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": 0
+        }
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": {
+      "C12345678": {
+        "ts": 1234.567,
+        "position": 1
+      }
+    },
+    "error": null,
+    "trace": [],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": 1234567,
+        "position": 1
+      },
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": 0
+        },
+        "position": 2
+      }
+    ]
+  },
+  {
+    "label": "nonSonic bypasses positions and coercion",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": {
+          "toString": 0
+        },
+        "ts": {
+          "toString": 0
+        }
+      }
+    ],
+    "sonic": false,
+    "team": "T1",
+    "multi": false,
+    "expected": {},
+    "error": null,
+    "trace": [],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": {
+          "toString": 0
+        },
+        "ts": {
+          "toString": 0
+        }
+      }
+    ]
+  },
+  {
+    "label": "all primary filtering precedes any timestamp",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": 0
+        }
+      },
+      {
+        "teamId": "T1",
+        "primaryView": {
+          "toString": 0
+        },
+        "ts": 1234567
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 1,
+      "field": "primaryView",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 1,
+        "field": "primaryView"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": 0
+        },
+        "position": 1
+      },
+      {
+        "teamId": "T1",
+        "primaryView": {
+          "toString": 0
+        },
+        "ts": 1234567,
+        "position": 2
+      }
+    ]
+  },
+  {
+    "label": "all positions assigned before timestamp failure",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": 0
+        }
+      },
+      {
+        "teamId": "T1",
+        "primaryView": "D12345678",
+        "ts": 1234567
+      },
+      {
+        "teamId": "T1",
+        "primaryView": "view",
+        "ts": 1234567
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "ts",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "ts"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": 0
+        },
+        "position": 1
+      },
+      {
+        "teamId": "T1",
+        "primaryView": "D12345678",
+        "ts": 1234567,
+        "position": 2
+      },
+      {
+        "teamId": "T1",
+        "primaryView": "view",
+        "ts": 1234567,
+        "position": 3
+      }
+    ]
+  },
+  {
+    "label": "noncallable shadow null",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": null
+        }
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "ts",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "ts"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": null
+        },
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "noncallable shadow false",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": false
+        }
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "ts",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "ts"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": false
+        },
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "noncallable shadow \"x\"",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": "x"
+        }
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "ts",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "ts"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": "x"
+        },
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "noncallable shadow []",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": []
+        }
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "ts",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "ts"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": []
+        },
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "noncallable shadow {}",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": {}
+        }
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "ts",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "ts"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": {}
+        },
+        "position": 1
+      }
+    ]
+  },
+  {
+    "label": "noncallable shadow 123",
+    "rows": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": 123
+        }
+      }
+    ],
+    "sonic": true,
+    "team": "T1",
+    "multi": false,
+    "expected": null,
+    "error": {
+      "index": 0,
+      "field": "ts",
+      "name": "TypeError"
+    },
+    "trace": [
+      {
+        "index": 0,
+        "field": "ts"
+      }
+    ],
+    "after": [
+      {
+        "teamId": "T1",
+        "primaryView": "C12345678",
+        "ts": {
+          "toString": 123
+        },
+        "position": 1
+      }
+    ]
+  }
+]

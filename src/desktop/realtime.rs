@@ -60,6 +60,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     crate::performance::record(crate::performance::StartupStage::RealtimeConnected);
                 }
                 if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
+                    if generation > 1 {
+                        workspace.posting_metadata.invalidate();
+                    }
                     workspace.rt_generation = generation;
                     workspace.reset_channel_discovery();
                     let self_user = workspace.self_user_id.clone();
@@ -281,6 +284,10 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     crate::slack_lists::labels::prepare(&shell, &team, generation, &event);
                 let upload =
                     crate::messaging::upload_recovery::event(&shell, &team, generation, &event);
+                let external_history_event = matches!(event.as_ref(), RtEvent::Unknown(raw)
+                    if matches!(raw.kind.as_str(), "channel_updated" | "channel_joined" |
+                        "group_joined" | "mpim_joined" | "channel_created" | "im_created" |
+                        "channel_converted_to_shared" | "group_converted_to_shared"));
                 apply_in_view(
                     &mut shell.core,
                     &team,
@@ -348,6 +355,11 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     shell.refresh_dock_badge_for(&team);
                 }
                 drop(shell);
+                // Queue while the accepted frame owner is still current, before
+                // the unrelated owned-draft await below can switch accounts.
+                if external_history_event {
+                    crate::bootstrap::persist_workspace_metadata(&state, &team);
+                }
                 if let Some(raw) = owned_draft {
                     if owned_socket
                         .event(state, &team, generation, raw)
@@ -418,6 +430,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     && generation >= workspace.rt_generation
                 {
                     workspace.rt = super_platinum_core::state::RealtimeStatus::Disconnected;
+                    workspace.posting_metadata.invalidate();
                 }
             }
         }
@@ -459,6 +472,8 @@ async fn refresh_open_metadata(mut state: Signal<ShellState>, generation: u64) {
     }) else {
         return;
     };
+    let posting = crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+        .for_channels([&channel]);
     let result = super_platinum_core::slack::api::fetch_conversation_details(
         &ctx.transport,
         &ctx.client,
@@ -477,6 +492,7 @@ async fn refresh_open_metadata(mut state: Signal<ShellState>, generation: u64) {
         return;
     }
     if let Ok(info) = result {
+        posting.channels(&state, std::slice::from_ref(&info));
         {
             let mut shell = state.write();
             if let Some(w) = shell.core.workspaces.get_mut(&ctx.session.team_id) {
@@ -536,6 +552,9 @@ pub(crate) fn apply_in_view(
             .apply(core.account_epoch, &key, active);
         core.reconcile_thread_subscription(&key);
     }
+    super_platinum_core::state::posting_metadata::authority::observe_event(
+        core, team, generation, &event,
+    );
     let workspace = core.workspaces.get_mut(team).unwrap();
     workspace.apply_channel_event(&event);
     match event {

@@ -56,7 +56,15 @@ pub(in crate::canvas::comments) fn Composer(
     let disabled = e.loading || e.inventory.is_none() || versions.len() > 1;
     let busy = e.sending || e.saving || e.native_busy;
     let composing = e.composing;
-    let retired = e.retired_text.as_ref() == Some(&text);
+    let retired = retired(e);
+    let blocks = serde_json::to_string(
+        &e.blocks
+            .clone()
+            .unwrap_or_else(|| super_platinum_core::canvas::comments::content::plain(&text)),
+    )
+    .unwrap();
+    let native_ready = e.native.as_ref().is_none_or(|n| n.matches(&binding));
+    let version_busy = busy || e.native.is_some();
     let issue = e.error;
     let checked = e.reviewed;
     let outcome = e.outcome.is_some();
@@ -84,19 +92,28 @@ pub(in crate::canvas::comments) fn Composer(
             if disabled && e.loading {p{role:"status","Loading local reply..."}}
             if versions.len()>1 {
                 p{role:"status","Several saved versions need review. Choose one before sending; nothing is selected automatically."}
-                if e.serial>0 && !versions.iter().any(|d|d.capture()==e.capture&&d.text()==e.text) {
-                    article{p{"Current reply retained in this app (not yet saved)"}p{class:"canvas-comment-reply-version","{text}"}}
+                if e.serial>0 && !versions.iter().any(|d|d.capture()==e.capture&&d.text()==e.text&&d.blocks()==e.blocks.as_deref()) {
+                    article{p{"Current reply retained in this app (not yet saved)"}{preview(state,&text,e.blocks.as_deref())}}
                 }
-                for draft in versions {article{key:"{draft.id()}",p{class:"canvas-comment-reply-version","{draft.text()}"}
-                    button{"data-canvas-comment-action":"reply-version",disabled:busy,onclick:{let b=binding.clone();move |_|choose_version(state,model,b.clone(),draft.clone())},"Use this version and discard the other shown versions"}
+                for draft in versions {article{key:"{draft.id()}",{preview(state,draft.text(),draft.blocks())}
+                    button{"data-canvas-comment-action":"reply-version",disabled:version_busy,onclick:{let b=binding.clone();move |_|choose_version(state,model,b.clone(),draft.clone())},"Use this version and discard the other shown versions"}
                 }}
             } else if e.inventory.is_some() {
+                if fixture::plain_requested() {
                 textarea {id:"canvas-comment-reply",key:"{scope}",class:"canvas-comment-reply-field",initial_value:"{text}",rows:3,
                     "data-draft-scope":"{scope}","data-composing":if composing{"true"}else{"false"},"aria-label":"Reply",disabled:disabled||!editable,
                     oninput:{let b=binding.clone();move |event|change(state,model,&b,event.value())},
                     oncompositionstart:{let b=binding.clone();move |_|{let mut shell=state.write();if b.current(&shell,&model.peek()){if let Some(e)=entry_mut(&mut shell,&b.id){e.composing=true;}}}},
                     oncompositionend:{let b=binding.clone();move |_|{let mut shell=state.write();if b.current(&shell,&model.peek()){if let Some(e)=entry_mut(&mut shell,&b.id){e.composing=false;}}}}
                 }
+                } else if native_ready {
+                    div {key:"{scope}","data-canvas-reply-scope":"{scope}","data-editor-generation":"{binding.read}",
+                        onmounted:{let b=binding.clone();move |_|native::mount(state,b.clone())},
+                        crate::view::rich_editor::RichEditor {id:"canvas-comment-reply",label:"Reply".to_string(),blocks,
+                            disabled:disabled||!editable,autofocus:false,expected_generation:Some(binding.read)}
+                    }
+                } else {p{role:"status","Retaining the previous reply editor before opening this view..."}}
+
             }
             if !writable {p{role:"status","This thread is read-only or resolved. Your saved reply is retained."}}
             if retired {p{role:"status","This text belongs to an already settled or archived attempt. Edit it to write a new reply; it will not be sent again automatically."}}
@@ -104,7 +121,7 @@ pub(in crate::canvas::comments) fn Composer(
             if e.saving {p{role:"status","Saving reply locally..."}}
             if let Some(receipt)=locked {
                 p{role:"status","An earlier reply may have been sent. Automatic resend is disabled."}
-                details {summary{"Review the original reply"}p{class:"canvas-comment-reply-version","{receipt.record().text()}"}}
+                details {summary{"Review the original reply"}{preview(state,receipt.record().text(),receipt.record().blocks())}}
                 if receipt.record().root_ts()==binding.root {
                     label{input{id:"canvas-reply-reviewed",r#type:"checkbox",checked,disabled:busy,onchange:{let b=binding.clone();move |event|{let mut shell=state.write();if b.current(&shell,&model.peek()){if let Some(e)=entry_mut(&mut shell,&b.id){e.reviewed=event.checked();}}}}},"I reviewed the current thread and understand that the reply outcome is unknown."}
                     button{"data-canvas-comment-action":"reply",id:"canvas-reply-archive",disabled:!checked||busy||model.read().loading||model.read().error.is_some()||model.read().cooling(),onclick:{let b=binding.clone();move |_|delivery::review(state,model,b.clone())},"Archive unconfirmed attempt"}
@@ -114,14 +131,36 @@ pub(in crate::canvas::comments) fn Composer(
                 button{"data-canvas-comment-action":"reply",id:"canvas-reply-send",disabled:send_disabled,onclick:{let b=binding.clone();move |_|delivery::send(state,model,b.clone())},"Send reply"}
                 if issue.is_some(){button{"data-canvas-comment-action":"reply",id:"canvas-reply-retry",disabled:busy,onclick:{let b=binding.clone();move |_|{if outcome{delivery::retry_result(state,model,b.clone())}else{retry(state,b.clone())}}},if outcome{"Retry local result save"}else{"Retry local save"}}}
                 button {"data-canvas-comment-action":"reply-history",disabled:busy,onclick:{let b=binding.clone();move |_|history(state,model,b.clone(),false)},"Earlier local attempts"}
-                p{class:"canvas-comments-note","Plain text. Replies stay in this canvas thread."}
+                p{class:"canvas-comments-note","Replies stay in this canvas thread. Formatting is retained in your local draft."}
             }
             if let Some(rows)=&e.history {
                 details {open:true,summary {"Earlier local attempts in this canvas"}
-                    for row in rows {article{key:"{row.receipt.id()}",p{"{row.status}"}p{class:"canvas-comment-reply-version","{row.receipt.record().text()}"}}}
+                    for row in rows {article{key:"{row.receipt.id()}",p{"{row.status}"}{preview(state,row.receipt.record().text(),row.receipt.record().blocks())}}}
                     if rows.len()==20{button{"data-canvas-comment-action":"reply-version",disabled:busy,onclick:{let b=binding.clone();move |_|history(state,model,b.clone(),true)},"Next local attempts"}}
                 }
             }
         }
     }
+}
+
+fn preview(state: Signal<ShellState>, text: &str, blocks: Option<&[serde_json::Value]>) -> Element {
+    let shell = state.read();
+    let workspace = shell
+        .core
+        .active_team
+        .as_ref()
+        .and_then(|id| shell.core.workspaces.get(id));
+    if let Some((blocks, workspace)) = blocks.zip(workspace) {
+        let nodes: Vec<_> = blocks
+            .iter()
+            .flat_map(|b| {
+                crate::blocks::block_nodes(crate::blocks::BlockCtx::new(workspace, &shell.media), b)
+            })
+            .collect();
+        if !nodes.is_empty() {
+            let epoch = shell.media_epoch;
+            return rsx! {div{class:"canvas-comment-reply-version",for node in &nodes{{crate::view::rich::rich_node(node,epoch,state)}}}};
+        }
+    }
+    rsx! {p{class:"canvas-comment-reply-version","{text}"}}
 }

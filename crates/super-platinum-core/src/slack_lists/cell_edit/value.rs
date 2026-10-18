@@ -53,6 +53,11 @@ pub(super) fn eligible(
             "Ordinary List editing preferences are not verified.",
         ));
     }
+    if matches!(column.kind.as_str(), "assignee" | "todo_assignee") {
+        return Err(ListError(
+            "Assignees require the To-do assignment workflow.",
+        ));
+    }
     validate_read(column, record)
 }
 
@@ -62,7 +67,7 @@ fn member(column: &Column) -> Result<&'static str, ListError> {
         "number" | "currency" => Ok("number"),
         "rating" => Ok("rating"),
         "select" | "multi_select" => Ok("select"),
-        "user" | "vote" => Ok("user"),
+        "user" | "assignee" | "todo_assignee" | "vote" => Ok("user"),
         "channel" => Ok("channel"),
         "link" => Ok("link"),
         "date" | "due_date" | "todo_due_date" => Ok("date"),
@@ -315,9 +320,11 @@ pub(super) fn validate(
                 Ok(())
             }
         }
-        ("user", CellEditValue::Users(values), CellEditValue::Users(_)) => {
-            entity::validate(column, values.iter().map(String::as_str))
-        }
+        (
+            "user" | "assignee" | "todo_assignee",
+            CellEditValue::Users(values),
+            CellEditValue::Users(_),
+        ) => entity::validate(column, values.iter().map(String::as_str)),
         ("channel", CellEditValue::Channels(values), CellEditValue::Channels(_)) => {
             entity::validate(column, values.iter().map(String::as_str))
         }

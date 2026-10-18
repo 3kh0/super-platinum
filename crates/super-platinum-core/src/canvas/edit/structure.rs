@@ -6,7 +6,7 @@ use super::{CanonicalTitle, CanvasCollabSnapshot, Error, F, RawMessage, Section}
 mod crdt;
 pub(super) use crdt::canonical_zero_base_history;
 mod inventory;
-mod position;
+pub(super) mod position;
 mod prepared;
 pub mod recovery;
 mod replacement;

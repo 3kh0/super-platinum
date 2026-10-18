@@ -142,10 +142,15 @@ impl History {
     /// Complete tyx1 per-item scoring. Ordering is significant for equal-score
     /// duplicate IDs in matching query buckets; exact-query doubling is later.
     pub fn score(&self, query: &str, ids: &[&str], now_ms: f64) -> Vec<Stats> {
-        let normalized = format_query(query);
+        self.score_normalized(&format_query(query), ids, now_ms)
+    }
+
+    /// Score an already observed hNDQ/Ojx4 query without a second locale pass.
+    /// The owning caller must bind normalization to the same query/account.
+    pub fn score_normalized(&self, normalized: &str, ids: &[&str], now_ms: f64) -> Vec<Stats> {
         let mut hits: BTreeMap<&str, (&Value, bool)> = BTreeMap::new();
         for (key, value) in &self.entries {
-            if !key.contains(&normalized) && !normalized.contains(key) {
+            if !key.contains(normalized) && !normalized.contains(key) {
                 continue;
             }
             for row in records(value) {
@@ -157,7 +162,7 @@ impl History {
                         > weight(Some(prior), now_ms) * count(Some(prior))
                 });
                 if replace {
-                    hits.insert(id, (row, key == &normalized));
+                    hits.insert(id, (row, key == normalized));
                 }
             }
         }

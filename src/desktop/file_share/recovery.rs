@@ -75,6 +75,7 @@ pub(super) struct Pending {
 #[derive(Default)]
 pub(super) struct Custody {
     pub draft_io: draft_io::Queue,
+    pub direct_results: BTreeMap<String, direct_recovery::Held>,
     pub pending: BTreeMap<String, Pending>,
     pub drafts: BTreeMap<(admission::Key, String), drafts::Draft>,
     pub draft_visits: BTreeMap<(admission::Key, String), std::sync::Weak<drafts::Visit>>,
@@ -201,6 +202,7 @@ pub(crate) fn open_recovery(mut signal: Signal<ShellState>) {
                         Ok((
                             j.unresolved(&key.team, &key.user)?,
                             j.drafts(&key.team, &key.user)?,
+                            j.direct_opens(&key.team, &key.user)?,
                         ))
                     })
                     .await
@@ -245,11 +247,13 @@ pub(crate) fn open_recovery(mut signal: Signal<ShellState>) {
         recovery.local = local;
         recovery.captured = captured;
         match result {
-            Ok((receipts, drafts)) => {
+            Ok((receipts, drafts, direct_opens)) => {
+                recovery.direct_opens = direct_opens;
                 recovery.receipts = receipts;
                 recovery.drafts = drafts;
             }
             Err(_) => {
+                recovery.direct_opens.clear();
                 recovery.receipts.clear();
                 recovery.drafts.clear();
                 recovery.error = Some(

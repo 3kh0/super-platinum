@@ -15,6 +15,9 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
     let create_blocked = crate::slack_lists::create::blocks_mutation(&state.read());
     let deletion = crate::slack_lists::delete::presentation(&state.read());
     let delete_blocked = crate::slack_lists::delete::blocks_mutation(&state.read());
+    let reminder_visible = crate::slack_lists::reminder::available(&state.read());
+    let reminder_reason = crate::slack_lists::reminder::reason(&state.read());
+    let reminder_blocked = crate::slack_lists::reminder::blocks_mutation(&state.read());
     let title = if detail.title.trim().is_empty() {
         "Untitled item"
     } else {
@@ -35,9 +38,11 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
     let fields=detail.columns[start..end].iter().filter_map(|column|detail.row.cells.iter().find(|cell|cell.column_id==column.id).map(|cell|(column,cell)))
         .map(|(column,cell)|{
             let column_id=cell.column_id.clone();let edit_column=column_id.clone();
+            let reminder_action=crate::slack_lists::task_date::reminder_for(&state.read(), &detail.record_id, &cell.column_id);
+            let reminder_reason=crate::slack_lists::task_date::reminder_reason(&state.read());
             let mutation=view.mutation.as_ref().filter(|m|m.record_id==detail.record_id&&m.column_id==cell.column_id);
             let pending=mutation.is_some_and(|m|!m.uncertain);let uncertain=mutation.is_some_and(|m|m.uncertain);
-            let blocked=detail.unavailable||view.loading||view.stale||view.mutation.is_some()||delete_blocked||create_blocked;
+            let blocked=crate::slack_lists::completion::blocks_mutation(&state.read())||detail.unavailable||view.loading||view.stale||view.mutation.is_some()||delete_blocked||create_blocked||reminder_blocked;
             let checked=vec![Attribute::new("checked",cell.checkbox.unwrap_or(false),None,true)];
             let value=if cell.checkbox.is_some(){rsx!{input{r#type:"checkbox",tabindex:"-1",disabled:blocked||!cell.editable,"aria-label":"{column.label}, {title}",
                 onchange:move |_|crate::slack_lists::toggle_detail_checkbox(state,generation,column_id.clone()),..checked}}}
@@ -57,7 +62,9 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
             rsx!{div{key:"{column.id}",class:"slack-list-detail-field","data-column-id":"{column.id}","data-row-id":"{detail.record_id}",role:"group","aria-label":"{column.label}","aria-busy":pending,tabindex:"-1",
                 div{class:"slack-list-detail-label","{column.label}"}
                 div{class:"slack-list-detail-value",{value}}
-                if cell.can_edit&&cell.checkbox.is_none(){button{r#type:"button",class:"slack-list-edit-cell",tabindex:"-1",disabled:blocked,"aria-label":"Edit {column.label}, {title}",title:"Edit field (F2)",
+                if reminder_action {button{r#type:"button",class:"slack-list-edit-cell slack-list-remind-cell",tabindex:"-1",disabled:blocked||reminder_reason.is_some(),"aria-label":"Remind me, {title}",title:reminder_reason.unwrap_or("Remind me (F2)"),
+                    onclick:move |_|crate::slack_lists::task_date::open_detail_reminder(state,generation,edit_column.clone()),{icon(Icon::Schedule,"icon")}}}
+                else if cell.can_edit&&cell.checkbox.is_none(){button{r#type:"button",class:"slack-list-edit-cell",tabindex:"-1",disabled:blocked,"aria-label":"Edit {column.label}, {title}",title:"Edit field (F2)",
                     onclick:move |_|crate::slack_lists::begin_detail_cell_editor(state,generation,edit_column.clone()),{icon(Icon::Compose,"icon")}}}
                 if pending{span{class:"slack-list-cell-status","Saving…"}}
                 if uncertain{span{class:"slack-list-cell-status","Save unconfirmed. Refresh to check."}}
@@ -68,6 +75,7 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
         header{class:"slack-list-record-header",button{id:"slack-list-record-back",r#type:"button",class:"slack-list-action",onclick:move |_|crate::slack_lists::close_record_detail(state,generation),{icon(Icon::ChevronRight,"icon")}if parent_return{"Back to parent"}else{"Back to list"}}
             h3{id:"slack-list-record-title","{title}"}
             div{class:"slack-list-record-actions",
+            if reminder_visible {button{id:"slack-list-record-reminder",r#type:"button",class:"slack-list-action",disabled:reminder_reason.is_some(),title:reminder_reason.unwrap_or("Remind me"),onclick:move |_|crate::slack_lists::reminder::open(state,generation),"Remind me"}}
             button{id:"slack-list-record-duplicate",r#type:"button",class:"slack-list-action",disabled:duplicate_reason.is_some(),title:duplicate_reason.unwrap_or("Duplicate item"),onclick:move |_|crate::slack_lists::create::duplicate::duplicate_item(state,generation),"Duplicate item"}
             button{id:"slack-list-record-delete",r#type:"button",class:"slack-list-action slack-list-delete-action",disabled:!deletion.enabled,title:deletion.reason.clone().unwrap_or_else(||"Delete item".into()),onclick:move |_|crate::slack_lists::delete::begin_delete(state,generation),{icon(Icon::Delete,"icon")}"Delete item"}
             }

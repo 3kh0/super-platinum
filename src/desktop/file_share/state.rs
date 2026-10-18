@@ -51,6 +51,7 @@ pub(crate) struct Recovery {
     pub error: Option<&'static str>,
     pub receipts: Vec<Receipt>,
     pub drafts: Vec<super_platinum_core::file_sharing::store::drafts::Draft>,
+    pub direct_opens: Vec<super_platinum_core::file_sharing::store::direct_open::Record>,
     pub(super) local: Vec<draft_io::Ticket>,
     pub captured: Vec<CapturedDraft>,
     pub serial: u64,

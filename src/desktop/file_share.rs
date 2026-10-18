@@ -13,10 +13,18 @@ use super_platinum_core::{
 };
 mod admission;
 pub(crate) mod check;
+pub(crate) mod composer;
 mod delivery;
+mod direct_recovery;
 mod draft_io;
 mod drafts;
 mod durable;
+mod new_direct;
+pub(crate) use direct_recovery::{
+    RetainedResult as RetainedDirectResult, discard_retained as discard_direct_result,
+    retained_results as retained_direct_results, retry_available as direct_retry_available,
+    retry_returned as retry_direct_returned,
+};
 mod recipients;
 pub(crate) use durable::close::{dialog as close_dialog, review_current as review_captured_note};
 pub(crate) use durable::has_capture;
@@ -52,6 +60,7 @@ pub(crate) enum Refusal {
     PolicyCapacity,
     Cooldown,
     Read,
+    RecipientResolution,
 }
 impl Refusal {
     pub(crate) fn message(self) -> &'static str {
@@ -70,6 +79,9 @@ impl Refusal {
             Self::Capacity => "Too many unresolved file shares are retained.",
             Self::PolicyCapacity => "File sharing checks are busy. Try again shortly.",
             Self::Cooldown => "Slack asked us to wait before sharing again. Your note is retained.",
+            Self::RecipientResolution => {
+                "The direct message could not be confirmed. No file was shared. Your draft is saved; check Slack before sharing again."
+            }
             Self::Read => "File sharing could not be checked. Your note is retained.",
         }
     }

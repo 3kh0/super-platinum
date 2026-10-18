@@ -5,6 +5,10 @@ use serde_json::{Number, Value, json};
 #[cfg(test)]
 mod channel_tests;
 mod comparison;
+mod completion;
+mod task;
+pub use completion::{TaskCompletion, TaskCompletionCell, TaskCompletionReference};
+pub use task::{TaskAssignment, TaskAssignmentDecision};
 mod link;
 pub use link::LinkValue;
 #[cfg(test)]
@@ -53,6 +57,7 @@ enum Edit {
         record: Value,
         column: Value,
         value: CellEditValue,
+        task_policy: Option<PersonalTaskLists>,
     },
 }
 impl From<CheckboxEdit> for CellEdit {
@@ -88,7 +93,7 @@ impl Column {
     /// Captured entity columns default to single_entity; only multi_entity
     /// enables multiple users. Eligibility separately rejects unknown formats.
     pub fn is_multi_user(&self) -> bool {
-        self.kind == "user"
+        matches!(self.kind.as_str(), "user" | "assignee" | "todo_assignee")
             && self.raw.pointer("/options/format").and_then(Value::as_str) == Some("multi_entity")
     }
     /// Channel reference columns use the same source-backed entity cardinality.
@@ -183,6 +188,7 @@ impl CellEdit {
                 record: record.raw.clone(),
                 column: column.raw.clone(),
                 value: desired,
+                task_policy: None,
             },
         })
     }
@@ -219,6 +225,7 @@ impl CellEdit {
                 record: record.raw.clone(),
                 column: column.raw.clone(),
                 value: CellEditValue::Votes(desired),
+                task_policy: None,
             },
         })
     }
@@ -286,6 +293,7 @@ impl CellEdit {
                 document: old_doc,
                 record: old_record,
                 column: old_column,
+                task_policy,
                 ..
             } => {
                 if let Some(reason) = document.read_only_reason(allow_lists) {
@@ -306,7 +314,14 @@ impl CellEdit {
                         "This List changed. Review it before editing again.",
                     ));
                 }
-                value::eligible(column, record, &document.id, personal_tasks)
+                if let Some(expected) = task_policy {
+                    if personal_tasks != Some(expected) {
+                        return Err(ListError("The personal To-do preferences changed."));
+                    }
+                    task::eligible(column, record)
+                } else {
+                    value::eligible(column, record, &document.id, personal_tasks)
+                }
             }
         }
     }

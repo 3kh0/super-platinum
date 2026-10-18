@@ -1,5 +1,12 @@
 //! Exact-gated native Lists fixture checks. Never runs against a live workspace.
+mod board_choice;
+mod board_choice_options;
 mod board_move;
+mod card_extended;
+mod card_order;
+mod group_delete;
+mod lane_order;
+mod refinement_save;
 use crate::state::ShellState;
 use dioxus::prelude::*;
 use serde_json::{Value, json};
@@ -26,7 +33,10 @@ mod number_rename;
 mod record_detail;
 mod saved_views;
 mod subitem;
+mod task_assignment;
+pub(crate) mod task_date;
 mod text_field_create;
+pub(crate) mod todo;
 mod user_edit;
 mod view_create;
 mod view_filter;
@@ -37,9 +47,19 @@ mod view_sort;
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     board_move::start(state, desktop.clone());
+    lane_order::start(state, desktop.clone());
+    refinement_save::start(state, desktop.clone());
+    group_delete::start(state, desktop.clone());
+    board_choice::start(state, desktop.clone());
+    board_choice_options::start(state, desktop.clone());
+    card_order::start(state, desktop.clone());
+    card_extended::start(state, desktop.clone());
     find::start(state, desktop.clone());
     field_delete::start(state, desktop.clone());
     view_order::start(state, desktop.clone());
+    todo::start(state, desktop.clone());
+    task_assignment::start(state, desktop.clone());
+    task_date::start(state, desktop.clone());
     field_visibility::start(state, desktop.clone());
     view_sort::start(state, desktop.clone());
     view_filter::start(state, desktop.clone());

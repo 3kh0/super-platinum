@@ -419,6 +419,13 @@ pub(crate) fn toggle_detail_checkbox(
     generation: u64,
     column: String,
 ) {
+    if completion::is_personal_cell(&state.peek(), &column) {
+        let row = current_record(&state.peek(), generation).map(|(_, row)| row);
+        if let Some(row) = row {
+            completion::toggle(state, row, column, EditAuthority::RecordDetail(generation));
+        }
+        return;
+    }
     let result = begin_checkbox_shell(&mut state.write(), generation, &column);
     match result {
         Ok(attempt) => network::dispatch(state, attempt),
@@ -524,6 +531,9 @@ pub(crate) fn open_subitem(mut state: Signal<ShellState>, generation: u64, child
     let mut shell = state.write();
     if create::blocks_mutation(&shell)
         || delete::blocks_mutation(&shell)
+        || reminder::blocks_mutation(&shell)
+        || completion::blocks_mutation(&shell)
+        || editor::assignment::blocks_mutation(&shell)
         || rename::blocks_mutation(&shell)
     {
         return;

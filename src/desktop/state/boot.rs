@@ -985,6 +985,21 @@ impl ShellState {
             "channel-canvas-surface" | "channel-canvas-surface-narrow" => {
                 crate::canvas::surface::install_fixture(&mut state)
             }
+            "channel-tabs-knowledge" | "channel-tabs-knowledge-narrow" => {
+                crate::channel_tabs::fixture::install_knowledge(&mut state);
+            }
+            "channel-tabs-folder"
+            | "channel-tabs-folder-narrow"
+            | "channel-tabs-folder-manage"
+            | "channel-tabs-folder-manage-narrow" => {
+                crate::channel_tabs::fixture::install_folder(&mut state);
+            }
+            "channel-tabs-enterprise" | "channel-tabs-enterprise-narrow" => {
+                crate::channel_tabs::fixture::install_enterprise(&mut state);
+            }
+            "channel-tabs-manager" | "channel-tabs-manager-narrow" => {
+                crate::channel_tabs::fixture::install_manager(&mut state);
+            }
             "channel-tabs-canvas" | "channel-tabs-canvas-narrow" => {
                 crate::channel_tabs::fixture::install(&mut state)
             }
@@ -1064,8 +1079,66 @@ impl ShellState {
             | "slack-list-board-move-checkbox-narrow" => {
                 crate::slack_lists::fixture::board_move::install(&mut state, name)
             }
+            "slack-list-task-date"
+            | "slack-list-task-date-narrow"
+            | "slack-list-task-reminder-route"
+            | "slack-list-task-reminder-route-narrow" => {
+                crate::slack_lists::task_date::fixture::install(&mut state, name);
+            }
+            "slack-list-task-assignment"
+            | "slack-list-task-assignment-narrow"
+            | "slack-list-task-assignment-recovery"
+            | "slack-list-task-assignment-recovery-narrow" => {
+                crate::slack_lists::assignment::fixture::install(&mut state, name);
+            }
+            "slack-list-board-group-delete" | "slack-list-board-group-delete-narrow" => {
+                crate::slack_lists::fixture::board_group_delete::install(&mut state, name);
+            }
+            "slack-list-board-card-cross"
+            | "slack-list-board-card-cross-narrow"
+            | "slack-list-board-card-tail"
+            | "slack-list-board-card-tail-narrow" => {
+                crate::slack_lists::fixture::board_card_extended::install(&mut state, name);
+            }
+            "slack-list-board-card-drag" | "slack-list-board-card-drag-narrow" => {
+                crate::slack_lists::fixture::board_card_order::install(&mut state, name);
+            }
+            "slack-list-board-choice-add"
+            | "slack-list-board-choice-add-narrow"
+            | "slack-list-board-choice-color"
+            | "slack-list-board-choice-color-narrow" => {
+                crate::slack_lists::fixture::board_choice_options::install(&mut state, name);
+            }
+            "slack-list-board-refinement-save"
+            | "slack-list-board-refinement-save-narrow"
+            | "slack-list-board-refinement-save-new"
+            | "slack-list-board-refinement-save-new-narrow"
+            | "slack-list-board-refinement-save-lost"
+            | "slack-list-board-refinement-save-lost-narrow" => {
+                crate::slack_lists::fixture::refinement_save::install(&mut state, name);
+            }
+            "slack-list-board-refinement"
+            | "slack-list-board-refinement-narrow"
+            | "slack-list-board-refinement-new"
+            | "slack-list-board-refinement-new-narrow" => {
+                crate::slack_lists::fixture::board_refinement::install(&mut state, name);
+            }
+            "slack-list-board-choice"
+            | "slack-list-board-choice-narrow"
+            | "slack-list-board-lane-order"
+            | "slack-list-board-lane-order-narrow"
+            | "slack-list-board-local-order"
+            | "slack-list-board-local-order-narrow" => {
+                crate::slack_lists::fixture::board_lane_order::install(&mut state, name);
+            }
             "slack-list-view-order" | "slack-list-view-order-narrow" => {
                 crate::slack_lists::fixture::view_order::install(&mut state, name);
+            }
+            "slack-list-todo-completion" | "slack-list-todo-completion-narrow" => {
+                crate::slack_lists::completion::fixture::install(&mut state, name);
+            }
+            "slack-list-todo-reminder" | "slack-list-todo-reminder-narrow" => {
+                crate::slack_lists::reminder::fixture::install(&mut state, name);
             }
             "slack-list-field-delete" | "slack-list-field-delete-narrow" => {
                 crate::slack_lists::fixture::field_delete::install(&mut state, name);
@@ -1211,6 +1284,21 @@ impl ShellState {
             "profile-photo" | "profile-photo-narrow" => {
                 crate::profile_edit::photo::fixture::install(&mut state)
             }
+            "profile-recording-recovery" | "profile-recording-recovery-narrow" => {
+                crate::profile_edit::recording::fixture::install_recovery(&mut state, true);
+            }
+            "profile-recording-cleanup" | "profile-recording-cleanup-narrow" => {
+                crate::profile_edit::recording::fixture::install_recovery(&mut state, false);
+            }
+            "profile-recording-upload" | "profile-recording-upload-narrow" => {
+                crate::profile_edit::recording::fixture::install_cancellation(&mut state, true);
+            }
+            "profile-recording-cancelled" | "profile-recording-cancelled-narrow" => {
+                crate::profile_edit::recording::fixture::install_cancellation(&mut state, false);
+            }
+            "profile-recording" | "profile-recording-narrow" => {
+                crate::profile_edit::recording::fixture::install(&mut state);
+            }
             "profile-pronunciation" | "profile-pronunciation-narrow" => {
                 crate::profile_edit::sections::fixture::install_pronunciation(&mut state);
             }
@@ -1256,7 +1344,116 @@ impl ShellState {
             }
             "system-messages" => crate::fixture::system_messages(&mut state),
             "slack-links" | "slack-links-narrow" => crate::slack_links_check::install(&mut state),
+            "app-home-calendar" | "app-home-calendar-narrow" => {
+                crate::app_home::fixture::install_calendar(&mut state)
+            }
+            "app-home-inputs" | "app-home-inputs-narrow" => {
+                crate::app_home::fixture::install_inputs(&mut state)
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-auth" | "app-home-workflow-auth-narrow" => {
+                crate::app_home::workflows::fixture::install_authentication(
+                    &mut state,
+                    crate::app_home::workflows::fixture::Mode::Accepted,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-auth-held" | "app-home-workflow-auth-held-narrow" => {
+                crate::app_home::workflows::fixture::install_authentication(
+                    &mut state,
+                    crate::app_home::workflows::fixture::Mode::Held,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-auth-unconfirmed" | "app-home-workflow-auth-unconfirmed-narrow" => {
+                crate::app_home::workflows::fixture::install_authentication(
+                    &mut state,
+                    crate::app_home::workflows::fixture::Mode::Unconfirmed,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-auth-rate-limit" | "app-home-workflow-auth-rate-limit-narrow" => {
+                crate::app_home::workflows::fixture::install_authentication(
+                    &mut state,
+                    crate::app_home::workflows::fixture::Mode::RateLimited,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow" | "app-home-workflow-narrow" => {
+                crate::app_home::workflows::fixture::install(
+                    &mut state,
+                    crate::app_home::workflows::fixture::Mode::Accepted,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-held" | "app-home-workflow-held-narrow" => {
+                crate::app_home::workflows::fixture::install(
+                    &mut state,
+                    crate::app_home::workflows::fixture::Mode::Held,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-unconfirmed" | "app-home-workflow-unconfirmed-narrow" => {
+                crate::app_home::workflows::fixture::install(
+                    &mut state,
+                    crate::app_home::workflows::fixture::Mode::Unconfirmed,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-rate-limit" | "app-home-workflow-rate-limit-narrow" => {
+                crate::app_home::workflows::fixture::install(
+                    &mut state,
+                    crate::app_home::workflows::fixture::Mode::RateLimited,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-meeting-known" | "app-home-workflow-meeting-known-narrow" => {
+                crate::app_home::workflows::fixture::install_meeting(
+                    &mut state,
+                    crate::app_home::workflows::fixture::MeetingMode::Known,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-meeting-all-day" | "app-home-workflow-meeting-all-day-narrow" => {
+                crate::app_home::workflows::fixture::install_meeting(
+                    &mut state,
+                    crate::app_home::workflows::fixture::MeetingMode::AllDay,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-meeting-title-only"
+            | "app-home-workflow-meeting-title-only-narrow" => {
+                crate::app_home::workflows::fixture::install_meeting(
+                    &mut state,
+                    crate::app_home::workflows::fixture::MeetingMode::TitleOnly,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-meeting-status-unavailable"
+            | "app-home-workflow-meeting-status-unavailable-narrow" => {
+                crate::app_home::workflows::fixture::install_meeting(
+                    &mut state,
+                    crate::app_home::workflows::fixture::MeetingMode::StatusUnavailable,
+                );
+            }
+            #[cfg(feature = "protected-test-support")]
+            "app-home-workflow-meeting-disconnected"
+            | "app-home-workflow-meeting-disconnected-narrow" => {
+                crate::app_home::workflows::fixture::install_meeting(
+                    &mut state,
+                    crate::app_home::workflows::fixture::MeetingMode::Disconnected,
+                );
+            }
             "app-home" | "app-home-narrow" => crate::app_home::fixture::install(&mut state),
+            "app-about" | "app-about-narrow" => {
+                crate::app_home::about::fixture::install(&mut state, false)
+            }
+            "app-about-connect" | "app-about-connect-narrow" => {
+                crate::app_home::about::fixture::install_modal(&mut state)
+            }
+            "app-about-unknown" | "app-about-unknown-narrow" => {
+                crate::app_home::about::fixture::install(&mut state, true)
+            }
             "app-calendar"
             | "app-calendar-narrow"
             | "app-calendar-modern"
@@ -1375,6 +1572,10 @@ impl ShellState {
             }
             "managed-draft-schedule" | "managed-draft-schedule-narrow" => {
                 crate::drafts::schedule::fixture::apply(&mut state)
+            }
+            #[cfg(feature = "protected-native-fixture")]
+            "protected-hosted-composer" | "protected-hosted-composer-narrow" => {
+                crate::drafts::protected::production::hosted_native::apply(&mut state)
             }
             #[cfg(feature = "protected-native-fixture")]
             "protected-owned-baseline" | "protected-owned-baseline-narrow" => {
@@ -1646,6 +1847,36 @@ impl ShellState {
             | "canvas-comment-resolve-narrow"
             | "canvas-comment-reply"
             | "canvas-comment-reply-narrow"
+            | "canvas-comment-rich-reply-narrow"
+            | "canvas-comment-inline"
+            | "canvas-comment-inline-narrow"
+            | "canvas-comment-existing-inline-narrow"
+            | "canvas-comment-archived-inline-narrow"
+            | "canvas-comment-hidden-inline-narrow"
+            | "canvas-comment-section-narrow"
+            | "canvas-comment-section-inline-narrow"
+            | "canvas-comment-list-narrow"
+            | "canvas-comment-list"
+            | "canvas-comment-image"
+            | "canvas-comment-image-narrow"
+            | "canvas-comment-table"
+            | "canvas-comment-table-narrow"
+            | "canvas-comment-table-bodies"
+            | "canvas-comment-table-bodies-narrow"
+            | "canvas-comment-blockquote-narrow"
+            | "canvas-comment-flexbox-narrow"
+            | "canvas-comment-callout-narrow"
+            | "canvas-comment-blockquote"
+            | "canvas-comment-flexbox"
+            | "canvas-comment-callout"
+            | "canvas-comment-existing-inline"
+            | "canvas-comment-archived-inline"
+            | "canvas-comment-hidden-inline"
+            | "canvas-comment-section"
+            | "canvas-comment-section-inline"
+            | "canvas-comment-annotation-narrow"
+            | "canvas-comment-annotation"
+            | "canvas-comment-rich-reply"
             | "canvas-checklist"
             | "canvas-checklist-narrow"
             | "canvas-text"
@@ -2002,14 +2233,25 @@ impl ShellState {
             | "forward-partial"
             | "forward-partial-narrow"
             | "forward-people"
-            | "forward-people-narrow" => {
+            | "forward-people-narrow"
+            | "forward-scheduled"
+            | "forward-scheduled-narrow"
+            | "forward-scheduled-dynamic"
+            | "forward-scheduled-dynamic-narrow" => {
                 let team = state.core.active_team.clone().unwrap();
-                let channel = if name.ends_with("narrow") && !name.starts_with("forward-recovery") {
+                let channel = if name.starts_with("forward-scheduled-dynamic")
+                    || (name.ends_with("narrow") && !name.starts_with("forward-recovery"))
+                {
                     "C5".into()
                 } else {
                     state.core.active_channel.clone().unwrap()
                 };
                 let mut message = state.messages.first().cloned().unwrap();
+                if name.starts_with("forward-scheduled-dynamic") {
+                    message.ts = "1719800000.000100".into();
+                    message.thread_ts = None;
+                    message.user_id = Some("U00000002".into());
+                }
                 if name.starts_with("forward-recovery") {
                     message.ts = "1719800000.000100".into();
                     state.core.active_account = Some("00000000-0000-4000-8000-000000000071".into());
@@ -2083,6 +2325,8 @@ impl ShellState {
                 });
             }
             "profile-pane"
+            | "profile-loading"
+            | "profile-loading-narrow"
             | "profile-dm-opening"
             | "profile-vip-pending"
             | "profile-pane-rich-fields"
@@ -2091,7 +2335,7 @@ impl ShellState {
                 state.profile_user = Some("U1".into());
                 state.core.profile_pane = Some(super_platinum_core::domain::ProfilePaneState {
                     user: "U1".into(),
-                    loading: false,
+                    loading: matches!(name, "profile-loading" | "profile-loading-narrow"),
                     error: None,
                 });
                 if name == "profile-vip-pending" {
@@ -2287,7 +2531,9 @@ impl ShellState {
             | "file-share-dm"
             | "file-share-dm-narrow"
             | "file-share-group-dm"
-            | "file-share-group-dm-narrow" => crate::file_share::check::seed::install(&mut state),
+            | "file-share-group-dm-narrow"
+            | "file-share-new-dm"
+            | "file-share-new-dm-narrow" => crate::file_share::check::seed::install(&mut state),
             "message-file-actions" | "message-file-actions-narrow" => {
                 crate::file_actions::attachment::check::fixture(&mut state)
             }

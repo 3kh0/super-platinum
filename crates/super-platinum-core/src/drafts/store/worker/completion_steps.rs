@@ -1,5 +1,7 @@
 //! Retained issuance. Linear API tickets never leave their actual result/request.
 use super::*;
+#[path = "inventory_retry.rs"]
+mod inventory_retry;
 use p::commands::{Action, Command};
 
 pub(in crate::drafts::store::worker) struct Step<I, T> {
@@ -626,8 +628,11 @@ pub(in crate::drafts::store::worker) use local::{
 #[path = "step_wait.rs"]
 mod wait;
 
+#[path = "hosted_steps.rs"]
+mod hosted;
 #[path = "slash_steps.rs"]
 mod slash;
+pub(in crate::drafts::store::worker) use hosted::{HostedClaimed, HostedCompletion};
 pub(in crate::drafts::store::worker) use slash::{
     SlashAttemptError, SlashClaimed, SlashCompletion, SlashReserved,
 };

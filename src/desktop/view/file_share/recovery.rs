@@ -112,10 +112,20 @@ fn review_capture(mut state: Signal<ShellState>, serial: u64, expected_owner: &s
 #[component]
 pub(crate) fn RecoveryDialog(state: Signal<ShellState>) -> Element {
     let closing = use_signal(|| None::<String>);
+    let mut discard = use_signal(|| None::<String>);
     let snapshot = state.read();
     let Some(recovery) = file_share::recovery_visible(&snapshot) else {
         return rsx! {};
     };
+    let retained = file_share::retained_direct_results(&snapshot)
+        .into_iter()
+        .filter(|held| {
+            !recovery
+                .direct_opens
+                .iter()
+                .any(|r| r.id() == held.record().id())
+        })
+        .collect::<Vec<_>>();
     let serial = recovery.serial;
     let owner = owner(&snapshot);
     let generation = format!("{owner}:{serial}");
@@ -140,7 +150,40 @@ pub(crate) fn RecoveryDialog(state: Signal<ShellState>) -> Element {
                 p {class:"file-share-hint","Review saved messages and file shares that need attention."}
                 if recovery.loading {p {class:"file-share-hint",role:"status","Loading saved shares..."}}
                 if let Some(error)=recovery.error {p {class:"file-share-error",role:"alert","{error}"}}
-                if !recovery.loading&&recovery.error.is_none()&&recovery.receipts.is_empty()&&recovery.drafts.is_empty()&&recovery.captured.is_empty() {p {class:"file-share-hint",role:"status","No saved messages or file shares need review."}}
+                if !recovery.loading&&recovery.error.is_none()&&recovery.receipts.is_empty()&&recovery.drafts.is_empty()&&recovery.captured.is_empty()&&recovery.direct_opens.is_empty()&&retained.is_empty() {p {class:"file-share-hint",role:"status","No saved messages or file shares need review."}}
+                div {role:"list","aria-label":"DM results retained for this session",
+                    for result in &retained {
+                        {let result=result.clone();let expected=result.clone();let record=result.record();let id=record.id().to_owned();let draft=record.draft();let name=draft.content.destination.as_ref().map(|d|d.name.as_str()).unwrap_or("Person");let save_id=id.clone();let ask_id=format!("{review_owner}:{serial}:{id}");let confirmed=discard.read().as_deref()==Some(ask_id.as_str());rsx!{
+                            div {class:"saved-file-share",role:"listitem",key:"retained-direct-{id}","data-retained-direct-open":id,
+                                div {class:"saved-file-share-copy",strong {"{draft.content.title}"}p {"To {name}"}
+                                    p {"A returned DM result is kept in this session. Its saved history may have changed or expired."}
+                                    p {class:"file-share-error","This copy is not yet saved and will be lost when you quit. Check Slack before sharing again."}
+                                    {direct_note(&snapshot,&draft.scope.team,&draft.content.note,state)}
+                                }
+                                button {disabled:close_pending,onclick:move |_|file_share::retry_direct_returned(state,save_id.clone()),"Save DM result"}
+                                if confirmed {
+                                    p {class:"file-share-error","Discard this session's retained copy? This does not change Slack or saved messages."}
+                                    button {disabled:close_pending,onclick:move |_|{file_share::discard_direct_result(state,serial,expected.clone());discard.set(None);},"Discard this copy"}
+                                    button {disabled:close_pending,onclick:move |_|discard.set(None),"Keep this copy"}
+                                } else {
+                                    button {disabled:close_pending,onclick:move |_|discard.set(Some(ask_id.clone())),"Discard retained result"}
+                                }
+                            }
+                        }}
+                    }
+                }
+                div {role:"list","aria-label":"Saved DM opening attempts",
+                    for record in &recovery.direct_opens {
+                        {let id=record.id().to_owned();let save_id=id.clone();let draft=record.draft();let name=draft.content.destination.as_ref().map(|d|d.name.as_str()).unwrap_or("Person");let status=if record.resolved().is_some(){"DM found. Your original message is retained below."}else{"DM opening result needs review. Review the saved message and Share to look up the DM without opening it again."};rsx!{
+                            div {class:"saved-file-share",role:"listitem",key:"direct-{id}","data-direct-open":id.clone(),
+                                div {class:"saved-file-share-copy",strong {"{draft.content.title}"}p {"To {name}"}p {"{status}"}
+                                    {direct_note(&snapshot, &draft.scope.team, &draft.content.note, state)}
+                                }
+                                if file_share::direct_retry_available(&snapshot,&id) {button {disabled:close_pending,onclick:move |_|file_share::retry_direct_returned(state,save_id.clone()),"Save DM result"}}
+                            }
+                        }}
+                    }
+                }
                 div {role:"list","aria-label":"Saved messages",
                     for draft in &recovery.drafts {
                         {let expected=draft.clone();let expected_owner=review_owner.clone();rsx!{
@@ -175,4 +218,21 @@ pub(crate) fn RecoveryDialog(state: Signal<ShellState>) -> Element {
             footer {button {id:"saved-file-shares-refresh",r#type:"button",disabled:recovery.loading||close_pending,onclick:move |_|file_share::open_recovery(state),"Refresh"}}
         }
     }
+}
+
+fn direct_note(
+    shell: &ShellState,
+    team: &str,
+    note: &[serde_json::Value],
+    state: Signal<ShellState>,
+) -> Element {
+    let Some(workspace) = shell.core.workspaces.get(team) else {
+        return rsx! {};
+    };
+    let context = crate::blocks::BlockCtx::new(workspace, &shell.media);
+    let nodes: Vec<_> = note
+        .iter()
+        .flat_map(|b| crate::blocks::block_nodes(context, b))
+        .collect();
+    rsx! {div {class:"message-body","aria-label":"Original saved message",for node in &nodes {{crate::view::rich::rich_node(node,shell.media_epoch,state)}}}}
 }

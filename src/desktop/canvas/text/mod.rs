@@ -8,6 +8,7 @@ use std::sync::{
 };
 use super_platinum_core::canvas::edit::text::TextIntent;
 
+mod annotation_text;
 pub(crate) mod check;
 pub(crate) mod continuation_check;
 mod continuation_fixture;
@@ -249,8 +250,18 @@ pub(super) fn paragraph(
     let before = section.clone();
     let after = section.clone();
     let remove = section.clone();
+    let (visit, read) = r
+        .text
+        .owner
+        .map(|(v, r)| (v.to_string(), r.to_string()))
+        .unwrap_or_default();
     rsx! {div {class:"canvas-editable-paragraph","data-canvas-text-section":"{section}",
-        div {class:"canvas-paragraph-content",for node in &item.preview {{crate::view::rich::rich_node(node,epoch,state)}}}
+        "data-canvas-text-visit":visit,"data-canvas-text-read":read,
+        div {class:if item.annotation.is_some(){"canvas-paragraph-content canvas-annotation-text"}else{"canvas-paragraph-content"},
+            if let Some(seed)=&item.annotation {
+                {annotation_text::render(seed,epoch,state)}
+            } else {for node in &item.preview {{crate::view::rich::rich_node(node,epoch,state)}}}
+        }
         div {class:"canvas-paragraph-actions",
             if item.intent.is_some() {button {class:"canvas-text-open",r#type:"button",disabled,"aria-label":"Edit paragraph",onclick:move |_|{if rename.peek().is_none(){open(state,reader,draft,&target);}},"Edit"}}
             if let Some(actions) = &item.structure {

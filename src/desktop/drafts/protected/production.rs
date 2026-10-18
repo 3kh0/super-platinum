@@ -9,6 +9,9 @@ pub(crate) mod baseline;
 pub(crate) mod baseline_native;
 pub(crate) mod commands;
 mod enroll;
+pub(crate) mod hosted;
+#[cfg(feature = "protected-native-fixture")]
+pub(crate) mod hosted_native;
 mod reclaim;
 pub(crate) mod send;
 pub(crate) mod socket;

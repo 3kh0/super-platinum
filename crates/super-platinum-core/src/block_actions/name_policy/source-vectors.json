@@ -1,0 +1,289 @@
+[
+  {
+    "name": "override-minus-one",
+    "state": {
+      "unified": true,
+      "userPrefs": {
+        "display_real_names_override": -1
+      },
+      "selfTeamIds": {
+        "teamId": "T1",
+        "enterpriseId": "E1",
+        "internalWorkspaceIds": [
+          "T1",
+          "T2"
+        ]
+      },
+      "teamPrefs": {
+        "T1": {
+          "display_real_names": false
+        },
+        "T2": {
+          "display_real_names": true
+        }
+      },
+      "teams": {
+        "T1": {
+          "enterprise_id": "E1"
+        },
+        "T2": {
+          "enterprise_id": "E1"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "hiddenUsers": {
+        "U1": true
+      }
+    },
+    "result": false
+  },
+  {
+    "name": "unified-any-workspace-true",
+    "state": {
+      "unified": true,
+      "userPrefs": {},
+      "selfTeamIds": {
+        "teamId": "T1",
+        "enterpriseId": "E1",
+        "internalWorkspaceIds": [
+          "T1",
+          "T2"
+        ]
+      },
+      "teamPrefs": {
+        "T1": {
+          "display_real_names": false
+        },
+        "T2": {
+          "display_real_names": true
+        }
+      },
+      "teams": {
+        "T1": {
+          "enterprise_id": "E1"
+        },
+        "T2": {
+          "enterprise_id": "E1"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "hiddenUsers": {
+        "U1": true
+      }
+    },
+    "result": true
+  },
+  {
+    "name": "org-false-suppresses-team-true",
+    "state": {
+      "unified": true,
+      "userPrefs": {},
+      "selfTeamIds": {
+        "teamId": "T1",
+        "enterpriseId": "E1",
+        "internalWorkspaceIds": [
+          "T1",
+          "T2"
+        ]
+      },
+      "teamPrefs": {
+        "T1": {
+          "display_real_names": false
+        },
+        "T2": {
+          "display_real_names": true
+        }
+      },
+      "teams": {
+        "T1": {
+          "enterprise_id": "E1"
+        },
+        "T2": {
+          "enterprise_id": "E1"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {
+          "display_real_names": false
+        },
+        "locked_prefs": {}
+      },
+      "hiddenUsers": {
+        "U1": true
+      }
+    },
+    "result": false
+  },
+  {
+    "name": "org-null-falls-through-locked-true",
+    "state": {
+      "unified": true,
+      "userPrefs": {},
+      "selfTeamIds": {
+        "teamId": "T1",
+        "enterpriseId": "E1",
+        "internalWorkspaceIds": [
+          "T1",
+          "T2"
+        ]
+      },
+      "teamPrefs": {
+        "T1": {
+          "display_real_names": false
+        },
+        "T2": {
+          "display_real_names": true
+        }
+      },
+      "teams": {
+        "T1": {
+          "enterprise_id": "E1"
+        },
+        "T2": {
+          "enterprise_id": "E1"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {
+          "display_real_names": null
+        },
+        "locked_prefs": {
+          "display_real_names": true
+        }
+      },
+      "hiddenUsers": {
+        "U1": true
+      }
+    },
+    "result": true
+  },
+  {
+    "name": "org-zero-suppresses-locked-true",
+    "state": {
+      "unified": true,
+      "userPrefs": {},
+      "selfTeamIds": {
+        "teamId": "T1",
+        "enterpriseId": "E1",
+        "internalWorkspaceIds": [
+          "T1",
+          "T2"
+        ]
+      },
+      "teamPrefs": {
+        "T1": {
+          "display_real_names": false
+        },
+        "T2": {
+          "display_real_names": true
+        }
+      },
+      "teams": {
+        "T1": {
+          "enterprise_id": "E1"
+        },
+        "T2": {
+          "enterprise_id": "E1"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {
+          "display_real_names": 0
+        },
+        "locked_prefs": {
+          "display_real_names": true
+        }
+      },
+      "hiddenUsers": {
+        "U1": true
+      }
+    },
+    "result": false
+  },
+  {
+    "name": "unified-string-true-not-boolean",
+    "state": {
+      "unified": true,
+      "userPrefs": {},
+      "selfTeamIds": {
+        "teamId": "T1",
+        "enterpriseId": "E1",
+        "internalWorkspaceIds": [
+          "T1",
+          "T2"
+        ]
+      },
+      "teamPrefs": {
+        "T1": {
+          "display_real_names": false
+        },
+        "T2": {
+          "display_real_names": "true"
+        }
+      },
+      "teams": {
+        "T1": {
+          "enterprise_id": "E1"
+        },
+        "T2": {
+          "enterprise_id": "E1"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "hiddenUsers": {
+        "U1": true
+      }
+    },
+    "result": false
+  },
+  {
+    "name": "foreign-enterprise-keeps-team-pref",
+    "state": {
+      "unified": true,
+      "userPrefs": {},
+      "selfTeamIds": {
+        "teamId": "T1",
+        "enterpriseId": "E1",
+        "internalWorkspaceIds": [
+          "T1",
+          "T2"
+        ]
+      },
+      "teamPrefs": {
+        "T1": {
+          "display_real_names": false
+        },
+        "T2": {
+          "display_real_names": true
+        }
+      },
+      "teams": {
+        "T1": {
+          "enterprise_id": "E1"
+        },
+        "T2": {
+          "enterprise_id": "E2"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {
+          "display_real_names": false
+        },
+        "locked_prefs": {}
+      },
+      "hiddenUsers": {
+        "U1": true
+      }
+    },
+    "result": true
+  }
+]

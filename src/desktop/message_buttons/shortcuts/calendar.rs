@@ -2,12 +2,34 @@
 use super::*;
 use super_platinum_core::{block_actions::shortcuts::calendar as cal, slack::api};
 mod actions;
+mod agents;
+mod directory;
 mod fixture;
+mod native;
 pub(super) fn install_fixture(s: &mut ShellState, variant: &str) {
     fixture::install(s, variant);
 }
 mod load;
+mod metadata;
+mod navigation;
+mod posting;
 mod sharing;
+pub(super) fn home_navigation_current(s: &ShellState, id: u64) -> bool {
+    navigation::current(s, id)
+}
+pub(super) fn close_home_navigation(s: &mut ShellState, id: u64) {
+    navigation::close_current(s, id)
+}
+#[cfg(test)]
+pub(super) fn navigation_test_setup(s: &mut ShellState) -> u64 {
+    fixture::install(s, "app-calendar");
+    let d = s.message_buttons.shortcuts.dialog.as_mut().unwrap();
+    d.fixture = false;
+    let c = d.calendar.as_mut().unwrap();
+    c.fixture = false;
+    c.stage = Stage::Created;
+    d.id
+}
 mod view;
 mod writes;
 pub(super) fn dialog(state: Signal<ShellState>, id: u64) -> Element {
@@ -31,6 +53,11 @@ struct Person {
 #[derive(Clone)]
 pub(super) struct Calendar {
     provider: cal::Provider,
+    metadata: metadata::Metadata,
+    posting: posting::Facts,
+    agents: agents::Facts,
+    directory_endpoint:
+        Option<Arc<super_platinum_core::block_actions::directory_endpoint::DirectoryEndpoint>>,
     stage: Stage,
     account: Option<cal::Account>,
     auth_url: Option<String>,
@@ -43,6 +70,7 @@ pub(super) struct Calendar {
     title: String,
     description: String,
     date: String,
+    time_revision: u64,
     start_text: String,
     end_text: String,
     start: Option<i64>,
@@ -71,6 +99,7 @@ pub(super) struct Calendar {
     notice: Option<String>,
     confirm_close: bool,
     provider_link: Option<String>,
+    app_link: Option<String>,
     attempt: Option<u64>,
     fixture: bool,
 }
@@ -107,6 +136,10 @@ impl Calendar {
     ) -> Self {
         Self {
             provider,
+            metadata: metadata::Metadata::default(),
+            posting: posting::Facts::default(),
+            agents: agents::Facts::default(),
+            directory_endpoint: None,
             stage: Stage::Loading,
             account: None,
             auth_url: None,
@@ -119,6 +152,7 @@ impl Calendar {
             title: String::new(),
             description: String::new(),
             date: cal::time::today(),
+            time_revision: 0,
             start_text: String::new(),
             end_text: String::new(),
             start: None,
@@ -147,6 +181,7 @@ impl Calendar {
             notice: None,
             confirm_close: false,
             provider_link: None,
+            app_link: None,
             attempt: None,
             fixture: false,
         }
@@ -200,6 +235,69 @@ fn context(s: &ShellState, id: u64) -> Option<Arc<Context>> {
             .ctx
             .clone()
     })
+}
+/// The Home button already supplied exact local Calendar intent, not an app
+/// execution token. Reuse the same form, reads and retained uncertain attempts.
+pub(super) fn begin_home(
+    mut state: Signal<ShellState>,
+    id: u64,
+    provider: cal::Provider,
+    preset: Option<String>,
+) {
+    let request = {
+        let mut s = state.write();
+        if !is_current(&s, id) {
+            return;
+        }
+        let d = s.message_buttons.shortcuts.dialog.as_ref().unwrap();
+        if d.owner.home.is_none() || d.calendar.is_some() || d.phase != Phase::Choosing {
+            return;
+        }
+        let ctx = d.owner.ctx.clone();
+        let channel = d.owner.channel.clone();
+        if cooling(&s, &ctx) {
+            return;
+        }
+        let mut c = Calendar::new(
+            provider,
+            channel.clone(),
+            load::initial_guests(&s, id),
+            load::share_choices(&s, &ctx, "", &channel),
+        );
+        if let Some(date) = preset {
+            c.date = date;
+        }
+        if let Some(old) = s
+            .message_buttons
+            .shortcuts
+            .calendar_attempts
+            .iter()
+            .rev()
+            .find(|a| {
+                a.epoch == ctx.epoch
+                    && a.team == ctx.session.team_id
+                    && a.provider == provider
+                    && !matches!(a.write, Write::Preference(_))
+                    && matches!(a.result, Settlement::Sending | Settlement::Unknown)
+            })
+        {
+            restore(&mut c, old, &s, &ctx);
+            c.stage = Stage::Uncertain;
+            c.notice=Some("An earlier calendar request has an unconfirmed outcome. It will not be sent again. Check your calendar before starting a different event.".into());
+            c.attempt = Some(old.id);
+        }
+        let load = c.stage == Stage::Loading;
+        s.message_buttons
+            .shortcuts
+            .dialog
+            .as_mut()
+            .unwrap()
+            .calendar = Some(c);
+        load.then_some(ctx)
+    };
+    if let Some(ctx) = request {
+        load::start(state, id, ctx);
+    }
 }
 /// Returns true only when the selected exact catalog action is this local flow.
 pub(super) fn begin(mut state: Signal<ShellState>, id: u64) -> bool {

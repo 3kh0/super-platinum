@@ -8,6 +8,7 @@ use std::{fs::OpenOptions, path::Path, time::Duration};
 const MAX_RECEIPTS: i64 = 32;
 const MAX_BODY: usize = crate::canvas::wire::MAX_BYTES * 5 + 128 * 1024;
 
+pub mod annotations;
 mod comments;
 pub mod replies;
 pub use comments::{CommentBegin, CommentDecision, CommentReceipt, CommentReview};
@@ -86,10 +87,10 @@ impl Journal {
         conn.execute_batch("PRAGMA synchronous=FULL; PRAGMA journal_mode=DELETE;")?;
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
         let version: i64 = tx.query_row("PRAGMA user_version", [], |r| r.get(0))?;
-        if !matches!(version, 0 | 1 | 2 | 3 | 4) {
+        if !matches!(version, 0 | 1 | 2 | 3 | 4 | 5) {
             return Err(invalid());
         }
-        if version == 4 {
+        if version >= 4 {
             let clocks: i64 = tx.query_row(
                 "SELECT count(*) FROM reply_clock WHERE singleton=1 AND value>=0",
                 [],
@@ -98,6 +99,15 @@ impl Journal {
             if clocks != 1 {
                 return Err(invalid());
             }
+        }
+        if version == 5 {
+            // Missing current-version tables are corruption, not a fresh store.
+            tx.query_row("SELECT count(*) FROM annotation_attempts", [], |r| {
+                r.get::<_, i64>(0)
+            })?;
+            tx.query_row("SELECT count(*) FROM annotation_history", [], |r| {
+                r.get::<_, i64>(0)
+            })?;
         }
         tx.execute_batch("CREATE TABLE IF NOT EXISTS identity(singleton INTEGER PRIMARY KEY CHECK(singleton=1),account TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS receipts(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,
@@ -118,7 +128,10 @@ impl Journal {
           CREATE TABLE IF NOT EXISTS reply_late_results(id TEXT PRIMARY KEY,observed TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS reply_history(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,id TEXT PRIMARY KEY,body TEXT NOT NULL,observed TEXT NOT NULL,status TEXT NOT NULL);
           CREATE INDEX IF NOT EXISTS reply_history_owner ON reply_history(workspace,user,file,id);
-          PRAGMA user_version=4;")?;
+          CREATE TABLE IF NOT EXISTS annotation_attempts(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,id TEXT NOT NULL UNIQUE,body TEXT NOT NULL,PRIMARY KEY(workspace,user,file));
+          CREATE TABLE IF NOT EXISTS annotation_history(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,id TEXT PRIMARY KEY,body TEXT NOT NULL,status TEXT NOT NULL,observed TEXT NOT NULL);
+          CREATE INDEX IF NOT EXISTS annotation_history_owner ON annotation_history(workspace,user,file,id);
+          PRAGMA user_version=5;")?;
         tx.execute("INSERT OR IGNORE INTO identity VALUES(1,?1)", [&owner])?;
         let actual: String =
             tx.query_row("SELECT account FROM identity WHERE singleton=1", [], |r| {
@@ -145,7 +158,7 @@ impl Journal {
             return Ok(Begin::Blocked(old));
         }
         let count: i64 = tx.query_row(
-            "SELECT (SELECT count(*) FROM receipts)+(SELECT count(*) FROM comment_receipts)+(SELECT count(*) FROM reply_attempts)",
+            "SELECT (SELECT count(*) FROM receipts)+(SELECT count(*) FROM comment_receipts)+(SELECT count(*) FROM reply_attempts)+(SELECT count(*) FROM annotation_attempts)",
             [],
             |r| r.get(0),
         )?;
@@ -185,7 +198,10 @@ impl Journal {
 }
 fn read(conn: &Connection, scope: &Scope) -> Result<Option<Receipt>, AppError> {
     scope_valid(scope)?;
-    if comments::present(conn, scope)? || replies::present(conn, scope)? {
+    if annotations::present(conn, scope)?
+        || comments::present(conn, scope)?
+        || replies::present(conn, scope)?
+    {
         return Err(invalid());
     }
     let row:Option<(String,String)>=conn.query_row(

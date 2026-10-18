@@ -33,7 +33,8 @@ pub(crate) fn select_route(
     visit: Option<crate::channel_tabs::Visit>,
     step: Option<crate::channel_tabs::selection::Step>,
 ) {
-    if (route.tab() == ChannelTab::AppHome && !crate::app_home::eligible(&state.peek()))
+    if (matches!(route.tab(), ChannelTab::AppHome | ChannelTab::AppAbout)
+        && !crate::app_home::eligible(&state.peek()))
         || state.peek().overlay.is_some()
         || !state.peek().conversation_visible()
     {
@@ -98,7 +99,8 @@ pub(crate) fn select_route(
                 || shell.shortcut_generation != canvas_generation
                 || shell.channel_tab != previous
                 || shell.overlay.is_some()
-                || (tab == ChannelTab::AppHome && !crate::app_home::eligible(&shell))
+                || (matches!(tab, ChannelTab::AppHome | ChannelTab::AppAbout)
+                    && !crate::app_home::eligible(&shell))
                 || !crate::canvas::surface::same_conversation(&shell, main_view)
                 || (previous == ChannelTab::Canvas && !crate::canvas::surface::can_leave(&shell))
                 || visit.as_ref().is_some_and(|v| !v.current(&shell))
@@ -132,7 +134,7 @@ pub(crate) fn select_route(
                 };
                 shell.core.pending_scroll_to = Some((channel.clone(), target));
             }
-            if previous == ChannelTab::AppHome {
+            if matches!(previous, ChannelTab::AppHome | ChannelTab::AppAbout) {
                 crate::app_home::leave(&mut shell);
             }
             shell.channel_tab = tab;
@@ -155,6 +157,10 @@ pub(crate) fn select_route(
 }
 
 pub async fn refresh(state: Signal<ShellState>) {
+    if crate::channel_tabs::selection::folder_selected(&state.peek()) {
+        crate::channel_tabs::folder::load(state);
+        return;
+    }
     if !state.peek().detail_open() {
         return;
     }
@@ -168,6 +174,7 @@ pub async fn refresh(state: Signal<ShellState>) {
     match tab {
         ChannelTab::Messages | ChannelTab::Canvas => {}
         ChannelTab::AppHome => crate::app_home::refresh(state).await,
+        ChannelTab::AppAbout => crate::app_home::about::refresh(state).await,
         ChannelTab::Bookmarks => crate::bookmarks::load(state, channel).await,
         ChannelTab::Pins => crate::pins::load(state, channel).await,
         ChannelTab::Files => {

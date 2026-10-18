@@ -1,5 +1,7 @@
 //! Durable draft receipts own retries. The HTTP layer must never replay a write.
 use super::*;
+#[path = "file_share_direct_open.rs"]
+mod file_share_direct_open;
 
 impl Transport {
     pub async fn execute_draft_mutation(&self, req: PreparedRequest) -> Result<Value, Error> {

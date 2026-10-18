@@ -18,6 +18,8 @@ mod picker_tests;
 mod precision;
 mod rating;
 mod record;
+mod refinement;
+mod reminder;
 mod rename;
 mod row;
 mod sort;
@@ -130,7 +132,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                             option{value:"",selected:selected.is_empty(),"All loaded items"}
                             for choice in view.view_choices.iter(){option{key:"{choice.id}",value:"{choice.id}",selected:choice.id==selected,"{choice.name}"}}
                             if view.selected_view.as_ref().is_some_and(|id|!view.view_choices.iter().any(|choice|&choice.id==id)) {
-                                option{value:"{selected}",selected:true,"Unavailable saved view"}
+                                option{value:"{selected}",selected:true,if view.pending_refinement{"Loading saved view…"}else{"Unavailable saved view"}}
                             }
                         }
                     }
@@ -138,6 +140,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                     {filter::action(state,generation)}
                     {sort::action(state,generation)}
                     {grouping::action(state,generation)}
+                    {refinement::controls(state,generation)}
                     {rename::view_action(state,generation)}
                     {rename::create_action(state,generation)}
                 }
@@ -148,9 +151,11 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
             if detail_generation.is_none()&&view.find_available {{find::bar(state,&view)}}
             div{class:"slack-list-notices","aria-live":"polite",
                 {create::status(state,generation)}
+                {refinement::status(state)}
                 {delete::status(state)}
+                {editor::assignment_recovery(state)}
                 if detail_generation.is_none()&&view.selected_view.is_none(){p{class:"slack-list-view-note","Showing loaded items without saved-view filters or grouping."}}
-                if let Some(reason)=&view.view_notice{p{class:"slack-list-warning",role:"status","{reason} Choose another view or All loaded items."}}
+                if view.pending_refinement{p{role:"status","Loading the saved view metadata…"}}else if let Some(reason)=&view.view_notice{p{class:"slack-list-warning",role:"status","{reason} Choose another view or All loaded items."}}
                 if let Some(reason)=&view.read_only_reason{p{class:"slack-list-read-only","{reason}"}}
                 if view.stale&&shown>0&&!deletion_unresolved{p{class:"slack-list-warning","This list has changed. Refresh to continue editing."}}
                 if view.incomplete{p{class:"slack-list-warning","Only part of this list is available. More items may exist."}}
@@ -180,8 +185,19 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
             }
             }
             if let Some(open)=detail_open {record::RecordDetail{key:"record-detail-{open}",state}}
+            if let Some(completion)=crate::slack_lists::completion::presentation(&state.read()) {
+                div{id:"slack-list-completion-status",class:"slack-list-warning",role:"status","aria-busy":completion.pending,
+                    p{"{completion.message}"}
+                    div{class:"slack-list-record-actions",
+                        if completion.can_check {button{r#type:"button",onclick:move |_|crate::slack_lists::completion::check(state,completion.serial),"Check result"}}
+                        if completion.can_continue {button{r#type:"button",onclick:move |_|crate::slack_lists::completion::continue_reference(state,completion.serial),"Update referenced item"}}
+                        if completion.can_dismiss {button{r#type:"button",onclick:move |_|crate::slack_lists::completion::dismiss(state,completion.serial),"Dismiss"}}
+                    }
+                }
+            }
             {delete::confirmation(state,generation)}
             {rename::panel(state)}
+            if let Some(reminder)=crate::slack_lists::reminder::presentation(&state.read()) {reminder::Reminder{key:"list-reminder-{reminder.generation}",state,view:reminder}}
             if let Some(receipt)=view.board_move_return {board_move::MoveReturn{key:"board-return-{receipt.serial}",state,receipt}}
             if let Some(editor)=view.editor {editor::CellEditor{key:"list-cell-editor-{editor.generation}",state,editor,visit:generation}}
         }

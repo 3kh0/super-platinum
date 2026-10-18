@@ -65,6 +65,8 @@ pub(in super::super) fn settled(
         }
         return Ok(());
     }
+    // This validated accepted draft is the sole retirement authority.
+    super::super::direct_open::accepted(tx, expected, receipt)?;
     // get validates the current indexed scope/source/token/body even if replaced.
     // Equality includes immutable source, note, destination, title and revision.
     if storage::get(tx, &expected.scope)?.as_ref() == Some(expected) {

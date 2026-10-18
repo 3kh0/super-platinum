@@ -6,7 +6,7 @@ use super_platinum_core::{
     slack::{Error, api},
 };
 
-async fn read(owner: &Owner) -> Result<(Value, Inventory), Error> {
+pub(super) async fn read(owner: &Owner) -> Result<(Value, Inventory), Error> {
     let raw = owner
         .execute(api::conversations_info(
             &owner.client,
@@ -25,7 +25,7 @@ async fn read(owner: &Owner) -> Result<(Value, Inventory), Error> {
     }
     Ok((channel.clone(), inventory))
 }
-fn envelope(raw: &Value) -> Result<(), Error> {
+pub(super) fn envelope(raw: &Value) -> Result<(), Error> {
     if raw["ok"] != true || raw.get("error").is_some_and(|v| !v.is_null()) {
         Err(Error::Api("tabs_response_unconfirmed".into()))
     } else {
@@ -63,8 +63,14 @@ pub(super) async fn execute(
         );
         return;
     }
-    let permission = owner.permission(&raw);
-    if let Some(intent) = intent {
+    let permission = match owner.read_permission(state, &raw).await {
+        Ok(permission) => permission,
+        Err(e) => {
+            failure(state, &owner, serial, &e, false);
+            return;
+        }
+    };
+    if let Some(mut intent) = intent {
         if permission != Permission::Allowed || intent.revalidate(&current).is_err() {
             if let Some(e) = current_entry(&mut state.write(), &owner, serial) {
                 e.inventory = Some(current);
@@ -171,9 +177,16 @@ pub(super) async fn execute(
                     return;
                 }
             };
+            let fresh_permission = match owner.read_permission(state, &fresh).await {
+                Ok(permission) => permission,
+                Err(e) => {
+                    failure(state, &owner, serial, &e, false);
+                    return;
+                }
+            };
             if !owner.current(&state.peek())
                 || intent.revalidate(&new).is_err()
-                || owner.permission(&fresh) != Permission::Allowed
+                || fresh_permission != Permission::Allowed
             {
                 finish(
                     state,
@@ -182,6 +195,91 @@ pub(super) async fn execute(
                     "Tabs or permissions changed. Nothing was sent.",
                 );
                 return;
+            }
+        }
+        if let Action::Remove { id } = intent.action() {
+            // oatk also recognizes file-only knowledge metadata. A missing
+            // channel flag must not send the ordinary one-service removal.
+            let file = intent
+                .base()
+                .canvas_record(id)
+                .ok()
+                .and_then(super_platinum_core::channel_tabs::file_id)
+                .unwrap_or_default();
+            let response = owner
+                .execute(api::file_info(&owner.client, &owner.session, file))
+                .await;
+            if !owner.current(&state.peek()) {
+                finish(
+                    state,
+                    &owner,
+                    serial,
+                    "The conversation changed. Nothing was sent.",
+                );
+                return;
+            }
+            let raw = match response {
+                Ok(v) if envelope(&v).is_ok() && v["file"]["id"].as_str() == Some(file) => v,
+                Err(e) => {
+                    failure(state, &owner, serial, &e, false);
+                    return;
+                }
+                _ => {
+                    finish(
+                        state,
+                        &owner,
+                        serial,
+                        "Current Canvas information is required. Nothing was sent.",
+                    );
+                    return;
+                }
+            };
+            if raw["file"]["knowledge_canvas_channel_id"].as_str()
+                == Some(owner.key.channel.as_str())
+                && !(current
+                    .properties()
+                    .pointer("/channel_knowledge_canvas/file_id")
+                    .and_then(Value::as_str)
+                    == Some(file)
+                    && current
+                        .properties()
+                        .pointer("/channel_knowledge_canvas/is_enabled")
+                        == Some(&Value::Bool(false)))
+            {
+                finish(
+                    state,
+                    &owner,
+                    serial,
+                    "This is a Channel Knowledge Canvas. Refresh its channel metadata before removing it.",
+                );
+                return;
+            }
+            let (fresh, new) = match read(&owner).await {
+                Ok(v) => v,
+                Err(e) => {
+                    failure(state, &owner, serial, &e, false);
+                    return;
+                }
+            };
+            if !owner.current(&state.peek()) || intent.revalidate(&new).is_err() {
+                finish(state, &owner, serial, "Tabs changed. Nothing was sent.");
+                return;
+            }
+            match owner.read_permission(state, &fresh).await {
+                Ok(Permission::Allowed) => {}
+                Err(e) => {
+                    failure(state, &owner, serial, &e, false);
+                    return;
+                }
+                _ => {
+                    finish(
+                        state,
+                        &owner,
+                        serial,
+                        "Permission changed. Nothing was sent.",
+                    );
+                    return;
+                }
             }
         }
         // Publish immutable custody before handing anything to Transport. There
@@ -205,7 +303,22 @@ pub(super) async fn execute(
             e.pending = Some(intent.clone());
         }
         match owner.execute(request).await {
-            Ok(v) if envelope(&v).is_ok() => {}
+            Ok(v) if envelope(&v).is_ok() => {
+                if intent.acknowledge(&v).is_err() {
+                    finish(
+                        state,
+                        &owner,
+                        serial,
+                        "The folder response could not be confirmed. Review current tabs; creation will not be sent again.",
+                    );
+                    return;
+                }
+                // ACK custody belongs to the original operation even when its
+                // account or dialog is no longer the visible destination.
+                if let Some(e) = current_entry(&mut state.write(), &owner, serial) {
+                    e.pending = Some(intent.clone());
+                }
+            }
             Ok(_) => {
                 finish(
                     state,
@@ -230,18 +343,23 @@ pub(super) async fn execute(
             return;
         }
         match read(&owner).await {
-            Ok((raw, current)) => adopt(state, &owner, serial, raw, current, true),
+            // Post-dispatch settlement is account-owned, even after UI retirement.
+            // A manager proof is not required to confirm the exact outcome;
+            // its next management action requires another fresh permission read.
+            Ok((raw, current)) => {
+                adopt(state, &owner, serial, owner.permission(&raw), current, true)
+            }
             Err(e) => failure(state, &owner, serial, &e, true),
         }
     } else {
-        adopt(state, &owner, serial, raw, current, false);
+        adopt(state, &owner, serial, permission, current, false);
     }
 }
 fn adopt(
     mut state: Signal<ShellState>,
     owner: &Owner,
     serial: u64,
-    raw: Value,
+    permission: Permission,
     current: Inventory,
     just_dispatched: bool,
 ) {
@@ -254,7 +372,6 @@ fn adopt(
         );
         return;
     }
-    let permission = owner.permission(&raw);
     let mut shell = state.write();
     let originating_visit_current = owner.current(&shell);
     let Some(e) = current_entry(&mut shell, owner, serial) else {
@@ -285,13 +402,19 @@ fn adopt(
         super::open_canvas(state, &Visit(Rc::new(owner.clone())), current, id);
     }
 }
-fn finish(mut state: Signal<ShellState>, owner: &Owner, serial: u64, message: &str) {
+pub(super) fn finish(mut state: Signal<ShellState>, owner: &Owner, serial: u64, message: &str) {
     if let Some(e) = current_entry(&mut state.write(), owner, serial) {
         e.busy = false;
         e.notice = message.into();
     }
 }
-fn failure(mut state: Signal<ShellState>, owner: &Owner, serial: u64, error: &Error, sent: bool) {
+pub(super) fn failure(
+    mut state: Signal<ShellState>,
+    owner: &Owner,
+    serial: u64,
+    error: &Error,
+    sent: bool,
+) {
     let wait = match error {
         Error::RateLimited { retry_after_secs } => {
             Some(Duration::from_secs(retry_after_secs.unwrap_or(30).max(1)))

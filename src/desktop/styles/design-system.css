@@ -433,6 +433,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Keep loading state visible without continuous rotation. */
+  .spinner,
+  .rail-connection-spinner,
+  .profile-avatar-loading { animation: none; }
+
   .rail-btn,
   .jump-to,
   .icon-btn,

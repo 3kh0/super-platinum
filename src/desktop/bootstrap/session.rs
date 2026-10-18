@@ -27,11 +27,36 @@ pub async fn refresh(mut state: Signal<ShellState>) {
                 )
             })
             .flatten();
-        match api::fetch_user_boot(&transport, &client, &workspace_session).await {
-            Ok(boot) => {
+        let boot_read = {
+            let mut shell = state.write();
+            if shell.core.account_epoch != refresh_epoch {
+                return;
+            }
+            super_platinum_core::state::posting_metadata::authority::BootRead::begin(
+                &mut shell.core,
+                &transport,
+                &workspace_session,
+            )
+        };
+        let Ok(boot_read) = boot_read else {
+            continue;
+        };
+        let Ok(request) = boot_read.request(&state.peek().core) else {
+            continue;
+        };
+        match transport.execute(request).await {
+            Ok(raw) => {
                 let mut shell = state.write();
-                if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-                    workspace.apply_boot(boot);
+                match boot_read.apply(&mut shell.core, raw, true) {
+                    Ok(true) => {}
+                    Ok(false) => continue,
+                    Err(error) => {
+                        shell.loading = false;
+                        shell.report_failure(&error, "", || {
+                            format!("Workspace refresh failed: {error}")
+                        });
+                        continue;
+                    }
                 }
                 shell.core.screen = super_platinum_core::state::Screen::Main;
                 shell.loading = false;
@@ -39,6 +64,9 @@ pub async fn refresh(mut state: Signal<ShellState>) {
             }
             Err(error) => {
                 let mut shell = state.write();
+                if !boot_read.failed(&mut shell.core) {
+                    continue;
+                }
                 shell.loading = false;
                 shell.report_failure(&error, "", || format!("Workspace refresh failed: {error}"));
                 continue;
@@ -99,10 +127,13 @@ pub async fn refresh(mut state: Signal<ShellState>) {
         {
             workspace.self_dnd = dnd;
         }
-        if let Ok(dms) = api::fetch_sidebar_dms(&transport, &client, &workspace_session).await
-            && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
-        {
-            workspace.apply_sidebar_dms(dms);
+        let posting =
+            crate::bootstrap::posting_ingress::capture(&state, &transport, &workspace_session);
+        if let Ok(dms) = api::fetch_sidebar_dms(&transport, &client, &workspace_session).await {
+            posting.channels(&state, &dms.all_channels());
+            if let Some(workspace) = state.write().core.workspaces.get_mut(&team) {
+                workspace.apply_sidebar_dms(dms);
+            }
         }
         if let Ok(sections) =
             api::fetch_channel_sections(&transport, &client, &workspace_session).await
@@ -291,8 +322,12 @@ async fn refresh_channel_metadata(
             .get(team)
             .map(|w| w.channel_lifecycle.revision())
             .unwrap_or(0);
+        let posting =
+            crate::bootstrap::posting_ingress::capture(&state, transport, workspace_session)
+                .for_channels(batch.keys());
         match api::fetch_generic_info(transport, client, workspace_session, &batch).await {
             Ok(page) if !page.channels.is_empty() => {
+                posting.channels(&state, &page.channels);
                 if let Some(workspace) = state.write().core.workspaces.get_mut(team) {
                     workspace.apply_channel_refresh_since(page, revision);
                 }
@@ -344,8 +379,14 @@ async fn hydrate_surface_channels(
     );
     let mut loaded = Vec::new();
     for chunk in channels.chunks(50) {
+        let posting =
+            crate::bootstrap::posting_ingress::capture(&state, transport, workspace_session)
+                .for_channels(chunk);
         match api::fetch_channels_info(transport, client, workspace_session, chunk.to_vec()).await {
-            Ok(channels) => loaded.extend(channels),
+            Ok(channels) => {
+                posting.channels(&state, &channels);
+                loaded.extend(channels);
+            }
             Err(error) => eprintln!("super-platinum: unfurl channel hydration failed: {error}"),
         }
     }
@@ -746,11 +787,21 @@ pub(super) async fn refresh_media(
 
 pub(crate) fn install_loaded(mut state: Signal<ShellState>, mut loaded: ShellState) {
     let mut previous = state.write();
+    // A newly loaded account/configuration must acquire posting authority from
+    // its own actual boot request. Warm caches and carried UI receipts cannot
+    // transfer a prior account's boot/config binding.
+    for workspace in loaded.core.workspaces.values_mut() {
+        workspace.posting_metadata.invalidate();
+    }
     let _release = crate::performance::emoji_retirement::scope(14, 1, 0);
     crate::read_preferences::settings::carry_pending(&mut previous, &mut loaded);
     crate::canvas_create::carry_pending(&mut previous, &mut loaded);
     crate::canvas::comments::carry_pending(&mut previous, &mut loaded);
     crate::channel_tabs::carry(&mut previous, &mut loaded);
+    crate::slack_lists::completion::carry_pending(&mut previous, &mut loaded);
+    crate::slack_lists::reminder::carry_pending(&mut previous, &mut loaded);
     crate::file_share::carry_pending(&mut previous, &mut loaded);
+    crate::profile_edit::recording::carry_pending(&mut previous, &mut loaded);
+    crate::app_home::workflows::navigation_history::carry(&mut previous, &mut loaded);
     *previous = loaded;
 }

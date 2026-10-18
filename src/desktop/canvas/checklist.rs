@@ -28,6 +28,7 @@ const MAX_TOTAL_RECEIPTS: usize = 32;
 #[derive(Default)]
 pub(crate) struct State {
     pub(in crate::canvas) local_editor: Option<u64>,
+    pub(in crate::canvas) comment_annotations: super::comments::annotation::Root,
     pub(in crate::canvas) comment_replies: super::comments::reply::Root,
     pub(in crate::canvas) comment_operations: super::comments::mutation::State,
     serial: u64,
@@ -386,6 +387,7 @@ pub(super) fn begin(
     if operation_index(shell, &view.file).is_some()
         || super::comments::mutation::pending_for_current_file(shell)
         || super::comments::reply::pending_for_current_file(shell)
+        || super::comments::annotation::pending_for_current_file(shell)
     {
         return Err("Wait for the previous change to be checked.");
     }

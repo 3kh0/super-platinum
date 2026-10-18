@@ -1,0 +1,1742 @@
+[
+  {
+    "label": "paid-regular",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "free",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": ""
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "pricing-policy-denied",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": false
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "on",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "pricing-policy-on-free",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": ""
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "on",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "builder-disabled",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "workflow_builder_enabled": false
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "builder-null-is-not-false",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "workflow_builder_enabled": null
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "read-denied-create-independent",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": false
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "restricted-regular",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": true
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "restricted-ra",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": true
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": "ra"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": false,
+      "editor": true
+    }
+  },
+  {
+    "label": "trial-restricted-free",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": true
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": ""
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "on"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": true
+    }
+  },
+  {
+    "label": "trial-free",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": ""
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "on"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "explicit-user",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": true
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": {
+            "user": [
+              "U00000001"
+            ]
+          }
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": false,
+      "editor": true
+    }
+  },
+  {
+    "label": "explicit-subteam",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": true
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": {
+            "subteam": [
+              "S1"
+            ]
+          }
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": [
+        "S1"
+      ]
+    },
+    "result": {
+      "create": true,
+      "managed": false,
+      "editor": true
+    }
+  },
+  {
+    "label": "unknown-string-default",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": "future"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "unknown-object-role-denied",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": {
+            "type": [
+              "future"
+            ]
+          }
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "empty-types-default",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": {
+            "type": []
+          }
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "workspace-owner",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": "owner"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": true,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "enterprise-admin-acts-owner",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": "owner"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": true
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "permission-or-owner",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": "owner"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": true,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "enterprise-no-locked-default",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro",
+        "enterprise_id": "E00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001",
+          "enterprise_id": "E00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ],
+        "enterpriseId": "E00000001"
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": "owner"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": true,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "enterprise-locked-owner-denied",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro",
+        "enterprise_id": "E00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001",
+          "enterprise_id": "E00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ],
+        "enterpriseId": "E00000001"
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {
+          "who_can_create_workflows": "owner"
+        }
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": true,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "enterprise-org-disabled-wins-locked-enabled",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro",
+        "enterprise_id": "E00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001",
+          "enterprise_id": "E00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ],
+        "enterpriseId": "E00000001"
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {
+          "workflow_builder_enabled": false
+        },
+        "locked_prefs": {
+          "workflow_builder_enabled": true
+        }
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": true,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "enterprise-selected-workspace",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro",
+        "enterprise_id": "E00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001",
+          "enterprise_id": "E00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ],
+        "enterpriseId": "E00000001"
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {
+          "who_can_create_workflows": {
+            "type": [
+              "selected"
+            ],
+            "workspace": [
+              "T00000001"
+            ]
+          }
+        }
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": true,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "enterprise-other-workspace-selected-denied",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro",
+        "enterprise_id": "E00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001",
+          "enterprise_id": "E00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ],
+        "enterpriseId": "E00000001"
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {
+          "who_can_create_workflows": {
+            "type": [
+              "selected"
+            ],
+            "workspace": [
+              "T00000009"
+            ]
+          }
+        }
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": true,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "enterprise-current-missing-field-retains-affiliation",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro",
+        "enterprise_id": "E00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ],
+        "enterpriseId": "E00000001"
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {
+          "workflow_builder_enabled": false
+        },
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": true,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "enterprise-foreign-pref-not-overridden",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro",
+        "enterprise_id": "E00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000002"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000002"
+        ],
+        "enterpriseId": "E00000001"
+      },
+      "teamPrefs": {
+        "T00000001": {},
+        "T00000002": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {
+          "workflow_builder_enabled": false
+        },
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": true,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": true,
+      "managed": true,
+      "editor": true
+    }
+  },
+  {
+    "label": "known-empty-inventory-no-builder",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": false
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro"
+      },
+      "workspaces": [],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": []
+      },
+      "teamPrefs": {
+        "T00000001": {}
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {}
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": false,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  },
+  {
+    "label": "boot-enterprise-without-self-enterprise-does-not-override",
+    "state": {
+      "self": {
+        "id": "U00000001",
+        "is_restricted": true
+      },
+      "team": {
+        "id": "T00000001",
+        "plan": "pro",
+        "enterprise_id": "E00000001"
+      },
+      "workspaces": [
+        {
+          "id": "T00000001",
+          "enterprise_id": "E00000001"
+        }
+      ],
+      "selfTeamIds": {
+        "teamId": "T00000001",
+        "internalWorkspaceIds": [
+          "T00000001"
+        ]
+      },
+      "teamPrefs": {
+        "T00000001": {
+          "who_can_create_workflows": "regular"
+        }
+      },
+      "enterprisePrefs": {
+        "org_prefs": {},
+        "locked_prefs": {
+          "who_can_create_workflows": "ra"
+        }
+      },
+      "featureAccess": {
+        "hermes__read": {
+          "is_enabled": true
+        },
+        "hermes__write": {
+          "is_enabled": true
+        }
+      },
+      "permission": false,
+      "flags": {
+        "slackforce_pnp_wfb": "off",
+        "wfb_hermes_trials": "off"
+      },
+      "unified": true,
+      "roles": {
+        "T00000001": {
+          "workspace_owner": false,
+          "workspace_admin": false,
+          "enterprise_owner": false,
+          "enterprise_admin": false
+        }
+      },
+      "subteams": []
+    },
+    "result": {
+      "create": false,
+      "managed": false,
+      "editor": false
+    }
+  }
+]

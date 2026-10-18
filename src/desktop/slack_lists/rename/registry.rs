@@ -65,11 +65,14 @@ pub(super) struct Entry {
     pub grouping_choice: u64,
     pub before: String,
     pub original: Document,
+    pub local_refinement: Option<super::super::refinement::Action>,
     pub intent: Option<Intent>,
     pub stage: Stage,
     pub message: String,
     pub review: Option<owner::Review>,
     pub raw_reply: Option<Value>,
+    pub refinement_receipt: Option<refinement_save::Receipt>,
+    pub group_delete_outcomes: Option<group_delete::Outcomes>,
 }
 #[derive(Default)]
 pub(super) struct Registry {

@@ -54,14 +54,52 @@ pub(crate) fn install(s: &mut ShellState) {
         notice: Some("Offline app workflow — no Slack requests.".into()),
         opened: true,
         confirmation: None,
+        calendar_confirmation: None,
         fixture: true,
     });
+    inputs::hydrate(s);
+}
+pub(crate) fn install_inputs(s: &mut ShellState) {
+    install(s);
+    let h = s.app_home.surface.as_mut().unwrap();
+    let home = h.home.clone().unwrap();
+    let mut raw = h.view.as_ref().unwrap().raw().clone();
+    let fields = serde_json::json!([
+    {"type":"input","block_id":"home-name","label":{"type":"plain_text","text":"Release name"},"element":{"type":"plain_text_input","action_id":"value","initial_value":"Équipe 東京"}},
+    {"type":"input","block_id":"home-notes","label":{"type":"plain_text","text":"Review notes"},"optional":true,"element":{"type":"plain_text_input","action_id":"value","multiline":true,"initial_value":"A quiet Home draft"}},
+    {"type":"input","block_id":"home-day","label":{"type":"plain_text","text":"Review date"},"optional":true,"element":{"type":"datepicker","action_id":"value"}},
+    {"type":"input","block_id":"home-choice","label":{"type":"plain_text","text":"Review team"},"element":{"type":"static_select","action_id":"value","options":[{"text":{"type":"plain_text","text":"Design"},"value":"design"},{"text":{"type":"plain_text","text":"Engineering"},"value":"engineering"}]}}
+    ]);
+    raw["blocks"]
+        .as_array_mut()
+        .unwrap()
+        .splice(2..2, fields.as_array().unwrap().iter().cloned());
+    h.view = Some(View::decode(&home, raw).unwrap());
+    h.revision = next();
+    inputs::hydrate(s);
 }
 fn home_view(h: &Home, saved: bool) -> Value {
     json!({"id":"V_HOME","type":"home","app_id":h.app,"app_installed_team_id":h.installed_team,"bot_id":"B_HOME","hash":if saved{"saved"}else{"initial"},"blocks":[
  {"type":"header","block_id":"heading","text":{"type":"plain_text","text":"Release reviews"}},
  {"type":"section","block_id":"summary","text":{"type":"mrkdwn","text":if saved{"*Review received*\nThe app updated this Home after receiving your form."}else{"*Prepare your release*\nOpen a review form without changing your conversation draft."}}},
  {"type":"actions","block_id":"entry","elements":[{"type":"button","action_id":"review","text":{"type":"plain_text","text":"Review release"},"value":"review"}]}]})
+}
+/// Static Home entry preview. Buttons remain fixture-inert: no auth URL, Calendar
+/// discovery, preference or event request can be dispatched from this surface.
+pub(crate) fn install_calendar(s: &mut ShellState) {
+    install(s);
+    let h = s.app_home.surface.as_mut().unwrap();
+    let home = h.home.clone().unwrap();
+    let raw = json!({"id":"V_HOME","type":"home","app_id":home.app,"app_installed_team_id":home.installed_team,"hash":"calendar-preview","blocks":[
+        {"type":"header","block_id":"heading","text":{"type":"plain_text","text":"Calendar"}},
+        {"type":"section","block_id":"description","text":{"type":"mrkdwn","text":"Create an event or connect your calendar while retaining your Home inputs."}},
+        {"type":"input","block_id":"note","label":{"type":"plain_text","text":"Local note"},"element":{"type":"plain_text_input","action_id":"value","initial_value":"Unsent Équipe 東京 note"}},
+        {"type":"actions","block_id":"calendar","elements":[
+            {"type":"button","action_id":"create","value":"ADZ494LHY_CREATE_EVENT:tomorrow","text":{"type":"plain_text","text":"Create event"}},
+            {"type":"button","action_id":"calendar_hermes_connect","value":json!({"app_id":"ADZ494LHY","provider_key":"gcal"}).to_string(),"text":{"type":"plain_text","text":"Connect calendar"}}]}]});
+    h.view = Some(View::decode(&home, raw).unwrap());
+    h.notice = Some("Offline Calendar Home preview — actions are disabled.".into());
+    inputs::hydrate(s);
 }
 pub(super) fn activate(s: &mut ShellState, b: &Button) {
     let Some(h) = s
@@ -122,7 +160,24 @@ pub(crate) fn submit(s: &mut ShellState, payload: &Value, token: &str) -> bool {
             toast_message: Some("Review submitted".into()),
         },
     );
-    let event=RtEvent::Unknown(serde_json::from_value(json!({"type":"view_updated","view_id":"V_HOME","app_id":"A_HOME","view":home_view(&home,true)})).unwrap());
+    let mut updated = s
+        .app_home
+        .surface
+        .as_ref()
+        .unwrap()
+        .view
+        .as_ref()
+        .unwrap()
+        .raw()
+        .clone();
+    updated["hash"] = json!("saved");
+    updated["blocks"][1] = home_view(&home, true)["blocks"][1].clone();
+    let event = RtEvent::Unknown(
+        serde_json::from_value(
+            json!({"type":"view_updated","view_id":"V_HOME","app_id":"A_HOME","view":updated}),
+        )
+        .unwrap(),
+    );
     super::realtime(s, &owner.ctx.session.team_id, owner.rt, &event);
     true
 }

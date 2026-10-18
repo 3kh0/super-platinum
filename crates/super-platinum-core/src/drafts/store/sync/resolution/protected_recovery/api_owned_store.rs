@@ -2,6 +2,8 @@
 //! initialization mode or drain certificate can be supplied by a caller.
 //! Construction, handoff, reopening and waits perform disk I/O: use off renderer.
 use super::*;
+// Content and read-only inventory types only; the hosted module stays private.
+pub use super::hosted_files::{Inventory as HostedInventory, Selection as HostedSelection};
 // Explicitly select the owned facade. The parent's legacy BaselineCompletion
 // otherwise shadows the public operations glob through the private import above.
 pub use crate::drafts::store::worker::owned_queue::operations::{
@@ -97,6 +99,13 @@ impl OwnedRoute {
         Ok((Self { queue }, fixture))
     }
 
+    /// Fresh private queue only; no caller-selected account, path or response.
+    #[cfg(any(test, feature = "protected-test-support"))]
+    pub fn fresh_hosted_fixture(case: HostedFixtureCase) -> Result<(Self, HostedFixture), Error> {
+        let queue = Queue::fresh()?;
+        let fixture = HostedFixture::create(queue.clone(), case)?;
+        Ok((Self { queue }, fixture))
+    }
     #[cfg(any(test, feature = "protected-test-support"))]
     pub fn fresh_fixture() -> Result<Self, Error> {
         Ok(Self {
@@ -246,3 +255,6 @@ pub use initialization::*;
 #[path = "api_owned_slash_schema.rs"]
 mod slash_schema;
 pub use slash_schema::*;
+#[path = "api_owned_hosted_schema.rs"]
+mod hosted_schema;
+pub use hosted_schema::*;

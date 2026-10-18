@@ -2,6 +2,7 @@
 use super::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FaultPoint {
+    InventoryRead,
     WriterCommit,
     LocalCommit,
     MutationReceipt,

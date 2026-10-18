@@ -458,6 +458,8 @@ async fn load_info(state: Signal<ShellState>, mut details: Signal<Details>, chan
     }
     details.write().loading = true;
     let read_revision = metadata_revision(&state, &ctx);
+    let posting = crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+        .for_channels([&channel]);
     let result =
         api::fetch_conversation_details(&ctx.transport, &ctx.client, &ctx.session, &channel).await;
     if !ctx.current(&state.peek()) {
@@ -466,6 +468,7 @@ async fn load_info(state: Signal<ShellState>, mut details: Signal<Details>, chan
     details.write().loading = false;
     match result {
         Ok(info) => {
+            posting.channels(&state, std::slice::from_ref(&info));
             let info = merge_info(state, &ctx, &info, read_revision);
             let mut data = details.write();
             data.info = Some(info);
@@ -495,6 +498,8 @@ async fn save(
         value
     };
     let read_revision = metadata_revision(&state, ctx);
+    let posting = crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+        .for_channels([&channel]);
     let mut info =
         api::fetch_conversation_details(&ctx.transport, &ctx.client, &ctx.session, channel)
             .await
@@ -502,6 +507,7 @@ async fn save(
     if !ctx.current(&state.peek()) {
         return Err("The active account changed.".into());
     }
+    posting.channels(&state, std::slice::from_ref(&info));
     info = merge_info(state, ctx, &info, read_revision);
     if field.value(&info) != expected {
         if let Ok(mut data) = details.try_write() {
@@ -533,9 +539,14 @@ async fn save(
     // that canonical value before the next edit's conflict comparison.
     let mut result_revision = write_revision;
     let snapshot_revision = metadata_revision(&state, ctx);
+    let posting = crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+        .for_channels([&channel]);
     if let Ok(fresh) =
         api::fetch_conversation_details(&ctx.transport, &ctx.client, &ctx.session, channel).await
     {
+        if ctx.current(&state.peek()) {
+            posting.channels(&state, std::slice::from_ref(&fresh));
+        }
         info = fresh;
         result_revision = snapshot_revision;
     }
@@ -563,6 +574,8 @@ async fn change_archive(
         return Err("The active account changed.".into());
     }
     let read_revision = metadata_revision(&state, ctx);
+    let posting = crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+        .for_channels([&channel]);
     let mut info =
         api::fetch_conversation_details(&ctx.transport, &ctx.client, &ctx.session, channel)
             .await
@@ -570,6 +583,7 @@ async fn change_archive(
     if !ctx.current(&state.peek()) {
         return Err("The active account changed.".into());
     }
+    posting.channels(&state, std::slice::from_ref(&info));
     info = merge_info(state, ctx, &info, read_revision);
     if info.is_archived == archive {
         if let Ok(mut data) = details.try_write() {
@@ -590,9 +604,14 @@ async fn change_archive(
     info.is_archived = archive;
     let mut result_revision = write_revision;
     let snapshot_revision = metadata_revision(&state, ctx);
+    let posting = crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+        .for_channels([&channel]);
     if let Ok(fresh) =
         api::fetch_conversation_details(&ctx.transport, &ctx.client, &ctx.session, channel).await
     {
+        if ctx.current(&state.peek()) {
+            posting.channels(&state, std::slice::from_ref(&fresh));
+        }
         info = fresh;
         result_revision = snapshot_revision;
     }

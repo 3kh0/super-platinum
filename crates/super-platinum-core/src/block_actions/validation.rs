@@ -303,6 +303,21 @@ pub(super) fn validate_button(
     button: &Value,
     self_user_id: &str,
 ) -> Result<(), MessageActionError> {
+    validate_button_shape(button, self_user_id, false)
+}
+// Only the closed Home Calendar entry capture may bypass the Calendar value
+// interception. Ordinary message and Home button paths retain the refusal.
+pub(super) fn validate_calendar_button(
+    button: &Value,
+    self_user_id: &str,
+) -> Result<(), MessageActionError> {
+    validate_button_shape(button, self_user_id, true)
+}
+fn validate_button_shape(
+    button: &Value,
+    self_user_id: &str,
+    calendar_entry: bool,
+) -> Result<(), MessageActionError> {
     if button.get("type").and_then(Value::as_str) != Some("button") {
         return Err(MessageActionError::UnsupportedButton);
     }
@@ -320,18 +335,19 @@ pub(super) fn validate_button(
     }
     // Captured urb3/maybeGetCalendarCreateEventAction intercepts these values
     // before blocks.actions for any service. They open a client calendar flow.
-    if button
-        .get("value")
-        .and_then(Value::as_str)
-        .is_some_and(|value| {
-            [
-                "ADZ494LHY_CREATE_EVENT",
-                "AFV5ECLBZ_CREATE_EVENT",
-                "A01NK8UJRGC_CREATE_EVENT",
-            ]
-            .iter()
-            .any(|prefix| value.starts_with(prefix))
-        })
+    if !calendar_entry
+        && button
+            .get("value")
+            .and_then(Value::as_str)
+            .is_some_and(|value| {
+                [
+                    "ADZ494LHY_CREATE_EVENT",
+                    "AFV5ECLBZ_CREATE_EVENT",
+                    "A01NK8UJRGC_CREATE_EVENT",
+                ]
+                .iter()
+                .any(|prefix| value.starts_with(prefix))
+            })
     {
         return Err(MessageActionError::UnsupportedButton);
     }

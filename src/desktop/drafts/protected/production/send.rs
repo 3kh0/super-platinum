@@ -15,6 +15,7 @@ pub(super) struct Captured {
     pub(super) account: Arc<Account>,
     pub(super) key: DraftKey,
     pub(super) local: LocalDraft,
+    pub(super) hosted: bool,
     pub(super) target: ComposerTarget,
     pub(super) epoch: u64,
     pub(super) view: u64,
@@ -24,7 +25,7 @@ pub(super) struct Captured {
     connection: Arc<socket::Connection>,
     pub(super) binding: crate::drafts::network::Binding,
 }
-fn local(shell: &ShellState, target: ComposerTarget) -> LocalDraft {
+pub(super) fn local(shell: &ShellState, target: ComposerTarget) -> LocalDraft {
     match target {
         ComposerTarget::Channel => LocalDraft {
             composer: shell.core.composer.clone(),
@@ -54,17 +55,32 @@ impl Captured {
     pub(super) fn unchanged(&self, shell: &ShellState) -> bool {
         self.current(shell)
             && same_local(&local(shell, self.target), &self.local)
-            && shell
-                .core
-                .drafts
-                .items
-                .get(&self.key)
-                .is_some_and(|v| same_local(v, &self.local))
+            && shell.core.drafts.items.get(&self.key).map_or_else(
+                || {
+                    self.hosted
+                        && self.local.composer == Default::default()
+                        && self.local.attachments.is_empty()
+                },
+                |v| same_local(v, &self.local),
+            )
     }
 }
 
 pub(crate) fn intercept(mut state: Signal<ShellState>, target: ComposerTarget) -> bool {
     if crate::fixture::is_fixture() {
+        #[cfg(feature = "protected-native-fixture")]
+        {
+            if !super::hosted_native::named() {
+                return false;
+            }
+            if !super::hosted_native::current(&state.peek()) {
+                state
+                    .write()
+                    .show_toast("The closed hosted fixture owner is no longer current.");
+                return true;
+            }
+        }
+        #[cfg(not(feature = "protected-native-fixture"))]
         return false;
     }
     let result = (|| {
@@ -81,15 +97,22 @@ pub(crate) fn intercept(mut state: Signal<ShellState>, target: ComposerTarget) -
             return Ok(None);
         }
         let local = local(&shell, target);
-        if local.empty() {
+        let hosted = super::hosted::present(&shell, target);
+        if hosted && (target != ComposerTarget::Channel || !local.attachments.is_empty()) {
+            return Err(durable::Error::Unsupported);
+        }
+        if local.empty() && !hosted {
             return Ok(None);
         }
         // Files keep their actual upload/share protocol and owned local/journal
         // path. They never enter the text-only protected Consume codec.
-        if local.attachments.is_empty() && crate::drafts::local_snapshot(&key, &local).is_err() {
+        if !hosted
+            && local.attachments.is_empty()
+            && crate::drafts::local_snapshot(&key, &local).is_err()
+        {
             return Err(durable::Error::Unsupported);
         }
-        if local.attachments.is_empty() {
+        if !hosted && local.attachments.is_empty() {
             action_root.has_capacity()?;
         }
         operation::bounded(&local)?;
@@ -116,6 +139,7 @@ pub(crate) fn intercept(mut state: Signal<ShellState>, target: ComposerTarget) -
             account,
             key,
             local,
+            hosted,
             target,
             epoch: shell.core.account_epoch,
             view: shell.draft_writes.view_id,
@@ -129,6 +153,10 @@ pub(crate) fn intercept(mut state: Signal<ShellState>, target: ComposerTarget) -
     })();
     match result {
         Ok(Some((root, captured))) => {
+            if captured.hosted {
+                super::hosted::start(state, captured);
+                return true;
+            }
             if !captured.local.attachments.is_empty() {
                 super::uploads::start(state, captured);
                 return true;
@@ -247,15 +275,30 @@ pub(super) async fn prepare_source(
     if !captured.unchanged(&state.peek()) {
         return Err(durable::Error::Stale);
     }
-    let original = native::capture(state, captured.target, &captured.local).await?;
-    let editor = super::enroll::editor(
-        state,
-        captured.target,
-        captured.account.clone(),
-        &captured.key,
-        &captured.local,
-    )
-    .await?;
+    let original = if captured.hosted {
+        native::capture_hosted(state, captured.target, &captured.local).await?
+    } else {
+        native::capture(state, captured.target, &captured.local).await?
+    };
+    let editor = if captured.hosted {
+        super::enroll::editor_hosted(
+            state,
+            captured.target,
+            captured.account.clone(),
+            &captured.key,
+            &captured.local,
+        )
+        .await?
+    } else {
+        super::enroll::editor(
+            state,
+            captured.target,
+            captured.account.clone(),
+            &captured.key,
+            &captured.local,
+        )
+        .await?
+    };
     if !captured.unchanged(&state.peek()) {
         return Err(durable::Error::Stale);
     }

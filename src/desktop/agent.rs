@@ -32,6 +32,8 @@ pub async fn serve(
     // bind/accept errors, and normal return all release the native activity.
     let _background_activity = background::begin_if(enabled);
     crate::blocks::check_button_metadata_native(desktop.clone());
+    #[cfg(feature = "protected-test-support")]
+    crate::app_home::workflows::fixture::check::start(state, desktop.clone());
     #[cfg(all(
         feature = "original-download-native-fixture",
         feature = "protected-native-fixture"
@@ -71,6 +73,8 @@ pub async fn serve(
     #[cfg(feature = "protected-native-fixture")]
     crate::drafts::protected::slash_native::start(state);
     #[cfg(feature = "protected-native-fixture")]
+    crate::drafts::protected::production::hosted_native::start(state, desktop.clone());
+    #[cfg(feature = "protected-native-fixture")]
     crate::drafts::protected::production::baseline_native::start(state, desktop.clone());
     #[cfg(feature = "protected-native-fixture")]
     crate::drafts::protected::enrollment_fixture::check::start(state, desktop.clone());
@@ -78,6 +82,7 @@ pub async fn serve(
     crate::drafts::protected::adoption_fixture::check::start(state, desktop.clone());
     crate::view::managed_schedule_check::start(state, desktop.clone());
     crate::scheduled::attachments::fixture::check::start(state, desktop.clone());
+    crate::forward::scheduled::fixture::check::start(state, desktop.clone());
     crate::slack_links::user_check::start(state, desktop.clone());
     crate::read_preferences::settings::check::start(state, desktop.clone());
     crate::read_preferences::navigation_check::start(state, desktop.clone());

@@ -1,5 +1,5 @@
 use super::*;
-fn setup() -> (ShellState, State, Binding) {
+pub(super) fn setup() -> (ShellState, State, Binding) {
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
     shell.core.active_account = Some(fixture::ACCOUNT.into());
     shell.canvas = Some(crate::state::CanvasTarget {
@@ -29,6 +29,8 @@ fn setup() -> (ShellState, State, Binding) {
         disk,
         root: binding.root.clone(),
         text: "original".into(),
+        blocks: None,
+        native: None,
         serial: 5,
         capture: uuid::Uuid::new_v4().to_string(),
         inventory: None,
@@ -43,6 +45,7 @@ fn setup() -> (ShellState, State, Binding) {
         locked: None,
         history: None,
         retired_text: None,
+        retired_blocks: None,
     });
     let model = State {
         owner: Some(owner),

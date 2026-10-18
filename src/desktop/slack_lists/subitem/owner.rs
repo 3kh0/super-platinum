@@ -88,6 +88,9 @@ impl Guard {
             && (stage == Stage::Checking
                 || shell.slack_lists.view.as_ref().is_some_and(|v| !v.stale))
             && !delete::blocks_mutation(shell)
+            && !reminder::blocks_mutation(shell)
+            && !completion::blocks_mutation(shell)
+            && !editor::assignment::blocks_mutation(shell)
             && !rename::blocks_mutation(shell)
             && !shell.slack_lists.operations.contains_key(&self.key.list)
             && with(|r| {

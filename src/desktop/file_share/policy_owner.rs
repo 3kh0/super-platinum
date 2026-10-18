@@ -67,6 +67,22 @@ impl Snapshot {
     pub(crate) fn eligibility(&self) -> Eligibility {
         self.eligibility
     }
+    pub(super) fn hosted_fresh(
+        &self,
+        input: Arc<super_platinum_core::drafts::store::protected::owned_store::HostedPrepared>,
+        current: &super_platinum_core::drafts::store::protected::owned_store::HostedInput,
+    ) -> Result<
+        super_platinum_core::drafts::store::protected::owned_store::HostedFresh,
+        super_platinum_core::drafts::store::protected::owned_store::AdmissionError,
+    > {
+        super_platinum_core::drafts::store::protected::owned_store::HostedFresh::new(
+            input,
+            current,
+            &self.raw,
+            &self.facts,
+            self.peer_raw.as_ref(),
+        )
+    }
     pub(crate) fn raw(&self) -> &Value {
         &self.raw
     }

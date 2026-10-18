@@ -25,6 +25,9 @@ pub(crate) enum Outcome {
     /// A complete, narrowly recognized explicit server rejection; no replay.
     Rejected,
     Confirmed,
+    /// The owning durable workflow explicitly retained both versions and chose
+    /// a freshly verified conflict baseline. This is not a success/rejection.
+    ReviewedConflict,
     Unknown,
 }
 
@@ -115,7 +118,10 @@ impl Operations {
         }
         match outcome {
             Outcome::Unknown => other.phase = Phase::Uncertain,
-            Outcome::NotDispatched | Outcome::Rejected | Outcome::Confirmed => {
+            Outcome::NotDispatched
+            | Outcome::Rejected
+            | Outcome::Confirmed
+            | Outcome::ReviewedConflict => {
                 if other.attached {
                     other.phase = Phase::Idle;
                     other.expected = None;

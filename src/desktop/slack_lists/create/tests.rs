@@ -426,3 +426,19 @@ fn owner_rotation_cannot_retire_still_running_creation_barrier() {
     assert!(retire(&mut s, a.serial));
     assert!(!blocks_mutation(&s));
 }
+
+#[test]
+fn completion_target_lookup_retains_creation_barrier_off_view_and_by_owner() {
+    let mut s = shell();
+    let attempt = begin_current(&mut s);
+    let scope = s.slack_lists.scope.clone().unwrap();
+    let list = attempt.intent.list_id().to_owned();
+    s.slack_lists.view.as_mut().unwrap().id = "F_DIFFERENT_VISIBLE".into();
+    assert!(blocks_target(&s, &scope, &list));
+    s.slack_lists.create.receipts.clear();
+    assert!(blocks_target(&s, &scope, &list)); // retained barrier is also authoritative
+    assert!(!blocks_target(&s, &scope, "F_UNRELATED"));
+    s.core.active_account = Some("foreign".into());
+    let foreign = Scope::capture(&s).unwrap();
+    assert!(!blocks_target(&s, &foreign, &list));
+}

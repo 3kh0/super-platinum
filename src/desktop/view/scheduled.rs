@@ -283,6 +283,7 @@ pub(crate) fn ScheduledPanel(mut state: Signal<ShellState>) -> Element {
           if let Some(error)=queue.and_then(|q|q.error.as_ref()){p{class:"later-error",role:"alert","{error}"}}
           if loading{p{class:"files-status",role:"status","Loading drafts…"}}
           if filter==DraftFilter::Drafts {crate::forward::inventory::SavedForwards{state}super::local_drafts::LocalDraftRows{state}}
+          crate::forward::scheduled::Inventory{state}
           attachments::host::Inventory{state,operations,editor_open:editing.read().is_some()||attachment_edit.read().is_some(),onopen:move |lease|{if editing.peek().is_none(){attachment_edit.set(Some(lease));}}}
           if let Some(queue)=queue{
             for item in queue.sorted(){
@@ -553,6 +554,9 @@ pub(super) fn destination_label(shell: &ShellState, destinations: &[serde_json::
         .join(", ")
 }
 fn can_schedule(shell: &ShellState, target: ComposerTarget) -> bool {
+    if crate::drafts::protected::production::hosted::present(shell, target) {
+        return false;
+    }
     if crate::drafts::schedule::Request::create(shell, target).is_some() {
         return true;
     }

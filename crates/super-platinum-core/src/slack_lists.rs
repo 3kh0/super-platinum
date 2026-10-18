@@ -3,7 +3,11 @@ use crate::slack::models::File;
 use serde_json::Value;
 use std::collections::{BTreeMap, HashSet};
 
+mod board_record_move;
 mod cell_edit;
+pub use board_record_move::{
+    BoardRecordMove, BoardRecordMoveAttempt, BoardRecordMovePermit, BoardRecordMovePhase,
+};
 mod column_create;
 mod rating;
 pub use rating::RatingOptions;
@@ -13,15 +17,22 @@ mod column_delete;
 mod column_precision;
 mod column_rename;
 pub use column_delete::{ColumnDelete, ColumnDeleteAttempt, ColumnDeletePermit, ColumnDeletePhase};
+mod board_lane_order;
 mod field_visibility;
 mod view_create;
 mod view_filter;
 mod view_grouping;
+mod view_refinement;
+pub use board_lane_order::{
+    BoardLaneOrder, BoardLaneOrderAttempt, BoardLaneOrderDraft, BoardLaneOrderPermit,
+    BoardLaneOrderPhase, BoardLanePlacement,
+};
 pub use column_create::{
     ColumnCreate, ColumnCreateAttempt, ColumnCreateKind, ColumnCreatePermit, ColumnCreatePhase,
     EntityCreateDefaults, EntityCreateDomain, EntityCreateFormat, EntityCreateOptions,
     NumberCreatePrecision, SelectCreateFormat, SelectCreateOption, SelectCreateOptions,
 };
+pub use view_refinement::{ViewRefinementChanges, ViewRefinementDraft};
 mod view_rename;
 mod view_reorder;
 pub use view_reorder::{
@@ -72,11 +83,16 @@ pub mod saved_views;
 pub mod timestamps;
 pub use hierarchy::{HierarchyRow, ParentRelation};
 mod presentation;
-pub use cell_edit::{CellEdit, CellEditValue, LinkValue};
+pub use cell_edit::{
+    CellEdit, CellEditValue, LinkValue, TaskAssignment, TaskAssignmentDecision, TaskCompletion,
+    TaskCompletionCell, TaskCompletionReference,
+};
+mod reminder;
 pub use cells::CellValue;
 pub use edits::CheckboxEdit;
 pub use policy::PersonalTaskLists;
 pub use presentation::{CellPresentation, ReferenceKind, SelectLabel};
+pub use reminder::{ListReminderChange, ListReminderEdit};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ListError(pub &'static str);
@@ -354,3 +370,27 @@ impl RecordsPage {
 mod tests;
 
 pub use view_sort::{ViewSort, ViewSortAttempt, ViewSortChoice, ViewSortPermit, ViewSortPhase};
+
+mod board_choice;
+pub use board_choice::{
+    BoardChoiceAction, BoardChoiceAttempt, BoardChoiceChange, BoardChoicePermit, BoardChoicePhase,
+};
+
+mod board_group_delete;
+pub use board_group_delete::{
+    BoardGroupDelete, BoardGroupDeleteAttempt, BoardGroupDeleteCellsPermit, BoardGroupDeletePhase,
+    BoardGroupDeleteSchemaPermit,
+};
+
+mod view_refinement_save;
+pub use view_refinement_save::{
+    ViewRefinementDestination, ViewRefinementSave, ViewRefinementSaveAttempt,
+    ViewRefinementSavePermit, ViewRefinementSavePhase,
+};
+
+mod default_view_preference;
+pub use default_view_preference::{
+    ListDefaultViewPreference, ListDefaultViewPreferenceAttempt, ListDefaultViewPreferencePermit,
+};
+
+pub use view_refinement_save::ViewRefinementAcknowledgement;

@@ -49,6 +49,20 @@ pub(super) fn same_incarnation(a: &Document, b: &Document) -> bool {
             .iter()
             .all(|k| a.raw.get(*k) == b.raw.get(*k))
 }
+fn is_board_choice(guard: &Guard) -> bool {
+    with_registry(|r| {
+        r.entries
+            .get(&guard.key)
+            .is_some_and(|e| e.serial == guard.serial && e.target.is_board_choice())
+    })
+}
+fn is_card_order(guard: &Guard) -> bool {
+    with_registry(|r| {
+        r.entries.get(&guard.key).is_some_and(|e| {
+            e.serial == guard.serial && (e.target.is_card_order() || e.target.is_group_delete())
+        })
+    })
+}
 fn is_deletion(guard: &Guard) -> bool {
     with_registry(|r| {
         r.entries
@@ -72,7 +86,29 @@ async fn read(
             .scope
             .request(&state.peek())
             .ok_or(Error::TransportNotConfigured)?;
-        if is_deletion(guard) {
+        if is_card_order(guard) {
+            context
+                .transport
+                .execute_list_board_record_move_read(request, || {
+                    guard.current(&state.peek(), stage) && !registry::blocked(&guard.key.owner)
+                })
+                .await
+                .map_err(|e| match e {
+                    ListColumnRenameFailure::NotRequested(e)
+                    | ListColumnRenameFailure::Unconfirmed(e) => e,
+                })
+        } else if is_board_choice(guard) {
+            context
+                .transport
+                .execute_list_board_choice_read(request, || {
+                    guard.current(&state.peek(), stage) && !registry::blocked(&guard.key.owner)
+                })
+                .await
+                .map_err(|e| match e {
+                    ListColumnRenameFailure::NotRequested(e)
+                    | ListColumnRenameFailure::Unconfirmed(e) => e,
+                })
+        } else if is_deletion(guard) {
             context
                 .transport
                 .execute_list_column_delete_read(request, || {
@@ -102,7 +138,7 @@ async fn read(
     // Keep the response for the original receipt. Caller owns projection admission.
     result
 }
-async fn metadata(
+pub(super) async fn metadata(
     state: Signal<ShellState>,
     guard: &Guard,
     stage: Stage,
@@ -175,6 +211,14 @@ async fn metadata(
 }
 pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) {
     dioxus::core::spawn_forever(async move {
+        if let Intent::Refinement(i) = &intent {
+            refinement_save::network::save(state, guard, i.clone()).await;
+            return;
+        }
+        if let Intent::GroupDelete(i) = &intent {
+            group_delete::network::save(state, guard, i.clone()).await;
+            return;
+        }
         let loaded = match metadata(state, &guard, Stage::Preparing).await {
             Ok(v) => v,
             Err(_) => {
@@ -186,7 +230,23 @@ pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) 
                 return;
             }
         };
-        let permit = admitted(&state.peek(), &guard, &intent, &loaded);
+        let records = if is_card_order(&guard) {
+            match population(state, &guard, Stage::Preparing).await {
+                Ok(page) => Some(page),
+                Err(_) => {
+                    unsent(
+                        &mut state.write(),
+                        &guard,
+                        "Could not verify the current items. Nothing was sent. Close this review and refresh before trying again.",
+                    );
+                    return;
+                }
+            }
+        } else {
+            None
+        };
+        let permit =
+            admitted_with_records(&state.peek(), &guard, &intent, &loaded, records.as_ref());
         let Some(permit) = permit else {
             unsent(
                 &mut state.write(),
@@ -199,6 +259,9 @@ pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) 
         let result = if super::super::fixture::enabled(&state.peek()) {
             fixture::write(state, &guard, permit).await
         } else if let Some(context) = guard.scope.request(&state.peek()) {
+            let card_order = permit.is_card_order();
+            let board_choice = permit.is_board_choice();
+            let lane_order = permit.is_lane_order();
             let reorder = permit.is_reorder();
             let deletion = permit.is_deletion();
             let text_creation = permit.is_text_creation();
@@ -213,7 +276,22 @@ pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) 
             let current = || {
                 guard.current(&state.peek(), Stage::Saving) && !registry::blocked(&guard.key.owner)
             };
-            if reorder {
+            if card_order {
+                context
+                    .transport
+                    .execute_list_board_record_move(request, current)
+                    .await
+            } else if board_choice {
+                context
+                    .transport
+                    .execute_list_board_choice(request, current)
+                    .await
+            } else if lane_order {
+                context
+                    .transport
+                    .execute_list_board_lane_order(request, current)
+                    .await
+            } else if reorder {
                 context
                     .transport
                     .execute_list_view_reorder(request, current)
@@ -280,8 +358,43 @@ pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) 
 }
 pub(super) fn check(mut state: Signal<ShellState>, guard: Guard) {
     dioxus::core::spawn_forever(async move {
-        let result = metadata(state, &guard, Stage::Checking).await;
-        let applied = checked(&mut state.write(), &guard, result);
+        let mut result = metadata(state, &guard, Stage::Checking).await;
+        let mut records = None;
+        if result.is_ok() && (is_board_choice(&guard) || is_card_order(&guard)) {
+            match population(state, &guard, Stage::Checking).await {
+                Ok(page) => records = Some(page),
+                Err(error) => result = Err(error),
+            }
+        }
+        let applied = checked_with_records(&mut state.write(), &guard, result, records);
         fixture::finished(&guard, "check", applied);
     });
+}
+
+pub(super) async fn population(
+    state: Signal<ShellState>,
+    guard: &Guard,
+    stage: Stage,
+) -> Result<RecordsPage, Error> {
+    let request = if super::super::fixture::enabled(&state.peek()) {
+        Some(api::lists_records_list(
+            &state.peek().core.client,
+            &fixture::session(),
+            &guard.key.list,
+        ))
+    } else {
+        guard
+            .scope
+            .request(&state.peek())
+            .map(|c| api::lists_records_list(&c.client, &c.session, &guard.key.list))
+    };
+    let raw = read(
+        state,
+        guard,
+        stage,
+        request.ok_or(Error::TransportNotConfigured)?,
+    )
+    .await?;
+    positive(&raw)?;
+    api::parse_list_records(raw, &guard.key.list)
 }

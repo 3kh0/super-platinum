@@ -10,6 +10,11 @@ impl Request {
                 "protected-slash",
                 Some(&command.scope().key),
             ),
+            Self::Hosted(command) => (
+                command.account(),
+                "protected-hosted",
+                Some(&command.scope().key),
+            ),
             Self::Protected(command) => (command.account.as_str(), "protected", None),
             Self::Upload(command) => {
                 let (account, family) = command.identity();
@@ -85,6 +90,7 @@ impl Request {
     pub(super) fn slash_fence_account(&self) -> Option<&str> {
         match self {
             Self::SlashProtected(_) => None,
+            Self::Hosted(command) if command.is_completion() => None,
             _ => Some(self.identity().account),
         }
     }

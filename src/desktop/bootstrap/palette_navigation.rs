@@ -233,15 +233,17 @@ pub(crate) fn open_palette_target(mut state: Signal<ShellState>, target: Palette
             shell.show_toast("Sign in to open this direct message.");
             return;
         };
-        let result = api::open_dm(&transport, &client, &session, user.clone()).await;
+        let posting = crate::bootstrap::posting_ingress::capture(&state, &transport, &session);
+        let result = api::open_dm_channel(&transport, &client, &session, user.clone()).await;
         if !visit.current(&state.peek()) {
             visit.release(&mut state.write());
             return;
         }
         match result {
-            Ok(id) => {
-                let opened = visit.finish(&mut state.write(), &user, id);
+            Ok(channel) => {
+                let opened = visit.finish(&mut state.write(), &user, channel.id.clone());
                 if opened {
+                    posting.channels(&state, std::slice::from_ref(&channel));
                     super::refresh_selected_channel(state).await;
                 } else {
                     let mut shell = state.write();

@@ -15,6 +15,16 @@ use super_platinum_core::{
     slack::Error,
 };
 mod calendar;
+pub(crate) fn calendar_home_navigation_current(s: &ShellState, id: u64) -> bool {
+    calendar::home_navigation_current(s, id)
+}
+pub(crate) fn close_calendar_home_navigation(s: &mut ShellState, id: u64) {
+    calendar::close_home_navigation(s, id)
+}
+#[cfg(test)]
+pub(crate) fn calendar_navigation_test_setup(s: &mut ShellState) -> u64 {
+    calendar::navigation_test_setup(s)
+}
 pub(crate) mod fixture;
 pub(crate) mod view;
 #[derive(Default)]
@@ -34,6 +44,7 @@ struct Owner {
     source: Option<Source>,
     related: Vec<String>,
     channel_scope: domain::grid::ChannelScope,
+    home: Option<crate::app_home::calendar::Origin>,
 }
 impl Owner {
     fn current(&self, s: &ShellState) -> bool {
@@ -52,6 +63,7 @@ impl Owner {
                 s.thread_root.as_ref() == Some(root) && s.thread_generation == *g
             })
             && self.source.as_ref().is_none_or(|v| v.current(s))
+            && self.home.as_ref().is_none_or(|v| v.current(s))
             && channel_scope(s, &self.ctx, &self.channel).as_ref() == Some(&self.channel_scope)
     }
 }
@@ -122,6 +134,66 @@ pub(crate) fn open_global(state: Signal<ShellState>, target: ComposerTarget, exp
 pub(crate) fn open_message(state: Signal<ShellState>, source: Source) {
     open(state, domain::Kind::Message, Some(source), None)
 }
+pub(crate) fn open_calendar_home(
+    mut state: Signal<ShellState>,
+    origin: crate::app_home::calendar::Origin,
+) {
+    let Some((provider, preset)) = origin.creation() else {
+        return;
+    };
+    let id = {
+        let mut s = state.write();
+        if crate::fixture::is_fixture() || !origin.current(&s) || s.overlay.is_some() {
+            return;
+        }
+        let ctx = origin.context();
+        if cooling(&s, &ctx) {
+            return;
+        }
+        let Some(channel) = s.core.active_channel.clone() else {
+            return;
+        };
+        let Some(scope) = channel_scope(&s, &ctx, &channel) else {
+            return;
+        };
+        let Some(w) = s.core.workspaces.get(&ctx.session.team_id) else {
+            return;
+        };
+        let owner = Owner {
+            ctx,
+            channel,
+            generation: s.channel_generation,
+            thread: None,
+            main: s.main_view,
+            tab: s.channel_tab,
+            rt: w.rt_generation,
+            source: None,
+            related: vec![],
+            channel_scope: scope,
+            home: Some(origin),
+        };
+        let id = super::next_id();
+        s.message_buttons.shortcuts.dialog = Some(Dialog {
+            fixture: false,
+            calendar: None,
+            id,
+            owner,
+            kind: domain::Kind::Global,
+            viewed: None,
+            catalog: None,
+            query: String::new(),
+            page: 0,
+            selected: None,
+            team: None,
+            phase: Phase::Choosing,
+            notice: None,
+            token: None,
+        });
+        s.overlay = Some(Overlay::AppShortcuts);
+        id
+    };
+    calendar::begin_home(state, id, provider, preset);
+}
 fn open(
     mut state: Signal<ShellState>,
     kind: domain::Kind,
@@ -189,6 +261,7 @@ fn open(
             source,
             related,
             channel_scope,
+            home: None,
         };
         let cooling = cooling(&s, &ctx);
         s.message_buttons.shortcuts.dialog = Some(Dialog {

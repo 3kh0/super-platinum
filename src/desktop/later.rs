@@ -243,12 +243,16 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
         }
     }
     if !channels.is_empty() {
+        let posting =
+            crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+                .for_channels(&channels);
         if let Ok(channels) =
             api::fetch_channels_info(&ctx.transport, &ctx.client, &ctx.session, channels).await
         {
             if !ctx.current(&state.peek()) {
                 return;
             }
+            posting.channels(&state, &channels);
             if let Some(workspace) = state.write().core.workspaces.get_mut(&ctx.session.team_id) {
                 for channel in channels {
                     workspace.insert_channel_metadata(channel);

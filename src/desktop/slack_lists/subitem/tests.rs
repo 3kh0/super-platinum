@@ -546,3 +546,17 @@ fn explicit_retirement_does_not_reset_known_creation_limit() {
         assert!(begin(&mut s, d).is_err());
     }
 }
+
+#[test]
+fn completion_target_lookup_retains_subitem_registry_off_view_and_by_owner() {
+    let (mut s, _cleanup) = shell();
+    let d = detail(&s);
+    let g = begin(&mut s, d).unwrap();
+    let scope = s.slack_lists.scope.clone().unwrap();
+    s.slack_lists.view.as_mut().unwrap().id = "F_OTHER".into();
+    assert!(blocks_target(&scope, &g.key.list));
+    assert!(!blocks_target(&scope, "F_OTHER"));
+    s.core.active_account = Some("foreign".into());
+    let foreign = Scope::capture(&s).unwrap();
+    assert!(!blocks_target(&foreign, &g.key.list));
+}

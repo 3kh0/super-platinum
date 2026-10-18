@@ -6,6 +6,7 @@ use std::sync::Arc;
 use super::wire::{self, EditAck, EncodedField as F, RawMessage, Section};
 use crate::slack::api::CanvasCollabSnapshot;
 
+pub mod annotation;
 mod batch;
 pub mod bootstrap;
 mod retained;

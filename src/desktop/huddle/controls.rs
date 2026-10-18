@@ -156,6 +156,8 @@ pub async fn open_huddle_thread(mut state: Signal<ShellState>) {
         let Some((transport, client, workspace)) = super::session_for(&state, &call.team) else {
             return;
         };
+        let posting = crate::bootstrap::posting_ingress::capture(&state, &transport, &workspace)
+            .for_channels([&channel]);
         let loaded = super_platinum_core::slack::api::fetch_channels_info(
             &transport,
             &client,
@@ -163,10 +165,13 @@ pub async fn open_huddle_thread(mut state: Signal<ShellState>) {
             vec![channel.clone()],
         )
         .await;
-        let mut shell = state.write();
-        if !shell.core.huddle.is_current(call.generation) {
+        if !state.peek().core.huddle.is_current(call.generation) {
             return;
         }
+        if let Ok(channels) = &loaded {
+            posting.channels(&state, channels);
+        }
+        let mut shell = state.write();
         match loaded {
             Ok(channels) => {
                 if let Some(workspace) = shell.core.workspaces.get_mut(&call.team) {

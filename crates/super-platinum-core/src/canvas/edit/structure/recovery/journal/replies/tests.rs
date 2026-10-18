@@ -253,3 +253,5 @@ fn shared_file_lock_blocks_structure_and_resolve_reads() {
     assert!(j.get(&s).is_err());
     assert!(j.comment(&s).is_err());
 }
+
+mod rich;

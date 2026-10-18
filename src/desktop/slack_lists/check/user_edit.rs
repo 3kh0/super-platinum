@@ -12,7 +12,7 @@ pub(super) async fn run(
         .ok_or("People checks require a disconnected fixture")?;
     wait_dom(desktop,r#"({ok:!!document.querySelector('#slack-list-view-select option[value="V_EDIT_USERS"]')})"#).await?;
     choose(desktop, "V_EDIT_USERS").await?;
-    wait_dom(desktop,r#"({ok:!!document.querySelector('tr[data-row-id="R_LIST_000"] [data-column-id="C_EDIT_USER"] .slack-list-edit-cell')&&!document.querySelector('tr[data-row-id="R_LIST_000"] [data-column-id="C_EDIT_TASK_USER"] .slack-list-edit-cell')})"#).await?;
+    wait_dom(desktop,r#"({ok:!!document.querySelector('tr[data-row-id="R_LIST_000"] [data-column-id="C_EDIT_USER"] .slack-list-edit-cell')&&!!document.querySelector('tr[data-row-id="R_LIST_000"] [data-column-id="C_EDIT_TASK_USER"] .slack-list-edit-cell')})"#).await?;
     edit("user", desktop, "C_EDIT_USER").await?;
     typing_survives_results("user", state, desktop).await?;
     wait_dom(desktop,r#"(()=>{const selected=[...document.querySelectorAll('[data-selected-user]')].map(e=>e.dataset.selectedUser),choices=[...document.querySelectorAll('input[name="slack-list-user-choice"]')].map(e=>e.value);return {ok:JSON.stringify(selected)==='["U00000001"]'&&JSON.stringify(choices)==='["U00000001","U00000002","W00000003"]'&&document.querySelector('input[name="slack-list-user-choice"]')?.type==='radio',selected,choices};})()"#).await?;

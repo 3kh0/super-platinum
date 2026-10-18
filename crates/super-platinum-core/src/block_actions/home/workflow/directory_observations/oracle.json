@@ -1,0 +1,1125 @@
+{
+  "models": [
+    {
+      "input": {
+        "ok": true
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "ok": true,
+        "model": null
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "ok": true,
+        "model": false
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "ok": true,
+        "model": 0
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "ok": true,
+        "model": ""
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "ok": true,
+        "model": {}
+      },
+      "expected": {}
+    },
+    {
+      "input": {
+        "ok": true,
+        "model": {
+          "fuzzy_score": "-2",
+          "READ_FUZZY_SCORE": ".5",
+          "USER_IS_EXTERNAL": true,
+          "ID": null
+        }
+      },
+      "expected": {
+        "FUZZY_SCORE": -2,
+        "READ_FUZZY_SCORE": 0.5,
+        "USER_IS_EXTERNAL": 1,
+        "ID": 0
+      }
+    },
+    {
+      "input": {
+        "ok": true,
+        "model": {
+          "A": "0x10",
+          "B": "0b11",
+          "C": "0o17",
+          "D": "﻿  1.25e2 ",
+          "E": [],
+          "F": [
+            [
+              " 2 "
+            ]
+          ],
+          "G": [
+            null
+          ],
+          "H": false
+        }
+      },
+      "expected": {
+        "A": 16,
+        "B": 3,
+        "C": 15,
+        "D": 125,
+        "E": 0,
+        "F": 2,
+        "G": 0,
+        "H": 0
+      }
+    },
+    {
+      "input": {
+        "ok": true,
+        "model": {
+          "A": "-0",
+          "B": ".1",
+          "C": "2."
+        }
+      },
+      "expected": {
+        "A": 0,
+        "B": 0.1,
+        "C": 2
+      }
+    }
+  ],
+  "offline": [
+    {
+      "input": {
+        "ok": true
+      },
+      "expected": {
+        "ctr": {
+          "member": 0.132,
+          "channel": 0.148,
+          "mpim": 0.014,
+          "ims": 0.179
+        },
+        "features": {
+          "member": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            }
+          },
+          "channel": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            }
+          },
+          "mpim": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            }
+          },
+          "ims": {
+            "U1": {
+              "missing": true
+            },
+            "C1": {
+              "missing": true
+            },
+            "C2": {
+              "missing": true
+            },
+            "G1": {
+              "missing": true
+            },
+            "MISSING": {
+              "missing": true
+            }
+          }
+        },
+        "dm": {
+          "U1": {
+            "value": null
+          },
+          "MISSING": {
+            "value": null
+          }
+        },
+        "mpdm": {
+          "U1": {
+            "value": null
+          },
+          "MISSING": {
+            "value": null
+          }
+        },
+        "affinity": {
+          "U1": 0,
+          "MISSING": 0
+        },
+        "priority": {
+          "C1": 0,
+          "MISSING": 0
+        }
+      }
+    },
+    {
+      "input": {
+        "ok": true,
+        "channel_ctr": 0.4,
+        "mpim_ctr": 0.3,
+        "user_ctr": 0.7,
+        "other_ctr": 0.2,
+        "channel_features": [
+          "user_ctr_30dd",
+          "team_ctr_90dd"
+        ],
+        "top_channels": {
+          "C1": [
+            0,
+            0.6
+          ],
+          "C2": [
+            0.8,
+            0
+          ]
+        },
+        "users_has_dmed": {
+          "U1": {
+            "last_read_abs": 456
+          }
+        },
+        "users_has_mpdmed": {
+          "U1": {
+            "last_read_abs": "789",
+            "membership_count": 3
+          }
+        },
+        "user_affinity": {
+          "U1": 5,
+          "U2": 0
+        },
+        "channel_priority_90d": {
+          "C1": 4
+        }
+      },
+      "expected": {
+        "ctr": {
+          "member": 0.7,
+          "channel": 0.4,
+          "mpim": 0.3,
+          "ims": 0.2
+        },
+        "features": {
+          "member": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.7,
+                "user_ctr_30dd": 0.7
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.7,
+                "user_ctr_30dd": 0.7
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.7,
+                "user_ctr_30dd": 0.7
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.7,
+                "user_ctr_30dd": 0.7
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.7,
+                "user_ctr_30dd": 0.7
+              }
+            }
+          },
+          "channel": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.4,
+                "user_ctr_30dd": 0.4
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.6,
+                "user_ctr_30dd": 0.4
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.4,
+                "user_ctr_30dd": 0.8
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.4,
+                "user_ctr_30dd": 0.4
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.4,
+                "user_ctr_30dd": 0.4
+              }
+            }
+          },
+          "mpim": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.3,
+                "user_ctr_30dd": 0.3
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.3,
+                "user_ctr_30dd": 0.3
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.3,
+                "user_ctr_30dd": 0.3
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.3,
+                "user_ctr_30dd": 0.3
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.3,
+                "user_ctr_30dd": 0.3
+              }
+            }
+          },
+          "ims": {
+            "U1": {
+              "missing": true
+            },
+            "C1": {
+              "missing": true
+            },
+            "C2": {
+              "missing": true
+            },
+            "G1": {
+              "missing": true
+            },
+            "MISSING": {
+              "missing": true
+            }
+          }
+        },
+        "dm": {
+          "U1": {
+            "value": {
+              "last_read_abs": 456
+            }
+          },
+          "MISSING": {
+            "missing": true
+          }
+        },
+        "mpdm": {
+          "U1": {
+            "value": {
+              "last_read_abs": "789",
+              "membership_count": 3
+            }
+          },
+          "MISSING": {
+            "missing": true
+          }
+        },
+        "affinity": {
+          "U1": 5,
+          "MISSING": 0
+        },
+        "priority": {
+          "C1": 4,
+          "MISSING": 0
+        }
+      }
+    },
+    {
+      "input": {
+        "ok": true,
+        "channel_ctr": 0,
+        "user_ctr": 0,
+        "mpim_ctr": 0,
+        "other_ctr": 0
+      },
+      "expected": {
+        "ctr": {
+          "member": 0,
+          "channel": 0,
+          "mpim": 0,
+          "ims": 0
+        },
+        "features": {
+          "member": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            }
+          },
+          "channel": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            }
+          },
+          "mpim": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0,
+                "user_ctr_30dd": 0
+              }
+            }
+          },
+          "ims": {
+            "U1": {
+              "missing": true
+            },
+            "C1": {
+              "missing": true
+            },
+            "C2": {
+              "missing": true
+            },
+            "G1": {
+              "missing": true
+            },
+            "MISSING": {
+              "missing": true
+            }
+          }
+        },
+        "dm": {
+          "U1": {
+            "value": null
+          },
+          "MISSING": {
+            "value": null
+          }
+        },
+        "mpdm": {
+          "U1": {
+            "value": null
+          },
+          "MISSING": {
+            "value": null
+          }
+        },
+        "affinity": {
+          "U1": 0,
+          "MISSING": 0
+        },
+        "priority": {
+          "C1": 0,
+          "MISSING": 0
+        }
+      }
+    },
+    {
+      "input": {
+        "ok": true,
+        "channel_ctr": null,
+        "user_ctr": -0.1,
+        "other_ctr": 0.25,
+        "default_features": [
+          "team_ctr_90dd",
+          "user_ctr_30dd"
+        ],
+        "top_users": {
+          "U1": [
+            0.8,
+            -0.5
+          ]
+        },
+        "top_channels": {
+          "C1": [
+            0
+          ],
+          "C2": []
+        }
+      },
+      "expected": {
+        "ctr": {
+          "member": -0.1,
+          "channel": 0.148,
+          "mpim": 0.014,
+          "ims": 0.25
+        },
+        "features": {
+          "member": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.8,
+                "user_ctr_30dd": -0.5
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": -0.1,
+                "user_ctr_30dd": -0.1
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": -0.1,
+                "user_ctr_30dd": -0.1
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": -0.1,
+                "user_ctr_30dd": -0.1
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": -0.1,
+                "user_ctr_30dd": -0.1
+              }
+            }
+          },
+          "channel": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            }
+          },
+          "mpim": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            }
+          },
+          "ims": {
+            "U1": {
+              "missing": true
+            },
+            "C1": {
+              "missing": true
+            },
+            "C2": {
+              "missing": true
+            },
+            "G1": {
+              "missing": true
+            },
+            "MISSING": {
+              "missing": true
+            }
+          }
+        },
+        "dm": {
+          "U1": {
+            "value": null
+          },
+          "MISSING": {
+            "value": null
+          }
+        },
+        "mpdm": {
+          "U1": {
+            "value": null
+          },
+          "MISSING": {
+            "value": null
+          }
+        },
+        "affinity": {
+          "U1": 0,
+          "MISSING": 0
+        },
+        "priority": {
+          "C1": 0,
+          "MISSING": 0
+        }
+      }
+    },
+    {
+      "input": {
+        "ok": true,
+        "default_features": [
+          "team_ctr_90dd"
+        ],
+        "channel_features": [],
+        "top_channels": {
+          "C1": [
+            0.9
+          ]
+        },
+        "users_has_dmed": {
+          "U1": null
+        },
+        "users_has_mpdmed": {}
+      },
+      "expected": {
+        "ctr": {
+          "member": 0.132,
+          "channel": 0.148,
+          "mpim": 0.014,
+          "ims": 0.179
+        },
+        "features": {
+          "member": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            }
+          },
+          "channel": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            }
+          },
+          "mpim": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            }
+          },
+          "ims": {
+            "U1": {
+              "missing": true
+            },
+            "C1": {
+              "missing": true
+            },
+            "C2": {
+              "missing": true
+            },
+            "G1": {
+              "missing": true
+            },
+            "MISSING": {
+              "missing": true
+            }
+          }
+        },
+        "dm": {
+          "U1": {
+            "value": null
+          },
+          "MISSING": {
+            "missing": true
+          }
+        },
+        "mpdm": {
+          "U1": {
+            "missing": true
+          },
+          "MISSING": {
+            "missing": true
+          }
+        },
+        "affinity": {
+          "U1": 0,
+          "MISSING": 0
+        },
+        "priority": {
+          "C1": 0,
+          "MISSING": 0
+        }
+      }
+    },
+    {
+      "input": {
+        "ok": true,
+        "channel_features": [
+          "user_ctr_30dd",
+          "user_ctr_30dd",
+          "team_ctr_90dd"
+        ],
+        "top_channels": {
+          "C1": [
+            0.9,
+            0,
+            0.6
+          ]
+        },
+        "mpim_features": [
+          "team_ctr_90dd"
+        ],
+        "top_mpims": {
+          "G1": [
+            0.75
+          ]
+        },
+        "user_affinity": {
+          "U1": null
+        },
+        "channel_priority_90d": {
+          "C1": null
+        }
+      },
+      "expected": {
+        "ctr": {
+          "member": 0.132,
+          "channel": 0.148,
+          "mpim": 0.014,
+          "ims": 0.179
+        },
+        "features": {
+          "member": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.132,
+                "user_ctr_30dd": 0.132
+              }
+            }
+          },
+          "channel": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.6,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.148,
+                "user_ctr_30dd": 0.148
+              }
+            }
+          },
+          "mpim": {
+            "U1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "C1": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "C2": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "G1": {
+              "value": {
+                "team_ctr_90dd": 0.75,
+                "user_ctr_30dd": 0.014
+              }
+            },
+            "MISSING": {
+              "value": {
+                "team_ctr_90dd": 0.014,
+                "user_ctr_30dd": 0.014
+              }
+            }
+          },
+          "ims": {
+            "U1": {
+              "missing": true
+            },
+            "C1": {
+              "missing": true
+            },
+            "C2": {
+              "missing": true
+            },
+            "G1": {
+              "missing": true
+            },
+            "MISSING": {
+              "missing": true
+            }
+          }
+        },
+        "dm": {
+          "U1": {
+            "value": null
+          },
+          "MISSING": {
+            "value": null
+          }
+        },
+        "mpdm": {
+          "U1": {
+            "value": null
+          },
+          "MISSING": {
+            "value": null
+          }
+        },
+        "affinity": {
+          "U1": 0,
+          "MISSING": 0
+        },
+        "priority": {
+          "C1": 0,
+          "MISSING": 0
+        }
+      }
+    }
+  ]
+}

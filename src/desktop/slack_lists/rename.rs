@@ -2,11 +2,19 @@
 use super::*;
 use serde_json::json;
 use super_platinum_core::slack_lists::{ColumnRename, ColumnRenameAttempt, ColumnRenamePermit};
+pub(crate) mod board_choice;
+pub(crate) mod card_order;
 pub(crate) mod field_delete;
 pub(crate) mod filter;
 pub(crate) mod fixture;
+pub(crate) mod group_delete;
 pub(crate) mod grouping;
+pub(crate) mod lane_order;
+pub(crate) mod local_refinement;
 mod network;
+mod readback;
+pub(crate) mod refinement_save;
+use readback::{checked, checked_with_records};
 mod owner;
 pub(crate) mod precision;
 mod registry;
@@ -37,12 +45,17 @@ fn poll_at(shell: &mut ShellState, now: std::time::Instant) -> bool {
 #[derive(Clone)]
 pub(crate) struct Presentation {
     pub serial: u64,
+    pub local_refinement: bool,
+    pub refinement_save: Option<refinement_save::Presentation>,
     pub column: String,
     pub view: Option<String>,
     pub creation: Option<super_platinum_core::slack_lists::ViewLayout>,
     pub text_creation: bool,
     pub deletion: Option<field_delete::Presentation>,
     pub reorder: Option<view_order::Presentation>,
+    pub board_choice: Option<board_choice::Presentation>,
+    pub card_order: bool,
+    pub group_delete: Option<group_delete::Presentation>,
     pub field_choice: Option<text_create::Choice>,
     pub select_draft: Option<text_create::select::Draft>,
     pub rating_draft: Option<super_platinum_core::slack_lists::RatingOptions>,
@@ -74,6 +87,13 @@ pub(super) fn creation_cooldown(scope: &Scope) -> bool {
 }
 pub(super) fn record_creation_limit(scope: &Scope, error: &Error) {
     registry::record(&scope.stable_owner(), error);
+}
+pub(super) fn blocks_target(scope: &Scope, list: &str) -> bool {
+    let key = Key {
+        owner: scope.stable_owner(),
+        list: list.into(),
+    };
+    with_registry(|r| r.entries.contains_key(&key))
 }
 pub(crate) fn blocks_mutation(shell: &ShellState) -> bool {
     Key::current(shell).is_some_and(|key| with_registry(|r| r.entries.contains_key(&key)))
@@ -121,18 +141,15 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
         .unwrap_or_default();
     with_registry(|r| {
         let e = r.entries.get(&key)?;
-        let original_current = shell
-            .slack_lists
-            .view
-            .as_ref()
-            .and_then(|v| v.loaded.as_ref())
-            .is_some_and(|l| l.document == e.original);
+        let original_current = local_refinement::original_current(shell, e);
         let population_current = text_create::population_current(shell, e);
         let editing_ready = (!e.target.is_deletion() || field_delete::permitted(shell))
             && owner::available(shell)
             && original_current
             && selection_current(shell, e)
-            && population_current;
+            && lane_order::projection_current(shell, &e.target)
+            && population_current
+            && refinement_save::current(shell, &e.target);
         let message = if e.target.is_grouping()
             && e.stage == Stage::Observed
             && (!e
@@ -142,14 +159,26 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
                 || !grouping::projection_current(shell, &e.target))
         {
             "This view changed since grouping was observed. Check current grouping before finishing this review. The request will not be repeated.".into()
-        } else if (e.target.is_text_creation() || e.target.is_deletion() || e.target.is_reorder())
+        } else if (e.target.is_text_creation()
+            || e.target.is_deletion()
+            || e.target.is_reorder()
+            || e.target.is_board_choice()
+            || e.target.is_card_order()
+            || e.target.is_group_delete()
+            || e.target.is_refinement())
             && e.stage == Stage::Observed
             && !e
                 .review
                 .as_ref()
                 .is_some_and(|p| p.navigation_current(shell))
         {
-            if e.target.is_reorder() {
+            if e.target.is_group_delete() {
+                "This Board changed after deletion was observed. Check both group and item results before finishing. Neither request will be repeated.".into()
+            } else if e.target.is_card_order() {
+                "This Board changed after the move was observed. Check current items before finishing. The move will not be repeated.".into()
+            } else if e.target.is_board_choice() {
+                "This List changed after the group was observed. Check current groups and items before finishing. The request will not be repeated.".into()
+            } else if e.target.is_reorder() {
                 "This List view changed since the order was observed. Check current views before finishing this review. The move request will not be repeated.".into()
             } else if e.target.is_deletion() {
                 "This List view changed since the field was observed. Check current fields before finishing this review. The delete request will not be repeated.".into()
@@ -170,8 +199,18 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
         } else {
             e.message.clone()
         };
+        let message = if e.target.is_lane_order() {
+            message
+                .replace("shared view order", "shared lane order")
+                .replace("current views", "current lanes")
+                .replace("returned views", "returned lanes")
+        } else {
+            message
+        };
         Some(Presentation {
             serial: e.serial,
+            local_refinement: e.local_refinement.is_some(),
+            refinement_save: refinement_save::presentation(e),
             column: if e.target.is_view() {
                 String::new()
             } else {
@@ -186,6 +225,9 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
             text_creation: e.target.is_text_creation(),
             deletion: field_delete::presentation(e),
             reorder: view_order::presentation(shell, e),
+            board_choice: board_choice::presentation(shell, e),
+            card_order: e.target.is_card_order(),
+            group_delete: group_delete::presentation(shell, e),
             field_choice: e.target.is_text_creation().then_some(e.field_choice),
             rating_draft: (e.target.is_text_creation()
                 && matches!(
@@ -243,6 +285,10 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
                         || e.target.is_text_creation()
                         || e.target.is_deletion()
                         || e.target.is_reorder()
+                        || e.target.is_board_choice()
+                        || e.target.is_card_order()
+                        || e.target.is_group_delete()
+                        || e.target.is_refinement()
                     {
                         p.navigation_current(shell)
                     } else {
@@ -355,7 +401,21 @@ fn selection_current(shell: &ShellState, e: &registry::Entry) -> bool {
     })
 }
 fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
-    if generation(shell) != Some(visit) || !can_target(shell, &target) {
+    open_target_inner(shell, target, visit, None)
+}
+fn open_target_inner(
+    shell: &mut ShellState,
+    target: Target,
+    visit: u64,
+    local: Option<(refinement::Action, Document)>,
+) -> bool {
+    if generation(shell) != Some(visit)
+        || if let Some((action, doc)) = &local {
+            !action.current(shell) || !owner::available(shell) || !target.supports(doc)
+        } else {
+            !can_target(shell, &target)
+        }
+    {
         return false;
     }
     let Some(key) = Key::current(shell) else {
@@ -370,6 +430,7 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
         .as_ref()
         .unwrap()
         .document;
+    let document = local.as_ref().map(|(_, doc)| doc).unwrap_or(document);
     if serde_json::to_vec(&document.raw).map_or(true, |b| b.len() > registry::MAX_DOCUMENT) {
         return false;
     }
@@ -378,7 +439,12 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
             return false;
         };
         Some(records)
-    } else if target.is_deletion() || target.is_reorder() {
+    } else if target.is_refinement()
+        || target.is_deletion()
+        || target.is_reorder()
+        || target.is_card_order()
+        || target.is_group_delete()
+    {
         let Some(records) = text_create::bounded_population(shell) else {
             return false;
         };
@@ -387,7 +453,16 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
         None
     };
     let before = target.name(document).unwrap().to_owned();
-    let input = if target.is_reorder() {
+    let input = if target.is_group_delete() {
+        Input::GroupDelete
+    } else if target.is_card_order() {
+        Input::CardOrder
+    } else if let Target::BoardChoice(choice) = &target {
+        let Some(action) = board_choice::initial(document, choice) else {
+            return false;
+        };
+        Input::BoardChoice(action)
+    } else if target.is_reorder() {
         Input::Reorder
     } else if target.is_deletion() {
         Input::DeleteColumn
@@ -465,9 +540,18 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
                 grouping_choice: next_id(),
                 before,
                 original: document.clone(),
+                local_refinement: local.as_ref().map(|(action,_)|action.clone()),
                 intent: None,
                 stage: Stage::Editing,
-                message: if target.is_reorder() {
+                message: if local.is_some() {
+                    "Apply this refinement to your current view. Use Save for everyone afterward to share it.".into()
+                } else if target.is_group_delete() {
+                    "Deleting this group removes its option from the List. Review the matching items before confirming.".into()
+                } else if target.is_board_choice() {
+                    "This group option is shared across the List. Slack may fill missing values from the field default.".into()
+                } else if target.is_lane_order() {
+                    "Moving this lane changes its shared Board order.".into()
+                } else if target.is_reorder() {
                     "Review this one-step move, then Save for everyone. Cancel leaves the shared view order unchanged.".into()
                 } else if target.is_deletion() {
                     "Permanently delete the selected field from every view? This app does not offer Undo for field deletion.".into()
@@ -496,6 +580,8 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
                 },
                 review: None,
                 raw_reply: None,
+                group_delete_outcomes:None,
+                refinement_receipt:None,
             },
         );
         true
@@ -516,7 +602,10 @@ pub(crate) fn input(mut state: Signal<ShellState>, serial: u64, value: String) {
             .get_mut(&key)
             .filter(|e| e.serial == serial && e.stage == Stage::Editing)
         {
-            if !e.target.is_reorder()
+            if !e.target.is_board_choice()
+                && !e.target.is_reorder()
+                && !e.target.is_group_delete()
+                && !e.target.is_card_order()
                 && !e.target.is_deletion()
                 && !e.target.is_text_creation()
                 && !e.target.is_filter()
@@ -548,7 +637,13 @@ fn close_entry(shell: &ShellState, serial: u64) -> bool {
             && (!e.target.is_grouping()
                 || e.stage != Stage::Observed
                 || grouping::review_current(shell, &e))
-            && (!(e.target.is_text_creation() || e.target.is_deletion() || e.target.is_reorder())
+            && (!(e.target.is_text_creation()
+                || e.target.is_deletion()
+                || e.target.is_reorder()
+                || e.target.is_board_choice()
+                || e.target.is_card_order()
+                || e.target.is_group_delete()
+                || e.target.is_refinement())
                 || e.stage != Stage::Observed
                 || e.review
                     .as_ref()
@@ -562,6 +657,10 @@ fn close_entry(shell: &ShellState, serial: u64) -> bool {
                         || e.target.is_text_creation()
                         || e.target.is_deletion()
                         || e.target.is_reorder()
+                        || e.target.is_board_choice()
+                        || e.target.is_card_order()
+                        || e.target.is_group_delete()
+                        || e.target.is_refinement()
                     {
                         p.navigation_current(&shell)
                     } else {
@@ -589,12 +688,26 @@ pub(crate) fn confirm(mut state: Signal<ShellState>, serial: u64) {
 fn prepare(shell: &mut ShellState, serial: u64) -> Option<(Guard, Intent)> {
     let key = Key::current(shell)?;
     let old = entry(shell)?;
+    if old.local_refinement.is_some() {
+        if old.serial == serial
+            && old.stage == Stage::Editing
+            && old.filter_capture.is_none()
+            && old.sort_pending.is_none()
+            && owner::available(shell)
+            && !registry::blocked(&key.owner)
+        {
+            local_refinement::finish(shell, &old);
+        }
+        return None;
+    }
     if old.serial != serial
         || old.stage != Stage::Editing
         || old.filter_capture.is_some()
         || old.sort_pending.is_some()
         || (old.target.is_grouping() && !grouping::projection_current(shell, &old.target))
         || !selection_current(shell, &old)
+        || !lane_order::projection_current(shell, &old.target)
+        || !refinement_save::current(shell, &old.target)
         || !owner::available(shell)
         || registry::blocked(&key.owner)
     {
@@ -604,7 +717,7 @@ fn prepare(shell: &mut ShellState, serial: u64) -> Option<(Guard, Intent)> {
     if loaded.document != old.original || !text_create::population_current(shell, &old) {
         return None;
     }
-    let intent = match text_create::capture(shell, &old, loaded) {
+    let intent = match group_delete::capture(shell, &old, loaded) {
         Ok(i) => i,
         Err(e) => {
             with_registry(|r| r.entries.get_mut(&key).unwrap().message = e.to_string());
@@ -627,14 +740,36 @@ fn admitted(
     intent: &Intent,
     loaded: &network::Metadata,
 ) -> Option<Permit> {
-    if !guard.current(shell, Stage::Preparing) || registry::blocked(&guard.key.owner) {
+    admitted_with_records(shell, guard, intent, loaded, None)
+}
+fn admitted_with_records(
+    shell: &ShellState,
+    guard: &Guard,
+    intent: &Intent,
+    loaded: &network::Metadata,
+    records: Option<&RecordsPage>,
+) -> Option<Permit> {
+    if !guard.current(shell, Stage::Preparing)
+        || registry::blocked(&guard.key.owner)
+        || with_registry(|r| {
+            r.entries
+                .get(&guard.key)
+                .is_none_or(|e| e.local_refinement.is_some())
+        })
+    {
         return None;
     }
-    let permit = text_create::admit(shell, intent, loaded)?;
+    let permit = card_order::admit(shell, intent, loaded, records)?;
     with_registry(|r| {
         let e = r.entries.get_mut(&guard.key).unwrap();
         e.stage = Stage::Saving;
-        e.message = if e.target.is_reorder() {
+        e.message = if e.target.is_card_order() {
+            "Moving item...".into()
+        } else if e.target.is_board_choice() {
+            "Saving group option...".into()
+        } else if e.target.is_lane_order() {
+            "Saving shared lane order...".into()
+        } else if e.target.is_reorder() {
             "Saving shared view order...".into()
         } else if e.target.is_deletion() {
             "Deleting field...".into()
@@ -692,7 +827,7 @@ fn completed(
                 Stage::Uncertain
             };
             e.raw_reply = result.ok();
-            e.message=if e.target.is_reorder(){if not_requested{"The move request was not sent. Close this editor and review a new attempt."}else{"The shared view order is not confirmed. Check current views explicitly. This request will not be sent again."}}else if e.target.is_deletion(){if not_requested{"The delete request was not sent. Close this editor and review a new attempt."}else{"Field deletion is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_text_creation(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The field request is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_filter(){if not_requested{"The filter request was not sent. Close this editor and review a new attempt."}else{"The shared filter is not confirmed. Check the current filter explicitly. This request will not be sent again."}}else if e.target.is_grouping(){if not_requested{"The grouping request was not sent. Close this editor and review a new attempt."}else{"The shared grouping is not confirmed. Check current grouping explicitly. This request will not be sent again."}}else if e.target.is_sort(){if not_requested{"The sort request was not sent. Close this editor and review a new attempt."}else{"The shared sort is not confirmed. Check the current sort explicitly. This request will not be sent again."}}else if e.target.is_visibility(){if not_requested{"The visibility request was not sent. Close this editor and review a new attempt."}else{"Field visibility is not confirmed. Check the current view explicitly. This request will not be sent again."}}else if e.target.is_precision(){if not_requested{"The number format request was not sent. Close this editor and review a new attempt."}else{"The number format is not confirmed. Check the current format explicitly. This request will not be sent again."}}else if e.target.creation().is_some(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The create request is not confirmed. Check current views explicitly. This request will not be sent again."}}else if not_requested{"The rename was not sent. Close this editor and review the name again."}else{"The rename is not confirmed. Check the current name before doing anything else. This request will not be sent again."}.into();
+            e.message=if e.target.is_card_order(){if not_requested{"The item move was not sent. Close this review and try a new move."}else{"The item move is not confirmed. Check current items. This request will not be sent again."}}else if e.target.is_board_choice(){if not_requested{"The group request was not sent. Close this editor and review a new attempt."}else{"The group change is not confirmed. Check current groups and items. This request will not be sent again."}}else if e.target.is_reorder(){if not_requested{"The move request was not sent. Close this editor and review a new attempt."}else{"The shared view order is not confirmed. Check current views explicitly. This request will not be sent again."}}else if e.target.is_deletion(){if not_requested{"The delete request was not sent. Close this editor and review a new attempt."}else{"Field deletion is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_text_creation(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The field request is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_filter(){if not_requested{"The filter request was not sent. Close this editor and review a new attempt."}else{"The shared filter is not confirmed. Check the current filter explicitly. This request will not be sent again."}}else if e.target.is_grouping(){if not_requested{"The grouping request was not sent. Close this editor and review a new attempt."}else{"The shared grouping is not confirmed. Check current grouping explicitly. This request will not be sent again."}}else if e.target.is_sort(){if not_requested{"The sort request was not sent. Close this editor and review a new attempt."}else{"The shared sort is not confirmed. Check the current sort explicitly. This request will not be sent again."}}else if e.target.is_visibility(){if not_requested{"The visibility request was not sent. Close this editor and review a new attempt."}else{"Field visibility is not confirmed. Check the current view explicitly. This request will not be sent again."}}else if e.target.is_precision(){if not_requested{"The number format request was not sent. Close this editor and review a new attempt."}else{"The number format is not confirmed. Check the current format explicitly. This request will not be sent again."}}else if e.target.creation().is_some(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The create request is not confirmed. Check current views explicitly. This request will not be sent again."}}else if not_requested{"The rename was not sent. Close this editor and review the name again."}else{"The rename is not confirmed. Check the current name before doing anything else. This request will not be sent again."}.into();
         }
     });
     // Deliberately no canonical projection and no automatic read or resend.
@@ -705,7 +840,13 @@ fn checkable(shell: &ShellState, e: &registry::Entry) -> bool {
     ) || (e.target.is_grouping()
         && e.stage == Stage::Observed
         && !grouping::review_current(shell, e))
-        || ((e.target.is_text_creation() || e.target.is_deletion() || e.target.is_reorder())
+        || ((e.target.is_text_creation()
+            || e.target.is_deletion()
+            || e.target.is_reorder()
+            || e.target.is_board_choice()
+            || e.target.is_card_order()
+            || e.target.is_group_delete()
+            || e.target.is_refinement())
             && e.stage == Stage::Observed
             && !e
                 .review
@@ -736,7 +877,13 @@ pub(crate) fn check(mut state: Signal<ShellState>, serial: u64) {
             e.review = None;
             e.available = None;
             e.observed_field = None;
-            e.message = if e.target.is_reorder() {
+            e.message = if e.target.is_group_delete() {
+                "Checking current group and item results...".into()
+            } else if e.target.is_card_order() {
+                "Checking current items...".into()
+            } else if e.target.is_board_choice() {
+                "Checking current groups and items...".into()
+            } else if e.target.is_reorder() {
                 "Checking current shared view order...".into()
             } else if e.target.is_deletion() {
                 "Checking current fields...".into()
@@ -761,164 +908,8 @@ pub(crate) fn check(mut state: Signal<ShellState>, serial: u64) {
     state.write();
     network::check(state, guard);
 }
-fn checked(
-    shell: &mut ShellState,
-    guard: &Guard,
-    result: Result<network::Metadata, Error>,
-) -> bool {
-    if let Err(e) = &result {
-        registry::record(&guard.key.owner, e);
-    }
-    let current = guard.current(shell, Stage::Checking);
-    let mut applied = false;
-    let retained = with_registry(|r| {
-        r.entries
-            .get(&guard.key)
-            .filter(|e| {
-                e.serial == guard.serial && e.job == Some(guard.job) && e.stage == Stage::Checking
-            })
-            .cloned()
-    });
-    let Some(old) = retained else { return false };
-    let mut stage = Stage::Uncertain;
-    let mut proof = None;
-    let mut available = None;
-    let mut observed_field = None;
-    let message = match result {
-        Ok(loaded) if current => {
-            let intent = old.intent.as_ref().unwrap();
-            if !network::same_incarnation(intent.original(), &loaded.document) {
-                "The List identity changed. The original request remains unconfirmed."
-            } else {
-                available = view_create::matching(shell, intent, &loaded);
-                observed_field = text_create::matching(shell, intent, &loaded);
-                stage = if available.is_some() {
-                    Stage::Available
-                } else if observed_field.is_some() || intent.observes_desired(&loaded.document) {
-                    Stage::Observed
-                } else {
-                    Stage::Conflict
-                };
-                let view = shell.slack_lists.view.as_mut().unwrap();
-                view.title = loaded.document.title.clone();
-                view.loaded.as_mut().unwrap().document = loaded.document;
-                view.loaded.as_mut().unwrap().allow_lists = loaded.allow;
-                view.loaded.as_mut().unwrap().personal_task_lists = Some(loaded.personal);
-                if old.target.is_deletion() {
-                    view.loaded.as_mut().unwrap().list_experiments = loaded.experiments;
-                }
-                view.revision = next_id();
-                rebuild_rows(shell);
-                if old.target.is_grouping()
-                    && stage == Stage::Observed
-                    && !grouping::projection_current(shell, &old.target)
-                {
-                    stage = Stage::Conflict;
-                }
-                proof = owner::Review::capture(shell);
-                applied = true;
-                if stage == Stage::Available {
-                    "A matching new view is now available. Opening it is navigation, not proof this request created it."
-                } else if old.target.is_reorder() {
-                    if stage == Stage::Observed {
-                        "The current shared view order matches this move. This does not prove which request changed it."
-                    } else {
-                        "The returned views differ from this move. Review the current order. The earlier request may still arrive; closing does not repeat or undo it."
-                    }
-                } else if old.target.is_deletion() {
-                    if stage == Stage::Observed {
-                        "The field is absent from the current schema and every view. This does not prove which request removed it."
-                    } else {
-                        "The returned schema differs from the requested deletion. Review the current fields. The earlier request may still arrive; closing does not repeat or undo it."
-                    }
-                } else if old.target.is_text_creation() {
-                    if stage == Stage::Observed {
-                        match old.field_choice.kind {
-                            super_platinum_core::slack_lists::ColumnCreateKind::Text => {
-                                "A matching Text field is now visible in this Table."
-                            }
-                            super_platinum_core::slack_lists::ColumnCreateKind::NumberDefault0 => {
-                                "A matching Number field is now visible in this Table."
-                            }
-                            super_platinum_core::slack_lists::ColumnCreateKind::Checkbox => {
-                                "A matching Checkbox field is now visible in this Table."
-                            }
-                            super_platinum_core::slack_lists::ColumnCreateKind::Select => {
-                                "A matching Select field is now visible in this Table."
-                            }
-                            super_platinum_core::slack_lists::ColumnCreateKind::Vote => {
-                                "A matching Vote field is now visible in this Table."
-                            }
-                            super_platinum_core::slack_lists::ColumnCreateKind::Rating => {
-                                "A matching Rating field is now visible in this Table."
-                            }
-                            super_platinum_core::slack_lists::ColumnCreateKind::ChannelSingleDefault => {
-                                "A matching Channel field is now visible in this Table."
-                            }
-                            super_platinum_core::slack_lists::ColumnCreateKind::Link => {
-                                "A matching Link field is now visible in this Table."
-                            }
-                            super_platinum_core::slack_lists::ColumnCreateKind::PeopleSingleDefault => {
-                                "A matching People field is now visible in this Table."
-                            }
-                            super_platinum_core::slack_lists::ColumnCreateKind::DateSingleDefault => {
-                                "A matching Date field is now visible in this Table."
-                            }
-                        }
-                    } else {
-                        "No isolated matching field is visible in this Table. Review the returned fields. The earlier request may still arrive; closing does not repeat or undo it."
-                    }
-                } else if old.target.creation().is_some() {
-                    "Review the returned views below. No isolated matching addition is available. The earlier create may still arrive; closing does not repeat or undo it."
-                } else if old.target.is_filter() {
-                    if stage == Stage::Observed {
-                        "The current shared filter matches your choice. Stored values are unchanged."
-                    } else {
-                        "The returned view differs from your filter choice. Review the current state. The earlier request may still arrive; closing does not repeat or undo it."
-                    }
-                } else if old.target.is_grouping() {
-                    if stage == Stage::Observed {
-                        "The current shared grouping matches your choice. Stored values are unchanged."
-                    } else {
-                        "The returned grouping or its current projection differs from your choice. Review the actual view. Closing does not repeat or undo the earlier request."
-                    }
-                } else if old.target.is_sort() {
-                    if stage == Stage::Observed {
-                        "The current shared sort matches your choice. Stored values are unchanged."
-                    } else {
-                        "The returned view differs from your sort choice. Review the current state. The earlier request may still arrive; closing does not repeat or undo it."
-                    }
-                } else if old.target.is_visibility() {
-                    if stage == Stage::Observed {
-                        "The current field visibility matches your choice."
-                    } else {
-                        "The returned view differs from your visibility choice. Review the current state. The earlier request may still arrive; closing does not repeat or undo it."
-                    }
-                } else if old.target.is_precision() {
-                    if stage == Stage::Observed {
-                        "The current number format matches your choice. Stored numbers are unchanged."
-                    } else {
-                        "The returned schema differs from your number format choice. Review the current format below. The earlier request may still arrive; closing does not repeat or undo it."
-                    }
-                } else if stage == Stage::Observed {
-                    "The current name matches your rename."
-                } else {
-                    "The returned schema differs from this rename. Review the current fields below. The earlier rename may still arrive. Closing this review does not repeat or undo it."
-                }
-            }
-        }
-        Ok(_) => "This List visit changed while checking. Reopen the List and check again.",
-        Err(_) => {
-            "Could not confirm the current schema. The earlier request will not be sent again."
-        }
-    };
-    with_registry(|r| {
-        let e = r.entries.get_mut(&guard.key).unwrap();
-        e.stage = stage;
-        e.review = proof;
-        e.available = available;
-        e.observed_field = observed_field;
-        e.message = message.into();
-    });
-    applied
+
+#[cfg(test)]
+pub(super) fn completion_test_available(shell: &ShellState) -> bool {
+    owner::available(shell)
 }

@@ -270,6 +270,8 @@ pub struct Workspace {
     pub locale: Option<String>,
     /// Exact boot team plan; None means unknown, not a guessed paid entitlement.
     pub team_plan: Option<String>,
+    /// Fresh boot posting facts; never restored from the warm cache.
+    pub posting_metadata: posting_metadata::Metadata,
     pub activity_unread_count: Option<u32>,
     pub activity_counts: ActivityCountsState,
     pub dock_counts: DockCountsState,
@@ -315,6 +317,7 @@ impl Workspace {
             self_user_id: s.user_id.clone(),
             locale: None,
             team_plan: None,
+            posting_metadata: Default::default(),
             activity_unread_count: None,
             activity_counts: Default::default(),
             dock_counts: Default::default(),
@@ -351,6 +354,9 @@ impl Workspace {
     }
 
     pub fn apply_boot(&mut self, boot: crate::slack::models::BootData) {
+        self.posting_metadata.replace_boot_preserving_external(
+            posting_metadata::Metadata::from_boot(&self.team_id, &self.self_user_id, &boot),
+        );
         self.team_plan = boot
             .team
             .as_ref()
@@ -945,6 +951,7 @@ pub use sidebar_prefs::*;
 pub mod bots;
 mod channel_lifecycle;
 mod member_list_changes;
+pub mod posting_metadata;
 pub use channel_lifecycle::ChannelLifecycle;
 mod activity_counts;
 mod dock_badge;

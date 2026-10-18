@@ -57,7 +57,7 @@ pub(crate) fn can_open(shell: &ShellState) -> bool {
     )
 }
 pub(crate) fn open(mut state: Signal<ShellState>, visit: u64, selection: u64) {
-    open_shell(&mut state.write(), visit, selection);
+    local_refinement::open(state, local_refinement::Kind::Visibility, visit, selection);
 }
 pub(crate) fn open_shell(shell: &mut ShellState, visit: u64, selection: u64) -> bool {
     if super::selection(shell) != Some(selection) || !can_open(shell) {
@@ -144,13 +144,7 @@ pub(super) fn change(
         }) else {
             return false;
         };
-        if !shell
-            .slack_lists
-            .view
-            .as_ref()
-            .and_then(|v| v.loaded.as_ref())
-            .is_some_and(|l| l.document == e.original)
-        {
+        if !local_refinement::original_current(shell, e) {
             return false;
         }
         let Target::Visibility { view, column: old } = &e.target else {
@@ -189,12 +183,8 @@ pub(super) fn presentation(shell: &ShellState, e: &registry::Entry) -> Option<Pr
         field: e.before.clone(),
         original: ViewFieldVisibility::current(&e.original, view, column)?,
         desired,
-        current: shell
-            .slack_lists
-            .view
-            .as_ref()
-            .and_then(|v| v.loaded.as_ref())
-            .and_then(|l| ViewFieldVisibility::current(&l.document, view, column)),
+        current: local_refinement::current_document(shell, e)
+            .and_then(|doc| ViewFieldVisibility::current(doc, view, column)),
         choices: choices(&e.original, view),
         choice: e.visibility_choice,
     })

@@ -15,18 +15,43 @@ use super_platinum_core::{
     block_actions::home::{self, Button, Home, View},
     slack::{Error, api, events::RtEvent},
 };
+pub(crate) mod about;
 mod actions;
+pub(crate) mod calendar;
 pub(crate) mod fixture;
+pub(crate) mod inputs;
+pub(crate) mod navigation;
 #[cfg(test)]
 mod tests;
 pub(crate) mod view;
+pub(crate) mod workflows;
 
 #[derive(Default)]
 pub(crate) struct Root {
+    about: about::State,
     correlations: Vec<(String, Owner)>,
+    workflow_correlations: Vec<workflows::Correlation>,
+    workflow: Option<workflows::Dialog>,
+    workflow_attempts: Vec<workflows::Attempt>,
+    workflow_salesforce: Vec<workflows::salesforce_dispatch::Session>,
+    workflow_ranking: Option<workflows::ranking_cache::Cache>,
+    workflow_meetings: Option<workflows::meeting_names::Store>,
+    workflow_navigation: Option<workflows::navigation_history::Store>,
+    workflow_names: Option<workflows::entity_names::Observation>,
+    workflow_names_revision: u64,
+    #[cfg(feature = "protected-test-support")]
+    workflow_fixture: Option<workflows::fixture::Harness>,
     pub(crate) fixture_forms: Vec<serde_json::Value>,
     surface: Option<Surface>,
+    navigation: Option<navigation::Pending>,
+    calendar_attempts: Vec<calendar::Attempt>,
     attempts: Vec<actions::Attempt>,
+    forms: std::collections::BTreeMap<
+        inputs::FormOwner,
+        super_platinum_core::block_actions::form::home::HomeForm,
+    >,
+    native: inputs::native::State,
+    input_revisions: std::collections::BTreeMap<inputs::FormOwner, u64>,
     cooldowns: std::collections::BTreeMap<(u64, String), Option<Instant>>,
 }
 struct Surface {
@@ -39,6 +64,7 @@ struct Surface {
     notice: Option<String>,
     opened: bool,
     confirmation: Option<Button>,
+    calendar_confirmation: Option<calendar::Origin>,
     fixture: bool,
 }
 #[derive(Clone)]
@@ -149,7 +175,7 @@ fn failure(s: &mut ShellState, ctx: &Context, e: &Error) {
 pub(crate) async fn refresh(mut state: Signal<ShellState>) {
     let (owner, id, revision, initial) = {
         let mut s = state.write();
-        if s.overlay.is_some() {
+        if s.overlay.is_some() || workflows::locked(&s) {
             return;
         }
         let Some(owner) = Owner::capture(&s) else {
@@ -174,6 +200,7 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
                 notice: None,
                 opened: false,
                 confirmation: None,
+                calendar_confirmation: None,
                 fixture: false,
             })
         }
@@ -184,13 +211,25 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
         h.loading = true;
         h.revision = next();
         h.confirmation = None;
+        h.calendar_confirmation = None;
         h.notice = None;
         (h.owner.clone(), h.id, h.revision, !h.opened)
     };
+    let posting = crate::bootstrap::posting_ingress::capture(
+        &state,
+        &owner.ctx.transport,
+        &owner.ctx.session,
+    )
+    .for_channels([&owner.channel]);
     let result = async {
         let req = home::fetch(&owner.ctx.client, &owner.ctx.session, &owner.channel)?;
         let raw = owner.ctx.transport.execute(req).await?;
         let (home, mut view) = Home::decode(&owner.channel, &raw)?;
+        // Only the accepted response's actual connection arrays feed the
+        // positive-history ingress. This typed copy grants no posting facts.
+        let channel = raw.get("channel").cloned().and_then(|raw| {
+            serde_json::from_value::<super_platinum_core::slack::models::Channel>(raw).ok()
+        });
         if view.is_none() {
             if let Some(id) = home.view_id.as_deref() {
                 let raw = owner
@@ -210,9 +249,22 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
                 }
             }
         }
-        Ok::<_, Error>((home, view))
+        Ok::<_, Error>((home, view, channel))
     }
     .await;
+    let accepts_response = {
+        let s = state.peek();
+        current(&s, id)
+            && s.app_home
+                .surface
+                .as_ref()
+                .is_some_and(|h| h.revision == revision)
+    };
+    if accepts_response {
+        if let Ok((_, _, Some(channel))) = &result {
+            posting.channels(&state, std::slice::from_ref(channel));
+        }
+    }
     let opened = {
         let mut s = state.write();
         if !current(&s, id) || s.app_home.surface.as_ref().unwrap().revision != revision {
@@ -224,7 +276,7 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
         let h = s.app_home.surface.as_mut().unwrap();
         h.loading = false;
         match result {
-            Ok((home, view)) => {
+            Ok((home, view, _)) => {
                 h.home = Some(home.clone());
                 h.view = view;
                 h.notice = if !home.enabled {
@@ -251,6 +303,7 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
             }
         }
     };
+    inputs::hydrate(&mut state.write());
     if let Some(home) = opened {
         if !current(&state.peek(), id) {
             return;
@@ -277,9 +330,45 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
 /// Socket caller supplies the accepted account's realtime generation. A home
 /// event cannot reuse modal token authority or navigate to another app/channel.
 pub(crate) fn realtime(s: &mut ShellState, team: &str, generation: u64, event: &RtEvent) -> bool {
+    let current_owner = s.app_home.surface.as_ref().is_some_and(|h| {
+        h.owner.current(s) && h.owner.ctx.session.team_id == team && h.owner.rt == generation
+    });
+    let changed_self = matches!(event, RtEvent::UserChanged(user)
+        if s.app_home.surface.as_ref().is_some_and(|h| h.owner.ctx.session.user_id == user.id));
+    if current_owner && (matches!(event, RtEvent::PreferencesChanged { .. }) || changed_self) {
+        workflows::entity_names::invalidate(s, team);
+    }
     let RtEvent::Unknown(raw) = event else {
         return false;
     };
+    if current_owner
+        && matches!(
+            raw.kind.as_str(),
+            "team_pref_change" | "enterprise_prefs_updated" | "team_join" | "team_leave"
+        )
+    {
+        workflows::entity_names::invalidate(s, team);
+    }
+    if s.app_home.surface.as_ref().is_some_and(|h| {
+        h.owner.current(s) && h.owner.ctx.session.team_id == team && h.owner.rt == generation
+    }) && matches!(
+        raw.kind.as_str(),
+        "external_auth_completed" | "salesforce_org_authed" | "salesforce_org_disconnected"
+    ) {
+        let mut event = serde_json::to_value(&raw.rest).unwrap_or(serde_json::Value::Null);
+        if let Some(object) = event.as_object_mut() {
+            object.insert("type".into(), serde_json::Value::String(raw.kind.clone()));
+            workflows::realtime(s, team, &event);
+        }
+        return false;
+    }
+    if raw.kind.starts_with("calendar_")
+        && s.app_home.surface.as_ref().is_some_and(|h| {
+            h.owner.current(s) && h.owner.ctx.session.team_id == team && h.owner.rt == generation
+        })
+    {
+        workflows::meeting_names::invalidate(s, team);
+    }
     if !matches!(raw.kind.as_str(), "view_opened" | "view_updated") {
         return false;
     }
@@ -324,6 +413,7 @@ pub(crate) fn realtime(s: &mut ShellState, team: &str, generation: u64, event: &
         h.revision = next();
         h.loading = false;
         h.confirmation = None;
+        h.calendar_confirmation = None;
         h.notice = Some("Home changed. Refresh to load its current content.".into());
         return true;
     };
@@ -336,7 +426,9 @@ pub(crate) fn realtime(s: &mut ShellState, team: &str, generation: u64, event: &
     h.revision = next();
     h.loading = false;
     h.confirmation = None;
+    h.calendar_confirmation = None;
     h.notice = None;
+    inputs::hydrate(s);
     false
 }
 
@@ -344,6 +436,9 @@ pub(crate) fn accepts_modal(
     s: &ShellState,
     raw: &super_platinum_core::slack::events::RawEvent,
 ) -> bool {
+    if !about::accepts_modal(s, raw) {
+        return false;
+    }
     let Some(token) = raw
         .rest
         .get("client_token")
@@ -351,6 +446,9 @@ pub(crate) fn accepts_modal(
     else {
         return true;
     };
+    if !workflows::accepts_modal(s, raw) {
+        return false;
+    }
     s.app_home
         .correlations
         .iter()
@@ -359,5 +457,9 @@ pub(crate) fn accepts_modal(
 }
 
 pub(crate) fn leave(s: &mut ShellState) {
+    workflows::leave(s);
+    navigation::clear(s);
+    about::clear(s);
+    calendar::retire_ui(s);
     s.app_home.surface = None;
 }

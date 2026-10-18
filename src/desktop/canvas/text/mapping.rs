@@ -20,6 +20,7 @@ pub(in crate::canvas) struct Mapping {
 }
 pub(in crate::canvas) struct Item {
     pub intent: Option<Arc<TextIntent>>,
+    pub annotation: Option<super_platinum_core::canvas::edit::annotation::AnnotationParagraph>,
     pub structure: Option<super_platinum_core::canvas::edit::structure::ParagraphActions>,
     pub replacement: bool,
     pub blocks: String,
@@ -76,13 +77,27 @@ impl Mapping {
         let actions = super_platinum_core::canvas::edit::structure::paragraph_actions(
             snapshot, &targets, now,
         );
+        let mut annotations: BTreeMap<_, _> =
+            super_platinum_core::canvas::edit::annotation::AnnotationPresentation::ordinary(
+                None, None,
+            )
+            .and_then(|context| {
+                super_platinum_core::canvas::edit::annotation::range_seeds_with_presentation(
+                    snapshot, &context,
+                )
+            })
+            .unwrap_or_default()
+            .into_iter()
+            .collect();
         let mut items = BTreeMap::new();
         for ((id, intent), structure) in targets.into_iter().zip(intents).zip(actions) {
             let intent = intent.ok();
+            let annotation = annotations.remove(id);
             let seed = intent
                 .as_ref()
                 .map(TextIntent::seed)
-                .or_else(|| structure.as_ref().map(|action| &action.seed));
+                .or_else(|| structure.as_ref().map(|action| &action.seed))
+                .or(annotation.as_ref().map(|a| &a.draft));
             let Some(seed) = seed else {
                 continue;
             };
@@ -95,6 +110,7 @@ impl Mapping {
                 id.into(),
                 Item {
                     intent: intent.map(Arc::new),
+                    annotation,
                     replacement: super::checklist::presentation(shell).is_some_and(|view| {
                         !view.loading
                             && !view.stale
@@ -113,5 +129,67 @@ impl Mapping {
             );
         }
         Self { owner: None, items }
+    }
+}
+
+#[cfg(test)]
+mod annotation_tests {
+    use super::*;
+    #[test]
+    fn comment_only_mapping_keeps_blank_lines_without_granting_body_edits() {
+        use super_platinum_core::canvas::wire::EncodedField as F;
+        let shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        let mut snapshot =
+            (*super::super::fixture::snapshot("<b>A&amp;\u{1f600}B</b><br><br>Last", 1000)).clone();
+        snapshot
+            .file
+            .extra
+            .insert("access".into(), serde_json::json!("comment"));
+        snapshot.thread = snapshot
+            .thread
+            .replace_fields(23, &[F::uint(23, 5).unwrap()])
+            .unwrap();
+        let export = CanvasDocument::parse(
+            "<div class='quip-canvas-content'><p id='paragraph'>lagging export</p></div>",
+        )
+        .unwrap();
+        // A text-edit fixture has no canonical placement. Annotation mapping
+        // must refuse that incomplete anchor rather than infer it from export.
+        assert!(
+            Mapping::project(&shell, &export, Some(&snapshot))
+                .items
+                .is_empty()
+        );
+        let paragraph = snapshot
+            .sections
+            .iter_mut()
+            .find(|section| section.id() == "paragraph")
+            .unwrap();
+        *paragraph = super_platinum_core::canvas::wire::Section::from_raw(
+            paragraph
+                .raw()
+                .replace_fields(8, &[F::bytes(8, b"aac").unwrap()])
+                .unwrap(),
+        )
+        .unwrap();
+        let map = Mapping::project(&shell, &export, Some(&snapshot));
+        let item = map.items.get("paragraph").unwrap();
+        assert!(item.intent.is_none());
+        assert!(item.structure.is_none());
+        let seed = item.annotation.as_ref().unwrap();
+        assert_eq!(
+            seed.runs
+                .iter()
+                .map(|r| r.text.as_str())
+                .collect::<String>(),
+            "A&\u{1f600}B\n\nLast"
+        );
+        assert!(seed.runs[0].style.bold);
+        let duplicate = CanvasDocument::parse("<div class='quip-canvas-content'><p id='paragraph'>one</p><p id='paragraph'>two</p></div>").unwrap();
+        assert!(
+            Mapping::project(&shell, &duplicate, Some(&snapshot))
+                .items
+                .is_empty()
+        );
     }
 }

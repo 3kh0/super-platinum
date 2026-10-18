@@ -75,3 +75,44 @@
 .calendar-shortcut-dialog #calendar-create { min-width: 120px; }
 .calendar-shortcut-dialog .app-modal-hint { overflow-wrap: anywhere; }
 @media (max-width: 480px) { .calendar-shortcut-dialog .calendar-time-fields { grid-template-columns: minmax(0, 1fr); } }
+
+/* About owns a bounded scroll surface beside the remembered conversation. */
+.app-about-content { overflow: auto; min-height: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+.app-about-content section { min-width: 0; }
+.app-about-content h3, .app-about-content h4 { margin: 0 0 var(--space-2); }
+.app-about-content p { margin: 0 0 var(--space-2); overflow-wrap: anywhere; }
+.app-about-description { white-space: pre-wrap; }
+.app-about-icon { width: 32px; height: 32px; object-fit: contain; border-radius: var(--radius-sm); }
+.app-about-connection, .app-about-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.app-about-links h3 { flex-basis: 100%; }
+.app-about-content dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-2); }
+.app-about-content dd { margin: 0; overflow-wrap: anywhere; }
+.app-about-screenshots { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.app-about-screenshot, .app-about-screenshot-placeholder { max-width: 100%; width: 240px; min-height: 120px; }
+.app-about-screenshot img { display: block; width: 100%; object-fit: contain; }
+
+/* About descriptions reuse typed message content with measured local expansion. */
+.app-about-description-body { white-space: normal; overflow-wrap: anywhere; }
+.app-about-description-body[data-expanded="false"] { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+.app-about-description-toggle[hidden] { display: none; }
+.app-about-description-toggle { min-height: var(--control-height); margin-top: var(--space-1); }
+
+/* Home workflow review reuses modal geometry and control states. */
+.app-home-workflow .app-modal-body { display: flex; flex-direction: column; gap: var(--space-3); }
+.app-home-workflow-name { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+.app-home-workflow-step, .app-home-workflow-field, .app-home-workflow-picker { min-width: 0; }
+.app-home-workflow-step h3 { margin: 0 0 var(--space-2); font-size: var(--text-md); font-weight: 500; }
+.app-home-workflow-step p, .app-home-workflow-field p { margin: var(--space-2) 0; overflow-wrap: anywhere; }
+.app-home-workflow-field > label, .app-home-workflow-step > label, .app-home-workflow-picker > label { display: block; margin-bottom: var(--space-2); font-size: var(--text-sm); }
+.app-home-workflow .app-modal-body button, .app-home-workflow .app-modal-body select,
+.app-home-workflow .app-modal-body input { min-height: var(--control-height); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
+.app-home-workflow .app-modal-body button { padding: var(--space-2) var(--space-3); overflow-wrap: anywhere; }
+.app-home-workflow .app-modal-body input, .app-home-workflow .app-modal-body select { display: block; width: 100%; min-width: 0; box-sizing: border-box; margin-top: var(--space-2); padding: var(--space-2) var(--space-3); }
+.app-home-workflow-field > button { width: 100%; text-align: left; }
+.app-home-workflow-results { display: flex; flex-direction: column; gap: var(--space-1); max-height: 224px; overflow: auto; overscroll-behavior: contain; margin-block: var(--space-2); padding: var(--space-1); }
+.app-home-workflow-results > button { width: 100%; flex: 0 0 auto; text-align: left; }
+.app-home-workflow button:focus-visible, .app-home-workflow input:focus-visible,
+.app-home-workflow select:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.app-home-workflow .app-modal-body button:hover:not(:disabled) { background: var(--surface-raised); }
+.app-home-workflow footer { flex-wrap: wrap; justify-content: flex-end; }
+.app-home-workflow footer .primary { min-width: 128px; }

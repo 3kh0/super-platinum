@@ -36,6 +36,7 @@ pub use message_conversation::{
 pub use message_overflow::parse_message_overflow;
 pub use message_user::{parse_message_user, valid_message_user, validate_message_user};
 pub use message_users::{parse_message_users, validate_message_users};
+pub mod home;
 mod parse;
 mod values;
 pub use message_date::{parse_message_date, validate_message_date};

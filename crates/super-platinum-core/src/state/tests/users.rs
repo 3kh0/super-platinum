@@ -192,6 +192,7 @@ fn boot_self_user_provides_self_avatar_url() {
         self_user_id: "U_SESSION".into(),
         locale: None,
         team_plan: None,
+        posting_metadata: Default::default(),
         activity_unread_count: None,
         activity_counts: Default::default(),
         dock_counts: Default::default(),

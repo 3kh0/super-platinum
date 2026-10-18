@@ -4,11 +4,13 @@
 use super::*;
 
 fn schema(column: &Column) -> Result<(), ListError> {
-    if !matches!(column.kind.as_str(), "user" | "channel")
-        || column
-            .raw
-            .get("options")
-            .is_some_and(|v| !v.is_null() && !v.is_object())
+    if !matches!(
+        column.kind.as_str(),
+        "user" | "assignee" | "todo_assignee" | "channel"
+    ) || column
+        .raw
+        .get("options")
+        .is_some_and(|v| !v.is_null() && !v.is_object())
         || column.raw.pointer("/options/format").is_some_and(|v| {
             !v.is_null() && !matches!(v.as_str(), Some("single_entity" | "multi_entity"))
         })
@@ -28,7 +30,7 @@ pub(super) fn validate<'a>(
     let mut seen = HashSet::new();
     let multi = column.is_multi_user() || column.is_multi_channel();
     let prefixes: &[u8] = match column.kind.as_str() {
-        "user" => b"UW",
+        "user" | "assignee" | "todo_assignee" => b"UW",
         "channel" => b"CGDZ",
         _ => unreachable!("validated entity schema"),
     };

@@ -248,14 +248,17 @@ pub(crate) fn preflight(
     {
         return Err("Unexpected Date preflight sequence/raw page".into());
     }
-    let expected = CellEdit::capture(
+    let expected = CellEdit::capture_task_date(
         &canonical.document,
         &canonical.records,
         ROW,
         COLUMN,
         canonical.allow_lists.as_deref(),
-        canonical.personal_task_lists.as_ref(),
-        CellEditValue::Date((index == 0).then(|| "2028-02-29".into())),
+        canonical
+            .personal_task_lists
+            .as_ref()
+            .ok_or("Date preflight lacks observed task preferences")?,
+        (index == 0).then(|| "2028-02-29".into()),
     )
     .map_err(|e| e.to_string())?;
     if attempt.edit != expected

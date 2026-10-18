@@ -7,7 +7,7 @@
  const cell=()=>detail()?detail().querySelector('[data-column-id="C_VOTE_OBSERVED"]'):row()?.querySelector('[data-column-id="C_VOTE_OBSERVED"]');
  const button=()=>cell()?.querySelector('button.slack-list-vote-action'),panel=()=>q('#slack-list-cell-editor');
  const disabled=e=>!!e&&(e.disabled||e.matches(':disabled'));
- let mode=null,sourceInstance=null,detailOpen=null,returnCell=null,oldFind=null,oldFindReceipt=null;const actions=[];
+ let mode=null,sourceInstance=null,detailOpen=null,returnCell=null,oldFind=null,oldFindReceipt=null;const actions=[];let navigation=null;
  function ring(e,trace){
   const shown=visible(e);if(trace)trace.visible=shown;
   if(!shown)return false;const r=e.getBoundingClientRect(),s=getComputedStyle(e);
@@ -44,7 +44,17 @@
   refresh(){return activate(q('#slack-list-refresh'));},
   disabledNoReplay(){const b=button();if(!b||!disabled(b))return{ok:false};b.click();b.click();return{ok:true,disabled:true,label:b.getAttribute('aria-label')};},
   navigate(id){const e=q('#slack-list-view-select');if(panel()||detail()||!(e instanceof HTMLSelectElement)||disabled(e)||!['V_FILTER','V_VOTE_BOARD'].includes(id)||e.value===id)return{ok:false};const before={view:e.value,find:q('.slack-list-find input')?.value},scrolling=reveal(e,'center');if(!hit(e))return{ok:false,scrolling};e.focus();Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,id);e.dispatchEvent(new Event('change',{bubbles:true}));return{ok:true,before,to:id,scrolling};},
-  navigationReady(id){const e=q('#slack-list-view-select'),f=q('.slack-list-find input');return{ok:!!e&&e.value===id&&e.selectedOptions?.[0]?.textContent===(id==='V_FILTER'?'Shared checklist':'Vote board')&&f?.value===''&&(id==='V_FILTER'?!!q('.slack-list-grid')&&!q('.slack-list-board'):!!q('.slack-list-board')&&!q('.slack-list-grid')),view:e?.value,find:f?.value};},
+  navigationReady(id){const e=q('#slack-list-view-select'),f=q('.slack-list-find input'),r=q('.slack-list-dialog');const focusExact=document.activeElement===e;const ok=!!r&&!!e&&e.value===id&&e.selectedOptions?.[0]?.textContent===(id==='V_FILTER'?'Shared checklist':'Vote board')&&f?.value===''&&(id==='V_FILTER'?!!q('.slack-list-grid')&&!q('.slack-list-board'):!!q('.slack-list-board')&&!q('.slack-list-grid'))&&focusExact;if(ok)navigation={root:r,select:e,find:f,id,visit:r.dataset.dialogGeneration,selection:r.dataset.viewSelection};return{ok,view:e?.value,find:f?.value,focusExact};},
+  // Explicit checker setup after query() deliberately focuses Find. No event or value mutation.
+  focusNavigation(id,visit,selection){
+   const n=navigation,e=q('#slack-list-view-select'),f=q('.slack-list-find input'),r=q('.slack-list-dialog');
+   if(!n||!mode||panel()||detail()||n.id!==id||!['V_FILTER','V_VOTE_BOARD'].includes(id)||r!==n.root||e!==n.select||f!==n.find||!r?.isConnected||!e?.isConnected||!f?.isConnected||n.visit!==visit||n.selection!==selection||r.dataset.dialogGeneration!==visit||r.dataset.viewSelection!==selection||e.value!==id||disabled(e)||disabled(f)||document.activeElement!==f||f.value!=='Launch item 0'||!h.findRetained().ok)return{ok:false};
+   const before={view:e.value,find:f.value,range:[f.selectionStart,f.selectionEnd,f.selectionDirection],active:f.id||null},scrolling=reveal(e,'center');
+   if(!hit(e))return{ok:false,scrolling};navigation=null;
+   e.focus({preventScroll:true});
+   const retained=h.findRetained(),after={view:e.value,find:f.value,range:[f.selectionStart,f.selectionEnd,f.selectionDirection],active:document.activeElement?.id||null};
+   return{ok:document.activeElement===e&&ring(e)&&retained.ok&&before.view===after.view&&before.find===after.find&&JSON.stringify(before.range)===JSON.stringify(after.range),setup:'Find-to-View focus only',before,after,visit,selection,scrolling};
+  },
   openDetail(){const c=card(),b=c?.querySelector('.slack-list-record-open');if(detail()||!c||!b)return{ok:false};returnCell=c.querySelector('.slack-list-card-field');oldFind=q('.slack-list-find input');if(!h.findRetained().ok||!oldFind)return{ok:false};oldFindReceipt={value:oldFind.value,range:[oldFind.selectionStart,oldFind.selectionEnd,oldFind.selectionDirection]};return activate(b);},
   detailReady(){const d=detail();return{ok:!!d&&d.dataset.recordId==='R_LIST_003'&&/^[1-9][0-9]*$/.test(d.dataset.detailOpenGeneration||'')&&visible(d)&&d.contains(document.activeElement)&&ring(document.activeElement),row:d?.dataset.recordId,generation:d?.dataset.detailGeneration,openGeneration:d?.dataset.detailOpenGeneration,focused:document.activeElement?.id};},
   closeDetail(){return detail()?activate(q('#slack-list-record-back')):{ok:false};},

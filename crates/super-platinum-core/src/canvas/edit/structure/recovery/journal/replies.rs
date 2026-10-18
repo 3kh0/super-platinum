@@ -16,6 +16,8 @@ pub struct ReplyDraft {
     revision: u64,
     capture: String,
     text: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    blocks: Option<Vec<serde_json::Value>>,
 }
 impl ReplyDraft {
     pub fn id(&self) -> &str {
@@ -26,6 +28,9 @@ impl ReplyDraft {
     }
     pub fn text(&self) -> &str {
         &self.text
+    }
+    pub fn blocks(&self) -> Option<&[serde_json::Value]> {
+        self.blocks.as_deref()
     }
     pub fn capture(&self) -> &str {
         &self.capture
@@ -104,6 +109,12 @@ fn draft_valid(value: &ReplyDraft) -> Result<(), AppError> {
     if value.revision == 0 || value.revision > i64::MAX as u64 || !valid_text(&value.text) {
         return Err(invalid());
     }
+    if let Some(blocks) = &value.blocks {
+        if crate::canvas::comments::content::fallback(blocks).map_err(|_| invalid())? != value.text
+        {
+            return Err(invalid());
+        }
+    }
     Ok(())
 }
 fn receipt_valid(value: &ReplyReceipt, scope: &Scope) -> Result<(), AppError> {
@@ -115,6 +126,7 @@ fn receipt_valid(value: &ReplyReceipt, scope: &Scope) -> Result<(), AppError> {
         || value.record.user() != scope.user
         || value.record.file() != scope.file
         || value.record.text() != value.draft.text
+        || value.record.blocks() != value.draft.blocks()
     {
         return Err(invalid());
     }

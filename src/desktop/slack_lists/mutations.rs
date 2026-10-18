@@ -56,6 +56,9 @@ pub(super) fn begin_edit_with_authority(
     if rename::blocks_mutation(shell)
         || create::blocks_mutation(shell)
         || delete::blocks_mutation(shell)
+        || reminder::blocks_mutation(shell)
+        || completion::blocks_mutation(shell)
+        || editor::assignment::blocks_mutation(shell)
         || shell.slack_lists.operations.contains_key(&view.id)
         || view.editor.is_some()
     {
@@ -82,6 +85,7 @@ pub(super) fn begin_edit_with_authority(
     )
     .map_err(|_| "This checkbox cannot be changed. Refresh and check your access.")?;
     let attempt = EditAttempt {
+        date_policy: None,
         selection_generation: view.layout.selection_generation,
         authority,
         scope,
@@ -127,6 +131,9 @@ pub(super) fn validate_edit(
 ) -> Result<(), &'static str> {
     if !attempt.visible(shell)
         || delete::blocks_mutation(shell)
+        || reminder::blocks_mutation(shell)
+        || completion::blocks_mutation(shell)
+        || editor::assignment::blocks_mutation(shell)
         || shell.overlay != Some(Overlay::SlackList)
         || attempt.scope.deleted(shell, attempt.edit.list_id())
         || shell.slack_lists.view.as_ref().is_none_or(|v| {
@@ -147,6 +154,12 @@ pub(super) fn validate_edit(
             .is_none_or(|m| m.phase != Phase::Preparing)
     {
         return Err("The list changed before this cell could be saved.");
+    }
+    if attempt
+        .date_policy
+        .is_some_and(|policy| !policy.current(&loaded, attempt.edit.record_id()))
+    {
+        return Err("Your task date settings changed before this save. Reopen the item.");
     }
     attempt
         .edit

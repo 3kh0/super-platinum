@@ -1,10 +1,13 @@
 use super::*;
 use crate::slack_lists::rename::visibility;
-pub(super) fn action(state: Signal<ShellState>, visit: u64) -> Element {
-    let selection = crate::slack_lists::rename::selection(&state.read()).unwrap_or_default();
-    let disabled = !visibility::can_open(&state.read());
+pub(super) fn action(state: Signal<ShellState>, _visit: u64) -> Element {
+    let stamp = crate::slack_lists::refinement::toolbar::stamp(&state.read());
+    let disabled = !crate::slack_lists::rename::local_refinement::can_open(
+        &state.read(),
+        crate::slack_lists::rename::local_refinement::Kind::Visibility,
+    );
     rsx! {button{id:"slack-list-fields",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,
-    title:"Show or hide a supported field in this saved Table",onclick:move |_|visibility::open(state,visit,selection),
+    title:"Show or hide fields in your current view",onclick:move |_|crate::slack_lists::rename::local_refinement::open_stamped(state,crate::slack_lists::rename::local_refinement::Kind::Visibility,stamp.clone()),
     {icon(Icon::Settings,"icon")}span{"Fields"}}}
 }
 pub(super) fn fields(
@@ -13,6 +16,7 @@ pub(super) fn fields(
     visit: u64,
     p: visibility::Presentation,
     editable: bool,
+    local: bool,
 ) -> Element {
     let choice = p.choice;
     let chosen_column = p.column.clone();
@@ -35,7 +39,7 @@ pub(super) fn fields(
             option{value:"shown",selected:p.desired,"Shown"}option{value:"hidden",selected:!p.desired,"Hidden"}
         }
         p{id:"slack-list-field-visibility-current",class:"slack-list-editor-hint","Original: {original}. Current: {current}."}
-        p{class:"slack-list-editor-hint","Save changes this shared Table for everyone with access. Fields and stored values are kept. Choose a different field to discard the current unsaved choice."}
+        p{class:"slack-list-editor-hint",if local {"Apply changes your current view. Use Save for everyone afterward to share it."} else {"Save changes this shared Table for everyone with access. Fields and stored values are kept. Choose a different field to discard the current unsaved choice."}}
     }
 }
 fn parse(value: &str) -> Option<bool> {

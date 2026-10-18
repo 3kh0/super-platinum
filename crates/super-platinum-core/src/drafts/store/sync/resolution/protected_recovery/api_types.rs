@@ -193,12 +193,16 @@ impl LocalInventory {
 }
 
 pub struct Loaded {
+    pub(super) hosted: hosted_files::Inventory,
     pub(super) managed: BTreeMap<DraftKey, Review>,
     pub(super) locals: BTreeMap<DraftKey, LocalInventory>,
     pub(super) uncommitted: BTreeMap<DraftKey, LocalDraft>,
     pub(super) recovery: Vec<RecoverySummary>,
 }
 impl Loaded {
+    pub fn hosted(&self) -> &hosted_files::Inventory {
+        &self.hosted
+    }
     pub fn managed(&self) -> &BTreeMap<DraftKey, Review> {
         &self.managed
     }

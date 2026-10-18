@@ -52,17 +52,24 @@
     const shadow = style?.boxShadow?.match(/^rgba?\(([^)]+)\)\s+0px\s+0px\s+0px\s+3px$/);
     const color = shadow?.[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
     const painted = color?.length === 4 && same(color, [50, 140, 255, .1]);
-    const border = ['Top', 'Right', 'Bottom', 'Left'].every(side => {
+    // Chromium snaps the authored one-CSS-pixel border down to a whole device
+    // pixel (at least one). At 150% scale its computed width is 0.666667px.
+    // Retain that exact token contract instead of accepting any positive edge.
+    const dpr = window.devicePixelRatio;
+    const expectedBorderWidth = Number.isFinite(dpr) && dpr > 0 ? Math.max(1, Math.floor(dpr)) / dpr : null;
+    const borders = ['Top', 'Right', 'Bottom', 'Left'].map(side => {
       const color = style?.[`border${side}Color`]?.match(/^rgba?\(([^)]+)\)$/)?.[1]
         .split(/[\s,\/]+/).filter(Boolean).map(Number);
-      return parseFloat(style?.[`border${side}Width`]) === 1 && style?.[`border${side}Style`] === 'solid'
-        && color?.every(Number.isFinite) && (color.length === 3 || color.length === 4 && color[3] > 0);
+      return {side, width: parseFloat(style?.[`border${side}Width`]), style: style?.[`border${side}Style`], color};
     });
+    const border = expectedBorderWidth !== null && borders.every(edge =>
+      Number.isFinite(edge.width) && Math.abs(edge.width - expectedBorderWidth) <= .00001 && edge.style === 'solid'
+      && edge.color?.every(Number.isFinite) && (edge.color.length === 3 || edge.color.length === 4 && edge.color[3] > 0));
     const r = geometry.rect, edges = r ? [r[0] - 3, r[1] - 3, r[0] + r[2] + 3, r[1] + r[3] + 3] : null;
     const clip = geometry.clip;
     return {ok: document.activeElement === e && geometry.ok && painted === true && border && !!edges
         && edges[0] >= clip[0] && edges[1] >= clip[1] && edges[2] <= clip[2] && edges[3] <= clip[3],
-      focused: document.activeElement === e, geometry, edges, shadow: style?.boxShadow || null, painted: painted === true, border};
+      focused: document.activeElement === e, geometry, edges, shadow: style?.boxShadow || null, painted: painted === true, border, borders, dpr, expectedBorderWidth};
   }
   function hit(e) {
     if (!box(e).ok) return false;

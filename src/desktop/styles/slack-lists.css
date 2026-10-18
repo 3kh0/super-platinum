@@ -89,7 +89,7 @@
 .slack-list-editor-body > :is(input, select, textarea):focus-visible, .slack-list-editor-body > .slack-list-entity-picker > input[type="search"]:focus-visible { outline-offset: -2px; }
 .slack-list-editor-body .slack-list-user-selected > button:focus-visible { outline-offset: -2px; }
 .slack-list-editor-body > label, .slack-list-editor-body legend { display: block; margin-bottom: 4px; font-size: var(--text-sm); }
-.slack-list-editor-body input[type="text"], .slack-list-editor-body input[type="date"], .slack-list-editor-body input[type="search"] { width: 100%; min-height: var(--control-height); padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); }
+.slack-list-editor-body input[type="text"], .slack-list-editor-body input[type="date"], .slack-list-editor-body input[type="datetime-local"], .slack-list-editor-body input[type="search"] { width: 100%; min-height: var(--control-height); padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); }
 .slack-list-user-picker { display: flex; flex-direction: column; gap: 8px; }
 .slack-list-user-picker > label { font-size: var(--text-sm); }
 .slack-list-user-selected { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: var(--control-height); font-size: var(--text-sm); }
@@ -375,3 +375,14 @@
 .slack-list-filter-select-options > label { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .slack-list-filter-select-options input[type=checkbox] { flex: 0 0 auto; width: 18px; height: 18px; accent-color: var(--accent); }
 .slack-list-filter-select-options span { overflow-wrap: anywhere; }
+
+/* Task assignment uses the existing editor scroll and control tokens. */
+.slack-list-assignment-review { display:flex; flex-direction:column; gap:8px; min-width:0; }
+.slack-list-assignment-review h4 { margin:0; font-size:var(--text-sm); }
+.slack-list-assignment-person { display:grid; grid-template-columns:minmax(0,1fr) minmax(100px,1fr); gap:4px 8px; align-items:center; font-size:var(--text-sm); }
+.slack-list-assignment-person > span { min-width:0; overflow-wrap:anywhere; }
+.slack-list-assignment-person > .slack-list-editor-hint { grid-column:1 / -1; }
+.slack-list-assignment-person select { width:100%; min-width:0; min-height:var(--control-height); padding:6px 8px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); color:var(--text); font:inherit; }
+.slack-list-assignment-person select:disabled { opacity:.55; cursor:default; }
+.slack-list-assignment-review :is(select,button):focus-visible { outline-offset:-2px; }
+.slack-list-assignment-review .slack-list-editor-actions { flex-wrap:wrap; }

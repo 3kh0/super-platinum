@@ -91,7 +91,7 @@ fn AppModalDialog(state: Signal<ShellState>) -> Element {
                                         let shape=control_shape(&field.kind);
                                         rsx! {ModalField {
                                             key:"{form.view_id}-{presentation.reset_revision}-{dom_id}-{shape}-{field.revision}",
-                                            state, input_key:input_key.clone(), field:field.clone(), locked,
+                                            state, input_key:input_key.clone(), field:field.clone(), locked,home:None,home_raw:None,
                                         }}
                                     } else {rsx!{}}
                                 }
@@ -125,15 +125,18 @@ fn AppModalDialog(state: Signal<ShellState>) -> Element {
 }
 
 #[component]
-fn ModalField(
+pub(crate) fn ModalField(
     state: Signal<ShellState>,
     input_key: InputKey,
     field: FormField,
     locked: bool,
+    home: Option<crate::app_home::view::Key>,
+    home_raw: Option<String>,
 ) -> Element {
     // Capture once per keyed mount. Current values/errors may rerender after
     // every keystroke, but native defaults must not overwrite the active DOM.
     let seed = use_hook(|| field.value.clone());
+    let raw_seed = use_hook(|| home_raw.clone());
     let id = field_id(&input_key);
     let label_id = format!("{id}-label");
     let hint_id = format!("{id}-hint");
@@ -154,7 +157,7 @@ fn ModalField(
                     textarea {id:"{id}",name:"{id}",initial_value:"{text}",placeholder:"{placeholder}",
                         disabled:locked,"aria-labelledby":"{label_id}","aria-describedby":"{described_by}",
                         "aria-invalid":"{invalid}","aria-required":"{required}",
-                        oninput:move |event|crate::app_modal::set_value(state,key.clone(),InputValue::Text(event.value()))}
+                        oninput:move |event|set_value(state,home,key.clone(),InputValue::Text(event.value()))}
                 }
             } else {
                 rsx! {
@@ -162,7 +165,7 @@ fn ModalField(
                         autocorrect:"off",autocapitalize:"off",disabled:locked,
                         "aria-labelledby":"{label_id}","aria-describedby":"{described_by}",
                         "aria-invalid":"{invalid}","aria-required":"{required}",
-                        oninput:move |event|crate::app_modal::set_value(state,key.clone(),InputValue::Text(event.value()))}
+                        oninput:move |event|set_value(state,home,key.clone(),InputValue::Text(event.value()))}
                 }
             }
         }
@@ -177,7 +180,7 @@ fn ModalField(
                 size:if *multiple {options.len().clamp(3,6)}else{1},disabled:locked,
                 "aria-labelledby":"{label_id}","aria-describedby":"{described_by}",
                 "aria-invalid":"{invalid}","aria-required":"{required}",
-                onchange:move |event|crate::app_modal::set_value(state,key.clone(),InputValue::Selected(selected_values(&event,&name,&choices))),
+                onchange:move |event|set_value(state,home,key.clone(),InputValue::Selected(selected_values(&event,&name,&choices))),
                 if !*multiple {option {value:"",initial_selected:selected.is_empty(),"{placeholder}"}}
                 for (index,option) in options.iter().enumerate() {
                     option {key:"{option.value}",value:"option-{index}",initial_selected:selected.contains(&option.value),
@@ -198,7 +201,7 @@ fn ModalField(
                         label {class:"app-modal-option",key:"{option.value}",
                             input {r#type:if radio{"radio"}else{"checkbox"},name:"{id}",value:"option-{index}",
                                 initial_checked:selected.contains(&option.value),disabled:locked,
-                                onchange:move |event|crate::app_modal::set_value(state,key.clone(),InputValue::Selected(selected_values(&event,&name,&choices)))}
+                                onchange:move |event|set_value(state,home,key.clone(),InputValue::Selected(selected_values(&event,&name,&choices)))}
                             span {"{option.text}"}
                         }
                     }}
@@ -214,24 +217,38 @@ fn ModalField(
                 InputValue::DateTime(value) => ("datetime-local", datetime_local_value(*value)),
                 _ => ("text", String::new()),
             };
+            let initial = raw_seed.clone().unwrap_or(initial);
+            if let Some(visit) = home {
+                return rsx! {div{class:"app-modal-field","data-block-id":input_key.block_id.clone(),"data-action-id":input_key.action_id.clone(),
+                    label{id:"{label_id}",r#for:"{id}",class:"app-modal-label","{field.label}",span{class:"app-modal-required",if field.optional{"Optional"}else{"Required"}}}
+                    crate::app_home::inputs::native::Control{state,visit,input_key:input_key.clone(),kind:kind.clone(),initial,id:id.clone(),label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),locked}
+                    p{id:"{hint_id}",class:"app-modal-hint",if let Some(hint)=field.hint.as_ref(){"{hint}"}if let InputKind::Time{timezone:Some(timezone)}=&field.kind {" ({timezone})"}}
+                    p{id:"{error_id}",class:"app-modal-error",role:"alert",if let Some(error)=field.error.as_ref(){"{error}"}}
+                }};
+            };
+
             rsx! {input {id:"{id}",name:"{id}",r#type:input_type,initial_value:"{initial}",disabled:locked,
                 "aria-labelledby":"{label_id}","aria-describedby":"{described_by}",
                 "aria-invalid":"{invalid}","aria-required":"{required}",
                 oninput:move |event|{
                     let value=event.value();
                     match kind {
-                        InputKind::Date=>crate::app_modal::set_value(state,key.clone(),InputValue::Date((!value.is_empty()).then_some(value))),
-                        InputKind::Time{..}=>crate::app_modal::set_value(state,key.clone(),InputValue::Time((!value.is_empty()).then_some(value))),
+                        InputKind::Date=>set_value(state,home,key.clone(),InputValue::Date((!value.is_empty()).then_some(value))),
+                        InputKind::Time{..}=>set_value(state,home,key.clone(),InputValue::Time((!value.is_empty()).then_some(value))),
                         _=>match parse_datetime_local(&value) {
-                            Ok(value)=>crate::app_modal::set_value(state,key.clone(),InputValue::DateTime(value)),
-                            Err(error)=>crate::app_modal::set_field_error(state,key.clone(),error),
+                            Ok(value)=>set_value(state,home,key.clone(),InputValue::DateTime(value)),
+                            Err(error)=>set_field_error(state,home,key.clone(),error,value),
                         }
                     }
                 }
             }}
         }
         InputKind::ExternalSelect { .. } | InputKind::MultiExternalSelect { .. } => {
-            rsx! {super::app_modal_external::ModalExternal {state,input_key:input_key.clone(),field:field.clone(),id:id.clone(),locked}}
+            if home.is_some() {
+                rsx! {p{class:"app-modal-hint","Home option lookup is not supported here yet."}}
+            } else {
+                rsx! {super::app_modal_external::ModalExternal {state,input_key:input_key.clone(),field:field.clone(),id:id.clone(),locked}}
+            }
         }
         InputKind::User
         | InputKind::MultiUser { .. }
@@ -239,9 +256,13 @@ fn ModalField(
         | InputKind::MultiConversation { .. }
         | InputKind::Conversation
         | InputKind::Channel => {
-            rsx! {super::app_modal_users::ModalUsers {
-                state,input_key:input_key.clone(),field:field.clone(),id:id.clone(),locked,
-            }}
+            if home.is_some() {
+                rsx! {p{class:"app-modal-hint","Home people and conversation lookup is not supported here yet."}}
+            } else {
+                rsx! {super::app_modal_users::ModalUsers {
+                    state,input_key:input_key.clone(),field:field.clone(),id:id.clone(),locked,
+                }}
+            }
         }
         InputKind::Unsupported { .. } => {
             rsx! {p {class:"app-modal-hint","This field is not supported yet."}}
@@ -283,7 +304,7 @@ fn selected_values(event: &FormEvent, name: &str, options: &[OptionSpec]) -> Vec
         .collect()
 }
 
-fn field_id(key: &InputKey) -> String {
+pub(crate) fn field_id(key: &InputKey) -> String {
     fn encoded(text: &str) -> String {
         text.as_bytes()
             .iter()
@@ -299,7 +320,7 @@ fn field_id(key: &InputKey) -> String {
 
 // A remote text field can change from single-line to multiline without changing
 // its wire type. Remount that DOM shape using the retained current value.
-fn control_shape(kind: &InputKind) -> String {
+pub(crate) fn control_shape(kind: &InputKind) -> String {
     let shape = match kind {
         InputKind::Text {
             multiline: true, ..
@@ -342,5 +363,31 @@ fn control_shape(kind: &InputKind) -> String {
             .expect("string list serializes")
         ),
         _ => shape.into(),
+    }
+}
+
+fn set_value(
+    state: Signal<ShellState>,
+    home: Option<crate::app_home::view::Key>,
+    key: InputKey,
+    value: InputValue,
+) {
+    if let Some(home) = home {
+        crate::app_home::inputs::set(state, home, key, value)
+    } else {
+        crate::app_modal::set_value(state, key, value)
+    }
+}
+fn set_field_error(
+    state: Signal<ShellState>,
+    home: Option<crate::app_home::view::Key>,
+    key: InputKey,
+    error: String,
+    text: String,
+) {
+    if let Some(home) = home {
+        crate::app_home::inputs::error(state, home, key, error, text)
+    } else {
+        crate::app_modal::set_field_error(state, key, error)
     }
 }

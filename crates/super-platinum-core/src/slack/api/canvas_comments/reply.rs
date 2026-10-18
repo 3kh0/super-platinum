@@ -20,6 +20,13 @@ pub fn canvas_comment_reply(
     let crate::slack::client::RequestBody::Form(fields) = &mut request.body else {
         unreachable!("chat form")
     };
+    if let Some(blocks) = record.blocks() {
+        fields.push((
+            "blocks".into(),
+            serde_json::to_string(blocks)
+                .map_err(|_| Error::Api("invalid_canvas_reply_content".into()))?,
+        ));
+    }
     fields.push(("client_msg_id".into(), record.client_msg_id().into()));
     fields.push(("reply_broadcast".into(), "false".into()));
     Ok(request)

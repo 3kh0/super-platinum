@@ -14,6 +14,8 @@ pub(super) struct Guard {
     selection: u64,
     document: Document,
     records: Option<std::sync::Arc<RecordsPage>>,
+    lane_projection: Option<lane_order::ReadProjection>,
+    refinement_projection: Option<refinement_save::Custody>,
 }
 fn enterprise(shell: &ShellState, team: &str) -> Option<String> {
     shell
@@ -46,9 +48,18 @@ pub(super) fn readable(shell: &ShellState) -> bool {
         && view.loaded.is_some()
         && !create::blocks_mutation(shell)
         && !delete::blocks_mutation(shell)
+        && !reminder::blocks_mutation(shell)
+        && !completion::blocks_mutation(shell)
+        && !editor::assignment::blocks_mutation(shell)
         && !shell.slack_lists.operations.contains_key(&view.id)
 }
 impl Guard {
+    pub(super) fn account_current(&self, shell: &ShellState) -> bool {
+        self.scope.current(shell)
+            && shell.core.session.as_ref().map(|s| &s.d_cookie) == self.cookie.as_ref()
+            && enterprise(shell, &self.scope.team) == self.enterprise
+    }
+
     pub fn capture(shell: &ShellState, key: Key, serial: u64) -> Option<Self> {
         if !available(shell)
             || with_registry(|r| {
@@ -79,6 +90,20 @@ impl Guard {
             revision: view.revision,
             selection: view.layout.selection_generation,
             document: view.loaded.as_ref()?.document.clone(),
+            refinement_projection: if entry(shell).is_some_and(|e| e.target.is_refinement()) {
+                Some(refinement_save::Custody::capture(shell)?)
+            } else {
+                None
+            },
+            lane_projection: if entry(shell).is_some_and(|e| {
+                (e.target.is_lane_order()
+                    || e.target.is_board_choice()
+                    || (e.target.is_card_order() || e.target.is_group_delete()))
+            }) {
+                Some(lane_order::ReadProjection::capture(shell)?)
+            } else {
+                None
+            },
             records: if with_registry(|r| {
                 r.entries
                     .get(&Key::current(shell)?)
@@ -98,7 +123,15 @@ impl Guard {
         } else {
             available(shell)
         }) && self.scope.current(shell)
+            && self
+                .refinement_projection
+                .as_ref()
+                .is_none_or(|p| p.current(shell))
             && Key::current(shell).as_ref() == Some(&self.key)
+            && self
+                .lane_projection
+                .as_ref()
+                .is_none_or(|p| p.current(shell))
             && shell.core.session.as_ref().map(|s| &s.d_cookie) == self.cookie.as_ref()
             && enterprise(shell, &self.scope.team) == self.enterprise
             && shell.slack_lists.view.as_ref().is_some_and(|v| {
@@ -113,7 +146,12 @@ impl Guard {
             })
             && with_registry(|r| {
                 r.entries.get(&self.key).is_some_and(|e| {
-                    e.serial == self.serial && e.job == Some(self.job) && e.stage == stage
+                    e.serial == self.serial
+                        && e.job == Some(self.job)
+                        && e.stage == stage
+                        && (!matches!(stage, Stage::Preparing | Stage::Saving)
+                            || (lane_order::projection_current(shell, &e.target)
+                                && refinement_save::current(shell, &e.target)))
                 })
             })
     }
@@ -130,6 +168,7 @@ pub(super) struct Review {
     revision: u64,
     document: Document,
     records: Option<std::sync::Arc<RecordsPage>>,
+    lane_projection: Option<lane_order::ReadProjection>,
 }
 impl Review {
     pub fn navigation_current(&self, shell: &ShellState) -> bool {
@@ -156,6 +195,15 @@ impl Review {
             read: v.read,
             revision: v.revision,
             document: v.loaded.as_ref()?.document.clone(),
+            lane_projection: if entry(shell).is_some_and(|e| {
+                (e.target.is_lane_order()
+                    || e.target.is_board_choice()
+                    || (e.target.is_card_order() || e.target.is_group_delete()))
+            }) {
+                Some(lane_order::ReadProjection::capture(shell)?)
+            } else {
+                None
+            },
             records: if with_registry(|r| {
                 r.entries
                     .get(&Key::current(shell)?)
@@ -172,6 +220,10 @@ impl Review {
     pub fn current(&self, shell: &ShellState) -> bool {
         readable(shell)
             && Key::current(shell).as_ref() == Some(&self.key)
+            && self
+                .lane_projection
+                .as_ref()
+                .is_none_or(|p| p.current(shell))
             && self.epoch == shell.core.account_epoch
             && shell.slack_lists.view.as_ref().is_some_and(|v| {
                 v.generation == self.visit

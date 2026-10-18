@@ -6,7 +6,9 @@ mod writer_settlement;
 fn simple(family: &str) -> bool {
     matches!(
         family,
-        "slash-archive"
+        "hosted-draft-save"
+            | "hosted-draft-load"
+            | "slash-archive"
             | "protected-finish-baseline"
             | "protected-inventory"
             | "protected-local-inventory"

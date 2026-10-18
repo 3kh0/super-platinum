@@ -170,7 +170,48 @@ fn check_archive(
     }
     Ok(())
 }
+/// Fully validated immutable evidence for one read-only phase of the existing
+/// immediate transaction/savepoint. This is not a cache or execution authority.
+/// Drop before any write and before committing/releasing its transaction.
+pub(super) struct ReadPhase<'tx> {
+    _transaction: &'tx Connection,
+    index: completion::ValidatedSettlements,
+    attestations: std::collections::BTreeMap<String, String>,
+}
+impl ReadPhase<'_> {
+    pub(super) fn binding(
+        &self,
+        scope: &Scope,
+        id: &str,
+    ) -> Result<(&bindings::Binding, &str), AppError> {
+        self.index.bindings().exact(scope, id)
+    }
+    pub(super) fn settlement(
+        &self,
+        scope: &Scope,
+        id: &str,
+    ) -> Result<(&SlashRecord, &str), AppError> {
+        self.index.settlement(scope, id)
+    }
+    pub(super) fn attestation(&self, id: &str) -> Option<&str> {
+        self.attestations.get(id).map(String::as_str)
+    }
+}
+pub(super) fn read_phase<'tx>(
+    conn: &'tx Connection,
+    account: &str,
+) -> Result<ReadPhase<'tx>, AppError> {
+    if conn.is_autocommit() {
+        return Err(invalid(
+            "archive read phase requires an existing transaction",
+        ));
+    }
+    validated(conn, account)
+}
 pub(super) fn audit(conn: &Connection, account: &str) -> Result<(), AppError> {
+    validated(conn, account).map(|_| ())
+}
+fn validated<'tx>(conn: &'tx Connection, account: &str) -> Result<ReadPhase<'tx>, AppError> {
     history::require(conn, account)?;
     let index = completion::validated(conn, account)?;
     let(n,size):(i64,i64)=conn.query_row("SELECT COUNT(*),COALESCE(SUM(LENGTH(CAST(content AS BLOB))+LENGTH(CAST(intent AS BLOB))),0) FROM (SELECT intent,content FROM composer_draft_slash_archives UNION ALL SELECT intent,content FROM composer_draft_slash_attestations UNION ALL SELECT intent,content FROM composer_draft_slash_bindings UNION ALL SELECT intent,binding AS content FROM composer_draft_slash_archives)",[],|r|Ok((r.get(0)?,r.get(1)?)))?;
@@ -218,7 +259,11 @@ pub(super) fn audit(conn: &Connection, account: &str) -> Result<(), AppError> {
     if remote::enabled(conn)? {
         remote::audit_remote(conn, account)?;
     }
-    Ok(())
+    Ok(ReadPhase {
+        _transaction: conn,
+        index,
+        attestations,
+    })
 }
 pub(super) fn move_active(conn: &Connection, a: &ArchivedRecord) -> Result<(), AppError> {
     history::require(conn, &a.scope.account_id)?;

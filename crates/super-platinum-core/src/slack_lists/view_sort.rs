@@ -92,7 +92,7 @@ impl ViewSort {
     pub fn valid_choice(document: &Document, desired: &ViewSortChoice) -> bool {
         Self::wire(document, desired).is_some()
     }
-    fn wire(document: &Document, desired: &ViewSortChoice) -> Option<Value> {
+    pub(super) fn wire(document: &Document, desired: &ViewSortChoice) -> Option<Value> {
         if matches!(desired, ViewSortChoice::Ordered(rows) if rows.len() < 2) {
             return None;
         }

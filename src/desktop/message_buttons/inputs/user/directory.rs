@@ -179,7 +179,19 @@ pub(crate) fn search(mut state: Signal<ShellState>, revision: u64, query: String
         if !admit_query(&mut state.write(), &context, revision, query_revision) {
             return;
         }
+        let posting = crate::bootstrap::posting_ingress::capture(
+            &state,
+            &context.transport,
+            &context.session,
+        );
         let result = fetch(&context, &query, filter.as_ref()).await;
+        let accepted = {
+            let shell = state.peek();
+            owner_current(&shell, &context) && request_current(&shell, revision, query_revision)
+        };
+        if accepted && let Ok((_, channels)) = &result {
+            posting.channels(&state, channels);
+        }
         let mut shell = state.write();
         if !owner_current(&shell, &context) {
             return;

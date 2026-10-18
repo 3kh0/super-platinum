@@ -1,6 +1,9 @@
 use super::*;
+pub(super) mod board_choice;
+mod card_order;
 mod entity;
 mod field_delete;
+mod group_delete;
 mod rating;
 mod select;
 mod view_order;
@@ -65,6 +68,29 @@ pub(super) fn panel(state: Signal<ShellState>) -> Element {
 }
 
 fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Element {
+    if view
+        .refinement_save
+        .as_ref()
+        .is_some_and(|save| save.dismissed_on_ack)
+    {
+        return rsx! {};
+    }
+    if let Some(deletion) = view.group_delete.clone() {
+        return group_delete::panel(state, view, deletion);
+    }
+    if view.card_order {
+        return card_order::panel(state, view);
+    }
+    if let Some(choice) = view.board_choice.clone() {
+        return board_choice::panel(state, view, choice);
+    }
+    let refinement_save = view.refinement_save.clone();
+    let saving_refinements = refinement_save.is_some();
+    let refinement_kind = refinement_save
+        .as_ref()
+        .map(|s| if s.new { "new" } else { "existing" })
+        .unwrap_or_default();
+    let local_refinement = view.local_refinement;
     let picker = view.rating_picker;
     let serial = view.serial;
     let column = view.column;
@@ -76,6 +102,7 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
     let deleting = deletion.is_some();
     let reorder = view.reorder;
     let reordering = reorder.is_some();
+    let lane_order = reorder.as_ref().is_some_and(|p| p.lanes);
     let order_direction = reorder.as_ref().map(|p| p.direction).unwrap_or_default();
     let field_choice = view.field_choice;
     let field_kind = field_choice.map(|c| c.kind.as_str()).unwrap_or_default();
@@ -119,7 +146,15 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
     } else {
         String::new()
     };
-    let title = if reordering {
+    let title = if let Some(save) = &refinement_save {
+        if save.new {
+            "Save as new view".into()
+        } else {
+            "Save view changes".into()
+        }
+    } else if lane_order {
+        "Move lane".to_owned()
+    } else if reordering {
         "Move view".to_owned()
     } else if deleting {
         "Delete field".to_owned()
@@ -154,7 +189,7 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
     let select_valid = view.select_draft.as_ref().is_none_or(|d| d.ready());
     let filter_save = filter.clone();
     let grouping_save = view_grouping.clone();
-    let unchanged = if deleting || reordering {
+    let unchanged = if saving_refinements || deleting || reordering {
         false
     } else if let Some(p) = &view_grouping {
         p.desired == p.original
@@ -196,11 +231,11 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
     rsx! { {std::iter::once(rsx! {
         div{key:"{serial}",class:"slack-list-editor-shade"}
         section{inert:picker.map(|_|true),id:"slack-list-rename",class:"slack-list-cell-editor",role:"dialog","aria-modal":"true","aria-labelledby":"slack-list-rename-title",
-            "data-keyboard-dialog":"true","data-reorder-direction":"{order_direction}","data-delete-column":if deleting{column.clone()}else{String::new()},"data-rename-serial":"{serial}","data-rename-stage":"{stage}","data-rename-column":"{column}","data-precision-column":"{precision_column}","data-rename-view":"{saved_view}","data-view-create":"{create_layout}","data-visibility-view":"{visibility_view}","data-filter-view":"{filter_view}","data-new-text-field-view":"{text_view}","data-sort-view":"{sort_view}","data-grouping-view":"{grouping_view}",
-            onmounted:move |_|{dioxus::document::eval(&format!("{}\n{}\n{}",include_str!("rename_restore.js"),include_str!("view_create_restore.js"),include_str!("rename_focus.js")));},
+            "data-keyboard-dialog":"true","data-refinement-save":"{refinement_kind}","data-local-refinement":"{local_refinement}","data-reorder-direction":"{order_direction}","data-delete-column":if deleting{column.clone()}else{String::new()},"data-rename-serial":"{serial}","data-rename-stage":"{stage}","data-rename-column":"{column}","data-precision-column":"{precision_column}","data-rename-view":"{saved_view}","data-view-create":"{create_layout}","data-visibility-view":"{visibility_view}","data-filter-view":"{filter_view}","data-new-text-field-view":"{text_view}","data-sort-view":"{sort_view}","data-grouping-view":"{grouping_view}",
+            onmounted:move |_|{dioxus::document::eval(&format!("{}\n{}\n{}\n{}",include_str!("rename_restore.js"),include_str!("view_create_restore.js"),include_str!("refinement_restore.js"),include_str!("rename_focus.js")));},
             h3{id:"slack-list-rename-title","{title}"}
             div{class:"slack-list-editor-body",
-                if !reordering && !deleting && !text_creation && creation.is_none() && precision.is_none() && visibility.is_none() && sort.is_none() && filter.is_none() && view_grouping.is_none(){p{class:"slack-list-editor-item","Original name: {view.before}"}}
+                if !saving_refinements && !reordering && !deleting && !text_creation && creation.is_none() && precision.is_none() && visibility.is_none() && sort.is_none() && filter.is_none() && view_grouping.is_none(){p{class:"slack-list-editor-item","Original name: {view.before}"}}
                 if text_creation {
                     label{r#for:"slack-list-new-field-kind","Type"}
                     select{id:"slack-list-new-field-kind",value:"{field_kind}","data-field-choice":"{field_revision}",disabled:!editing||!view.can_confirm,
@@ -242,10 +277,12 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
                         }
                     }
                 }
-                if let Some(p)=reorder.clone() {{view_order::fields(p)}} else if let Some(p)=deletion.clone() {{field_delete::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=view_grouping.clone() {{super::grouping::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=filter.clone() {{super::filter::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=sort.clone() {{super::sort::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=visibility.clone() {{super::visibility::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=precision.clone() {{super::precision::fields(state,serial,visit,p,editing && view.can_confirm)}} else {
+                if let Some(p)=reorder.clone() {{view_order::fields(p)}} else if let Some(p)=deletion.clone() {{field_delete::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=view_grouping.clone() {{super::grouping::fields(state,serial,visit,p,editing && view.can_confirm,local_refinement)}} else if let Some(p)=filter.clone() {{super::filter::fields(state,serial,visit,p,editing && view.can_confirm,local_refinement)}} else if let Some(p)=sort.clone() {{super::sort::fields(state,serial,visit,p,editing && view.can_confirm,local_refinement)}} else if let Some(p)=visibility.clone() {{super::visibility::fields(state,serial,visit,p,editing && view.can_confirm,local_refinement)}} else if let Some(p)=precision.clone() {{super::precision::fields(state,serial,visit,p,editing && view.can_confirm)}} else {
+                if !refinement_save.as_ref().is_some_and(|save|!save.new) {
                 label{r#for:"slack-list-rename-name","{label}"}
                 input{id:"slack-list-rename-name",r#type:"text","data-field-choice":"{field_revision}",value:"{view.name}",maxlength:view.limit,disabled:!editing||(text_creation&&!view.can_confirm),
                     oninput:move |event|{if text_creation {if let Some(rendered)=field_choice {rename::text_create::input(state,serial,visit,selected,rendered,event.value());}}else{rename::input(state,serial,event.value())}}}
+                }
                 }
                 if let (Some(draft),Some(choice))=(view.select_draft,field_choice) {{select::fields(state,serial,visit,selected,choice,draft,editing && view.can_confirm)}}
                 if let Some(p)=entity {
@@ -254,6 +291,7 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
                 p{id:"slack-list-rename-message",class:"slack-list-editor-hint",role:"status","{view.message}"}
                 if matches!(view.stage,Stage::Observed|Stage::Conflict|Stage::Available){p{id:"slack-list-rename-current",class:"slack-list-editor-hint","Current fields: {current}"}}
                 if field_kind!="select"&&field_kind!="number" {if let Some(observed)=view.observed_field.as_ref() {{observed_summary(observed,field_label)}}}
+                if let Some(save)=&refinement_save {p{id:"slack-list-refinement-preference",class:"slack-list-editor-hint","{save.preference}"}}
                 if view.blocked{p{class:"slack-list-warning","Slack asked us to wait. Checking and changes are temporarily unavailable."}}
             }
             if field_kind=="select"||field_kind=="number" {if let Some(observed)=view.observed_field.as_ref() {{observed_summary(observed,field_label)}}}
@@ -261,10 +299,10 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
                 button{id:"slack-list-rename-leave",r#type:"button",onclick:move |_|{let mut state=state;crate::slack_lists::close_shell(&mut state.write());},"Close list"}
                 if closable{button{id:"slack-list-rename-close",r#type:"button",onclick:move |_|close(state,serial,visit),if editing{"Cancel"}else if matches!(view.stage,Stage::Conflict|Stage::Available){"Close review"}else{"Done"}}}
                 if editing{button{id:"slack-list-rename-confirm",r#type:"button",class:if deleting{"danger"}else{"primary"},disabled:picker.is_some()||!view.can_confirm||!filter_valid||!select_valid||(!reordering&&!deleting&&precision.is_none()&&visibility.is_none()&&sort.is_none()&&filter.is_none()&&view_grouping.is_none()&&view.name.trim().is_empty())||unchanged,
-                    onclick:move |_|{if let Some(p)=grouping_save.clone(){rename::grouping::confirm(state,serial,visit,p.choice)}else{super::filter::confirm(state,serial,visit,filter_save.clone())}},if deleting{"Delete field permanently"}else if reordering||visibility.is_some()||sort.is_some()||filter.is_some()||view_grouping.is_some(){"Save for everyone"}else if precision.is_some(){"Save"}else if text_creation{"Create field"}else if creation.is_some(){"Create view"}else{"Rename {noun}"}}}
+                    onclick:move |_|{if let Some(p)=grouping_save.clone(){rename::grouping::confirm(state,serial,visit,p.choice)}else{super::filter::confirm(state,serial,visit,filter_save.clone())}},if local_refinement{"Apply"}else if saving_refinements{"Save for everyone"}else if deleting{"Delete field permanently"}else if reordering||visibility.is_some()||sort.is_some()||filter.is_some()||view_grouping.is_some(){"Save for everyone"}else if precision.is_some(){"Save"}else if text_creation{"Create field"}else if creation.is_some(){"Create view"}else{"Rename {noun}"}}}
                 if checkable{button{id:"slack-list-rename-check",r#type:"button",class:"primary",disabled:!view.can_check,
-                    onclick:move |_|rename::check(state,serial),if reordering{"Check current views"}else if view_grouping.is_some(){"Check current grouping"}else if sort.is_some(){"Check current sort"}else if filter.is_some(){"Check current filter"}else if visibility.is_some(){"Check current visibility"}else if precision.is_some(){"Check current format"}else if text_creation||deleting{"Check current fields"}else if creation.is_some(){"Check current views"}else{"Check current {noun}"}}}
-                if view.stage==Stage::Available {button{id:"slack-list-new-view-open",r#type:"button",class:"primary",disabled:!view.can_navigate,onclick:move |_|{if let Some(opened)=rename::view_create::open_available(state,serial){let proof=serde_json::to_string(&opened).unwrap();dioxus::document::eval(&format!("window.__listViewCreateReturn?.commit({proof})"));}},"Open view"}}
+                    onclick:move |_|rename::check(state,serial),if lane_order{"Check current lanes"}else if reordering{"Check current views"}else if view_grouping.is_some(){"Check current grouping"}else if sort.is_some(){"Check current sort"}else if filter.is_some(){"Check current filter"}else if visibility.is_some(){"Check current visibility"}else if precision.is_some(){"Check current format"}else if text_creation||deleting{"Check current fields"}else if creation.is_some(){"Check current views"}else{"Check current {noun}"}}}
+                if view.stage==Stage::Available {button{id:"slack-list-new-view-open",r#type:"button",class:"primary",disabled:!view.can_navigate,onclick:move |_|{if let Some(opened)=rename::view_create::open_available(state,serial){let proof=serde_json::to_string(&opened).unwrap();dioxus::document::eval(&format!("{}?.commit({proof})",if saving_refinements {"window.__listRefinementReturn"}else{"window.__listViewCreateReturn"}));}},"Open view"}}
                 if busy{span{role:"status","Please wait..."}}
             }
         }

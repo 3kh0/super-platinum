@@ -4,6 +4,15 @@ use super::*;
 
 const MAX_PER_OWNER: usize = 8;
 const MAX_TOTAL: usize = 32;
+pub(super) fn blocks_target(shell: &ShellState, scope: &Scope, list: &str) -> bool {
+    let owner = scope.stable_owner();
+    shell
+        .slack_lists
+        .operations
+        .values()
+        .chain(shell.slack_lists.retained_cells.receipts.values())
+        .any(|m| m.attempt.scope.stable_owner() == owner && m.attempt.edit.list_id() == list)
+}
 #[derive(Clone, Default)]
 pub(super) struct Retained {
     // The unique attempt serial prevents any owner/List collision from replacing

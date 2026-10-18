@@ -66,6 +66,32 @@ impl Model {
         }
         score
     }
+
+    /// Source-specific per-feature intercept, applied before multiplication.
+    pub fn score_with_adjustment(
+        &self,
+        features: &[(&str, f64)],
+        source: &str,
+        adjustment: impl Fn(&str) -> f64,
+    ) -> f64 {
+        let prefix = if source == "composer_page__destination" || source.starts_with("share") {
+            "WRITE"
+        } else {
+            "READ"
+        };
+        let mut score = 0.0;
+        for (name, value) in features {
+            let weight = self.weights.get(*name).copied().unwrap_or(0.0)
+                + self
+                    .weights
+                    .get(&format!("{prefix}_{name}"))
+                    .copied()
+                    .unwrap_or(0.0)
+                + adjustment(name);
+            score += weight * finite(*value);
+        }
+        score
+    }
 }
 
 const FEATURE_NAMES: &[&str] = &[

@@ -142,12 +142,15 @@ async fn change(
     let revision = state.peek().core.workspaces[&ctx.session.team_id]
         .channel_lifecycle
         .revision();
+    let posting = crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+        .for_channels([&channel]);
     let fresh = api::fetch_conversation_details(&ctx.transport, &ctx.client, &ctx.session, channel)
         .await
         .map_err(|e| super::channel_details::failure(&e))?;
     if !ctx.current(&state.peek()) {
         return Err("The active account changed.".into());
     }
+    posting.channels(&state, std::slice::from_ref(&fresh));
     let info = {
         let mut shell = state.write();
         let info = shell
@@ -169,6 +172,8 @@ async fn change(
     let revision = state.peek().core.workspaces[&ctx.session.team_id]
         .channel_lifecycle
         .revision();
+    let posting = crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
+        .for_channels([&channel]);
     let joined = api::change_conversation_membership(
         &ctx.transport,
         &ctx.client,
@@ -180,6 +185,9 @@ async fn change(
     .map_err(|e| super::channel_details::failure(&e))?;
     if !ctx.current(&state.peek()) {
         return Ok(());
+    }
+    if let Some(info) = &joined {
+        posting.channels(&state, std::slice::from_ref(info));
     }
     {
         let mut shell = state.write();

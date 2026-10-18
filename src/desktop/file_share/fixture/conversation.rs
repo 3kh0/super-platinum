@@ -3,12 +3,14 @@ use super::*;
 pub(in crate::file_share) enum Conversation {
     Channel,
     Direct,
+    NewDirect,
     Group,
 }
 impl Conversation {
     pub(in crate::file_share) fn from_alias(alias: &str) -> Self {
         match alias {
             "file-share-dm" | "file-share-dm-narrow" => Self::Direct,
+            "file-share-new-dm" | "file-share-new-dm-narrow" => Self::NewDirect,
             "file-share-group-dm" | "file-share-group-dm-narrow" => Self::Group,
             _ => Self::Channel,
         }
@@ -16,15 +18,17 @@ impl Conversation {
     pub(in crate::file_share) fn id(self) -> &'static str {
         match self {
             Self::Channel => DESTINATION,
-            Self::Direct => "D00000001",
+            Self::Direct | Self::NewDirect => "D00000001",
             Self::Group => "G00000001",
         }
     }
     pub(in crate::file_share) fn raw(self) -> Value {
         match self {
             Self::Channel => destination(),
-            Self::Direct => json!({"id":self.id(),"is_im":true,"user":"U00000002","is_open":true,
-                "is_ext_shared":false,"is_read_only":false,"is_thread_only":false,"future":{"keep":1}}),
+            Self::Direct | Self::NewDirect => {
+                json!({"id":self.id(),"is_im":true,"user":"U00000002","is_open":true,
+                "is_ext_shared":false,"is_read_only":false,"is_thread_only":false,"future":{"keep":1}})
+            }
             Self::Group => {
                 json!({"id":self.id(),"name":"mpdm-you--alice--bob-1","is_mpim":true,"is_private":true,
                 "members":[USER,"U00000002","U00000003"],"is_open":true,
@@ -42,7 +46,11 @@ impl Capability {
         self.0.conversation.id()
     }
     pub(in crate::file_share) async fn peer_info(&self, id: &str) -> Result<Value, Error> {
-        if self.0.conversation != Conversation::Direct || id != "U00000002" {
+        if !matches!(
+            self.0.conversation,
+            Conversation::Direct | Conversation::NewDirect
+        ) || id != "U00000002"
+        {
             return Err(rejected(Rejected::Read));
         }
         self.read("users/info").map_err(rejected)?;

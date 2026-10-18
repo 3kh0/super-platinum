@@ -1,5 +1,53 @@
 use super::*;
 #[test]
+fn typing_keeps_native_time_nodes_but_explicit_date_and_slot_choices_replace_them() {
+    use std::{cell::Cell, rc::Rc};
+    type Slot = Rc<Cell<Option<Signal<ShellState>>>>;
+    let slot = Slot::default();
+    let mut dom = VirtualDom::new_with_props(
+        |slot: Slot| {
+            let state = use_signal(|| super::super::tests::setup().0);
+            slot.set(Some(state));
+            rsx! { div {} }
+        },
+        slot.clone(),
+    );
+    dom.rebuild_in_place();
+    let mut state = slot.get().unwrap();
+    let id = state
+        .peek()
+        .message_buttons
+        .shortcuts
+        .dialog
+        .as_ref()
+        .unwrap()
+        .id;
+    let original = active(&state.peek(), id).unwrap().time_revision;
+    dom.in_runtime(|| edit(state, id, Field::Start, "".into()));
+    assert!(event(&state.peek(), id).is_none());
+    assert_eq!(active(&state.peek(), id).unwrap().time_revision, original);
+    dom.in_runtime(|| edit(state, id, Field::Title, "unrelated rerender".into()));
+    assert_eq!(active(&state.peek(), id).unwrap().time_revision, original);
+    dom.in_runtime(|| edit(state, id, Field::Start, "09:15".into()));
+    assert!(event(&state.peek(), id).is_some());
+    dom.in_runtime(|| edit(state, id, Field::Date, "2026-10-19".into()));
+    let next = active(&state.peek(), id).unwrap().time_revision;
+    assert_ne!(next, original);
+    assert!(active(&state.peek(), id).unwrap().start_text.is_empty());
+    let selected = cal::time::parse("2026-10-19", "09:30").unwrap();
+    dom.in_runtime(|| {
+        active_mut(&mut state.write(), id).unwrap().slots = vec![cal::Slot {
+            start: selected,
+            end: selected + 3600,
+            all_free: true,
+            busy: vec![],
+        }];
+    });
+    dom.in_runtime(|| super::slot(state, id, selected.to_string()));
+    assert_ne!(active(&state.peek(), id).unwrap().time_revision, next);
+    assert!(event(&state.peek(), id).is_some());
+}
+#[test]
 fn fresh_draft_retires_old_reads_and_callbacks_even_when_query_generation_repeats() {
     let (mut s, old) = super::super::tests::setup();
     let c = active_mut(&mut s, old).unwrap();

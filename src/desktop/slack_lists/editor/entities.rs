@@ -26,7 +26,8 @@ struct Request {
 }
 impl Request {
     fn current(&self, shell: &ShellState) -> bool {
-        self.scope.current(shell)
+        !assignment::blocks_mutation(shell)
+            && self.scope.current(shell)
             && checkbox_visit_current(shell, self.visit)
             && shell.slack_lists.view.as_ref().is_some_and(|view| {
                 !view.stale
@@ -47,7 +48,10 @@ impl Request {
 }
 fn begin(shell: &mut ShellState, generation: u64, query: String) -> Option<Request> {
     let scope = shell.slack_lists.scope.clone()?;
-    if !scope.current(shell) || shell.overlay != Some(Overlay::SlackList) {
+    if assignment::blocks_mutation(shell)
+        || !scope.current(shell)
+        || shell.overlay != Some(Overlay::SlackList)
+    {
         return None;
     }
     let view = shell.slack_lists.view.as_ref()?;
@@ -122,7 +126,18 @@ pub(crate) fn search(mut state: Signal<ShellState>, generation: u64, query: Stri
             );
             return;
         };
+        let posting = crate::bootstrap::posting_ingress::capture(
+            &state,
+            &context.transport,
+            &context.session,
+        );
         let result = directory::fetch(&context, &request.query).await;
+        if request.current(&state.peek())
+            && request.kind == Kind::Channels
+            && let Ok(Results::Channels(channels)) = &result
+        {
+            posting.channels(&state, channels);
+        }
         finish(&mut state.write(), &request, result);
     });
 }

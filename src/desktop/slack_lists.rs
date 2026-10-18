@@ -14,6 +14,7 @@ use super_platinum_core::{
 pub(crate) mod board_move;
 mod cell_receipts;
 pub(crate) mod check;
+pub(crate) mod completion;
 pub(crate) mod create;
 pub(crate) mod date_context;
 pub(crate) mod delete;
@@ -27,6 +28,8 @@ mod layout;
 pub(crate) mod lifecycle;
 mod mutations;
 mod network;
+pub(crate) mod refinement;
+pub(crate) mod reminder;
 pub(crate) mod rename;
 pub(crate) mod subitem;
 use mutations::{
@@ -35,10 +38,10 @@ use mutations::{
 };
 mod read_state;
 mod record_detail;
-pub(crate) use editor::entities;
 pub(crate) use editor::{
     EditorKind, EditorView, begin_cell_editor, cancel_editor, link_normalization_slot, save_editor,
 };
+pub(crate) use editor::{assignment, date as task_date, entities};
 pub(crate) use layout::{TableEntry, select_view, toggle_group};
 use record_detail::EditAuthority;
 pub(crate) use record_detail::{
@@ -71,6 +74,8 @@ pub(crate) struct State {
     viewing: lifecycle::State,
     create: create::State,
     delete: delete::State,
+    reminder: reminder::State,
+    completion: completion::State,
     pub(crate) fixture: Option<fixture::Fixture>,
 }
 #[derive(Clone)]
@@ -119,6 +124,7 @@ pub(super) struct EditAttempt {
     serial: u64,
     generation: u64,
     revision: u64,
+    date_policy: Option<editor::date::Policy>,
     pub edit: CellEdit,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -162,6 +168,7 @@ pub(super) fn open_shell(shell: &mut ShellState, file: File) -> bool {
         || !super_platinum_core::slack_lists::is_list(&file);
     create::close_visit(shell);
     delete::close_visit(shell);
+    reminder::close_visit(shell);
     record_detail::dismiss_shell(shell);
     shell.slack_lists.scope = Some(scope);
     shell.slack_lists.view = Some(View {
@@ -191,6 +198,7 @@ pub(super) fn open_shell(shell: &mut ShellState, file: File) -> bool {
 pub(crate) fn close_shell(shell: &mut ShellState) {
     create::close_visit(shell);
     delete::close_visit(shell);
+    reminder::close_visit(shell);
     record_detail::dismiss_shell(shell);
     // In-flight mutations retain their ownership and receipt independently of
     // the dialog visit; reopening cannot repeat an uncertain request.
@@ -203,12 +211,15 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
     let rename_changed = rename::poll(shell);
     let creation_changed = create::poll(shell) | subitem::poll(shell);
     let deletion_changed = delete::poll(shell);
+    let reminder_changed = reminder::poll(shell);
+    let completion_changed = completion::poll(shell);
     if shell
         .slack_lists
         .scope
         .as_ref()
         .is_some_and(|scope| !scope.current(shell))
     {
+        reminder::close_visit(shell);
         shell.slack_lists.view = None;
         cell_receipts::retire(shell);
         shell.slack_lists.scope = None;
@@ -240,7 +251,14 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
         shell.slack_lists.view.as_mut().unwrap().retry_at = 0;
     }
     let calendar_changed = date_context::poll(shell);
-    rename_changed || creation_changed || deletion_changed || deleted || expired || calendar_changed
+    rename_changed
+        || creation_changed
+        || deletion_changed
+        || reminder_changed
+        || completion_changed
+        || deleted
+        || expired
+        || calendar_changed
 }
 /// A verified realtime event names the file/list. Its payload is not trusted as
 /// a complete document or cell response: invalidate and require a fresh read.
@@ -290,6 +308,8 @@ pub(super) fn begin_read(shell: &mut ShellState) -> Option<ReadAttempt> {
         || view.unavailable
         || view.retry_at > now()
         || delete::blocks_read(shell)
+        || reminder::blocks_read(shell)
+        || completion::blocks_read(shell)
         || rename::blocks_read(shell)
         || shell
             .slack_lists

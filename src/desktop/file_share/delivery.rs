@@ -57,10 +57,12 @@ impl Drop for Lease {
         }
     }
 }
+mod direct_resolution;
 struct Worker {
     signal: Signal<ShellState>,
     source: admission::Source,
     destination: Destination,
+    source_revision: Option<u64>,
     lease: Lease,
     visit: Arc<drafts::Visit>,
     capture: Option<durable::capture::Capture>,
@@ -70,6 +72,14 @@ struct Worker {
 impl Worker {
     fn current(&self, shell: &ShellState) -> bool {
         self.source.current(shell)
+            && self.source_revision.is_none_or(|revision| {
+                !crate::file_events::changed_since(
+                    shell,
+                    &self.source.context.key.team,
+                    &self.source.id,
+                    revision,
+                )
+            })
             && recipients::chosen(shell, &self.lease.id, &self.destination.id)
             && visible(shell).is_some_and(|d| {
                 d.id == self.lease.id
@@ -154,7 +164,7 @@ impl Worker {
                 durable::apply_capture(&mut shell, &self.lease.id, &self.visit, &ticket, &outcome);
             }
         }
-        let saved = match outcome {
+        let mut saved = match outcome {
             draft_io::Outcome::Saved(draft) => {
                 let _ = queue.acknowledge(&ticket);
                 draft
@@ -168,6 +178,8 @@ impl Worker {
             draft_io::Outcome::Conflict(_) => return Err(Refusal::Changed),
             _ => return Err(Refusal::Storage),
         };
+        self.check()?;
+        saved = self.resolve_person(saved).await?;
         self.check()?;
         let selected = saved
             .content
@@ -205,7 +217,9 @@ impl Worker {
             return Err(Refusal::Cooldown);
         }
         self.check()?;
-        let revision = crate::file_events::snapshot_revision(&self.signal.peek());
+        let revision = self
+            .source_revision
+            .unwrap_or_else(|| crate::file_events::snapshot_revision(&self.signal.peek()));
         let context = &self.source.context;
         let raw = context.file_info(&self.source.id).await.map_err(|e| {
             self.read_error(&e);
@@ -423,6 +437,10 @@ fn capture_worker(mut signal: Signal<ShellState>, id: String) -> Option<Worker> 
             }
             let destination = dialog.destination.clone().ok_or(Refusal::Destination)?;
             let visit = dialog.draft_visit.clone().ok_or(Refusal::Changed)?;
+            let source_revision = destination
+                .id
+                .starts_with("person:")
+                .then(|| crate::file_events::snapshot_revision(&shell));
             let mut lease = Lease::reserve(
                 shell.file_share.custody.clone(),
                 &source.context.key,
@@ -434,6 +452,7 @@ fn capture_worker(mut signal: Signal<ShellState>, id: String) -> Option<Worker> 
                 signal: worker_signal,
                 source,
                 destination,
+                source_revision,
                 lease,
                 visit,
                 capture: Some(capture),

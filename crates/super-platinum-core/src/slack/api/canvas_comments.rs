@@ -1,9 +1,11 @@
 //! The desktop client's read-only document stream, separate from channel history.
 use super::*;
 mod archive;
+mod bootstrap;
 mod reply;
 use crate::canvas::comments::{self, Filter};
 pub use archive::{canvas_comment_archive, execute_canvas_comment_archive};
+pub use bootstrap::{canvas_comment_bootstrap, execute_canvas_comment_bootstrap};
 pub use reply::{canvas_comment_reply, execute_canvas_comment_reply};
 
 fn invalid(_: comments::Invalid) -> Error {

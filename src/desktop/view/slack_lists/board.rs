@@ -1,6 +1,7 @@
 //! Bounded Board lanes. Canonical records may have several distinct card instances.
 use super::*;
 mod lane_add;
+mod lane_order;
 const LANES: usize = 4;
 const CARDS: usize = 10;
 const HELP: &str = "Up and Down move between cards; Left and Right move between nonempty lanes. Home and End move to the first and last card. Tab and Shift+Tab move between fields within a card. Alt+Enter opens item details. F2 edits a field. Space changes a checkbox. Enter opens field controls; Escape returns to the field.";
@@ -8,6 +9,8 @@ const HELP: &str = "Up and Down move between cards; Left and Right move between 
 #[component]
 pub(super) fn Board(state: Signal<ShellState>) -> Element {
     let mut page = use_signal(|| (0u64, 0usize));
+    let drag = use_signal(|| None::<crate::slack_lists::rename::lane_order::Action>);
+    let card_drag = use_signal(|| None::<crate::slack_lists::rename::card_order::Drag>);
     let Some(view) = crate::slack_lists::presentation(&state.read()) else {
         return rsx! {};
     };
@@ -20,13 +23,15 @@ pub(super) fn Board(state: Signal<ShellState>) -> Element {
         .iter()
         .map(|lane| {
             let lane_key = lane.key.clone();
-            rsx! {Lane {key:"{lane.key}",state,lane_key}}
+            rsx! {Lane {key:"{lane.key}",state,lane_key,drag,card_drag}}
         })
         .collect::<Vec<_>>();
     rsx! {
+        {super::rename::board_choice::add(state)}
         p {class:"slack-list-help",id:"slack-list-board-help","{HELP}"}
+        if crate::slack_lists::rename::lane_order::has_local_order(&state.read()){p{class:"slack-list-help","Lane order is local to this open List."}}
         div {class:"slack-list-board",role:"region","aria-label":"Board","aria-describedby":"slack-list-board-help","aria-busy":view.loading,
-            onmounted:move |_|{dioxus::document::eval(include_str!("board_keyboard.js"));},
+            onmounted:move |_|{dioxus::document::eval(include_str!("board_keyboard.js"));dioxus::document::eval(include_str!("board/lane_order_return.js"));},
             {rendered.into_iter()}
         }
         if pages>1 {
@@ -41,7 +46,12 @@ pub(super) fn Board(state: Signal<ShellState>) -> Element {
     }
 }
 #[component]
-fn Lane(state: Signal<ShellState>, lane_key: String) -> Element {
+fn Lane(
+    state: Signal<ShellState>,
+    lane_key: String,
+    mut drag: Signal<Option<crate::slack_lists::rename::lane_order::Action>>,
+    mut card_drag: Signal<Option<crate::slack_lists::rename::card_order::Drag>>,
+) -> Element {
     let mut page = use_signal(|| (0u64, 0usize));
     let Some(view) = crate::slack_lists::presentation(&state.read()) else {
         return rsx! {};
@@ -57,7 +67,7 @@ fn Lane(state: Signal<ShellState>, lane_key: String) -> Element {
     let media_epoch = state.read().media_epoch;
     let cards = lane.rows[start..end]
         .iter()
-        .map(|row| card(state, &view, row, media_epoch))
+        .map(|row| card(state, &view, row, media_epoch, &lane_key, drag, card_drag))
         .collect::<Vec<_>>();
     let title = if let Some(heading) = &lane.checkbox_heading {
         heading.accessible_label.as_str()
@@ -66,9 +76,36 @@ fn Lane(state: Signal<ShellState>, lane_key: String) -> Element {
     } else {
         lane.label.as_str()
     };
+    let drag_start = crate::slack_lists::rename::lane_order::adjacent(
+        &state.read(),
+        &lane_key,
+        crate::slack_lists::rename::lane_order::Direction::Left,
+    )
+    .or_else(|| {
+        crate::slack_lists::rename::lane_order::adjacent(
+            &state.read(),
+            &lane_key,
+            crate::slack_lists::rename::lane_order::Direction::Right,
+        )
+    });
+    let draggable = drag_start.is_some();
+    let drop_key = lane_key.clone();
+    let card_tail = (end == lane.rows.len()).then(|| lane_key.clone());
+    let allows_tail = card_tail.is_some();
+    let card_drop_key = lane_key.clone();
     rsx! {
         section {class:"slack-list-lane","data-group-key":"{lane.key}","data-count":lane.count,"aria-label":"{title}",
-            header {class:"slack-list-lane-title",
+            header {class:"slack-list-lane-title",draggable:if draggable{"true"}else{"false"},
+                ondragstart:move |event| {event.stop_propagation();card_drag.set(None);if drag_start.is_some(){drag.set(drag_start.clone());}else{event.prevent_default();}},
+                ondragend:move |_|{drag.set(None);},
+                ondragover:move |event|{if drag.read().is_some(){event.prevent_default();}},
+                ondrop:move |event|{
+                    event.prevent_default();event.stop_propagation();
+                    let captured=drag.write().take();
+                    if let Some(action)=captured.and_then(|a|crate::slack_lists::rename::lane_order::drop_action(&state.read(),&a,&drop_key)){
+                        crate::slack_lists::rename::lane_order::apply(state,action);
+                    }
+                },
                 h3 {"aria-label":lane.checkbox_heading.as_ref().map(|heading| heading.accessible_label.as_str()),
                     if let Some(heading) = &lane.checkbox_heading {
                         span {"data-checkbox-heading":if heading.checked {"checked"} else {"unchecked"},
@@ -77,9 +114,20 @@ fn Lane(state: Signal<ShellState>, lane_key: String) -> Element {
                     } else {"{title}"}
                 }
                 span {class:"slack-list-group-count","{lane.count}"}
+                {super::rename::board_choice::actions(state,&lane.key)}
+                lane_order::Actions {state,visit:view.generation,layout:view.layout_generation,lane_key:lane.key.clone()}
                 lane_add::LaneAdd {key:"add-{view.generation}-{view.layout_generation}-{lane.key}",state,visit:view.generation,layout:view.layout_generation,lane_key:lane.key.clone()}
             }
-            div {class:"slack-list-lane-cards",{cards.into_iter()}
+            div {class:"slack-list-lane-cards",
+                ondragover:move |event|{if allows_tail&&card_drag.read().is_some(){event.prevent_default();}},
+                ondrop:move |event|{
+                    event.prevent_default();event.stop_propagation();
+                    let captured=card_drag.write().take();
+                    let action=captured.as_ref().and_then(|d|card_tail.as_deref().and_then(|k|crate::slack_lists::rename::card_order::destination(&state.read(),d,k,None)));
+                    crate::slack_lists::rename::fixture::card_extended::tail_drop_observed(&state.read(),&card_drop_key,allows_tail,captured.as_ref(),action.is_some());
+                    if let Some(action)=action{crate::slack_lists::rename::card_order::apply(state,action);}
+                },
+                {cards.into_iter()}
                 if lane.rows.is_empty(){p{class:"slack-list-lane-empty","No items"}}
             }
             if pages>1 {
@@ -97,6 +145,9 @@ fn card(
     view: &crate::slack_lists::Presentation,
     row: &crate::slack_lists::RowView,
     media_epoch: u64,
+    lane: &str,
+    mut lane_drag: Signal<Option<crate::slack_lists::rename::lane_order::Action>>,
+    mut card_drag: Signal<Option<crate::slack_lists::rename::card_order::Drag>>,
 ) -> Element {
     let primary = view
         .columns
@@ -127,7 +178,30 @@ fn card(
     } else {
         row.label.as_str()
     };
-    rsx! {article {key:"{row.instance_id}",class:"slack-list-card","data-row-id":"{row.id}","data-instance-id":"{row.instance_id}","aria-label":if row.label.is_empty(){"Untitled item"}else{row.label.as_str()},
+    let can_drag = crate::slack_lists::rename::card_order::can_begin(
+        &state.read(),
+        lane,
+        &row.instance_id,
+        visit,
+        layout,
+    );
+    let source_lane = lane.to_owned();
+    let source_instance = row.instance_id.clone();
+    let destination_lane = lane.to_owned();
+    let before = row.id.clone();
+    rsx! {article {draggable:if can_drag{"true"}else{"false"},
+        ondragstart:move |event|{
+            event.stop_propagation();lane_drag.set(None);
+            let fresh=crate::slack_lists::rename::card_order::can_begin(&state.read(),&source_lane,&source_instance,visit,layout).then(||crate::slack_lists::rename::card_order::begin(&state.read(),&source_lane,&source_instance)).flatten();
+            if fresh.is_some(){card_drag.set(fresh);}else{card_drag.set(None);event.prevent_default();}
+        },
+        ondragend:move |_|{card_drag.set(None);},
+        ondragover:move |event|{if card_drag.read().is_some(){event.prevent_default();}},
+        ondrop:move |event|{
+            event.prevent_default();event.stop_propagation();
+            let captured=card_drag.write().take();
+            if let Some(action)=captured.and_then(|d|crate::slack_lists::rename::card_order::destination(&state.read(),&d,&destination_lane,Some(&before))){crate::slack_lists::rename::card_order::apply(state,action);}
+        },key:"{row.instance_id}",class:"slack-list-card","data-row-id":"{row.id}","data-instance-id":"{row.instance_id}","aria-label":if row.label.is_empty(){"Untitled item"}else{row.label.as_str()},
         div{class:"slack-list-card-heading",{header_cells.into_iter()}
             super::board_move::MoveAction {state,instance:row.instance_id.clone(),row:row.id.clone(),label:item.to_owned(),visit,layout}
             button{r#type:"button",class:"slack-list-record-open",tabindex:"-1","aria-label":"Open {item}",title:"Open item details (Alt+Enter)",
@@ -151,6 +225,9 @@ fn field(
     let edit_instance = instance.clone();
     let column = cell.column_id.clone();
     let edit_column = column.clone();
+    let reminder_action =
+        crate::slack_lists::task_date::reminder_for(&state.read(), &row.id, &cell.column_id);
+    let reminder_reason = crate::slack_lists::task_date::reminder_reason(&state.read());
     let label = view
         .columns
         .iter()
@@ -227,7 +304,9 @@ fn field(
         "data-board-cell":"true","data-column-id":"{cell.column_id}",tabindex:"-1",role:"group","aria-label":"{label}, {item}","aria-busy":pending,
         if !heading {span{class:"slack-list-field-label","{label}"}}
         {content}
-        if cell.can_edit&&cell.checkbox.is_none(){button{r#type:"button",class:"slack-list-edit-cell",tabindex:"-1","aria-label":"Edit {label}, {item}",title:"Edit field (F2)",disabled:view.mutation.is_some()||view.loading||view.stale||crate::slack_lists::delete::blocks_mutation(&state.read()),
+        if reminder_action {button{r#type:"button",class:"slack-list-edit-cell slack-list-remind-cell",tabindex:"-1",disabled:reminder_reason.is_some(),"aria-label":"Remind me, {item}",title:reminder_reason.unwrap_or("Remind me (F2)"),
+                    onclick:move |_|crate::slack_lists::task_date::open_reminder(state,edit_instance.clone(),edit_column.clone(),generation,layout),{icon(Icon::Schedule,"icon")}}}
+                else if cell.can_edit&&cell.checkbox.is_none(){button{r#type:"button",class:"slack-list-edit-cell",tabindex:"-1","aria-label":"Edit {label}, {item}",title:"Edit field (F2)",disabled:view.mutation.is_some()||view.loading||view.stale||crate::slack_lists::delete::blocks_mutation(&state.read()),
             onclick:move |_|crate::slack_lists::begin_cell_editor(state,edit_instance.clone(),edit_column.clone(),generation,layout),{icon(Icon::Compose,"icon")}}}
         if pending{span{class:"slack-list-cell-status","Saving…"}}
         if uncertain{span{class:"slack-list-cell-status","Save unconfirmed. Refresh to check."}}

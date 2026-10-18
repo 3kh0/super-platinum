@@ -135,3 +135,6 @@ fn fresh_audit_rejects_changed_attestation_archive_and_duplicate_history() {
         evidence::audit(&f.store.0, &f.scope.account_id).unwrap();
     }
 }
+
+#[path = "api_slash_archive_read_phase_tests.rs"]
+mod read_phase_tests;

@@ -1,0 +1,45 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import test from 'node:test';
+const path=process.argv[2]||'src/desktop/app_home/inputs/native.js';
+const script=fs.readFileSync(path,'utf8');
+function setup(){
+ const hosts=new Map(),observers=[],listeners=new Map();
+ const body={isConnected:true};
+ class Node {
+  constructor(){this.dataset={};this.handlers=new Map();this.parentNode=null;this.disabled=false;this.validity={valid:true,badInput:false};this._value='';this.assignments=0;}
+  set value(v){this._value=v;this.assignments++;}get value(){return this._value;}
+  addEventListener(k,f){this.handlers.set(k,f);}removeEventListener(k,f){if(this.handlers.get(k)===f)this.handlers.delete(k);}
+  setAttribute(k,v){this[k]=v;}focus(){document.activeElement=this;this.handlers.get('focus')?.({});}
+  emit(k){this.handlers.get(k)?.({target:this});}
+ }
+ const document={body,activeElement:body,getElementById:id=>hosts.get(id),createElement:()=>new Node(),addEventListener:(k,f)=>listeners.set(k,f),removeEventListener:(k,f)=>{if(listeners.get(k)===f)listeners.delete(k);}};
+ const context={window:{},document,MutationObserver:class{constructor(f){this.f=f;observers.push(this);}observe(){this.live=true;}disconnect(){this.live=false;}}};
+ vm.createContext(context);vm.runInContext(script,context);
+ function host(mount){const h={isConnected:true,dataset:{homeNativeMount:String(mount),locked:'false',nativeId:'calendar',label:'label',description:'description',required:'false',invalid:'false'},appendChild(n){n.parentNode?.removeChild(n);n.parentNode=this;},removeChild(n){assert.equal(n.parentNode,this);n.parentNode=null;}};hosts.set('host'+mount,h);return h;}
+ function mount(id=1,m=1,extra={}){const h=host(m),messages=[];const control=context.homeCalendarNative({host:'host'+m,id,mount:m,epoch:1,type:'date',initial:'2028-02-29',...extra},{send:x=>messages.push(x)});return {h,messages,control,node:control?.entry.node};}
+ const ack=(x)=>{const e=x.messages.at(-1);x.control.ack({mount:e.mount,seq:e.seq});};
+ const expected=x=>[{id:1,mount:x.control.entry.mount,seq:x.control.entry.seq,value:x.node.value}];
+ return {context,mount,ack,expected,flush:()=>observers.filter(x=>x.live).forEach(x=>x.f()),observers,body,document};
+}
+test('invalid empty is not clear; complete empty is accepted only after acknowledgment',()=>{const t=setup(),x=t.mount();t.ack(x);x.node._value='';x.node.validity={valid:false,badInput:true};x.node.emit('input');t.ack(x);assert.equal(t.context.lockHomeCalendars(t.expected(x)),null);x.node.validity={valid:true,badInput:false};x.node.emit('input');assert.equal(t.context.lockHomeCalendars(t.expected(x)),null);t.ack(x);const release=t.context.lockHomeCalendars(t.expected(x));assert.equal(typeof release,'function');assert.equal(x.node.disabled,true);release();assert.equal(x.node.disabled,false);});
+test('remount retains the actual input object and never assigns its value again',()=>{const t=setup(),x=t.mount();t.ack(x);x.node._value='';x.node.validity={valid:false,badInput:true};x.node.emit('input');t.ack(x);x.h.isConnected=false;t.flush();assert.equal(x.messages.at(-1).kind,'closed');const y=t.mount(1,2,{retained:true,initial:'DIFFERENT'});assert.equal(y.node,x.node);assert.equal(y.node.assignments,1);assert.equal(y.node.value,'');assert.equal(y.node.validity.badInput,true);assert.equal(t.context.lockHomeCalendars(t.expected(y)),null);});
+test('a retained-invalid owner without its real node refuses instead of rebuilding a value-only node',()=>{const t=setup(),x=t.mount(1,1,{retained:true});assert.equal(x.control,null);});
+test('old mount acknowledgment cannot release or validate the new mount',()=>{const t=setup(),x=t.mount();const y=t.mount(1,2);x.control.ack({mount:1,seq:1,release:true});assert.equal(t.context.window.__spHomeCalendarNative.entries.size,1);assert.equal(t.context.lockHomeCalendars(t.expected(y)),null);t.ack(y);assert.equal(typeof t.context.lockHomeCalendars(t.expected(y)),'function');});
+test('exact type and account mismatch refuse current cached node',()=>{const t=setup();t.mount();assert.equal(t.mount(1,2,{type:'time'}).control,null);assert.equal(t.mount(1,3,{epoch:2}).control,null);});
+test('closed valid custody is removed only by its exact release acknowledgment',()=>{const t=setup(),x=t.mount();t.ack(x);x.h.isConnected=false;t.flush();assert.equal(t.context.window.__spHomeCalendarNative.entries.size,1);const e=x.messages.at(-1);x.control.ack({mount:e.mount,seq:e.seq,release:true});assert.equal(t.context.window.__spHomeCalendarNative.entries.size,0);assert.equal(t.observers.filter(x=>x.live).length,0);});
+test('disabled field ignores synthetic input and locked field cannot be leased again',()=>{const t=setup(),x=t.mount();t.ack(x);const before=x.messages.length;x.h.dataset.locked='true';t.flush();x.node.emit('input');assert.equal(x.messages.length,before);x.h.dataset.locked='false';t.flush();const release=t.context.lockHomeCalendars(t.expected(x));assert.ok(release);assert.equal(t.context.lockHomeCalendars(t.expected(x)),null);release();});
+test('unacknowledged native edits cannot reuse an older successful state',()=>{const t=setup(),x=t.mount();t.ack(x);const old=t.expected(x);x.node._value='2029-01-01';x.node.emit('input');assert.equal(t.context.lockHomeCalendars(old),null);assert.equal(t.context.lockHomeCalendars(t.expected(x)),null);t.ack(x);assert.equal(typeof t.context.lockHomeCalendars(t.expected(x)),'function');});
+test('explicit outside focus clears remount focus recovery',()=>{const t=setup(),x=t.mount();x.node.focus();x.node.handlers.get('blur')({relatedTarget:{id:'other'}});t.document.activeElement=t.body;x.h.isConnected=false;t.flush();const y=t.mount(1,2);assert.equal(t.document.activeElement,t.body);assert.equal(y.node,x.node);});
+
+test('pristine server updates adopt only a settled valid node; pending input keeps custody',()=>{const t=setup(),x=t.mount();t.ack(x);const y=t.mount(1,2,{pristine:true,initial:'2030-01-01'});assert.equal(y.node,x.node);assert.equal(y.node.value,'2030-01-01');t.ack(y);y.node._value='2031-01-01';y.node.emit('input');const z=t.mount(1,3,{pristine:true,initial:'2032-01-01'});assert.equal(z.node.value,'2031-01-01');assert.equal(z.messages[0].value,'2031-01-01');});
+test('invalid native input defeats pristine server adoption and the bounded book never evicts it',()=>{const t=setup(),x=t.mount();t.ack(x);x.node._value='';x.node.validity={valid:false,badInput:true};const y=t.mount(1,2,{pristine:true,initial:'2030-01-01'});assert.equal(y.node,x.node);assert.equal(y.node.assignments,1);for(let id=2;id<=256;id++)assert.ok(t.mount(id,id+2).control);assert.equal(t.mount(257,259).control,null);assert.equal(t.context.window.__spHomeCalendarNative.entries.get(1).node,x.node);});
+
+test('settled pristine type replacement creates the new native control and ignores old close acknowledgment',()=>{const t=setup(),x=t.mount();t.ack(x);const y=t.mount(1,2,{type:'time',pristine:true,initial:'14:30'});assert.notEqual(y.node,x.node);assert.equal(y.node.type,'time');assert.equal(y.node.value,'14:30');const closed=x.messages.at(-1);assert.equal(closed.kind,'closed');x.control.ack({mount:closed.mount,seq:closed.seq,release:true});assert.equal(t.context.window.__spHomeCalendarNative.entries.get(1).node,y.node);t.ack(y);assert.equal(typeof t.context.lockHomeCalendars(t.expected(y)),'function');});
+test('pending or invalid type replacement refuses and preserves the original native draft node',()=>{const t=setup(),x=t.mount();t.ack(x);x.node._value='';x.node.validity={valid:false,badInput:true};x.node.emit('input');assert.equal(t.mount(1,2,{type:'time',pristine:true,initial:'14:30'}).control,null);assert.equal(t.context.window.__spHomeCalendarNative.entries.get(1).node,x.node);assert.equal(x.node.assignments,1);});
+test('review: a closed pristine node awaiting its close ack adopts the new server value',()=>{const t=setup(),x=t.mount();t.ack(x);x.h.isConnected=false;t.flush();assert.equal(x.messages.at(-1).kind,'closed');const y=t.mount(1,2,{pristine:true,initial:'2030-01-01'});assert.equal(y.node.value,'2030-01-01');});
+test('review: a closed pristine node awaiting its close ack can change native type',()=>{const t=setup(),x=t.mount();t.ack(x);x.h.isConnected=false;t.flush();const y=t.mount(1,2,{pristine:true,type:'time',initial:'14:30'});assert.ok(y.control);assert.equal(y.node.type,'time');});
+
+test('close cannot certify an unacknowledged edited value as pristine',()=>{const t=setup(),x=t.mount();t.ack(x);x.node._value='2031-01-01';x.node.emit('input');x.h.isConnected=false;t.flush();const y=t.mount(1,2,{pristine:true,initial:'2032-01-01'});assert.equal(y.node,x.node);assert.equal(y.node.value,'2031-01-01');});
+test('close cannot certify an unreported changed native value for type replacement',()=>{const t=setup(),x=t.mount();t.ack(x);x.node._value='2031-01-01';x.h.isConnected=false;t.flush();const y=t.mount(1,2,{pristine:true,type:'time',initial:'14:30'});assert.equal(y.control,null);assert.equal(t.context.window.__spHomeCalendarNative.entries.get(1).node,x.node);});

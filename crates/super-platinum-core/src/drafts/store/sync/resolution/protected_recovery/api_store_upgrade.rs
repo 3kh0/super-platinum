@@ -7,6 +7,8 @@ use std::{
     fs::File,
     sync::{Arc, mpsc},
 };
+#[path = "upgrade_hosted.rs"]
+mod hosted;
 #[path = "upgrade_owned.rs"]
 mod owned;
 #[path = "upgrade_rich.rs"]
@@ -57,12 +59,14 @@ pub(in crate::drafts::store) enum Reply {
     Committed(Receipt),
     Opened(Arc<Review>),
     SlashInitialized { review: String, changed: bool },
+    HostedInitialized { review: String, changed: bool },
 }
 pub(in crate::drafts::store) enum Action {
     Inspect,
     Commit(Arc<Review>),
     Handoff(Arc<Review>),
     InitializeSlash(Arc<Review>),
+    InitializeHosted(Arc<Review>),
 }
 pub(in crate::drafts::store) struct Command {
     owner: Arc<Owned>,
@@ -119,7 +123,7 @@ impl Command {
         let report = terminal::app(&result, |value| match value {
             Reply::Inspected(_) | Reply::Opened(_) => terminal::read(value),
             Reply::Committed(_) => terminal::accepted(value),
-            Reply::SlashInitialized { changed, .. } => {
+            Reply::SlashInitialized { changed, .. } | Reply::HostedInitialized { changed, .. } => {
                 if *changed {
                     terminal::accepted(value)
                 } else {
@@ -136,6 +140,9 @@ impl Command {
         self.owner.bind_worker(fence.worker_id())?;
         if let Action::InitializeSlash(review) = &self.action {
             return self.initialize_slash(review.clone(), fence);
+        }
+        if let Action::InitializeHosted(review) = &self.action {
+            return self.initialize_hosted(review.clone(), fence);
         }
         if let Action::Handoff(review) = &self.action {
             review.validate_handoff(&self.owner, fence.worker_id(), fence.generation())?;
@@ -158,9 +165,10 @@ impl Command {
                 self.owner.path(),
                 match self.action {
                     Action::Inspect => OpenFlags::SQLITE_OPEN_READ_ONLY,
-                    Action::Commit(_) | Action::Handoff(_) | Action::InitializeSlash(_) => {
-                        OpenFlags::SQLITE_OPEN_READ_WRITE
-                    }
+                    Action::Commit(_)
+                    | Action::Handoff(_)
+                    | Action::InitializeSlash(_)
+                    | Action::InitializeHosted(_) => OpenFlags::SQLITE_OPEN_READ_WRITE,
                 },
             )?)
         } else {

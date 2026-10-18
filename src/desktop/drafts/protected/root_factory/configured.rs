@@ -20,6 +20,8 @@ pub(super) fn initialize_route(
         review = route.inspect()?.wait()?;
     }
     route.initialize_slash(&review)?.wait()?;
+    let review = route.inspect()?.wait()?;
+    route.initialize_hosted(&review)?.wait()?;
     // Initialization advances the worker fence; never reuse the old review.
     let opened = route.inspect()?.wait()?.open()?;
     Ok(opened.initialize_cold(factory)?.wait()?)

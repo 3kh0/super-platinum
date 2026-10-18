@@ -99,6 +99,8 @@ impl Run {
         expected: &ScheduledMessage,
     ) -> Result<ScheduledMessage, Error> {
         self.check(state)?;
+        crate::forward::scheduled::allow_existing(state, &expected.client_msg_id).await?;
+        self.check(state)?;
         let request = api::drafts_info(&self.context.client, &self.context.session, &expected.id)?;
         let response = self.context.transport.execute(request).await?;
         self.check(state)?;
@@ -168,11 +170,50 @@ impl Run {
         response
     }
 
+    /// Forwarding's durable journal must receive the original response envelope.
+    /// Keep the same exact shared owner and single-attempt transport boundary.
+    pub(crate) async fn dispatch_retained(
+        &mut self,
+        state: Signal<ShellState>,
+        request: PreparedRequest,
+    ) -> Result<serde_json::Value, Error> {
+        self.check(state)?;
+        self.dispatched = true;
+        let response =
+            crate::forward::scheduled::fixture::execute(&self.context, request, true).await;
+        if matches!(&response, Err(Error::Api(code)) if code == "draft_mutation_not_sent_offline") {
+            self.dispatched = false;
+        }
+        response
+    }
+
     pub fn confirmed(&mut self) {
         let _ = self
             .operations
             .write()
             .settle_other(&self.lease, Outcome::Confirmed);
+        self.settled = true;
+    }
+
+    /// A durable forwarding receipt settles the shared fence without claiming
+    /// that a rejected or never-dispatched operation succeeded.
+    pub(crate) fn settle_retained(&mut self, confirmed: bool) {
+        let outcome = if confirmed {
+            Outcome::Confirmed
+        } else if self.dispatched {
+            Outcome::Rejected
+        } else {
+            Outcome::NotDispatched
+        };
+        let _ = self.operations.write().settle_other(&self.lease, outcome);
+        self.settled = true;
+    }
+
+    pub(crate) fn resolved_retained_conflict(&mut self) {
+        let _ = self
+            .operations
+            .write()
+            .settle_other(&self.lease, Outcome::ReviewedConflict);
         self.settled = true;
     }
 

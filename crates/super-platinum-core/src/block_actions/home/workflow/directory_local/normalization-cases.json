@@ -1,0 +1,68 @@
+[
+  {
+    "raw": "  JOSÉ\tSMITH  ",
+    "lowered": "josé\tsmith",
+    "query": "jose smith",
+    "member": "  jose\tsmith  "
+  },
+  {
+    "raw": "  AB  C ",
+    "lowered": "ab  c",
+    "query": "ab c",
+    "member": "  ab  c "
+  },
+  {
+    "raw": "ЙОЖ ЁЛКА",
+    "lowered": "йож ёлка",
+    "query": "jozh jolka",
+    "member": "jozh jolka"
+  },
+  {
+    "raw": "ガギグ ＡＢＣ",
+    "lowered": "ガギグ ａｂｃ",
+    "query": "ｶﾞｷﾞｸﾞ abc",
+    "member": "ｶﾞｷﾞｸﾞ abc"
+  },
+  {
+    "raw": "é⃐",
+    "lowered": "é⃐",
+    "query": "e",
+    "member": "e"
+  },
+  {
+    "raw": "﻿Alice　Doe﻿",
+    "lowered": "alice　doe",
+    "query": "alice doe",
+    "member": "﻿alice doe﻿"
+  },
+  {
+    "raw": "ΟΔΟΣ",
+    "lowered": "οδος",
+    "query": "οδος",
+    "member": "οδος"
+  },
+  {
+    "raw": "İPEK",
+    "lowered": "i̇pek",
+    "query": "ipek",
+    "member": "ipek"
+  },
+  {
+    "raw": "́ A",
+    "lowered": "́ a",
+    "query": " a",
+    "member": " a"
+  },
+  {
+    "raw": "Ａ́",
+    "lowered": "ａ́",
+    "query": "a",
+    "member": "a"
+  },
+  {
+    "raw": "ĐÆß ŒŁ",
+    "lowered": "đæß œł",
+    "query": "daess oel",
+    "member": "daess oel"
+  }
+]

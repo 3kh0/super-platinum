@@ -60,6 +60,10 @@ pub(crate) fn toggle_checkbox(
     if !checkbox_visit_current(&state.peek(), generation) {
         return;
     }
+    if completion::is_personal_cell(&state.peek(), &column) {
+        completion::toggle(state, row, column, EditAuthority::Layout);
+        return;
+    }
     if fixture::enabled(&state.peek()) {
         fixture::toggle_checkbox(&mut state.write(), &row, &column);
         return;

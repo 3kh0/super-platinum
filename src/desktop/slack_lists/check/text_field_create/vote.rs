@@ -206,6 +206,32 @@ async fn navigate(
     }
     let bound = checked(d, "window.__listTextCreate.bindFind()").await?;
     let adopted = cells::adopt_view(&mut state.write(), id)?;
+    // query() explicitly focused Find. Restore the View setup only after proving
+    // native navigation focus/reset and exact reapplied Find; the stage oracle stays unchanged.
+    let before_focus = cells::snapshot(&state.peek())?;
+    let focus_setup = checked(
+        d,
+        &format!(
+            "window.__listVoteCells.focusNavigation({},{},{})",
+            json!(id),
+            json!(
+                c.sync["visit"]
+                    .as_u64()
+                    .ok_or("Missing Vote visit")?
+                    .to_string()
+            ),
+            json!(
+                adopted["selection"]
+                    .as_u64()
+                    .ok_or("Missing Vote selection")?
+                    .to_string()
+            )
+        ),
+    )
+    .await?;
+    if cells::snapshot(&state.peek())? != before_focus || find(state)? != c.find {
+        return Err("Vote focus setup changed retained state".into());
+    }
     let reveal = checked(
         d,
         &format!(
@@ -215,7 +241,7 @@ async fn navigate(
     )
     .await?;
     Ok(
-        json!({"event":event,"reset":reset,"resetModel":before,"query":query,"find":c.find,"bound":bound,"adopted":adopted,"reveal":reveal}),
+        json!({"event":event,"reset":reset,"resetModel":before,"query":query,"find":c.find,"bound":bound,"adopted":adopted,"focusSetup":focus_setup,"reveal":reveal}),
     )
 }
 async fn detail(d: &dioxus::desktop::DesktopContext) -> Result<Value, String> {

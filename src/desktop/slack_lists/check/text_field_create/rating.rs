@@ -398,6 +398,13 @@ pub(super) async fn run(
     let initial = checked(d, "window.__listRatingCells.initial()").await?;
     let first = open(state, d, None).await?;
     let missing_noop = noop(state, d, first).await?;
+    // The no-op Save proof intentionally focuses Save. Explicitly hand focus
+    // back to the owned Rating choice before admitting trusted keyboard input.
+    checked(
+        d,
+        &format!("window.__listRatingCells.keyboardFocus({first})"),
+    )
+    .await?;
     let keys = keyboard::run(state, d, proof.mode, first).await?;
     let before = cells::snapshot(&state.peek())?;
     click(d, "slack-list-editor-cancel", first).await?;

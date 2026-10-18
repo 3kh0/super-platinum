@@ -314,6 +314,242 @@ window.runRichEditorTests = () => {
     document.execCommand('redo');assert(linkStable(f.read())===linkStable(expected),'partial loaded code redo complete typed document');
     results.push('partial loaded code removal renders normal font and retains backward direction');
   }
+  {
+    const f=fixture(original,false,'31'),before=api.snapshot(f.root);
+    assert(JSON.stringify(before.blocks)===JSON.stringify(original),'snapshot lost original raw');
+    assert(before.revision===0&&!before.composing&&before.generation==='31','snapshot omitted exact editing state');
+    f.root.remove();
+    assert(JSON.stringify(api.read(f.root))===JSON.stringify(original),'detached exact read lost original');
+    assert(JSON.stringify(api.snapshot(f.root).blocks)===JSON.stringify(original),'detached final snapshot lost original');
+    assert(api.replace(f.root,before,[])===null,'detached mutation accepted');
+    const other=document.createElement('div');other.id=f.root.id;document.body.append(other);
+    assert(api.snapshot(other)===null,'same ID fabricated mounted provenance');
+    results.push('exact detached snapshot retains raw without mutation authority');
+  }
+  {
+    const f=fixture(original,false,'32'),before=api.snapshot(f.root);
+    const forged=JSON.parse(JSON.stringify(before));
+    assert(api.replace(f.root,forged,[])===null,'JSON snapshot fabricated authority');
+    before.blocks.length=0;before.revision=100;
+    const result=api.replace(f.root,before,[]);
+    assert(result&&result.revision===1&&result.blocks.length===0,'private snapshot proof or guarded clear failed');
+    assert(api.replace(f.root,before,original)===null,'successful ticket replay accepted');
+    assert(JSON.stringify(api.read(f.root))==='[]','clear roundtrip not exact');
+    assert(document.activeElement===f.origin,'guarded replacement stole focus');
+    results.push('owned snapshot clear is exact single-use and does not steal focus');
+  }
+  {
+    const source=documentBlocks([section([text('Original')])]);
+    for(const change of [
+      f=>{f.root.querySelector('span').textContent='Typed';dirty(f.root);},
+      f=>{f.root.querySelector('span').textContent='Typed';dirty(f.root);f.root.querySelector('span').textContent='Original';dirty(f.root);},
+      f=>f.root.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true})),
+      f=>{f.root.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));f.root.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true}));},
+      f=>f.owner.dataset.editorGeneration='99',
+      f=>f.root.contentEditable='false',
+      f=>f.panel.hidden=false,
+    ]){
+      const f=fixture(source,false,'33'),before=api.snapshot(f.root);change(f);const current=JSON.stringify(api.read(f.root));
+      assert(api.replace(f.root,before,[])===null,'stale/composing/readonly/link-panel replacement accepted');
+      assert(JSON.stringify(api.read(f.root))===current,'refusal changed current draft');
+    }
+    results.push('replacement refuses typing ABA composition generation readonly and pending link');
+  }
+  {
+    const f=fixture(original,false,'34'),before=api.snapshot(f.root);
+    const newRoot=document.createElement('div');newRoot.id=f.root.id;newRoot.contentEditable='true';f.root.replaceWith(newRoot);
+    api.mount(newRoot.id,original,{},false,'34');
+    assert(api.replace(newRoot,before,[])===null,'same ID/generation replacement accepted old node ticket');
+    assert(JSON.stringify(api.read(newRoot))===JSON.stringify(original),'replacement refusal changed successor');
+    assert(JSON.stringify(api.snapshot(f.root).blocks)===JSON.stringify(original),'predecessor final custody was lost');
+    results.push('same ID successor cannot consume predecessor snapshot');
+  }
+  // Completion is tested against the actual browser edit/undo stack. These
+  // tests do not replace a native engine with a mocked execCommand.
+  const point=(node,offset=node.length)=>{const r=document.createRange();r.setStart(node,offset);r.collapse(true);getSelection().removeAllRanges();getSelection().addRange(r);};
+  const firstText=root=>{const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);return w.nextNode();};
+  const leaves=blocks=>blocks.flatMap(b=>b.elements||[]).flatMap(b=>b.elements||[]);
+  {
+    for(const value of [
+      {type:'user',user_id:'U2',future:{retain:true}},
+      {type:'channel',channel_id:'C2'}, {type:'usergroup',usergroup_id:'S2'},
+      {type:'broadcast',range:'here'}, {type:'emoji',name:'thumbsup',skin_tone:4},
+      {type:'file',file_id:'F1',text:'https://example.test/file',url:'https://example.test/file'},
+      {type:'canvas',file_id:'F2',text:'https://example.test/canvas',section_id:'section',is_skill_invocation:true},
+      {type:'list_record',file_id:'F3',text:'https://example.test/list',record_id:'R1',view_id:'V1'}
+    ]) {
+      const f=fixture(documentBlocks([section([text('Before @fi',{bold:true}),...tokens])]),true,'81');
+      point(firstText(f.root));const before=JSON.stringify(f.read()),ticket=api.caret(f.root);let inputRaw=null;
+      f.root.addEventListener('input',()=>{inputRaw=f.read();},{once:true});
+      assert(ticket?.before==='Before @fi'&&ticket.generation==='81','wrong caret text or generation');
+      const receipt=api.complete(f.root,ticket,3,value,'@Fixture');
+      assert(receipt&&receipt.revision>ticket.revision,'typed completion refused');
+      const after=JSON.stringify(f.read()),items=leaves(f.read());
+      assert(items.some(v=>v.type===value.type&&JSON.stringify(v)===JSON.stringify({...value,style:{bold:true}})),'typed identity/metadata/format lost');
+      assert(JSON.stringify(inputRaw)===after,'input listener observed incomplete token provenance');
+      assert(!f.root.querySelector('[data-rich-completion-insert]'),'private insertion marker survived');
+      assert(after.includes('Before ')&&!after.includes('@fi'),'replacement range changed');
+      assert(api.complete(f.root,ticket,3,value,'@Fixture')===null,'spent ticket replayed');
+      const completed=f.root.querySelector('.rich-editor-token');let redoInput=null;
+      f.root.addEventListener('input',event=>{if(event.inputType==='historyRedo')redoInput=f.read();});
+      assert(document.execCommand('undo')&&JSON.stringify(f.read())===before,'completion undo lost original rich document');
+      assert(document.execCommand('redo')&&JSON.stringify(f.read())===after,'completion redo lost typed WeakMap identity');
+      assert(f.root.querySelector('.rich-editor-token')===completed&&completed.contentEditable==='false','redo did not restore exact admitted atomic node');
+      assert(JSON.stringify(redoInput)===after,'redo input consumer observed flattened completion');
+    }
+    results.push('typed completion identity, event custody, all token kinds and native undo/redo');
+  }
+  {
+    const f=fixture(documentBlocks([section([text('Prefix '),text('@',{bold:true}),text('fi',{italic:true})])]));
+    const texts=[];const w=document.createTreeWalker(f.root,NodeFilter.SHOW_TEXT);while(w.nextNode())texts.push(w.currentNode);
+    point(texts.at(-1));const ticket=api.caret(f.root),before=JSON.stringify(f.read());
+    const paragraph=texts[0].parentElement.parentElement;let captured=null;
+    f.root.addEventListener('input',()=>{captured=f.read();},{once:true});
+    assert(ticket.before==='Prefix @fi','adjacent style runs changed query');
+    assert(api.complete(f.root,ticket,3,{type:'user',user_id:'U2'},'@Fixture',''),'cross-style query refused');
+    const token=leaves(f.read()).find(v=>v.type==='user');assert(token?.style.italic&&!token.style.bold,'completion did not inherit match-index-plus-one formatting');
+    assert(f.root.textContent==='Prefix @Fixture','empty suffix was ignored');
+    const after=JSON.stringify(f.read()),blocks=f.read();
+    assert(blocks.length===1&&blocks[0].elements.length===1&&blocks[0].elements[0].type==='rich_text_section','completion escaped its rich paragraph');
+    assert(paragraph.contains(f.root.querySelector('.rich-editor-token')),'native completion left the original paragraph');
+    assert(JSON.stringify(captured)===after,'cross-style input capture lost inline ownership');
+    assert(f.root.querySelector('.rich-editor-token').contentEditable==='false','completed token remained editable');
+    assert(getComputedStyle(f.root.querySelector('.rich-editor-token')).fontStyle==='italic','typed completion display lost inherited italic');
+    assert(document.execCommand('undo')&&JSON.stringify(f.read())===before,'cross-style completion was not one native undo unit');
+    assert(document.execCommand('redo')&&JSON.stringify(f.read())===after,'cross-style redo lost inline identity');
+    assert(paragraph.contains(f.root.querySelector('.rich-editor-token'))&&f.root.querySelector('.rich-editor-token').contentEditable==='false','redo changed paragraph or atomicity');
+    assert(document.execCommand('insertText',false,'!')&&f.root.textContent==='Prefix @Fixture!','typing after completed atomic token used the wrong caret');
+    const typed=f.read(),typedToken=leaves(typed).find(v=>v.type==='user');
+    assert(typed[0].elements.length===1&&typed[0].elements[0].type==='rich_text_section'&&JSON.stringify(typedToken)===JSON.stringify(token),'typing after redo changed token or paragraph identity');
+    const plain=fixture(documentBlocks([section([text('@',{bold:true}),text('fi',{italic:true})])]));
+    const w2=document.createTreeWalker(plain.root,NodeFilter.SHOW_TEXT);let end;while(w2.nextNode())end=w2.currentNode;point(end);
+    assert(api.complete(plain.root,api.caret(plain.root),3,text(':wave:'),':wave:',''),'cross-run text completion refused');
+    const run=leaves(plain.read()).find(v=>v.text?.includes(':wave:'));assert(run?.style.italic&&!run.style.bold,'plain completion inherited wrong format run');
+    results.push('completion spans text runs without replacing adjacent content');
+  }
+  {
+    // JSON object member order is not identity; every key/type/value and array
+    // position remains significant, including unknown metadata and absence.
+    const sameJSON=(a,b)=>{
+      if(Object.is(a,b))return true;
+      if(a===null||b===null||typeof a!=='object'||typeof b!=='object'||Array.isArray(a)!==Array.isArray(b))return false;
+      const keys=Object.keys(a);if(keys.length!==Object.keys(b).length)return false;
+      if(Array.isArray(a)&&a.length!==b.length)return false;
+      return keys.every(key=>Object.hasOwn(b,key)&&sameJSON(a[key],b[key]));
+    };
+    const front={type:'text',text:'Front ',future:{keep:'text'},style:{bold:true,custom_style:9}};
+    const link={type:'link',url:'https://example.test/prefix',text:'Link',future:{keep:'link'},style:{italic:true}};
+    const opaque={type:'user',user_id:'U9',future:{keep:'opaque'},style:{custom_style:7}};
+    const query={type:'text',text:' between @fi',future:{keep:'partial'},style:{italic:true}};
+    const tail={type:'text',text:' tail',future:{keep:'tail'},style:{strike:true}};
+    const source=documentBlocks([{type:'rich_text_section',future:{keep:'section'},elements:[front,link,opaque,query,tail]}]);
+    const f=fixture(source);const texts=[];const walker=document.createTreeWalker(f.root,NodeFilter.SHOW_TEXT);while(walker.nextNode())texts.push(walker.currentNode);
+    const queryNode=texts.find(n=>n.data===query.text),tailNode=texts.find(n=>n.data===tail.text),paragraph=queryNode.parentElement.closest('.rich-editor-section');
+    point(queryNode);const before=JSON.stringify(f.read()),ticket=api.caret(f.root);let captured;
+    f.root.addEventListener('input',()=>{captured=f.read();},{once:true});
+    assert(api.complete(f.root,ticket,3,{type:'user',user_id:'U2',future:{keep:'new'}},'@Fixture',''),'rich prefix completion refused');
+    const expected=documentBlocks([{type:'rich_text_section',future:{keep:'section'},elements:[front,link,opaque,{...query,text:' between '},{type:'user',user_id:'U2',future:{keep:'new'},style:{italic:true}},tail]}]);
+    const after=JSON.stringify(f.read());assert(sameJSON(JSON.parse(after),expected),'prefix completion changed exact raw metadata, link, style, opaque token or tail');
+    assert(JSON.stringify(captured)===after&&paragraph?.isConnected&&f.root.querySelector('.rich-editor-section')===paragraph&&tailNode.isConnected&&paragraph.contains(tailNode),'prefix event/scope/suffix custody lost');
+    assert(document.execCommand('undo')&&sameJSON(f.read(),JSON.parse(before)),'rich prefix was not one native undo unit');
+    assert(document.execCommand('redo')&&sameJSON(f.read(),JSON.parse(after)),'rich prefix redo lost exact raw metadata');
+    assert(tailNode.isConnected&&document.execCommand('insertText',false,'!')&&f.root.textContent.endsWith('@Fixture! tail'),'prefix redo caret did not stay before untouched tail');
+    results.push('completion preserves rich prefix unknown metadata link atom section and untouched suffix');
+  }
+  {
+    const f=fixture(documentBlocks([section([{type:'text',text:'Prefix @fi',future:{keep:true}}])]));point(firstText(f.root));
+    const before=JSON.stringify(f.read()),ticket=api.caret(f.root),native=document.execCommand,own=Object.getOwnPropertyDescriptor(document,'execCommand');let blocked=false,eventBlocked=false;
+    f.root.addEventListener('input',()=>{try{f.read();}catch{eventBlocked=true;}},{once:true});
+    document.execCommand=function(command,showUi,payload){
+      if(command!=='insertHTML')return native.call(this,command,showUi,payload);
+      const fragment=document.createElement('div');fragment.innerHTML=payload;const first=fragment.querySelector('[data-rich-completion-insert]');
+      assert(first&&first.textContent==='Prefix ','prefix rejection fixture missing exact first run');first.removeAttribute('data-rich-completion-insert');
+      return native.call(this,command,showUi,fragment.innerHTML);
+    };
+    try{api.complete(f.root,ticket,3,{type:'user',user_id:'U2'},'@Fixture','');}catch{blocked=true;}
+    finally{if(own)Object.defineProperty(document,'execCommand',own);else delete document.execCommand;}
+    let laterBlocked=false;try{api.snapshot(f.root);}catch{laterBlocked=true;}
+    assert(blocked&&eventBlocked&&laterBlocked,'missing prefix provenance was captured as valid content');
+    assert(document.execCommand('undo')&&JSON.stringify(f.read())===before,'failed prefix insertion lost exact undo recovery');
+    assert(document.execCommand('redo'),'failed prefix redo unavailable');let redoBlocked=false;try{f.read();}catch{redoBlocked=true;}
+    assert(redoBlocked,'redo silently accepted rejected prefix metadata');
+    results.push('completion prefix metadata omission fences input snapshots and redo until exact undo');
+  }
+  {
+    for(const kind of ['code','pre','link','text']){
+      const body=kind==='pre'?[{type:'rich_text_preformatted',elements:[text('@fi')]}]
+        :[section([kind==='link'?{type:'link',url:'https://example.test',text:'@fi'}:text('@fi',kind==='code'?{code:true}:undefined)])];
+      const f=fixture(documentBlocks(body));point(firstText(f.root));const ticket=api.caret(f.root),before=JSON.stringify(f.read());
+      const value=kind==='text'?text(':thumbsup:'):{type:'user',user_id:'U2'};
+      assert(api.complete(f.root,ticket,3,value,'@Fixture'),'plain contextual completion refused');
+      const after=JSON.stringify(f.read());assert(!after.includes('"type":"user"'),'code/pre/link text acquired a mention');
+      assert(f.root.textContent===(kind==='text'?':thumbsup: ':'@Fixture '),'plain contextual completion label changed');
+      if(kind==='link')assert(leaves(f.read())[0].url==='https://example.test','plain completion replaced surrounding link URL');
+      assert(document.execCommand('undo')&&JSON.stringify(f.read())===before,'plain completion undo failed');
+      assert(document.execCommand('redo')&&JSON.stringify(f.read())===after,'plain completion redo failed');
+    }
+    results.push('code, preformatted, link and text-preference completion stay plain');
+  }
+  {
+    const f=fixture(documentBlocks([section([text('@fi')])]),true,'82');const node=firstText(f.root);point(node);
+    const ticket=api.caret(f.root),before=f.root.innerHTML;
+    assert(api.complete(f.root,{...ticket},3,{type:'user',user_id:'U2'},'@Fixture')===null,'reconstructed ticket admitted');
+    point(node,2);assert(api.complete(f.root,ticket,3,{type:'user',user_id:'U2'},'@Fixture')===null,'moved caret admitted');point(node);
+    f.owner.dataset.editorGeneration='83';assert(api.complete(f.root,ticket,3,{type:'user',user_id:'U2'},'@Fixture')===null,'changed mount generation admitted');f.owner.dataset.editorGeneration='82';
+    f.root.contentEditable='false';assert(api.caret(f.root)===null&&api.complete(f.root,ticket,3,{type:'user',user_id:'U2'},'@Fixture')===null,'read-only completion admitted');f.root.contentEditable='true';f.root.focus();point(node);
+    f.root.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));assert(api.caret(f.root)===null,'IME admitted caret');f.root.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true}));
+    assert(api.complete(f.root,ticket,3,{type:'user',user_id:'U2'},'@Fixture')===null,'ABA composition accepted old ticket');
+    assert(f.root.innerHTML===before,'guard refusal changed document');
+    results.push('completion ticket, selection, readonly, generation and IME guards');
+  }
+  {
+    const f=fixture(documentBlocks([section([text('@fi')])]),true,'84');point(firstText(f.root));const ticket=api.caret(f.root);
+    const old=f.root,newRoot=document.createElement('div');newRoot.id=old.id;newRoot.contentEditable='true';old.replaceWith(newRoot);api.mount(newRoot.id,documentBlocks([section([text('@fi')])]),{},true,'84');point(firstText(newRoot));
+    assert(api.complete(newRoot,ticket,3,{type:'user',user_id:'U2'},'@Fixture')===null,'same ID/generation successor admitted predecessor caret');
+    assert(api.complete(old,ticket,3,{type:'user',user_id:'U2'},'@Fixture')===null,'detached node accepted insertion');
+    assert(newRoot.textContent==='@fi'&&old.textContent==='@fi','remount guard changed input');
+    results.push('completion exact-node ownership survives detach and same-ID remount');
+  }
+  {
+    const f=fixture(documentBlocks([section([{type:'user',user_id:'U1'},text('@fi')])]));
+    const w=document.createTreeWalker(f.root,NodeFilter.SHOW_TEXT);let node;while(w.nextNode())node=w.currentNode;point(node);
+    const ticket=api.caret(f.root);assert(ticket.before==='@fi','query borrowed preceding opaque token label');
+    assert(api.complete(f.root,ticket,4,{type:'user',user_id:'U2'},'@Fixture')===null,'completion consumed opaque predecessor');
+    assert(api.complete(f.root,ticket,3,{type:'unsupported',payload:1},'@Fixture')===null,'unknown insertion type admitted');
+    assert(api.complete(f.root,ticket,3,{type:'user',user_id:'U2'},'<b>not HTML</b>'),'escaped label refused');
+    assert(!f.root.querySelector('b')&&f.root.textContent.includes('<b>not HTML</b>'),'label was injected as markup');
+    results.push('completion range excludes opaque tokens and labels remain escaped content');
+  }
+  {
+    const f=fixture(documentBlocks([section([text('\uD83D\uDE80')])]));point(firstText(f.root));const ticket=api.caret(f.root);
+    assert(api.complete(f.root,ticket,1,{type:'user',user_id:'U2'},'@Fixture')===null,'completion split surrogate pair');
+    assert(f.root.textContent==='\uD83D\uDE80','surrogate refusal changed input');
+    const forged=document.createElement('span');forged.className='rich-editor-token';forged.contentEditable='false';forged.textContent='@Forged';f.root.append(forged);dirty(f.root);
+    let refused=false;try{f.read();}catch{refused=true;}assert(refused,'unowned token markup silently became plain text');
+    results.push('completion refuses partial scalars and lost typed-node provenance');
+  }
+
+  {
+    const f=fixture(documentBlocks([section([text('Before @fi'),...tokens])]),true,'85');point(firstText(f.root));
+    const before=JSON.stringify(f.read()),ticket=api.caret(f.root),execute=document.execCommand.bind(document);
+    let eventRefused=false,completeRefused=false;
+    f.root.addEventListener('input',()=>{try{api.snapshot(f.root);}catch{eventRefused=true;}},{once:true});
+    // A real native insertText transaction deliberately supplies no generated
+    // marker/class. This tests failure handling, not a claim engines strip HTML.
+    const ownDescriptor=Object.getOwnPropertyDescriptor(document,'execCommand');
+    Object.defineProperty(document,'execCommand',{configurable:true,value:(command,...args)=>command==='insertHTML'?execute('insertText',false,'@Flattened '):execute(command,...args)});
+    try{api.complete(f.root,ticket,3,{type:'user',user_id:'U2'},'@Fixture');}catch{completeRefused=true;}
+    finally{if(ownDescriptor)Object.defineProperty(document,'execCommand',ownDescriptor);else delete document.execCommand;}
+    assert(eventRefused&&completeRefused,'unproven insertion escaped event-time/final refusal');
+    let laterRefused=false;try{f.read();}catch{laterRefused=true;}assert(laterRefused,'finally cleared failed-insertion capture fence');
+    assert(execute('undo')&&JSON.stringify(f.read())===before,'actual undo could not recover exact original rich content');
+    assert(execute('redo'),'failed transaction redo unavailable');
+    let redoRefused=false;try{api.snapshot(f.root);}catch{redoRefused=true;}assert(redoRefused,'redo exposed flattened failed transaction');
+    assert(execute('undo')&&JSON.stringify(f.read())===before,'second exact undo failed');
+    point(firstText(f.root));assert(execute('insertText',false,' safe'),'new edit after recovery refused');
+    assert(JSON.stringify(f.read()).includes(' safe'),'verified undo plus new edit left permanent capture fence');
+    results.push('unaccepted insertion blocks event and later capture until exact native undo recovery');
+  }
   // Called separately after this suite; two frames expose native blur after
   // contenteditable changes. The baseline must reproduce the pre-fix failure.
   window.runRichEditorReadOnlyTests=async()=>{
@@ -440,5 +676,66 @@ window.runRichEditorTests = () => {
     results.push('mixed link refuses IME revision generation same-ID replacement disabled and silent DOM change');
   }
 
+
+  {
+    const value={type:'user',user_id:'U1',future:{keep:true}};
+    const f=fixture(documentBlocks([section([value,text(' @ca')])]),true,'92');
+    const before=api.resolved(f.root);
+    assert(before.tokens.length===1&&before.tokens[0].label==='@Fixture','initial private canonical label missing');
+    const walk=document.createTreeWalker(f.root,NodeFilter.SHOW_TEXT);let query;while(walk.nextNode())if(walk.currentNode.data===' @ca')query=walk.currentNode;
+    point(query);let captured;
+    f.root.addEventListener('input',()=>{captured=api.resolved(f.root);},{once:true});
+    assert(api.complete(f.root,api.caret(f.root),3,value,'@Caf\u00e9',''),'resolved completion refused');
+    const after=api.resolved(f.root);
+    assert(after.tokens.length===2&&after.tokens[0].label==='@Fixture'&&after.tokens[1].label==='@Caf\u00e9','equal raw occurrences lost distinct canonical labels');
+    assert(JSON.stringify(captured.tokens)===JSON.stringify(after.tokens),'input observed incomplete canonical label custody');
+    assert(document.execCommand('undo')&&JSON.stringify(api.resolved(f.root).tokens)===JSON.stringify(before.tokens),'label custody undo lost predecessor');
+    assert(document.execCommand('redo')&&JSON.stringify(api.resolved(f.root).tokens)===JSON.stringify(after.tokens),'label custody redo lost admitted resolution');
+    const atoms=f.root.querySelectorAll('.rich-editor-token');atoms[1].textContent='forged visible label';dirty(f.root);
+    assert(api.resolved(f.root).tokens[1].label==='@Caf\u00e9','editable DOM label became canonical authority');
+    results.push('canonical labels retain exact per-occurrence input prefix undo and redo provenance');
+  }
+  {
+    const value={type:'user',user_id:'U1'};
+    const f=fixture(documentBlocks([section([value,text(' tail')])]),false,'93');
+    const first=api.resolved(f.root);first.tokens[0].label='forged returned witness';
+    assert(api.resolved(f.root).tokens[0].label==='@Fixture','returned witness mutated private canonical label');
+    f.root.querySelector('.rich-editor-token').remove();
+    let refused=false;try{api.resolved(f.root);}catch{refused=true;}
+    assert(refused,'clean initial raw was paired with silently removed token labels');
+    results.push('canonical capture refuses mismatched tree and returned witness mutation');
+  }
+  {
+    const original=documentBlocks([section([text('kept'),{type:'user',user_id:'U1'}])]);
+    const f=fixture(original),before=JSON.stringify(original);
+    f.root.contentEditable='false';
+    assert(JSON.stringify(api.readForCommit(f.root.id))===before,'reserved read lost opaque content');
+    f.root.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));
+    let refused=false;try{api.readForCommit(f.root.id);}catch(_){refused=true;}
+    assert(refused,'committing read admitted active IME');
+    f.root.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true}));
+    assert(JSON.stringify(api.readForCommit(f.root.id))===before,'composition refusal changed note');
+    results.push('committing rich read preserves atoms and refuses IME');
+  }
+  {
+    const f=fixture(documentBlocks([section([text('link selection')])]));
+    select(f.root.querySelector('span').firstChild);
+    f.root.closest('.rich-editor').querySelector('.rich-link-open').click();
+    assert(!f.root.closest('.rich-editor').querySelector('.rich-link-controls').hidden,'link controls did not open');
+    let refused=false;try{api.readForCommit(f.root.id);}catch(_){refused=true;}
+    assert(refused,'committing read ignored unfinished link input');
+    f.root.closest('.rich-editor').querySelector('.rich-link-cancel').click();
+    assert(api.readForCommit(f.root.id).length===1,'canceling link edit prevented capture');
+    results.push('committing rich read refuses pending link input');
+  }
+  {
+    const f=fixture([]),id=f.root.id;f.root.remove();
+    let refused=false;try{api.readForCommit(id);}catch(_){refused=true;}
+    assert(refused,'detached rich editor admitted');
+    const replacement=document.createElement('div');replacement.id=id;document.body.append(replacement);
+    refused=false;try{api.readForCommit(id);}catch(_){refused=true;}
+    assert(refused,'same-ID unmounted replacement admitted');
+    results.push('committing rich read rejects detached and unmounted replacement nodes');
+  }
   return results;
 };

@@ -1,4 +1,5 @@
 //! Exact disconnected appearance fixtures; never persists settings.
+pub(crate) mod motion;
 use crate::state::{Overlay, SettingsSection, ShellState};
 use dioxus::prelude::*;
 use serde_json::{Value, json};
@@ -17,7 +18,7 @@ fn fixture() -> Option<String> {
     .then_some(name)
 }
 fn isolated(state: &ShellState) -> Result<(), String> {
-    if fixture().is_some()
+    if (fixture().is_some() || motion::preference().is_some())
         && crate::fixture::is_fixture()
         && state.core.session.is_none()
         && state.core.transport.is_none()
@@ -28,6 +29,7 @@ fn isolated(state: &ShellState) -> Result<(), String> {
     }
 }
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    motion::start(state, desktop.clone());
     let Some(name) = fixture() else {
         return;
     };

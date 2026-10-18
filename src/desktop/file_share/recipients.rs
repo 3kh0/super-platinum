@@ -74,6 +74,9 @@ pub(super) fn eligible(shell: &ShellState, id: &str) -> bool {
     resolve(shell, id).is_some()
 }
 pub(super) fn capture(shell: &ShellState, id: &str) -> Option<Value> {
+    if id.starts_with("person:") {
+        return new_direct::capture_person(shell, id);
+    }
     let (c, peer) = resolve(shell, id)?;
     if !c.is_im && !c.is_mpim {
         return Some(Value::Null);

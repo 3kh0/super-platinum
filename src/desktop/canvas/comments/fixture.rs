@@ -9,7 +9,8 @@ struct Record {
 }
 static RECORD: OnceLock<Mutex<Record>> = OnceLock::new();
 pub(in crate::canvas) fn requested() -> bool {
-    reply::fixture::requested()
+    annotation::fixture::requested()
+        || reply::fixture::requested()
         || mutation::fixture::requested()
         || crate::fixture::is_fixture()
             && matches!(
@@ -45,6 +46,9 @@ fn reply(ts: &str, parent: &str, text: &str) -> Value {
     json!({"type":"message","ts":ts,"thread_ts":parent,"user":"U2","text":text})
 }
 pub(super) fn response(shell: &ShellState, ticket: &Ticket) -> Result<Value, Error> {
+    if annotation::fixture::requested() {
+        return annotation::fixture::response(shell, ticket);
+    }
     if reply::fixture::requested() {
         return reply::fixture::response(shell, ticket);
     }
@@ -97,6 +101,9 @@ pub(super) fn response(shell: &ShellState, ticket: &Ticket) -> Result<Value, Err
 }
 
 pub(super) fn file() -> super_platinum_core::slack::models::File {
+    if annotation::fixture::requested() {
+        return annotation::fixture::file();
+    }
     serde_json::from_value(
         serde_json::json!({"id":"Ffixture","filetype":"quip","access":"write","is_locked":false}),
     )

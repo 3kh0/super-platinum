@@ -37,7 +37,26 @@ async fn refusal(
                     && editor.snapshot().capture.is_none()
             })
     })
-    .await?;
+    .await
+    .map_err(|error| {
+        let shell = state.peek();
+        let model = shell.canvas_create.as_ref().map(|draft| {
+            json!({
+                "sameVisit": draft.visit == visit,
+                "busy": draft.busy,
+                "closeRequested": draft.close_requested,
+                "pendingDeparture": draft.pending_departure.is_some(),
+                "error": draft.error,
+                "expectedError": message,
+                "sameEditor": draft.editor.as_ref().is_some_and(|e| Arc::ptr_eq(e, editor)),
+                "captureNone": editor.snapshot().capture.is_none(),
+            })
+        });
+        format!(
+            "{error}; model={model:?}; canvasOverlay={}",
+            shell.overlay == Some(Overlay::CanvasCreate)
+        )
+    })?;
     let n = editable(body).await?;
     Ok(json!({"sameEditor":true,"pending":false,"closeRequested":false,"native":n,"error":message}))
 }

@@ -10,6 +10,28 @@ impl Journal {
         capture: &str,
         text: &str,
     ) -> Result<ReplySave, AppError> {
+        self.save_reply_content(scope, root, expected, capture, text, None)
+    }
+    pub fn save_rich_reply_draft(
+        &mut self,
+        scope: &Scope,
+        root: &str,
+        expected: Option<&ReplyDraft>,
+        capture: &str,
+        blocks: Vec<serde_json::Value>,
+    ) -> Result<ReplySave, AppError> {
+        let text = crate::canvas::comments::content::fallback(&blocks).map_err(|_| invalid())?;
+        self.save_reply_content(scope, root, expected, capture, &text, Some(blocks))
+    }
+    fn save_reply_content(
+        &mut self,
+        scope: &Scope,
+        root: &str,
+        expected: Option<&ReplyDraft>,
+        capture: &str,
+        text: &str,
+        blocks: Option<Vec<serde_json::Value>>,
+    ) -> Result<ReplySave, AppError> {
         owner(scope, root)?;
         uuid(capture)?;
         if !valid_text(text) {
@@ -29,7 +51,9 @@ impl Journal {
         )?;
         if used {
             return match inventory.drafts.iter().find(|d| d.capture == capture) {
-                Some(value) if value.text == text => Ok(ReplySave::Stored(value.clone())),
+                Some(value) if value.text == text && value.blocks == blocks => {
+                    Ok(ReplySave::Stored(value.clone()))
+                }
                 Some(_) => Err(invalid()),
                 None => Ok(ReplySave::Retired),
             };
@@ -41,6 +65,7 @@ impl Journal {
                 revision: old.revision.checked_add(1).ok_or_else(invalid)?,
                 capture: capture.into(),
                 text: text.into(),
+                blocks: blocks.clone(),
             }
         } else {
             if inventory.drafts.len() >= MAX_VERSIONS {
@@ -51,6 +76,7 @@ impl Journal {
                 revision: 1,
                 capture: capture.into(),
                 text: text.into(),
+                blocks: blocks.clone(),
             }
         };
         let body = encoded(&value)?;

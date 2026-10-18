@@ -76,6 +76,81 @@ fn limited(state: Signal<ShellState>, mut model: Signal<State>, binding: &Bindin
     }
 }
 pub(super) fn send(mut state: Signal<ShellState>, model: Signal<State>, binding: Binding) {
+    // Keep the historical plain fixture route explicit; the rich named fixtures
+    // and ordinary product use the same exact-node capture as each other.
+    if super::fixture::plain_requested() {
+        send_captured(state, model, binding);
+        return;
+    }
+    {
+        let mut shell = state.write();
+        if !binding.current(&shell, &model.peek()) {
+            return;
+        }
+        let Some(e) = entry_mut(&mut shell, &binding.id) else {
+            return;
+        };
+        if e.native_busy || e.sending || e.loading {
+            return;
+        }
+        e.native_busy = true;
+    }
+    dioxus::core::spawn_forever(async move {
+        let result = native::capture(state, &binding).await;
+        let Ok(blocks) = result else {
+            if let Some(e) = entry_mut(&mut state.write(), &binding.id) {
+                e.native_busy = false;
+            }
+            error(
+                state,
+                &binding.id,
+                "The rich reply could not be captured. Nothing was sent.",
+            );
+            return;
+        };
+        // Wait only for this explicit capture's local save, never enqueue a send
+        // across newer input, owner replacement, storage failure or composition.
+        let saved = tokio::time::timeout(std::time::Duration::from_secs(6), async {
+            loop {
+                let pending = {
+                    let shell = state.peek();
+                    if !binding.current(&shell, &model.peek()) {
+                        return false;
+                    }
+                    let Some(e) = entry(&shell, &binding.id) else {
+                        return false;
+                    };
+                    if e.blocks.as_deref() != Some(blocks.as_slice())
+                        || e.composing
+                        || e.error.is_some()
+                    {
+                        return false;
+                    }
+                    e.saving
+                };
+                if !pending {
+                    return true;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .unwrap_or(false);
+        if let Some(e) = entry_mut(&mut state.write(), &binding.id) {
+            e.native_busy = false;
+        }
+        if saved {
+            send_captured(state, model, binding)
+        } else {
+            error(
+                state,
+                &binding.id,
+                "The captured rich reply changed or could not be saved. Review it before sending.",
+            );
+        }
+    });
+}
+fn send_captured(mut state: Signal<ShellState>, model: Signal<State>, binding: Binding) {
     let request = {
         let mut shell = state.write();
         let value = model.peek();
@@ -96,7 +171,7 @@ pub(super) fn send(mut state: Signal<ShellState>, model: Signal<State>, binding:
             || e.loading
             || e.composing
             || e.error.is_some()
-            || e.retired_text.as_ref() == Some(&e.text)
+            || retired(e)
         {
             return;
         }
@@ -106,6 +181,7 @@ pub(super) fn send(mut state: Signal<ShellState>, model: Signal<State>, binding:
         let [draft] = inventory.drafts() else { return };
         if e.locked.is_some()
             || inventory.attempt().is_some()
+            || draft.blocks() != e.blocks.as_deref()
             || draft.text() != e.text
             || draft.capture() != e.capture
             || e.text.trim().is_empty()
@@ -118,14 +194,26 @@ pub(super) fn send(mut state: Signal<ShellState>, model: Signal<State>, binding:
         let Some(root) = value.root.as_ref() else {
             return;
         };
-        let Ok(intent) = ReplyIntent::capture(
-            &e.disk.scope.workspace,
-            &e.disk.scope.user,
-            file,
-            root,
-            &e.text,
-            &uuid::Uuid::new_v4().to_string(),
-        ) else {
+        let client_msg_id = uuid::Uuid::new_v4().to_string();
+        let intent = match &e.blocks {
+            Some(blocks) => ReplyIntent::capture_rich(
+                &e.disk.scope.workspace,
+                &e.disk.scope.user,
+                file,
+                root,
+                blocks.clone(),
+                &client_msg_id,
+            ),
+            None => ReplyIntent::capture(
+                &e.disk.scope.workspace,
+                &e.disk.scope.user,
+                file,
+                root,
+                &e.text,
+                &client_msg_id,
+            ),
+        };
+        let Ok(intent) = intent else {
             return;
         };
         e.sending = true;
@@ -156,6 +244,18 @@ pub(super) fn send(mut state: Signal<ShellState>, model: Signal<State>, binding:
             );
             return;
         }
+        if let Some(expected) = request.2.record().blocks() {
+            if native::capture(state, &binding).await.as_deref() != Ok(expected)
+                || !current(&state.peek(), &model.peek(), &binding, request.3)
+            {
+                error(
+                    state,
+                    &binding.id,
+                    "The rich reply changed before admission. Nothing was sent.",
+                );
+                return;
+            }
+        }
         let record = request.2.record().clone();
         let expected = request.1;
         let receipt = match request
@@ -178,7 +278,11 @@ pub(super) fn send(mut state: Signal<ShellState>, model: Signal<State>, binding:
         if let Some(e) = entry_mut(&mut state.write(), &binding.id) {
             e.locked = Some(receipt.clone());
         }
-        if !current(&state.peek(), &model.peek(), &binding, request.3) {
+        let native_current = match request.2.record().blocks() {
+            Some(expected) => native::capture(state, &binding).await.as_deref() == Ok(expected),
+            None => true,
+        };
+        if !native_current || !current(&state.peek(), &model.peek(), &binding, request.3) {
             settle(
                 state,
                 model,
@@ -312,7 +416,13 @@ async fn settle(
             }
             if accepted {
                 if let Outcome::Accepted(receipt, _) = &*outcome {
-                    mark_retired(state, &binding.id, serial, receipt.record().text());
+                    mark_retired(
+                        state,
+                        &binding.id,
+                        serial,
+                        receipt.record().text(),
+                        receipt.record().blocks(),
+                    );
                 }
                 clear_delivered(state, model, &binding, serial, &outcome).await;
                 if binding.current(&state.peek(), &model.peek()) {
@@ -332,13 +442,22 @@ async fn settle(
         }
     }
 }
-fn mark_retired(mut state: Signal<ShellState>, id: &str, serial: u64, text: &str) {
+fn mark_retired(
+    mut state: Signal<ShellState>,
+    id: &str,
+    serial: u64,
+    text: &str,
+    blocks: Option<&[serde_json::Value]>,
+) {
     if let Some(e) = entry_mut(&mut state.write(), id) {
-        retire_exact(e, serial, text);
+        if e.serial == serial && e.text == text && e.blocks.as_deref() == blocks {
+            e.retired_text = Some(text.into());
+            e.retired_blocks = blocks.map(<[_]>::to_vec);
+        }
     }
 }
 pub(super) fn retire_exact(e: &mut Entry, serial: u64, text: &str) {
-    if e.serial == serial && e.text == text {
+    if e.serial == serial && e.text == text && e.blocks.is_none() {
         e.retired_text = Some(text.into());
     }
 }
@@ -350,7 +469,11 @@ async fn clear_delivered(
     outcome: &Outcome,
 ) {
     if let Outcome::Accepted(receipt, _) = outcome {
-        settle_field(state, model, binding, serial, receipt.record().text()).await;
+        if let Some(blocks) = receipt.record().blocks() {
+            let _ = native::clear(state, binding, serial, blocks).await;
+        } else {
+            settle_field(state, model, binding, serial, receipt.record().text()).await;
+        }
     }
 }
 async fn settle_field(
@@ -512,8 +635,18 @@ pub(super) fn review(mut state: Signal<ShellState>, model: Signal<State>, bindin
                     e.sending = false;
                     e.error = None;
                 }
-                mark_retired(state, &binding.id, request.3, receipt.record().text());
-                settle_field(state, model, &binding, request.3, receipt.record().text()).await;
+                mark_retired(
+                    state,
+                    &binding.id,
+                    request.3,
+                    receipt.record().text(),
+                    receipt.record().blocks(),
+                );
+                if let Some(blocks) = receipt.record().blocks() {
+                    let _ = native::clear(state, &binding, request.3, blocks).await;
+                } else {
+                    settle_field(state, model, &binding, request.3, receipt.record().text()).await;
+                }
             }
             _ => error(
                 state,

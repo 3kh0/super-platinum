@@ -100,6 +100,9 @@ pub fn CanvasDialog(
             Reader {
                 document: (!matches!(fixture.as_str(), "canvas-loading" | "canvas-error")).then(
                     || {
+                        if comments::annotation::fixture::requested() {
+                            return Arc::new(comments::annotation::fixture::document());
+                        }
                         Arc::new(
                             CanvasDocument::parse(if text::structure_fixture::requested() {
                                 text::structure_fixture::HTML
@@ -129,10 +132,12 @@ pub fn CanvasDialog(
         }
     });
     let comments = use_signal(comments::State::default);
-    let mut comments_open = use_signal(comments::fixture::requested);
+    let mut comments_open = use_signal(|| {
+        comments::fixture::requested() && !comments::annotation::fixture::inline_requested()
+    });
     comments::focus::use_focus(state, comments, comments_open);
     use_future(move || async move {
-        if comments::fixture::requested() {
+        if comments::fixture::requested() && !comments::annotation::fixture::inline_requested() {
             comments::open(state, comments);
         }
     });
@@ -162,7 +167,12 @@ pub fn CanvasDialog(
                     return;
                 }
             }
-            if text::structure_fixture::requested() {
+            if comments::annotation::fixture::inline_requested() {
+                comments::annotation::fixture::refresh_reader(
+                    &mut state.write(),
+                    &mut reader.write(),
+                );
+            } else if text::structure_fixture::requested() {
                 let mut shell = state.write();
                 text::structure_fixture::install(&mut shell);
                 checklist::reader::update_mapping(&shell, &mut reader.write());
@@ -316,6 +326,9 @@ pub fn CanvasDialog(
             nav {class:"canvas-toolbar","aria-label":"Canvas actions",
                 span {class:"canvas-status",if text_draft.read().is_some() {"Editing paragraph"} else if loading {"Loading…"} else {"Read view"}}
                 span {class:"spacer"}
+                button {id:"canvas-comment-selection",disabled:editing||writing||loading||*comments_open.read(),
+                    onmousedown:|event|event.prevent_default(),
+                    onclick:move |_|comments::annotation::range::choose(state,reader,comments,comments_open),"Comment on selection"}
                 button {id:"canvas-comments-open","data-canvas-comment-action":"open",disabled:editing||writing,onclick:move |_|{comments_open.set(true);comments::open(state,comments);},"Show all threads"}
                 if snapshot.editable {button {disabled:refreshing||editing||checklist_pending||canonical.as_ref().is_some_and(|view|view.stale),onclick:move |_|{if text_draft.peek().is_none() && checklist::presentation(&state.peek()).is_none_or(|view|view.operation.is_none()&&!view.loading&&!view.stale) && !reader.peek().loading {if !surface::hold_local(&mut state.write(),local_generation) {return;}rename.set(Some(RenameDraft{base:rename_title.clone(),input:rename_title.clone(),busy:false,error:None}));}},"Rename"}}
                 if local_review_available {button {disabled:refreshing||editing,onclick:move |_|checklist::recovery::review::open(state,reader,review_target.clone(),local_review),"Review saved change"}}
@@ -334,7 +347,7 @@ pub fn CanvasDialog(
                 }
                 if let Some(document)=snapshot.document.as_ref() {
                     article {class:"canvas-document",
-                        for node in document.nodes.iter().take(shown()) {{render_node(node,state,epoch,mapped,reader,canonical.as_ref(),rename,text_draft)}}
+                        for node in document.nodes.iter().take(shown()) {{render_node(node,state,epoch,mapped,reader,canonical.as_ref(),rename,text_draft,None,comments,comments_open,local_review)}}
                         if document.nodes.len()>shown() {button {class:"canvas-more",onclick:move |_|shown+=80,"Show more"}}
                     }
                 } else if loading {
@@ -355,6 +368,10 @@ fn render_node(
     canonical: Option<&checklist::Presentation>,
     rename: Signal<Option<RenameDraft>>,
     text_draft: Signal<Option<text::Draft>>,
+    parent_section: Option<&str>,
+    comments: Signal<comments::State>,
+    comments_open: Signal<bool>,
+    local_review: Signal<Option<checklist::recovery::review::Draft>>,
 ) -> Element {
     let N::Element {
         kind,
@@ -365,7 +382,8 @@ fn render_node(
         let N::Text(text) = node else { unreachable!() };
         return rsx! {"{text}"};
     };
-    let content = || rsx! {for child in children {{render_node(child,state,epoch,checklist,reader,canonical,rename,text_draft)}}};
+    let image_section = section.as_deref().or(parent_section);
+    let content = || rsx! {for child in children {{render_node(child,state,epoch,checklist,reader,canonical,rename,text_draft,image_section,comments,comments_open,local_review)}}};
     match kind {
         K::Group => rsx! {div {{content()}}},
         K::Inline => rsx! {span {{content()}}},
@@ -444,18 +462,22 @@ fn render_node(
             let destination = url.clone();
             rsx! {a {href:"{url}",onclick:move |e|{e.prevent_default();let _=crate::media::open_external(&destination);},{content()}}}
         }
-        K::Image {
-            url: Some(url),
+        K::Image { url, alt } => comments::annotation::image::render(
+            state,
+            reader,
+            comments,
+            comments_open,
+            canonical,
+            image_section,
+            url.as_deref(),
             alt,
-        } => {
-            let id = state.peek().media.register_image(
-                super_platinum_core::MediaAssetKind::Attachment,
-                url,
-                "image/png",
-            );
-            rsx! {crate::view::media_image::MediaImage {state,id,media_epoch:epoch,alt:alt.clone(),class:"canvas-image",loading:"lazy"}}
-        }
-        K::Image { alt, .. } => rsx! {span {class:"canvas-image-unavailable","{alt}"}},
+            epoch,
+            comments::annotation::image::Editors {
+                rename,
+                text: text_draft,
+                review: local_review,
+            },
+        ),
         K::Break => rsx! {br {}},
         K::Rule => rsx! {hr {}},
     }

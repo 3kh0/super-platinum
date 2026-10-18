@@ -16,6 +16,15 @@ pub(super) async fn editor(
 ) -> Result<Arc<editor::Editor>, durable::Error> {
     editor_with_policy(state, target, account, key, local, CapturePolicy::Plain).await
 }
+pub(super) async fn editor_hosted(
+    state: Signal<ShellState>,
+    target: ComposerTarget,
+    account: Arc<Account>,
+    key: &DraftKey,
+    local: &LocalDraft,
+) -> Result<Arc<editor::Editor>, durable::Error> {
+    editor_with_policy(state, target, account, key, local, CapturePolicy::Hosted).await
+}
 pub(super) async fn editor_baseline(
     state: Signal<ShellState>,
     target: ComposerTarget,
@@ -28,6 +37,7 @@ pub(super) async fn editor_baseline(
 #[derive(Clone, Copy)]
 enum CapturePolicy {
     Plain,
+    Hosted,
     Baseline,
 }
 impl CapturePolicy {
@@ -39,6 +49,7 @@ impl CapturePolicy {
     ) -> Result<native::Capture, durable::Error> {
         match self {
             Self::Plain => native::capture(state, target, local).await,
+            Self::Hosted => native::capture_hosted(state, target, local).await,
             Self::Baseline => native::capture_baseline(state, target, local).await,
         }
     }

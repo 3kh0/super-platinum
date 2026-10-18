@@ -4,6 +4,7 @@ use crate::error::AppError;
 use rusqlite::{Connection, OptionalExtension, Transaction, TransactionBehavior, params};
 use std::{fs::OpenOptions, path::Path, time::Duration};
 
+pub mod direct_open;
 pub mod drafts;
 
 pub const MAX_UNRESOLVED: usize = 32;
@@ -140,6 +141,7 @@ fn save(tx: &Transaction<'_>, r: &Receipt) -> Result<(), AppError> {
     drop(stmt);
     for receipt in prune {
         drafts::retire_association(tx, &receipt)?;
+        direct_open::retire_completed(tx, &receipt)?;
         let deleted = tx.execute("DELETE FROM receipts WHERE team=?1 AND user=?2 AND file=?3 AND destination=?4 AND attempt=?5 AND terminal=1",
             params![receipt.scope.team,receipt.scope.user,receipt.scope.file,receipt.scope.destination,receipt.attempt_id])?;
         if deleted != 1 {
@@ -184,7 +186,7 @@ impl Journal {
         conn.execute_batch("PRAGMA synchronous=FULL;PRAGMA journal_mode=DELETE;")?;
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
         let version: i64 = tx.query_row("PRAGMA user_version", [], |r| r.get(0))?;
-        if !matches!(version, 0 | 1 | 2) {
+        if !matches!(version, 0 | 1 | 2 | 3 | 4) {
             return Err(invalid());
         }
         tx.execute_batch("CREATE TABLE IF NOT EXISTS identity(singleton INTEGER PRIMARY KEY CHECK(singleton=1),account TEXT NOT NULL);
@@ -199,7 +201,8 @@ impl Journal {
             return Err(invalid());
         }
         drafts::migrate(&tx, version)?;
-        tx.execute_batch("PRAGMA user_version=2;")?;
+        direct_open::migrate(&tx, version)?;
+        tx.execute_batch("PRAGMA user_version=4;")?;
         tx.commit()?;
         Ok(Self { conn })
     }
@@ -268,6 +271,7 @@ impl Journal {
         }
         if let Some(previous) = &previous {
             drafts::retire_association(&tx, previous)?;
+            direct_open::retire_completed(&tx, previous)?;
         }
         save(&tx, &receipt)?;
         if let Some(draft) = draft {

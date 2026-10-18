@@ -1,18 +1,18 @@
 //! Q XuI8 interval generation; malformed/exhausted intervals fail closed.
 use super::*;
 
-pub(super) fn canonical(value: &str) -> Result<(), Error> {
+pub(in crate::canvas::edit) fn canonical(value: &str) -> Result<(), Error> {
     if value.is_empty() || value.len() > 256 || !value.bytes().all(|b| b.is_ascii_alphabetic()) {
         return Err(Error::Unsupported);
     }
     Ok(())
 }
-pub(super) fn base(value: &str) -> Result<&str, Error> {
+pub(in crate::canvas::edit) fn base(value: &str) -> Result<&str, Error> {
     let value = value.strip_suffix(":temp").unwrap_or(value);
     canonical(value)?;
     Ok(value)
 }
-pub(super) fn modern_id(value: &str) -> bool {
+pub(in crate::canvas::edit) fn modern_id(value: &str) -> bool {
     value.len() == 35
         && value.starts_with("temp:C:")
         && value.as_bytes()[7..10]
@@ -51,7 +51,10 @@ fn decrement(value: &str) -> String {
     }
     String::new()
 }
-pub(super) fn between(before: Option<&str>, after: Option<&str>) -> Result<String, Error> {
+pub(in crate::canvas::edit) fn between(
+    before: Option<&str>,
+    after: Option<&str>,
+) -> Result<String, Error> {
     for value in before.into_iter().chain(after) {
         canonical(value)?;
     }
@@ -87,7 +90,10 @@ pub(super) fn between(before: Option<&str>, after: Option<&str>) -> Result<Strin
     }
     Ok(format!("{result}:temp"))
 }
-pub(super) fn section_id(snapshot: &CanvasCollabSnapshot, suffix: &str) -> Result<String, Error> {
+pub(in crate::canvas::edit) fn section_id(
+    snapshot: &CanvasCollabSnapshot,
+    suffix: &str,
+) -> Result<String, Error> {
     if suffix.len() != 25
         || !suffix
             .bytes()

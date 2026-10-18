@@ -2,14 +2,17 @@ use super::*;
 use crate::slack_lists::rename::grouping;
 use super_platinum_core::slack_lists::ViewGroupingChoice;
 
-pub(super) fn action(state: Signal<ShellState>, visit: u64) -> Element {
+pub(super) fn action(state: Signal<ShellState>, _visit: u64) -> Element {
     let shell = state.read();
-    let selection = crate::slack_lists::rename::selection(&shell).unwrap_or_default();
+    let stamp = crate::slack_lists::refinement::toolbar::stamp(&shell);
     let selected = crate::slack_lists::rename::selected_view(&shell)
         .unwrap_or_default()
         .to_owned();
-    let disabled = !grouping::can_open(&shell);
-    rsx! {button{id:"slack-list-grouping",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,"data-grouping-view":"{selected}",title:"Change simple grouping for this shared Table or Board",onclick:move |_|grouping::open(state,visit,selection),"Group by"}}
+    let disabled = !crate::slack_lists::rename::local_refinement::can_open(
+        &shell,
+        crate::slack_lists::rename::local_refinement::Kind::Grouping,
+    );
+    rsx! {button{id:"slack-list-grouping",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,"data-grouping-view":"{selected}",title:"Group your current view",onclick:move |_|crate::slack_lists::rename::local_refinement::open_stamped(state,crate::slack_lists::rename::local_refinement::Kind::Grouping,stamp.clone()),"Group by"}}
 }
 fn label(choice: Option<&ViewGroupingChoice>, choices: &[(String, String)]) -> String {
     match choice {
@@ -28,6 +31,7 @@ pub(super) fn fields(
     visit: u64,
     p: grouping::Presentation,
     editable: bool,
+    local: bool,
 ) -> Element {
     let choice = p.choice;
     let field = match &p.desired {
@@ -45,7 +49,7 @@ pub(super) fn fields(
             for (id,name) in p.choices {option{value:"{id}",selected:field==id,"{name}"}}
         }
         p{id:"slack-list-grouping-current",class:"slack-list-editor-hint","Original: {original}. Current: {current}."}
-        p{class:"slack-list-editor-hint","Save changes this shared view for everyone with access. Stored values are kept. Choose None to remove grouping."}
+        p{class:"slack-list-editor-hint",if local {"Apply changes your current view. Use Save for everyone afterward to share it."} else {"Save changes this shared view for everyone with access. Stored values are kept. Choose None to remove grouping."}}
     }
 }
 #[cfg(test)]

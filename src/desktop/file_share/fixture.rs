@@ -19,6 +19,7 @@ use super_platinum_core::{
 use tokio::sync::oneshot;
 
 mod conversation;
+mod direct_open;
 pub(super) mod reopen;
 mod request;
 pub(super) use conversation::{Conversation, peer};
@@ -132,6 +133,8 @@ impl Inputs {
                     | "file-share-dm-narrow"
                     | "file-share-group-dm"
                     | "file-share-group-dm-narrow"
+                    | "file-share-new-dm"
+                    | "file-share-new-dm-narrow"
                     | "file-share-pressure"
                     | "file-share-pressure-narrow"
             )
@@ -226,6 +229,7 @@ struct Inner {
 }
 #[derive(Default)]
 struct Ledger {
+    direct_open: Option<Vec<(String, String)>>,
     reads: Vec<&'static str>,
     attempt: Option<String>,
     fields: Option<Vec<(String, String)>>,
@@ -509,7 +513,16 @@ impl Capability {
             return Err(Rejected::Request);
         }
         if ledger.reads
-            != if self.0.conversation == Conversation::Direct {
+            != if self.0.conversation == Conversation::NewDirect {
+                vec![
+                    "files.info",
+                    "users/info",
+                    "conversations.info",
+                    "files.info",
+                    "conversations.info",
+                    "users/info",
+                ]
+            } else if self.0.conversation == Conversation::Direct {
                 vec!["files.info", "conversations.info", "users/info"]
             } else {
                 vec!["files.info", "conversations.info"]

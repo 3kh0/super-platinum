@@ -439,3 +439,8 @@ mod archive;
 mod baseline;
 #[path = "accounting_writer.rs"]
 mod writer;
+
+#[path = "accounting_hosted.rs"]
+mod hosted;
+#[path = "accounting_inventory.rs"]
+mod inventory;

@@ -28,6 +28,7 @@ pub(super) fn load(
             .map_err(|_| Error::Storage)?
     };
     let mut out = Loaded {
+        hosted: hosted_files::inventory(&tx, account).map_err(|_| Error::Storage)?,
         managed: BTreeMap::new(),
         locals: BTreeMap::new(),
         uncommitted: pending.clone(),

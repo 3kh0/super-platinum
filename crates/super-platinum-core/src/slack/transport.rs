@@ -15,6 +15,8 @@ use super::client::{PreparedRequest, RequestBody, redact_secrets};
 mod canvas_collab;
 mod canvas_edit;
 mod draft_mutation;
+mod file_share_read;
+pub use file_share_read::FileShareReadGate;
 mod emoji_preferences;
 mod original_download;
 mod protected_draft;
@@ -26,8 +28,14 @@ mod list_column_precision;
 mod list_column_rename;
 pub use list_column_delete::ListColumnDeleteFailure;
 pub use list_column_precision::ListColumnPrecisionFailure;
+mod list_assignee;
+pub use list_assignee::ListAssigneeFailure;
+mod list_todo;
+pub use list_todo::ListReminderFailure;
 mod list_subitem;
 pub use list_subitem::ListSubitemFailure;
+mod list_board_lane_order;
+mod list_board_record_move;
 mod list_column_create;
 mod list_field_visibility;
 mod list_view_filter;
@@ -53,6 +61,7 @@ mod notification_preferences;
 mod notification_schedule;
 mod own_profile;
 mod own_profile_photo;
+mod own_profile_recording;
 mod presentation_notifications;
 mod profile_sections;
 mod read_preferences;
@@ -399,6 +408,17 @@ impl Transport {
         structured_block_response: bool,
         http: &wreq::Client,
     ) -> Result<Value, Error> {
+        self.execute_once_using_read_mode(req, structured_block_response, http, false)
+            .await
+    }
+
+    async fn execute_once_using_read_mode(
+        &self,
+        req: &PreparedRequest,
+        structured_block_response: bool,
+        http: &wreq::Client,
+        file_share_rate_limit: bool,
+    ) -> Result<Value, Error> {
         self.http()?;
         let req_url = req.url.clone();
         let mut builder = match req.method {
@@ -469,6 +489,15 @@ impl Transport {
                     }
                 })?
             };
+
+        // This narrow read owner must retain the actual header even when Slack
+        // reports a rate limit inside a successful HTTP response.
+        if file_share_rate_limit
+            && !structured_block_response
+            && file_share_read::rate_limited(req, &value)
+        {
+            return Err(Error::RateLimited { retry_after_secs });
+        }
 
         if structured_block_response {
             return if value.is_object() {
@@ -618,6 +647,15 @@ fn is_block_interaction_request(req: &PreparedRequest) -> bool {
                     | "/api/apps.home.dispatchOpenEvent"
                     | "/api/calendar.event.create"
                     | "/api/rooms.request"
+                    | "/api/apps.home.open"
+                    | "/api/apps.user.connection.submit"
+                    | "/api/apps.auth.external.start"
+                    | "/api/workflows.triggers.trip"
+                    | "/api/apps.auth.external.authMapping.update"
+                    | "/api/sfdc.integration.listOrgs"
+                    | "/api/sfdc.integration.authUser"
+                    | "/api/sfdc.integration.auth.loginUrl"
+                    | "/api/sfdc.integration.disconnectUser"
                     | "/api/blocks.suggestions"
                     | "/api/views.get"
                     | "/api/views.submit"
@@ -629,6 +667,10 @@ fn is_block_interaction_request(req: &PreparedRequest) -> bool {
 #[cfg(test)]
 #[path = "transport/block_interaction_tests.rs"]
 mod block_interaction_tests;
+
+#[cfg(test)]
+#[path = "transport/home_workflow_tests.rs"]
+mod home_workflow_tests;
 
 async fn read_suggestions_body(response: wreq::Response) -> Result<Value, Error> {
     let limit = crate::block_actions::external::MAX_SUGGESTIONS_BYTES;
@@ -1072,3 +1114,18 @@ mod disconnected_fixture;
 #[cfg(test)]
 #[path = "transport/calendar_tests.rs"]
 mod calendar_tests;
+
+#[cfg(test)]
+#[path = "transport/home_navigation_tests.rs"]
+mod home_navigation_tests;
+
+mod list_board_choice;
+pub use list_board_choice::ListBoardChoiceFailure;
+
+mod list_board_group_delete;
+
+mod list_view_refinement_save;
+pub use list_view_refinement_save::ListViewRefinementSaveFailure;
+
+mod list_default_view_preference;
+pub use list_default_view_preference::ListDefaultViewPreferenceFailure;

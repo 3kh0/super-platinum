@@ -3,6 +3,8 @@ use super::*;
 use serde_json::Value;
 use std::io::{self, Write};
 
+pub mod batch;
+
 pub const FILE_SHARE_NOTE_BYTES: usize = 256 * 1024;
 pub const FILE_SHARE_RESPONSE_BYTES: usize = 1024 * 1024;
 

@@ -6,6 +6,7 @@ pub(super) fn Conditions(
     visit: u64,
     p: filter::Presentation,
     editable: bool,
+    local: bool,
 ) -> Element {
     let mut add = use_signal(String::new);
     let structure = p.choice;
@@ -38,7 +39,7 @@ pub(super) fn Conditions(
     }
     }
     p{id:"slack-list-filter-current",class:"slack-list-editor-hint","Original: {original}. Current: {current}."}
-    p{class:"slack-list-editor-hint","Save changes this shared Table for everyone with access. All conditions must match. Only currently loaded items can be filtered here; stored values are kept."}
+    p{class:"slack-list-editor-hint",if local {"Apply filters your current view. All conditions must match. Only currently loaded items can be filtered here; stored values are kept."} else {"Save changes this shared Table for everyone with access. All conditions must match. Only currently loaded items can be filtered here; stored values are kept."}}
     }
 }
 fn row_fields(

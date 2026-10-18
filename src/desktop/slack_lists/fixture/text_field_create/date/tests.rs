@@ -110,7 +110,7 @@ fn actual_calendar_worker_noops_lost_response_clear_ack_and_owned_reads() {
         editor::begin_save(&mut shell, g, CellEditValue::Date(None))
             .err()
             .unwrap(),
-        "This value cannot be saved. Check the value and choices."
+        "This date cannot be saved. Check the date and your current access."
     );
     assert_eq!(snapshot(&shell).unwrap(), before);
     check(&shell, 0);
@@ -232,4 +232,61 @@ fn missing_calendar_is_known_empty_not_checkbox_unknown_and_owner_retirement_ref
     shell.core.account_epoch += 1;
     assert!(snapshot(&shell).is_err());
     assert!(preflight(&mut shell, &a, &data).is_err());
+}
+
+#[test]
+fn date_observer_requires_task_custody_and_admitted_saving_before_recording_preflight() {
+    let mut shell = setup();
+    let generation = open(&mut shell);
+    let attempt = editor::begin_save(
+        &mut shell,
+        generation,
+        CellEditValue::Date(Some("2028-02-29".into())),
+    )
+    .unwrap();
+    let canonical = loaded(shell.slack_lists.fixture.as_ref().unwrap());
+    let generic = CellEdit::capture(
+        &canonical.document,
+        &canonical.records,
+        ROW,
+        COLUMN,
+        canonical.allow_lists.as_deref(),
+        canonical.personal_task_lists.as_ref(),
+        CellEditValue::Date(Some("2028-02-29".into())),
+    )
+    .unwrap();
+    // Identical request cells do not establish the typed preference custody.
+    assert_eq!(attempt.edit.cells(), generic.cells());
+    assert_ne!(attempt.edit, generic);
+    let preparing = snapshot(&shell).unwrap();
+    assert_eq!(preparing["operation"]["phase"], "Preparing");
+    assert_eq!(
+        preflight(&mut shell, &attempt, &canonical).unwrap_err(),
+        "Actual typed Date custody or admitted phase differs"
+    );
+    assert_eq!(snapshot(&shell).unwrap(), preparing);
+    validate_edit(&mut shell, &attempt, canonical.clone()).unwrap();
+    let saving = snapshot(&shell).unwrap();
+    assert_eq!(saving["operation"]["phase"], "Saving");
+    let mut missing_policy = canonical.clone();
+    missing_policy.personal_task_lists = None;
+    assert_eq!(
+        preflight(&mut shell, &attempt, &missing_policy).unwrap_err(),
+        "Date preflight lacks observed task preferences"
+    );
+    assert_eq!(snapshot(&shell).unwrap(), saving);
+    let mut without_custody = attempt.clone();
+    without_custody.edit = generic;
+    assert_eq!(
+        preflight(&mut shell, &without_custody, &canonical).unwrap_err(),
+        "Actual typed Date custody or admitted phase differs"
+    );
+    assert_eq!(snapshot(&shell).unwrap(), saving);
+    preflight(&mut shell, &attempt, &canonical).unwrap();
+    let admitted = snapshot(&shell).unwrap();
+    assert_eq!(admitted["preflights"].as_array().unwrap().len(), 1);
+    assert_eq!(admitted["preflights"][0]["phase"], "Saving");
+    assert_eq!(admitted["preflights"][0]["attempt"], attempt_json(&attempt));
+    assert_eq!(admitted["requests"], json!([]));
+    assert_eq!(admitted["operation"], saving["operation"]);
 }

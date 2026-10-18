@@ -338,12 +338,31 @@ mod deadline_tests {
     use super::*;
     #[tokio::test]
     async fn actual_keyboard_deadline_bounds_slow_await_and_late_ready_result() {
+        struct DropProbe(std::sync::Arc<std::sync::atomic::AtomicBool>);
+        impl Drop for DropProbe {
+            fn drop(&mut self) {
+                self.0.store(true, std::sync::atomic::Ordering::SeqCst);
+            }
+        }
         let reached = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let polled = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let dropped = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let flag = reached.clone();
+        let polls = polled.clone();
+        let drop_probe = DropProbe(dropped.clone());
+        // Keep the sender held: scheduling cannot make this input ready when
+        // both a short deadline and a longer timer have elapsed before a poll.
+        let (held, mut receiver) = tokio::sync::oneshot::channel::<()>();
         let result = within_keyboard_deadline(
             tokio::time::Instant::now() + std::time::Duration::from_millis(2),
             async move {
-                tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+                let _drop_probe = drop_probe;
+                std::future::poll_fn(move |cx| {
+                    polls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    std::future::Future::poll(std::pin::Pin::new(&mut receiver), cx)
+                })
+                .await
+                .expect("the held sender must not finish before timeout");
                 flag.store(true, std::sync::atomic::Ordering::SeqCst);
                 Ok(json!({"ok":true}))
             },
@@ -351,6 +370,12 @@ mod deadline_tests {
         .await;
         assert!(result.is_err());
         assert!(!reached.load(std::sync::atomic::Ordering::SeqCst));
+        assert!(polled.load(std::sync::atomic::Ordering::SeqCst) > 0);
+        assert!(dropped.load(std::sync::atomic::Ordering::SeqCst));
+        assert!(
+            held.send(()).is_err(),
+            "timeout must drop its pending input"
+        );
         let result = within_keyboard_deadline(
             tokio::time::Instant::now() + std::time::Duration::from_millis(2),
             async {

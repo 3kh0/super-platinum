@@ -4,6 +4,7 @@
 use super::*;
 use serde_json::{Value, json};
 pub mod custom;
+pub mod recording;
 mod schema;
 pub use schema::OwnProfileSections;
 #[cfg(test)]

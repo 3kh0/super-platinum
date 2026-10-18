@@ -100,13 +100,30 @@ pub(super) fn matching(
     intent: &Intent,
     loaded: &network::Metadata,
 ) -> Option<String> {
-    let Intent::Create(intent) = intent else {
-        return None;
+    let id = match intent {
+        Intent::Create(intent) => intent.matching_addition(&loaded.document)?,
+        Intent::Refinement(intent)
+            if matches!(
+                intent.destination(),
+                super_platinum_core::slack_lists::ViewRefinementDestination::New { .. }
+            ) =>
+        {
+            // A positive ACK already selected its pending ID. Lost-response
+            // recovery is separately offered as noncausal navigation.
+            if entry(shell)
+                .and_then(|e| e.refinement_receipt)
+                .and_then(|r| r.acknowledged_id)
+                .is_some()
+            {
+                return None;
+            }
+            intent.observed_view_id(&loaded.document)?
+        }
+        _ => return None,
     };
     if loaded.personal.contains(&loaded.document.id) {
         return None;
     }
-    let id = intent.matching_addition(&loaded.document)?;
     projectable(shell, loaded, id).then(|| id.into())
 }
 /// Returned only after the exact-current synchronous navigation succeeded.
@@ -126,7 +143,7 @@ pub(super) fn open_available_shell(shell: &mut ShellState, serial: u64) -> Optio
     let e = entry(shell)?;
     if e.serial != serial
         || e.stage != Stage::Available
-        || e.target.creation().is_none()
+        || (e.target.creation().is_none() && !e.target.is_refinement())
         || !e.review.as_ref()?.navigation_current(shell)
     {
         return None;

@@ -442,7 +442,9 @@ pub(crate) fn realtime(
     }
     session.sync_forms();
     shell.overlay = Some(Overlay::AppModal);
-    session.loading
+    let loading = session.loading;
+    crate::app_home::about::modal_adopted(shell, raw);
+    loading
 }
 pub(crate) fn load_if_needed(state: Signal<ShellState>) {
     if state

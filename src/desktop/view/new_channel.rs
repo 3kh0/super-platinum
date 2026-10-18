@@ -84,11 +84,13 @@ fn CreateChannelDialog(mut state: Signal<ShellState>, onclose: EventHandler) -> 
                     busy.set(true);error.set(String::new());
                     dioxus::core::spawn_forever(async move{
                         if !ctx.current(&state.peek()){return;}
+                        let posting=crate::bootstrap::posting_ingress::capture(&state,&ctx.transport,&ctx.session);
                         let result=api::create_conversation(&ctx.transport,&ctx.client,&ctx.session,&target,&name,private).await;
                         if !ctx.current(&state.peek()){return;}
                         let alive=if let Ok(mut b)=busy.try_write(){*b=false;true}else{false};
                         match result{
                             Ok(channel)=>{
+                                posting.channels(&state,std::slice::from_ref(&channel));
                                 let id=channel.id.clone();
                                 {let mut shell=state.write();if let Some(w)=shell.core.workspaces.get_mut(&ctx.session.team_id){w.channels.entry(id.clone()).or_insert(channel);}shell.refresh_from_core();}
                                 crate::bootstrap::persist_workspace(&state,&ctx.session.team_id);

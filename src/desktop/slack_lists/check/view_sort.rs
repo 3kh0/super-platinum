@@ -4,13 +4,14 @@ use crate::slack_lists::rename::{self, Stage, fixture as rename_fixture};
 mod harness;
 mod oracle;
 mod ordered;
+mod refinement;
 mod rows;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     if !rename_fixture::sort_check_enabled() {
         return;
     }
     dioxus::core::spawn_forever(async move {
-        let receipt = match run(state, &desktop).await {
+        let receipt = match refinement::run(state, &desktop).await {
             Ok(v) => v,
             Err(error) => {
                 json!({"ok":false,"error":error,"failedLedger":rename_fixture::snapshot(&state.peek()).ok(),"failedDocument":document(state).ok(),"failedPopulation":population(state).ok()})
