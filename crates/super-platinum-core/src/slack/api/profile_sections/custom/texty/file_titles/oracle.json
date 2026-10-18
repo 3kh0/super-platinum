@@ -1,0 +1,790 @@
+{
+  "cases": [
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "Café plan",
+        "name": "Fallback"
+      },
+      "label": "Café plan"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Café plan",
+        "name": "Fallback"
+      },
+      "label": "Café plan"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "Café 🚀",
+        "name": "Fallback"
+      },
+      "label": "Café 🚀"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Café 🚀",
+        "name": "Fallback"
+      },
+      "label": "Café 🚀"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "  draft  ",
+        "name": "Fallback"
+      },
+      "label": "draft"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "  draft  ",
+        "name": "Fallback"
+      },
+      "label": "draft"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a  b",
+        "name": "Fallback"
+      },
+      "label": "a  b"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a  b",
+        "name": "Fallback"
+      },
+      "label": "a b"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a   b",
+        "name": "Fallback"
+      },
+      "label": "a   b"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a   b",
+        "name": "Fallback"
+      },
+      "label": "a  b"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a\tb",
+        "name": "Fallback"
+      },
+      "label": "a\tb"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a\tb",
+        "name": "Fallback"
+      },
+      "label": "ab"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a\nb",
+        "name": "Fallback"
+      },
+      "label": "a\nb"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a\nb",
+        "name": "Fallback"
+      },
+      "label": "a\nb"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a\n\nb",
+        "name": "Fallback"
+      },
+      "label": "a\n\nb"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a\n\nb",
+        "name": "Fallback"
+      },
+      "label": "a\n\nb"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a\n\n\nb",
+        "name": "Fallback"
+      },
+      "label": "a\n\n\nb"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a\n\n\nb",
+        "name": "Fallback"
+      },
+      "label": "a\n\n\n\nb"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a\r\nb",
+        "name": "Fallback"
+      },
+      "label": "a\r\nb"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a\r\nb",
+        "name": "Fallback"
+      },
+      "label": "a\nb"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a b c",
+        "name": "Fallback"
+      },
+      "label": "a\nb\nc"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a b c",
+        "name": "Fallback"
+      },
+      "label": "a\nb\nc"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "​Title​",
+        "name": "Fallback"
+      },
+      "label": "Title"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "​Title​",
+        "name": "Fallback"
+      },
+      "label": "Title"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "﻿Title﻿",
+        "name": "Fallback"
+      },
+      "label": "Title"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "﻿Title﻿",
+        "name": "Fallback"
+      },
+      "label": "Title"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "​﻿Title​­",
+        "name": "Fallback"
+      },
+      "label": "Title​"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "​﻿Title​­",
+        "name": "Fallback"
+      },
+      "label": "Title​"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a b",
+        "name": "Fallback"
+      },
+      "label": "a b"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a b",
+        "name": "Fallback"
+      },
+      "label": "a b"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": " Name ",
+        "name": "Fallback"
+      },
+      "label": "Name"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": " Name ",
+        "name": "Fallback"
+      },
+      "label": " Name "
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a &amp; b",
+        "name": "Fallback"
+      },
+      "label": "a & b"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a &amp; b",
+        "name": "Fallback"
+      },
+      "label": "a & b"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a &amp;amp; b",
+        "name": "Fallback"
+      },
+      "label": "a &amp; b"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a &amp;amp; b",
+        "name": "Fallback"
+      },
+      "label": "a & b"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "&quot;quoted&#39;",
+        "name": "Fallback"
+      },
+      "label": "\"quoted'"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "&quot;quoted&#39;",
+        "name": "Fallback"
+      },
+      "label": "\"quoted'"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "&#x27; &apos; &#160;",
+        "name": "Fallback"
+      },
+      "label": "&#x27; &apos; &#160;"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "&#x27; &apos; &#160;",
+        "name": "Fallback"
+      },
+      "label": "&#x27; &apos; &#160;"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a &nbsp;&nbsp; b",
+        "name": "Fallback"
+      },
+      "label": "a &nbsp;&nbsp; b"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a &nbsp;&nbsp; b",
+        "name": "Fallback"
+      },
+      "label": "a \n b"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "x",
+        "name": "Fallback"
+      },
+      "label": "x"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "x",
+        "name": "Fallback"
+      },
+      "label": "x"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "᠎x᠎",
+        "name": "Fallback"
+      },
+      "label": "᠎x᠎"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "᠎x᠎",
+        "name": "Fallback"
+      },
+      "label": "᠎x᠎"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "a/b (v2), next!",
+        "name": "Fallback"
+      },
+      "label": "a/b (v2), next!"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "a/b (v2), next!",
+        "name": "Fallback"
+      },
+      "label": "a/b (v2), next!"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "Title­",
+        "name": "Fallback"
+      },
+      "label": "Title"
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Title­",
+        "name": "Fallback"
+      },
+      "label": "Title"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "​",
+        "name": "Fallback"
+      },
+      "label": ""
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "​",
+        "name": "Fallback"
+      },
+      "error": "LocalizedFallback"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "­",
+        "name": "Fallback"
+      },
+      "label": ""
+    },
+    {
+      "kind": "canvas",
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "­",
+        "name": "Fallback"
+      },
+      "label": ""
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "",
+        "name": " ﻿ &amp; Name   "
+      },
+      "label": "&amp; Name"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": null,
+        "name": " ﻿ &amp; Name   "
+      },
+      "label": "&amp; Name"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": " \t\n ",
+        "name": " ﻿ &amp; Name   "
+      },
+      "label": "&amp; Name"
+    },
+    {
+      "kind": "list",
+      "raw": {
+        "id": "F00000001",
+        "mode": "list",
+        "title": "&amp;lt;tag&amp;gt;",
+        "name": " ﻿ &amp; Name   "
+      },
+      "label": "&lt;tag&gt;"
+    }
+  ],
+  "sanitation": [
+    {
+      "input": "Café plan",
+      "output": "Café plan"
+    },
+    {
+      "input": "Café 🚀",
+      "output": "Café 🚀"
+    },
+    {
+      "input": "  draft  ",
+      "output": "  draft  "
+    },
+    {
+      "input": "a  b",
+      "output": "a  b"
+    },
+    {
+      "input": "a   b",
+      "output": "a   b"
+    },
+    {
+      "input": "a\tb",
+      "output": "a\tb"
+    },
+    {
+      "input": "a\nb",
+      "output": "a\nb"
+    },
+    {
+      "input": "a\n\nb",
+      "output": "a\n\nb"
+    },
+    {
+      "input": "a\n\n\nb",
+      "output": "a\n\n\nb"
+    },
+    {
+      "input": "a\r\nb",
+      "output": "a\r\nb"
+    },
+    {
+      "input": "a b c",
+      "output": "a\nb\nc"
+    },
+    {
+      "input": "​Title​",
+      "output": "Title"
+    },
+    {
+      "input": "﻿Title﻿",
+      "output": "Title"
+    },
+    {
+      "input": "​﻿Title​­",
+      "output": "Title​"
+    },
+    {
+      "input": "a b",
+      "output": "a b"
+    },
+    {
+      "input": " Name ",
+      "output": " Name "
+    },
+    {
+      "input": "a &amp; b",
+      "output": "a &amp; b"
+    },
+    {
+      "input": "a &amp;amp; b",
+      "output": "a &amp;amp; b"
+    },
+    {
+      "input": "&quot;quoted&#39;",
+      "output": "&quot;quoted&#39;"
+    },
+    {
+      "input": "&#x27; &apos; &#160;",
+      "output": "&#x27; &apos; &#160;"
+    },
+    {
+      "input": "a &nbsp;&nbsp; b",
+      "output": "a &nbsp;&nbsp; b"
+    },
+    {
+      "input": "x",
+      "output": "x"
+    },
+    {
+      "input": "᠎x᠎",
+      "output": "᠎x᠎"
+    },
+    {
+      "input": "a/b (v2), next!",
+      "output": "a/b (v2), next!"
+    },
+    {
+      "input": "Title­",
+      "output": "Title"
+    },
+    {
+      "input": "​",
+      "output": ""
+    },
+    {
+      "input": "­",
+      "output": ""
+    }
+  ],
+  "trimCases": [
+    {
+      "input": "x",
+      "output": "x"
+    },
+    {
+      "input": "᠎x᠎",
+      "output": "᠎x᠎"
+    },
+    {
+      "input": "﻿x﻿",
+      "output": "x"
+    },
+    {
+      "input": "​x​",
+      "output": "​x​"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": "\u000bx\f",
+      "output": "x"
+    }
+  ],
+  "semanticCases": [
+    {
+      "input": "*bold*",
+      "tokens": [
+        "<B:START>",
+        "bold",
+        "<B:END>"
+      ]
+    },
+    {
+      "input": "_italic_",
+      "tokens": [
+        "<I:START>",
+        "italic",
+        "<I:END>"
+      ]
+    },
+    {
+      "input": "`code`",
+      "tokens": [
+        "<CODE:START>",
+        "code",
+        "<CODE:END>"
+      ]
+    },
+    {
+      "input": "<@U00000001>",
+      "tokens": [
+        "<@U00000001>"
+      ]
+    },
+    {
+      "input": "<#C00000001>",
+      "tokens": [
+        "<#C00000001>"
+      ]
+    },
+    {
+      "input": "<!date^1^{date}|fallback>",
+      "tokens": [
+        "<!date^1^{date}|fallback>"
+      ]
+    },
+    {
+      "input": ":wave:",
+      "tokens": [
+        "<EMOJI:COLONS :wave:>"
+      ]
+    },
+    {
+      "input": "<https://example.invalid|label>",
+      "tokens": [
+        "<LINK:START https://example.invalid>",
+        "label",
+        "<LINK:END>"
+      ]
+    },
+    {
+      "input": "＊bold＊",
+      "tokens": [
+        "<B:START>",
+        "bold",
+        "<B:END>"
+      ]
+    }
+  ]
+}

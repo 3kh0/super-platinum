@@ -1,6 +1,71 @@
 use super::*;
 
 #[test]
+fn aggregate_user_hint_is_fenced_with_channel_hint_and_retains_old_snapshot() {
+    let (mut s, owner, cookie) = setup();
+    let cold = s
+        .app_home
+        .workflow_ranking
+        .as_ref()
+        .unwrap()
+        .offline
+        .value
+        .clone();
+    let token = s
+        .app_home
+        .workflow_ranking
+        .as_mut()
+        .unwrap()
+        .offline
+        .reserve(Instant::now())
+        .unwrap();
+    complete_observation(
+        &mut s,
+        &owner,
+        &cookie,
+        Kind::Offline,
+        token,
+        Ok(Reply::Priorities(
+            serde_json::json!({"ok":true,"channel_priority_90d":{"CZ":1,"CA":1},"user_affinity":{"UZ":4,"UA":4}}),
+            Some(vec!["CZ".into(), "CA".into()]),
+            Some(vec!["UZ".into(), "UA".into()]),
+        )),
+    );
+    let slot = &s.app_home.workflow_ranking.as_ref().unwrap().offline;
+    assert!(!slot.malformed);
+    assert!(slot.pending.is_none());
+    assert_eq!(slot.value.processed_top_channels().unwrap(), ["CZ", "CA"]);
+    assert_eq!(slot.value.processed_top_users().unwrap(), ["UZ", "UA"]);
+    assert!(cold.processed_top_users().unwrap().is_empty());
+}
+
+#[test]
+fn aggregate_retired_or_incomplete_user_order_cannot_publish() {
+    let (mut s, owner, cookie) = setup();
+    let now = Instant::now();
+    let slot = &mut s.app_home.workflow_ranking.as_mut().unwrap().offline;
+    let old = slot.reserve(now).unwrap();
+    let new = slot.reserve(now + PENDING).unwrap();
+    let reply = || {
+        Reply::Priorities(
+            serde_json::json!({"ok":true,"user_affinity":{"UZ":4,"UA":4}}),
+            None,
+            Some(vec!["UZ".into()]),
+        )
+    };
+    complete_observation(&mut s, &owner, &cookie, Kind::Offline, old, Ok(reply()));
+    let slot = &s.app_home.workflow_ranking.as_ref().unwrap().offline;
+    assert_eq!(slot.pending.map(|p| p.0), Some(new));
+    assert!(!slot.malformed);
+    assert!(slot.value.processed_top_users().unwrap().is_empty());
+    complete_observation(&mut s, &owner, &cookie, Kind::Offline, new, Ok(reply()));
+    let slot = &s.app_home.workflow_ranking.as_ref().unwrap().offline;
+    assert!(slot.malformed);
+    assert!(slot.pending.is_none());
+    assert!(slot.value.processed_top_users().unwrap().is_empty());
+}
+
+#[test]
 fn ordered_offline_receipt_keeps_source_ties_and_snapshot_is_immutable() {
     let (mut s, owner, cookie) = setup();
     let cold = s

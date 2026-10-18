@@ -1,0 +1,211 @@
+[
+  {
+    "raw": {},
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": null
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": []
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        null
+      ]
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        false
+      ]
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        {}
+      ]
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": null
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": false
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": true
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": 0
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": 1
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 1
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": 12.25
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 12.25
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": ""
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": "no"
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": "12.5tail"
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 12.5
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": " -4e2suffix"
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": -400
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": "1e+"
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 1
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": "0x10"
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 0
+  },
+  {
+    "raw": {
+      "actions": [
+        {
+          "ts": " 12.5"
+        },
+        {
+          "ts": 999
+        }
+      ]
+    },
+    "expected": 12.5
+  }
+]

@@ -47,6 +47,7 @@ struct CachedSidebar {
 #[derive(serde::Serialize)]
 struct CachedSidebarRef<'a> {
     draft_presence: serde_json::Value,
+    directory_usergroups: serde_json::Value,
     posting_external_teams: serde_json::Value,
     locale: Option<&'a str>,
     team_plan: Option<&'a str>,
@@ -63,6 +64,8 @@ struct CachedSidebarRef<'a> {
 }
 const MAX_CACHED_MESSAGES_PER_CHANNEL: usize = 200;
 
+#[cfg(test)]
+mod directory_usergroups_tests;
 #[cfg(test)]
 mod emoji_preferences_tests;
 #[cfg(test)]
@@ -198,6 +201,7 @@ impl Cache {
             posting_metadata: Default::default(),
             directory_channels: Default::default(),
             directory_members: Default::default(),
+            directory_usergroups: Default::default(),
             cfm_payload: Default::default(),
             draft_presence: Default::default(),
             activity_unread_count: None,
@@ -274,6 +278,16 @@ impl Cache {
             let group: crate::slack::models::UserGroup = serde_json::from_str(&row?)?;
             ws.usergroups.insert(group.id.clone(), group);
         }
+        // Source order cannot be recovered from SQL row order or typed groups.
+        // Restore only a persisted history paired with these exact native rows.
+        let group_history = sidebar
+            .as_deref()
+            .and_then(|json| serde_json::from_str::<serde_json::Value>(json).ok())
+            .and_then(|value| value.get("directory_usergroups").cloned());
+        ws.directory_usergroups = crate::state::directory_usergroups::Store::restore(
+            group_history.as_ref(),
+            &ws.usergroups,
+        );
 
         let mut stmt = self
             .conn
@@ -374,6 +388,7 @@ impl Cache {
                 serde_json::to_string(&ws.frecency)?,
                 serde_json::to_string(&CachedSidebarRef {
                     draft_presence: ws.draft_presence.persisted(),
+                    directory_usergroups: ws.directory_usergroups.save(),
                     posting_external_teams: ws.posting_metadata.cached_external_teams(),
                     locale: ws.locale.as_deref(),
                     team_plan: ws.team_plan.as_deref(),

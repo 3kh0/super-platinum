@@ -341,7 +341,17 @@ pub(crate) fn realtime(s: &mut ShellState, team: &str, generation: u64, event: &
     let changed_self = matches!(event, RtEvent::UserChanged(user)
         if s.app_home.surface.as_ref().is_some_and(|h| h.owner.ctx.session.user_id == user.id));
     let about_names_changed = about::name_policy_changed(s, team, generation, event);
-    if (current_owner && (matches!(event, RtEvent::PreferencesChanged { .. }) || changed_self))
+    let profile_preferences_changed = crate::profile_edit::sections::active(s)
+        && s.core.active_team.as_deref() == Some(team)
+        && s.core
+            .workspaces
+            .get(team)
+            .is_some_and(|w| w.rt_generation == generation)
+        && (matches!(event, RtEvent::PreferencesChanged { .. })
+            || matches!(event, RtEvent::Unknown(raw) if matches!(raw.kind.as_str(),
+                "team_pref_change" | "enterprise_prefs_updated" | "team_join" | "team_leave")));
+    if profile_preferences_changed
+        || (current_owner && (matches!(event, RtEvent::PreferencesChanged { .. }) || changed_self))
         || about_names_changed
     {
         workflows::entity_names::invalidate(s, team);
@@ -351,6 +361,7 @@ pub(crate) fn realtime(s: &mut ShellState, team: &str, generation: u64, event: &
     };
     if current_owner
         && !about_names_changed
+        && !profile_preferences_changed
         && matches!(
             raw.kind.as_str(),
             "team_pref_change" | "enterprise_prefs_updated" | "team_join" | "team_leave"

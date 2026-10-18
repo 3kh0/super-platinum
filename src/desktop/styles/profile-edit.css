@@ -35,3 +35,14 @@
 .profile-section-tags,.profile-section-people {display:flex;flex-wrap:wrap;gap:4px;margin:4px 0;}
 .profile-edit-field button {min-height:var(--control-height);max-width:100%;overflow-wrap:anywhere;}
 .profile-section-tags button {display:inline-flex;align-items:center;gap:4px;}
+
+/* Ordinary channel suggestions remain inside the description scroll surface. */
+.profile-rich-completions {min-width:0;}
+.profile-rich-options {max-height:160px;overflow:auto;margin:4px 0;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-raised);padding:4px;}
+.profile-edit .profile-rich-option {display:flex;align-items:center;gap:8px;width:100%;min-height:var(--control-height);margin:0;padding:6px 8px;border-radius:var(--radius-sm);background:transparent;color:var(--text);text-align:left;font-size:var(--text-sm);}
+.profile-rich-option-label {min-width:0;overflow-wrap:anywhere;}
+.profile-rich-channel-icon {flex:0 0 16px;width:16px;height:16px;color:var(--muted);}
+.profile-edit .profile-rich-option:is(:hover,.selected) {background:var(--hover-overlay);}
+.profile-edit .profile-rich-option:focus-visible {outline-offset:-2px;}
+.profile-rich-status {margin:4px 0;font-size:var(--text-sm);color:var(--muted);overflow-wrap:anywhere;}
+@media(max-height:500px){.profile-rich-options {max-height:104px;}}

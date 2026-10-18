@@ -1,0 +1,1787 @@
+{
+  "cases": [
+    {
+      "query": "",
+      "normalized": "",
+      "matcher": "",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000001",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "S00000002",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "S00000003",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "S00000006",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "S00000007",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "S00000008",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "S00000009",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "S00000010",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "S00000001",
+          "score": 0,
+          "exact": null
+        }
+      ]
+    },
+    {
+      "query": "d",
+      "normalized": "d",
+      "matcher": "d",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000001",
+          "score": 0,
+          "exact": false
+        },
+        {
+          "id": "S00000001",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "query": "dr",
+      "normalized": "dr",
+      "matcher": "dr",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000001",
+          "score": 1,
+          "exact": false
+        },
+        {
+          "id": "S00000001",
+          "score": 1,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "query": "design",
+      "normalized": "design",
+      "matcher": "design",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000001",
+          "score": 0,
+          "exact": false
+        },
+        {
+          "id": "S00000001",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "query": "design review",
+      "normalized": "design review",
+      "matcher": "design review",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000001",
+          "score": 0,
+          "exact": true
+        },
+        {
+          "id": "S00000001",
+          "score": 0,
+          "exact": true
+        }
+      ]
+    },
+    {
+      "query": "@design-review",
+      "normalized": "@design-review",
+      "matcher": "@design-review",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "query": "design-review",
+      "normalized": "design-review",
+      "matcher": "design-review",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000001",
+          "score": 0,
+          "exact": false
+        },
+        {
+          "id": "S00000001",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "query": "cafe",
+      "normalized": "cafe",
+      "matcher": "cafe",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000002",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "query": "@cafe",
+      "normalized": "@cafe",
+      "matcher": "@cafe",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "query": "retained",
+      "normalized": "retained",
+      "matcher": "retained",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000003",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "query": "different",
+      "normalized": "different",
+      "matcher": "different",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "query": "third",
+      "normalized": "third",
+      "matcher": "third",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000003",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "query": "missing",
+      "normalized": "missing",
+      "matcher": "missing",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "query": "crew",
+      "normalized": "crew",
+      "matcher": "crew",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "query": "@crew",
+      "normalized": "@crew",
+      "matcher": "@crew",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000007",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "query": "@@crew",
+      "normalized": "@@crew",
+      "matcher": "@@crew",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "query": "stored",
+      "normalized": "stored",
+      "matcher": "stored",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000008",
+          "score": 0,
+          "exact": false
+        },
+        {
+          "id": "S00000010",
+          "score": 1,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "query": "@",
+      "normalized": "@",
+      "matcher": "@",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000007",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "query": "no handle",
+      "normalized": "no handle",
+      "matcher": "no handle",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000009",
+          "score": 0,
+          "exact": true
+        }
+      ]
+    },
+    {
+      "query": "empty stored",
+      "normalized": "empty stored",
+      "matcher": "empty stored",
+      "rows": [
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        },
+        {
+          "id": "S00000002",
+          "name": "Café Team",
+          "handle": "@cafe"
+        },
+        {
+          "id": "S00000003",
+          "name": "Different",
+          "_name_lc": "retained alias",
+          "handle": "third"
+        },
+        {
+          "id": "S00000004",
+          "name": "unknown",
+          "handle": "unknown",
+          "isUnknown": true
+        },
+        {
+          "id": "S00000005",
+          "name": "Retired",
+          "handle": "retired",
+          "date_delete": 1
+        },
+        {
+          "id": "S00000006",
+          "name": "",
+          "handle": ""
+        },
+        {
+          "id": "S00000007",
+          "name": "Visible name",
+          "handle": "@@crew",
+          "is_visible": false
+        },
+        {
+          "id": "S00000008",
+          "name": "Stored fallback",
+          "_name_lc": null,
+          "handle": "@"
+        },
+        {
+          "id": "S00000009",
+          "name": "No handle"
+        },
+        {
+          "id": "S00000010",
+          "name": "Empty stored",
+          "_name_lc": "",
+          "handle": false
+        },
+        {
+          "id": "S00000001",
+          "name": "Design Review",
+          "handle": "design-review"
+        }
+      ],
+      "expected": [
+        {
+          "id": "S00000010",
+          "score": 0,
+          "exact": true
+        }
+      ]
+    }
+  ],
+  "normalized": {
+    "": "",
+    "d": "d",
+    "dr": "dr",
+    "design": "design",
+    "design review": "design review",
+    "@design-review": "@design-review",
+    "design-review": "design-review",
+    "cafe": "cafe",
+    "@cafe": "@cafe",
+    "retained": "retained",
+    "different": "different",
+    "third": "third",
+    "missing": "missing",
+    "crew": "crew",
+    "@crew": "@crew",
+    "@@crew": "@@crew",
+    "stored": "stored",
+    "@": "@",
+    "no handle": "no handle",
+    "empty stored": "empty stored",
+    "Design Review": "design review",
+    "café team": "cafe team",
+    "Café Team": "cafe team",
+    "retained alias": "retained alias",
+    "Different": "different",
+    "@third": "@third",
+    "unknown": "unknown",
+    "@unknown": "@unknown",
+    "retired": "retired",
+    "Retired": "retired",
+    "@retired": "@retired",
+    "visible name": "visible name",
+    "Visible name": "visible name",
+    "stored fallback": "stored fallback",
+    "Stored fallback": "stored fallback",
+    "No handle": "no handle",
+    "Empty stored": "empty stored"
+  },
+  "lowercase": {
+    "Design Review": "design review",
+    "Café Team": "café team",
+    "Different": "different",
+    "unknown": "unknown",
+    "Retired": "retired",
+    "": "",
+    "Visible name": "visible name",
+    "Stored fallback": "stored fallback",
+    "No handle": "no handle",
+    "Empty stored": "empty stored"
+  },
+  "eligibility": [
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": null
+      },
+      "unified": false,
+      "foreign": false,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": null
+      },
+      "unified": false,
+      "foreign": true,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": 0
+      },
+      "unified": false,
+      "foreign": false,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": 0
+      },
+      "unified": false,
+      "foreign": true,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": 1
+      },
+      "unified": false,
+      "foreign": false,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": 1
+      },
+      "unified": false,
+      "foreign": true,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": "0"
+      },
+      "unified": false,
+      "foreign": false,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": "0"
+      },
+      "unified": false,
+      "foreign": true,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": ""
+      },
+      "unified": false,
+      "foreign": false,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": ""
+      },
+      "unified": false,
+      "foreign": true,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": false
+      },
+      "unified": false,
+      "foreign": false,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": false
+      },
+      "unified": false,
+      "foreign": true,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": null
+      },
+      "unified": true,
+      "foreign": false,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": null
+      },
+      "unified": true,
+      "foreign": true,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": 0
+      },
+      "unified": true,
+      "foreign": false,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": 0
+      },
+      "unified": true,
+      "foreign": true,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": 1
+      },
+      "unified": true,
+      "foreign": false,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": 1
+      },
+      "unified": true,
+      "foreign": true,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": "0"
+      },
+      "unified": true,
+      "foreign": false,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": "0"
+      },
+      "unified": true,
+      "foreign": true,
+      "allowed": false
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": ""
+      },
+      "unified": true,
+      "foreign": false,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": ""
+      },
+      "unified": true,
+      "foreign": true,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000001",
+        "date_delete": false
+      },
+      "unified": true,
+      "foreign": false,
+      "allowed": true
+    },
+    {
+      "row": {
+        "id": "S00000002",
+        "date_delete": false
+      },
+      "unified": true,
+      "foreign": true,
+      "allowed": true
+    }
+  ]
+}

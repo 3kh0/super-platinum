@@ -1,0 +1,305 @@
+use super::*;
+use serde_json::json;
+
+fn setup() -> (ShellState, Token) {
+    let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+    fixture::install_interaction(&mut shell);
+    let token = Token::capture(&shell).unwrap();
+    (shell, token)
+}
+fn response(id: &str, title: &str, mode: &str) -> Value {
+    json!({"ok":true,"file":{"id":id,"mode":mode,"filetype":mode,"created":1,"title":title}})
+}
+fn put(shell: &mut ShellState, token: &Token, raw: &Value) {
+    install(
+        shell,
+        token,
+        raw["file"]["id"].as_str().unwrap(),
+        socket(shell, token).unwrap(),
+        crate::file_events::snapshot_revision(shell),
+        raw,
+    )
+    .unwrap();
+}
+#[test]
+fn singleton_info_uses_original_defaults_without_search_options() {
+    let ctx = crate::scheduled::Context {
+        client: Default::default(),
+        transport: Arc::new(
+            super_platinum_core::slack::Transport::new("synthetic-cookie").unwrap(),
+        ),
+        epoch: 1,
+        session: super_platinum_core::config::WorkspaceSession {
+            team_id: "T00000001".into(),
+            user_id: "U00000001".into(),
+            enterprise_id: None,
+            name: "Fixture".into(),
+            url: "https://fixture.invalid".into(),
+            token: "synthetic".into(),
+        },
+    };
+    let req = request(&ctx, "FFILE0001");
+    assert!(req.url.split('?').next().unwrap().ends_with("/files.info"));
+    let super_platinum_core::slack::client::RequestBody::Form(body) = req.body else {
+        panic!("form request");
+    };
+    let mut body: BTreeMap<_, _> = body.into_iter().collect();
+    body.remove("token");
+    assert_eq!(
+        body,
+        BTreeMap::from([
+            ("file".into(), "FFILE0001".into()),
+            ("page".into(), "1".into()),
+            ("count".into(), "500".into()),
+            ("truncate".into(), "true".into()),
+        ])
+    );
+}
+#[test]
+fn title_observations_bind_socket_source_and_original_kind() {
+    let (mut shell, token) = setup();
+    let raw = response("FFILE0001", "Canonical title", "quip");
+    put(&mut shell, &token, &raw);
+    let observed = Observation::capture(&shell, &token, "FFILE0001").unwrap();
+    let wire =
+        json!({"type":"canvas","file_id":"FFILE0001","text":"wire URL is not a title","opaque":42});
+    assert_eq!(observed.label(&wire).unwrap(), "Canonical title");
+    assert!(
+        observed
+            .label(&json!({"type":"file","file_id":"FFILE0001"}))
+            .is_err()
+    );
+    put(
+        &mut shell,
+        &token,
+        &response("FFILE0002", "Unrelated title", "list"),
+    );
+    assert!(observed.current(&shell));
+    put(
+        &mut shell,
+        &token,
+        &response("FFILE0001", "Renamed title", "quip"),
+    );
+    assert!(!observed.current(&shell));
+    let next = Observation::capture(&shell, &token, "FFILE0001").unwrap();
+    assert_eq!(next.label(&wire).unwrap(), "Renamed title");
+    shell
+        .core
+        .workspaces
+        .get_mut(&token.owner.team)
+        .unwrap()
+        .rt_generation += 1;
+    assert!(!next.current(&shell));
+    assert!(Observation::capture(&shell, &token, "FFILE0001").is_err());
+}
+#[test]
+fn explicit_invalidation_keeps_preimage_and_stale_opening_cannot_mount() {
+    let (mut shell, token) = setup();
+    let id = "FFILE0001";
+    put(&mut shell, &token, &response(id, "Original title", "list"));
+    let blocks = vec![
+        json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":[
+            {"type":"text","text":"Keep "},{"type":"file","file_id":id,"text":"https://fixture.invalid/file","opaque":1}
+        ]}]}),
+    ];
+    fixture::mentions::set_blocks(&mut shell, blocks.clone());
+    let draft = shell.profile_edit.sections.draft.as_ref().unwrap();
+    let (visit, serial) = (draft.visit, draft.serial);
+    let opening = opening::begin(&mut shell, visit, serial, "long", 77).unwrap();
+    invalidate(&mut shell, &token.owner.team, id);
+    assert!(!opening::finish(&mut shell, opening));
+    assert!(Observation::capture(&shell, &token, id).is_err());
+    // A partial refresh keeps the actual prior title, rather than starting an
+    // invented empty store when invalidation retires the read witness.
+    put(
+        &mut shell,
+        &token,
+        &json!({"ok":true,"file":{"id":id,"mode":"list","created":2}}),
+    );
+    let observed = Observation::capture(&shell, &token, id).unwrap();
+    assert_eq!(
+        observed
+            .label(&blocks[0]["elements"][0]["elements"][1])
+            .unwrap(),
+        "Original title"
+    );
+    let opening = opening::begin(&mut shell, visit, serial, "long", 78).unwrap();
+    assert!(opening::finish(&mut shell, opening));
+    let labels = shell
+        .profile_edit
+        .sections
+        .draft
+        .as_ref()
+        .unwrap()
+        .rich
+        .as_ref()
+        .unwrap()
+        .labels
+        .clone();
+    put(&mut shell, &token, &response(id, "Later title", "list"));
+    assert_eq!(
+        shell
+            .profile_edit
+            .sections
+            .draft
+            .as_ref()
+            .unwrap()
+            .rich
+            .as_ref()
+            .unwrap()
+            .labels,
+        labels
+    );
+    assert!(
+        shell
+            .profile_edit
+            .sections
+            .draft
+            .as_ref()
+            .unwrap()
+            .form
+            .as_ref()
+            .unwrap()
+            .value("long")
+            == Some(&SectionValue::LongText(blocks))
+    );
+}
+#[test]
+fn wrong_id_account_and_deleted_file_never_supply_opening_labels() {
+    let (mut shell, token) = setup();
+    let generation = socket(&shell, &token).unwrap();
+    assert!(
+        install(
+            &mut shell,
+            &token,
+            "FFILE0001",
+            generation,
+            0,
+            &response("FFILE0002", "Title", "quip")
+        )
+        .is_err()
+    );
+    put(&mut shell, &token, &response("FFILE0001", "Title", "quip"));
+    let observed = Observation::capture(&shell, &token, "FFILE0001").unwrap();
+    shell
+        .core
+        .workspaces
+        .get_mut(&token.owner.team)
+        .unwrap()
+        .deleted_files
+        .insert("FFILE0001".into());
+    assert!(!observed.current(&shell));
+    shell
+        .core
+        .workspaces
+        .get_mut(&token.owner.team)
+        .unwrap()
+        .deleted_files
+        .clear();
+    shell.core.account_epoch += 1;
+    assert!(!observed.current(&shell));
+}
+
+#[test]
+fn local_metadata_changes_retire_inflight_reads_before_any_row_exists() {
+    let (mut shell, token) = setup();
+    let stamp = Arc::new(());
+    cache(&mut shell, &token)
+        .unwrap()
+        .changes
+        .insert("FFILE0001".into(), stamp.clone());
+    assert!(read_current(&shell, &token, "FFILE0001", &stamp));
+    invalidate(&mut shell, &token.owner.team, "FFILE0002");
+    assert!(read_current(&shell, &token, "FFILE0001", &stamp));
+    // The existing shared hook also protects reads begun before a confirmed
+    // local file rename, even when its realtime tracker has no pending read.
+    crate::file_events::invalidate(&mut shell, &token.owner.team, "FFILE0001");
+    assert!(!read_current(&shell, &token, "FFILE0001", &stamp));
+    assert!(
+        shell
+            .profile_edit
+            .sections
+            .file_titles
+            .as_ref()
+            .unwrap()
+            .store
+            .row("FFILE0001")
+            .is_err()
+    );
+}
+
+#[test]
+fn canvas_blocks_require_independent_runtime_observation_and_preserve_literal_title() {
+    let (mut shell, token) = setup();
+    let mut raw = response("FFILE0001", "Wrong file-title fallback", "quip");
+    raw["file"]["title_blocks"] = json!([{"type":"rich_text","opaque":"retained",
+    "elements":[{"type":"rich_text_section","elements":[
+        {"type":"text","text":":wave: &amp; ","style":{"bold":true}},
+        {"type":"text","text":"*literal*","opaque":17}
+    ]}]}]);
+    put(&mut shell, &token, &raw);
+    let wire =
+        json!({"type":"canvas","file_id":"FFILE0001","text":"wire URL","style":{"italic":true}});
+    let opening = Observation::capture(&shell, &token, "FFILE0001").unwrap();
+    assert_eq!(opening.label(&wire).unwrap(), "&amp; *literal*");
+
+    // A healthy file receipt cannot fill in an unobserved independent store.
+    shell.canvas_titles = Default::default();
+    assert!(!opening.current(&shell));
+    assert!(Observation::capture(&shell, &token, "FFILE0001").is_err());
+    let retained = shell
+        .profile_edit
+        .sections
+        .file_titles
+        .as_ref()
+        .unwrap()
+        .store
+        .row("FFILE0001")
+        .unwrap();
+    assert_eq!(
+        retained.source()["title_blocks"],
+        raw["file"]["title_blocks"]
+    );
+
+    // A genuinely new runtime can be observed, but cannot revive an old witness.
+    shell.canvas_titles = crate::canvas::quip_titles::State::fresh();
+    assert!(!opening.current(&shell));
+    let reopened = Observation::capture(&shell, &token, "FFILE0001").unwrap();
+    assert_eq!(reopened.label(&wire).unwrap(), "&amp; *literal*");
+
+    let mut renamed = raw.clone();
+    renamed["file"]["title_blocks"][0]["elements"][0]["elements"] =
+        json!([{"type":"text","text":":memo: Changed &amp;"}]);
+    put(&mut shell, &token, &renamed);
+    assert!(!reopened.current(&shell));
+    assert_eq!(reopened.label(&wire).unwrap(), "&amp; *literal*");
+    assert_eq!(
+        Observation::capture(&shell, &token, "FFILE0001")
+            .unwrap()
+            .label(&wire)
+            .unwrap(),
+        "Changed &amp;"
+    );
+}
+
+#[test]
+fn plain_canvas_and_whole_list_titles_do_not_claim_a_quip_dependency() {
+    let (mut shell, token) = setup();
+    shell.canvas_titles = Default::default();
+    for (id, mode, kind) in [
+        ("FFILE0001", "quip", "canvas"),
+        ("FFILE0002", "list", "file"),
+    ] {
+        let mut raw = response(id, "Plain title", mode);
+        if mode == "list" {
+            raw["file"]["title_blocks"] = json!([{"type":"future"}]);
+        }
+        put(&mut shell, &token, &raw);
+        let observed = Observation::capture(&shell, &token, id).unwrap();
+        assert_eq!(
+            observed.label(&json!({"type":kind,"file_id":id})).unwrap(),
+            "Plain title"
+        );
+        assert!(observed.quip.is_none());
+    }
+}

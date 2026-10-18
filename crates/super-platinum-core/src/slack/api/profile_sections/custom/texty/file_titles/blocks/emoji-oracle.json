@@ -1,0 +1,84 @@
+{
+  "cases": [
+    {
+      "input": ":wave: Plan",
+      "output": "Plan"
+    },
+    {
+      "input": ":wave::tada: Plan",
+      "output": ":tada: Plan"
+    },
+    {
+      "input": ":wave::skin-tone-2: Plan",
+      "output": "Plan"
+    },
+    {
+      "input": ":wave::skin-tone-2-6: Plan",
+      "output": "Plan"
+    },
+    {
+      "input": ":wave::skin-tone-7: Plan",
+      "output": ":skin-tone-7: Plan"
+    },
+    {
+      "input": " :wave: Plan",
+      "output": " :wave: Plan"
+    },
+    {
+      "input": ":wave: ﻿Plan﻿",
+      "output": "Plan"
+    },
+    {
+      "input": ":wave:",
+      "output": ""
+    },
+    {
+      "input": ":café: Plan",
+      "output": "Plan"
+    },
+    {
+      "input": ":漢字: Plan",
+      "output": "Plan"
+    },
+    {
+      "input": ":한글: Plan",
+      "output": "Plan"
+    },
+    {
+      "input": ":full＿＋９: Plan",
+      "output": "Plan"
+    },
+    {
+      "input": ":a-b_+': Plan",
+      "output": "Plan"
+    },
+    {
+      "input": ":😀: Plan",
+      "output": ":😀: Plan"
+    },
+    {
+      "input": "🚀 Plan",
+      "output": "🚀 Plan"
+    },
+    {
+      "input": ":bad.name: Plan",
+      "output": ":bad.name: Plan"
+    },
+    {
+      "input": ":wave:Plan",
+      "output": "Plan"
+    },
+    {
+      "input": ":wave:​Plan​",
+      "output": "​Plan​"
+    },
+    {
+      "input": ":wave: &amp; *literal*",
+      "output": "&amp; *literal*"
+    },
+    {
+      "input": ":memo: Changed &amp;",
+      "output": "Changed &amp;"
+    }
+  ]
+}

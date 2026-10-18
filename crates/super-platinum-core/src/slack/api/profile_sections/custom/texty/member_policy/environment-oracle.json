@@ -1,0 +1,338 @@
+[
+  {
+    "url": "https://slack.com/",
+    "expected": "A04T99UKKQE"
+  },
+  {
+    "url": "https://team.slack.com/",
+    "expected": "A04T99UKKQE"
+  },
+  {
+    "url": "https://team.dev.slack.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.dev12.slack.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.qa.slack.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.qa2.slack.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.staging.slack.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.staging-master.slack.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.staging-sandbox.slack.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.staging12.slack.com/",
+    "expected": "A04T99UKKQE"
+  },
+  {
+    "url": "https://team.enterprise.slack.com/",
+    "expected": "A04T99UKKQE"
+  },
+  {
+    "url": "https://team.enterprise.qa.slack.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.dev-gov-east.slack.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.dev-feature.beach.slack.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.dev.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.dev12.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.qa.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.qa2.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.staging.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.staging-master.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.staging-sandbox.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.staging12.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.enterprise.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.enterprise.qa.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.dev-gov-east.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://team.dev-feature.beach.slack-dev.com/",
+    "expected": "A014JPFMT8T"
+  },
+  {
+    "url": "https://slack-gov.com/",
+    "expected": "A1W53KSJQ"
+  },
+  {
+    "url": "https://team.slack-gov.com/",
+    "expected": "A1W53KSJQ"
+  },
+  {
+    "url": "https://team.dev.slack-gov.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev12.slack-gov.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.qa.slack-gov.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.qa2.slack-gov.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging.slack-gov.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging-master.slack-gov.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging-sandbox.slack-gov.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging12.slack-gov.com/",
+    "expected": "A1W53KSJQ"
+  },
+  {
+    "url": "https://team.enterprise.slack-gov.com/",
+    "expected": "A1W53KSJQ"
+  },
+  {
+    "url": "https://team.enterprise.qa.slack-gov.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev-gov-east.slack-gov.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev-feature.beach.slack-gov.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev12.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.qa.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.qa2.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging-master.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging-sandbox.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging12.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.enterprise.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.enterprise.qa.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev-gov-east.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev-feature.beach.slack-gov-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://slack.mil/",
+    "expected": "A1W53KSJQ"
+  },
+  {
+    "url": "https://team.slack.mil/",
+    "expected": "A1W53KSJQ"
+  },
+  {
+    "url": "https://team.dev.slack.mil/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev12.slack.mil/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.qa.slack.mil/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.qa2.slack.mil/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging.slack.mil/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging-master.slack.mil/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging-sandbox.slack.mil/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging12.slack.mil/",
+    "expected": "A1W53KSJQ"
+  },
+  {
+    "url": "https://team.enterprise.slack.mil/",
+    "expected": "A1W53KSJQ"
+  },
+  {
+    "url": "https://team.enterprise.qa.slack.mil/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev-gov-east.slack.mil/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev-feature.beach.slack.mil/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev12.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.qa.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.qa2.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging-master.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging-sandbox.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.staging12.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.enterprise.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.enterprise.qa.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev-gov-east.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  },
+  {
+    "url": "https://team.dev-feature.beach.slack-mil-dev.com/",
+    "expected": "A07846N4L"
+  }
+]

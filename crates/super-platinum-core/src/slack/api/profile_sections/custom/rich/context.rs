@@ -1,4 +1,4 @@
-//! Ordered user, usergroup and ordinary-channel labels captured with the UI.
+//! Ordered mention and whole-file labels captured with the UI.
 //! Adapted from profile-rich-mounted-v1-prep; no title/catalog acquisition lives here.
 use super::super::{Error, Value, invalid};
 use super::delta::Kind;
@@ -52,6 +52,57 @@ impl RichTextContext {
             .as_str()
             .filter(|id| !id.is_empty())
             .ok_or_else(|| invalid("This mention identity is unavailable."))?;
+        self.push(
+            token,
+            label.clone(),
+            Kind::Mention {
+                id: id.into(),
+                label,
+            },
+        )
+    }
+    /// Capture a canonical label for an ordinary whole canvas or file. The
+    /// caller owns the original file/title source; neither `text` nor `url` is
+    /// label authority. E1L/ inserts this label as a slug, and 3bvJ measures its
+    /// UTF-16 text, including every duplicate occurrence. No title is generated.
+    pub fn file(&mut self, token: &Value, label: String) -> Result<(), Error> {
+        let kind = token["type"]
+            .as_str()
+            .filter(|kind| matches!(*kind, "canvas" | "file"))
+            .ok_or_else(|| invalid("This is not a resolved whole-file token."))?;
+        let id = token["file_id"]
+            .as_str()
+            .filter(|id| !id.is_empty())
+            .ok_or_else(|| invalid("This file identity is unavailable."))?;
+        if token.get("style").is_some_and(|style| !style.is_object()) {
+            return Err(invalid("This rich-text element is malformed."));
+        }
+        // pND/ consumes these canvas fields. bFOf ignores them on a file;
+        // ignored future fields remain opaque, not new semantic permissions.
+        if kind == "canvas"
+            && (!absent_or_falsey(token.get("section_id"))
+                || !absent_or_falsey(token.get("is_skill_invocation")))
+        {
+            return Err(invalid("This canvas variant is not supported."));
+        }
+        let mut slug = serde_json::json!({"type":kind,"id":id,"label":label});
+        if let Some(url) = token.get("url") {
+            slug["url"] = url.clone();
+        }
+        if kind == "canvas"
+            && let Some(section) = token.get("section_id")
+        {
+            slug["secondaryObjectId"] = section.clone();
+        }
+        self.push(
+            token,
+            label,
+            Kind::Slug {
+                identity: slug.to_string(),
+            },
+        )
+    }
+    fn push(&mut self, token: &Value, label: String, kind: Kind) -> Result<(), Error> {
         let mut budget = (super::MAX_NODES, super::MAX_BYTES);
         super::bounded(token, 0, &mut budget)?;
         let key = token.to_string();
@@ -63,14 +114,7 @@ impl RichTextContext {
         if bytes > super::MAX_BYTES || self.sequence.len() >= super::MAX_NODES {
             return Err(invalid("The rich-text resolution is too large."));
         }
-        self.sequence.push((
-            key,
-            label.clone(),
-            Kind::Mention {
-                id: id.into(),
-                label,
-            },
-        ));
+        self.sequence.push((key, label, kind));
         self.bytes = bytes;
         Ok(())
     }
@@ -81,7 +125,7 @@ impl RichTextContext {
     ) -> Result<Option<(String, Kind)>, Error> {
         if !matches!(
             token["type"].as_str(),
-            Some("user" | "channel" | "usergroup")
+            Some("user" | "channel" | "usergroup" | "canvas" | "file")
         ) {
             return Ok(None);
         }
@@ -101,6 +145,15 @@ impl RichTextContext {
             return Err(invalid("The rich-text capture omitted resolved content."));
         }
         Ok(())
+    }
+}
+
+fn absent_or_falsey(value: Option<&Value>) -> bool {
+    match value {
+        None | Some(Value::Null | Value::Bool(false)) => true,
+        Some(Value::String(text)) => text.is_empty(),
+        Some(Value::Number(number)) => number.as_f64() == Some(0.0),
+        _ => false,
     }
 }
 

@@ -125,6 +125,7 @@ pub(super) fn vector(
         "user-navigation" => USER,
         "channel-navigation" => CHANNEL,
         "mpim-navigation" => MPIM,
+        "file-navigation" => super::file_features::KEYS,
         _ => &[],
     };
     GLOBAL
@@ -177,7 +178,7 @@ fn value(key: &str, e: &Value, now: f64, source: &str, n: &Normalize<'_>) -> Res
         "FRECENCY" => {
             if matches!(
                 kind,
-                "user-navigation" | "channel-navigation" | "mpim-navigation"
+                "user-navigation" | "channel-navigation" | "mpim-navigation" | "file-navigation"
             ) {
                 field("frecencyScore")
             } else {
@@ -589,6 +590,7 @@ fn value(key: &str, e: &Value, now: f64, source: &str, n: &Normalize<'_>) -> Res
         "MPIM_ALL_OTHER_MEMBERS_NAMES_HAVE_PREFIX_MATCH" => {
             bit("allOtherMemberNamesHavePrefixMatch")
         }
+        _ if kind == "file-navigation" => return super::file_features::value(key, e, now, n),
         _ => return Err(Error::UnsupportedFeature(key.to_owned())),
     };
     Ok(res)

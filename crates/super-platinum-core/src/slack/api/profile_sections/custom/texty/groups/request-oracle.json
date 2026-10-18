@@ -1,0 +1,42 @@
+[
+  {
+    "query": "A",
+    "expected": {
+      "query": "A",
+      "count": 25,
+      "org_wide": true
+    }
+  },
+  {
+    "query": " A & B ",
+    "expected": {
+      "query": " A & B ",
+      "count": 25,
+      "org_wide": true
+    }
+  },
+  {
+    "query": "some-group",
+    "expected": {
+      "query": "some-group",
+      "count": 25,
+      "org_wide": true
+    }
+  },
+  {
+    "query": "一",
+    "expected": {
+      "query": "一",
+      "count": 25,
+      "org_wide": true
+    }
+  },
+  {
+    "query": "🚀",
+    "expected": {
+      "query": "🚀",
+      "count": 25,
+      "org_wide": true
+    }
+  }
+]

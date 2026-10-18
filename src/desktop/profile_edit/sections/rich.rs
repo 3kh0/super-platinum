@@ -5,10 +5,12 @@ use crate::app_home::channel_fetches::canonical;
 use serde::Deserialize;
 use serde_json::Value;
 mod catalog;
+pub(crate) mod files;
 #[cfg(test)]
 mod group_tests;
 pub(crate) mod opening;
 pub(crate) mod query;
+pub(crate) use query::fixture_choices;
 mod recovery;
 pub(crate) mod search;
 pub(super) use recovery::lease::Lease as RecoveryLease;
@@ -31,6 +33,7 @@ pub(crate) struct Session {
     labels: String,
     notice: Option<String>,
     query: Option<query::Choices>,
+    preferences: Option<Arc<search::ranking::Preferences>>,
 }
 /// Shared recovery calls this only for an attempt whose original publication,
 /// account/session and socket witnesses are still current, before retiring it.
@@ -74,6 +77,13 @@ pub(crate) fn refresh_failed(
 }
 pub(super) fn notice(session: &Session) -> Option<String> {
     session.notice.clone()
+}
+pub(crate) fn has_files(blocks: &[Value]) -> bool {
+    collect(blocks).is_ok_and(|tokens| {
+        tokens
+            .iter()
+            .any(|raw| matches!(raw["type"].as_str(), Some("file" | "canvas")))
+    })
 }
 pub(crate) fn open(state: Signal<ShellState>, visit: u64, serial: u64, id: &str, key: u64) -> bool {
     open_with_recovery(state, visit, serial, id, key, false)
@@ -141,6 +151,16 @@ pub(crate) fn labels(
     let session = d.rich.as_ref()?;
     (current(shell, &d.token, visit, serial) && session.id == id && session.key == key)
         .then(|| session.labels.clone())
+}
+pub(crate) fn mount_current(shell: &ShellState, visit: u64, serial: u64, key: u64) -> bool {
+    editable(shell, visit, serial)
+        && shell
+            .profile_edit
+            .sections
+            .draft
+            .as_ref()
+            .and_then(|d| d.rich.as_ref())
+            .is_some_and(|s| s.key == key)
 }
 pub(crate) fn cancel(mut state: Signal<ShellState>, visit: u64, serial: u64) {
     let mut shell = state.write();
@@ -319,6 +339,7 @@ mod tests {
             labels: "retained-labels".into(),
             notice: None,
             query: None,
+            preferences: None,
         });
         let owner = pane.token.owner.clone();
         (shell, visit, serial, owner)

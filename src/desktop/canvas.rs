@@ -5,6 +5,7 @@ pub(crate) mod comments;
 mod links;
 pub(crate) mod links_check;
 mod loader;
+pub(crate) mod quip_titles;
 use loader::load;
 pub(crate) mod surface;
 pub(crate) mod text;

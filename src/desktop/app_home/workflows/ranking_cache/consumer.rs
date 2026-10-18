@@ -17,6 +17,7 @@ pub(in crate::app_home) fn capture_for(
         if !current(&s)
             || (crate::fixture::is_fixture()
                 && !crate::app_home::about::management::activity::members::fixture::enabled(&s))
+                && !crate::profile_edit::sections::fixture::completion::enabled(&s)
         {
             return Err(unavailable());
         }
@@ -153,7 +154,16 @@ fn refresh_for(
                 }
             }
         };
-        let result = if crate::fixture::is_fixture() {
+        let result = if crate::profile_edit::sections::fixture::completion::enabled(&state.peek()) {
+            crate::profile_edit::sections::fixture::completion::ranking_request(
+                &state.peek(),
+                &request,
+            )
+            .map(|(raw, keys)| match kind {
+                Kind::Model => Reply::Value(raw),
+                Kind::Offline => Reply::Offline(raw, keys),
+            })
+        } else if crate::fixture::is_fixture() {
             crate::app_home::about::management::activity::members::fixture::ranking_request(
                 &state.peek(),
                 &request,
@@ -170,13 +180,13 @@ fn refresh_for(
                 Kind::Offline => owner
                     .context
                     .transport
-                    .execute_autocomplete_offline_current(request, || {
+                    .execute_autocomplete_priorities_current(request, || {
                         pending(&state.peek(), &owner, &cookie, kind, token)
                     })
                     .await
                     .map(|response| {
-                        let (raw, keys) = response.into_parts();
-                        Reply::Offline(raw, keys)
+                        let (raw, channels, users) = response.into_parts();
+                        Reply::Priorities(raw, channels, users)
                     }),
             }
         };

@@ -120,17 +120,21 @@ enum Kind {
 enum Reply {
     Value(Value),
     Offline(Value, Option<Vec<String>>),
+    Priorities(Value, Option<Vec<String>>, Option<Vec<String>>),
 }
 impl Reply {
     fn raw(self) -> Value {
         match self {
-            Self::Value(raw) | Self::Offline(raw, _) => raw,
+            Self::Value(raw) | Self::Offline(raw, _) | Self::Priorities(raw, _, _) => raw,
         }
     }
     fn offline(self) -> Result<observed::Offline, observed::Error> {
         match self {
             Self::Value(raw) => observed::Offline::decode(&raw),
             Self::Offline(raw, keys) => observed::Offline::decode_ordered(&raw, keys.as_deref()),
+            Self::Priorities(raw, channels, users) => {
+                observed::Offline::decode_priorities(&raw, channels.as_deref(), users.as_deref())
+            }
         }
     }
 }
@@ -252,7 +256,7 @@ fn refresh(mut state: Signal<ShellState>, origin: Origin, kind: Kind, token: u64
                 .owner
                 .ctx
                 .transport
-                .execute_autocomplete_offline_current(request, || {
+                .execute_autocomplete_priorities_current(request, || {
                     let s = state.peek();
                     owner.current(&s)
                         && s.app_home.workflow_ranking.as_ref().is_some_and(|cache| {
@@ -265,8 +269,8 @@ fn refresh(mut state: Signal<ShellState>, origin: Origin, kind: Kind, token: u64
                 })
                 .await
                 .map(|response| {
-                    let (raw, keys) = response.into_parts();
-                    Reply::Offline(raw, keys)
+                    let (raw, channels, users) = response.into_parts();
+                    Reply::Priorities(raw, channels, users)
                 })
         } else {
             io::read(state, &origin, request).await.map(Reply::Value)

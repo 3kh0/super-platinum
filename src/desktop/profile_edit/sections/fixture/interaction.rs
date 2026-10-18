@@ -18,6 +18,7 @@ pub(in crate::profile_edit::sections) struct Interaction {
     pub reads: usize,
     pub outcome: Outcome,
     pub(super) mentions: Option<super::mentions::Identity>,
+    pub(super) completion: Option<super::completion::Model>,
     pending: Option<(SectionAttempt, Value)>,
 }
 
@@ -47,6 +48,7 @@ pub(crate) fn install_interaction(shell: &mut ShellState) {
         reads: 0,
         outcome: Outcome::Saved,
         mentions: None,
+        completion: None,
         pending: None,
     });
 }

@@ -109,6 +109,50 @@ pub fn item(raw: &Value, names: Names<'_>) -> Option<Value> {
     Some(Value::Object(result))
 }
 
+/// Rank an effective user-group record from the caller's captured group store.
+/// An S ID validates shape only: the caller still owns intake/source, policy,
+/// account and query custody. This helper does not authorize a mention.
+/// Group category identity cannot be changed by wire `facts` or shape aliases.
+pub fn group(raw: &Value) -> Option<Value> {
+    let id = raw["id"].as_str()?;
+    if !(9..=255).contains(&id.len())
+        || !id.starts_with('S')
+        || !id.bytes().all(|c| c.is_ascii_alphanumeric())
+        || ["name", "handle"]
+            .iter()
+            .any(|key| truth(&raw[*key]) && !raw[*key].is_string())
+    {
+        return None;
+    }
+    let mut result = item(
+        raw,
+        Names {
+            comparison: text(&raw["name"]),
+            mpim: None,
+            custom: None,
+            custom_allowed: false,
+        },
+    )?;
+    for key in [
+        "member",
+        "self",
+        "mpim",
+        "im",
+        "privateChannel",
+        "channel",
+        "conversation",
+        "channelMember",
+        "bot",
+        "slackbot",
+        "uslack",
+    ] {
+        result["facts"][key] = json!(false);
+    }
+    result["facts"]["channelType"] = Value::Null;
+    result["facts"]["userGroup"] = json!(true);
+    Some(result)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -150,5 +194,46 @@ mod tests {
             observed(json!({"id":"G12345678","is_mpim":true,"members":[],"is_ext_shared":true}));
         assert_eq!(b["facts"]["memberCount"], 2);
         assert_eq!(b["facts"]["external"], false);
+    }
+    #[test]
+    fn effective_groups_cannot_spoof_other_category_facts_or_shape_aliases() {
+        let raw = json!({"id":"S00000001","name":" Raw name ","handle":"@@raw",
+            "is_usergroup":true,"is_channel":true,"is_im":true,"is_mpim":true,
+            "is_group":true,"is_self":true,"is_bot":true,"opaque":{"keep":7},
+            "facts":{"member":true,"channel":true,"conversation":true,"comparisonName":"Injected"}});
+        let group = group(&raw).unwrap();
+        assert_eq!(group["name"], raw["name"]);
+        assert_eq!(group["handle"], raw["handle"]);
+        assert_eq!(group["opaque"], raw["opaque"]);
+        for key in [
+            "member",
+            "self",
+            "channel",
+            "privateChannel",
+            "conversation",
+            "im",
+            "mpim",
+            "bot",
+        ] {
+            assert_eq!(group["facts"][key], false, "{key}");
+        }
+        assert!(group["facts"]["channelType"].is_null());
+        assert_eq!(group["facts"]["userGroup"], true);
+        assert_eq!(group["facts"]["comparisonName"], " Raw name ");
+    }
+    #[test]
+    fn group_shape_validation_is_not_a_permission_or_active_filter() {
+        for raw in [
+            Value::Null,
+            json!({"id":"U00000001"}),
+            json!({"id":"Sshort"}),
+            json!({"id":"S00000001","name":{"unobserved":true}}),
+        ] {
+            assert!(group(&raw).is_none());
+        }
+        // Actual active/permission and source readiness are separate observations.
+        let row = group(&json!({"id":"S00000001","isUnknown":true,"date_delete":7})).unwrap();
+        assert_eq!(row["isUnknown"], true);
+        assert_eq!(row["date_delete"], 7);
     }
 }

@@ -144,3 +144,147 @@ fn original_scope_and_source_revision_remain_required() {
     store.changed();
     assert!(!witness.current(&store, "A", &owner(), 7, "Q", &native));
 }
+
+#[test]
+fn bounded_current_rows_survive_unrelated_pending_and_adopted_intake() {
+    let (mut store, mut native) = seeded();
+    let witness = store
+        .subset(
+            "A",
+            &owner(),
+            7,
+            "Q",
+            &BTreeSet::from(["UZLAST123".into()]),
+            &native,
+        )
+        .unwrap();
+    store
+        .enqueue(
+            "A",
+            &owner(),
+            Origin::Directory,
+            vec![row("UNEW12345", "New")],
+            json!({}),
+        )
+        .unwrap();
+    assert!(witness.current_rows(&store, "A", &owner(), 7, "Q", &native));
+    settle(&mut store, &mut native);
+    assert!(witness.current_rows(&store, "A", &owner(), 7, "Q", &native));
+    assert!(!witness.current(&store, "A", &owner(), 7, "Q", &native));
+    let clone = store.clone();
+    assert!(witness.current_rows(&clone, "A", &owner(), 7, "Q", &native));
+}
+#[test]
+fn bounded_current_rows_reject_requested_pending_source_native_and_scope_drift() {
+    for change in 0..7 {
+        let (mut store, mut native) = seeded();
+        let witness = store
+            .subset(
+                "A",
+                &owner(),
+                7,
+                "Q",
+                &BTreeSet::from(["UZLAST123".into()]),
+                &native,
+            )
+            .unwrap();
+        match change {
+            0 => store
+                .enqueue(
+                    "A",
+                    &owner(),
+                    Origin::Directory,
+                    vec![row("UZLAST123", "Z")],
+                    json!({}),
+                )
+                .unwrap(),
+            1 => {
+                native.get_mut("UZLAST123").unwrap().is_restricted = true;
+            }
+            2 => {
+                store.saved.as_mut().unwrap().records[0].source["opaque"] = json!("changed");
+            }
+            3 => {
+                store
+                    .saved
+                    .as_mut()
+                    .unwrap()
+                    .invalidated
+                    .insert("UZLAST123".into());
+            }
+            4 => {
+                store.saved.as_mut().unwrap().records[0].interaction = Some(false);
+            }
+            5 => {
+                // Rebinding only the record's typed witness cannot lend an old
+                // permission capture new native metadata with unchanged source.
+                native.get_mut("UZLAST123").unwrap().is_restricted = true;
+                store.saved.as_mut().unwrap().records[0].native_witness =
+                    serde_json::to_value(&native["UZLAST123"]).unwrap();
+            }
+            _ => store
+                .enqueue(
+                    "A",
+                    &owner(),
+                    Origin::Directory,
+                    vec![],
+                    json!({"UZLAST123":false}),
+                )
+                .unwrap(),
+        }
+        assert!(
+            !witness.current_rows(&store, "A", &owner(), 7, "Q", &native),
+            "change {change}"
+        );
+    }
+    let (store, native) = seeded();
+    let witness = store
+        .subset(
+            "A",
+            &owner(),
+            7,
+            "Q",
+            &BTreeSet::from(["UZLAST123".into()]),
+            &native,
+        )
+        .unwrap();
+    for (account, epoch, generation) in [("foreign", 7, "Q"), ("A", 8, "Q"), ("A", 7, "other")] {
+        assert!(!witness.current_rows(&store, account, &owner(), epoch, generation, &native));
+    }
+    let mut changed = owner();
+    changed.token = "rotated".into();
+    assert!(!witness.current_rows(&store, "A", &changed, 7, "Q", &native));
+}
+#[test]
+fn identical_rows_after_begin_or_cache_restore_do_not_reauthorize_old_subset() {
+    let (mut store, native) = seeded();
+    let witness = store
+        .subset(
+            "A",
+            &owner(),
+            7,
+            "Q",
+            &BTreeSet::from(["UZLAST123".into()]),
+            &native,
+        )
+        .unwrap();
+    let cache = store.cached().unwrap();
+    let restored = Store::restore(Some(&cache), &owner());
+    assert!(
+        restored
+            .subset(
+                "A",
+                &owner(),
+                7,
+                "Q",
+                &BTreeSet::from(["UZLAST123".into()]),
+                &native
+            )
+            .is_ok()
+    );
+    assert!(!witness.current_rows(&restored, "A", &owner(), 7, "Q", &native));
+    let original = store.saved.clone();
+    store.begin("A", &owner(), &BTreeSet::new()).unwrap();
+    store.saved = original; // identical rows deliberately isolate the lineage fence
+    assert!(!witness.current_rows(&store, "A", &owner(), 7, "Q", &native));
+}

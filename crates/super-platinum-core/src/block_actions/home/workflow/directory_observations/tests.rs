@@ -216,3 +216,19 @@ fn contradictory_success_envelopes_are_never_model_or_offline_observations() {
         0.4
     );
 }
+
+#[test]
+fn other_ctr_is_exact_observed_default_or_value_without_member_alias() {
+    for case in oracle()["offline"].as_array().unwrap() {
+        let observed = Offline::decode(&case["input"]).unwrap();
+        assert_eq!(
+            observed.other_ctr(),
+            case["expected"]["ctr"]["ims"].as_f64().unwrap()
+        );
+    }
+    let observed = Offline::decode(&json!({"ok":true,"user_ctr":0.1,"other_ctr":0.9})).unwrap();
+    assert_eq!(observed.entity_ctr(Entity::Member), 0.1);
+    assert_eq!(observed.other_ctr(), 0.9);
+    let zero = Offline::decode(&json!({"ok":true,"other_ctr":0})).unwrap();
+    assert_eq!(zero.other_ctr(), 0.0);
+}

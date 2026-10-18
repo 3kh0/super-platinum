@@ -1,0 +1,2714 @@
+[
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": false,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": false,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": null
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "T1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "list"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "filetype": "list",
+      "subtype": "poll"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "hosted",
+      "filetype": "pdf"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_ai_suggested": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isUnknown": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "isNonExistent": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "not_visible",
+      "filetype": "quip"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "file_access": "template_not_visible"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "is_tombstoned": true
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T1"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "USLACKBOT",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": false
+  },
+  {
+    "raw": {
+      "id": "F00000001",
+      "name": "File",
+      "mode": "quip",
+      "canvas_template_mode": "published",
+      "user": "U1",
+      "user_team": "T2"
+    },
+    "context": {
+      "current_team": "T1",
+      "enterprise": true,
+      "paid": true,
+      "creator_enterprise": "E1"
+    },
+    "allowed": true
+  }
+]

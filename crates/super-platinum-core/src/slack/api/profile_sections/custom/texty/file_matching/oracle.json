@@ -1,0 +1,2578 @@
+{
+  "cases": [
+    {
+      "type": "files",
+      "query": "",
+      "normalized": "",
+      "matcher": "",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000002",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000003",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": null
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "",
+      "normalized": "",
+      "matcher": "",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000002",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000003",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": null
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "",
+      "normalized": "",
+      "matcher": "",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000002",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000003",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": null
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "",
+      "normalized": "",
+      "matcher": "",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000002",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000003",
+          "score": 0,
+          "exact": null
+        },
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": null
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "d",
+      "normalized": "d",
+      "matcher": "d",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": false
+        },
+        {
+          "id": "F00000007",
+          "score": 1,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "d",
+      "normalized": "d",
+      "matcher": "d",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": false
+        },
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "d",
+      "normalized": "d",
+      "matcher": "d",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": false
+        },
+        {
+          "id": "F00000007",
+          "score": 1,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "d",
+      "normalized": "d",
+      "matcher": "d",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": false
+        },
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "dr",
+      "normalized": "dr",
+      "matcher": "dr",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "dr",
+      "normalized": "dr",
+      "matcher": "dr",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "dr",
+      "normalized": "dr",
+      "matcher": "dr",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "dr",
+      "normalized": "dr",
+      "matcher": "dr",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "design",
+      "normalized": "design",
+      "matcher": "design",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "design",
+      "normalized": "design",
+      "matcher": "design",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "design",
+      "normalized": "design",
+      "matcher": "design",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "design",
+      "normalized": "design",
+      "matcher": "design",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "@design-review",
+      "normalized": "@design-review",
+      "matcher": "@design-review",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "@design-review",
+      "normalized": "@design-review",
+      "matcher": "@design-review",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "@design-review",
+      "normalized": "@design-review",
+      "matcher": "@design-review",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "@design-review",
+      "normalized": "@design-review",
+      "matcher": "@design-review",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "cafe",
+      "normalized": "cafe",
+      "matcher": "cafe",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000002",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "cafe",
+      "normalized": "cafe",
+      "matcher": "cafe",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000002",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "cafe",
+      "normalized": "cafe",
+      "matcher": "cafe",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000002",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "cafe",
+      "normalized": "cafe",
+      "matcher": "cafe",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000002",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "retained",
+      "normalized": "retained",
+      "matcher": "retained",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "retained",
+      "normalized": "retained",
+      "matcher": "retained",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "retained",
+      "normalized": "retained",
+      "matcher": "retained",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "retained",
+      "normalized": "retained",
+      "matcher": "retained",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "third",
+      "normalized": "third",
+      "matcher": "third",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "third",
+      "normalized": "third",
+      "matcher": "third",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "third",
+      "normalized": "third",
+      "matcher": "third",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "third",
+      "normalized": "third",
+      "matcher": "third",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "missing",
+      "normalized": "missing",
+      "matcher": "missing",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "missing",
+      "normalized": "missing",
+      "matcher": "missing",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "missing",
+      "normalized": "missing",
+      "matcher": "missing",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "missing",
+      "normalized": "missing",
+      "matcher": "missing",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "ab",
+      "normalized": "ab",
+      "matcher": "ab",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000003",
+          "score": 1,
+          "exact": false
+        },
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "ab",
+      "normalized": "ab",
+      "matcher": "ab",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000003",
+          "score": 0,
+          "exact": false
+        },
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "ab",
+      "normalized": "ab",
+      "matcher": "ab",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000003",
+          "score": 1,
+          "exact": false
+        },
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "ab",
+      "normalized": "ab",
+      "matcher": "ab",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000003",
+          "score": 0,
+          "exact": false
+        },
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "https://fixture.invalid/plan",
+      "normalized": "https://fixture.invalid/plan",
+      "matcher": "https://fixture.invalid/plan",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "https://fixture.invalid/plan",
+      "normalized": "https://fixture.invalid/plan",
+      "matcher": "https://fixture.invalid/plan",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": []
+    },
+    {
+      "type": "files",
+      "query": "https://fixture.invalid/plan",
+      "normalized": "https://fixture.invalid/plan",
+      "matcher": "https://fixture.invalid/plan",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": true
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "https://fixture.invalid/plan",
+      "normalized": "https://fixture.invalid/plan",
+      "matcher": "https://fixture.invalid/plan",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000001",
+          "score": 0,
+          "exact": true
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "adg",
+      "normalized": "adg",
+      "matcher": "adg",
+      "queryHasLink": false,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000007",
+          "score": 2,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "adg",
+      "normalized": "adg",
+      "matcher": "adg",
+      "queryHasLink": false,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "adg",
+      "normalized": "adg",
+      "matcher": "adg",
+      "queryHasLink": true,
+      "ignoreFuzzy": false,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000007",
+          "score": 2,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "type": "files",
+      "query": "adg",
+      "normalized": "adg",
+      "matcher": "adg",
+      "queryHasLink": true,
+      "ignoreFuzzy": true,
+      "rows": [
+        {
+          "id": "F00000001",
+          "name": "design_plan",
+          "title": "Design Plan",
+          "permalink": "https://fixture.invalid/plan"
+        },
+        {
+          "id": "F00000002",
+          "name": "opaque",
+          "title": "Café Notes",
+          "external_url": "https://fixture.invalid/cafe"
+        },
+        {
+          "id": "F00000003",
+          "name": "alpha beta",
+          "title": "alpha beta"
+        },
+        {
+          "id": "F00000004",
+          "name": "plan",
+          "isUnknown": true
+        },
+        {
+          "id": "F00000005",
+          "title": "plan",
+          "notVisible": true
+        },
+        {
+          "id": "F00000006",
+          "name": "plan",
+          "dlp": true
+        },
+        {
+          "id": "F00000007",
+          "name": "abc def ghi",
+          "title": "separate"
+        }
+      ],
+      "expected": [
+        {
+          "id": "F00000007",
+          "score": 0,
+          "exact": false
+        }
+      ]
+    }
+  ],
+  "normalization": {
+    "design_plan": "design_plan",
+    "Design Plan": "design plan",
+    "": "",
+    "https://fixture.invalid/plan": "https://fixture.invalid/plan",
+    "opaque": "opaque",
+    "Café Notes": "cafe notes",
+    "https://fixture.invalid/cafe": "https://fixture.invalid/cafe",
+    "alpha beta": "alpha beta",
+    "plan": "plan",
+    "abc def ghi": "abc def ghi",
+    "separate": "separate"
+  },
+  "scope": "Inherited original2YmW matching only; visibility selectors in historical oracle are explicit fixture predicates, not production eligibility."
+}

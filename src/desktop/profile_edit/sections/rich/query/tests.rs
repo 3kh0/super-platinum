@@ -190,7 +190,10 @@ fn choices() -> Choices {
         revision: 2,
         consumed: false,
         source: None,
+        member_source: None,
+        group_source: None,
         cancel: tokio::sync::watch::channel(false).0,
+        ranking_current: None,
         values: vec![
             Completion {
                 value: json!({"type":"channel","channel_id":"C00000001"}),
@@ -277,4 +280,78 @@ fn selected_occurrence_keeps_prior_catalog_and_preserves_style_identity() {
             )
             .is_ok()
     );
+}
+
+#[test]
+fn same_label_members_retain_distinct_identity_and_original_opaque_occurrences() {
+    let mut choices = choices();
+    choices.values = ["UMEMBER01", "UMEMBER02"]
+        .into_iter()
+        .map(|id| Completion {
+            value: json!({"type":"user","user_id":id}),
+            label: "@Same name".into(),
+        })
+        .collect();
+    let original = json!({"type":"user","user_id":"UMEMBER01","future":{"keep":true}});
+    let mut catalog = catalog::Catalog::default();
+    catalog.insert(&original, "@Original label".into()).unwrap();
+    let selected = choices.consume(3, 2, 1, &mut catalog).unwrap();
+    assert_eq!(selected.value["user_id"], "UMEMBER02");
+    let mut styled = selected.value.clone();
+    styled["style"] = json!({"bold":true,"italic":true});
+    let (shell, _, _) = mounted();
+    let owner = Owner::capture(&shell).unwrap();
+    assert!(
+        catalog
+            .context(
+                &[
+                    catalog::Witness {
+                        value: original,
+                        label: "@Original label".into()
+                    },
+                    catalog::Witness {
+                        value: styled,
+                        label: selected.label.clone()
+                    },
+                ],
+                &owner
+            )
+            .is_ok()
+    );
+    assert!(
+        catalog
+            .context(
+                &[catalog::Witness {
+                    value: json!({"type":"user","user_id":"UMEMBER01"}),
+                    label: selected.label,
+                }],
+                &owner
+            )
+            .is_err()
+    );
+    assert!(choices.consume(3, 2, 0, &mut catalog).is_none());
+}
+
+#[test]
+fn mixed_same_label_choices_keep_category_and_group_identity() {
+    let mut choices = choices();
+    choices.values = [
+        json!({"type":"user","user_id":"UMEMBER01"}),
+        json!({"type":"usergroup","usergroup_id":"SGROUP001"}),
+        json!({"type":"usergroup","usergroup_id":"SGROUP002"}),
+    ]
+    .into_iter()
+    .map(|value| Completion {
+        value,
+        label: "@Same name".into(),
+    })
+    .collect();
+    let mut catalog = catalog::Catalog::default();
+    let selected = choices.consume(3, 2, 2, &mut catalog).unwrap();
+    assert_eq!(
+        selected.value,
+        json!({"type":"usergroup","usergroup_id":"SGROUP002"})
+    );
+    assert!(choices.consume(3, 2, 1, &mut catalog).is_none());
+    assert!(choices.consume(3, 2, 0, &mut catalog).is_none());
 }

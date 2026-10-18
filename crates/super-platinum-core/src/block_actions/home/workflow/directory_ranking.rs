@@ -5,6 +5,11 @@ use crate::composer_emoji::{history::History, model::Model, ranking::SimilarityC
 use serde_json::{Value, json};
 use std::cmp::Ordering;
 mod features;
+mod file_features;
+mod file_prepare;
+pub mod files;
+#[cfg(test)]
+mod group_tests;
 mod lists;
 mod prepare;
 #[cfg(test)]
@@ -97,6 +102,10 @@ fn comparison_name(row: &Value) -> String {
         string_or(&i["facts"]["comparisonName"], &i["name"]).to_lowercase()
     } else if flag(i, "member") {
         string_or(&i["facts"]["comparisonName"], &i["name"]).to_owned()
+    } else if flag(i, "userGroup") && truth(&i["is_usergroup"]) {
+        string_or(&i["handle"], &i["name"]).to_owned()
+    } else if flag(i, "file") && truth(&i["title"]) {
+        text(&i["title"]).to_owned()
     } else {
         text(&i["name"]).to_owned()
     }
@@ -161,8 +170,10 @@ pub(super) fn bonus_sum(v: &Value) -> f64 {
         "isNotChannelMember",
         "isChannelFromAnotherTeam",
         "isDeactivatedMember",
+        "isUserGroupOrKeyword",
         "userAffinity",
         "channelPriority90D",
+        "fileIsTopEngaged",
     ]
     .iter()
     .map(|k| number(&v[*k]))
@@ -263,10 +274,18 @@ fn bonus(
     if flag(item, "member") && (flag(item, "deleted") || flag(item, "deactivated")) {
         set("isDeactivatedMember", -50.0)
     }
+    // 4ucY applies this penalty to marked group suggestions independently of
+    // exact/fuzzy matches. Broadcast keywords are outside the admitted categories.
+    if flag(item, "userGroup") && truth(&item["is_usergroup"]) {
+        set("isUserGroupOrKeyword", -25.0)
+    }
     if s["experiments"]["autocomplete_affinity_score"] == "on"
         && truth(&s["teamId"])
         && truth(&s["offline"])
     {
+        if flag(item, "file") && truth(&row["isTopEngagedFile"]) {
+            set("fileIsTopEngaged", 25.0)
+        }
         if flag(item, "member") && number(&s["affinity"][text(&row["id"])]) > 0.0 {
             set("userAffinity", 50.0)
         }
@@ -310,9 +329,12 @@ pub fn rank_observed(
         return Err(Error::InvalidInput);
     }
     if groups.as_object().is_none_or(|groups| {
-        groups
-            .keys()
-            .any(|k| !matches!(k.as_str(), "members" | "channels" | "mpims" | "ims"))
+        groups.keys().any(|k| {
+            !matches!(
+                k.as_str(),
+                "members" | "channels" | "mpims" | "ims" | "userGroups" | "files"
+            )
+        })
     }) {
         return Err(Error::InvalidInput);
     }
@@ -323,13 +345,16 @@ pub fn rank_observed(
         ("channels", "channel"),
         ("mpims", "mpim"),
         ("ims", "ims"),
+        ("userGroups", "userGroup"),
+        ("files", "file"),
     ] {
         if let Some(values) = groups.get(group) {
             let values = values.as_array().ok_or(Error::InvalidInput)?;
             for row in values {
                 if !row.is_object()
                     || !row["item"].is_object()
-                    || !row["item"]["facts"].is_object()
+                    || (!matches!(group, "userGroups" | "files")
+                        && !row["item"]["facts"].is_object())
                     || row["item"]["id"].as_str().is_none()
                     || row["id"].as_str().is_none()
                     || row.get("lastSuggestionToken").is_some()
@@ -346,6 +371,27 @@ pub fn rank_observed(
                     return Err(Error::InvalidInput);
                 }
                 let mut r = row.clone();
+                if group == "userGroups" {
+                    r["item"] = super::directory_selectors::group(&row["item"])
+                        .ok_or(Error::InvalidInput)?;
+                    if r["id"] != r["item"]["id"] {
+                        return Err(Error::InvalidInput);
+                    }
+                    if truth(&context.state["teamId"])
+                        && truth(&context.state["offline"])
+                        && context.state["entityCtr"]["userGroup"]
+                            .as_f64()
+                            .is_none_or(|n| !n.is_finite())
+                    {
+                        return Err(Error::MissingObservation("userGroup entity CTR".into()));
+                    }
+                }
+                if group == "files" {
+                    r["item"] = files::item(&row["item"], context)?;
+                    if r["id"] != r["item"]["id"] {
+                        return Err(Error::InvalidInput);
+                    }
+                }
                 r["type"] = json!(kind);
                 r["_originalIndex"] = json!(rows.len());
                 let b = if group == "channels" {

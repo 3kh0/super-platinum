@@ -1,0 +1,344 @@
+{
+  "cases": [
+    {
+      "op": "add",
+      "args": [
+        "alpha"
+      ],
+      "now": 1000,
+      "result": null
+    },
+    {
+      "op": "contains",
+      "args": [
+        "alpha"
+      ],
+      "now": 28801000,
+      "result": true
+    },
+    {
+      "op": "contains",
+      "args": [
+        "alpha"
+      ],
+      "now": 28801001,
+      "result": true
+    },
+    {
+      "op": "contains",
+      "args": [
+        "alpha"
+      ],
+      "now": 28801001,
+      "result": false
+    },
+    {
+      "op": "add",
+      "args": [
+        "beta"
+      ],
+      "now": 28801001,
+      "result": null
+    },
+    {
+      "op": "contains",
+      "args": [
+        "beta"
+      ],
+      "now": 28801001,
+      "result": true
+    },
+    {
+      "op": "addAsPrefix",
+      "args": [
+        "abc"
+      ],
+      "now": 28801001,
+      "result": null
+    },
+    {
+      "op": "containsPrefixOf",
+      "args": [
+        "abcd"
+      ],
+      "now": 28801001,
+      "result": true
+    },
+    {
+      "op": "containsPrefixOf",
+      "args": [
+        "abcd"
+      ],
+      "now": 29701001,
+      "result": true
+    },
+    {
+      "op": "containsPrefixOf",
+      "args": [
+        "abcd"
+      ],
+      "now": 29701002,
+      "result": false
+    },
+    {
+      "op": "addAsPrefix",
+      "args": [
+        ""
+      ],
+      "now": 29701002,
+      "result": null
+    },
+    {
+      "op": "containsPrefixOf",
+      "args": [
+        "anything"
+      ],
+      "now": 29701002,
+      "result": false
+    },
+    {
+      "op": "containsPrefixOf",
+      "args": [
+        ""
+      ],
+      "now": 29701002,
+      "result": false
+    },
+    {
+      "op": "addAsPrefix",
+      "args": [
+        "Ab"
+      ],
+      "now": 29701002,
+      "result": null
+    },
+    {
+      "op": "containsPrefixOf",
+      "args": [
+        "abcd"
+      ],
+      "now": 29701002,
+      "result": false
+    },
+    {
+      "op": "containsPrefixOf",
+      "args": [
+        "Abcd"
+      ],
+      "now": 29701002,
+      "result": true
+    },
+    {
+      "op": "setRequestInFlight",
+      "args": [
+        "first"
+      ],
+      "now": 40000000,
+      "result": null
+    },
+    {
+      "op": "isRequestInFlight",
+      "args": [],
+      "now": 40000399,
+      "result": true
+    },
+    {
+      "op": "isRequestInFlight",
+      "args": [],
+      "now": 40000400,
+      "result": false
+    },
+    {
+      "op": "setRequestInFlight",
+      "args": [
+        "second"
+      ],
+      "now": 40000400,
+      "result": null
+    },
+    {
+      "op": "clearRequestInFlight",
+      "args": [
+        "first"
+      ],
+      "now": 40000400,
+      "result": null
+    },
+    {
+      "op": "isRequestInFlight",
+      "args": [],
+      "now": 40000400,
+      "result": true
+    },
+    {
+      "op": "clearRequestInFlight",
+      "args": [
+        "second"
+      ],
+      "now": 40000400,
+      "result": null
+    },
+    {
+      "op": "isRequestInFlight",
+      "args": [],
+      "now": 40000400,
+      "result": false
+    },
+    {
+      "op": "setRequestInFlight",
+      "args": [
+        "zero"
+      ],
+      "now": 0,
+      "result": null
+    },
+    {
+      "op": "isRequestInFlight",
+      "args": [],
+      "now": 1,
+      "result": false
+    },
+    {
+      "op": "setRequestInFlight",
+      "args": [
+        "backwards"
+      ],
+      "now": 1000,
+      "result": null
+    },
+    {
+      "op": "isRequestInFlight",
+      "args": [],
+      "now": 999,
+      "result": true
+    },
+    {
+      "op": "reset",
+      "args": [],
+      "now": 1000,
+      "result": null
+    },
+    {
+      "op": "isRequestInFlight",
+      "args": [],
+      "now": 1000,
+      "result": false
+    },
+    {
+      "op": "contains",
+      "args": [
+        "beta"
+      ],
+      "now": 1000,
+      "result": false
+    },
+    {
+      "op": "containsPrefixOf",
+      "args": [
+        "Abcd"
+      ],
+      "now": 1000,
+      "result": false
+    }
+  ],
+  "ranges": [
+    [
+      4352,
+      4607
+    ],
+    [
+      11904,
+      12255
+    ],
+    [
+      12272,
+      12287
+    ],
+    [
+      12289,
+      12543
+    ],
+    [
+      12592,
+      12687
+    ],
+    [
+      12736,
+      19903
+    ],
+    [
+      19968,
+      40959
+    ],
+    [
+      43360,
+      43391
+    ],
+    [
+      44032,
+      55295
+    ],
+    [
+      63744,
+      64255
+    ],
+    [
+      65072,
+      65103
+    ],
+    [
+      65280,
+      65519
+    ]
+  ],
+  "thresholds": [
+    {
+      "query": "",
+      "result": false
+    },
+    {
+      "query": "abc",
+      "result": false
+    },
+    {
+      "query": "abcd",
+      "result": true
+    },
+    {
+      "query": "   ",
+      "result": false
+    },
+    {
+      "query": "    ",
+      "result": true
+    },
+    {
+      "query": "a🙂",
+      "result": false
+    },
+    {
+      "query": "🙂🙂",
+      "result": true
+    },
+    {
+      "query": "𠀀",
+      "result": false
+    },
+    {
+      "query": "中",
+      "result": true
+    },
+    {
+      "query": "　",
+      "result": false
+    },
+    {
+      "query": "＠",
+      "result": true
+    },
+    {
+      "query": "é",
+      "result": false
+    }
+  ]
+}

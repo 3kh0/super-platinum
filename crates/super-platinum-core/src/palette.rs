@@ -349,6 +349,7 @@ mod tests {
             posting_metadata: Default::default(),
             directory_channels: Default::default(),
             directory_members: Default::default(),
+            directory_usergroups: Default::default(),
             cfm_payload: Default::default(),
             draft_presence: Default::default(),
             activity_unread_count: None,

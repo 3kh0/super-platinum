@@ -81,7 +81,10 @@ impl DirectoryEndpoint {
     ) -> Result<PreparedRequest, Error> {
         if !body.is_object()
             || !self.current(w, now)
-            || !matches!(path, "users/search" | "channels/search" | "mpims/search")
+            || !matches!(
+                path,
+                "users/search" | "channels/search" | "mpims/search" | "usergroups/search"
+            )
         {
             return Err(invalid());
         }
@@ -153,7 +156,12 @@ mod tests {
             now,
         )
         .unwrap();
-        for path in ["users/search", "channels/search", "mpims/search"] {
+        for path in [
+            "users/search",
+            "channels/search",
+            "mpims/search",
+            "usergroups/search",
+        ] {
             assert!(
                 endpoint
                     .request(

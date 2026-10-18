@@ -309,12 +309,16 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 let member_event = matches!(event.as_ref(), RtEvent::UserChanged(_))
                     || matches!(event.as_ref(), RtEvent::Unknown(raw) if raw.kind == "user_invalidated");
                 let member_event = member_event.then(|| event.clone());
-                apply_in_view(
+                let group_work =
+                    crate::usergroups::prepare_event(&mut shell, &team, generation, &event);
+                let group_tracked = group_work.is_some();
+                apply_in_view_with_groups(
                     &mut shell.core,
                     &team,
                     generation,
                     *event,
                     transcript_visible,
+                    !group_tracked,
                 );
                 let channel_work =
                     crate::app_home::channel_fetches::after_event(&mut shell, channel_event);
@@ -399,6 +403,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 // Queue while the accepted frame owner is still current, before
                 // the unrelated owned-draft await below can switch accounts.
                 crate::app_home::channel_fetches::resume(state, channel_work);
+                if let Some(work) = group_work {
+                    crate::usergroups::source::resume(state, work);
+                }
                 if external_history_event || draft_presence_changed {
                     crate::bootstrap::persist_workspace_metadata(&state, &team);
                 }
@@ -574,6 +581,17 @@ pub(crate) fn apply_in_view(
     generation: u64,
     event: RtEvent,
     transcript_visible: bool,
+) {
+    apply_in_view_with_groups(core, team, generation, event, transcript_visible, true);
+}
+
+fn apply_in_view_with_groups(
+    core: &mut super_platinum_core::CoreAppState,
+    team: &str,
+    generation: u64,
+    event: RtEvent,
+    transcript_visible: bool,
+    apply_groups: bool,
 ) {
     let Some(workspace) = core.workspaces.get(team) else {
         return;
@@ -861,11 +879,13 @@ pub(crate) fn apply_in_view(
                 }
                 return;
             }
-            super_platinum_core::slack::models::apply_group_event(
-                &mut workspace.usergroups,
-                &workspace.self_user_id,
-                &raw,
-            );
+            if apply_groups {
+                super_platinum_core::slack::models::apply_group_event(
+                    &mut workspace.usergroups,
+                    &workspace.self_user_id,
+                    &raw,
+                );
+            }
             if core.active_team.as_deref() == Some(team)
                 && matches!(
                     raw.kind.as_str(),

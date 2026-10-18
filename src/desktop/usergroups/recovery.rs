@@ -98,7 +98,20 @@ pub(crate) async fn recover(
     }
     let attempt = Attempt::capture(&state.peek(), team, ids)?;
     let received = read::acquire(state, &attempt, &current).await?;
-    let persist = attempt.publish(&mut state.write(), received.rows, &current)?;
+    let mut progress = Progress::default();
+    if !progress
+        .receive_observed(
+            state,
+            &attempt.request,
+            Ok(received.rows),
+            Some(received.ordered_rows),
+            &current,
+        )
+        .await
+    {
+        return Err(unavailable());
+    }
+    let persist = progress.should_persist();
     if persist && attempt.request.owner.current(&state.peek()) && current(&state.peek()) {
         crate::bootstrap::persist_workspace_metadata(&state, team);
     }

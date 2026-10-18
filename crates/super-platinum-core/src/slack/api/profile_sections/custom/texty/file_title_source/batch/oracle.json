@@ -1,0 +1,2353 @@
+{
+  "status": "PASS",
+  "cases": 14,
+  "sourceHashes": {
+    "4OY3": "cbabe86b5c78e1ea23131e6ac88f277cb6ab51a6b18caf7b0ed473ba643bdbb2",
+    "kbkl": "3919d39fcc0e17f4d03c94a1d8db5da928d71ef79e41d781d67cff0bfec7fd50"
+  },
+  "limits": "Actual original functions with explicit normal-file predicates and fixed team T1; no templates/status reset/persistence/runtime claim.",
+  "fields": [
+    "actions",
+    "canvas_metadata",
+    "canvas_template_mode",
+    "channel_map",
+    "channels",
+    "comments",
+    "comments_count",
+    "created",
+    "external_type",
+    "external_url",
+    "file_access",
+    "filetype",
+    "groups",
+    "highlight_type",
+    "huddle_summary_id",
+    "huddle_transcript_file_id",
+    "id",
+    "ims",
+    "isNonExistent",
+    "isTopEngagedFile",
+    "isUnknown",
+    "is_ai_suggested",
+    "is_deleted",
+    "is_external",
+    "is_hidden_by_limit",
+    "is_huddle_canvas",
+    "is_huddle_transcript_canvas",
+    "is_locked",
+    "is_shared",
+    "is_skill",
+    "is_starred",
+    "is_tombstoned",
+    "last_read",
+    "list_template_mode",
+    "mode",
+    "name",
+    "permalink",
+    "pretty_type",
+    "restriction_type",
+    "shares",
+    "subtype",
+    "timestamp",
+    "title",
+    "title_blocks",
+    "updated",
+    "user",
+    "user_team"
+  ],
+  "tests": [
+    {
+      "name": "new defaults and exact inherited selector fields",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "user": "U1",
+              "user_team": "T1",
+              "external_url": "https://fixture.invalid/e",
+              "last_read": "44",
+              "shares": {
+                "public": {
+                  "C1": [
+                    {
+                      "ts": "2"
+                    }
+                  ]
+                }
+              },
+              "facts": {
+                "forged": 1
+              }
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "external_url": "https://fixture.invalid/e",
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "last_read": "44",
+              "mode": "quip",
+              "shares": {
+                "public": {
+                  "C1": [
+                    {
+                      "ts": "2"
+                    }
+                  ]
+                }
+              },
+              "title": "Title",
+              "user": "U1",
+              "user_team": "T1"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "external_url": "https://fixture.invalid/e",
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "last_read": "44",
+              "mode": "quip",
+              "shares": {
+                "public": {
+                  "C1": [
+                    {
+                      "ts": "2"
+                    }
+                  ]
+                }
+              },
+              "title": "Title",
+              "user": "U1",
+              "user_team": "T1"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "duplicate same-prebatch action predecessor",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "20",
+                  "kind": "old"
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [
+                {
+                  "ts": "20",
+                  "kind": "old"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [
+                {
+                  "ts": "20",
+                  "kind": "old"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "actions": [
+                {
+                  "ts": "30",
+                  "kind": "first"
+                }
+              ]
+            },
+            {
+              "id": "F1",
+              "actions": [
+                {
+                  "ts": "10",
+                  "kind": "last"
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [
+                {
+                  "ts": "30",
+                  "kind": "first"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            },
+            {
+              "actions": [
+                {
+                  "ts": "20",
+                  "kind": "old"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [
+                {
+                  "ts": "20",
+                  "kind": "old"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "20",
+                  "kind": "old"
+                }
+              ],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": false,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862040
+            },
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "20",
+                  "kind": "old"
+                }
+              ],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": false,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862040
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "embedded rows follow roots and share original preimage",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "20"
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [
+                {
+                  "ts": "20"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [
+                {
+                  "ts": "20"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F2",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "canvas_metadata": {
+                "opaque": "keep",
+                "items": [
+                  {
+                    "kind": "ref",
+                    "file": {
+                      "id": "F1",
+                      "title": "embedded",
+                      "actions": [
+                        {
+                          "ts": "10"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "F1",
+              "title": "root",
+              "actions": [
+                {
+                  "ts": "30"
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "canvas_metadata": {
+                "opaque": "keep",
+                "items": [
+                  {
+                    "kind": "ref",
+                    "file": {
+                      "id": "F1"
+                    }
+                  }
+                ]
+              },
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F2",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            },
+            {
+              "actions": [
+                {
+                  "ts": "30"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "root"
+            },
+            {
+              "actions": [
+                {
+                  "ts": "20"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "embedded"
+            }
+          ],
+          "final": [
+            {
+              "actions": [
+                {
+                  "ts": "20"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "embedded"
+            },
+            {
+              "actions": [],
+              "canvas_metadata": {
+                "opaque": "keep",
+                "items": [
+                  {
+                    "kind": "ref",
+                    "file": {
+                      "id": "F1"
+                    }
+                  }
+                ]
+              },
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F2",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null,
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "20"
+                }
+              ],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": false,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862040
+            },
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "20"
+                }
+              ],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": false,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862040
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "metadata omitted removes only incoming override",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "canvas_metadata": {
+                "items": []
+              },
+              "permalink": "old",
+              "is_locked": true,
+              "groups": [
+                "G1"
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "canvas_metadata": {
+                "items": []
+              },
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_locked": true,
+              "is_shared": true,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "permalink": "old",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "canvas_metadata": {
+                "items": []
+              },
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_locked": true,
+              "is_shared": true,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "permalink": "old",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "title": "next"
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": true,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "next"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": true,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "next"
+            }
+          ],
+          "preimages": [
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "canvas_metadata": {
+                "items": []
+              },
+              "permalink": "old",
+              "is_locked": true,
+              "actions": [],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": true,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862040
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "actions empty retain prior and only first timestamp competes",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "10"
+                },
+                {
+                  "ts": "99"
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [
+                {
+                  "ts": "10"
+                },
+                {
+                  "ts": "99"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [
+                {
+                  "ts": "10"
+                },
+                {
+                  "ts": "99"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "actions": []
+            }
+          ],
+          "processed": [
+            {
+              "actions": [
+                {
+                  "ts": "10"
+                },
+                {
+                  "ts": "99"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [
+                {
+                  "ts": "10"
+                },
+                {
+                  "ts": "99"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "10"
+                },
+                {
+                  "ts": "99"
+                }
+              ],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": false,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862040
+            }
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "actions": [
+                {
+                  "ts": "11suffix"
+                },
+                {
+                  "ts": "999"
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [
+                {
+                  "ts": "11suffix"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [
+                {
+                  "ts": "11suffix"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "10"
+                },
+                {
+                  "ts": "99"
+                }
+              ],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": false,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862040
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "malformed numeric action prefix comparison retains previous",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "10"
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [
+                {
+                  "ts": "10"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [
+                {
+                  "ts": "10"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "actions": [
+                {
+                  "ts": "not-a-number"
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [
+                {
+                  "ts": "10"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [
+                {
+                  "ts": "10"
+                }
+              ],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "actions": [
+                {
+                  "ts": "10"
+                }
+              ],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": false,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862041
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "same team channel map union",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "channels": [
+                "C1",
+                "C2"
+              ],
+              "channel_map": {
+                "only": {
+                  "id": "C0",
+                  "team": "T1"
+                }
+              }
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channel_map": {
+                "only": {
+                  "id": "C0",
+                  "team": "T1"
+                }
+              },
+              "channels": [
+                "C0",
+                "C1",
+                "C2"
+              ],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": true,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channel_map": {
+                "only": {
+                  "id": "C0",
+                  "team": "T1"
+                }
+              },
+              "channels": [
+                "C0",
+                "C1",
+                "C2"
+              ],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": true,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "org shared channel map",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "channels": [],
+              "channel_map": {
+                "only": {
+                  "id": "C0",
+                  "team": "T2",
+                  "is_org_shared": true
+                }
+              }
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channel_map": {
+                "only": {
+                  "id": "C0",
+                  "team": "T2",
+                  "is_org_shared": true
+                }
+              },
+              "channels": [
+                "C0"
+              ],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channel_map": {
+                "only": {
+                  "id": "C0",
+                  "team": "T2",
+                  "is_org_shared": true
+                }
+              },
+              "channels": [
+                "C0"
+              ],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "foreign channel map ignored",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "channels": [
+                "C1"
+              ],
+              "channel_map": {
+                "only": {
+                  "id": "C0",
+                  "team": "T2"
+                }
+              }
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channel_map": {
+                "only": {
+                  "id": "C0",
+                  "team": "T2"
+                }
+              },
+              "channels": [
+                "C1"
+              ],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": true,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channel_map": {
+                "only": {
+                  "id": "C0",
+                  "team": "T2"
+                }
+              },
+              "channels": [
+                "C1"
+              ],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": true,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "numeric channel map source index order",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "channels": [
+                "C1"
+              ],
+              "channel_map": {
+                "2": {
+                  "id": "C2",
+                  "team": "T1"
+                },
+                "10": {
+                  "id": "C10",
+                  "team": "T1"
+                }
+              }
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channel_map": {
+                "2": {
+                  "id": "C2",
+                  "team": "T1"
+                },
+                "10": {
+                  "id": "C10",
+                  "team": "T1"
+                }
+              },
+              "channels": [
+                "C2",
+                "C10",
+                "C1"
+              ],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": true,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channel_map": {
+                "2": {
+                  "id": "C2",
+                  "team": "T1"
+                },
+                "10": {
+                  "id": "C10",
+                  "team": "T1"
+                }
+              },
+              "channels": [
+                "C2",
+                "C10",
+                "C1"
+              ],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": true,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "share and star computed on incoming collections",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "channels": [
+                "C1"
+              ],
+              "groups": [
+                "G1"
+              ],
+              "is_starred": true
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [
+                "C1"
+              ],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": true,
+              "is_starred": true,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [
+                "C1"
+              ],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": true,
+              "is_starred": true,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "channels": [],
+              "is_starred": null
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": true,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": true,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "channels": [
+                "C1"
+              ],
+              "is_starred": true,
+              "actions": [],
+              "is_shared": true,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862041
+            }
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "is_starred": false
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [
+                "G1"
+              ],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "channels": [],
+              "is_starred": true,
+              "actions": [],
+              "is_shared": false,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862041
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "comment count actual max and zero fallback",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "comments_count": 10,
+              "comments": [
+                {
+                  "id": "a"
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [
+                {
+                  "id": "a"
+                }
+              ],
+              "comments_count": 10,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [
+                {
+                  "id": "a"
+                }
+              ],
+              "comments_count": 10,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "comments_count": 0,
+              "comments": [
+                {
+                  "id": "b"
+                },
+                {
+                  "id": "c"
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [
+                {
+                  "id": "b"
+                },
+                {
+                  "id": "c"
+                }
+              ],
+              "comments_count": 10,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [
+                {
+                  "id": "b"
+                },
+                {
+                  "id": "c"
+                }
+              ],
+              "comments_count": 10,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            {
+              "comments": [
+                {
+                  "id": "a"
+                }
+              ],
+              "ims": [],
+              "groups": [],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "comments_count": 10,
+              "actions": [],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": false,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862041
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "title block predecessor survives omitted update",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "title_blocks": [
+                {
+                  "type": "rich_text",
+                  "elements": []
+                }
+              ]
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title",
+              "title_blocks": [
+                {
+                  "type": "rich_text",
+                  "elements": []
+                }
+              ]
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title",
+              "title_blocks": [
+                {
+                  "type": "rich_text",
+                  "elements": []
+                }
+              ]
+            }
+          ],
+          "preimages": [
+            null
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "title": "new"
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "new",
+              "title_blocks": [
+                {
+                  "type": "rich_text",
+                  "elements": []
+                }
+              ]
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "new",
+              "title_blocks": [
+                {
+                  "type": "rich_text",
+                  "elements": []
+                }
+              ]
+            }
+          ],
+          "preimages": [
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title",
+              "title_blocks": [
+                {
+                  "type": "rich_text",
+                  "elements": []
+                }
+              ],
+              "actions": [],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": false,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862041
+            }
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "title_blocks": []
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "new",
+              "title_blocks": []
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "new",
+              "title_blocks": []
+            }
+          ],
+          "preimages": [
+            {
+              "comments": [],
+              "ims": [],
+              "groups": [],
+              "id": "F1",
+              "is_tombstoned": false,
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "new",
+              "title_blocks": [
+                {
+                  "type": "rich_text",
+                  "elements": []
+                }
+              ],
+              "actions": [],
+              "channels": [],
+              "is_starred": false,
+              "is_shared": false,
+              "comments_count": 0,
+              "isNonExistent": false,
+              "isUnknown": false,
+              "localUpdated": 1792361862041
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "list facts and distinct user absent/null values",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "list",
+              "filetype": "list",
+              "created": 101,
+              "title": "Title",
+              "user": null,
+              "highlight_type": "list",
+              "isTopEngagedFile": true
+            },
+            {
+              "id": "F2",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 101,
+              "title": "Title"
+            }
+          ],
+          "processed": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "list",
+              "groups": [],
+              "highlight_type": "list",
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isTopEngagedFile": true,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "list",
+              "title": "Title",
+              "user": null
+            },
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F2",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "final": [
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "list",
+              "groups": [],
+              "highlight_type": "list",
+              "id": "F1",
+              "ims": [],
+              "isNonExistent": false,
+              "isTopEngagedFile": true,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "list",
+              "title": "Title",
+              "user": null
+            },
+            {
+              "actions": [],
+              "channels": [],
+              "comments": [],
+              "comments_count": 0,
+              "created": 101,
+              "filetype": "quip",
+              "groups": [],
+              "id": "F2",
+              "ims": [],
+              "isNonExistent": false,
+              "isUnknown": false,
+              "is_shared": false,
+              "is_starred": false,
+              "is_tombstoned": false,
+              "mode": "quip",
+              "title": "Title"
+            }
+          ],
+          "preimages": [
+            null,
+            null
+          ]
+        }
+      ]
+    }
+  ]
+}

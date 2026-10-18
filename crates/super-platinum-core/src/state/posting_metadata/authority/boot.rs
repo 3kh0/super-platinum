@@ -10,6 +10,7 @@ pub struct BootRead {
     previous_self: String,
     channel_revision: u64,
     channel_boot: Option<crate::state::directory_channels::BootLease>,
+    group_boot: Option<crate::state::directory_usergroups::BootLease>,
 }
 impl BootRead {
     pub fn begin(
@@ -32,6 +33,7 @@ impl BootRead {
             previous_self: workspace.self_user_id.clone(),
             channel_revision: workspace.channel_lifecycle.revision(),
             channel_boot: None,
+            group_boot: None,
         })
     }
     /// Normal full bootstrap observes actual raw directory ingress. Picker recovery
@@ -52,10 +54,16 @@ impl BootRead {
                 .directory_channels
                 .begin_full_boot(account, session, read.scope.epoch)
                 .ok();
+            let workspace = &core.workspaces[&session.team_id];
+            read.group_boot = workspace
+                .directory_usergroups
+                .begin_boot(&workspace.usergroups)
+                .ok();
         }
         Ok(read)
     }
     fn finish_full(&mut self, core: &mut CoreAppState) {
+        self.group_boot.take();
         if let Some(lease) = self.channel_boot.take()
             && let Some(account) = self.scope.account.as_deref()
             && let Some(workspace) = core.workspaces.get_mut(&self.scope.session.team_id)
@@ -188,6 +196,19 @@ impl BootRead {
         }
         let workspace = core.workspaces.get_mut(&team).unwrap();
         if apply_workspace {
+            if let Some(lease) = self.group_boot.take()
+                && let Some(account) = self.scope.account.as_deref()
+                && let Ok(commit) = workspace.directory_usergroups.observe_boot(
+                    lease,
+                    account,
+                    &self.scope.session,
+                    self.scope.epoch,
+                    &workspace.usergroups,
+                    &raw,
+                )
+            {
+                (workspace.directory_usergroups, workspace.usergroups) = commit.into_parts();
+            }
             if self.channel_boot.is_some()
                 && let Some(account) = self.scope.account.as_deref()
             {

@@ -19,6 +19,9 @@ use super_platinum_core::{
 
 pub(super) struct Received {
     pub(super) rows: Vec<UserGroup>,
+    // Source projection needs response order and duplicate IDs. The legacy
+    // typed fallback below deliberately keeps its existing first-row behavior.
+    pub(super) ordered_rows: Vec<Value>,
     // Original successful response payloads and failures survive until adoption.
     pub(super) raw: Vec<Value>,
     pub(super) errors: Vec<Arc<Error>>,
@@ -43,6 +46,7 @@ impl Part {
         self.errors.extend(other.errors);
     }
     fn finish(mut self) -> Received {
+        let ordered_rows = self.rows.clone();
         let mut seen = BTreeSet::new();
         let mut rows = Vec::new();
         for raw in self.rows {
@@ -60,6 +64,7 @@ impl Part {
         }
         Received {
             rows,
+            ordered_rows,
             raw: self.raw,
             errors: self.errors,
         }

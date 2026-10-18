@@ -3,9 +3,12 @@ use crate::state::{ChannelOpen, ShellState};
 use dioxus::prelude::*;
 use super_platinum_core::slack::api;
 
+mod events;
 mod hydration;
 mod ownership;
 pub(crate) mod recovery;
+pub(crate) mod source;
+pub(crate) use events::prepare as prepare_event;
 
 use crate::directory_member_fetches::Context;
 use ownership::{GroupRead, UsersRead};
@@ -84,19 +87,55 @@ pub(crate) async fn open(mut state: Signal<ShellState>, id: String) {
             api::fetch_usergroup_members(&owner.transport, &owner.client, &owner.session, &group)
                 .await
                 .ok()?;
+        let mut progress = hydration::Progress::default();
+        if !progress
+            .receive_observed(state, &request, Ok(vec![group.clone()]), None, &current)
+            .await
+        {
+            return None;
+        }
+        let installed =
+            GroupRead::capture(&state.peek(), owner.clone(), std::slice::from_ref(&id))?;
+        let membership = {
+            let mut shell = state.write();
+            if !current(&shell) || !installed.current(&shell) {
+                return None;
+            }
+            source::enqueue(
+                &mut shell,
+                owner.clone(),
+                super_platinum_core::state::directory_usergroups::Operation::Members {
+                    id: id.clone(),
+                    users: members.clone(),
+                    append: false,
+                    skip_org_count: false,
+                },
+            )
+        };
+        let tracked = match membership {
+            source::Admission::Tracked(work) => {
+                work.run(state, |shell| current(shell) && installed.current(shell))
+                    .await
+                    .ok()?;
+                true
+            }
+            source::Admission::Unavailable => false,
+        };
         group.users = members.clone();
         group.members_loaded = true;
         let users_request = {
             let mut shell = state.write();
-            if !current(&shell) || !request.current(&shell) {
+            if !current(&shell) || (!tracked && !installed.current(&shell)) {
                 return None;
             }
-            shell
-                .core
-                .workspaces
-                .get_mut(&team)?
-                .usergroups
-                .insert(id.clone(), group);
+            if !tracked {
+                shell
+                    .core
+                    .workspaces
+                    .get_mut(&team)?
+                    .usergroups
+                    .insert(id.clone(), group);
+            }
             let installed = GroupRead::capture(&shell, owner.clone(), std::slice::from_ref(&id))?;
             UsersRead::capture(&shell, installed, &members)?
         };
@@ -209,7 +248,10 @@ pub(crate) async fn hydrate(mut state: Signal<ShellState>, team: &str) {
             }
             continue;
         }
-        if !hydration.receive(&mut state.write(), &request, result) {
+        if !hydration
+            .receive_observed(state, &request, result, None, |_| true)
+            .await
+        {
             return;
         }
     }

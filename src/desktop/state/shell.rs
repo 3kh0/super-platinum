@@ -143,6 +143,7 @@ pub struct ShellState {
     pub viewer: Option<ViewerVm>,
     pub file_refresh: crate::file_preview::refresh::State,
     pub canvas: Option<CanvasTarget>,
+    pub(crate) canvas_titles: crate::canvas::quip_titles::State,
     pub(crate) canvas_checklist: crate::canvas::checklist::State,
     pub canvas_create: Option<crate::canvas_create::Draft>,
     pub canvas_creation: crate::canvas_create::Root,

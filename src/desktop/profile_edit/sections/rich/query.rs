@@ -10,8 +10,11 @@ pub(super) struct Choices {
     revision: u64,
     consumed: bool,
     source: Option<Arc<canonical::Canonical>>,
+    member_source: Option<Arc<crate::directory_member_fetches::search::Snapshot>>,
+    group_source: Option<Arc<super::search::group_source::Snapshot>>,
     values: Vec<Completion>,
     cancel: tokio::sync::watch::Sender<bool>,
+    ranking_current: Option<Arc<dyn Fn(&ShellState) -> bool + Send + Sync>>,
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -42,6 +45,12 @@ pub(crate) struct Lease {
 }
 
 impl Lease {
+    pub(super) fn member_generation(&self) -> String {
+        format!(
+            "profile-member-search-{}-{}-{}",
+            self.opening, self.key, self.sequence
+        )
+    }
     pub(super) fn context(&self, shell: &ShellState) -> Option<Arc<crate::scheduled::Context>> {
         self.current(shell)
             .then(|| context(shell, &self.token))
@@ -165,8 +174,11 @@ pub(crate) fn begin(
         revision: 0,
         consumed: false,
         source: None,
+        member_source: None,
+        group_source: None,
         values: Vec::new(),
         cancel,
+        ranking_current: None,
     });
     Some(lease)
 }
@@ -190,6 +202,9 @@ pub(crate) fn close(shell: &mut ShellState, lease: &Lease) -> bool {
     q.consumed = true;
     q.values.clear();
     q.source = None;
+    q.member_source = None;
+    q.group_source = None;
+    q.ranking_current = None;
     q.cancel.send_replace(true);
     true
 }
@@ -202,9 +217,24 @@ pub(crate) fn publish_channels(
     source: Arc<canonical::Canonical>,
     ids: &[String],
 ) -> Option<Presentation> {
+    publish_channels_checked(shell, lease, source, ids, None)
+}
+
+/// The matching/ranking controller retains its immutable input witness here;
+/// renderer rows never receive or reconstruct this private selection guard.
+pub(super) fn publish_channels_checked(
+    shell: &mut ShellState,
+    lease: &Lease,
+    source: Arc<canonical::Canonical>,
+    ids: &[String],
+    ranking_current: Option<Arc<dyn Fn(&ShellState) -> bool + Send + Sync>>,
+) -> Option<Presentation> {
     if !lease.current(shell)
         || !source.current_for(shell, &lease.token.owner.team)
         || ids.len() > 25
+        || ranking_current
+            .as_ref()
+            .is_some_and(|current| !current(shell))
     {
         return None;
     }
@@ -230,6 +260,105 @@ pub(crate) fn publish_channels(
     q.revision = revision;
     q.values = values;
     q.source = Some(source);
+    q.member_source = None;
+    q.group_source = None;
+    q.ranking_current = ranking_current;
+    Some(Presentation {
+        sequence: lease.sequence,
+        revision,
+        labels,
+    })
+}
+
+/// Member IDs come only from a ranked batch retaining its eligibility, names,
+/// renderer and source observations. Visible labels never carry token authority.
+pub(super) fn publish_members_checked(
+    shell: &mut ShellState,
+    lease: &Lease,
+    source: Arc<crate::directory_member_fetches::search::Snapshot>,
+    ids: &[String],
+    ranking_current: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
+) -> Option<Presentation> {
+    publish_mixed_checked(
+        shell,
+        lease,
+        source,
+        None,
+        &ids.iter()
+            .cloned()
+            .map(MentionId::Member)
+            .collect::<Vec<_>>(),
+        &std::collections::BTreeMap::new(),
+        ranking_current,
+    )
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub(super) enum MentionId {
+    Member(String),
+    Group(String),
+}
+
+/// Both categories share one ranked batch and one private selection receipt.
+/// Group display labels are exact NFC observations retained by that batch.
+pub(super) fn publish_mixed_checked(
+    shell: &mut ShellState,
+    lease: &Lease,
+    source: Arc<crate::directory_member_fetches::search::Snapshot>,
+    groups: Option<Arc<super::search::group_source::Snapshot>>,
+    ids: &[MentionId],
+    group_labels: &std::collections::BTreeMap<String, String>,
+    ranking_current: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
+) -> Option<Presentation> {
+    if !lease.current(shell)
+        || !source.current(shell)
+        || groups.as_ref().is_some_and(|source| !source.current(shell))
+        || !ranking_current(shell)
+        || ids.len() > 25
+        || ids.iter().collect::<std::collections::BTreeSet<_>>().len() != ids.len()
+    {
+        return None;
+    }
+    let values = ids
+        .iter()
+        .map(|selection| {
+            let id = match selection {
+                MentionId::Member(id) => id,
+                MentionId::Group(id) => {
+                    groups.as_ref()?.rows().iter().find(|row| row.id() == id)?;
+                    return Some(Completion {
+                        value: serde_json::json!({"type":"usergroup","usergroup_id":id}),
+                        label: group_labels.get(id)?.clone(),
+                    });
+                }
+            };
+            let row = source
+                .rows()
+                .iter()
+                .find(|r| r.source["id"].as_str() == Some(id.as_str()))?;
+            Some(Completion {
+                value: serde_json::json!({"type":"user","user_id":id}),
+                label: opening::member_label(&row.source).ok()?,
+            })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let q = shell
+        .profile_edit
+        .sections
+        .draft
+        .as_mut()?
+        .rich
+        .as_mut()?
+        .query
+        .as_mut()?;
+    let revision = q.revision.checked_add(1).filter(|r| *r < MAX_SAFE)?;
+    let labels = values.iter().map(|c| c.label.clone()).collect();
+    q.revision = revision;
+    q.values = values;
+    q.source = None;
+    q.member_source = Some(source);
+    q.group_source = groups;
+    q.ranking_current = Some(ranking_current);
     Some(Presentation {
         sequence: lease.sequence,
         revision,
@@ -257,10 +386,24 @@ pub(crate) fn choose(
         .as_ref()?
         .query
         .as_ref()?;
-    if !q
-        .source
-        .as_ref()?
-        .current_for(shell, &lease.token.owner.team)
+    let source_current = match (&q.source, &q.member_source) {
+        (Some(source), None) => {
+            q.group_source.is_none() && source.current_for(shell, &lease.token.owner.team)
+        }
+        (None, Some(source)) => {
+            source.current(shell)
+                && q.group_source
+                    .as_ref()
+                    .is_none_or(|groups| groups.current(shell))
+        }
+        _ => false,
+    };
+    if !source_current {
+        return None;
+    }
+    if q.ranking_current
+        .as_ref()
+        .is_some_and(|current| !current(shell))
     {
         return None;
     }
@@ -299,3 +442,24 @@ impl Choices {
 
 #[cfg(test)]
 mod tests;
+
+/// Closed native acceptance can identify equal-label rows without exposing
+/// selectable tokens in the product DOM or granting an insertion capability.
+pub(crate) fn fixture_choices(shell: &ShellState) -> Option<Value> {
+    if !fixture::completion::groups::enabled(shell) {
+        return None;
+    }
+    let q = shell
+        .profile_edit
+        .sections
+        .draft
+        .as_ref()?
+        .rich
+        .as_ref()?
+        .query
+        .as_ref()?;
+    if q.consumed {
+        return None;
+    }
+    Some(serde_json::json!({"sequence":q.sequence,"revision":q.revision,"values":q.values}))
+}

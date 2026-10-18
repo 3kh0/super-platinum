@@ -275,6 +275,7 @@ pub struct Workspace {
     /// Raw source history and canonical publication witnesses, separate from typed UI maps.
     pub directory_channels: directory_channels::Store,
     pub directory_members: directory_members::Store,
+    pub directory_usergroups: directory_usergroups::Store,
     pub cfm_payload: cfm_payload::Stores,
     /// Read-only unified-draft identities, separate from recoverable local composers.
     pub draft_presence: crate::drafts::presence::Presence,
@@ -326,6 +327,7 @@ impl Workspace {
             posting_metadata: Default::default(),
             directory_channels: Default::default(),
             directory_members: Default::default(),
+            directory_usergroups: directory_usergroups::Store::fresh(),
             cfm_payload: Default::default(),
             draft_presence: Default::default(),
             activity_unread_count: None,
@@ -963,6 +965,7 @@ pub mod cfm_payload;
 mod channel_lifecycle;
 pub mod directory_channels;
 pub mod directory_members;
+pub mod directory_usergroups;
 mod member_list_changes;
 pub mod posting_metadata;
 pub use channel_lifecycle::ChannelLifecycle;

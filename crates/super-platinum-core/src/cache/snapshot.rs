@@ -46,6 +46,7 @@ impl WorkspaceSnapshot {
         workspace.channels = source.channels.clone();
         workspace.users = source.users.clone();
         workspace.usergroups = source.usergroups.clone();
+        workspace.directory_usergroups = source.directory_usergroups.clone();
         Self {
             workspace,
             metadata_only: true,

@@ -76,7 +76,7 @@ impl Members {
         member_label(&row.source)
     }
 }
-fn member_label(row: &Value) -> Result<String, Error> {
+pub(super) fn member_label(row: &Value) -> Result<String, Error> {
     for key in ["isUnknown", "isNonExistent"] {
         if row
             .get(key)
@@ -188,6 +188,7 @@ pub(crate) struct Opening {
     source: Option<Arc<canonical::Canonical>>,
     members: Option<Members>,
     groups: Option<Groups>,
+    files: Vec<files::Observation>,
 }
 pub(crate) fn begin(
     shell: &mut ShellState,
@@ -292,11 +293,25 @@ fn prepare(
         })
         .unwrap_or_default();
     let mut catalog = catalog::Catalog::default();
-    for raw in tokens
-        .iter()
-        .copied()
-        .filter(|v| matches!(v["type"].as_str(), Some("channel" | "user" | "usergroup")))
-    {
+    let mut files = Vec::new();
+    for raw in tokens.iter().copied().filter(|v| {
+        matches!(
+            v["type"].as_str(),
+            Some("channel" | "user" | "usergroup" | "file" | "canvas")
+        )
+    }) {
+        if matches!(raw["type"].as_str(), Some("file" | "canvas")) {
+            let observed = files::Observation::capture(
+                shell,
+                &token,
+                raw["file_id"].as_str().ok_or_else(unavailable)?,
+            )?;
+            let label = observed.label(raw)?;
+            labels.insert(raw.to_string(), Value::String(label.clone()));
+            catalog.insert(raw, label)?;
+            files.push(observed);
+            continue;
+        }
         if raw["type"] == "usergroup" {
             let label = groups.as_ref().ok_or_else(unavailable)?.label(raw)?;
             // Exact token keys also preserve an intentionally empty group
@@ -351,6 +366,7 @@ fn prepare(
         source,
         members,
         groups,
+        files,
         session: Session {
             id: id.into(),
             key,
@@ -359,6 +375,7 @@ fn prepare(
             labels: Value::Object(labels).to_string(),
             notice: None,
             query: None,
+            preferences: None,
         },
     })
 }
@@ -371,6 +388,7 @@ pub(crate) fn finish(shell: &mut ShellState, opening: Opening) -> bool {
             .as_ref()
             .is_some_and(|m| !m.current(shell, &opening.token))
         || opening.groups.as_ref().is_some_and(|g| !g.current(shell))
+        || opening.files.iter().any(|file| !file.current(shell))
     {
         return false;
     }

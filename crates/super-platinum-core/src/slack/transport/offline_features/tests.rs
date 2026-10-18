@@ -193,6 +193,50 @@ async fn actual_http_decode_keeps_priority_tie_order_and_original_payload() {
     assert_eq!(features.processed_top_channels().unwrap(), ["Cz", "Ca"]);
     assert_eq!(t.health(), Health::Online);
 }
+
+#[tokio::test]
+async fn aggregate_observes_two_orders_from_one_actual_body() {
+    let wire = r#"{"ok":true,"user_affinity":{"discard":1},"channel_priority_90d":{"Cz":8,"Ca":8},"user_affinity":{"Uz":2,"10":2,"2":2,"Ua":3,"Uz":3},"unknown":{"retained":true}}"#;
+    let (req, server) = respond("200 OK", "", wire).await;
+    let response = tokio::time::timeout(
+        Duration::from_secs(3),
+        loopback().execute_autocomplete_priorities_once(&req),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    server.await.unwrap();
+    let (raw, channels, users) = response.into_parts();
+    assert_eq!(raw, serde_json::from_str::<Value>(wire).unwrap());
+    assert_eq!(channels.as_deref().unwrap(), ["Cz", "Ca"]);
+    assert_eq!(users.as_deref().unwrap(), ["2", "10", "Uz", "Ua"]);
+    let decoded =
+        observed::Offline::decode_priorities(&raw, channels.as_deref(), users.as_deref()).unwrap();
+    assert_eq!(
+        decoded.processed_top_users().unwrap(),
+        ["Uz", "Ua", "2", "10"]
+    );
+    assert_eq!(decoded.processed_top_channels().unwrap(), ["Cz", "Ca"]);
+}
+
+#[tokio::test]
+async fn aggregate_owner_retirement_and_malformed_json_keep_error_boundary() {
+    let t = disconnected();
+    assert!(matches!(
+        t.execute_autocomplete_priorities_current(request(), || false)
+            .await,
+        Err(Error::Offline(_))
+    ));
+    let (req, server) = respond("200 OK", "", "{").await;
+    let result = tokio::time::timeout(
+        Duration::from_secs(3),
+        loopback().execute_autocomplete_priorities_once(&req),
+    )
+    .await
+    .unwrap();
+    server.await.unwrap();
+    assert!(matches!(result, Err(Error::Transport(_))));
+}
 #[tokio::test]
 async fn ordered_decode_keeps_http_api_and_json_error_categories() {
     for (status, extra, wire, kind) in [

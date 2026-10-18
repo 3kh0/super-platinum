@@ -18,6 +18,7 @@ pub(super) struct MissingOpening {
     before: Vec<Value>,
     ids: Vec<String>,
     groups: Vec<String>,
+    files: Vec<String>,
 }
 impl MissingOpening {
     pub(super) fn capture(
@@ -39,6 +40,7 @@ impl MissingOpening {
         };
         let mut ids = Vec::new();
         let mut groups = Vec::new();
+        let mut files = Vec::new();
         for raw in collect(before).ok()? {
             if raw["type"] == "user" {
                 let id = raw["user_id"].as_str()?.to_owned();
@@ -52,8 +54,14 @@ impl MissingOpening {
                     groups.push(id);
                 }
             }
+            if matches!(raw["type"].as_str(), Some("file" | "canvas")) {
+                let id = raw["file_id"].as_str()?.to_owned();
+                if !id.is_empty() && !files.contains(&id) {
+                    files.push(id);
+                }
+            }
         }
-        (!ids.is_empty() || !groups.is_empty()).then(|| Self {
+        (!ids.is_empty() || !groups.is_empty() || !files.is_empty()).then(|| Self {
             token: draft.token.clone(),
             visit,
             serial,
@@ -63,6 +71,7 @@ impl MissingOpening {
             before: before.clone(),
             ids,
             groups,
+            files,
         })
     }
     fn current(&self, shell: &ShellState) -> bool {
@@ -88,7 +97,7 @@ impl MissingOpening {
             };
             client
         };
-        if client.is_none() && !known && !automatic_members {
+        if client.is_none() && !known && !automatic_members && self.files.is_empty() {
             return;
         }
         let (identity, mut cancellation) = {
@@ -100,7 +109,7 @@ impl MissingOpening {
             retire_recovery(d);
             let (lease, identity, receiver) = lease::Lease::new();
             d.rich_recovery = Some(lease);
-            d.rich_reading = known || automatic_members;
+            d.rich_reading = known || automatic_members || !self.files.is_empty();
             (identity, receiver)
         };
         // Cancellation ends only this consumer. Shared acquisition remains owned
@@ -121,6 +130,12 @@ impl MissingOpening {
         known: bool,
         automatic_members: bool,
     ) -> Result<(), Error> {
+        if !self.files.is_empty() {
+            files::recover(state, &self.token, &self.files, known, |shell| {
+                self.current(shell)
+            })
+            .await?;
+        }
         if let Some(client) = client {
             self.absent(state, client).await?;
         }
@@ -366,6 +381,7 @@ mod tests {
             labels: "{}".into(),
             notice: None,
             query: None,
+            preferences: None,
         });
         assert!(!captured.current(&shell));
     }

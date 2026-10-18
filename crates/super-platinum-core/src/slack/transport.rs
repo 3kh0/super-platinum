@@ -71,6 +71,8 @@ mod own_profile_photo;
 mod own_profile_recording;
 mod presentation_notifications;
 mod profile_channel_search;
+mod profile_group_search;
+mod profile_member_search;
 mod profile_sections;
 mod read_preferences;
 mod read_shortcuts;
@@ -84,8 +86,11 @@ pub use directory_response::DirectoryResponse as DirectoryMemberInfoResponse;
 pub use directory_response::DirectoryResponse as DirectoryUsergroupInfoResponse;
 pub use directory_response::DirectoryResponse as DirectoryChannelInfoResponse;
 pub use directory_response::DirectoryResponse as ProfileChannelSearchResponse;
+pub use directory_response::DirectoryResponse as ProfileMemberSearchResponse;
+pub use directory_response::DirectoryResponse as ProfileGroupSearchResponse;
 pub use list_record_delete::ListDeleteFailure;
 pub(super) use notification_preferences::notification_preferences_success;
+pub use offline_features::AutocompletePrioritiesResponse;
 
 #[cfg(test)]
 mod file_viewing_tests;

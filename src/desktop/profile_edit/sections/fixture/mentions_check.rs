@@ -5,9 +5,10 @@ use crate::slack_links_check::wait_dom as native_wait_dom;
 use dioxus::desktop::DesktopContext;
 use serde_json::json;
 use std::time::Duration;
+mod files;
 mod groups;
 
-async fn readiness(name: &str) -> Result<Value, String> {
+pub(super) async fn readiness(name: &str) -> Result<Value, String> {
     let nonce = std::env::var("SUPER_PLATINUM_PROFILE_MENTIONS_NONCE")
         .map_err(|_| "Missing profile mentions readiness nonce")?;
     if nonce.len() != 32
@@ -69,6 +70,22 @@ async fn readiness(name: &str) -> Result<Value, String> {
 }
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
+    if super::files::named() {
+        files::start(state, desktop);
+        return;
+    }
+    if super::completion::named() && std::env::var(super::completion::FLAG).as_deref() == Ok("1") {
+        if std::env::var(super::completion::groups::FLAG).as_deref() == Ok("1") {
+            super::group_completion_check::start(state, desktop);
+        } else if std::env::var("SUPER_PLATINUM_PROFILE_MEMBER_COMPLETION_CHECK").as_deref()
+            == Ok("1")
+        {
+            super::member_completion_check::start(state, desktop);
+        } else {
+            super::completion_check::start(state, desktop);
+        }
+        return;
+    }
     if !mentions::named() || std::env::var(FLAG).as_deref() != Ok("1") {
         return;
     }
@@ -361,7 +378,11 @@ async fn run(
     )
 }
 
-async fn click(desktop: &DesktopContext, label: &str, twice: bool) -> Result<(), String> {
+pub(super) async fn click(
+    desktop: &DesktopContext,
+    label: &str,
+    twice: bool,
+) -> Result<(), String> {
     wait_dom(desktop,&format!(r#"(()=>{{const b=[...document.querySelectorAll('.profile-edit button')].find(b=>b.textContent==={});if(!b||b.disabled)return{{ok:false}};b.scrollIntoView({{block:'nearest'}});const r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);if(hit!==b&&!b.contains(hit))return{{ok:false}};b.click();if({twice})b.click();return{{ok:true}};}})()"#,json!(label))).await.map(|_|()).map_err(|e|format!("Click {label}: {e}"))
 }
 async fn editor(desktop: &DesktopContext, text: &str, editable: bool) -> Result<(), String> {
@@ -422,7 +443,7 @@ async fn counts(
         mentions::snapshot(&state.peek())
     ))
 }
-async fn save(
+pub(super) async fn save(
     mut state: Signal<ShellState>,
     desktop: &DesktopContext,
     outcome: Outcome,
@@ -468,7 +489,10 @@ async fn save(
     select_values(state, desktop).await
 }
 
-async fn select_values(state: Signal<ShellState>, desktop: &DesktopContext) -> Result<(), String> {
+pub(super) async fn select_values(
+    state: Signal<ShellState>,
+    desktop: &DesktopContext,
+) -> Result<(), String> {
     let model = mentions::snapshot(&state.peek());
     if model["choiceValue"] != "Morning" || model["countryValue"] != "US" {
         return Err(format!("Untouched model selects changed: {model}"));
@@ -479,7 +503,7 @@ async fn select_values(state: Signal<ShellState>, desktop: &DesktopContext) -> R
 
 /// Each poll returns an owned diagnostic snapshot even while its condition is
 /// false, rather than losing the exact DOM generation behind a generic timeout.
-async fn wait_dom(desktop: &DesktopContext, script: &str) -> Result<Value, String> {
+pub(super) async fn wait_dom(desktop: &DesktopContext, script: &str) -> Result<Value, String> {
     let wrapped = format!(
         r#"(()=>{{let measured;try{{measured=({script});}}catch(error){{measured={{ok:false,error:String(error)}};}}
       const d=document.getElementById('shell-overlay-dialog'),e=document.getElementById('profile-section-rich');
@@ -518,6 +542,9 @@ async fn capture(
         mentions::group_mode() && stage == "group-empty"
     );
     let mut geometry = wait_layout(desktop, stage, &script).await?;
+    if super::files::named() {
+        files::styles(&geometry)?;
+    }
     let model = mentions::snapshot(&state.peek());
     let directory = std::env::var_os("SUPER_PLATINUM_UI_CAPTURE_DIR")
         .map(std::path::PathBuf::from)
@@ -569,7 +596,7 @@ const LAYOUT: &str = r#"(()=>{
  const visible=e=>{const s=getComputedStyle(e),fragments=[...e.getClientRects()].filter(r=>r.width>0&&r.height>0);return s.visibility==='visible'&&s.display!=='none'&&fragments.length>0&&fragments.every(r=>{const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);let unclipped=true;for(let p=e.parentElement;p;p=p.parentElement){const ps=getComputedStyle(p),pr=rect(p);if(/auto|scroll|hidden|clip/.test(ps.overflowY)&&(r.top<pr.top-1||r.bottom>pr.bottom+1))unclipped=false;if(/auto|scroll|hidden|clip/.test(ps.overflowX)&&(r.left<pr.left-1||r.right>pr.right+1))unclipped=false;}return unclipped&&r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1&&(hit===e||e.contains(hit));});};
  const controls=d?[...d.querySelectorAll('footer button,#profile-section-rich-pane > button')].map(e=>({text:e.textContent,disabled:e.disabled,visible:visible(e),rect:rect(e)})):[];
  const notices=d?[...d.querySelectorAll('.profile-edit-notice,.profile-edit-field-error,#profile-section-rich-status')].filter(e=>e.textContent.trim()).map(e=>({text:e.textContent,visible:visible(e),rect:rect(e)})):[];
- const tokens=e?[...e.querySelectorAll('.rich-editor-token')].map(e=>({text:e.textContent,editable:e.isContentEditable,visible:visible(e),rect:rect(e),fragments:[...e.getClientRects()].map(r=>({left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}))})):[];
+ const tokens=e?[...e.querySelectorAll('.rich-editor-token')].map(e=>({text:e.textContent,editable:e.isContentEditable,fontWeight:getComputedStyle(e).fontWeight,fontStyle:getComputedStyle(e).fontStyle,visible:visible(e),rect:rect(e),fragments:[...e.getClientRects()].map(r=>({left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}))})):[];
  const native=e&&window.superPlatinumRichEditor.resolved(e),locked=document.getElementById('profile-section-field-locked');
  const noOverflow=document.documentElement.scrollWidth<=innerWidth+1&&(!d||d.scrollWidth<=d.clientWidth+1);
  return{ok:noOverflow&&(!d||visible(d))&&controls.every(e=>e.visible)&&notices.every(e=>e.visible)&&tokens.every((t,i)=>t.visible||(allowEmptyGroup&&t.text===''&&t.rect.width===0&&native?.tokens[i]?.label===''&&native?.tokens[i]?.value?.type==='usergroup')),

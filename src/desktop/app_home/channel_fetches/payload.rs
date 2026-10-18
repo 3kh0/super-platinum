@@ -2,12 +2,35 @@
 use super::*;
 use super_platinum_core::state::{cfm_payload as source, directory_members};
 mod auxiliary;
-pub(super) fn kick(state: Signal<ShellState>, owner: Owner) {
+pub(super) fn kick(mut state: Signal<ShellState>, owner: Owner) {
+    let works = {
+        let mut shell = state.write();
+        if !owner.current(&shell) {
+            return;
+        }
+        std::mem::take(
+            &mut shell
+                .app_home
+                .channel_fetches
+                .slots
+                .get_mut(&owner.context.key())
+                .unwrap()
+                .payload
+                .group_work,
+        )
+    };
+    for work in works {
+        let owner = owner.clone();
+        dioxus::core::spawn_forever(async move {
+            let _ = work.run(state, |shell| owner.current(shell)).await;
+        });
+    }
     auxiliary::kick(state, owner);
 }
 
 pub(super) struct State {
     auxiliary: auxiliary::State,
+    group_work: Vec<crate::usergroups::source::Work>,
     pub(super) screen_reader: ScreenReader,
     pub(super) workspace_ids: Option<Vec<String>>,
     pub(super) teams: BTreeMap<String, Value>,
@@ -35,6 +58,7 @@ impl Default for State {
         // retain that provenance instead of claiming an OS observation.
         Self {
             auxiliary: auxiliary::State::default(),
+            group_work: vec![],
             screen_reader: ScreenReader::BridgeUnavailable,
             workspace_ids: Some(vec![]),
             teams: BTreeMap::new(),
@@ -353,10 +377,48 @@ impl source::Adopter for Sink<'_> {
             }
             Kind::Subteams => {
                 w.cfm_payload.apply(effect)?;
-                for group in w.usergroups.values_mut() {
-                    group.users.retain(|id| id != &ctx.session.user_id);
-                    if w.cfm_payload.user_group_membership.contains_key(&group.id) {
-                        group.users.push(ctx.session.user_id.clone());
+                let ids = effect.payload["userGroups"]
+                    .as_array()
+                    .ok_or(source::Error::Malformed("subteams array"))?
+                    .iter()
+                    .map(|id| id.as_str().map(str::to_owned))
+                    .collect::<Option<Vec<_>>>()
+                    .ok_or(source::Error::Malformed("subteam id"))?;
+                let group_owner = crate::directory_member_fetches::Context::capture(
+                    self.shell,
+                    &ctx.session.team_id,
+                )
+                .ok()
+                .map(Arc::new);
+                let admission =
+                    group_owner.map(|owner| {
+                        crate::usergroups::source::enqueue(
+                    self.shell, owner,
+                    super_platinum_core::state::directory_usergroups::Operation::Membership { ids },
+                )
+                    });
+                if let Some(crate::usergroups::source::Admission::Tracked(work)) = admission {
+                    self.shell
+                        .app_home
+                        .channel_fetches
+                        .slots
+                        .get_mut(&ctx.key())
+                        .unwrap()
+                        .payload
+                        .group_work
+                        .push(work);
+                } else {
+                    let w = self
+                        .shell
+                        .core
+                        .workspaces
+                        .get_mut(&ctx.session.team_id)
+                        .ok_or(source::Error::Adoption)?;
+                    for group in w.usergroups.values_mut() {
+                        group.users.retain(|id| id != &ctx.session.user_id);
+                        if w.cfm_payload.user_group_membership.contains_key(&group.id) {
+                            group.users.push(ctx.session.user_id.clone());
+                        }
                     }
                 }
             }

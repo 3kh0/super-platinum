@@ -16,6 +16,8 @@ pub(crate) struct State {
     draft: Option<SectionPane>,
     entries: BTreeMap<Owner, SectionEntry>,
     fixture: Option<fixture::Interaction>,
+    file_titles: Option<rich::files::Cache>,
+    file_search: rich::search::file_source::State,
 }
 #[derive(Clone)]
 struct SectionPane {
@@ -70,7 +72,7 @@ fn current(shell: &ShellState, token: &Token, visit: u64, serial: u64) -> bool {
             .as_ref()
             .is_some_and(|d| d.token == *token && d.serial == serial && d.visit == visit)
 }
-pub(super) fn active(shell: &ShellState) -> bool {
+pub(crate) fn active(shell: &ShellState) -> bool {
     shell
         .profile_edit
         .sections

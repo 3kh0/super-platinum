@@ -20,6 +20,11 @@ fn directory_then_fallback_first_wins_and_opaque_observations_survive() {
         ..Default::default()
     });
     let received = part.finish();
+    assert_eq!(received.ordered_rows.len(), 4);
+    assert_eq!(received.ordered_rows[0], first);
+    assert_eq!(received.ordered_rows[1]["handle"], "second");
+    assert_eq!(received.ordered_rows[2]["handle"], "fallback-late");
+    assert_eq!(received.ordered_rows[3], fallback);
     assert_eq!(
         received
             .rows

@@ -7,6 +7,12 @@ use super_platinum_core::{
     composer_emoji::{model::Model, ranking::SimilarityCache},
 };
 
+/// Accepted account preference events retire immutable name/history inputs,
+/// including consumers that have no Home or About surface open.
+pub(crate) fn preferences_revision(shell: &ShellState) -> u64 {
+    shell.app_home.workflow_names_revision
+}
+
 #[derive(Clone)]
 pub(crate) struct Ranking(workflows::ranking_cache::Snapshot);
 impl Ranking {
@@ -53,5 +59,30 @@ impl Navigation {
     }
     pub(crate) fn value(&self) -> &Value {
         &self.value
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn profile_preferences_retire_inputs_without_home_and_refuse_foreign_owner() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        crate::profile_edit::sections::fixture::install_interaction(&mut shell);
+        shell.app_home = Default::default();
+        let team = shell.core.active_team.clone().unwrap();
+        let generation = shell.core.workspaces[&team].rt_generation;
+        let event = super_platinum_core::slack::events::RtEvent::PreferencesChanged {
+            name: "frecency".into(),
+            value: serde_json::json!("{}"),
+        };
+        crate::app_home::realtime(&mut shell, &team, generation + 1, &event);
+        crate::app_home::realtime(&mut shell, "OTHER", generation, &event);
+        assert_eq!(preferences_revision(&shell), 0);
+        crate::app_home::realtime(&mut shell, &team, generation, &event);
+        assert_eq!(preferences_revision(&shell), 1);
+        shell.core.active_account = Some("different-account".into());
+        crate::app_home::realtime(&mut shell, &team, generation, &event);
+        assert_eq!(preferences_revision(&shell), 1);
     }
 }

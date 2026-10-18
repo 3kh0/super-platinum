@@ -127,6 +127,8 @@ struct Persisted {
 #[derive(Clone, Default)]
 pub struct Store {
     saved: Option<Persisted>,
+    // Source lineage survives ordinary intake, but never begin/cache restore.
+    history: Arc<()>,
     epoch: Arc<()>,
     revision: u64,
 }
@@ -277,6 +279,7 @@ impl Store {
             overflowed: false,
             disconnected: std::collections::BTreeMap::new(),
         });
+        self.history = Arc::new(());
         self.epoch = Arc::new(());
         self.revision = 0;
         Ok(())

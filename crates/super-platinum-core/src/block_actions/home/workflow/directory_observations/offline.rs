@@ -50,6 +50,7 @@ pub struct Offline {
     // order. Such a snapshot still supplies scores, but cannot supply Texty's
     // stable-tie top-channel request hint.
     processed_channels: Option<Vec<String>>,
+    processed_users: Option<Vec<String>>,
 }
 
 impl Default for Offline {
@@ -67,6 +68,7 @@ impl Default for Offline {
             affinity: BTreeMap::new(),
             priority: BTreeMap::new(),
             processed_channels: Some(Vec::new()),
+            processed_users: Some(Vec::new()),
         }
     }
 }
@@ -187,6 +189,9 @@ impl Offline {
         if !out.priority.is_empty() {
             out.processed_channels = None;
         }
+        if !out.affinity.is_empty() {
+            out.processed_users = None;
+        }
         Ok(out)
     }
     /// Same-response Object.keys order, supplied by the transport decoder.
@@ -216,6 +221,43 @@ impl Offline {
     /// account's cache or query is current. Those guards belong to the caller.
     pub fn processed_top_channels(&self) -> Result<&[String], Error> {
         self.processed_channels.as_deref().ok_or(Error::Offline)
+    }
+    /// Both key orders must originate in the same response bytes. The earlier
+    /// channel-only decoder remains available, but cannot observe a nonempty
+    /// user-affinity map's stable ties merely by reserializing a sorted map.
+    pub fn decode_priorities(
+        value: &Value,
+        channel_keys: Option<&[String]>,
+        user_keys: Option<&[String]>,
+    ) -> Result<Self, Error> {
+        let mut out = Self::decode_ordered(value, channel_keys)?;
+        let Some(raw) = value.get("user_affinity").filter(|v| !v.is_null()) else {
+            return if user_keys.is_none() {
+                Ok(out)
+            } else {
+                Err(Error::Offline)
+            };
+        };
+        let raw = raw.as_object().ok_or(Error::Offline)?;
+        let keys = user_keys.ok_or(Error::Offline)?;
+        let unique = keys.iter().collect::<std::collections::BTreeSet<_>>();
+        if unique.len() != keys.len() || unique != raw.keys().collect() {
+            return Err(Error::Offline);
+        }
+        let mut ordered = keys.to_vec();
+        ordered.sort_by(|a, b| out.affinity[b].partial_cmp(&out.affinity[a]).unwrap());
+        ordered.truncate(50);
+        out.processed_users = Some(ordered);
+        Ok(out)
+    }
+    /// zbK1 derives this request hint from user_affinity, not top_users CTR rows.
+    pub fn processed_top_users(&self) -> Result<&[String], Error> {
+        self.processed_users.as_deref().ok_or(Error::Offline)
+    }
+    /// zbK1.getEntityCtr uses this observed value for unrecognized categories,
+    /// including `userGroup`. It is not the member CTR or an IM classification.
+    pub fn other_ctr(&self) -> f64 {
+        self.other
     }
     pub fn entity_ctr(&self, entity: Entity) -> f64 {
         self.ctr
@@ -261,3 +303,5 @@ impl Offline {
 
 #[cfg(test)]
 mod priority_tests;
+#[cfg(test)]
+mod user_priority_tests;

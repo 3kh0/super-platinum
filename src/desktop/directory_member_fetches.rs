@@ -21,6 +21,7 @@ pub(crate) mod automatic;
 mod context;
 pub(crate) mod driver;
 pub(crate) mod known;
+pub(crate) mod search;
 pub(crate) use context::Context;
 pub(crate) use driver::{Client, Election, Stage};
 pub(crate) use super_platinum_core::state::directory_members::fetch_claim::{

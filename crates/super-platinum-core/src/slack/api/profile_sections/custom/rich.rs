@@ -21,7 +21,13 @@ pub(super) fn validate_with(
     }
     let existing = std::ptr::eq(blocks, originals);
     for block in blocks {
-        node(block, Position::Root, originals, existing)?;
+        node(
+            block,
+            Position::Root,
+            originals,
+            existing,
+            context.is_some(),
+        )?;
     }
     if measured_length_with(blocks, context)? > 5000 {
         return Err(invalid(
@@ -72,6 +78,7 @@ fn node(
     position: Position,
     originals: &[Value],
     existing: bool,
+    resolved: bool,
 ) -> Result<(), Error> {
     let kind = value
         .get("type")
@@ -115,11 +122,21 @@ fn node(
             .and_then(Value::as_array)
             .ok_or(invalid("This rich-text block has malformed children."))?;
         for child in children {
-            node(child, position, originals, existing)?;
+            node(child, position, originals, existing, resolved)?;
         }
         return Ok(());
     }
     let required = match kind {
+        "canvas" | "file" => {
+            // Unlike raw text/links, new file nodes need an ordered canonical
+            // label witness. The length pass consumes and checks every exact
+            // occurrence, including existing originals; presence alone is not
+            // authorization and there is no wire-text fallback.
+            if !resolved {
+                return Err(invalid("This file label is unavailable."));
+            }
+            Some("file_id")
+        }
         "text" => Some("text"),
         "link" => Some("url"),
         "emoji" => Some("name"),

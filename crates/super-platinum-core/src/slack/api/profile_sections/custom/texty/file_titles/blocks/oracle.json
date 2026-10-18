@@ -1,0 +1,5366 @@
+{
+  "ok": true,
+  "count": 136,
+  "cases": [
+    {
+      "name": "adjacent plain runs",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Café "
+                  },
+                  {
+                    "type": "text",
+                    "text": "🚀"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Café 🚀",
+      "overridePresent": false,
+      "label": "Café 🚀"
+    },
+    {
+      "name": "adjacent plain runs",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Café "
+                  },
+                  {
+                    "type": "text",
+                    "text": "🚀"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Café 🚀",
+      "overridePresent": false,
+      "label": "Café 🚀"
+    },
+    {
+      "name": "adjacent plain runs",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Café "
+                  },
+                  {
+                    "type": "text",
+                    "text": "🚀"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Café 🚀",
+      "overridePresent": false,
+      "label": "Café 🚀"
+    },
+    {
+      "name": "adjacent plain runs",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Café "
+                  },
+                  {
+                    "type": "text",
+                    "text": "🚀"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Café 🚀",
+      "overridePresent": true,
+      "override": null,
+      "label": "Café 🚀"
+    },
+    {
+      "name": "adjacent plain runs",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Café "
+                  },
+                  {
+                    "type": "text",
+                    "text": "🚀"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Café 🚀",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "adjacent plain runs",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Café "
+                  },
+                  {
+                    "type": "text",
+                    "text": "🚀"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Café 🚀",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "adjacent plain runs",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Café "
+                  },
+                  {
+                    "type": "text",
+                    "text": "🚀"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Café 🚀",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "adjacent plain runs",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Café "
+                  },
+                  {
+                    "type": "text",
+                    "text": "🚀"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Café 🚀",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "formatting ignored",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Bold",
+                    "style": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " italic",
+                    "style": {
+                      "italic": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " strike",
+                    "style": {
+                      "strike": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " code",
+                    "style": {
+                      "code": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Bold italic strike code",
+      "overridePresent": false,
+      "label": "Bold italic strike code"
+    },
+    {
+      "name": "formatting ignored",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Bold",
+                    "style": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " italic",
+                    "style": {
+                      "italic": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " strike",
+                    "style": {
+                      "strike": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " code",
+                    "style": {
+                      "code": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Bold italic strike code",
+      "overridePresent": false,
+      "label": "Bold italic strike code"
+    },
+    {
+      "name": "formatting ignored",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Bold",
+                    "style": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " italic",
+                    "style": {
+                      "italic": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " strike",
+                    "style": {
+                      "strike": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " code",
+                    "style": {
+                      "code": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Bold italic strike code",
+      "overridePresent": false,
+      "label": "Bold italic strike code"
+    },
+    {
+      "name": "formatting ignored",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Bold",
+                    "style": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " italic",
+                    "style": {
+                      "italic": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " strike",
+                    "style": {
+                      "strike": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " code",
+                    "style": {
+                      "code": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Bold italic strike code",
+      "overridePresent": true,
+      "override": null,
+      "label": "Bold italic strike code"
+    },
+    {
+      "name": "formatting ignored",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Bold",
+                    "style": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " italic",
+                    "style": {
+                      "italic": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " strike",
+                    "style": {
+                      "strike": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " code",
+                    "style": {
+                      "code": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Bold italic strike code",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "formatting ignored",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Bold",
+                    "style": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " italic",
+                    "style": {
+                      "italic": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " strike",
+                    "style": {
+                      "strike": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " code",
+                    "style": {
+                      "code": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Bold italic strike code",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "formatting ignored",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Bold",
+                    "style": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " italic",
+                    "style": {
+                      "italic": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " strike",
+                    "style": {
+                      "strike": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " code",
+                    "style": {
+                      "code": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Bold italic strike code",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "formatting ignored",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Bold",
+                    "style": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " italic",
+                    "style": {
+                      "italic": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " strike",
+                    "style": {
+                      "strike": true
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " code",
+                    "style": {
+                      "code": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Bold italic strike code",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "styles opaque",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Opaque",
+                    "style": {
+                      "future": {
+                        "opaque": [
+                          null,
+                          1
+                        ]
+                      },
+                      "bold": false
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Opaque",
+      "overridePresent": false,
+      "label": "Opaque"
+    },
+    {
+      "name": "styles opaque",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Opaque",
+                    "style": {
+                      "future": {
+                        "opaque": [
+                          null,
+                          1
+                        ]
+                      },
+                      "bold": false
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Opaque",
+      "overridePresent": false,
+      "label": "Opaque"
+    },
+    {
+      "name": "styles opaque",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Opaque",
+                    "style": {
+                      "future": {
+                        "opaque": [
+                          null,
+                          1
+                        ]
+                      },
+                      "bold": false
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Opaque",
+      "overridePresent": false,
+      "label": "Opaque"
+    },
+    {
+      "name": "styles opaque",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Opaque",
+                    "style": {
+                      "future": {
+                        "opaque": [
+                          null,
+                          1
+                        ]
+                      },
+                      "bold": false
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Opaque",
+      "overridePresent": true,
+      "override": null,
+      "label": "Opaque"
+    },
+    {
+      "name": "styles opaque",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Opaque",
+                    "style": {
+                      "future": {
+                        "opaque": [
+                          null,
+                          1
+                        ]
+                      },
+                      "bold": false
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Opaque",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "styles opaque",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Opaque",
+                    "style": {
+                      "future": {
+                        "opaque": [
+                          null,
+                          1
+                        ]
+                      },
+                      "bold": false
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Opaque",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "styles opaque",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Opaque",
+                    "style": {
+                      "future": {
+                        "opaque": [
+                          null,
+                          1
+                        ]
+                      },
+                      "bold": false
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Opaque",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "styles opaque",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Opaque",
+                    "style": {
+                      "future": {
+                        "opaque": [
+                          null,
+                          1
+                        ]
+                      },
+                      "bold": false
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "Opaque",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "no HTML decoding",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "&amp; &lt; &quot; &#39;"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "&amp; &lt; &quot; &#39;",
+      "overridePresent": false,
+      "label": "&amp; &lt; &quot; &#39;"
+    },
+    {
+      "name": "no HTML decoding",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "&amp; &lt; &quot; &#39;"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "&amp; &lt; &quot; &#39;",
+      "overridePresent": false,
+      "label": "&amp; &lt; &quot; &#39;"
+    },
+    {
+      "name": "no HTML decoding",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "&amp; &lt; &quot; &#39;"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "&amp; &lt; &quot; &#39;",
+      "overridePresent": false,
+      "label": "&amp; &lt; &quot; &#39;"
+    },
+    {
+      "name": "no HTML decoding",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "&amp; &lt; &quot; &#39;"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "&amp; &lt; &quot; &#39;",
+      "overridePresent": true,
+      "override": null,
+      "label": "&amp; &lt; &quot; &#39;"
+    },
+    {
+      "name": "no HTML decoding",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "&amp; &lt; &quot; &#39;"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "&amp; &lt; &quot; &#39;",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "no HTML decoding",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "&amp; &lt; &quot; &#39;"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "&amp; &lt; &quot; &#39;",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "no HTML decoding",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "&amp; &lt; &quot; &#39;"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "&amp; &lt; &quot; &#39;",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "no HTML decoding",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "&amp; &lt; &quot; &#39;"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "&amp; &lt; &quot; &#39;",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "no mrkdwn parsing",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "*literal* :wave: <@U00000001>"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "*literal* :wave: <@U00000001>",
+      "overridePresent": false,
+      "label": "*literal* :wave: <@U00000001>"
+    },
+    {
+      "name": "no mrkdwn parsing",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "*literal* :wave: <@U00000001>"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "*literal* :wave: <@U00000001>",
+      "overridePresent": false,
+      "label": "*literal* :wave: <@U00000001>"
+    },
+    {
+      "name": "no mrkdwn parsing",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "*literal* :wave: <@U00000001>"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "*literal* :wave: <@U00000001>",
+      "overridePresent": false,
+      "label": "*literal* :wave: <@U00000001>"
+    },
+    {
+      "name": "no mrkdwn parsing",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "*literal* :wave: <@U00000001>"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "*literal* :wave: <@U00000001>",
+      "overridePresent": true,
+      "override": null,
+      "label": "*literal* :wave: <@U00000001>"
+    },
+    {
+      "name": "no mrkdwn parsing",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "*literal* :wave: <@U00000001>"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "*literal* :wave: <@U00000001>",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "no mrkdwn parsing",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "*literal* :wave: <@U00000001>"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "*literal* :wave: <@U00000001>",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "no mrkdwn parsing",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "*literal* :wave: <@U00000001>"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "*literal* :wave: <@U00000001>",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "no mrkdwn parsing",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "*literal* :wave: <@U00000001>"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "*literal* :wave: <@U00000001>",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "sections use newline",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one \n two",
+      "overridePresent": false,
+      "label": "one \n two"
+    },
+    {
+      "name": "sections use newline",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one \n two",
+      "overridePresent": false,
+      "label": "one \n two"
+    },
+    {
+      "name": "sections use newline",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one \n two",
+      "overridePresent": false,
+      "label": "one \n two"
+    },
+    {
+      "name": "sections use newline",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one \n two",
+      "overridePresent": true,
+      "override": null,
+      "label": "one \n two"
+    },
+    {
+      "name": "sections use newline",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one \n two",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "sections use newline",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one \n two",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "sections use newline",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one \n two",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "sections use newline",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one \n two",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "blocks use double newline",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one\n\ntwo",
+      "overridePresent": false,
+      "label": "one\n\ntwo"
+    },
+    {
+      "name": "blocks use double newline",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one\n\ntwo",
+      "overridePresent": false,
+      "label": "one\n\ntwo"
+    },
+    {
+      "name": "blocks use double newline",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one\n\ntwo",
+      "overridePresent": false,
+      "label": "one\n\ntwo"
+    },
+    {
+      "name": "blocks use double newline",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one\n\ntwo",
+      "overridePresent": true,
+      "override": null,
+      "label": "one\n\ntwo"
+    },
+    {
+      "name": "blocks use double newline",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one\n\ntwo",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "blocks use double newline",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one\n\ntwo",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "blocks use double newline",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one\n\ntwo",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "blocks use double newline",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " one "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " two "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "one\n\ntwo",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "blank section retained",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": false,
+      "label": "a\n\nb"
+    },
+    {
+      "name": "blank section retained",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": false,
+      "label": "a\n\nb"
+    },
+    {
+      "name": "blank section retained",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": false,
+      "label": "a\n\nb"
+    },
+    {
+      "name": "blank section retained",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": true,
+      "override": null,
+      "label": "a\n\nb"
+    },
+    {
+      "name": "blank section retained",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "blank section retained",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "blank section retained",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "blank section retained",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "blank top block dropped",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": false,
+      "label": "a\n\nb"
+    },
+    {
+      "name": "blank top block dropped",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": false,
+      "label": "a\n\nb"
+    },
+    {
+      "name": "blank top block dropped",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": false,
+      "label": "a\n\nb"
+    },
+    {
+      "name": "blank top block dropped",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": true,
+      "override": null,
+      "label": "a\n\nb"
+    },
+    {
+      "name": "blank top block dropped",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "blank top block dropped",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "blank top block dropped",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "blank top block dropped",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "a\n\nb",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "raw whitespace retained",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " A  B\tC\r\nD "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "A  B\tC\r\nD",
+      "overridePresent": false,
+      "label": "A  B\tC\r\nD"
+    },
+    {
+      "name": "raw whitespace retained",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " A  B\tC\r\nD "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "A  B\tC\r\nD",
+      "overridePresent": false,
+      "label": "A  B\tC\r\nD"
+    },
+    {
+      "name": "raw whitespace retained",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " A  B\tC\r\nD "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "A  B\tC\r\nD",
+      "overridePresent": false,
+      "label": "A  B\tC\r\nD"
+    },
+    {
+      "name": "raw whitespace retained",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " A  B\tC\r\nD "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "A  B\tC\r\nD",
+      "overridePresent": true,
+      "override": null,
+      "label": "A  B\tC\r\nD"
+    },
+    {
+      "name": "raw whitespace retained",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " A  B\tC\r\nD "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "A  B\tC\r\nD",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "raw whitespace retained",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " A  B\tC\r\nD "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "A  B\tC\r\nD",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "raw whitespace retained",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " A  B\tC\r\nD "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "A  B\tC\r\nD",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "raw whitespace retained",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " A  B\tC\r\nD "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "A  B\tC\r\nD",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "ZW soft hyphen NBSP sanitation",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "​A­ B ﻿C​"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "​A­ B ﻿C​",
+      "overridePresent": false,
+      "label": "A B\nC"
+    },
+    {
+      "name": "ZW soft hyphen NBSP sanitation",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "​A­ B ﻿C​"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "​A­ B ﻿C​",
+      "overridePresent": false,
+      "label": "A B\nC"
+    },
+    {
+      "name": "ZW soft hyphen NBSP sanitation",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "​A­ B ﻿C​"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "​A­ B ﻿C​",
+      "overridePresent": false,
+      "label": "A B\nC"
+    },
+    {
+      "name": "ZW soft hyphen NBSP sanitation",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "​A­ B ﻿C​"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "​A­ B ﻿C​",
+      "overridePresent": true,
+      "override": null,
+      "label": "A B\nC"
+    },
+    {
+      "name": "ZW soft hyphen NBSP sanitation",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "​A­ B ﻿C​"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "​A­ B ﻿C​",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "ZW soft hyphen NBSP sanitation",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "​A­ B ﻿C​"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "​A­ B ﻿C​",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "ZW soft hyphen NBSP sanitation",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "​A­ B ﻿C​"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "​A­ B ﻿C​",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "ZW soft hyphen NBSP sanitation",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "​A­ B ﻿C​"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "​A­ B ﻿C​",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "leading colon emoji",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave:  Plan  "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave:  Plan",
+      "overridePresent": false,
+      "label": "Plan"
+    },
+    {
+      "name": "leading colon emoji",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave:  Plan  "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave:  Plan",
+      "overridePresent": false,
+      "label": "Plan"
+    },
+    {
+      "name": "leading colon emoji",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave:  Plan  "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave:  Plan",
+      "overridePresent": false,
+      "label": "Plan"
+    },
+    {
+      "name": "leading colon emoji",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave:  Plan  "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave:  Plan",
+      "overridePresent": true,
+      "override": null,
+      "label": "Plan"
+    },
+    {
+      "name": "leading colon emoji",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave:  Plan  "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave:  Plan",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "leading colon emoji",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave:  Plan  "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave:  Plan",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "leading colon emoji",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave:  Plan  "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave:  Plan",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "leading colon emoji",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave:  Plan  "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave:  Plan",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "two leading colon emojis",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave::tada:  Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave::tada:  Plan",
+      "overridePresent": false,
+      "label": ":tada:  Plan"
+    },
+    {
+      "name": "two leading colon emojis",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave::tada:  Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave::tada:  Plan",
+      "overridePresent": false,
+      "label": ":tada:  Plan"
+    },
+    {
+      "name": "two leading colon emojis",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave::tada:  Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave::tada:  Plan",
+      "overridePresent": false,
+      "label": ":tada:  Plan"
+    },
+    {
+      "name": "two leading colon emojis",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave::tada:  Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave::tada:  Plan",
+      "overridePresent": true,
+      "override": null,
+      "label": ":tada:  Plan"
+    },
+    {
+      "name": "two leading colon emojis",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave::tada:  Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave::tada:  Plan",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "two leading colon emojis",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave::tada:  Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave::tada:  Plan",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "two leading colon emojis",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave::tada:  Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave::tada:  Plan",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "two leading colon emojis",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": ":wave::tada:  Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": ":wave::tada:  Plan",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "leading Unicode glyph stays",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "🚀 Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "🚀 Plan",
+      "overridePresent": false,
+      "label": "🚀 Plan"
+    },
+    {
+      "name": "leading Unicode glyph stays",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "🚀 Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "🚀 Plan",
+      "overridePresent": false,
+      "label": "🚀 Plan"
+    },
+    {
+      "name": "leading Unicode glyph stays",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "🚀 Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "🚀 Plan",
+      "overridePresent": false,
+      "label": "🚀 Plan"
+    },
+    {
+      "name": "leading Unicode glyph stays",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "🚀 Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "🚀 Plan",
+      "overridePresent": true,
+      "override": null,
+      "label": "🚀 Plan"
+    },
+    {
+      "name": "leading Unicode glyph stays",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "🚀 Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "🚀 Plan",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "leading Unicode glyph stays",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "🚀 Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "🚀 Plan",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "leading Unicode glyph stays",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "🚀 Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "🚀 Plan",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "leading Unicode glyph stays",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "🚀 Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "🚀 Plan",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    },
+    {
+      "name": "empty extracted",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "",
+      "overridePresent": false,
+      "error": "LocalizedFallback"
+    },
+    {
+      "name": "empty extracted",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "",
+      "overridePresent": false,
+      "error": "LocalizedFallback"
+    },
+    {
+      "name": "empty extracted",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "",
+      "overridePresent": false,
+      "error": "LocalizedFallback"
+    },
+    {
+      "name": "empty extracted",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "",
+      "overridePresent": true,
+      "override": null,
+      "error": "LocalizedFallback"
+    },
+    {
+      "name": "empty extracted",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "",
+      "overridePresent": true,
+      "override": "",
+      "error": "LocalizedFallback"
+    },
+    {
+      "name": "empty extracted",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "error": "LocalizedFallback"
+    },
+    {
+      "name": "empty extracted",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "error": "LocalizedFallback"
+    },
+    {
+      "name": "empty extracted",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": " \t\n "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "",
+      "overridePresent": true,
+      "override": "Override",
+      "error": "LocalizedFallback"
+    },
+    {
+      "name": "post-sanitize empty",
+      "observation": "store absent",
+      "state": {},
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "­"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "­",
+      "overridePresent": false,
+      "label": ""
+    },
+    {
+      "name": "post-sanitize empty",
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "­"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "­",
+      "overridePresent": false,
+      "label": ""
+    },
+    {
+      "name": "post-sanitize empty",
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "­"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "­",
+      "overridePresent": false,
+      "label": ""
+    },
+    {
+      "name": "post-sanitize empty",
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "­"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "­",
+      "overridePresent": true,
+      "override": null,
+      "label": ""
+    },
+    {
+      "name": "post-sanitize empty",
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "­"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "­",
+      "overridePresent": true,
+      "override": "",
+      "label": ""
+    },
+    {
+      "name": "post-sanitize empty",
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "­"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "­",
+      "overridePresent": true,
+      "override": "  Override &amp;  ",
+      "label": "  Override &amp;  "
+    },
+    {
+      "name": "post-sanitize empty",
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "­"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "­",
+      "overridePresent": true,
+      "override": ":wave:  Override  ",
+      "label": "Override"
+    },
+    {
+      "name": "post-sanitize empty",
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "raw": {
+        "id": "F00000001",
+        "mode": "quip",
+        "title": "Ignored string title",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "­"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extracted": "­",
+      "overridePresent": true,
+      "override": "Override",
+      "label": "Override"
+    }
+  ],
+  "fallbackCases": [
+    {
+      "observation": "store absent",
+      "state": {},
+      "localized": "[observed localized Untitled]",
+      "label": "[observed localized Untitled]"
+    },
+    {
+      "observation": "entry absent",
+      "state": {
+        "quipTitle": {}
+      },
+      "localized": "[observed localized Untitled]",
+      "label": "[observed localized Untitled]"
+    },
+    {
+      "observation": "field absent",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "isEmpty": false
+          }
+        }
+      },
+      "localized": "[observed localized Untitled]",
+      "label": "[observed localized Untitled]"
+    },
+    {
+      "observation": "null",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": null
+          }
+        }
+      },
+      "localized": "[observed localized Untitled]",
+      "label": "[observed localized Untitled]"
+    },
+    {
+      "observation": "empty string",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ""
+          }
+        }
+      },
+      "localized": "[observed localized Untitled]",
+      "label": ""
+    },
+    {
+      "observation": "plain override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "  Override &amp;  "
+          }
+        }
+      },
+      "localized": "[observed localized Untitled]",
+      "label": "  Override &amp;  "
+    },
+    {
+      "observation": "colon emoji override",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": ":wave:  Override  "
+          }
+        }
+      },
+      "localized": "[observed localized Untitled]",
+      "label": "Override"
+    },
+    {
+      "observation": "isEmpty true ignored",
+      "state": {
+        "quipTitle": {
+          "F00000001": {
+            "titleString": "Override",
+            "isEmpty": true
+          }
+        }
+      },
+      "localized": "[observed localized Untitled]",
+      "label": "Override"
+    }
+  ],
+  "limits": [
+    "Normal known whole Canvas only; exact effective file and quipTitle observations supplied as synthetic inputs.",
+    "Only rich_text > rich_text_section > text supported shape exercised; no semantic leaf rendering.",
+    "Status/kind/owner/native freshness not established by this source-only replay.",
+    "In cases, unavailable localization throws as an oracle boundary, not a Slack error. fallbackCases supplies an explicitly observed synthetic localized value and demonstrates final override choice.",
+    "HTEe reducer retained for provenance but no live/native producer is asserted."
+  ]
+}

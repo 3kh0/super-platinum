@@ -5,6 +5,8 @@ use crate::slack::models::User;
 use std::collections::HashMap;
 
 pub struct Subset {
+    history: Arc<()>,
+    native: Vec<Value>,
     stamp: Stamp,
     ids: BTreeSet<String>,
     rows: Vec<Current>,
@@ -13,6 +15,27 @@ impl Subset {
     pub fn rows(&self) -> &[Current] {
         &self.rows
     }
+    /// Bounded self/permission observation: unrelated intake may change the
+    /// collection revision, but source lineage, original scope and every
+    /// requested source/native field must remain exactly the same.
+    /// Pending/invalidation of a requested row still refuses immediately.
+    pub fn current_rows(
+        &self,
+        store: &Store,
+        account: &str,
+        owner: &WorkspaceSession,
+        epoch: u64,
+        generation: &str,
+        native: &HashMap<String, User>,
+    ) -> bool {
+        Arc::ptr_eq(&self.history, &store.history)
+            && self.stamp.scope.current(account, owner, epoch, generation)
+            && store
+                .subset_rows(account, owner, &self.ids, native)
+                .is_ok_and(|rows| rows == self.rows)
+            && subset_native(&self.ids, native).is_ok_and(|rows| rows == self.native)
+    }
+
     pub fn current(
         &self,
         store: &Store,
@@ -41,6 +64,8 @@ impl Store {
     ) -> Result<Subset, Error> {
         let rows = self.subset_rows(account, owner, ids, native)?;
         Ok(Subset {
+            history: self.history.clone(),
+            native: subset_native(ids, native)?,
             stamp: self.stamp(account, owner, epoch, generation)?,
             ids: ids.clone(),
             rows,
@@ -100,6 +125,16 @@ impl Store {
         }
         Ok(rows)
     }
+}
+fn subset_native(
+    ids: &BTreeSet<String>,
+    native: &HashMap<String, User>,
+) -> Result<Vec<Value>, Error> {
+    ids.iter()
+        .map(|id| {
+            serde_json::to_value(native.get(id).ok_or_else(unavailable)?).map_err(|_| unavailable())
+        })
+        .collect()
 }
 #[cfg(test)]
 mod tests;

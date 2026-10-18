@@ -34,6 +34,9 @@
       const element = remember(document.createElement('span'), value);
       element.contentEditable = 'false';
       element.className = 'rich-editor-token';
+      // Mounted opaque tokens need the same visible formatting as newly
+      // completed ones. Their original wire value remains in the WeakMap.
+      applyRunStyle(element, value.style || {});
       const exactLabel = labels[JSON.stringify(value)];
       element.textContent = typeof exactLabel === 'string' ? exactLabel : labels[value.user_id || value.channel_id || value.usergroup_id || value.name]
         || value.fallback || value.text || (value.type === 'emoji' ? `:${value.name}:`
@@ -401,6 +404,10 @@
       selection.removeAllRanges();selection.addRange(range);return;
     }
   }
+  function applyRunStyle(element,style) {
+    element.style.fontWeight=style.bold?'bold':'normal';element.style.fontStyle=style.italic?'italic':'normal';
+    element.style.textDecoration=style.strike?'line-through':'none';element.style.fontFamily=style.code?'monospace':'inherit';
+  }
   function completionRun(value,label,style,atomic,marker,index) {
     // A generated inert inline tag avoids Chromium's special removal of span
     // wrappers during native style normalization. It has no custom-element
@@ -413,8 +420,7 @@
     // no node move or second editing command is needed, including on undo/redo.
     if(value.type==='link')element.setAttribute('href',value.url);
     element.textContent=label;element.setAttribute('data-rich-completion-insert',marker+'-'+index);
-    element.style.fontWeight=style.bold?'bold':'normal';element.style.fontStyle=style.italic?'italic':'normal';
-    element.style.textDecoration=style.strike?'line-through':'none';element.style.fontFamily=style.code?'monospace':'inherit';
+    applyRunStyle(element,style);
     return {value,label,tag:element.tagName,atomic,html:element.outerHTML,node:null};
   }
   // Replace from the same paragraph's start: native MoveParagraph otherwise

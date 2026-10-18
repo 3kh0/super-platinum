@@ -12,6 +12,12 @@ impl DirectoryResponse {
         (self.raw, self.keys)
     }
 }
+/// Reuse the exact JSON/property-order decoder for two observations of the
+/// original response body; never serialize a parsed Value to recover order.
+pub(super) fn decode_field_bytes(bytes: &[u8], field: &str) -> Result<DirectoryResponse, Error> {
+    decode::decode_field(bytes, field)
+        .map_err(|_| Error::Transport("invalid ordered response JSON".into()))
+}
 pub(super) async fn read_body(
     response: wreq::Response,
     status: wreq::StatusCode,

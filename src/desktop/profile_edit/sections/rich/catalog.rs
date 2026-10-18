@@ -31,7 +31,7 @@ impl Catalog {
         for token in tokens.iter().filter(|t| {
             matches!(
                 t.value["type"].as_str(),
-                Some("channel" | "user" | "usergroup")
+                Some("channel" | "user" | "usergroup" | "file" | "canvas")
             )
         }) {
             let identity = identity(&token.value)?;
@@ -42,7 +42,11 @@ impl Catalog {
             {
                 return Err(unavailable());
             }
-            context.mention(&token.value, token.label.clone())?;
+            if matches!(token.value["type"].as_str(), Some("file" | "canvas")) {
+                context.file(&token.value, token.label.clone())?;
+            } else {
+                context.mention(&token.value, token.label.clone())?;
+            }
         }
         Ok(context)
     }
@@ -54,6 +58,7 @@ fn identity(value: &Value) -> Result<Value, Error> {
         Some("usergroup") => value["usergroup_id"]
             .as_str()
             .is_some_and(|id| !id.is_empty()),
+        Some("file" | "canvas") => value["file_id"].as_str().is_some_and(|id| !id.is_empty()),
         _ => false,
     } {
         return Err(unavailable());
@@ -180,5 +185,54 @@ mod tests {
         let mut changed = witnesses;
         changed[0].value["future"] = Value::from(3);
         assert!(catalog.context(&changed, &owner).is_err());
+    }
+
+    #[test]
+    fn file_labels_require_catalog_admission_and_preserve_wire_identity() {
+        let owner = Owner {
+            account: "account".into(),
+            team: "T12345678".into(),
+            user: "U12345678".into(),
+        };
+        for kind in ["file", "canvas"] {
+            let raw = serde_json::json!({
+                "type":kind,"file_id":"FFILE0001",
+                "text":"https://fixture.invalid/document",
+                "url":"https://fixture.invalid/document", "opaque":{"keep":1}
+            });
+            let mut catalog = Catalog::default();
+            let mut token = Witness {
+                value: raw.clone(),
+                label: "Canonical title".into(),
+            };
+            assert!(
+                catalog
+                    .context(std::slice::from_ref(&token), &owner)
+                    .is_err()
+            );
+            catalog.insert(&raw, token.label.clone()).unwrap();
+            token.value["style"] = serde_json::json!({"bold":true});
+            assert!(
+                catalog
+                    .context(std::slice::from_ref(&token), &owner)
+                    .is_ok()
+            );
+            token.label = "Wire text cannot replace the title".into();
+            assert!(
+                catalog
+                    .context(std::slice::from_ref(&token), &owner)
+                    .is_err()
+            );
+            token.label = "Canonical title".into();
+            token.value["opaque"]["keep"] = Value::from(2);
+            assert!(
+                catalog
+                    .context(std::slice::from_ref(&token), &owner)
+                    .is_err()
+            );
+            token.value = raw;
+            token.value["url"] = Value::from("https://fixture.invalid/changed");
+            assert!(catalog.context(&[token], &owner).is_err());
+        }
     }
 }

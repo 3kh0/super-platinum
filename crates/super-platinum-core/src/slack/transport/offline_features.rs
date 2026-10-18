@@ -4,12 +4,40 @@ use super::*;
 #[cfg(test)]
 mod tests;
 
+/// Private raw response, with both independent ECMAScript object-key orders.
+/// Intentionally not Debug. Channel-only callers keep their existing API.
+pub struct AutocompletePrioritiesResponse {
+    raw: Value,
+    channel_keys: Option<Vec<String>>,
+    user_keys: Option<Vec<String>>,
+}
+impl AutocompletePrioritiesResponse {
+    pub fn into_parts(self) -> (Value, Option<Vec<String>>, Option<Vec<String>>) {
+        (self.raw, self.channel_keys, self.user_keys)
+    }
+    fn channels(self) -> AutocompleteOfflineResponse {
+        AutocompleteOfflineResponse {
+            raw: self.raw,
+            keys: self.channel_keys,
+        }
+    }
+}
+
 impl Transport {
     pub async fn execute_autocomplete_offline_current(
         &self,
         req: PreparedRequest,
         current: impl Fn() -> bool,
     ) -> Result<AutocompleteOfflineResponse, Error> {
+        self.execute_autocomplete_priorities_current(req, current)
+            .await
+            .map(AutocompletePrioritiesResponse::channels)
+    }
+    pub async fn execute_autocomplete_priorities_current(
+        &self,
+        req: PreparedRequest,
+        current: impl Fn() -> bool,
+    ) -> Result<AutocompletePrioritiesResponse, Error> {
         if !allowed(&req) {
             return Err(Error::Api("invalid_autocomplete_offline_request".into()));
         }
@@ -31,11 +59,11 @@ impl Transport {
             let attempted = if req.retry_safe() {
                 tokio::select! {
                     biased;
-                    result = self.execute_autocomplete_offline_once(&req) => result,
+                    result = self.execute_autocomplete_priorities_once(&req) => result,
                     () = self.link_dropped() => Err(Error::Offline("link dropped mid-call".into())),
                 }
             } else {
-                self.execute_autocomplete_offline_once(&req).await
+                self.execute_autocomplete_priorities_once(&req).await
             };
             match attempted {
                 Ok(value) => return Ok(value),
@@ -48,24 +76,47 @@ impl Transport {
             }
         }
     }
+    #[cfg(test)]
     async fn execute_autocomplete_offline_once(
         &self,
         req: &PreparedRequest,
     ) -> Result<AutocompleteOfflineResponse, Error> {
-        let mut keys = None;
+        self.execute_autocomplete_priorities_once(req)
+            .await
+            .map(AutocompletePrioritiesResponse::channels)
+    }
+    async fn execute_autocomplete_priorities_once(
+        &self,
+        req: &PreparedRequest,
+    ) -> Result<AutocompletePrioritiesResponse, Error> {
+        let mut bytes = None;
         let raw = self
             .execute_once_using_field_decode_mode(
                 req,
                 false,
                 self.http()?,
                 false,
-                Some(&mut keys),
                 None,
                 None,
+                Some(&mut bytes),
                 "channel_priority_90d",
             )
             .await?;
-        Ok(AutocompleteOfflineResponse { raw, keys })
+        let bytes =
+            bytes.ok_or_else(|| Error::Transport("missing offline response bytes".into()))?;
+        let channels =
+            directory_response::decode_field_bytes(bytes.as_bytes(), "channel_priority_90d")?;
+        let users = directory_response::decode_field_bytes(bytes.as_bytes(), "user_affinity")?;
+        if raw != channels.raw || raw != users.raw {
+            return Err(Error::Transport(
+                "mismatched offline response observation".into(),
+            ));
+        }
+        Ok(AutocompletePrioritiesResponse {
+            raw,
+            channel_keys: channels.keys,
+            user_keys: users.keys,
+        })
     }
 }
 fn allowed(req: &PreparedRequest) -> bool {

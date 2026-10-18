@@ -323,6 +323,9 @@ pub(super) fn suggestions(
             e["pctNonNullDmsForAllMembers"] = finite(nonnull / denom * 100.0);
             e["membersForEscapeHatchQuery"] = json!(people);
         }
+        if e["type"] == "file" {
+            super::file_prepare::apply(&mut e, s, offline, affinity, self_id)?;
+        }
         if offline {
             let kind = text(&e["type"]).to_owned();
             copy(&mut e, "entityTypeCtr", &s["entityCtr"][kind]);

@@ -15,6 +15,7 @@ impl Store {
             .filter(|saved| valid(saved, owner));
         Self {
             saved,
+            history: Arc::new(()),
             epoch: Arc::new(()),
             revision: 0,
         }

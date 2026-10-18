@@ -2,6 +2,7 @@ use super::*;
 use crate::profile_edit::sections as controller;
 use super_platinum_core::slack::api::custom::{SectionValue, countries};
 mod fields;
+mod rich;
 const CAPTURE: &str = include_str!("sections/capture.js");
 const BRIDGE: &str = include_str!("sections/bridge.js");
 pub(super) fn view(state: Signal<ShellState>) -> Element {
@@ -94,7 +95,13 @@ fn rich_pane(
     if labels.is_none() {
         let retry_id = id.clone();
         let recovering = controller::rich::recovering(&state.peek(), visit, serial);
-        let status = if recovering {
+        let status = if controller::rich::has_files(&blocks) {
+            if recovering {
+                "Loading document titles. Your description is unchanged."
+            } else {
+                "Document titles are unavailable or changed while opening. Your description is unchanged. Retry to load document details."
+            }
+        } else if recovering {
             "Loading mention names. Your description is unchanged."
         } else {
             "Mention names are unavailable or changed while opening. Your description is unchanged. Retry to load member, channel, and group details."
@@ -112,6 +119,7 @@ fn rich_pane(
         div{key:"rich-{key}",id:"profile-section-rich-pane","data-rich-visit":key,"data-composing":"false",
             onmounted:move |_|{dioxus::document::eval(&format!("const pane=document.getElementById('profile-section-rich-pane');if(pane?.dataset.richVisit==='{key}'){{pane.addEventListener('compositionstart',()=>pane.dataset.composing='true');pane.addEventListener('compositionend',()=>pane.dataset.composing='false');}}"));},
             crate::view::rich_editor::RichEditor{id:"profile-section-rich",label,labels,blocks:serialized,disabled:locked,expected_generation:Some(serial)}
+            rich::Suggestions{key:"profile-rich-completion-{key}",state,visit,serial,mount:key}
             button{r#type:"button",disabled:locked,onclick:move |_|{
                 let id=id.clone();spawn(async move{
                     // Native unlock is five seconds after capture. Never admit a

@@ -1,0 +1,75 @@
+[
+  {
+    "raw": {
+      "id": "U00000002"
+    },
+    "expected": true
+  },
+  {
+    "raw": {
+      "id": "U00000002",
+      "is_bot": true
+    },
+    "expected": true
+  },
+  {
+    "raw": {
+      "id": "U00000002",
+      "is_restricted": true
+    },
+    "expected": true
+  },
+  {
+    "raw": {
+      "id": "U00000002",
+      "deleted": true
+    },
+    "expected": true
+  },
+  {
+    "raw": {
+      "id": "U00000002",
+      "is_profile_only_user": true
+    },
+    "expected": true
+  },
+  {
+    "raw": {
+      "id": "U00000002",
+      "is_workflow_bot": true
+    },
+    "expected": false
+  },
+  {
+    "raw": {
+      "id": "U00000002",
+      "is_bot": true,
+      "deleted": true
+    },
+    "expected": false
+  },
+  {
+    "raw": {
+      "id": "U00000002",
+      "is_app_user": true,
+      "deleted": true
+    },
+    "expected": false
+  },
+  {
+    "raw": {
+      "id": "U00000002",
+      "is_restricted": true,
+      "restricted_user_type": "external_guest"
+    },
+    "expected": false
+  },
+  {
+    "raw": {
+      "id": "U00000002",
+      "is_profile_only_user": true,
+      "deleted": true
+    },
+    "expected": false
+  }
+]

@@ -17,6 +17,9 @@ pub(crate) fn user_mode() -> bool {
     named() && std::env::var("SUPER_PLATINUM_PROFILE_USER_MENTIONS_CHECK").as_deref() == Ok("1")
 }
 pub(crate) fn source_label() -> &'static str {
+    if super::files::named() {
+        return super::files::source_label();
+    }
     if group_mode() {
         GROUP_HANDLE
     } else if user_mode() {
@@ -26,6 +29,9 @@ pub(crate) fn source_label() -> &'static str {
     }
 }
 pub(crate) fn mounted_label() -> String {
+    if super::files::named() {
+        return super::files::mounted_label().into();
+    }
     if group_mode() {
         return GROUP_HANDLE.into();
     }
@@ -36,6 +42,9 @@ pub(crate) fn mounted_label() -> String {
     }
 }
 pub(crate) fn renamed_label() -> &'static str {
+    if super::files::named() {
+        return super::files::renamed_label();
+    }
     if group_mode() {
         return "renamed-group";
     }
@@ -90,6 +99,9 @@ pub(super) fn enabled(shell: &ShellState) -> bool {
 /// Duplicate channel occurrences carry distinct unknown fields. The editor and
 /// section wire must retain both even when the source Delta length merges them.
 pub(crate) fn blocks(text: &str) -> Vec<Value> {
+    if super::files::named() {
+        return super::files::blocks(text);
+    }
     let token = |occurrence| {
         if group_mode() {
             json!({"type":"usergroup","usergroup_id":GROUP,"fixture_occurrence":occurrence,"tab_id":"opaque-tab","opaque":{"keep":true}})
@@ -131,6 +143,12 @@ pub(crate) fn install(shell: &mut ShellState) {
         .unwrap()
         .mentions = Some(Identity { token, transport });
     set_blocks(shell, blocks("Working with "));
+    if super::files::named() {
+        super::files::install();
+    }
+    if super::completion::named() && std::env::var(super::completion::FLAG).as_deref() == Ok("1") {
+        super::completion::install(shell);
+    }
 }
 
 pub(crate) fn set_blocks(shell: &mut ShellState, blocks: Vec<Value>) {
@@ -212,7 +230,7 @@ pub(crate) async fn seed(mut state: Signal<ShellState>, label: &str) -> Result<(
         return Ok(());
     }
     let owner = Owner::capture(&state.peek()).ok_or("Missing mentions owner")?;
-    let user = json!({"id":owner.user,"name":"fixture-self","team_id":owner.team,"is_admin":true,"profile":{}});
+    let user = json!({"id":owner.user,"name":"fixture-self","team_id":owner.team,"is_admin":true,"is_restricted":super::completion::groups::restricted(),"profile":{}});
     let mut users = vec![user.clone()];
     if user_mode() {
         users.push(json!({"id":USER,"name":"username-must-not-win","team_id":owner.team,
