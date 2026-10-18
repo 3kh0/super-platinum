@@ -18,7 +18,6 @@ impl Owner {
     pub async fn review(&self) -> Result<durable::Review, durable::Error> {
         self.account.initialize().await?;
         let _guard = self.gate.lock().await;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if let Some(route) = &self.account.owned {
             return route.review(self.scope.clone()).await;
         }
@@ -27,7 +26,6 @@ impl Owner {
     pub async fn local_inventory(&self) -> Result<durable::LocalInventory, durable::Error> {
         self.account.initialize().await?;
         let _guard = self.gate.lock().await;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if let Some(route) = &self.account.owned {
             return route.local(self.scope.clone()).await;
         }

@@ -337,7 +337,6 @@ pub struct ClaimedDispatch(pub(super) Receipt);
 impl ClaimedDispatch {
     // Receipt already permits storage-only completion. Borrowing it does not
     // consume or reconstruct the issued dispatch permission.
-    #[cfg(any(test, feature = "protected-test-support"))]
     pub(crate) fn receipt(&self) -> &Receipt {
         &self.0
     }

@@ -13,7 +13,12 @@ impl NativeIdentity {
         Rc::ptr_eq(&self.0, &other.0)
     }
 }
+#[path = "protected_enrollment/local.rs"]
+mod local_policy;
+pub(super) use local_policy::Policy;
+
 pub(crate) struct Capture {
+    policy: Policy,
     identity: NativeIdentity,
     state: Signal<ShellState>,
     target: ComposerTarget,
@@ -41,25 +46,37 @@ fn local(s: &ShellState, target: ComposerTarget) -> LocalDraft {
         },
     }
 }
-fn same(a: &LocalDraft, b: &LocalDraft) -> bool {
-    a.attachments.is_empty() && b.attachments.is_empty() && a.composer == b.composer
-}
 pub(crate) async fn capture(
     state: Signal<ShellState>,
     target: ComposerTarget,
     expected: &LocalDraft,
 ) -> Result<Capture, Error> {
+    capture_with_policy(state, target, expected, Policy::Plain).await
+}
+pub(crate) async fn capture_baseline(
+    state: Signal<ShellState>,
+    target: ComposerTarget,
+    expected: &LocalDraft,
+) -> Result<Capture, Error> {
+    capture_with_policy(state, target, expected, Policy::Baseline).await
+}
+async fn capture_with_policy(
+    state: Signal<ShellState>,
+    target: ComposerTarget,
+    expected: &LocalDraft,
+    policy: Policy,
+) -> Result<Capture, Error> {
     let (account, epoch, view, key, mount) = {
         let s = state.try_peek().map_err(|_| Error::Stale)?;
         let key = s.composer_key(target).ok_or(Error::Stale)?;
         let mount = field::current(&s, target).ok_or(Error::Stale)?;
-        if !same(&local(&s, target), expected)
+        if !policy.same(&local(&s, target), expected)
             || !s
                 .core
                 .drafts
                 .items
                 .get(&key)
-                .is_some_and(|v| same(v, expected))
+                .is_some_and(|v| policy.same(v, expected))
         {
             return Err(Error::ReviewRequired);
         }
@@ -83,6 +100,7 @@ pub(crate) async fn capture(
             protected_admission::Failure::Deferred => Error::Stale,
         })?;
     let capture = Capture {
+        policy,
         identity: NativeIdentity(Rc::new(())),
         state,
         target,
@@ -111,7 +129,7 @@ impl Capture {
     ) -> bool {
         self.account == scope.account_id
             && self.key == scope.key
-            && same(&self.local, expected)
+            && self.policy.same_saved(&self.local, expected)
             && self.current(shell)
     }
     pub fn current(&self, s: &ShellState) -> bool {
@@ -121,12 +139,45 @@ impl Capture {
             && s.core.account_epoch == self.epoch
             && s.draft_writes.view_id == self.view
             && s.composer_key(self.target).as_ref() == Some(&self.key)
-            && same(&local(s, self.target), &self.local)
+            && self.policy.same(&local(s, self.target), &self.local)
             && s.core
                 .drafts
                 .items
                 .get(&self.key)
-                .is_some_and(|v| same(v, &self.local))
+                .is_some_and(|v| self.policy.same(v, &self.local))
+    }
+    /// Preparation already owns this exact Editor. A late native input event
+    /// becomes its retained alternate before admission refuses; never clear or
+    /// replace it with the older captured value.
+    pub(crate) async fn lock_preserving(
+        self,
+        editor: &std::sync::Arc<crate::drafts::protected::editor::Editor>,
+        serial: u64,
+    ) -> Result<Admission, Error> {
+        if editor.scope().account_id != self.account || editor.scope().key != self.key {
+            return Err(Error::Stale);
+        }
+        let lease = match self.evidence.lock(self.mount.clone()).await {
+            Ok(lease) => lease,
+            Err(protected_admission::Failure::Changed(current)) => {
+                super::protected_actions::preserve_native_changed(
+                    editor,
+                    &self.local,
+                    current,
+                    serial,
+                )
+                .await?;
+                return Err(Error::ReviewRequired);
+            }
+            Err(protected_admission::Failure::Deferred) => return Err(Error::Stale),
+        };
+        if !self.state.try_peek().is_ok_and(|s| self.current(&s)) {
+            return Err(Error::Stale);
+        }
+        Ok(Admission {
+            capture: self,
+            lease,
+        })
     }
     pub async fn lock(self) -> Result<Admission, Error> {
         let lease =

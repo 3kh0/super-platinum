@@ -11,6 +11,7 @@ fn credentials(shell: &mut ShellState, name: &str) {
     let user = shell.core.workspaces[&team].self_user_id.clone();
     shell.core.transport = Some(Arc::new(Transport::new(name).unwrap()));
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: name.into(),
         workspaces: [(
             team.clone(),

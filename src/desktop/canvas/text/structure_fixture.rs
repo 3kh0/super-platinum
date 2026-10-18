@@ -1,5 +1,7 @@
 //! Disconnected structural fixture. All completions use real core ACK guards.
 use super::*;
+mod mixed;
+
 use super_platinum_core::{
     canvas::{
         CanvasDocument,
@@ -38,6 +40,8 @@ pub(in crate::canvas) fn requested() -> bool {
                 | "canvas-replacement-narrow"
                 | "canvas-structure"
                 | "canvas-structure-narrow"
+                | "canvas-structure-mixed"
+                | "canvas-structure-mixed-narrow"
                 | "canvas-local-review"
                 | "canvas-local-review-narrow"
                 | "canvas-structure-text"
@@ -109,6 +113,9 @@ pub(in crate::canvas) fn snapshot() -> Arc<CanvasCollabSnapshot> {
     Arc::new(snapshot)
 }
 pub(in crate::canvas) fn document(snapshot: &CanvasCollabSnapshot) -> CanvasDocument {
+    if snapshot.section("mixed-heading").is_some() {
+        return mixed::document(snapshot);
+    }
     let mut sections: Vec<_> = snapshot
         .sections
         .iter()
@@ -149,6 +156,8 @@ pub(in crate::canvas) fn install(shell: &mut ShellState) {
             return;
         }
         snapshot
+    } else if mixed::requested() {
+        mixed::snapshot()
     } else {
         snapshot()
     };

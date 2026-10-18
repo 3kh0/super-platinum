@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use crate::state::{AttachmentVm, MessageVm, Overlay, ReactionVm, RichNode, ShellState};
 
 pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellState>) -> Element {
-    rich_node_with_source(node, media_epoch, state, None)
+    rich_node_with_source(node, media_epoch, state, None, None)
 }
 
 /// Only canonical message bodies provide action ownership. Attachments, app
@@ -15,7 +15,16 @@ pub(crate) fn rich_node_for_message(
     state: Signal<ShellState>,
     source: &crate::message_buttons::source::Source,
 ) -> Element {
-    rich_node_with_source(node, media_epoch, state, Some(source))
+    rich_node_with_source(node, media_epoch, state, Some(source), None)
+}
+
+pub(crate) fn rich_node_for_home(
+    node: &RichNode,
+    media_epoch: u64,
+    state: Signal<ShellState>,
+    key: crate::app_home::view::Key,
+) -> Element {
+    rich_node_with_source(node, media_epoch, state, None, Some(key))
 }
 
 fn rich_node_with_source(
@@ -23,6 +32,7 @@ fn rich_node_with_source(
     media_epoch: u64,
     state: Signal<ShellState>,
     source: Option<&crate::message_buttons::source::Source>,
+    home: Option<crate::app_home::view::Key>,
 ) -> Element {
     match node {
         RichNode::Canvas(target) => {
@@ -111,13 +121,13 @@ fn rich_node_with_source(
                     .any(|node| matches!(node, RichNode::Media { file: Some(_), .. }))
             {
                 // File actions contain a form: a paragraph cannot own this flow content.
-                rsx! { div { class:"message-file-paragraph", for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } } }
+                rsx! { div { class:"message-file-paragraph", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } } }
             } else {
-                rsx! { p { for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } } }
+                rsx! { p { for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } } }
             }
         }
         RichNode::Quote(nodes) => {
-            rsx! { blockquote { for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } } }
+            rsx! { blockquote { for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } } }
         }
         RichNode::Emoji { name, glyph } => rsx! {
             span { class: "custom-emoji", title: ":{name}:", "{glyph}" }
@@ -228,10 +238,10 @@ fn rich_node_with_source(
         // ── Block Kit layout ─────────────────────────────────────────────
         RichNode::Divider => rsx! { div { class: "block-divider" } },
         RichNode::Header(nodes) => rsx! {
-            h3 { class: "block-header", for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } }
+            h3 { class: "block-header", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } }
         },
         RichNode::Context(nodes) => rsx! {
-            div { class: "block-context", for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } }
+            div { class: "block-context", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } }
         },
         RichNode::Section {
             text,
@@ -240,24 +250,24 @@ fn rich_node_with_source(
         } => rsx! {
             div { class: "block-section",
                 div { class: "block-section-text",
-                    for node in text { {rich_node_with_source(node, media_epoch, state, source)} }
+                    for node in text { {rich_node_with_source(node, media_epoch, state, source, home)} }
                     if !fields.is_empty() {
                         div { class: "block-fields",
                             for (index, field) in fields.iter().enumerate() {
                                 div { key: "field-{index}", class: "block-field",
-                                    for node in field { {rich_node_with_source(node, media_epoch, state, source)} }
+                                    for node in field { {rich_node_with_source(node, media_epoch, state, source, home)} }
                                 }
                             }
                         }
                     }
                 }
                 if let Some(accessory) = accessory.as_ref() {
-                    div { class: "block-accessory", {rich_node_with_source(accessory, media_epoch, state, source)} }
+                    div { class: "block-accessory", {rich_node_with_source(accessory, media_epoch, state, source, home)} }
                 }
             }
         },
         RichNode::Actions(nodes) => rsx! {
-            div { class: "block-actions", for node in nodes { {rich_node_with_source(node, media_epoch, state, source)} } }
+            div { class: "block-actions", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } }
         },
         RichNode::Button {
             label,
@@ -270,7 +280,9 @@ fn rich_node_with_source(
                 .as_deref()
                 .filter(|label| !label.trim().is_empty())
                 .unwrap_or(label);
-            if let Some(source) = source.filter(|_| {
+            if let Some(key) = home {
+                crate::app_home::view::button(state,key,metadata.as_ref().clone(),label.clone(),accessible_label.to_owned(),*style)
+            } else if let Some(source) = source.filter(|_| {
                 matches!(
                     metadata.source,
                     super_platinum_core::block_actions::BlockElementSource::Button
@@ -429,7 +441,7 @@ fn rich_node_with_source(
                     ol { class: "block-list", style: "{indent}", start: "{offset + 1}",
                         for (index, item) in items.iter().enumerate() {
                             li { key: "li-{index}",
-                                for node in item { {rich_node_with_source(node, media_epoch, state, source)} }
+                                for node in item { {rich_node_with_source(node, media_epoch, state, source, home)} }
                             }
                         }
                     }
@@ -437,7 +449,7 @@ fn rich_node_with_source(
                     ul { class: "block-list", style: "{indent}",
                         for (index, item) in items.iter().enumerate() {
                             li { key: "li-{index}",
-                                for node in item { {rich_node_with_source(node, media_epoch, state, source)} }
+                                for node in item { {rich_node_with_source(node, media_epoch, state, source, home)} }
                             }
                         }
                     }

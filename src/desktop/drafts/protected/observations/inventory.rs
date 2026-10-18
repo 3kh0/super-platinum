@@ -7,6 +7,7 @@ pub(crate) struct Snapshot {
     pub(crate) failed: bool,
     pub(crate) unknown: bool,
     // These are the original accepted objects, not reconstructed identities.
+    raw: Option<Arc<RawEvent>>,
     pending: Vec<Arc<Work>>,
     active: Option<Arc<Work>>,
     abandoned: Vec<Arc<Work>>,
@@ -23,6 +24,7 @@ impl ObservationQueue {
             running: queue.running,
             failed: queue.failed,
             unknown: queue.unknown,
+            raw: queue.raw.clone(),
             pending: queue.pending.iter().cloned().collect(),
             active: queue.active.clone(),
             abandoned: queue.abandoned.clone(),
@@ -32,8 +34,11 @@ impl ObservationQueue {
     }
 }
 impl Snapshot {
+    pub(crate) fn has_raw_frame(&self) -> bool {
+        self.raw.is_some()
+    }
     pub(crate) fn pending(&self) -> usize {
-        self.pending.len()
+        self.pending.len() + usize::from(self.raw.is_some())
     }
     pub(crate) fn active(&self) -> bool {
         self.active.is_some()

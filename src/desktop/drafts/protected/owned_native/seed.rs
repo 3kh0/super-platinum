@@ -191,6 +191,7 @@ pub(crate) async fn install(mut state: Signal<ShellState>) -> Result<Arc<Run>, S
         }
         shell.core.transport = Some(transport);
         shell.core.session = Some(Login {
+            unified_user_client_enabled: Default::default(),
             d_cookie: COOKIE.into(),
             workspaces: [(
                 "T1".into(),

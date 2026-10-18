@@ -8,6 +8,7 @@ pub(super) struct Route {
     pub initialized: o::Initialized,
     pub operations: o::Operations,
     pub unsupported: AtomicBool,
+    pub uploads: super::owned_upload::Book,
     #[cfg(test)]
     local_read_gate: std::sync::Mutex<
         Option<(
@@ -22,6 +23,7 @@ impl Route {
             operations: initialized.operations(),
             initialized,
             unsupported: AtomicBool::new(false),
+            uploads: super::owned_upload::Book::default(),
             #[cfg(test)]
             local_read_gate: std::sync::Mutex::default(),
         })
@@ -34,11 +36,11 @@ impl Route {
         // The actual worker retains admitted reads. Refused scope is still
         // owned by the existing Owner; it contains no displaced local input.
         let held = Held::new(self.operations.review(scope));
-        held.value().await.map_err(ui)?
+        held.observed_success().await
     }
     pub async fn local(&self, scope: Scope) -> Result<durable::LocalInventory, durable::Error> {
         let held = Held::new(self.operations.local_inventory(scope));
-        let result = held.value().await.map_err(ui)?;
+        let result = held.observed_success().await;
         #[cfg(test)]
         {
             let gate = self
@@ -75,7 +77,7 @@ impl Route {
         // Cloning this result retains the actual worker's Arc, not a rebuilt
         // inventory or another initialization. Named read has no LoadMode input.
         let held = Held::new(self.operations.inventory());
-        held.value().await.map_err(ui)?
+        held.observed_success().await
     }
 }
 
@@ -106,6 +108,21 @@ impl<I: Send + Sync + 'static, T: Send + 'static> Held<I, T> {
     }
 }
 impl<I: Send + Sync + 'static, T: Clone + Send + 'static> Held<I, T> {
+    pub async fn observed_success(&self) -> Result<T, durable::Error> {
+        self.submit().map_err(ui)?;
+        self.wait().await.map_err(ui)?;
+        let job = self.job().map_err(ui)?;
+        if let Some(Err(error)) = job.result() {
+            return Err(error);
+        }
+        let (value, acknowledgment) = job.observe_success().map_err(ui)?;
+        // Actual consumer has observed and retains value before retirement.
+        // Failed acknowledgment leaves the core slot and its result retained.
+        acknowledgment
+            .acknowledge()
+            .map_err(|(error, _)| ui(error))?;
+        Ok(value)
+    }
     pub async fn value(&self) -> Result<Result<T, durable::Error>, o::AdmissionError> {
         self.submit()?;
         self.wait().await?;

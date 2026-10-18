@@ -15,6 +15,18 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
     let Some((epoch, transport)) = worker_source(&state.peek().core, &params) else {
         return;
     };
+    let captured = {
+        let mut shell = state.write();
+        crate::drafts::protected::production::socket::Worker::capture(&mut shell, params)
+    };
+    let (mut owned_socket, params) = match captured {
+        Ok(value) => value,
+        Err(_) => {
+            state.write().managed_drafts.error =
+                Some("Owned draft storage is not ready for this account. Input is retained.");
+            return;
+        }
+    };
     let health = Some(transport.health_watch());
     let mut updates = realtime::connect(params, health);
     let mut notifications = crate::notification::NotificationTracker::default();
@@ -25,7 +37,8 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
         // A replaced account may reuse the same team and socket generation.
         // Events belong to the transport that opened this worker, never the
         // credentials that happen to be current when a queued frame arrives.
-        if shell.core.account_epoch != epoch
+        if !owned_socket.current(&shell)
+            || shell.core.account_epoch != epoch
             || shell
                 .core
                 .transport
@@ -39,6 +52,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 generation,
                 connection,
             } => {
+                if !owned_socket.can_accept(&shell, &team, generation) {
+                    continue;
+                }
                 crate::file_share::connection(&mut shell, &team, generation);
                 if shell.core.active_team.as_ref() == Some(&team) {
                     crate::performance::record(crate::performance::StartupStage::RealtimeConnected);
@@ -53,6 +69,10 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     workspace.rt =
                         super_platinum_core::state::RealtimeStatus::Connected(connection);
                 }
+                let accepted_socket = match owned_socket.accept(&mut shell, &team, generation) {
+                    Ok(source) => source,
+                    Err(_) => return,
+                };
                 // Nothing replays the frames that arrived while the socket was
                 // down, so whatever happened to the open conversation meanwhile
                 // — a reaction above all, which no later frame mentions again —
@@ -76,6 +96,15 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     .clone()
                     .zip(shell.core.active_channel.clone());
                 drop(shell);
+                if owned_socket
+                    .connected(state, accepted_socket, generation)
+                    .await
+                    .is_err()
+                {
+                    state.write().managed_drafts.error = Some(
+                        "Draft continuity is unavailable; input and storage work are retained.",
+                    );
+                }
                 if reconnected {
                     dioxus::prelude::spawn(crate::channel_discovery::reconcile(
                         state,
@@ -101,6 +130,17 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
             }
             RtUpdate::Event { generation, event } => {
+                let owned_draft = match event.as_ref() {
+                    RtEvent::Unknown(raw)
+                        if matches!(
+                            raw.kind.as_str(),
+                            "draft_create" | "draft_update" | "draft_delete"
+                        ) =>
+                    {
+                        Some(raw.clone())
+                    }
+                    _ => None,
+                };
                 crate::file_share::event(&mut shell, &team, generation, &event);
                 let presence_only = matches!(event.as_ref(), RtEvent::PresenceChange { .. });
                 let reaction_channel = reactions::channel(&event).map(str::to_owned);
@@ -235,6 +275,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     .map(|w| w.channel_lifecycle.revision());
                 let thread_marked = matches!(event.as_ref(), RtEvent::ThreadMarked { .. });
                 let transcript_visible = shell.reading_latest(crate::read_visibility::focused());
+                let home_load = crate::app_home::realtime(&mut shell, &team, generation, &event);
                 let modal_load = crate::app_modal::realtime(&mut shell, &team, generation, &event);
                 let list_labels =
                     crate::slack_lists::labels::prepare(&shell, &team, generation, &event);
@@ -307,8 +348,21 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     shell.refresh_dock_badge_for(&team);
                 }
                 drop(shell);
+                if let Some(raw) = owned_draft {
+                    if owned_socket
+                        .event(state, &team, generation, raw)
+                        .await
+                        .is_err()
+                    {
+                        state.write().managed_drafts.error =
+                            Some("A draft update needs review. Your input is retained.");
+                    }
+                }
                 if list_refresh {
                     crate::slack_lists::refresh(state);
+                }
+                if home_load {
+                    dioxus::core::spawn_forever(crate::app_home::refresh(state));
                 }
                 if modal_load {
                     crate::app_modal::load(state);
@@ -358,6 +412,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
             }
             RtUpdate::Disconnected { generation } => {
+                owned_socket.disconnected(&mut shell, &team, generation);
                 crate::file_share::connection(&mut shell, &team, generation);
                 if let Some(workspace) = shell.core.workspaces.get_mut(&team)
                     && generation >= workspace.rt_generation
@@ -367,6 +422,10 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
             }
         }
     }
+    owned_socket.retire(&mut state.write());
+    let _ = owned_socket
+        .close(super_platinum_core::drafts::store::protected::GapReason::Disconnect)
+        .await;
 }
 
 fn worker_source(

@@ -211,6 +211,7 @@ fn profile_and_status_mutations_serialize_in_both_directions() {
     let owner = Owner::capture(&shell).unwrap();
     let session = fixture::session(&owner);
     shell.core.session = Some(super_platinum_core::config::Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "fixture-cookie".into(),
         workspaces: [(owner.team.clone(), session)].into(),
     });

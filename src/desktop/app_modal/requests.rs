@@ -234,6 +234,9 @@ pub(super) async fn submit(mut state: Signal<ShellState>) {
         ) {
             return;
         }
+        if crate::app_home::fixture::submit(&mut shell, &payload, &client_token) {
+            return;
+        }
         let session = shell.app_modal.as_mut().unwrap();
         let view = session.modal.stack().last().unwrap().id.clone();
         if users_fixture::record(session, &payload, &client_token) {

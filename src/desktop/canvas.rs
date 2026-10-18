@@ -4,6 +4,7 @@ pub(crate) mod checklist;
 pub(crate) mod comments;
 mod loader;
 use loader::load;
+pub(crate) mod surface;
 pub(crate) mod text;
 
 use crate::{
@@ -84,11 +85,18 @@ impl Reader {
 }
 
 #[component]
-pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Element {
+pub fn CanvasDialog(
+    mut state: Signal<ShellState>,
+    target: CanvasTarget,
+    #[props(default = false)] embedded: bool,
+) -> Element {
     let original = use_hook(|| target.clone());
+    let local_generation = use_hook(|| state.peek().shortcut_generation);
     let mut reader = use_signal(|| {
         let fixture = std::env::var("SUPER_PLATINUM_FIXTURE").unwrap_or_default();
-        if crate::fixture::is_fixture() && original.id == "Ffixture" {
+        if crate::fixture::is_fixture()
+            && (original.id == "Ffixture" || surface::fixture_target(&original))
+        {
             Reader {
                 document: (!matches!(fixture.as_str(), "canvas-loading" | "canvas-error")).then(
                     || {
@@ -149,6 +157,11 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
     use_future(move || {
         let initial = initial.clone();
         async move {
+            if embedded {
+                if !surface::mount(&mut state.write(), &initial) {
+                    return;
+                }
+            }
             if text::structure_fixture::requested() {
                 let mut shell = state.write();
                 text::structure_fixture::install(&mut shell);
@@ -182,6 +195,14 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
     );
     let mut text_draft = use_signal(|| None::<text::Draft>);
     let local_review = use_signal(|| None::<checklist::recovery::review::Draft>);
+    use_effect(move || {
+        if rename.read().is_none()
+            && text_draft.read().is_none()
+            && state.peek().canvas_checklist.local_editor == Some(local_generation)
+        {
+            surface::release_local(&mut state.write(), local_generation);
+        }
+    });
     use_effect(move || {
         let shell = state.read();
         if text::should_close(&shell, text_draft.peek().as_ref()) {
@@ -282,22 +303,26 @@ pub fn CanvasDialog(mut state: Signal<ShellState>, target: CanvasTarget) -> Elem
     let refresh = original.clone();
     let permalink = original.permalink.clone();
     let epoch = state.read().media_epoch;
+    let unavailable = embedded && !surface::visible(&state.read(), &original.id);
     rsx! {
-        div {class:"scrim",onclick:move |_|state.write().dismiss_overlay()}
-        section {id:"shell-overlay-dialog",class:"modal canvas-dialog",role:"dialog","aria-label":"Canvas: {title}","aria-modal":"true",tabindex:"-1","data-keyboard-dialog":"true","data-dialog-kind":"other","data-dialog-generation":state.read().shortcut_generation,
+        if !embedded {div {class:"scrim",onclick:move |_|state.write().dismiss_overlay()}}
+        section {id:if embedded {"channel-canvas-panel"}else{"shell-overlay-dialog"},class:if embedded {"canvas-dialog channel-canvas-panel"}else{"modal canvas-dialog"},role:if embedded {"region"}else{"dialog"},"aria-label":"Canvas: {title}","aria-modal":if embedded {None}else{Some("true")},tabindex:"-1","data-keyboard-dialog":if embedded {None}else{Some("true")},"data-dialog-kind":"other","data-dialog-generation":state.read().shortcut_generation,
+            onmounted:move |_|if embedded {surface::focus(state.peek().shortcut_generation);},
             header {
                 div {class:"canvas-heading",span {class:"canvas-eyebrow","Canvas"}h2 {"{title}"}}
-                button {class:"icon-btn","aria-label":"Close canvas",onclick:move |_|state.write().dismiss_overlay(),{icon(Icon::Close,"icon")}}
+                if embedded {button {class:"canvas-more",onclick:move |_|crate::channel_resources::select(state,crate::state::ChannelTab::Messages),"Messages"}}
+                else {button {class:"icon-btn","aria-label":"Close canvas",onclick:move |_|state.write().dismiss_overlay(),{icon(Icon::Close,"icon")}}}
             }
             nav {class:"canvas-toolbar","aria-label":"Canvas actions",
                 span {class:"canvas-status",if text_draft.read().is_some() {"Editing paragraph"} else if loading {"Loading…"} else {"Read view"}}
                 span {class:"spacer"}
                 button {id:"canvas-comments-open","data-canvas-comment-action":"open",disabled:editing||writing,onclick:move |_|{comments_open.set(true);comments::open(state,comments);},"Show all threads"}
-                if snapshot.editable {button {disabled:refreshing||editing||checklist_pending||canonical.as_ref().is_some_and(|view|view.stale),onclick:move |_|{if text_draft.peek().is_none() && checklist::presentation(&state.peek()).is_none_or(|view|view.operation.is_none()&&!view.loading&&!view.stale) && !reader.peek().loading {rename.set(Some(RenameDraft{base:rename_title.clone(),input:rename_title.clone(),busy:false,error:None}));}},"Rename"}}
+                if snapshot.editable {button {disabled:refreshing||editing||checklist_pending||canonical.as_ref().is_some_and(|view|view.stale),onclick:move |_|{if text_draft.peek().is_none() && checklist::presentation(&state.peek()).is_none_or(|view|view.operation.is_none()&&!view.loading&&!view.stale) && !reader.peek().loading {if !surface::hold_local(&mut state.write(),local_generation) {return;}rename.set(Some(RenameDraft{base:rename_title.clone(),input:rename_title.clone(),busy:false,error:None}));}},"Rename"}}
                 if local_review_available {button {disabled:refreshing||editing,onclick:move |_|checklist::recovery::review::open(state,reader,review_target.clone(),local_review),"Review saved change"}}
                 button {disabled:refreshing||block_refresh||writing,onclick:move |_|{spawn(load(state,reader,refresh.clone()));},"Refresh"}
                 if let Some(url)=permalink {button {onclick:move |_|{if crate::media::open_external(&url).is_err(){state.write().show_toast("This canvas link could not be opened.");}},"Open in Slack"}}
             }
+            if unavailable {p {class:"canvas-status",role:"status","This tab is no longer available. Your edit is kept here; copy it or cancel before changing tabs."}}
             if let Some(notice) = notice {p {class:"canvas-status",role:"status", "{notice}"}}
             if rename.read().is_some() {RenameForm {state,reader,draft:rename,target:rename_target}}
             if *comments_open.read() {comments::Panel {state,model:comments,opened:comments_open}} else {
@@ -460,7 +485,8 @@ fn RenameForm(
     let Some(value) = current.as_ref() else {
         return rsx! {};
     };
-    let disabled = value.busy || value.input.trim().is_empty();
+    let disabled =
+        value.busy || value.input.trim().is_empty() || !surface::visible(&state.read(), &target.id);
     let busy = value.busy;
     rsx! {
         form {class:"canvas-rename",onsubmit:move |event|{event.prevent_default();if !disabled {spawn(save_name(state,reader,draft,target.clone()));}},
@@ -489,6 +515,12 @@ async fn save_name(
     else {
         return;
     };
+    if !surface::visible(&state.peek(), &target.id) {
+        if let Some(d) = draft.write().as_mut() {
+            d.error = Some("This tab is no longer available. Your edit is still here.".into());
+        }
+        return;
+    }
     let visit = state.peek().shortcut_generation;
     let name = edit.input.trim().to_owned();
     if name == edit.base {
@@ -512,7 +544,7 @@ async fn save_name(
     let current =
         api::fetch_canvas_file(&ctx.transport, &ctx.client, &ctx.session, &target.id).await;
     if !ctx.current(&state.peek())
-        || state.peek().overlay != Some(Overlay::Canvas)
+        || !surface::visible(&state.peek(), &target.id)
         || state.peek().shortcut_generation != visit
         || !state
             .peek()
@@ -520,6 +552,12 @@ async fn save_name(
             .as_ref()
             .is_some_and(|c| c.id == target.id)
     {
+        if ctx.current(&state.peek()) && surface::retains_local(&state.peek(), &target.id, visit) {
+            if let Some(d) = draft.write().as_mut() {
+                d.busy = false;
+                d.error = Some("This tab changed while the name request was being checked. Your edit is kept here; cancel and review the Canvas before trying again.".into());
+            }
+        }
         return;
     }
     if crate::file_events::changed_since(
@@ -557,7 +595,7 @@ async fn save_name(
         Err(error) => Err(error),
     };
     if !ctx.current(&state.peek())
-        || state.peek().overlay != Some(Overlay::Canvas)
+        || !surface::visible(&state.peek(), &target.id)
         || state.peek().shortcut_generation != visit
         || !state
             .peek()
@@ -565,6 +603,12 @@ async fn save_name(
             .as_ref()
             .is_some_and(|c| c.id == target.id)
     {
+        if ctx.current(&state.peek()) && surface::retains_local(&state.peek(), &target.id, visit) {
+            if let Some(d) = draft.write().as_mut() {
+                d.busy = false;
+                d.error = Some("This tab changed while the name request was being checked. Your edit is kept here; cancel and review the Canvas before trying again.".into());
+            }
+        }
         return;
     }
     match result {

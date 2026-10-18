@@ -27,6 +27,15 @@ pub(crate) fn bounded<T: serde::Serialize>(value: &T) -> Result<(), durable::Err
 }
 #[derive(Clone)]
 pub(crate) enum Request {
+    Baseline {
+        evidence: Arc<super::baseline::Evidence>,
+        choice: super_platinum_core::drafts::store::sync::RemoteChoice,
+    },
+    Slash {
+        context: Arc<owned_slash::Context>,
+        choice: super_platinum_core::slash_commands::catalog::Choice,
+        client_token: String,
+    },
     Send,
     Schedule {
         snapshot: super_platinum_core::drafts::sync::Snapshot,
@@ -80,12 +89,14 @@ pub(crate) struct Evidence {
     pub status: Status,
     pub review: Option<Arc<durable::Review>>,
     pub consumed: Option<Arc<Consumed>>,
+    pub(super) baseline_finish: Option<Arc<super::owned_baseline::Finish>>,
+    pub(super) baseline_applied: Option<Arc<super::actions::ProjectionBarrier>>,
+    pub(super) baseline_projection: Option<Arc<super::projection::Acknowledged>>,
     pub attempt: Option<Arc<Attempt>>,
     pub receipt: Option<durable::Receipt>,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     pub owned_send: Option<Arc<super::owned_send::Send>>,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     pub owned_release: Option<Arc<super::owned_release::Release>>,
+    pub owned_slash: Option<Arc<super::owned_slash::Slash>>,
     pub recorded: Option<Arc<durable::Review>>,
     pub preservation: Option<Result<(), durable::Error>>,
     pub publication: Publications,
@@ -189,12 +200,14 @@ impl Account {
                 status: Status::Running,
                 review: None,
                 consumed: None,
+                baseline_finish: None,
+                baseline_applied: None,
+                baseline_projection: None,
                 attempt: None,
                 receipt: None,
-                #[cfg(any(test, feature = "protected-native-fixture"))]
                 owned_send: None,
-                #[cfg(any(test, feature = "protected-native-fixture"))]
                 owned_release: None,
+                owned_slash: None,
                 recorded: None,
                 preservation: None,
                 publication: Publications::default(),
@@ -334,6 +347,17 @@ impl Operation {
     pub fn permits(&self, action: &Action) -> bool {
         match (&self.0.request, action) {
             (
+                Request::Baseline {
+                    evidence: a,
+                    choice: x,
+                },
+                Action::Baseline {
+                    evidence: b,
+                    choice: y,
+                    ..
+                },
+            ) => Arc::ptr_eq(a, b) && x == y,
+            (
                 Request::Send,
                 Action::Consume(super_platinum_core::drafts::sync::ConsumeKind::Send),
             ) => true,
@@ -397,6 +421,9 @@ impl Operation {
         self.0.changed.notify_waiters();
     }
     pub fn unknown(&self) {
+        if let Request::Slash { context, .. } = &self.0.request {
+            context.revoke();
+        }
         self.0.live.store(false, Ordering::Release);
         if let Ok(mut state) = self.0.evidence.lock() {
             if state.status == Status::Running {
@@ -424,6 +451,12 @@ impl Operation {
     }
 }
 
+#[path = "operation/baseline.rs"]
+mod baseline;
+
 #[cfg(test)]
 #[path = "operation/tests.rs"]
 pub(crate) mod tests;
+
+#[cfg(test)]
+pub(crate) use baseline::tests::RecoveryFixture;

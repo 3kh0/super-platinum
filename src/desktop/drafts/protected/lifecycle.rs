@@ -12,6 +12,8 @@ mod consent;
 pub(crate) use install::{InstallRequest, Installed, ReadyInstall};
 pub(crate) use route::RouteSnapshot;
 mod local;
+mod managed;
+pub(crate) use managed::{ManagedInstallRequest, ManagedOpen, ReadyManagedInstall};
 #[cfg(test)]
 mod tests;
 pub(crate) use adopt::{Adoption, AdoptionResult};
@@ -57,6 +59,7 @@ pub(crate) struct Host {
     selected: Option<Selection>,
     discovery: discovery::Discovery,
     locals: BTreeMap<String, local::Slot>,
+    managed: BTreeMap<String, managed::Slot>,
     adoptions: BTreeMap<String, adopt::Slot>,
     routes: BTreeMap<(String, DraftKey), route::Route>,
 }
@@ -106,13 +109,13 @@ impl Host {
     pub fn begin_load(
         &mut self,
         shell: &ShellState,
-    ) -> Result<discovery::Wait<durable::Loaded>, durable::Error> {
+    ) -> Result<discovery::Wait<Arc<durable::Loaded>>, durable::Error> {
         self.discovery.begin_load(shell)
     }
     pub fn finish_load(
         &mut self,
         shell: &ShellState,
-        ready: &discovery::Wait<durable::Loaded>,
+        ready: &discovery::Wait<Arc<durable::Loaded>>,
     ) -> Result<(), durable::Error> {
         self.discovery.finish_load(shell, ready)
     }
@@ -123,5 +126,16 @@ impl Host {
 impl Drop for Host {
     fn drop(&mut self) {
         self.retire_selection();
+    }
+}
+
+impl Host {
+    pub(super) fn publish_current(
+        &mut self,
+        shell: &ShellState,
+        before: &View,
+        after: View,
+    ) -> bool {
+        self.discovery.publish_current(shell, before, after)
     }
 }

@@ -97,7 +97,7 @@ pub(super) fn open(
     let Some(intent) = &item.intent else {
         return;
     };
-    draft.set(Some(Draft {
+    let next = Draft {
         generation: NEXT_DRAFT.fetch_add(1, Ordering::Relaxed),
         visit: current.visit,
         read: current.read,
@@ -107,7 +107,14 @@ pub(super) fn open(
         reading: false,
         pending: None,
         error: None,
-    }));
+    };
+    drop(r);
+    drop(shell);
+    let mut state = state;
+    if !super::surface::hold_local(&mut state.write(), next.visit) {
+        return;
+    }
+    draft.set(Some(next));
 }
 fn open_structure(
     state: Signal<ShellState>,
@@ -154,7 +161,7 @@ fn open_structure(
         )
         .unwrap()
     };
-    draft.set(Some(Draft {
+    let next = Draft {
         generation: NEXT_DRAFT.fetch_add(1, Ordering::Relaxed),
         visit: current.visit,
         read: current.read,
@@ -168,7 +175,14 @@ fn open_structure(
         reading: false,
         pending: None,
         error: None,
-    }));
+    };
+    drop(r);
+    drop(shell);
+    let mut state = state;
+    if !super::surface::hold_local(&mut state.write(), next.visit) {
+        return;
+    }
+    draft.set(Some(next));
 }
 fn current(shell: &ShellState, draft: &Draft) -> bool {
     checklist::presentation(shell).is_some_and(|view| {
@@ -246,4 +260,28 @@ pub(super) fn paragraph(
             }
         }
     }}
+}
+
+#[cfg(test)]
+mod surface_retention_tests {
+    use super::*;
+    #[test]
+    fn visibility_loss_is_not_a_settlement_or_permission_to_discard_local_text() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        let draft = Draft {
+            generation: 1,
+            visit: shell.shortcut_generation,
+            read: 1,
+            section: "paragraph".into(),
+            kind: Kind::Structure(Action::Before),
+            blocks: "preserved local text".into(),
+            reading: false,
+            pending: None,
+            error: None,
+        };
+        shell.main_view = crate::state::MainView::Unreads;
+        assert!(!current(&shell, &draft));
+        assert!(!should_close(&shell, Some(&draft)));
+        assert_eq!(draft.blocks, "preserved local text");
+    }
 }

@@ -70,6 +70,29 @@ pub(super) fn prepare(shell: &mut ShellState) {
 }
 pub(crate) fn install(shell: &mut ShellState) {
     prepare(shell);
+    let conversation = fixture::Conversation::from_alias(
+        &std::env::var("SUPER_PLATINUM_FIXTURE").unwrap_or_default(),
+    );
+    if conversation != fixture::Conversation::Channel {
+        let workspace = shell.core.workspaces.get_mut(fixture::TEAM).unwrap();
+        workspace.channels.insert(
+            conversation.id().into(),
+            serde_json::from_value(conversation.raw()).unwrap(),
+        );
+        workspace.users.insert(
+            "U00000002".into(),
+            serde_json::from_value(fixture::peer()).unwrap(),
+        );
+        workspace.users.insert(
+            "U00000003".into(),
+            serde_json::from_value(
+                json!({"id":"U00000003","name":"bob","deleted":false,"is_bot":false}),
+            )
+            .unwrap(),
+        );
+        shell.refresh_from_core();
+        shell.sync_fixture_messages();
+    }
     match fixture::Capability::load(shell) {
         Ok(capability) => shell.file_share_fixture = Some(capability),
         Err(_) => eprintln!(

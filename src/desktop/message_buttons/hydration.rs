@@ -163,6 +163,7 @@ mod tests {
                 token: "synthetic-only".into(),
             };
             shell.core.session = Some(Session {
+                unified_user_client_enabled: Default::default(),
                 d_cookie: "synthetic-only".into(),
                 workspaces: [("T1".into(), workspace)].into(),
             });

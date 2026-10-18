@@ -2,9 +2,16 @@
 use super::owned_route::{Held, Route, o, ui};
 use super::ownership::Tracked as Mutex;
 use super::*;
+mod retire;
+#[derive(Default)]
+struct Child {
+    completion: Option<o::LocalCompletion>,
+    acknowledgment: Option<o::LocalHandoffAcknowledgment>,
+    acknowledged: Option<durable::LocalWriterLease>,
+}
 pub(super) struct Release {
     pub held: Arc<Held<o::ReleaseInput, durable::Release>>,
-    child: Mutex<Option<o::LocalCompletion>>,
+    child: Mutex<Child>,
 }
 impl Release {
     /// Desktop holder membership only. Core job progression is a separate edge.
@@ -33,7 +40,7 @@ impl Release {
         self.held.wait().await.map_err(ui)?;
         let child = {
             let mut child = self.child.lock().map_err(|_| durable::Error::Storage)?;
-            if child.is_none() {
+            if child.completion.is_none() {
                 // start_local transfers the Release result into this exact
                 // child. Later retry/reattachment must use that retained child,
                 // never reread the consumed parent result or create a Release.
@@ -44,9 +51,9 @@ impl Release {
                     .result()
                     .ok_or(durable::Error::Pending)??;
                 parent.retain(|s| s.release = Some(release))?;
-                *child = Some(self.held.job().map_err(ui)?.start_local().map_err(ui)?);
+                child.completion = Some(self.held.job().map_err(ui)?.start_local().map_err(ui)?);
             }
-            child.clone().ok_or(durable::Error::Pending)?
+            child.completion.clone().ok_or(durable::Error::Pending)?
         };
         // Evidence phase may be stale while this exact storage continuation is
         // still admitted. Never resurrect root currentness or substitute Release.
@@ -69,6 +76,7 @@ impl Release {
             .child
             .lock()
             .map_err(|_| durable::Error::Storage)?
+            .completion
             .clone()
             .ok_or(durable::Error::Pending)?;
         match child.result().map_err(ui)? {

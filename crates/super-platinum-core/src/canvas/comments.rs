@@ -1,5 +1,7 @@
 //! Read-only Canvas comments. Source: Slack's Oo8B/rGEL/IIdT client modules.
 //! No Quip IDs are synthesized into Slack timestamps and no read marks are sent.
+pub mod archive;
+pub mod reply;
 use crate::slack::models::Message;
 use serde_json::Value;
 use std::collections::{BTreeMap, HashSet};

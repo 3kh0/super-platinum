@@ -90,6 +90,7 @@ fn context(shell: &mut ShellState) -> Context {
         slack::Transport,
     };
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "fixture".into(),
         workspaces: [(
             "T1".into(),

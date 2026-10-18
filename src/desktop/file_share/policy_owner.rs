@@ -36,7 +36,7 @@ pub(crate) struct Owner {
     facts: PostingFacts,
     // Provenance of retained facts survives clearing the presentation snapshot.
     // A later read cannot silently rebase old facts onto newer local metadata.
-    fact_observation: Option<(u64, Value, Value)>,
+    fact_observation: Option<(u64, Value, Value, Value)>,
     latest: Option<Snapshot>,
 }
 /// Owned original read context; cannot be created from a raw endpoint response.
@@ -48,6 +48,7 @@ pub(crate) struct Read {
     revision: u64,
     channel_snapshot: Value,
     member_snapshot: Value,
+    recipient_snapshot: Value,
 }
 #[derive(Clone)]
 pub(crate) struct Snapshot {
@@ -56,7 +57,9 @@ pub(crate) struct Snapshot {
     revision: u64,
     channel_snapshot: Value,
     member_snapshot: Value,
+    recipient_snapshot: Value,
     raw: Arc<Value>,
+    peer_raw: Option<Value>,
     facts: PostingFacts,
     eligibility: Eligibility,
 }
@@ -72,25 +75,7 @@ impl Owner {
     pub(crate) fn capture(shell: &ShellState, channel: &str) -> Option<Self> {
         // No lookup/create of a user, new DM or channel membership mutation.
         let scope = Scope::capture(shell)?;
-        let c = shell
-            .core
-            .workspaces
-            .get(&scope.context.session.team_id)?
-            .channels
-            .get(channel)?;
-        if c.id != channel
-            || !(9..=64).contains(&channel.len())
-            || !matches!(channel.as_bytes().first(), Some(b'C' | b'G'))
-            || !channel
-                .bytes()
-                .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
-            || !(c.is_channel || c.is_private || c.is_group)
-            || c.is_im
-            || c.is_mpim
-            || c.extra.get("is_member").and_then(Value::as_bool) != Some(true)
-        {
-            return None;
-        }
+        super::recipients::capture(shell, channel)?;
         Some(Self {
             identity: Arc::new(()),
             scope,
@@ -137,7 +122,7 @@ impl Owner {
             self.facts = PostingFacts::new(self.channel.clone());
             self.fact_observation = None;
         }
-        let (revision, channel_snapshot, member_snapshot) = observed;
+        let (revision, channel_snapshot, member_snapshot, recipient_snapshot) = observed;
         let serial = self.next()?;
         self.pending = Some(serial);
         Ok(Read {
@@ -148,6 +133,7 @@ impl Owner {
             revision,
             channel_snapshot,
             member_snapshot,
+            recipient_snapshot,
         })
     }
     /// A genuine failed read retires only its ticket. Never convert it into raw
@@ -158,11 +144,27 @@ impl Owner {
             self.latest = None;
         }
     }
+    #[cfg(test)]
     pub(crate) fn finish(
         &mut self,
         shell: &ShellState,
         read: Read,
         response: Value,
+    ) -> Result<Snapshot, Refusal> {
+        self.finish_response(
+            shell,
+            read,
+            Response {
+                channel: response,
+                peer: None,
+            },
+        )
+    }
+    pub(crate) fn finish_response(
+        &mut self,
+        shell: &ShellState,
+        read: Read,
+        response: Response,
     ) -> Result<Snapshot, Refusal> {
         if !Arc::ptr_eq(&self.identity, &read.identity) || self.pending != Some(read.serial) {
             return Err(Refusal::Changed);
@@ -178,10 +180,13 @@ impl Owner {
                 read.revision,
                 read.channel_snapshot.clone(),
                 read.member_snapshot.clone(),
+                read.recipient_snapshot.clone(),
             )
         {
             return Err(Refusal::Changed);
         }
+        let peer_response = response.peer;
+        let response = response.channel;
         if !bounded(&response) {
             return Err(Refusal::Limit);
         }
@@ -195,16 +200,34 @@ impl Owner {
             .filter(|v| v.is_object())
             .filter(|v| v["id"].as_str() == Some(self.channel.as_str()))
             .ok_or(Refusal::Envelope)?;
+        if !super::recipients::same_target(&read.channel_snapshot, raw) {
+            return Err(Refusal::Changed);
+        }
+        let peer = if read.channel_snapshot["is_im"] == true {
+            let id = read.channel_snapshot["user"]
+                .as_str()
+                .ok_or(Refusal::Changed)?;
+            Some(
+                super::recipients::raw_peer(peer_response.as_ref().ok_or(Refusal::Envelope)?, id)
+                    .ok_or(Refusal::Envelope)?,
+            )
+        } else {
+            if peer_response.is_some() {
+                return Err(Refusal::Envelope);
+            }
+            None
+        };
         let member: User =
             serde_json::from_value(read.member_snapshot.clone()).map_err(|_| Refusal::Changed)?;
         if !self.facts.observe(raw, Some(&member)) {
             return Err(Refusal::Envelope);
         }
-        let eligibility = policy::destination(raw, &self.facts, None);
+        let eligibility = policy::destination(raw, &self.facts, peer.as_ref());
         self.fact_observation = Some((
             read.revision,
             read.channel_snapshot.clone(),
             read.member_snapshot.clone(),
+            read.recipient_snapshot.clone(),
         ));
         let snapshot = Snapshot {
             identity: self.identity.clone(),
@@ -212,7 +235,9 @@ impl Owner {
             revision: read.revision,
             channel_snapshot: read.channel_snapshot,
             member_snapshot: read.member_snapshot,
+            recipient_snapshot: read.recipient_snapshot,
             raw: Arc::new(raw.clone()),
+            peer_raw: peer,
             facts: self.facts.clone(),
             eligibility,
         };
@@ -227,20 +252,20 @@ impl Owner {
             && Arc::ptr_eq(&self.identity, &snapshot.identity)
             && self.serial == Some(snapshot.serial)
             && self.facts == snapshot.facts
-            && self
-                .latest
-                .as_ref()
-                .is_some_and(|s| Arc::ptr_eq(&s.raw, &snapshot.raw))
+            && self.latest.as_ref().is_some_and(|s| {
+                Arc::ptr_eq(&s.raw, &snapshot.raw) && s.peer_raw == snapshot.peer_raw
+            })
             && self.observed(shell).is_ok_and(|current| {
                 current
                     == (
                         snapshot.revision,
                         snapshot.channel_snapshot.clone(),
                         snapshot.member_snapshot.clone(),
+                        snapshot.recipient_snapshot.clone(),
                     )
             })
     }
-    fn observed(&self, shell: &ShellState) -> Result<(u64, Value, Value), Refusal> {
+    fn observed(&self, shell: &ShellState) -> Result<(u64, Value, Value, Value), Refusal> {
         let workspace = shell
             .core
             .workspaces
@@ -250,12 +275,7 @@ impl Owner {
             .channels
             .get(&self.channel)
             .ok_or(Refusal::Changed)?;
-        if channel.extra.get("is_member").and_then(Value::as_bool) != Some(true)
-            || channel.is_im
-            || channel.is_mpim
-        {
-            return Err(Refusal::Changed);
-        }
+        let recipient = super::recipients::capture(shell, &self.channel).ok_or(Refusal::Changed)?;
         let member = workspace
             .users
             .get(&self.scope.context.session.user_id)
@@ -270,6 +290,7 @@ impl Owner {
             workspace.channel_lifecycle.channel_revision(&self.channel),
             channel,
             member,
+            recipient,
         ))
     }
     /// Called at the already epoch/Transport/generation-guarded realtime ingress
@@ -324,6 +345,10 @@ impl Owner {
         }
     }
 }
+pub(crate) struct Response {
+    channel: Value,
+    peer: Option<Value>,
+}
 impl Read {
     pub(crate) fn request(&self) -> PreparedRequest {
         api::conversations_info(
@@ -334,11 +359,22 @@ impl Read {
     }
     /// Caller checks its dialog/source owner before invoking and after await.
     /// Existing read transport honors health/timeout/Retry-After. No write here.
-    pub(crate) async fn fetch(&self) -> Result<Value, Error> {
-        self.scope.context.channel_info(&self.channel).await
+    pub(crate) async fn fetch(&self) -> Result<Response, Error> {
+        let channel = self.scope.context.channel_info(&self.channel).await?;
+        // Only the captured peer is read. A changed server user cannot choose a
+        // different lookup. Caller rechecks every local snapshot after awaits.
+        let peer = if self.channel_snapshot["is_im"] == true {
+            let id = self.channel_snapshot["user"]
+                .as_str()
+                .ok_or_else(|| Error::Transport("File share peer identity missing".into()))?;
+            Some(self.scope.context.peer_info(id).await?)
+        } else {
+            None
+        };
+        Ok(Response { channel, peer })
     }
 }
-fn bounded(value: &Value) -> bool {
+pub(super) fn bounded(value: &Value) -> bool {
     fn depth(v: &Value, n: usize) -> bool {
         n <= 32
             && match v {

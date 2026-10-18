@@ -90,7 +90,17 @@ fn choice(value: &super_platinum_core::slack_lists::ViewFilterChoice) -> Value {
     match value {
         ViewFilterChoice::All(rows) => json!({"all": rows.iter().map(choice).collect::<Vec<_>>()}),
         ViewFilterChoice::None => json!({"column":null,"checked":null}),
+        ViewFilterChoice::Select {
+            column_id,
+            operator,
+            values,
+        } => json!({"column":column_id,"operator":operator.as_str(),"values":values}),
         ViewFilterChoice::Number {
+            column_id,
+            operator,
+            value,
+        } => json!({"column":column_id,"operator":operator.as_str(),"value":value}),
+        ViewFilterChoice::Date {
             column_id,
             operator,
             value,

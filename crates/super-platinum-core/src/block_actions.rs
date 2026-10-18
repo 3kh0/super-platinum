@@ -4,6 +4,7 @@
 
 pub mod external;
 pub mod form;
+pub mod home;
 pub mod message_state;
 mod metadata;
 pub mod modal;
@@ -13,3 +14,6 @@ pub use metadata::{
     BlockConfirmation, BlockConfirmationState, BlockElementMetadata, BlockElementSource, BlockText,
     BlockTextFormat,
 };
+
+/// Ordinary installed-app shortcuts use the app modal correlation path.
+pub mod shortcuts;

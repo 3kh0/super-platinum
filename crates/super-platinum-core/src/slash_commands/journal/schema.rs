@@ -12,26 +12,32 @@ pub(super) fn install(conn: &mut Connection, account: &str) -> Result<(), Failur
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .map_err(storage)?;
-    let count:i64=tx.query_row("SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('sp_slash_meta','sp_slash_intents','sp_slash_cooldowns')",[],|r|r.get(0)).map_err(storage)?;
+    install_transaction(&tx, account)?;
+    tx.commit().map_err(storage)
+}
+pub(super) fn install_transaction(conn: &Connection, account: &str) -> Result<(), Failure> {
+    if conn.is_autocommit() || !valid_account(account) {
+        return Err(Failure::Invalid);
+    }
+    let count:i64=conn.query_row("SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('sp_slash_meta','sp_slash_intents','sp_slash_cooldowns')",[],|r|r.get(0)).map_err(storage)?;
     if count == 3 {
-        require(&tx, account)?;
-        transaction::inventory(&tx, account)?;
-        cooldown::audit(&tx, account)?;
-        tx.commit().map_err(storage)?;
+        require(conn, account)?;
+        transaction::inventory(conn, account)?;
+        cooldown::audit(conn, account)?;
         return Ok(());
     }
     if count != 0 {
         return Err(Failure::Invalid);
     }
-    draft_account(&tx, account)?;
-    tx.execute_batch("CREATE TABLE sp_slash_meta(singleton INTEGER PRIMARY KEY CHECK(singleton=1),version INTEGER NOT NULL,account TEXT NOT NULL);
+    draft_account(conn, account)?;
+    conn.execute_batch("CREATE TABLE sp_slash_meta(singleton INTEGER PRIMARY KEY CHECK(singleton=1),version INTEGER NOT NULL,account TEXT NOT NULL);
         CREATE TABLE sp_slash_intents(id TEXT PRIMARY KEY,scope TEXT NOT NULL,version INTEGER NOT NULL CHECK(version>0),created_run TEXT NOT NULL,body BLOB NOT NULL);
         CREATE INDEX sp_slash_scope ON sp_slash_intents(scope);
         CREATE TABLE sp_slash_cooldowns(scope TEXT PRIMARY KEY,permanent INTEGER NOT NULL CHECK(permanent IN(0,1)),duration_ms INTEGER,run TEXT,until_mono INTEGER,until_wall INTEGER);").map_err(storage)?;
-    tx.execute("INSERT INTO sp_slash_meta VALUES(1,1,?1)", [account])
+    conn.execute("INSERT INTO sp_slash_meta VALUES(1,1,?1)", [account])
         .map_err(storage)?;
-    require(&tx, account)?;
-    tx.commit().map_err(storage)
+    require(conn, account)?;
+    Ok(())
 }
 pub(super) fn require(conn: &Connection, account: &str) -> Result<(), Failure> {
     if !valid_account(account) {

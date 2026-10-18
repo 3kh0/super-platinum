@@ -144,6 +144,7 @@ fn three_profile_controllers_serialize_without_recursive_locks() {
     let mut s = shell();
     let o = Owner::capture(&s).unwrap();
     s.core.session = Some(super_platinum_core::config::Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "fixture-cookie".into(),
         workspaces: [(o.team.clone(), fixture::session(&o))].into(),
     });

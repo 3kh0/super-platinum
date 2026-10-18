@@ -270,6 +270,7 @@ fn credential_replacement_cannot_lend_dirty_multi_proofs_to_a_new_picker() {
     use super_platinum_core::{config::Session as Credentials, slack::Transport};
     let mut s = setup(view(true, 5));
     s.core.session = Some(Credentials {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: [("T1".into(), fixture::workspace())].into(),
     });

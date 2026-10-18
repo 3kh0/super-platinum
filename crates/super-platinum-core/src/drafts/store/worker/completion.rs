@@ -16,7 +16,7 @@ pub use steps::{
 #[path = "completion_prerequisites.rs"]
 mod prerequisites;
 pub(in crate::drafts::store::worker) use prerequisites::TakeoverInput;
-pub use prerequisites::{OpenInput, TeamInput};
+pub use prerequisites::{GapInput, OpenInput, TeamInput};
 #[path = "completion_requests.rs"]
 mod requests;
 
@@ -83,6 +83,9 @@ struct CompletionHeld {
     changed: Condvar,
 }
 struct CompletionStatus {
+    baseline: bool,
+    baseline_deferred_initial: bool,
+    deferred: baseline_deferred::Deferred,
     issued: Option<Issued>,
     binding: Option<Arc<Binding>>,
     dispatch: Option<Dispatch>,
@@ -101,6 +104,12 @@ impl CompletionHeld {
         Arc::new(Self {
             changed: Condvar::new(),
             status: Mutex::new(CompletionStatus {
+                baseline: matches!(&issued, Issued::Baseline(_)),
+                baseline_deferred_initial: matches!(
+                    &issued,
+                    Issued::Baseline(p::BaselineClaim::Deferred { .. })
+                ),
+                deferred: Default::default(),
                 issued: Some(issued),
                 binding: None,
                 dispatch: None,
@@ -162,6 +171,9 @@ pub(in crate::drafts::store::worker) struct Completion {
     held: Arc<CompletionHeld>,
 }
 impl Completion {
+    pub(in crate::drafts::store::worker) fn is_baseline(&self) -> bool {
+        self.held.status.lock().unwrap().baseline
+    }
     // Observation of the exact already-issued completion binding. This clone
     // cannot mint/recover ClaimedDispatch or authorize another network attempt.
     pub(in crate::drafts::store::worker) fn mutation_receipt(&self) -> Result<p::Receipt, Reason> {
@@ -176,6 +188,12 @@ impl Completion {
         matches!(
             self.held.status.lock().unwrap().binding.as_deref(),
             Some(Binding::Mutation(_))
+        )
+    }
+    pub(in crate::drafts::store::worker) fn is_observation(&self) -> bool {
+        matches!(
+            self.held.status.lock().unwrap().binding.as_deref(),
+            Some(Binding::Observation(_))
         )
     }
     pub(in crate::drafts::store::worker) fn is_local(&self) -> bool {
@@ -294,6 +312,23 @@ impl Worker {
         })?;
         held.initialize()?;
         Ok(Completion { key, held })
+    }
+    pub(in crate::drafts::store::worker) fn bind_observation_completion(
+        &self,
+        c: &Completion,
+    ) -> Result<(), Reason> {
+        let pending = self.pending.lock().map_err(|_| Reason::Incomplete)?;
+        self.exact_completion(&pending, c)?;
+        let mut s = c.held.status.lock().map_err(|_| Reason::Incomplete)?;
+        if !matches!(s.binding.as_deref(), Some(Binding::Observation(_))) {
+            return Err(Reason::Stale);
+        }
+        match s.raw.as_deref() {
+            None => s.raw = Some(Arc::new(Raw::Observation)),
+            Some(Raw::Observation) => (),
+            _ => return Err(Reason::Stale),
+        }
+        Ok(())
     }
     pub(in crate::drafts::store::worker) fn reattach_completion(
         &self,
@@ -499,4 +534,9 @@ impl Worker {
 #[path = "completion_wait.rs"]
 mod wait;
 
-pub(in crate::drafts::store::worker) use steps::{SlashClaimed, SlashCompletion, SlashReserved};
+#[path = "baseline_deferred.rs"]
+mod baseline_deferred;
+
+pub(in crate::drafts::store::worker) use steps::{
+    SlashAttemptError, SlashClaimed, SlashCompletion, SlashReserved,
+};

@@ -70,6 +70,7 @@ struct Worker {
 impl Worker {
     fn current(&self, shell: &ShellState) -> bool {
         self.source.current(shell)
+            && recipients::chosen(shell, &self.lease.id, &self.destination.id)
             && visible(shell).is_some_and(|d| {
                 d.id == self.lease.id
                     && d.phase == Phase::Preparing
@@ -332,7 +333,7 @@ impl Worker {
             .ok_or(Refusal::Changed)
             .and_then(|owner| {
                 owner
-                    .finish(&shell, ticket.read.take().ok_or(Refusal::Changed)?, raw)
+                    .finish_response(&shell, ticket.read.take().ok_or(Refusal::Changed)?, raw)
                     .map_err(|_| Refusal::Changed)
             });
         shell.file_share = state;

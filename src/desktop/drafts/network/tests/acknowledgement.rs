@@ -236,6 +236,7 @@ fn captured() -> (ShellState, Binding, String) {
     shell.core.account_epoch = source.epoch;
     shell.core.transport = Some(source.transport.clone());
     shell.core.session = Some(super_platinum_core::config::Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: source.cookie,
         workspaces: [(team.clone(), source.workspace)].into_iter().collect(),
     });

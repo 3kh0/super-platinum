@@ -9,7 +9,6 @@ pub(crate) struct Editor {
     pub(super) gate: tokio::sync::Mutex<()>,
     pub(super) state: Mutex<State>,
     changed: tokio::sync::Notify,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     pub(super) owned_write: Mutex<Option<Arc<super::owned_editor::Write>>>,
     pub(super) identity: Arc<()>,
     pub(super) retention_id: String,
@@ -26,6 +25,8 @@ pub(super) struct State {
     pub preserved: Option<durable::LocalInventory>,
     pub direct: Option<ConsumeIntent>,
     pub barrier: Option<Arc<super::actions::ProjectionBarrier>>,
+    pub projection_registration: Option<Arc<super::projection::Registration>>,
+    pub owned_baseline_finishes: Vec<Arc<super::owned_baseline::Finish>>,
     pub released: Option<Arc<super::local_writer::LocalWriter>>,
     pub handoff_lost: bool,
     pub handoff_expected: Option<durable::Review>,
@@ -105,6 +106,8 @@ impl Editor {
                 preserved: None,
                 direct,
                 barrier: None,
+                projection_registration: None,
+                owned_baseline_finishes: Vec::new(),
                 released: None,
                 handoff_lost: false,
                 handoff_expected: None,
@@ -113,7 +116,6 @@ impl Editor {
                 retired: false,
             }),
             changed: tokio::sync::Notify::new(),
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             owned_write: Mutex::default(),
             identity: Arc::new(()),
             retention_id,
@@ -178,6 +180,13 @@ impl Editor {
     /// No actor serial or retained bytes change until the size check succeeds.
     pub fn submit(self: &Arc<Self>, local: &LocalDraft) -> Result<u64, durable::Error> {
         retention::input_size(local)?;
+        for operation in self.owner.account.retained_operations()? {
+            if operation.belongs(self) {
+                if let operation::Request::Slash { context, .. } = &operation.record().request {
+                    context.revoke();
+                }
+            }
+        }
         let (serial, start) = {
             let mut state = self.state.lock().map_err(|_| durable::Error::Storage)?;
             if state.retired {
@@ -239,7 +248,6 @@ impl Editor {
             let Some((mut command, mut preserve, retry)) = next else {
                 break;
             };
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             let owned = if let Some(route) = &self.owner.account.owned {
                 let held = {
                     let mut slot = self.owned_write.lock().unwrap();
@@ -270,8 +278,6 @@ impl Editor {
             } else {
                 None
             };
-            #[cfg(not(any(test, feature = "protected-native-fixture")))]
-            let owned: Option<Result<durable::WriteResult, durable::Error>> = None;
             let result = if let Some(result) = owned {
                 result
             } else {
@@ -349,6 +355,18 @@ impl Editor {
                     state.review = review;
                     state.preserved = None;
                     state.error = None;
+                    if self.owner.account.owned.is_some() {
+                        let held = self.owned_write.lock().unwrap().clone();
+                        let acknowledgment = held
+                            .ok_or(durable::Error::Pending)
+                            .and_then(|held| held.acknowledge_applied(&state.review));
+                        if let Err(error) = acknowledgment {
+                            state.retry = Some((command, preserve));
+                            state.error = Some(error);
+                            state.running = false;
+                            break;
+                        }
+                    }
                     if state
                         .pending
                         .as_ref()

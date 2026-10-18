@@ -269,6 +269,7 @@ fn cookie_and_enterprise_rotation_revoke_exact_request_context() {
         let mut shell = shell(true);
         let team = shell.core.active_team.clone().unwrap();
         shell.core.session = Some(Session {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "synthetic-cookie".into(),
             workspaces: BTreeMap::from([(
                 team.clone(),

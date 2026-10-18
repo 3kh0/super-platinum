@@ -52,7 +52,7 @@ impl State {
 impl Backend {
     fn reserve(&self, draft: Draft) -> Result<uploads::Reservation, AppError> {
         match self {
-            Self::Disk => uploads::reserve(draft),
+            Self::Disk => crate::drafts::protected::owned_upload::reserve(draft),
             Self::IsolatedDisk(path) => DraftStore::open(path)?.reserve_upload(&draft),
             Self::Memory(db) => db.lock().unwrap().reserve_upload(&draft),
         }
@@ -63,21 +63,21 @@ impl Backend {
         ids: Vec<String>,
     ) -> Result<Option<Stored>, AppError> {
         match self {
-            Self::Disk => uploads::finalize(ticket, ids),
+            Self::Disk => crate::drafts::protected::owned_upload::finalize(ticket, ids),
             Self::IsolatedDisk(path) => DraftStore::open(path)?.finalize_upload(&ticket, ids),
             Self::Memory(db) => db.lock().unwrap().finalize_upload(&ticket, ids),
         }
     }
     fn retire(&self, row: Stored) -> Result<bool, AppError> {
         match self {
-            Self::Disk => uploads::retire(row),
+            Self::Disk => crate::drafts::protected::owned_upload::retire(row),
             Self::IsolatedDisk(path) => DraftStore::open(path)?.retire_upload(&row),
             Self::Memory(db) => db.lock().unwrap().retire_upload(&row),
         }
     }
     fn load(&self, account: &str) -> Result<Vec<Stored>, AppError> {
         match self {
-            Self::Disk => uploads::load(account),
+            Self::Disk => crate::drafts::protected::owned_upload::load(account),
             Self::IsolatedDisk(path) => DraftStore::open(path)?.load_uploads(account),
             Self::Memory(db) => db.lock().unwrap().load_uploads(account),
         }

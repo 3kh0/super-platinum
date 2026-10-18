@@ -231,6 +231,7 @@ fn queued_action_rejects_changed_session_identity_even_with_same_token_and_epoch
     for change_user in [true, false] {
         let mut shell = shell();
         shell.core.session = Some(Session {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "synthetic".into(),
             workspaces: [(
                 "T1".into(),

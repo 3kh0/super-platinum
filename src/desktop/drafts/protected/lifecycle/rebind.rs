@@ -23,7 +23,11 @@ impl RebindRequest {
     pub async fn prepare(self) -> Result<ReadyRebind, durable::Error> {
         let owner = self.prior.editor.owner.clone();
         let guard = owner.gate.clone().lock_owned().await;
-        let fresh = account::wait(owner.client()?.review(owner.scope().clone())).await?;
+        let fresh = if let Some(route) = &owner.account.owned {
+            route.review(owner.scope().clone()).await?
+        } else {
+            account::wait(owner.client()?.review(owner.scope().clone())).await?
+        };
         if !fresh.same(&self.expected)
             || !self.visit.current()
             || !self.selection.0.live.load(Ordering::Acquire)
@@ -88,12 +92,9 @@ impl Host {
             .managed()?
             .clone();
         let snapshot = prior.editor.snapshot();
-        if expected.row().lineage().basis() != durable::Basis::Unverified
-            || expected.row().state().consumption().is_some()
-            || !matches!(
-                expected.row().state().workflow(),
-                super_platinum_core::drafts::sync::Workflow::Idle
-            )
+        // Renderer installation keeps this same Editor and raw basis. It does
+        // not verify a remote baseline or authorize an outgoing operation.
+        if expected.row().state().consumption().is_some()
             || !matches!(snapshot.view.inventory(),Inventory::Managed(r) if r.same(&expected))
             || snapshot.running
             || snapshot.pending.is_some()
@@ -230,3 +231,19 @@ impl Host {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+impl Host {
+    pub(in super::super) async fn rebind_without_native_for_managed_test(
+        &mut self,
+        shell: &ShellState,
+        selected: &Selection,
+        prior: &Installed,
+    ) -> Result<Installed, durable::Error> {
+        let ready = self
+            .rebind_request(shell, selected, prior, None, Visit::new())?
+            .prepare()
+            .await?;
+        self.commit_rebind(shell, ready)
+    }
+}

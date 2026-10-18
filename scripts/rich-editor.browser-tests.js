@@ -342,5 +342,103 @@ window.runRichEditorTests = () => {
     };
     return {baseline:await run(false),candidate:await run(true)};
   };
+
+  // Actual engine multi-node link coverage. Expected typed runs are literal;
+  // selection and undo remain browser-owned, never reconstructed via innerHTML.
+  const mixedSource=()=>[{type:'rich_text',block_id:'mixed',future_document:{kept:1},elements:[
+    {type:'rich_text_section',future_section:'keep',elements:[
+      {type:'text',text:'Before ',future_text:'prefix'},
+      {type:'text',text:'Bold ',style:{bold:true,future_style:'bold-meta'},future_text:{run:1}},
+      {type:'text',text:'middle ',future_text:{run:2}},
+      {type:'text',text:'Italic after',style:{italic:true,future_style:'italic-meta'},future_text:{run:3}},
+      {type:'user',user_id:'U1',future_atom:'mention'},
+      {type:'file',file_id:'F_TEST',future_atom:{keep:true}},
+    ]},section([text('Other paragraph')])]}];
+  const mixedExpected=(source,url)=>{
+    const out=structuredClone(source),leaves=source[0].elements[0].elements;
+    const leaf=(i,value,linked)=>({...structuredClone(leaves[i]),text:value,...(linked?{type:'link',url}:{} )});
+    out[0].elements[0].elements=[leaf(0,'Before ',false),leaf(1,'B',false),leaf(1,'old ',true),leaf(2,'middle ',true),leaf(3,'Italic',true),leaf(3,' after',false),...structuredClone(leaves.slice(4))];
+    return out;
+  };
+  const selectOffsets=(scope,start,end,reverse=false)=>{
+    const nodes=[],walker=document.createTreeWalker(scope,NodeFilter.SHOW_TEXT);while(walker.nextNode())nodes.push(walker.currentNode);
+    const point=offset=>{for(const node of nodes){if(offset<=node.length)return [node,offset];offset-=node.length;}throw Error('test offset outside paragraph');};
+    const a=point(start),b=point(end);getSelection().setBaseAndExtent(...(reverse?b:a),...(reverse?a:b));
+  };
+  {
+    const source=mixedSource(),f=fixture(source),scope=f.root.firstChild.firstChild;
+    selectOffsets(scope,8,25);assert(getSelection().toString()==='old middle Italic','mixed selection fixture');
+    f.trigger.click();assert(!f.action('apply').disabled,'mixed formatting selection refused');
+    f.url.value='https://example.com/mixed';f.action('apply').click();
+    const expected=mixedExpected(source,'https://example.com/mixed');
+    assert(linkStable(f.read())===linkStable(expected),'mixed link complete typed metadata: '+linkStable(f.read()));
+    assert(f.root.querySelectorAll('[contenteditable=false]').length===2,'adjacent atoms changed');
+    document.execCommand('undo');assert(linkStable(f.read())===linkStable(source),'mixed create undo source');
+    document.execCommand('redo');assert(linkStable(f.read())===linkStable(expected),'mixed create redo source');
+    selectOffsets(scope,8,25);f.trigger.click();assert(f.url.value==='https://example.com/mixed'&&!f.action('remove').hidden,'mixed URL reopening');
+    f.url.value='mailto:team@example.com';f.action('apply').click();
+    const edited=mixedExpected(source,'mailto:team@example.com');
+    assert(linkStable(f.read())===linkStable(edited),'mixed edit complete typed metadata');
+    document.execCommand('undo');assert(linkStable(f.read())===linkStable(expected),'mixed edit undo');
+    document.execCommand('redo');assert(linkStable(f.read())===linkStable(edited),'mixed edit redo');
+    selectOffsets(scope,8,25);f.trigger.click();f.action('remove').click();
+    const removed=structuredClone(edited);for(const leaf of removed[0].elements[0].elements)if(leaf.type==='link'){leaf.type='text';delete leaf.url;}
+    assert(linkStable(f.read())===linkStable(removed),'mixed unlink metadata: '+linkStable(f.read()));
+    document.execCommand('undo');assert(linkStable(f.read())===linkStable(edited),'mixed unlink undo');
+    document.execCommand('redo');assert(linkStable(f.read())===linkStable(removed),'mixed unlink redo');
+    results.push('mixed paragraph create edit unlink exact full metadata native undo redo');
+  }
+  {
+    const source=mixedSource(),f=fixture(source),scope=f.root.firstChild.firstChild;
+    selectOffsets(scope,8,25,true);const before=getSelection(),saved=[before.anchorNode,before.anchorOffset,before.focusNode,before.focusOffset];
+    f.trigger.click();f.url.value='https://example.com/cancel';f.action('cancel').click();
+    const after=getSelection();assert(after.anchorNode===saved[0]&&after.anchorOffset===saved[1]&&after.focusNode===saved[2]&&after.focusOffset===saved[3],'mixed reverse Cancel direction/identity');
+    assert(linkStable(f.read())===linkStable(source),'mixed Cancel mutated raw document');
+    f.trigger.click();f.url.value='https://example.com/reverse';f.action('apply').click();
+    assert(linkStable(f.read())===linkStable(mixedExpected(source,'https://example.com/reverse')),'reverse mixed apply');
+    document.execCommand('undo');assert(linkStable(f.read())===linkStable(source),'reverse mixed undo');
+    results.push('mixed reverse selection cancel and create preserve direction and metadata');
+  }
+  {
+    const source=documentBlocks([section([{type:'text',text:'Same',future_text:{id:1}}, {type:'text',text:'Style',future_text:{id:2}},text(' Bold',{bold:true})])]);
+    const f=fixture(source),scope=f.root.firstChild.firstChild;selectOffsets(scope,0,14);f.trigger.click();f.url.value='https://example.com/provenance';f.action('apply').click();
+    const expected=structuredClone(source);for(const v of expected[0].elements[0].elements){v.type='link';v.url='https://example.com/provenance';}
+    assert(linkStable(f.read())===linkStable(expected),'equal-style distinct metadata merged/lost: '+linkStable(f.read()));
+    document.execCommand('undo');assert(linkStable(f.read())===linkStable(source),'equal-style provenance undo');
+    results.push('mixed link preserves distinct same-style inline provenance');
+  }
+  {
+    for(const atom of [{type:'user',user_id:'U1'},{type:'file',file_id:'F_TEST'},{type:'future_inline',opaque:{keep:true}}]) {
+      const source=documentBlocks([section([text('Before',{bold:true}),atom,text('After',{italic:true})])]),f=fixture(source),scope=f.root.firstChild.firstChild;
+      select(scope);f.trigger.click();assert(f.action('apply').disabled&&linkStable(f.read())===linkStable(source),'selection spanning inline atom admitted');
+    }
+    const source=mixedSource(),f=fixture(source);const first=f.root.querySelector('strong').firstChild,last=f.root.firstChild.lastChild.firstChild.firstChild;
+    getSelection().setBaseAndExtent(first,1,last,3);f.trigger.click();assert(f.action('apply').disabled&&linkStable(f.read())===linkStable(source),'multi paragraph admitted');
+    for(const leaves of [
+      [text('One\nTwo',{bold:true}),text('Three',{italic:true})],
+      [{type:'link',text:'One',url:'https://example.com/a'},{type:'link',text:'Two',url:'https://example.com/b'}],
+      [{type:'link',text:'One',url:'https://example.com/a'},text('Two',{italic:true})],
+    ]) {
+      const raw=documentBlocks([section(leaves)]),g=fixture(raw);select(g.root.firstChild.firstChild);g.trigger.click();
+      assert(g.action('apply').disabled&&linkStable(g.read())===linkStable(raw),'line break or ambiguous URL mixture admitted');
+    }
+    const br=fixture(documentBlocks([section([text('One',{bold:true}),text('Two',{italic:true})])]));
+    const brScope=br.root.firstChild.firstChild;brScope.insertBefore(document.createElement('br'),brScope.lastChild);select(brScope);br.trigger.click();
+    assert(br.action('apply').disabled&&!br.root.querySelector('a'),'explicit BR boundary admitted');
+    results.push('mixed range rejects mention file future atoms and cross-paragraph boundaries');
+  }
+  {
+    for(const retire of ['composition','generation','html','replacement','disabled']) {
+      const source=mixedSource(),f=fixture(source,true,'31'),scope=f.root.firstChild.firstChild;selectOffsets(scope,8,25);f.trigger.click();f.url.value='https://example.com/stale';
+      if(retire==='composition'){f.root.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));f.root.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true}));}
+      if(retire==='generation')f.owner.dataset.editorGeneration='32';
+      if(retire==='html')f.root.querySelector('strong').firstChild.data='Changed ';
+      if(retire==='replacement')f.root.replaceWith(f.root.cloneNode(true));
+      if(retire==='disabled')f.root.contentEditable='false';
+      const prior=f.root.innerHTML;f.action('apply').click();assert(f.root.innerHTML===prior&&!f.root.querySelector('a')&&!f.error.hidden,'stale mixed operation mutated: '+retire);
+    }
+    results.push('mixed link refuses IME revision generation same-ID replacement disabled and silent DOM change');
+  }
+
   return results;
 };

@@ -29,16 +29,23 @@ pub(super) fn migrate(store: &DraftStore, account: &str) -> Result<(), Error> {
         return Err(Error::Storage);
     }
     let tx = disk(adapter_atomic::begin(&store.0))?;
-    disk(bindings::require(&tx, account))?;
-    disk(bindings::all(&tx, account))?;
-    disk(completion::audit(&tx, account))?;
-    if !disk(v2(&tx))? {
-        disk(tx.execute_batch("CREATE TABLE composer_draft_slash_archives(intent TEXT PRIMARY KEY,destination TEXT NOT NULL,enrollment TEXT NOT NULL,binding TEXT NOT NULL,content TEXT NOT NULL);
+    migrate_transaction(&tx, account)?;
+    disk(tx.commit())
+}
+pub(super) fn migrate_transaction(conn: &Connection, account: &str) -> Result<(), Error> {
+    if conn.is_autocommit() {
+        return Err(Error::Storage);
+    }
+    disk(bindings::require(conn, account))?;
+    disk(bindings::all(conn, account))?;
+    disk(completion::audit(conn, account))?;
+    if !disk(v2(conn))? {
+        disk(conn.execute_batch("CREATE TABLE composer_draft_slash_archives(intent TEXT PRIMARY KEY,destination TEXT NOT NULL,enrollment TEXT NOT NULL,binding TEXT NOT NULL,content TEXT NOT NULL);
           CREATE TABLE composer_draft_slash_attestations(intent TEXT PRIMARY KEY,content TEXT NOT NULL);
           UPDATE composer_draft_slash_format SET version=2 WHERE singleton=1 AND version=1;"))?;
     }
-    disk(archive_storage::audit(&tx, account))?;
-    disk(tx.commit())
+    disk(archive_storage::audit(conn, account))?;
+    Ok(())
 }
 pub(super) fn binding_rows(
     conn: &Connection,

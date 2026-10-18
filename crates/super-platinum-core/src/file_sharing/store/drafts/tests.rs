@@ -145,7 +145,7 @@ fn scope_source_shape_size_and_revision_errors_preserve_existing() {
             0 => c.source["id"] = json!("FOTHER"),
             1 => c.source["large"] = json!("x".repeat(MAX_SOURCE_BYTES)),
             2 => c.note = vec![json!({"no_type":true})],
-            3 => c.destination.as_mut().unwrap().id = "D12345678".into(),
+            3 => c.destination.as_mut().unwrap().id = "U12345678".into(),
             _ => c.title = "other".into(),
         };
         assert!(j.save_draft(&d, c).is_err());
@@ -716,3 +716,5 @@ fn two_current_connections_preserve_ordered_claims_and_equal_text_aba() {
         assert!(first.draft(&base.scope).unwrap().as_ref() == Some(&same_text));
     }
 }
+
+mod direct;

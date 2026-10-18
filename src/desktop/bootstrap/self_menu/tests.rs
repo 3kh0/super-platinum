@@ -10,6 +10,7 @@ fn shell() -> ShellState {
     let user = shell.core.workspaces["T1"].self_user_id.clone();
     shell.self_account.user_id = user.clone();
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: [(
             "T1".into(),

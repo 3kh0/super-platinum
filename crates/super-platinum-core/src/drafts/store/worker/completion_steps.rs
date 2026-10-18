@@ -628,4 +628,18 @@ mod wait;
 
 #[path = "slash_steps.rs"]
 mod slash;
-pub(in crate::drafts::store::worker) use slash::{SlashClaimed, SlashCompletion, SlashReserved};
+pub(in crate::drafts::store::worker) use slash::{
+    SlashAttemptError, SlashClaimed, SlashCompletion, SlashReserved,
+};
+
+#[path = "success_retirement.rs"]
+mod success_retirement;
+
+#[path = "family_retirement.rs"]
+mod family_retirement;
+
+#[path = "observation_retirement.rs"]
+mod observation_retirement;
+
+#[path = "baseline_steps.rs"]
+mod baseline;

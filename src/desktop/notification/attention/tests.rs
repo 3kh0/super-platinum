@@ -118,6 +118,7 @@ fn core() -> CoreAppState {
     core.active_account = Some("fixture".into());
     core.transport = Some(Arc::new(Transport::new("fixture-cookie").unwrap()));
     core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "fixture-cookie".into(),
         workspaces: [("T1".into(), session)].into(),
     });

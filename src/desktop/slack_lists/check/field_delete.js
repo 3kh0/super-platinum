@@ -45,6 +45,25 @@
       && edges[0] >= clip[0] && edges[1] >= clip[1] && edges[2] <= clip[2] && edges[3] <= clip[3];
     return {ok, rect: rect(e), edges, clip, ancestors, outline: ring ? {width, offset, style: style.outlineStyle} : null};
   }
+  // Find intentionally uses the shared text-field border + shadow, not an outline.
+  // Match that actual token shape and include the entire three-pixel ring in clipping.
+  function findFocus(e) {
+    const geometry = box(e), style = e ? getComputedStyle(e) : null;
+    const shadow = style?.boxShadow?.match(/^rgba?\(([^)]+)\)\s+0px\s+0px\s+0px\s+3px$/);
+    const color = shadow?.[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
+    const painted = color?.length === 4 && same(color, [50, 140, 255, .1]);
+    const border = ['Top', 'Right', 'Bottom', 'Left'].every(side => {
+      const color = style?.[`border${side}Color`]?.match(/^rgba?\(([^)]+)\)$/)?.[1]
+        .split(/[\s,\/]+/).filter(Boolean).map(Number);
+      return parseFloat(style?.[`border${side}Width`]) === 1 && style?.[`border${side}Style`] === 'solid'
+        && color?.every(Number.isFinite) && (color.length === 3 || color.length === 4 && color[3] > 0);
+    });
+    const r = geometry.rect, edges = r ? [r[0] - 3, r[1] - 3, r[0] + r[2] + 3, r[1] + r[3] + 3] : null;
+    const clip = geometry.clip;
+    return {ok: document.activeElement === e && geometry.ok && painted === true && border && !!edges
+        && edges[0] >= clip[0] && edges[1] >= clip[1] && edges[2] <= clip[2] && edges[3] <= clip[3],
+      focused: document.activeElement === e, geometry, edges, shadow: style?.boxShadow || null, painted: painted === true, border};
+  }
   function hit(e) {
     if (!box(e).ok) return false;
     const r = e.getBoundingClientRect();
@@ -158,7 +177,10 @@
       const revealed = reveal(e, 'find-query');
       if (!revealed.ok || !hit(e) || root !== q('.slack-list-dialog') || e !== find() || !live(e)) return {ok: false, revealed};
       e.focus();
-      if (document.activeElement !== e || !box(e, true).ok) return {ok: false};
+      const focus = findFocus(e);
+      if (!focus.ok || root !== q('.slack-list-dialog') || e !== find() || !live(root) || !live(e)
+          || !topDialog(root) || q('#slack-list-rename') || e.disabled)
+        return {ok: false, reason: 'find-focus-ring-or-owner', focus, revealed};
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(e, 'Launch item 0');
       e.dispatchEvent(new Event('input', {bubbles: true})); return {ok: true, revealed};
     },

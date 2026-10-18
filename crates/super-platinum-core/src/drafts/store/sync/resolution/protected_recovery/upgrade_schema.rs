@@ -26,7 +26,7 @@ fn marker(image: &Image, name: &str) -> Result<i64, AppError> {
         .integer()
 }
 pub(super) fn ordinary() -> Result<DraftStore, AppError> {
-    DraftStore::open(":memory:")
+    DraftStore::open("")
 }
 pub(super) fn classify(image: &Image, account: &str) -> Result<Class, AppError> {
     image.shape()?;

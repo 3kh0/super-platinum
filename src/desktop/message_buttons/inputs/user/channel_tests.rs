@@ -143,6 +143,7 @@ fn channels_confirm_cancel_preserves_wire_and_prepare_commits_full_siblings() {
 fn picker_query_and_mount_generations_and_transport_guard_are_independent() {
     let (mut shell, source, metadata, mounted) = setup();
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: [("T1".into(), session(&source))].into(),
     });
@@ -240,6 +241,7 @@ fn channel_enterprise_context_invalidates_cached_picker_and_sibling_preparation(
     let mut enterprise = session(&source);
     enterprise.enterprise_id = Some("E00000001".into());
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: [("T1".into(), enterprise)].into(),
     });

@@ -392,7 +392,6 @@ pub(super) fn keep_editing(
 /// The original proof is immutable. Read, full intent/enrollment comparison and
 /// the existing Prepare CAS share one immediate transaction. No Review provided
 /// by a caller replaces this fresh inventory and no ticket is reconstructed.
-#[cfg(any(test, feature = "protected-test-support"))]
 pub(super) fn prepare_consumed_send(
     store: &DraftStore,
     proof: &Stream,

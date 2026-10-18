@@ -1,4 +1,4 @@
-//! Exact bounded Checkbox/Number AND filter form, sharing only the established one-attempt HTTP mechanics.
+//! Exact bounded Checkbox/Number/Select/Date AND filter form, sharing only the established one-attempt HTTP mechanics.
 use super::*;
 pub type ListViewFilterFailure = ListColumnRenameFailure;
 impl Transport {
@@ -107,6 +107,20 @@ fn allowed(request: &PreparedRequest) -> bool {
         if !keys.insert(item["key"].as_str().unwrap()) {
             return false;
         }
+        if matches!(
+            item.get("operator").and_then(Value::as_str),
+            Some("contains" | "does_not_contain")
+        ) {
+            let Some(values) = item.get("values").and_then(Value::as_array) else {
+                return false;
+            };
+            let mut seen = std::collections::BTreeSet::new();
+            return values.iter().all(|value| {
+                value
+                    .as_str()
+                    .is_some_and(|id| identity(id) && !id.contains('|') && seen.insert(id))
+            });
+        }
         let Some(operator) = item
             .get("operator")
             .and_then(Value::as_str)
@@ -123,6 +137,10 @@ fn allowed(request: &PreparedRequest) -> bool {
             _ => return false,
         };
         operator.valid_value(value)
+            || item["operator"]
+                .as_str()
+                .and_then(crate::slack_lists::DateFilterOperator::parse)
+                .is_some_and(|op| op.valid_value(value))
     })
 }
 #[cfg(test)]

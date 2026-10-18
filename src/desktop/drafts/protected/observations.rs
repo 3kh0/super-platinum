@@ -1,4 +1,4 @@
-//! Bounded ordered ingress adapter. No realtime receiver calls this module.
+//! Bounded ordered ingress, retaining actual owned storage through projection acknowledgment.
 use super::*;
 use super::{editor::Editor, editor_proof::Capture, source::Source};
 use crate::{drafts::observation::Prepared, state::ShellState};
@@ -6,7 +6,11 @@ use dioxus::prelude::{ReadableExt, Signal};
 use std::{collections::VecDeque, sync::Mutex};
 use super_platinum_core::slack::events::RawEvent;
 
+mod delivery;
+mod ingress;
 pub(super) mod inventory;
+mod owned;
+pub(crate) use delivery::Delivery;
 
 const MAX_PENDING: usize = 64;
 pub(crate) struct ObservationQueue {
@@ -16,6 +20,7 @@ pub(crate) struct ObservationQueue {
 }
 #[derive(Default)]
 struct Queue {
+    raw: Option<Arc<RawEvent>>,
     pending: VecDeque<Arc<Work>>,
     active: Option<Arc<Work>>,
     abandoned: Vec<Arc<Work>>,
@@ -33,6 +38,7 @@ struct Work {
     owner: Owner,
     editor: Option<Arc<Editor>>,
     prepared: Prepared,
+    storage: Mutex<owned::State>,
 }
 #[derive(Clone)]
 pub(crate) struct Observed {
@@ -74,6 +80,7 @@ impl ObservationQueue {
             owner,
             editor,
             prepared,
+            storage: Mutex::default(),
         }))?;
         if start {
             let guard = inventory::Running {
@@ -108,6 +115,7 @@ impl ObservationQueue {
             + queue.delivered.len()
             + usize::from(queue.active.is_some())
             + queue.abandoned.len()
+            + usize::from(queue.raw.is_some())
             >= MAX_PENDING
         {
             queue.failed = true;
@@ -169,7 +177,10 @@ impl ObservationQueue {
     async fn run(self: Arc<Self>, state: Signal<ShellState>) {
         loop {
             let next = self.next();
-            let Some(work) = next else { return };
+            let Some(work) = next else {
+                self.account.retire_closed_ingress();
+                return;
+            };
             let result = self.process(state, &work).await;
             if let Err(error) = result.as_ref() {
                 self.source.gap(if *error == durable::Error::Storage {
@@ -179,6 +190,24 @@ impl ObservationQueue {
                 });
             }
             self.finish(result);
+            if self.account.owned.is_some() {
+                let handled = match self.take_delivery() {
+                    Some(delivery) => delivery.apply(state).await,
+                    None => Err(durable::Error::Stale),
+                };
+                if let Err(error) = handled {
+                    let mut queue = self.state.lock().unwrap();
+                    self.source.inventory.clock.change();
+                    queue.failed = true;
+                    queue.abandon_pending();
+                    drop(queue);
+                    self.source.gap(if error == durable::Error::Storage {
+                        durable::GapReason::StorageFailure
+                    } else {
+                        durable::GapReason::InterruptedAdmission
+                    });
+                }
+            }
         }
     }
     async fn process(
@@ -238,22 +267,30 @@ impl ObservationQueue {
             }
             current.busy = true;
         }
-        let result = async {
-            let ticket = account::wait(owner.client()?.reserve_observation(
-                stream,
-                before.clone(),
-                event,
-            ))
-            .await?;
-            if !state
-                .try_peek()
-                .is_ok_and(|shell| self.source.current(&shell))
-            {
-                return Err(durable::Error::Gap);
+        let result = if let Some(route) = &owner.account.owned {
+            owned::run(self, work, state, route, stream, before.clone(), event)
+                .await
+                .map(owned::ResultValue::Owned)
+        } else {
+            async {
+                let ticket = account::wait(owner.client()?.reserve_observation(
+                    stream,
+                    before.clone(),
+                    event,
+                ))
+                .await?;
+                if !state
+                    .try_peek()
+                    .is_ok_and(|shell| self.source.current(&shell))
+                {
+                    return Err(durable::Error::Gap);
+                }
+                account::wait(owner.client()?.finish_observation(ticket))
+                    .await
+                    .map(owned::ResultValue::Legacy)
             }
-            account::wait(owner.client()?.finish_observation(ticket)).await
-        }
-        .await;
+            .await
+        };
         let mut barrier = None;
         if let (Some(editor), Some(captured)) = (&editor, captured) {
             let mut current = editor.state.lock().unwrap();
@@ -281,6 +318,7 @@ impl ObservationQueue {
                             after: observed.after().clone(),
                             id: barrier_id(),
                             renew_writer: false,
+                            owned_finish: None,
                             authority: Some(actions::ProjectionAuthority {
                                 source: self.source.clone(),
                                 binding: None,

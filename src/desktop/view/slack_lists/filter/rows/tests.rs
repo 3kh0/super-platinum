@@ -18,6 +18,7 @@ fn initial() -> filter::Presentation {
         desired: ViewFilterChoice::All(vec![value("A", "12.50"), value("B", "2e1")]),
         choices: vec![("A".into(), "A".into()), ("B".into(), "B".into())],
         numbers: vec!["A".into(), "B".into()],
+        selects: vec![],
         choice: 30,
         rows: vec![
             filter::Row { id: 1, epoch: 11 },
@@ -145,4 +146,147 @@ fn actual_over_cap_input_text_is_carried_to_operator_epoch_without_old_value_rev
             ..
         }
     )));
+}
+
+#[test]
+fn actual_select_checkbox_nodes_survive_epoch_toggle_and_removal_of_number_neighbor() {
+    use super_platinum_core::slack_lists::SelectFilterOperator;
+    let slot = Slot::default();
+    let copy = slot.clone();
+    let mut dom = VirtualDom::new_with_props(
+        |slot: Slot| {
+            let state = use_signal(|| ShellState::fixture(crate::media::MediaRegistry::default()));
+            let draft = use_signal(|| {
+                let mut p = initial();
+                p.numbers = vec!["A".into()];
+                p.selects = vec![(
+                    "B".into(),
+                    vec![("a".into(), "Same".into()), ("é".into(), "Same".into())],
+                )];
+                p.desired = ViewFilterChoice::All(vec![
+                    value("A", "12.50"),
+                    ViewFilterChoice::Select {
+                        column_id: "B".into(),
+                        operator: SelectFilterOperator::Contains,
+                        values: vec!["é".into()],
+                    },
+                ]);
+                p
+            });
+            slot.set(Some(draft));
+            let p = draft.read().clone();
+            rsx! {Conditions{state,serial:7,visit:1,p,editable:true}}
+        },
+        copy,
+    );
+    let first = dom.rebuild_to_vec();
+    let option = |edits: &Mutations, want: &str| {
+        edits
+            .edits
+            .iter()
+            .find_map(|m| match m {
+                Mutation::SetAttribute {
+                    id,
+                    name: "data-filter-choice",
+                    value: AttributeValue::Text(v),
+                    ..
+                } if *v == want => Some(*id),
+                _ => None,
+            })
+            .expect("actual choice attribute joins exact node")
+    };
+    let a = option(&first, "a");
+    let accent = option(&first, "é");
+    assert_ne!(a, accent);
+    let mut draft = slot.get().unwrap();
+    dom.in_runtime(|| {
+        let mut p = draft.write();
+        p.rows[1].epoch += 1;
+        p.choice += 1;
+        p.desired = ViewFilterChoice::All(vec![
+            value("A", "12.50"),
+            ViewFilterChoice::Select {
+                column_id: "B".into(),
+                operator: SelectFilterOperator::Contains,
+                values: vec!["é".into(), "a".into()],
+            },
+        ]);
+    });
+    dom.mark_dirty(ScopeId::ROOT);
+    let toggle = dom.render_immediate_to_vec();
+    assert!(toggle.edits.iter().any(|m|matches!(m,Mutation::SetAttribute{id,name:"checked",value:AttributeValue::Bool(true),..} if *id==a)));
+    assert!(!toggle.edits.iter().any(
+        |m| matches!(m,Mutation::Remove{id}|Mutation::ReplaceWith{id,..} if *id==a||*id==accent)
+    ));
+    dom.in_runtime(|| {
+        let mut p = draft.write();
+        p.rows.remove(0);
+        p.choice += 1;
+        p.desired = ViewFilterChoice::Select {
+            column_id: "B".into(),
+            operator: SelectFilterOperator::Contains,
+            values: vec!["a".into()],
+        };
+    });
+    dom.mark_dirty(ScopeId::ROOT);
+    let removed = dom.render_immediate_to_vec();
+    assert!(removed.edits.iter().any(|m|matches!(m,Mutation::SetAttribute{id,name:"checked",value:AttributeValue::Bool(false),..} if *id==accent)));
+    assert!(!removed.edits.iter().any(
+        |m| matches!(m,Mutation::Remove{id}|Mutation::ReplaceWith{id,..} if *id==a||*id==accent)
+    ));
+}
+
+#[test]
+fn calendar_node_survives_sibling_removal_and_preset_removes_only_calendar_control() {
+    use super_platinum_core::slack_lists::DateFilterOperator;
+    let slot = Slot::default();
+    let copy = slot.clone();
+    let date = |text: &str| ViewFilterChoice::Date {
+        column_id: "B".into(),
+        operator: DateFilterOperator::Equal,
+        value: Some(text.into()),
+    };
+    let mut dom = VirtualDom::new_with_props(
+        |slot: Slot| {
+            let state = use_signal(|| ShellState::fixture(crate::media::MediaRegistry::default()));
+            let draft = use_signal(|| {
+                let mut p = initial();
+                p.numbers = vec!["A".into()];
+                p.desired = ViewFilterChoice::All(vec![
+                    value("A", "12.50"),
+                    ViewFilterChoice::Date {
+                        column_id: "B".into(),
+                        operator: DateFilterOperator::Equal,
+                        value: Some("2024-02-29".into()),
+                    },
+                ]);
+                p
+            });
+            slot.set(Some(draft));
+            let p = draft.read().clone();
+            rsx! {Conditions{state,serial:7,visit:1,p,editable:true}}
+        },
+        copy,
+    );
+    let first = dom.rebuild_to_vec();
+    let calendar = input(&first, "2024-02-29");
+    let mut draft = slot.get().unwrap();
+    dom.in_runtime(|| {
+        let mut p = draft.write();
+        p.desired = date("2024-03-01");
+        p.rows.remove(0);
+        p.choice += 1;
+    });
+    dom.mark_dirty(ScopeId::ROOT);
+    let removed = dom.render_immediate_to_vec();
+    assert_eq!(input(&removed, "2024-03-01"), calendar);
+    dom.in_runtime(|| {
+        let mut p = draft.write();
+        p.desired = date("today");
+        p.rows[0].epoch += 1;
+        p.choice += 1;
+    });
+    dom.mark_dirty(ScopeId::ROOT);
+    let preset = dom.render_immediate_to_vec();
+    assert!(!preset.edits.iter().any(|m|matches!(m,Mutation::SetAttribute{name:"initial_value",value:AttributeValue::Text(v),..} if v=="today")));
 }

@@ -62,15 +62,22 @@ impl Gap {
         if state.attempts.len() == MAX_ATTEMPTS {
             return Err(durable::Error::Pending);
         }
-        let client = match account.client() {
-            Ok(client) => client,
-            Err(error) => {
-                state.pending_error = Some(error);
-                return Err(error);
+        let job = match &account.owned {
+            Some(route) => {
+                ReplyJob::owned(route.operations.mark_gap(durable::owned_store::GapInput {
+                    stream: stream.clone(),
+                    reason,
+                }))
             }
+            None => match account.client() {
+                Ok(client) => ReplyJob::new(client.mark_gap(stream.clone(), reason)),
+                Err(error) => {
+                    state.pending_error = Some(error);
+                    return Err(error);
+                }
+            },
         };
         state.starting = true;
-        let job = ReplyJob::new(client.mark_gap(stream.clone(), reason));
         state.attempts.push(job.clone());
         state.pending_error = None;
         let retained = Arc::downgrade(self);
@@ -87,6 +94,18 @@ impl Gap {
             state.starting = false;
         }
         result
+    }
+    pub(super) async fn ready(&self) -> Result<(), durable::Error> {
+        let job = self
+            .state
+            .lock()
+            .map_err(|_| durable::Error::Storage)?
+            .attempts
+            .last()
+            .cloned()
+            .ok_or(durable::Error::Pending)?;
+        // Actual cached result plus callback completion; no delay/poll certificate.
+        job.ready().await
     }
     pub(super) fn terminal(&self) -> Result<bool, durable::Error> {
         let state = self.state.lock().map_err(|_| durable::Error::Storage)?;

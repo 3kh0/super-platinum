@@ -108,7 +108,7 @@ pub(super) async fn fetch(
     channels.extend(mpims?);
     Ok((users?, channels))
 }
-fn normalize_mpim_query(query: &str) -> String {
+pub(crate) fn normalize_mpim_query(query: &str) -> String {
     let mut result = String::new();
     let mut chars = query.chars().peekable();
     while let Some(c) = chars.next() {
@@ -123,7 +123,7 @@ fn js_whitespace(c: char) -> bool {
     matches!(c,'\u{0009}'..='\u{000D}'|'\u{0020}'|'\u{00A0}'|'\u{1680}'|'\u{2000}'..='\u{200A}'|'\u{2028}'|'\u{2029}'|'\u{202F}'|'\u{205F}'|'\u{3000}'|'\u{FEFF}')
 }
 
-fn mpim(value: &Value) -> Option<Channel> {
+pub(crate) fn mpim(value: &Value) -> Option<Channel> {
     let details = value.get("details")?.as_object()?;
     if details.get("is_mpim") != Some(&Value::Bool(true)) {
         return None;

@@ -116,3 +116,22 @@ test('detail reset editor return uses expected Find absence without weakening ex
  const h=fixture();h.modal=false;h.board=true;h.detail=true;h.detailNode.focus();assert.equal(h.api.detailReady().ok,true);h.cell.focus();
  assert.equal(h.api.returned().ok,true);h.root.focus();assert.equal(h.api.returned().ok,false);
 });
+
+// Actual ring predicate at a scroll-body edge. This models the known base focus
+// style and its inset correction; it does not claim browser computed CSS evidence.
+test('Rating choice focus at the scroll body edge rejects outward ring and preserves strict inset bounds',()=>{
+ const h=fixture('default'),e=h.choices[0];
+ const body={parentElement:null,style:{overflowX:'auto',overflowY:'auto'},getBoundingClientRect:()=>({left:20,top:10,right:200,bottom:110})};
+ e.parentElement=body;e.style.outlineOffset='2px';
+ assert.equal(h.api.ready(null,7).ok,false);
+ e.style.outlineOffset='-2px';assert.equal(h.api.ready(null,7).ok,true);
+ e.box[0]=19.75;assert.equal(h.api.ready(null,7).ok,false);
+ e.box[0]=20;h.cancel.focus();assert.equal(h.api.ready(null,7).ok,false);
+});
+test('enabled Clear rating retains its complete ring at scroll edges and refuses real clipping',()=>{
+ const h=fixture('default');h.choose();const e=h.clear;
+ e.parentElement={parentElement:null,style:{overflowX:'auto',overflowY:'auto'},getBoundingClientRect:()=>({left:20,top:10,right:200,bottom:52})};
+ e.style.outlineOffset='2px';assert.equal(h.api.click('slack-list-rating-clear',7).ok,false);assert.equal(h.api.chosen(1,7).value,1);
+ e.style.outlineOffset='-2px';assert.equal(h.api.click('slack-list-rating-clear',7).ok,true);assert.equal(h.api.chosen(null,7).ok,true);
+ h.choose();e.box[1]=20.25;assert.equal(h.api.click('slack-list-rating-clear',7).ok,false);assert.equal(h.api.chosen(1,7).value,1);
+});

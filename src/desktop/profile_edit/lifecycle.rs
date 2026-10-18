@@ -102,6 +102,7 @@ pub(super) fn preflight(
     fresh: &api::FreshOwnProfileCapabilities,
 ) -> bool {
     let allowed = draft_current(shell, &attempt.token, attempt.visit)
+        && !(super::sections::pending(shell) || super::photo::pending(shell))
         && !crate::self_status::blocks_profile_edit(shell)
         && !crate::profile_title::blocks_profile_writes(shell)
         && attempt.token.owner.values(shell) == attempt.observed

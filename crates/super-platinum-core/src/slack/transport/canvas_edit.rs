@@ -14,12 +14,45 @@ impl Transport {
         &self,
         req: PreparedRequest,
     ) -> Result<Vec<u8>, CanvasEditFailure> {
-        use CanvasEditFailure::{NotSent, Uncertain};
+        use CanvasEditFailure::NotSent;
         if !allowed(&req) {
             return Err(NotSent(Error::Api(
                 "unsupported_canvas_edit_request".into(),
             )));
         }
+        self.execute_canvas_write(req).await
+    }
+
+    /// Explicit comment resolve/reopen shares the no-hold, one-attempt boundary.
+    pub async fn execute_canvas_comment_archive(
+        &self,
+        req: PreparedRequest,
+    ) -> Result<Vec<u8>, CanvasEditFailure> {
+        if !comment_allowed(&req) {
+            return Err(CanvasEditFailure::NotSent(Error::Api(
+                "unsupported_canvas_comment_write".into(),
+            )));
+        }
+        self.execute_canvas_write(req).await
+    }
+
+    pub async fn execute_canvas_comment_reply(
+        &self,
+        req: PreparedRequest,
+    ) -> Result<Vec<u8>, CanvasEditFailure> {
+        if !reply_allowed(&req) {
+            return Err(CanvasEditFailure::NotSent(Error::Api(
+                "unsupported_canvas_reply".into(),
+            )));
+        }
+        self.execute_canvas_write(req).await
+    }
+
+    async fn execute_canvas_write(
+        &self,
+        req: PreparedRequest,
+    ) -> Result<Vec<u8>, CanvasEditFailure> {
+        use CanvasEditFailure::{NotSent, Uncertain};
         if self.health() == Health::Offline {
             return Err(NotSent(Error::Offline(
                 "canvas edit not sent while offline".into(),
@@ -124,6 +157,83 @@ impl Transport {
             .get()
             .ok_or_else(|| Error::Transport("single-attempt client unavailable".into()))
     }
+}
+
+fn reply_allowed(req: &PreparedRequest) -> bool {
+    let RequestBody::Form(fields) = &req.body else {
+        return false;
+    };
+    let mut seen = std::collections::HashSet::new();
+    if fields.len() != 6
+        || fields.iter().any(|(key, value)| {
+            !seen.insert(key.as_str())
+                || match key.as_str() {
+                    "token" => value.is_empty(),
+                    "channel" => {
+                        !value.starts_with('C')
+                            || crate::canvas::comments::channel(&format!("F{}", &value[1..]))
+                                .is_err()
+                    }
+                    "thread_ts" => !crate::canvas::comments::timestamp(value),
+                    "client_msg_id" => uuid::Uuid::parse_str(value).is_err(),
+                    "reply_broadcast" => value != "false",
+                    "text" => {
+                        value.trim().is_empty()
+                            || !crate::canvas::comments::reply::valid_text(value)
+                    }
+                    _ => true,
+                }
+        })
+    {
+        return false;
+    }
+    let Ok(mut url) = url::Url::parse(&req.url) else {
+        return false;
+    };
+    if url.path() != "/api/chat.postMessage" {
+        return false;
+    }
+    url.set_path("/canvas/-/edit-document");
+    let mut check = req.clone();
+    check.url = url.into();
+    allowed(&check)
+}
+
+fn comment_allowed(req: &PreparedRequest) -> bool {
+    let RequestBody::Form(fields) = &req.body else {
+        return false;
+    };
+    let mut seen = std::collections::HashSet::new();
+    if fields.len() != 3
+        || fields.iter().any(|(key, value)| {
+            !seen.insert(key.as_str())
+                || match key.as_str() {
+                    "token" => value.is_empty(),
+                    "channel_id" => crate::canvas::comments::channel(&format!(
+                        "F{}",
+                        value.strip_prefix('C').unwrap_or("")
+                    ))
+                    .is_err(),
+                    "thread_ts" => !crate::canvas::comments::timestamp(value),
+                    _ => true,
+                }
+        })
+    {
+        return false;
+    }
+    let mut test = req.clone();
+    let Ok(mut url) = url::Url::parse(&req.url) else {
+        return false;
+    };
+    if !matches!(
+        url.path(),
+        "/api/quip.thread.archive" | "/api/quip.thread.unarchive"
+    ) {
+        return false;
+    }
+    url.set_path("/canvas/-/edit-document");
+    test.url = url.into();
+    allowed(&test)
 }
 
 fn allowed(req: &PreparedRequest) -> bool {

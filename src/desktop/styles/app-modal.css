@@ -53,3 +53,25 @@
   .app-modal-body { padding: 0 16px 16px; }
   .app-modal footer { padding: 8px 16px; }
 }
+
+/* Ordinary app shortcuts reuse the modal and control tokens. */
+.app-shortcut-dialog { max-height:calc(100vh - 32px); display:flex; flex-direction:column; }
+.app-shortcut-body { min-height:0; overflow:auto; padding:var(--space-4); }
+.app-shortcut-body > input, .app-shortcut-body > select { width:100%; min-height:32px; }
+.app-shortcut-results { max-height:280px; overflow:auto; margin-block:var(--space-3); }
+.app-shortcut-row { display:flex; gap:var(--space-2); align-items:flex-start; padding:var(--space-2); }
+.app-shortcut-row > span { display:flex; flex-direction:column; min-width:0; overflow-wrap:anywhere; }
+.app-shortcut-row small { color:var(--muted); }
+.app-shortcut-run { min-width:112px; min-height:32px; }
+
+/* Client-owned Calendar form; existing modal tokens and fixed footer controls. */
+.calendar-shortcut-dialog .calendar-time-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.calendar-selected-guests, .calendar-guest-results { max-height: 128px; overflow: auto; overscroll-behavior: contain; margin-bottom: var(--space-2); padding: var(--space-1); }
+.calendar-selected-guest { display: flex; align-items: center; gap: var(--space-2); min-height: var(--control-height); }
+.calendar-selected-guest > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.calendar-guest-results > button { display: block; width: 100%; text-align: left; }
+.calendar-shortcut-dialog .app-modal-body button { min-height: var(--control-height); padding: 0 var(--space-3); border-radius: var(--radius-md); background: var(--surface); color: var(--text); }
+.calendar-shortcut-dialog button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.calendar-shortcut-dialog #calendar-create { min-width: 120px; }
+.calendar-shortcut-dialog .app-modal-hint { overflow-wrap: anywhere; }
+@media (max-width: 480px) { .calendar-shortcut-dialog .calendar-time-fields { grid-template-columns: minmax(0, 1fr); } }

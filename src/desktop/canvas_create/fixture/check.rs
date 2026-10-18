@@ -20,22 +20,32 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: Desktop) {
 }
 async fn dom(operation: &str, args: Value) -> Result<Value, String> {
     let script = format!(
-        "{}\ntry{{dioxus.send(window.canvasCreationCheck({},{}));}}catch(e){{dioxus.send({{ok:false,reason:String(e)}});}}",
+        "{}\nlet receipt;try{{receipt=window.canvasCreationCheck({},{});}}catch(e){{receipt={{ok:false,reason:String(e)}};}}dioxus.send(receipt);await dioxus.recv();",
         include_str!("check.js"),
         json!(operation),
         args
     );
     let mut eval = document::eval(&script);
-    let value = tokio::time::timeout(Duration::from_secs(3), eval.recv::<Value>())
-        .await
+    // Keep the JS query alive until Rust has consumed its one receipt. Release it
+    // on timeout/error too; a missing receipt never authorizes replaying an action.
+    let received = tokio::time::timeout(Duration::from_secs(3), eval.recv::<Value>()).await;
+    let released = eval.send(());
+    let value = received
         .map_err(|_| "Native receipt timed out")?
         .map_err(|_| "Native receipt missing")?;
     if value["ok"] != true {
         return Err(format!("Native {operation}: {value}"));
     }
+    released.map_err(|_| "Native receipt acknowledgment failed")?;
     Ok(value)
 }
 async fn wait_dom(operation: &str, args: Value) -> Result<Value, String> {
+    if !matches!(
+        operation,
+        "read" | "palette" | "disclosure" | "reopen-ready"
+    ) {
+        return Err(format!("Native action must not be polled: {operation}"));
+    }
     let mut last = String::new();
     for _ in 0..150 {
         match dom(operation, args.clone()).await {

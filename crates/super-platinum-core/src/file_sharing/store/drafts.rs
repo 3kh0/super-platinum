@@ -133,7 +133,7 @@ fn validate_content(scope: &DraftScope, content: &Content) -> Result<(), AppErro
     if content
         .destination
         .as_ref()
-        .is_some_and(|d| !api_shape(&d.id, b"CG", 9) || d.name.is_empty() || d.name.len() > 16_384)
+        .is_some_and(|d| !api_shape(&d.id, b"CGD", 9) || d.name.is_empty() || d.name.len() > 16_384)
     {
         return Err(invalid());
     }

@@ -275,6 +275,7 @@ async fn install(mut state: Signal<ShellState>) -> Result<Arc<Capability>, Strin
     refresh::fixture::install(&mut shell, "file-preview-refresh");
     shell.core.active_account = Some("cached-save-fixture".into());
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: String::new(),
         workspaces: std::collections::BTreeMap::from([(
             "T1".into(),

@@ -1,6 +1,6 @@
 //! Unwired protected action adapter for existing mounted composers. No component,
 //! selector, enrollment, automatic request, or alternate legacy route lives here.
-use super::{field, field_scope};
+use super::{field, field_scope, protected_enrollment::Policy};
 use crate::{
     drafts::{
         network::Binding,
@@ -21,6 +21,7 @@ pub(crate) struct Prepared {
     operation: crate::drafts::protected::operation::Operation,
 }
 struct NativeVisit {
+    policy: Policy,
     state: Signal<ShellState>,
     target: ComposerTarget,
     scope: Scope,
@@ -96,6 +97,9 @@ impl Prepared {
             + 'static,
     {
         use crate::drafts::protected::operation::Phase;
+        if !self.native.policy.permits_action(&action) {
+            return Err(Error::Unsupported);
+        }
         self.operation.phase(Phase::NativeAdmission)?;
         let native = self.native.clone();
         let admission = match self.evidence.lock(self.native.mount.clone()).await {
@@ -127,7 +131,7 @@ impl Prepared {
                 additional(&shell)
             })
             .await?;
-        self.operation.consumed(&result)?;
+        self.operation.applied(&result)?;
         self.operation.phase(Phase::NativeClear)?;
         if result.after.row().state().consumption().is_some() && result.after.local().empty() {
             #[cfg(feature = "protected-native-fixture")]
@@ -159,7 +163,7 @@ impl Prepared {
                 _ => crate::drafts::protected::NativeClear::Deferred,
             };
         }
-        self.operation.consumed(&result)?;
+        self.operation.applied(&result)?;
         Ok(result)
     }
 }
@@ -316,19 +320,49 @@ fn capture(
     visit: Visit,
     whole_inventory: bool,
 ) -> Result<Captured, Error> {
+    capture_with_policy(
+        state,
+        target,
+        registry,
+        editor,
+        visit,
+        whole_inventory,
+        Policy::Plain,
+    )
+}
+fn capture_baseline(
+    state: Signal<ShellState>,
+    target: ComposerTarget,
+    registry: Arc<Registry>,
+    editor: Arc<Editor>,
+    visit: Visit,
+) -> Result<Captured, Error> {
+    capture_with_policy(
+        state,
+        target,
+        registry,
+        editor,
+        visit,
+        true,
+        Policy::Baseline,
+    )
+}
+fn capture_with_policy(
+    state: Signal<ShellState>,
+    target: ComposerTarget,
+    registry: Arc<Registry>,
+    editor: Arc<Editor>,
+    visit: Visit,
+    whole_inventory: bool,
+    policy: Policy,
+) -> Result<Captured, Error> {
     let native = {
         let shell = state.try_peek().map_err(|_| Error::Stale)?;
-        let (composer, attachments) = match target {
-            ComposerTarget::Channel => (&shell.core.composer, &shell.core.composer_attachments),
-            ComposerTarget::Thread => (
-                &shell.core.thread_composer,
-                &shell.core.thread_composer_attachments,
-            ),
-        };
-        if !attachments.is_empty() || composer.text.encode_utf16().count() > 131_072 {
+        let visible = local(&shell, target);
+        if !policy.admits(&visible) || visible.composer.text.encode_utf16().count() > 131_072 {
             return Err(Error::Unsupported);
         }
-        crate::drafts::protected::operation::bounded(composer)?;
+        crate::drafts::protected::operation::bounded(&visible)?;
         if let Some(book) = shell
             .composer_key(target)
             .and_then(|key| shell.core.drafts.items.get(&key))
@@ -338,6 +372,7 @@ fn capture(
         let scope = editor.scope().clone();
         let mount = field::current(&shell, target).ok_or(Error::Stale)?;
         let native = Rc::new(NativeVisit {
+            policy,
             state,
             target,
             epoch: shell.core.account_epoch,
@@ -346,13 +381,13 @@ fn capture(
             registry,
             editor: editor.clone(),
             serial: editor.snapshot().serial,
-            local: Arc::new(local(&shell, target)),
+            local: Arc::new(visible),
             book: shell
                 .composer_key(target)
                 .and_then(|key| shell.core.drafts.items.get(&key).cloned())
                 .map(Arc::new),
         });
-        if !native.current(&shell) || !native.local.attachments.is_empty() {
+        if !native.current(&shell) {
             return Err(Error::Stale);
         }
         native
@@ -417,14 +452,14 @@ async fn prepare(
     // Whole-inventory decisions may start from a preserved alternate. The
     // visible predecessor must be one of the exact versions being reviewed.
     let review = lease.review();
-    if !same(&native.local, review.local())
+    if !native.policy.same_saved(&native.local, review.local())
         && !review
             .blocked()
-            .is_some_and(|blocked| same(&native.local, &blocked.draft))
+            .is_some_and(|blocked| native.policy.same_saved(&native.local, &blocked.draft))
         && !review
             .alternates()
             .iter()
-            .any(|alternate| same(&native.local, &alternate.draft))
+            .any(|alternate| native.policy.same_saved(&native.local, &alternate.draft))
     {
         return Err(Error::ReviewRequired);
     }
@@ -450,13 +485,13 @@ impl NativeVisit {
                 &self.scope.key,
                 &self.editor,
             )
-            && same(&local(shell, self.target), &self.local)
+            && self.policy.same(&local(shell, self.target), &self.local)
             && match (
                 shell.core.drafts.items.get(&self.scope.key),
                 self.book.as_ref(),
             ) {
                 (None, None) => true,
-                (Some(a), Some(b)) => same(a, b),
+                (Some(a), Some(b)) => self.policy.same(a, b),
                 _ => false,
             }
     }
@@ -507,7 +542,7 @@ impl NativeVisit {
         preserve_native_changed(&self.editor, &self.local, current, serial).await
     }
 }
-async fn preserve_native_changed(
+pub(super) async fn preserve_native_changed(
     editor: &Arc<Editor>,
     original: &LocalDraft,
     current: super::protected_projection::NativeSnapshot,
@@ -536,10 +571,15 @@ fn local(shell: &ShellState, target: ComposerTarget) -> LocalDraft {
         },
     }
 }
-fn same(a: &LocalDraft, b: &LocalDraft) -> bool {
-    a.attachments.is_empty() && b.attachments.is_empty() && a.composer == b.composer
-}
 
 #[cfg(test)]
 #[path = "protected_actions/tests.rs"]
 mod tests;
+
+#[path = "protected_slash.rs"]
+mod slash;
+pub(crate) use slash::{StartSlash, start_slash};
+
+#[path = "protected_baseline.rs"]
+mod baseline;
+pub(crate) use baseline::{StartBaseline, start_baseline};

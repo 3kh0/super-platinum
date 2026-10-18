@@ -59,6 +59,9 @@ impl FreshClear {
     }
 }
 impl Settlement {
+    pub(crate) fn has_fresh_clear(&self) -> bool {
+        self.fresh.is_some()
+    }
     pub(crate) fn take_fresh_clear(&mut self) -> Option<FreshClear> {
         self.fresh.take()
     }
@@ -126,6 +129,10 @@ pub(super) fn install(store: &DraftStore, account: &str) -> Result<(), Error> {
     disk(bindings::require(&tx, account))?;
     disk(receipts::install(&tx, account))?;
     disk(tx.commit())
+}
+
+pub(super) fn install_transaction(conn: &Connection, account: &str) -> Result<(), AppError> {
+    receipts::install(conn, account)
 }
 
 /// Commit response, cooldown, local settlement and its receipt together.
@@ -387,6 +394,27 @@ pub(super) fn preserve_recovered(
     disk(receipts::insert(&tx, &receipt))?;
     disk(tx.commit())?;
     Ok(result(receipt))
+}
+/// Complete validated immutable evidence for a single enclosing audit.
+/// Caller must discard this value before mutating any underlying evidence.
+pub(super) struct ValidatedSettlements(receipts::Validated);
+impl ValidatedSettlements {
+    pub(super) fn bindings(&self) -> &bindings::Validated {
+        &self.0.bindings
+    }
+    pub(super) fn settlement(
+        &self,
+        scope: &Scope,
+        id: &str,
+    ) -> Result<(&SlashRecord, &str), AppError> {
+        self.0.settlement(scope, id)
+    }
+}
+pub(super) fn validated(
+    conn: &Connection,
+    account: &str,
+) -> Result<ValidatedSettlements, AppError> {
+    receipts::validated(conn, account).map(ValidatedSettlements)
 }
 pub(super) fn audit(conn: &Connection, account: &str) -> Result<(), AppError> {
     receipts::audit(conn, account)

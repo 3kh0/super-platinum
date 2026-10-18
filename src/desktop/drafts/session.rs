@@ -314,14 +314,12 @@ pub(crate) async fn restore(shell: &mut ShellState) {
     };
     let epoch = shell.core.account_epoch;
     shell.managed_drafts.begin(&account, epoch);
-    let result = match Account::production(&account) {
-        Ok(owner) => owner.load_all().await,
-        Err(error) => Err(error),
-    };
-    match result {
-        Ok(loaded) => {
-            shell.managed_drafts.accept(&account, epoch, loaded);
-            restore_locals(shell, &account);
+    match super::protected::production::restore(shell).await {
+        Ok(()) => {
+            // Protected Discovery retains the actual complete metadata; never
+            // claim that a legacy managed projection is verified or ready.
+            shell.managed_drafts.loading = false;
+            shell.managed_drafts.error = Some(super::protected::production::legacy_refusal());
         }
         Err(_) => shell.managed_drafts.fail(),
     }
@@ -350,6 +348,12 @@ fn restore_locals(shell: &mut ShellState, account: &str) {
 /// Refresh only metadata in an exposed shell. Current typing belongs to the
 /// checkpoint queue and must not be replaced by an older disk snapshot.
 pub(crate) async fn load(mut state: Signal<ShellState>) {
+    if !crate::fixture::is_fixture() {
+        let mut shell = state.write();
+        shell.managed_drafts.error = Some(super::protected::production::legacy_refusal());
+        return;
+    }
+
     if crate::fixture::is_fixture() {
         return;
     }

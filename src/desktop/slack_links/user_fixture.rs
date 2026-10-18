@@ -117,6 +117,7 @@ pub(crate) fn install(shell: &mut ShellState) {
     shell.core.active_account = Some(ACCOUNT.into());
     shell.core.transport = None;
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "fake-user-links".into(),
         workspaces: [(
             "T1".into(),

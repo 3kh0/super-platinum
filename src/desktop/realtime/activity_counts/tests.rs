@@ -24,6 +24,7 @@ pub(super) fn core() -> CoreAppState {
     core.active_account = Some("fixture-owner".into());
     core.active_team = Some("T1".into());
     core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "fixture-cookie".into(),
         workspaces: [("T1".into(), session)].into(),
     });

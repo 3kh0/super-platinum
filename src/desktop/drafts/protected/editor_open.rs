@@ -26,7 +26,6 @@ pub(super) struct Evidence {
     // Preserve actual evidence even when installation or the waiter disappears.
     pub review: Option<Arc<durable::Review>>,
     pub writer: Option<durable::Writer>,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     pub owned: super::owned_route::Opening,
     editor: Option<Weak<editor::Editor>>,
 }
@@ -107,7 +106,6 @@ impl Request {
                 terminal: Terminal::Running,
                 review: None,
                 writer: None,
-                #[cfg(any(test, feature = "protected-native-fixture"))]
                 owned: Default::default(),
                 editor: None,
             }),
@@ -238,7 +236,6 @@ impl Completion {
         }
     }
     async fn read(&self, owner: &Owner) -> Result<durable::Review, durable::Error> {
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if let Some(route) = &owner.account.owned {
             let held =
                 super::owned_route::Held::new(route.operations.review(owner.scope().clone()));
@@ -248,7 +245,7 @@ impl Completion {
                 .map_err(|_| durable::Error::Storage)?
                 .owned
                 .read = Some(held.clone());
-            return held.value().await.map_err(super::owned_route::ui)?;
+            return held.observed_success().await;
         }
         account::wait(owner.client()?.review(owner.scope().clone())).await
     }
@@ -257,7 +254,6 @@ impl Completion {
         owner: &Owner,
         review: durable::Review,
     ) -> Result<durable::Writer, durable::Error> {
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if let Some(route) = &owner.account.owned {
             let held = super::owned_route::Held::new(route.operations.register(review));
             self.job
@@ -266,7 +262,7 @@ impl Completion {
                 .map_err(|_| durable::Error::Storage)?
                 .owned
                 .register = Some(held.clone());
-            return held.value().await.map_err(super::owned_route::ui)?;
+            return held.observed_success().await;
         }
         account::wait(owner.register(review)?).await
     }

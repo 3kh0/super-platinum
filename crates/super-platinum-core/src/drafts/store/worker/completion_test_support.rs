@@ -280,7 +280,7 @@ impl Fixture {
         let reserved = self
             .queue
             .worker
-            .hold_baseline(BaselineInput {
+            .hold_baseline(crate::drafts::store::worker::admission::BaselineInput {
                 stream: self.stream.clone(),
                 expected: review,
                 now_ms: 1000,
@@ -371,7 +371,7 @@ impl Fixture {
         let reserved = self
             .queue
             .worker
-            .hold_observation(ObservationInput {
+            .hold_observation(crate::drafts::store::worker::admission::ObservationInput {
                 stream: self.stream.clone(),
                 expected: review,
                 event: event.clone(),

@@ -2,9 +2,11 @@ use super::*;
 use crate::slack_lists::rename::{self, filter};
 use super_platinum_core::slack_lists::{NumberFilterOperator as Op, ViewFilterChoice};
 mod capture;
+mod date;
 mod focus;
 mod number;
 mod rows;
+mod select;
 
 pub(super) fn action(state: Signal<ShellState>, visit: u64) -> Element {
     let selection = rename::selection(&state.read()).unwrap_or_default();
@@ -35,6 +37,33 @@ fn label(choice: Option<&ViewFilterChoice>, choices: &[(String, String)]) -> Str
             } else {
                 "is not checked"
             }
+        ),
+        Some(ViewFilterChoice::Select {
+            column_id,
+            operator,
+            values,
+        }) => format!(
+            "{} {}{}",
+            name(column_id, choices),
+            select::label(*operator),
+            if operator.requires_values() {
+                format!(" ({} options)", values.len())
+            } else {
+                String::new()
+            }
+        ),
+        Some(ViewFilterChoice::Date {
+            column_id,
+            operator,
+            value,
+        }) => format!(
+            "{} {}{}",
+            name(column_id, choices),
+            date::label(*operator),
+            value
+                .as_deref()
+                .map(|v| format!(" {}", date::value_label(v)))
+                .unwrap_or_default()
         ),
         Some(ViewFilterChoice::Number {
             column_id,

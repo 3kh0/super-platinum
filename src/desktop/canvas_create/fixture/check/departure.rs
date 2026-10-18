@@ -85,7 +85,8 @@ pub(super) async fn run(
     }
     dom("leave-palette", json!({})).await?;
     wait_model(state, "actual Escape left Palette", |s| s.overlay.is_none()).await?;
-    wait_dom("reopen", json!({})).await?;
+    wait_dom("reopen-ready", json!({})).await?;
+    dom("reopen", json!({})).await?;
     ready(state).await?;
     let returned = editable(AHEAD).await?;
     if returned["visit"] == first_visit || b.inventory().await? != saved {

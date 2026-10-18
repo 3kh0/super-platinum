@@ -10,11 +10,16 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
+mod configured;
+#[cfg(test)]
+mod configured_tests;
 mod job;
 #[cfg(test)]
 mod owned_tests;
+#[cfg(test)]
 mod reservation;
 mod source;
+#[cfg(test)]
 use reservation::{Reservation, Slot};
 #[cfg(test)]
 mod tests;
@@ -79,10 +84,11 @@ pub(super) struct Root {
     closed: bool,
     identity: Arc<()>,
     factory: durable::owned_store::FactoryIdentity,
+    #[cfg(test)]
     reservations: Vec<Arc<Slot>>,
 }
 impl Root {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self {
             accounts: BTreeMap::new(),
             selected: None,
@@ -90,8 +96,77 @@ impl Root {
             closed: false,
             identity: Arc::new(()),
             factory: Default::default(),
+            #[cfg(test)]
             reservations: Vec::new(),
         }
+    }
+
+    #[cfg(not(test))]
+    fn occupied(&self) -> usize {
+        self.accounts.len()
+    }
+
+    /// Only the disconnected native fixture supplies this temporary opaque route.
+    /// Initialization, selection, load, Host and all subsequent producer methods
+    /// are the same configured path. No configured account/path is accepted here.
+    #[cfg(any(test, feature = "protected-native-fixture"))]
+    pub(super) fn acquire_configured_fixture(
+        &mut self,
+        route: durable::owned_store::OwnedRoute,
+    ) -> Result<Acquisition, Error> {
+        self.acquire(Source::configured_fixture(route))
+    }
+
+    pub(super) fn acquire_configured(&mut self, id: &str) -> Result<Acquisition, Error> {
+        if let Some(entry) = self.accounts.get(id) {
+            if self.closed || !entry.source.is_configured() {
+                return Err(Error::Identity);
+            }
+            return Ok(Acquisition(entry.clone()));
+        }
+        self.acquire(Source::configured(id)?)
+    }
+    pub(super) fn configured_account(&self, id: &str) -> Result<Arc<Account>, Error> {
+        let entry = self.accounts.get(id).ok_or(Error::Pending)?;
+        if !entry.source.is_configured() {
+            return Err(Error::Identity);
+        }
+        Ok(entry.initialization.result()?.account.clone())
+    }
+    pub(super) fn host(&self) -> &lifecycle::Host {
+        &self.host
+    }
+    pub(super) fn host_mut(&mut self) -> &mut lifecycle::Host {
+        &mut self.host
+    }
+
+    pub(super) fn submit_current(
+        &mut self,
+        shell: &ShellState,
+        key: &DraftKey,
+        local: &LocalDraft,
+    ) -> Result<u64, Error> {
+        let selected = self.selected.clone().ok_or(Error::Stale)?;
+        self.check(shell, &selected)?;
+        let account = selected.0.entry.initialization.result()?.account.clone();
+        let selected = self.host.select(shell, account)?;
+        if self.host.route_snapshot(shell, key).is_err() {
+            let inventory = self
+                .host
+                .discovery()
+                .entry(shell, key)
+                .map(|view| view.inventory().clone());
+            match inventory {
+                Some(Inventory::Managed(expected)) => {
+                    self.host.begin_managed(shell, &selected, expected)?;
+                }
+                Some(Inventory::Local(_)) | None => {
+                    self.host
+                        .open_local_current(shell, &selected, key.clone())?;
+                }
+            }
+        }
+        Ok(self.host.submit(shell, &selected, key, local)?)
     }
 
     /// Source is opaque and retained. A UUID collision with a different source
@@ -240,7 +315,7 @@ impl Drop for Root {
 
 pub(super) struct Load {
     selection: Selection,
-    wait: discovery::Wait<durable::Loaded>,
+    wait: discovery::Wait<Arc<durable::Loaded>>,
 }
 impl Load {
     pub async fn ready(&self) {

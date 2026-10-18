@@ -744,3 +744,6 @@ fn orphan_history_or_completion_schema_never_means_no_active_guard() {
     let conn = rusqlite::Connection::open_in_memory().unwrap();
     guard(&conn, &f.scope).unwrap();
 }
+
+#[path = "api_slash_audit_index_tests.rs"]
+mod audit_index_tests;

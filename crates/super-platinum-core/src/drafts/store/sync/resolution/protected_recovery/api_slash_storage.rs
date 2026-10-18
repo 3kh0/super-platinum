@@ -67,7 +67,15 @@ pub(super) fn install(conn: &Connection, account: &str) -> Result<(), AppError> 
     all(conn, account)?;
     Ok(())
 }
+#[cfg(test)]
+thread_local! { static VALIDATION_WORK: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
+#[cfg(test)]
+pub(super) fn take_validation_work() -> usize {
+    VALIDATION_WORK.with(|v| v.replace(0))
+}
 fn validate(binding: &Binding) -> Result<(), AppError> {
+    #[cfg(test)]
+    VALIDATION_WORK.with(|v| v.set(v.get() + 1));
     let before = views::managed(binding.inventory.restore()?)
         .map_err(|_| invalid("missing protected binding row"))?;
     let after = wire::decode(
@@ -119,28 +127,54 @@ fn validate(binding: &Binding) -> Result<(), AppError> {
     sql_number(binding.serial)?;
     Ok(())
 }
-pub(super) fn all(conn: &Connection, account: &str) -> Result<Vec<Binding>, AppError> {
-    let receipts = slash_journal::protected_inventory(conn, account)
-        .map_err(|_| invalid("invalid command inventory"))?;
-    let mut seen = std::collections::BTreeSet::new();
-    let mut out = Vec::new();
+/// Full, bounded validation for one immutable database observation. Never cached
+/// across a transaction or reused after a write. Raw bytes stay paired with IDs.
+pub(super) struct Validated {
+    entries: std::collections::BTreeMap<String, (Binding, String)>,
+    journal: std::collections::BTreeMap<String, SlashRecord>,
+}
+impl Validated {
+    pub(super) fn exact(&self, scope: &Scope, id: &str) -> Result<(&Binding, &str), AppError> {
+        self.entries
+            .get(id)
+            .filter(|(b, _)| b.scope == *scope)
+            .map(|(b, raw)| (b, raw.as_str()))
+            .ok_or_else(|| invalid("missing exact command binding"))
+    }
+    pub(super) fn journal(&self, id: &str) -> Option<&SlashRecord> {
+        self.journal.get(id)
+    }
+}
+pub(super) fn validated(conn: &Connection, account: &str) -> Result<Validated, AppError> {
+    let journal = slash_journal::protected_inventory(conn, account)
+        .map_err(|_| invalid("invalid command inventory"))?
+        .into_iter()
+        .map(|r| (r.id().to_owned(), r))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut entries = std::collections::BTreeMap::new();
     for (id, key, enrollment, raw) in history::binding_rows(conn)? {
         let binding: Binding = wire::strict(&raw)?;
         validate(&binding)?;
-        if !seen.insert(id.clone())
-            || binding.scope.account_id != account
+        if binding.scope.account_id != account
             || binding.intent != id
             || binding.enrollment != enrollment
             || key != serde_json::to_string(&binding.scope.key)?
-            || !receipts
-                .iter()
-                .any(|r| r.protected_descends_from(&binding.dispatch))
+            || !journal
+                .get(&id)
+                .is_some_and(|r| r.protected_descends_from(&binding.dispatch))
+            || entries.insert(id, (binding, raw)).is_some()
         {
             return Err(invalid("duplicate/changed historical binding"));
         }
-        out.push(binding);
     }
-    Ok(out)
+    Ok(Validated { entries, journal })
+}
+pub(super) fn all(conn: &Connection, account: &str) -> Result<Vec<Binding>, AppError> {
+    Ok(validated(conn, account)?
+        .entries
+        .into_values()
+        .map(|(b, _)| b)
+        .collect())
 }
 pub(super) fn insert(conn: &Connection, binding: &Binding) -> Result<(), AppError> {
     require(conn, &binding.scope.account_id)?;
@@ -171,12 +205,11 @@ pub(super) fn exact(
     id: &str,
 ) -> Result<(Binding, String), AppError> {
     require(conn, &scope.account_id)?;
-    let binding = all(conn, &scope.account_id)?
-        .into_iter()
-        .find(|b| b.scope == *scope && b.intent == id)
-        .ok_or_else(|| invalid("missing exact command binding"))?;
-    let raw = history::binding_raw(conn, id)?;
-    Ok((binding, raw))
+    validated(conn, &scope.account_id)?
+        .entries
+        .remove(id)
+        .filter(|(b, _)| b.scope == *scope)
+        .ok_or_else(|| invalid("missing exact command binding"))
 }
 pub(super) fn guard(conn: &Connection, scope: &Scope) -> Result<(), AppError> {
     if count(conn)? == 0 {

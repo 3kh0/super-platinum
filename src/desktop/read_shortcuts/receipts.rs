@@ -634,6 +634,7 @@ mod tests {
         );
         s.core.transport = Some(transport.clone());
         s.core.session = Some(super_platinum_core::config::Session {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "fixture-cookie".into(),
             workspaces: [(team, session.clone())].into(),
         });

@@ -9,10 +9,11 @@ fn setup() -> (ShellState, Arc<Capability>) {
             .as_nanos() as u64,
         NEXT.fetch_add(1, Ordering::Relaxed)
     );
-    let root = std::env::current_dir()
-        .unwrap()
-        .join("tmp")
-        .join(format!("cached-viewer-save-{nonce}"));
+    // A freshly copied/checked-out source tree has no gitignored tmp directory.
+    // Create only that shared parent; keep the nonce-owned root exclusive.
+    let base = std::env::current_dir().unwrap().join("tmp");
+    std::fs::create_dir_all(&base).unwrap();
+    let root = base.join(format!("cached-viewer-save-{nonce}"));
     std::fs::create_dir(&root).unwrap();
     std::fs::create_dir(root.join("downloads")).unwrap();
     std::fs::write(

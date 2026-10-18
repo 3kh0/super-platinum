@@ -194,6 +194,7 @@ fn fixture_context_requires_exact_installed_allocation_owner_and_no_credentials(
             4 => shell.self_account.user_id = "UOTHER".into(),
             5 => {
                 shell.core.session = Some(super_platinum_core::config::Session {
+                    unified_user_client_enabled: Default::default(),
                     d_cookie: String::new(),
                     workspaces: Default::default(),
                 })
@@ -595,3 +596,5 @@ async fn actual_worker_cancellation_after_close_reader_failure_cannot_replace_re
         assert_eq!(d.error, Some(Refusal::Note.message()));
     }
 }
+
+mod direct;

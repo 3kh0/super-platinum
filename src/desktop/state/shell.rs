@@ -12,6 +12,7 @@ pub enum PendingDeliveryStatus {
 
 pub struct ShellState {
     pub(crate) message_buttons: crate::message_buttons::State,
+    pub(crate) app_home: crate::app_home::Root,
     pub(crate) app_modal: Option<crate::app_modal::Session>,
     pub(crate) app_modal_closes: Vec<crate::app_modal::CloseTicket>,
     pub core: super_platinum_core::CoreAppState,
@@ -57,6 +58,7 @@ pub struct ShellState {
     pub chat_paused: bool,
     pub main_view: MainView,
     pub channel_tab: ChannelTab,
+    pub(crate) channel_tabs: crate::channel_tabs::Root,
     pub dm_query: String,
     pub dm_unread_only: bool,
     pub activity_tab: ActivityTab,
@@ -602,6 +604,10 @@ impl ShellState {
         }
         if self.overlay == Some(Overlay::ButtonConfirmation) {
             crate::message_buttons::cancel_local(self);
+            return;
+        }
+        if self.overlay == Some(Overlay::AppShortcuts) {
+            crate::message_buttons::shortcuts::cancel(self);
             return;
         }
         if self.overlay == Some(Overlay::AppModal) {

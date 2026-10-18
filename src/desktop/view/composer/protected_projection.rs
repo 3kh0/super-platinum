@@ -1,5 +1,5 @@
 //! Explicit native projection proof. No timer, remote observation or autosave wiring.
-use super::{byte_to_utf16, field, field_scope, utf16_to_byte};
+use super::{byte_to_utf16, field, field_scope, protected_enrollment::Policy, utf16_to_byte};
 use crate::{
     drafts::protected::{
         editor::Editor,
@@ -134,6 +134,7 @@ pub(crate) enum ProjectionResult<T> {
 
 /// No public fields/constructors: a capture cannot stand in for native acceptance.
 pub(crate) struct ProjectionAttempt {
+    policy: Policy,
     state: Signal<ShellState>,
     target: ComposerTarget,
     editor: Arc<Editor>,
@@ -209,15 +210,10 @@ fn live(shell: &ShellState, target: ComposerTarget) -> LocalDraft {
     }
 }
 
-// Managed projection supports text only. Do not use lossy serialized attachment
-// equality to authorize replacing in-flight upload handles or previews.
-fn same_plain(left: &LocalDraft, right: &LocalDraft) -> bool {
-    left.attachments.is_empty() && right.attachments.is_empty() && left.composer == right.composer
-}
-fn same_book(left: Option<&LocalDraft>, right: Option<&LocalDraft>) -> bool {
+fn same_book(policy: Policy, left: Option<&LocalDraft>, right: Option<&LocalDraft>) -> bool {
     match (left, right) {
         (None, None) => true,
-        (Some(a), Some(b)) => same_plain(a, b),
+        (Some(a), Some(b)) => policy.same(a, b),
         _ => false,
     }
 }
@@ -247,8 +243,9 @@ impl ProjectionAttempt {
     }
     fn same_pair(&self, shell: &ShellState) -> bool {
         self.same_destination(shell)
-            && same_plain(&live(shell, self.target), &self.live)
+            && self.policy.same(&live(shell, self.target), &self.live)
             && same_book(
+                self.policy,
                 shell.core.drafts.items.get(&self.ticket.scope().key),
                 self.book.as_ref(),
             )
@@ -353,6 +350,7 @@ impl AppliedProjection {
         let attempt = self.attempt;
         let ProjectionAttempt {
             mut state,
+            policy,
             target,
             editor,
             ticket,
@@ -381,8 +379,8 @@ impl AppliedProjection {
                     || shell.core.active_account.as_deref()
                         != Some(ticket.scope().account_id.as_str())
                     || shell.composer_key(target).as_ref() != Some(key)
-                    || !same_plain(&live(&shell, target), &before)
-                    || !same_book(shell.core.drafts.items.get(key), book.as_ref())
+                    || !policy.same(&live(&shell, target), &before)
+                    || !same_book(policy, shell.core.drafts.items.get(key), book.as_ref())
                     || match target {
                         ComposerTarget::Channel => shell.core.drafts.channel.as_ref() != Some(key),
                         ComposerTarget::Thread => shell.core.drafts.thread.as_ref() != Some(key),
@@ -390,19 +388,15 @@ impl AppliedProjection {
                 {
                     return Err(Fault::Stale);
                 }
-                let after = ticket.after_local();
-                if !after.attachments.is_empty() {
-                    return Err(Fault::Unsupported);
-                }
-                shell
-                    .core
-                    .drafts
-                    .project_clean(key, book.as_ref(), after)
-                    .map_err(|_| Fault::Stale)?;
-                match target {
-                    ComposerTarget::Channel => shell.core.composer = after.composer.clone(),
-                    ComposerTarget::Thread => shell.core.thread_composer = after.composer.clone(),
-                }
+                install_pair(
+                    &mut shell,
+                    target,
+                    key,
+                    policy,
+                    &before,
+                    book.as_ref(),
+                    ticket.after_local(),
+                )?;
                 // No checkpoint/route: this is a paired remote projection, and the
                 // Editor barrier must remain until its separate strict ack succeeds.
                 Ok(RendererApplied { ticket })
@@ -417,6 +411,25 @@ pub(crate) async fn capture_projection(
     ticket: ProjectionTicket,
     registry: Arc<Registry>,
 ) -> ProjectionResult<ProjectionAttempt> {
+    capture_with_policy(state, target, editor, ticket, registry, Policy::Plain).await
+}
+pub(crate) async fn capture_baseline_projection(
+    state: Signal<ShellState>,
+    target: ComposerTarget,
+    editor: Arc<Editor>,
+    ticket: ProjectionTicket,
+    registry: Arc<Registry>,
+) -> ProjectionResult<ProjectionAttempt> {
+    capture_with_policy(state, target, editor, ticket, registry, Policy::Baseline).await
+}
+async fn capture_with_policy(
+    state: Signal<ShellState>,
+    target: ComposerTarget,
+    editor: Arc<Editor>,
+    ticket: ProjectionTicket,
+    registry: Arc<Registry>,
+    policy: Policy,
+) -> ProjectionResult<ProjectionAttempt> {
     let (lease, before, book, epoch) = {
         let shell = state.peek();
         let Some(lease) = field::current(&shell, target) else {
@@ -429,14 +442,17 @@ pub(crate) async fn capture_projection(
             shell.core.account_epoch,
         )
     };
-    if !same_plain(&before, ticket.before_local())
+    if !policy.same(&before, ticket.before_local())
         || replacement(ticket.after_local()).is_none()
-        || book.as_ref().is_some_and(|book| !same_plain(book, &before))
+        || book
+            .as_ref()
+            .is_some_and(|book| !policy.same(book, &before))
         || (book.is_none() && !before.empty())
     {
         return ProjectionResult::Deferred(ProjectionDeferral::Stale);
     }
     let mut attempt = ProjectionAttempt {
+        policy,
         state,
         target,
         editor,
@@ -528,3 +544,43 @@ pub(super) async fn evaluate(expression: &str) -> NativeReceipt {
 
 // Shared native protocol tests remain in projection_tests.rs; protected proof
 // and registry interleavings receive separate opaque-worker tests.
+
+// Called only inside with_current_projection after native Applied and all
+// account/mount/serial guards. This helper owns the atomic paired state mutation.
+fn install_pair(
+    shell: &mut ShellState,
+    target: ComposerTarget,
+    key: &super_platinum_core::drafts::DraftKey,
+    policy: Policy,
+    before: &LocalDraft,
+    book: Option<&LocalDraft>,
+    after: &LocalDraft,
+) -> Result<(), Fault> {
+    if !after.attachments.is_empty() {
+        return Err(Fault::Unsupported);
+    }
+    if !policy.same(&live(shell, target), before)
+        || !same_book(policy, shell.core.drafts.items.get(key), book)
+    {
+        return Err(Fault::Stale);
+    }
+    shell
+        .core
+        .drafts
+        .project_clean(key, book, after)
+        .map_err(|_| Fault::Stale)?;
+    match target {
+        ComposerTarget::Channel => {
+            shell.core.composer = after.composer.clone();
+            shell.core.composer_attachments = after.attachments.clone();
+        }
+        ComposerTarget::Thread => {
+            shell.core.thread_composer = after.composer.clone();
+            shell.core.thread_composer_attachments = after.attachments.clone();
+        }
+    }
+    Ok(())
+}
+#[cfg(test)]
+#[path = "protected_projection/baseline_tests.rs"]
+mod baseline_tests;

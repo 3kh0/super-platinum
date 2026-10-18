@@ -4,10 +4,12 @@ pub use super_platinum_core::block_actions::{BlockElementMetadata, BlockElementS
 pub enum ChannelTab {
     #[default]
     Messages,
+    AppHome,
     Files,
     Links,
     Pins,
     Bookmarks,
+    Canvas,
 }
 
 use super_platinum_core::MediaAssetId;
@@ -704,6 +706,7 @@ pub enum Overlay {
     MessageUserSelect,
     MessageExternalSelect,
     AppModal,
+    AppShortcuts,
     Accounts,
     SelfMenu,
     SelfStatus,

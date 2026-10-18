@@ -9,6 +9,9 @@ pub(crate) struct BaselineRead {
     pub raw: Option<Value>,
     pub cooldown_until_ms: Option<u64>,
     pub requested: bool,
+    /// Actual transport failure for ShellState::report_failure; never displayed
+    /// or serialized verbatim. Durable classification above stays independent.
+    pub error: Option<Error>,
 }
 impl BaselineRead {
     pub(crate) fn not_requested(until: Option<u64>) -> Self {
@@ -19,6 +22,7 @@ impl BaselineRead {
             raw: None,
             cooldown_until_ms: until,
             requested: false,
+            error: None,
         }
     }
 }
@@ -69,6 +73,7 @@ impl Binding {
                     raw: Some(raw),
                     cooldown_until_ms: None,
                     requested: true,
+                    error: None,
                 }
             }
             Err(error) => {
@@ -91,6 +96,7 @@ impl Binding {
                     raw: None,
                     cooldown_until_ms: attempt.cooldown_until_ms,
                     requested: !evidence.not_requested(),
+                    error: Some(error),
                 }
             }
         }

@@ -4,6 +4,7 @@ use super_platinum_core::{config::Session, slack::models::Message};
 fn shell() -> ShellState {
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "fixture".into(),
         workspaces: [(
             "T1".into(),

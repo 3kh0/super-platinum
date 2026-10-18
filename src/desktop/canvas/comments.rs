@@ -1,7 +1,9 @@
-//! Owned, read-only Canvas thread reader. Never merges virtual-channel messages
-//! into the active conversation or sends read marks, replies, or archive writes.
+//! Owned Canvas comment reader with separately guarded resolve/reopen custody.
+//! Virtual-channel messages never enter the active conversation; no read marks or replies.
 use super::checklist::scope::Scope;
-use crate::state::{Overlay, ShellState};
+#[cfg(test)]
+use crate::state::Overlay;
+use crate::state::ShellState;
 use dioxus::prelude::*;
 use std::time::Instant;
 use super_platinum_core::{
@@ -11,13 +13,23 @@ use super_platinum_core::{
 pub(crate) mod check;
 pub(in crate::canvas) mod fixture;
 pub(in crate::canvas) mod focus;
+pub(in crate::canvas) mod mutation;
 mod pages;
 mod rate;
+pub(in crate::canvas) mod reply;
 use pages::Direction;
 mod view;
 pub(super) use view::Panel;
 #[cfg(test)]
 mod tests;
+
+/// Loaded shells contain fresh comment roots. Move the original retained roots
+/// into that shell before replacement; account/visit guards remain attached to
+/// every entry and are not rebound to the newly selected account.
+pub(crate) fn carry_pending(previous: &mut ShellState, loaded: &mut ShellState) {
+    reply::carry_pending(previous, loaded);
+    mutation::carry_pending(previous, loaded);
+}
 
 const MAX_ROWS: usize = 200;
 #[derive(Clone)]
@@ -38,7 +50,7 @@ impl Owner {
     fn current(&self, shell: &ShellState) -> bool {
         self.scope.current(shell)
             && !self.scope.deleted(shell, &self.file)
-            && shell.overlay == Some(Overlay::Canvas)
+            && super::surface::visible(shell, &self.file)
             && shell.shortcut_generation == self.visit
             && shell.canvas.as_ref().is_some_and(|v| v.id == self.file)
     }
@@ -62,6 +74,13 @@ pub(super) struct State {
     rate_blocked: bool,
     filter: Filter,
     root: Option<Message>,
+    file: Option<super_platinum_core::slack::models::File>,
+    mutation_ready: bool,
+    review: Option<mutation::review::Draft>,
+    review_serial: u64,
+    mutation_error: Option<&'static str>,
+    mutation_receipt:
+        Option<super_platinum_core::canvas::edit::structure::recovery::journal::CommentReceipt>,
 }
 struct Row {
     message: Message,
@@ -86,6 +105,7 @@ impl State {
         self.rate_blocked || self.retry_at.is_some_and(|time| Instant::now() < time)
     }
     fn next_serial(&mut self) {
+        self.review = None;
         self.serial = self.serial.wrapping_add(1);
     }
 }
@@ -210,7 +230,11 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
         return;
     }
     match result {
-        Ok(page) => {
+        Ok((page, file)) => {
+            mutation::load(state, model, &ticket).await;
+            if !model.peek().accepts(&state.peek(), &ticket) {
+                return;
+            }
             let shell = state.peek();
             let Some(workspace) = shell.core.workspaces.get(&ticket.owner.scope.team) else {
                 return;
@@ -250,8 +274,13 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
                 value.cursor = None;
                 return;
             }
+            value.file = Some(file);
             value.rows.clear();
             for (message, preview) in messages {
+                if matches!(&ticket.query, Query::Replies(root) if message.ts.as_ref() == Some(root))
+                {
+                    value.root = Some(message.clone());
+                }
                 let row = Row {
                     body: crate::message_vm::message_vm_with_pending(
                         workspace,
@@ -300,6 +329,7 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
             }
         }
     }
+    mutation::after_read(state, model).await;
 }
 fn set_wait(state: Signal<ShellState>, mut model: Signal<State>, owner: Owner, wait: rate::Wait) {
     match wait {
@@ -323,20 +353,23 @@ enum Page {
     Stream(StreamPage),
     Replies(ReplyPage),
 }
-async fn read(state: Signal<ShellState>, ticket: &Ticket) -> Result<Page, Error> {
+async fn read(
+    state: Signal<ShellState>,
+    ticket: &Ticket,
+) -> Result<(Page, super_platinum_core::slack::models::File), Error> {
     let invalid = || Error::Api("canvas_comments_unavailable".into());
     if !ticket.owner.current(&state.peek()) {
         return Err(invalid());
     }
-    let response = if crate::fixture::is_fixture() {
-        fixture::response(&state.peek(), ticket)?
+    let (response, file) = if crate::fixture::is_fixture() {
+        (fixture::response(&state.peek(), ticket)?, fixture::file())
     } else {
         let ctx = ticket
             .owner
             .scope
             .request(&state.peek())
             .ok_or_else(invalid)?;
-        api::fetch_canvas_file(
+        let file = api::fetch_canvas_file(
             &ctx.transport,
             &ctx.client,
             &ctx.session,
@@ -347,10 +380,10 @@ async fn read(state: Signal<ShellState>, ticket: &Ticket) -> Result<Page, Error>
             return Err(invalid());
         }
         let request = request(&ctx.client, &ctx.session, ticket)?;
-        ctx.transport.execute(request).await?
+        (ctx.transport.execute(request).await?, file)
     };
     let ticket = ticket.clone();
-    tokio::task::spawn_blocking(move || match ticket.query {
+    let page = tokio::task::spawn_blocking(move || match ticket.query {
         Query::Stream(_) => StreamPage::parse(&ticket.owner.file, &response).map(Page::Stream),
         Query::Replies(root) => ReplyPage::parse(
             &ticket.owner.file,
@@ -362,7 +395,8 @@ async fn read(state: Signal<ShellState>, ticket: &Ticket) -> Result<Page, Error>
     })
     .await
     .map_err(|_| invalid())?
-    .map_err(|_| invalid())
+    .map_err(|_| invalid())?;
+    Ok((page, file))
 }
 fn request(
     client: &super_platinum_core::slack::client::SlackClient,
@@ -385,4 +419,9 @@ fn request(
             ticket.cursor.as_deref(),
         ),
     }
+}
+
+pub(crate) fn install_fixture(shell: &mut ShellState) {
+    mutation::fixture::install(shell);
+    reply::fixture::install(shell);
 }

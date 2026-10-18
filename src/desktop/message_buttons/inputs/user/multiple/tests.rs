@@ -211,6 +211,7 @@ fn multi_user_search_backoff_is_retained_and_old_queries_do_not_apply() {
     let (mut shell, source, metadata, mounted) = setup();
     shell.core.transport = Some(Arc::new(Transport::new("synthetic-cookie").unwrap()));
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic-cookie".into(),
         workspaces: [("T1".into(), session())].into(),
     });

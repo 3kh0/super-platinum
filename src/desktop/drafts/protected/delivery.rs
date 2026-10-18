@@ -23,7 +23,7 @@ pub(crate) struct Finished {
 /// conversion from the legacy managed_drafts or draft_writes maps exists.
 pub(crate) struct Delivery {
     state: Signal<ShellState>,
-    session: Rc<RefCell<Session>>,
+    session: ProjectionSession,
     registry: Arc<registry::Registry>,
     editor: Arc<editor::Editor>,
     source: Arc<Source>,
@@ -37,10 +37,71 @@ pub(crate) struct Delivery {
     initial: View,
     operation: Option<operation::Operation>,
 }
+enum ProjectionSession {
+    Detached(Rc<RefCell<Session>>),
+    Configured,
+}
+impl ProjectionSession {
+    fn entry(&self, shell: &ShellState, scope: &Scope) -> Option<View> {
+        match self {
+            Self::Detached(session) => session
+                .try_borrow()
+                .ok()?
+                .entry(&scope.account_id, shell.core.account_epoch, &scope.key)
+                .cloned(),
+            Self::Configured => super::production::session_view(shell, &scope.key),
+        }
+    }
+    fn apply(&self, shell: &ShellState, before: &View, after: View) -> bool {
+        match self {
+            Self::Detached(session) => {
+                session.try_borrow_mut().is_ok_and(|mut session| {
+                    shell.core.active_account.as_deref().is_some_and(|id| {
+                        session.apply(id, shell.core.account_epoch, before, after)
+                    })
+                })
+            }
+            Self::Configured => super::production::publish_session(shell, before, after),
+        }
+    }
+}
 impl Delivery {
+    pub(crate) fn capture_configured(
+        state: Signal<ShellState>,
+        registry: Arc<registry::Registry>,
+        editor: Arc<editor::Editor>,
+        source: Arc<Source>,
+        binding: Binding,
+    ) -> Result<Self, durable::Error> {
+        Self::capture_with(
+            state,
+            ProjectionSession::Configured,
+            registry,
+            editor,
+            source,
+            binding,
+        )
+    }
     pub fn capture(
         state: Signal<ShellState>,
         session: Rc<RefCell<Session>>,
+        registry: Arc<registry::Registry>,
+        editor: Arc<editor::Editor>,
+        source: Arc<Source>,
+        binding: Binding,
+    ) -> Result<Self, durable::Error> {
+        Self::capture_with(
+            state,
+            ProjectionSession::Detached(session),
+            registry,
+            editor,
+            source,
+            binding,
+        )
+    }
+    fn capture_with(
+        state: Signal<ShellState>,
+        session: ProjectionSession,
         registry: Arc<registry::Registry>,
         editor: Arc<editor::Editor>,
         source: Arc<Source>,
@@ -54,9 +115,7 @@ impl Delivery {
             || !binding.current(&shell)
             || !registry.current(&scope.account_id, epoch, &scope.key, &editor)
             || session
-                .try_borrow()
-                .map_err(|_| durable::Error::Stale)?
-                .entry(&scope.account_id, epoch, &scope.key)
+                .entry(&shell, scope)
                 .is_none_or(|view| !view.same(&snapshot.view))
         {
             return Err(durable::Error::Stale);
@@ -111,6 +170,9 @@ impl Delivery {
         }
         let local = prepared.visible().clone();
         let action = match request {
+            Request::Slash { .. } | Request::Baseline { .. } => {
+                return Err(durable::Error::Unsupported);
+            }
             Request::Send => Action::Consume(ConsumeKind::Send),
             Request::Schedule { snapshot, post_at } => Action::Schedule { snapshot, post_at },
         };
@@ -246,11 +308,7 @@ impl Delivery {
             return None;
         }
         let scope = self.editor.scope();
-        self.session
-            .try_borrow()
-            .ok()?
-            .entry(&scope.account_id, self.epoch, &scope.key)
-            .cloned()
+        self.session.entry(&shell, scope)
     }
     fn publish_snapshot(&self, before: Option<View>) -> bool {
         let Some(before) = before else { return false };
@@ -260,14 +318,11 @@ impl Delivery {
         if !self.owner_current(&shell) {
             return false;
         }
-        let scope = self.editor.scope();
-        let Ok(mut session) = self.session.try_borrow_mut() else {
-            return false;
-        };
+
         // Snapshot is read at the final synchronous publication boundary. A
         // previously returned background snapshot never overwrites new input.
         let latest = self.editor.snapshot();
-        session.apply(&scope.account_id, self.epoch, &before, latest.view)
+        self.session.apply(&shell, &before, latest.view)
     }
     fn project_send(
         &self,

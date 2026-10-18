@@ -70,9 +70,8 @@ impl Pending {
         owner: &Owner,
         ids: Vec<String>,
     ) -> Result<(), Error> {
-        if !owner.current(&state.peek()) {
-            return Err(Error::UploadCanceled);
-        }
+        // Settlement belongs to the reservation owner, even if its UI retired.
+        // The exact owner check below still prevents any later share/UI update.
         let backend = self.backend.clone();
         let ticket = self.stored.lock().unwrap().ticket.clone();
         let row = tokio::task::spawn_blocking(move || backend.finalize(ticket, ids))

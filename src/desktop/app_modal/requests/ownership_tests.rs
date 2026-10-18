@@ -10,6 +10,7 @@ fn setup(submission: bool) -> (ShellState, Ticket, Value) {
     users_fixture::install(&mut shell);
     shell.core.transport = Some(Arc::new(Transport::new("synthetic-cookie").unwrap()));
     shell.core.session = Some(Credentials {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic-cookie".into(),
         workspaces: [(
             "T1".into(),

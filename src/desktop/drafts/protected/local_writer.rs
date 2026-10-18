@@ -30,7 +30,6 @@ struct Submission {
 }
 #[derive(Clone)]
 struct Command {
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     owned: Option<
         Arc<
             super::owned_route::Held<
@@ -54,6 +53,12 @@ pub(crate) struct LocalSnapshot {
     pub failed_inputs: Vec<(u64, LocalDraft)>,
 }
 impl LocalWriter {
+    pub(super) fn matches_lease(&self, lease: &durable::LocalWriterLease) -> bool {
+        self.lease.scope() == lease.scope()
+            && self.lease.writer_id() == lease.writer_id()
+            && self.lease.generation() == lease.generation()
+            && self.lease.initial_serial() == lease.initial_serial()
+    }
     /// Desktop holder membership only. Core job progression is a separate edge.
     pub(super) fn ownership_stamp(
         &self,
@@ -113,7 +118,14 @@ impl LocalWriter {
         }
         account.initialize().await?;
         let local = inventory.local().clone();
-        let lease = super::account::wait(account.client()?.renew_local(inventory.clone())).await?;
+        let lease = match &account.owned {
+            Some(route) => {
+                super::owned_route::Held::new(route.operations.renew_local(inventory.clone()))
+                    .observed_success()
+                    .await?
+            }
+            None => super::account::wait(account.client()?.renew_local(inventory.clone())).await?,
+        };
         let writer = Self::from_handoff(account, lease, local)?;
         // Renew advances the durable generation. The pre-renew proof is never
         // published as if it described the newly installed lease.
@@ -154,7 +166,6 @@ impl LocalWriter {
                 .checked_add(1)
                 .ok_or(durable::Error::Unsupported)?;
             let mut command = Command {
-                #[cfg(any(test, feature = "protected-native-fixture"))]
                 owned: None,
                 predecessor,
                 serial,
@@ -164,7 +175,6 @@ impl LocalWriter {
             let reply = match self.enqueue(&mut command, false) {
                 Ok(reply) => reply,
                 Err(error) => {
-                    #[cfg(any(test, feature = "protected-native-fixture"))]
                     if self.account.owned.is_some() {
                         state.unsent_latest = Some(local.clone());
                         state.retries.insert(serial, command);
@@ -201,7 +211,6 @@ impl LocalWriter {
                                 let predecessor = state.serial;
                                 if let Some(serial) = predecessor.checked_add(1) {
                                     let mut command = Command {
-                                        #[cfg(any(test, feature = "protected-native-fixture"))]
                                         owned: None,
                                         predecessor,
                                         serial,
@@ -216,7 +225,6 @@ impl LocalWriter {
                                             Some(Submission { command, reply })
                                         }
                                         Err(error) => {
-                                            #[cfg(any(test, feature = "protected-native-fixture"))]
                                             if self.account.owned.is_some() {
                                                 state.retries.insert(serial, command);
                                             }
@@ -267,11 +275,49 @@ impl LocalWriter {
                 {
                     state.inventory = Some(inventory);
                     state.error = None;
-                    state.retries.remove(&command.serial);
-                    if state.latest_input.as_ref().is_some_and(|(serial, local)| {
-                        *serial == command.serial && same_local(local, &command.local)
-                    }) {
-                        state.latest_input = None;
+                    if let Some(held) = &command.owned {
+                        let acknowledgment = held.job().and_then(|job| job.observe_local_write());
+                        match acknowledgment {
+                            Ok((_, acknowledgment)) => {
+                                if let Err((error, _)) = acknowledgment.acknowledge() {
+                                    state.error = Some(super::owned_route::ui(error));
+                                }
+                            }
+                            Err(_) => {
+                                // Storage retry history cannot use the clean
+                                // receipt. Settle only this exact applied job;
+                                // no other failure or preserved input qualifies.
+                                let settled = held
+                                    .job()
+                                    .and_then(|job| job.observe_local_write_settlement());
+                                match settled {
+                                    Ok((observed, _history, acknowledgment))
+                                        if state
+                                            .inventory
+                                            .as_ref()
+                                            .is_some_and(|v| v.same(&observed)) =>
+                                    {
+                                        if let Err((error, _)) = acknowledgment.acknowledge() {
+                                            state.error = Some(super::owned_route::ui(error));
+                                        }
+                                    }
+                                    Ok(_) => state.error = Some(durable::Error::Stale),
+                                    Err(error) => state.error = Some(super::owned_route::ui(error)),
+                                }
+                            }
+                        }
+                    }
+                    if state.error.is_some() {
+                        // A fence or accounting refusal must retain this exact
+                        // applied job for explicit acknowledgment retry.
+                        state.retries.insert(command.serial, command.clone());
+                    } else {
+                        state.retries.remove(&command.serial);
+                        if state.latest_input.as_ref().is_some_and(|(serial, local)| {
+                            *serial == command.serial && same_local(local, &command.local)
+                        }) {
+                            state.latest_input = None;
+                        }
                     }
                 }
                 Ok(durable::LocalWriteResult::Preserved(inventory))
@@ -425,12 +471,7 @@ impl LocalWriter {
             return Err(durable::Error::ReviewRequired);
         }
         let expected = before.inventory.ok_or(durable::Error::Stale)?;
-        let fresh = account::wait(
-            self.account
-                .client()?
-                .review_local(self.lease.scope().clone()),
-        )
-        .await?;
+        let fresh = self.current_inventory().await?;
         if fresh.row().is_some() || !fresh.same(&expected) {
             return Err(durable::Error::Stale);
         }

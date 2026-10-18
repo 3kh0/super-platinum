@@ -141,12 +141,7 @@ async fn malformed_numeric_wire_never_dispatches_and_current_guard_still_applies
         rule["values"] = values;
         rules.push(rule);
     }
-    for operator in [
-        "less_than_or_equal",
-        "greater_than_or_equal",
-        "contains",
-        "is_empty",
-    ] {
+    for operator in ["less_than_or_equal", "greater_than_or_equal", "is_empty"] {
         let mut rule = valid.clone();
         rule["operator"] = Value::String(operator.into());
         rules.push(rule);
@@ -159,12 +154,15 @@ async fn malformed_numeric_wire_never_dispatches_and_current_guard_still_applies
         rule[key] = value;
         rules.push(rule);
     }
+    // Membership is valid for Select IDs, including numeric-looking IDs. The
+    // raw wire has no column type; Number rejection is checked against schema below.
     for rule in rules {
         let mut r = request(address);
         let RequestBody::Form(fields) = &mut r.body else {
             panic!()
         };
         fields[3].1 = serde_json::json!([rule]).to_string();
+        assert!(!allowed(&r), "malformed rule was admitted: {rule}");
         assert!(matches!(
             transport.execute_list_view_filter(r, || true).await,
             Err(ListViewFilterFailure::NotRequested(_))
@@ -184,4 +182,56 @@ async fn malformed_numeric_wire_never_dispatches_and_current_guard_still_applies
             .await
             .is_err()
     );
+}
+
+#[test]
+fn numeric_column_cannot_capture_or_replace_membership_rules() {
+    use crate::slack_lists::SelectFilterOperator;
+    let document = Document::parse(serde_json::json!({
+        "id":"F1","mode":"list","access":"write","list_metadata":{
+            "schema":[{"id":"C_NUMBER","key":"estimate","name":"Estimate","type":"number","options":{"precision":0}}],
+            "views":[{"id":"V1","name":"Custom","type":"table","columns":[],"filters":[],"info_column_filters":[]}]
+        }
+    })).unwrap();
+    let personal = PersonalTaskLists::from_response(
+        &serde_json::json!({"ok":true,"prefs":{"task_lists":"[]","assigned_to_list":""}}),
+    )
+    .unwrap();
+    for operator in [
+        SelectFilterOperator::Contains,
+        SelectFilterOperator::DoesNotContain,
+    ] {
+        assert!(
+            ViewFilter::capture(
+                &document,
+                "V1",
+                ViewFilterChoice::Select {
+                    column_id: "C_NUMBER".into(),
+                    operator,
+                    values: vec!["12.50".into()],
+                },
+                Some("full"),
+                Some(&personal),
+            )
+            .is_err(),
+            "Number schema must not mint a membership permit"
+        );
+        let mut raw = document.raw.clone();
+        raw["list_metadata"]["views"][0]["filters"] = serde_json::json!([
+            {"key":"estimate","operator":operator.as_str(),"values":["12.50"]}
+        ]);
+        let loaded = Document::parse(raw).unwrap();
+        assert_eq!(ViewFilter::current(&loaded, "V1"), None);
+        assert!(
+            ViewFilter::capture(
+                &loaded,
+                "V1",
+                ViewFilterChoice::None,
+                Some("full"),
+                Some(&personal),
+            )
+            .is_err(),
+            "unknown Number membership must not be silently replaced"
+        );
+    }
 }

@@ -2,7 +2,6 @@
 use super::*;
 pub(super) enum Reply {
     Legacy(durable::Reply<durable::LocalWriteResult>),
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     Owned(
         Arc<
             super::super::owned_route::Held<
@@ -18,7 +17,6 @@ impl LocalWriter {
         command: &mut Command,
         retry: bool,
     ) -> Result<Reply, durable::Error> {
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if let Some(route) = &self.account.owned {
             use super::super::owned_route::{Held, o, ui};
             if command.owned.is_none() {
@@ -56,7 +54,6 @@ impl LocalWriter {
     pub(super) async fn current_inventory(
         &self,
     ) -> Result<durable::LocalInventory, durable::Error> {
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if let Some(route) = &self.account.owned {
             return route.local(self.lease.scope().clone()).await;
         }
@@ -71,7 +68,6 @@ impl LocalWriter {
 pub(super) async fn wait(reply: Reply) -> Result<durable::LocalWriteResult, durable::Error> {
     match reply {
         Reply::Legacy(reply) => super::super::account::wait(reply).await,
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         Reply::Owned(held) => {
             use super::super::owned_route::{o, ui};
             held.wait().await.map_err(ui)?;

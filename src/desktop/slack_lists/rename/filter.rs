@@ -7,7 +7,11 @@ mod rows;
 pub(crate) use capture::{Capture, Snapshot, finish, release, reserve};
 pub(super) use rows::rows_for;
 pub(crate) use rows::{Action, Row, editable, structural, update_value};
-use super_platinum_core::slack_lists::{NumberFilterOperator, ViewFilter, ViewFilterChoice};
+mod select;
+pub(crate) use select::update_select;
+use super_platinum_core::slack_lists::{
+    DateFilterOperator, NumberFilterOperator, SelectFilterOperator, ViewFilter, ViewFilterChoice,
+};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Presentation {
     pub original: ViewFilterChoice,
@@ -16,6 +20,7 @@ pub(crate) struct Presentation {
     pub choices: Vec<(String, String)>,
     pub choice: u64,
     pub numbers: Vec<String>,
+    pub selects: Vec<(String, Vec<(String, String)>)>,
     pub rows: Vec<Row>,
 }
 fn choices(doc: &Document) -> Vec<(String, String)> {
@@ -106,6 +111,8 @@ fn supported(doc: &Document, choice: &ViewFilterChoice) -> bool {
         }
         ViewFilterChoice::Checkbox { column_id, .. } => (column_id, "checkbox"),
         ViewFilterChoice::Number { column_id, .. } => (column_id, "number"),
+        ViewFilterChoice::Select { column_id, .. } => (column_id, "select"),
+        ViewFilterChoice::Date { column_id, .. } => (column_id, "date"),
     };
     doc.column(id)
         .is_some_and(|c| c.kind == kind && ViewFilter::supports_column(c))
@@ -259,6 +266,12 @@ pub(super) fn operator_change(
 }
 pub(crate) fn valid(choice: &ViewFilterChoice) -> bool {
     match choice {
+        ViewFilterChoice::Date {
+            operator, value, ..
+        } => operator.valid_value(value.as_deref()),
+        ViewFilterChoice::Select {
+            operator, values, ..
+        } => operator.valid_values(values),
         ViewFilterChoice::Number {
             operator, value, ..
         } => operator.valid_value(value.as_deref()),
@@ -333,6 +346,12 @@ pub(super) fn presentation(shell: &ShellState, e: &registry::Entry) -> Option<Pr
         choices: choices(&e.original),
         choice: e.filter_choice,
         rows: e.filter_rows.clone(),
+        selects: e
+            .original
+            .columns
+            .iter()
+            .filter_map(|c| ViewFilter::select_choices(c).map(|v| (c.id.clone(), v)))
+            .collect(),
         numbers: e
             .original
             .columns

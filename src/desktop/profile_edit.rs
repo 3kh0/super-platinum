@@ -17,6 +17,8 @@ use super_platinum_core::{
 mod lifecycle;
 mod model;
 mod network;
+pub(crate) mod photo;
+pub(crate) mod sections;
 use lifecycle::*;
 use model::Owner;
 use model::*;
@@ -28,6 +30,8 @@ mod tests;
 #[derive(Clone, Default)]
 pub(crate) struct State {
     draft: Option<Draft>,
+    photo: photo::State,
+    sections: sections::State,
     entries: BTreeMap<Owner, Entry>,
     pub(crate) fixture: Option<fixture::Fixture>,
 }
@@ -59,9 +63,11 @@ pub(crate) struct Presentation {
     pub status_conflict: bool,
 }
 pub(crate) fn blocks_status(shell: &ShellState) -> bool {
-    Owner::capture(shell)
-        .and_then(|o| shell.profile_edit.entries.get(&o))
-        .is_some_and(|e| e.pending.is_some())
+    sections::pending(shell)
+        || photo::pending(shell)
+        || Owner::capture(shell)
+            .and_then(|o| shell.profile_edit.entries.get(&o))
+            .is_some_and(|e| e.pending.is_some())
 }
 pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
     let draft = shell
@@ -73,7 +79,10 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
     let pending = entry.and_then(|e| e.pending.as_ref());
     let busy = pending.is_some_and(|a| a.phase != Phase::Uncertain);
     let uncertain = pending.is_some_and(|a| matches!(a.phase, Phase::Uncertain | Phase::Checking));
-    let status_conflict = crate::self_status::blocks_profile_edit(shell)
+    let status_conflict = sections::active(shell)
+        || sections::pending(shell)
+        || photo::pending(shell)
+        || crate::self_status::blocks_profile_edit(shell)
         || crate::profile_title::blocks_profile_writes(shell);
     let fields = FIELDS
         .into_iter()
@@ -178,6 +187,9 @@ pub(crate) fn close_shell(shell: &mut ShellState) {
     close_visit(shell, None);
 }
 fn close_visit(shell: &mut ShellState, visit: Option<u64>) {
+    if sections::intercept_close(shell, visit) || photo::intercept_close(shell, visit) {
+        return;
+    }
     let Some(draft) = shell.profile_edit.draft.as_ref() else {
         return;
     };
@@ -273,6 +285,7 @@ pub(crate) fn reload(mut state: Signal<ShellState>, visit: u64) {
     }
 }
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
+    let photo_changed = sections::poll(shell) | photo::poll(shell);
     let stale = shell
         .profile_edit
         .draft
@@ -318,7 +331,7 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
     shell.profile_edit.entries.retain(|owner, entry| {
         Some(owner) == visible.as_ref() || entry.pending.is_some() || entry.retry_at > now()
     });
-    stale || expired || before != shell.profile_edit.entries.len()
+    photo_changed || stale || expired || before != shell.profile_edit.entries.len()
 }
 
 pub(crate) fn keep_current(mut state: Signal<ShellState>, visit: u64) {

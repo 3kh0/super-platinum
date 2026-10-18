@@ -6,8 +6,18 @@ use crate::{
 use dioxus::prelude::*;
 
 pub fn tabs(state: Signal<ShellState>, selected: ChannelTab) -> Element {
+    let custom_scope = format!(
+        "{}-{:?}-{:?}-{}",
+        state.read().core.account_epoch,
+        state.read().core.active_team,
+        state.read().core.active_channel,
+        state.read().channel_generation
+    );
     rsx! {
         nav {class:"channel-tabs","aria-label":"Conversation tabs",
+            if crate::app_home::eligible(&state.read()) {
+                button {class:if selected==ChannelTab::AppHome {"active"}else{""},"aria-pressed":selected==ChannelTab::AppHome,onclick:move |_|crate::channel_resources::select(state,ChannelTab::AppHome),"Home"}
+            }
             button {class:if selected == ChannelTab::Messages {"active"} else {""},"aria-pressed":selected==ChannelTab::Messages,
                 onclick:move |_|crate::channel_resources::select(state,ChannelTab::Messages),"Messages"}
             button {class:if matches!(selected,ChannelTab::Files|ChannelTab::Links) {"active"} else {""},"aria-pressed":matches!(selected,ChannelTab::Files|ChannelTab::Links),
@@ -16,6 +26,7 @@ pub fn tabs(state: Signal<ShellState>, selected: ChannelTab) -> Element {
                 onclick:move |_|crate::channel_resources::select(state,ChannelTab::Bookmarks),"Bookmarks"}
             button {class:if selected==ChannelTab::Pins {"active"}else{""},"aria-pressed":selected==ChannelTab::Pins,
                 onclick:move |_|crate::channel_resources::select(state,ChannelTab::Pins),"Pins"}
+            super::channel_tabs::CustomTabs {key:"{custom_scope}",state}
         }
     }
 }

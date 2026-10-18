@@ -1,4 +1,4 @@
-//! Inactive fixture route: one real Worker, owner lock, and retained migration jobs.
+//! Configured/fixture owned route: one real Worker, owner lock, retained migration jobs.
 //! No Default opener, legacy admission, Current-mode permit, or drain certificate.
 use super::super::protected::{Error, commands::Command as ProtectedCommand, upgrade};
 use super::*;
@@ -132,13 +132,15 @@ impl Drop for WorkerExit {
     }
 }
 impl Queue {
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub(in crate::drafts::store) fn fresh() -> Result<Arc<Self>, Error> {
         Self::start(upgrade::Owned::fresh().map_err(|_| Error::Storage)?)
     }
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub(in crate::drafts::store) fn reopen(ticket: &str) -> Result<Arc<Self>, Error> {
         Self::start(upgrade::Owned::reopen_fixture(ticket).map_err(|_| Error::Storage)?)
     }
-    fn start(owner: Arc<upgrade::Owned>) -> Result<Arc<Self>, Error> {
+    pub(super) fn start(owner: Arc<upgrade::Owned>) -> Result<Arc<Self>, Error> {
         let worker = Arc::new(Worker {
             protected_fixture: true,
             ..Worker::default()
@@ -275,7 +277,10 @@ impl Queue {
         if control.jobs.len() >= MAX_JOBS {
             return Err(Error::Pending);
         }
-        let commit = matches!(action, upgrade::Action::Commit(_));
+        let commit = matches!(
+            action,
+            upgrade::Action::Commit(_) | upgrade::Action::InitializeSlash(_)
+        );
         let (mut command, receiver) = upgrade::Command::new(self.owner.clone(), action);
         configure(&mut command);
         let job = Job::new(receiver, commit);
@@ -319,6 +324,7 @@ impl Queue {
         }
         self.proof.set(actual.clone()).map_err(|_| Error::Stale)
     }
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub(in crate::drafts::store) fn ticket(&self) -> Result<String, Error> {
         self.proof
             .get()

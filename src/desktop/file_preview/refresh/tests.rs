@@ -22,6 +22,7 @@ pub(crate) fn shell() -> ShellState {
     let mut shell = ShellState::fixture(MediaRegistry::default());
     shell.core.active_account = Some("refresh-test".into());
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "fixture-only".into(),
         workspaces: std::collections::BTreeMap::from([(
             "T1".into(),

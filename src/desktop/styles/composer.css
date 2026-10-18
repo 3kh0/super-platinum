@@ -382,3 +382,12 @@
 .upload-delivery-check:hover:not(:disabled) { background:var(--selection-bg); }
 .upload-delivery-check:disabled { color:var(--muted); cursor:default; }
 .upload-delivery-hint { flex:1 1 160px; min-width:0; color:var(--muted); font-size:var(--text-sm); line-height:var(--leading-copy); overflow-wrap:anywhere; }
+
+/* Installed command chooser: stable ordinary composer controls. */
+.composer-command-chooser { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; font-size: var(--text-sm); }
+.composer-command-chooser p { flex-basis: 100%; margin: 0; color: var(--muted); }
+.composer-command-chooser select { min-width: 0; flex: 1 1 160px; height: 32px; padding: 4px 8px; background: var(--surface-raised); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+.composer-command-chooser button { height: 32px; padding: 4px 12px; border-radius: 8px; }
+.composer-command-chooser button:hover:not(:disabled) { background: var(--hover-overlay); }
+.composer-command-chooser button:disabled { opacity: 0.5; }
+.composer-command-chooser .composer-command-run { min-inline-size: 112px; }

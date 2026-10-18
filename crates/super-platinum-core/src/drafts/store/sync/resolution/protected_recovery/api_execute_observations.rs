@@ -47,7 +47,6 @@ pub(super) fn execute(
             let _ = reply.send(result);
             report
         }
-        #[cfg(any(test, feature = "protected-test-support"))]
         Action::FinishRetainedObservation { ticket, reply } => {
             let result = finish_open(account, &ticket, &pending, open)
                 .and_then(|store| observation::finish_retained(&store, &ticket));

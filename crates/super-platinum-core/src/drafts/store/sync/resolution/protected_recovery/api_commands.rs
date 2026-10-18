@@ -20,7 +20,6 @@ pub(crate) enum Action {
         reply: std::sync::mpsc::Sender<Result<(), Error>>,
     },
     // Retained inventory read only; no caller-selected initialization mode.
-    #[cfg(any(test, feature = "protected-test-support"))]
     Inventory {
         reply: std::sync::mpsc::Sender<Result<std::sync::Arc<Loaded>, Error>>,
     },
@@ -122,7 +121,6 @@ pub(crate) enum Action {
         expected: Review,
         reply: std::sync::mpsc::Sender<Result<DispatchTicket, Error>>,
     },
-    #[cfg(any(test, feature = "protected-test-support"))]
     PrepareConsumedSend {
         stream: Stream,
         consumed: Review,
@@ -213,7 +211,6 @@ pub(crate) enum Action {
         event: DraftObservation,
         reply: std::sync::mpsc::Sender<Result<ObservationTicket, Error>>,
     },
-    #[cfg(any(test, feature = "protected-test-support"))]
     FinishRetainedObservation {
         ticket: std::sync::Arc<ObservationTicket>,
         reply: std::sync::mpsc::Sender<Result<ObservationResult, Error>>,
@@ -226,7 +223,6 @@ pub(crate) enum Action {
         expected: Review,
         reply: std::sync::mpsc::Sender<Result<Release, Error>>,
     },
-    #[cfg(any(test, feature = "protected-test-support"))]
     StartRetainedLocal {
         release: std::sync::Arc<Release>,
         writer: Writer,

@@ -89,6 +89,18 @@ impl Desktop {
 /// paired managed store. An unknown startup state is never proof of no owner.
 pub(crate) fn legacy_allowed(shell: &ShellState, key: &DraftKey) -> Result<(), &'static str> {
     #[cfg(feature = "protected-native-fixture")]
+    if super::protected::production::baseline_native::named() {
+        return Err("Owned baseline fixture forbids legacy delivery.");
+    }
+    if !crate::fixture::is_fixture() {
+        return Err(super::protected::production::legacy_refusal());
+    }
+
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::slash_native::named() {
+        return Err("Slash fixture forbids legacy delivery.");
+    }
+    #[cfg(feature = "protected-native-fixture")]
     if super::protected::owned_native::named() {
         return Err("Owned protected fixture forbids legacy delivery.");
     }
@@ -171,6 +183,11 @@ fn legacy_ownership(shell: &ShellState, key: &DraftKey) -> Result<(), &'static s
 
 pub(crate) fn route(shell: &mut ShellState, changes: BTreeMap<DraftKey, LocalDraft>) {
     #[cfg(feature = "protected-native-fixture")]
+    if super::protected::slash_native::named() {
+        super::protected::slash_native::route(shell, changes);
+        return;
+    }
+    #[cfg(feature = "protected-native-fixture")]
     if super::protected::owned_native::named() {
         super::protected::owned_native::route(shell, changes);
         return;
@@ -228,33 +245,17 @@ pub(crate) fn route(shell: &mut ShellState, changes: BTreeMap<DraftKey, LocalDra
         super::projection_fixture::route(shell, changes);
         return;
     }
+    #[cfg(feature = "protected-native-fixture")]
+    if super::protected::production::baseline_native::named() {
+        if super::protected::production::baseline_native::current(shell) {
+            super::protected::production::route(shell, changes);
+        }
+        return;
+    }
     if changes.is_empty() || crate::fixture::is_fixture() {
         return;
     }
-    let Some(account_id) = shell.core.active_account.clone() else {
-        return;
-    };
-    let epoch = shell.core.account_epoch;
-    shell.draft_writes.scope(&account_id, epoch);
-    let changes = route_existing(shell, changes);
-    let known = shell.managed_drafts.account.as_deref() == Some(&account_id)
-        && shell.managed_drafts.epoch == epoch
-        && changes
-            .keys()
-            .any(|key| shell.managed_drafts.entry(&account_id, key).is_some());
-    let legacy = if known {
-        match Account::production(&account_id) {
-            Ok(account) => route_managed(shell, &account, changes),
-            Err(_) => changes,
-        }
-    } else {
-        changes
-    };
-    // Unknown ownership must use the existing worker: its managed-row check
-    // stores a blocked alternate rather than overwriting enrolled state.
-    if !legacy.is_empty() {
-        store::enqueue(account_id, legacy);
-    }
+    super::protected::production::route(shell, changes);
 }
 
 fn route_managed(

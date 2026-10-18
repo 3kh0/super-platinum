@@ -31,6 +31,7 @@ mod user_edit;
 mod view_create;
 mod view_filter;
 mod view_grouping;
+mod view_order;
 mod view_rename;
 mod view_sort;
 
@@ -38,6 +39,7 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
     board_move::start(state, desktop.clone());
     find::start(state, desktop.clone());
     field_delete::start(state, desktop.clone());
+    view_order::start(state, desktop.clone());
     field_visibility::start(state, desktop.clone());
     view_sort::start(state, desktop.clone());
     view_filter::start(state, desktop.clone());

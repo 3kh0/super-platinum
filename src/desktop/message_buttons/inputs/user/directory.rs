@@ -7,6 +7,7 @@ use super_platinum_core::{
     state::Workspace,
 };
 mod discovery;
+pub(crate) use discovery::{mpim as decode_mpim, normalize_mpim_query};
 mod policy;
 use discovery::fetch;
 pub(crate) use policy::eligible;

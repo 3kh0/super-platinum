@@ -14,9 +14,10 @@ pub(crate) struct Inventory {
     initialization: super::initialization::Observation,
     editors_stamp: ownership::Stamp,
     operations_stamp: ownership::Stamp,
+    ingress_stamp: ownership::Stamp,
+    _ingress: Vec<Arc<super::super::ObservationQueue>>,
     slots: Vec<Slot>,
     operations: Vec<Operation>,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     owned: Option<(Arc<super::super::owned_route::Route>, bool)>,
 }
 struct Slot {
@@ -30,9 +31,7 @@ struct Editor {
     state: ownership::Stamp,
     serial: u64,
     released: Option<(Arc<local_writer::LocalWriter>, ownership::Stamp)>,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     write_slot: ownership::Stamp,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     write: Option<(Arc<super::super::owned_editor::Write>, ownership::Stamp)>,
 }
 struct Opening {
@@ -43,10 +42,12 @@ struct Operation {
     original: operation::Operation,
     evidence: ownership::Stamp,
     live: bool,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     send: Option<(Arc<super::super::owned_send::Send>, ownership::Stamp)>,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     release: Option<(Arc<super::super::owned_release::Release>, ownership::Stamp)>,
+    slash: Option<(
+        Arc<super::super::owned_slash::Slash>,
+        super::super::owned_slash::Ownership,
+    )>,
 }
 impl Account {
     pub(crate) fn ownership_inventory(self: &Arc<Self>) -> Result<Inventory, ownership::Error> {
@@ -82,14 +83,16 @@ impl Account {
             .into_iter()
             .map(Operation::capture)
             .collect::<Result<_, _>>()?;
+        let (ingress_stamp, ingress) = self.ingress.observe(Clone::clone)?;
         let inventory = Inventory {
             account: Arc::downgrade(self),
             initialization,
             editors_stamp,
             operations_stamp,
+            ingress_stamp,
+            _ingress: ingress,
             slots,
             operations,
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             owned: self.owned.as_ref().map(|route| {
                 (
                     route.clone(),
@@ -112,9 +115,7 @@ impl Editor {
                 Ok::<_, ownership::Error>((writer, stamp))
             })
             .transpose()?;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         let (write_slot, write) = original.owned_write.observe(Clone::clone)?;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         let write = write
             .map(|writer| {
                 let stamp = writer.ownership_stamp()?;
@@ -126,9 +127,7 @@ impl Editor {
             state,
             serial,
             released,
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             write_slot,
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             write,
         })
     }
@@ -137,7 +136,6 @@ impl Editor {
         if let Some((writer, stamp)) = &self.released {
             writer.validate_ownership(stamp)?;
         }
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         {
             self.original.owned_write.validate(&self.write_slot)?;
             if let Some((writer, stamp)) = &self.write {
@@ -151,35 +149,38 @@ impl Editor {
 impl Operation {
     fn capture(original: operation::Operation) -> Result<Self, ownership::Error> {
         let live = original.current();
-        #[cfg(any(test, feature = "protected-native-fixture"))]
-        let (evidence, (send, release)) = original
-            .record()
-            .evidence
-            .observe(|value| (value.owned_send.clone(), value.owned_release.clone()))?;
-        #[cfg(not(any(test, feature = "protected-native-fixture")))]
-        let (evidence, ()) = original.record().evidence.observe(|_| ())?;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
+        let (evidence, (send, release, slash)) = original.record().evidence.observe(|value| {
+            (
+                value.owned_send.clone(),
+                value.owned_release.clone(),
+                value.owned_slash.clone(),
+            )
+        })?;
         let send = send
             .map(|send| {
                 let stamp = send.ownership_stamp()?;
                 Ok::<_, ownership::Error>((send, stamp))
             })
             .transpose()?;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         let release = release
             .map(|release| {
                 let stamp = release.ownership_stamp()?;
                 Ok::<_, ownership::Error>((release, stamp))
             })
             .transpose()?;
+        let slash = slash
+            .map(|value| {
+                let stamp = value.ownership_stamp()?;
+                Ok::<_, ownership::Error>((value, stamp))
+            })
+            .transpose()?;
         Ok(Self {
             original,
             evidence,
             live,
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             send,
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             release,
+            slash,
         })
     }
     fn validate(&self) -> Result<(), ownership::Error> {
@@ -187,10 +188,12 @@ impl Operation {
             return Err(ownership::Error::Changed);
         }
         self.original.record().evidence.validate(&self.evidence)?;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         {
             if let Some((send, stamp)) = &self.send {
                 send.validate_ownership(stamp)?;
+            }
+            if let Some((slash, stamp)) = &self.slash {
+                slash.validate_ownership(stamp)?;
             }
             if let Some((release, stamp)) = &self.release {
                 release.validate_ownership(stamp)?;
@@ -226,7 +229,6 @@ impl Inventory {
     }
     fn membership(&self, account: &Arc<Account>) -> Result<(), ownership::Error> {
         self.initialization.validate(account)?;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         match (&self.owned, &account.owned) {
             (None, None) => {}
             (Some((captured, unsupported)), Some(current)) if Arc::ptr_eq(captured, current) => {
@@ -241,6 +243,7 @@ impl Inventory {
             _ => return Err(ownership::Error::Replaced),
         }
         account.editors.validate(&self.editors_stamp)?;
+        account.ingress.validate(&self.ingress_stamp)?;
         account.operations.validate(&self.operations_stamp)
     }
     pub(crate) fn initialization_status(&self) -> super::initialization::Status {

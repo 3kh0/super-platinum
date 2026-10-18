@@ -74,6 +74,7 @@ impl Review {
             .ok()
     }
 
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub(in crate::drafts::store) fn fixture_ticket(&self) -> Result<String, AppError> {
         self.owner.fixture_ticket(
             self._file

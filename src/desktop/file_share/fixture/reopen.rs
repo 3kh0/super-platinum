@@ -229,6 +229,7 @@ pub(in crate::file_share) fn load(shell: &ShellState) -> Result<Capability, Reje
             database,
             saved_database: saved,
         },
+        conversation: Conversation::Channel,
         restart: Some(seal),
         case: Case::Accepted,
         epoch: shell.core.account_epoch,

@@ -1,0 +1,8 @@
+/* Bot conversation Home uses the same compact, typed Block Kit vocabulary. */
+.app-home { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.app-home-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; }
+.app-home-toolbar h2 { margin: 0; font-size: var(--text-lg); font-weight: 600; }
+.app-home-content { flex: 1; min-height: 0; overflow: auto; padding: 16px; }
+.app-home-notice { flex: none; margin: 0; padding: 8px 16px; font-size: var(--text-sm); color: var(--muted); }
+.app-home-confirm { flex: none; padding: 16px; background: var(--surface-raised); }
+.app-home-confirm button { margin-right: 8px; min-height: 32px; }

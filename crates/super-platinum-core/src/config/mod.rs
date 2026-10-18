@@ -14,6 +14,10 @@ pub type AccountId = String;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Session {
     pub d_cookie: String,
+    /// Captured per-team auth configuration, not workspace membership or permission.
+    /// Missing keys are unknown, including every legacy session.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub unified_user_client_enabled: BTreeMap<TeamId, bool>,
     pub workspaces: BTreeMap<TeamId, WorkspaceSession>,
 }
 
@@ -70,12 +74,15 @@ impl From<&WorkspaceSession> for WorkspaceMeta {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct SessionMeta {
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    unified_user_client_enabled: BTreeMap<TeamId, bool>,
     workspaces: Vec<WorkspaceMeta>,
 }
 
 impl From<&Session> for SessionMeta {
     fn from(session: &Session) -> Self {
         Self {
+            unified_user_client_enabled: session.unified_user_client_enabled.clone(),
             workspaces: session
                 .workspaces
                 .values()
@@ -362,6 +369,7 @@ fn session_from_parts(meta: SessionMeta, secrets: &SessionSecrets) -> Option<Ses
     }
     (!workspaces.is_empty()).then(|| Session {
         d_cookie: secrets.d_cookie.clone(),
+        unified_user_client_enabled: meta.unified_user_client_enabled,
         workspaces,
     })
 }

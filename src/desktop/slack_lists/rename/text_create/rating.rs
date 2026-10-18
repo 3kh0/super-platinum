@@ -168,7 +168,7 @@ fn finish_picker(
     // Capture actual DOM custody before our own removal. Snapshot failure never
     // blocks exact-token dismissal; it merely withholds focus restoration.
     let mut eval = dioxus::document::eval(&format!(
-        "{}\nrestoreRatingEmoji({serial},{visit},{},{token});",
+        "{}\nawait restoreRatingEmoji({serial},{visit},{},{token});",
         include_str!("rating_restore.js"),
         rendered.revision
     ));

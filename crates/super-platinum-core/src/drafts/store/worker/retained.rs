@@ -8,7 +8,7 @@ pub(in crate::drafts::store::worker) enum Delivery {
 }
 struct Status<T> {
     request: Option<Request>,
-    receiver: mpsc::Receiver<T>,
+    receiver: Option<mpsc::Receiver<T>>,
     result: Option<Arc<T>>,
     disconnected: bool,
     submitted: Option<u64>,
@@ -18,6 +18,9 @@ struct Status<T> {
 pub(in crate::drafts::store::worker) struct Held<I, T> {
     input: Arc<I>,
     status: Mutex<Status<T>>,
+    changed: std::sync::Condvar,
+    #[cfg(test)]
+    wait_probe: Mutex<Option<mpsc::Sender<&'static str>>>,
 }
 pub(in crate::drafts::store::worker) struct Operation<I, T> {
     key: Key,
@@ -46,7 +49,10 @@ impl<I, T> Operation<I, T> {
         if status.disconnected {
             return Err(Delivery::Disconnected);
         }
-        match status.receiver.try_recv() {
+        let Some(receiver) = status.receiver.as_ref() else {
+            return Err(Delivery::Pending);
+        };
+        match receiver.try_recv() {
             Ok(value) => {
                 let value = Arc::new(value);
                 status.result = Some(value.clone());
@@ -96,13 +102,16 @@ impl Worker {
             input: Arc::new(input),
             status: Mutex::new(Status {
                 request: None,
-                receiver,
+                receiver: Some(receiver),
                 result: None,
                 disconnected: false,
                 submitted: None,
                 acknowledged: false,
                 next: None,
             }),
+            changed: std::sync::Condvar::new(),
+            #[cfg(test)]
+            wait_probe: Mutex::new(None),
         });
         let key = pending
             .admission
@@ -325,13 +334,16 @@ impl Worker {
             input: Arc::new(Finalize { ticket, files }),
             status: Mutex::new(Status {
                 request: None,
-                receiver,
+                receiver: Some(receiver),
                 result: None,
                 disconnected: false,
                 submitted: None,
                 acknowledged: false,
                 next: None,
             }),
+            changed: std::sync::Condvar::new(),
+            #[cfg(test)]
+            wait_probe: Mutex::new(None),
         });
         let key = state.register(id, Some(parent.key.id), "upload-finalize", held.clone());
         parent.held.status.lock().unwrap().next = Some(key.clone());
@@ -387,3 +399,9 @@ impl Worker {
             .resume(fence)
     }
 }
+
+#[path = "retained_upload.rs"]
+mod upload;
+
+#[path = "retained_upload_cancel.rs"]
+mod upload_cancel;

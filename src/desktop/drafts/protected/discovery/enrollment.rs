@@ -18,6 +18,7 @@ pub(super) struct Pending {
     generation: u64,
     expected: durable::LocalInventory,
     job: Arc<Job<durable::Review>>,
+    _owned: Option<Arc<super::super::owned_route::Held<durable::LocalInventory, durable::Review>>>,
 }
 pub(crate) struct EnrollmentOutcome {
     selection: Arc<Selection>,
@@ -140,12 +141,16 @@ impl EnrollmentRequest {
     pub async fn prepare(self) -> Result<PreparedEnrollment, durable::Error> {
         self.owner.account.initialize().await?;
         let gate = self.owner.gate.clone().lock_owned().await;
-        let fresh = account::wait(
-            self.owner
-                .client()?
-                .review_local(self.owner.scope().clone()),
-        )
-        .await?;
+        let fresh = if let Some(route) = &self.owner.account.owned {
+            route.local(self.owner.scope().clone()).await?
+        } else {
+            account::wait(
+                self.owner
+                    .client()?
+                    .review_local(self.owner.scope().clone()),
+            )
+            .await?
+        };
         if !self.visit.current() || !fresh.same(&self.expected) {
             return Err(durable::Error::Stale);
         }
@@ -194,23 +199,36 @@ impl PreparedEnrollment {
         }
         // The command itself atomically compares the full local clock,
         // generation and all inventory. A later queued write cannot be erased.
-        let reply = request
-            .owner
-            .client()?
-            .enroll_local(request.owner.scope().clone(), request.expected.clone());
+        let owned = request.owner.account.owned.as_ref().map(|route| {
+            super::super::owned_route::Held::new(route.operations.enroll(request.expected.clone()))
+        });
+        let reply = if owned.is_none() {
+            Some(
+                request
+                    .owner
+                    .client()?
+                    .enroll_local(request.owner.scope().clone(), request.expected.clone()),
+            )
+        } else {
+            None
+        };
         let job = Job::new();
         discovery.enrollment = Some(Pending {
             selection: request.selection,
             generation,
             expected: request.expected,
             job: job.clone(),
+            _owned: owned.clone(),
         });
         discovery.status = Status::NeedsLoad;
         discovery.generation = generation;
         let completion = job.completion();
         runtime.spawn(Box::pin(async move {
             let _gate = gate;
-            completion.finish(account::wait(reply).await);
+            completion.finish(match owned {
+                Some(held) => held.observed_success().await,
+                None => account::wait(reply.expect("legacy enrollment reply")).await,
+            });
         }));
         Ok(Wait::new(job))
     }

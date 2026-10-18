@@ -67,7 +67,6 @@ impl Binding {
     }
     // Consumes the actual issued claim; no Operation/receipt constructor can
     // enter this adapter. The old Owner path remains unchanged.
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     pub(crate) async fn execute_claimed<F: Fn() -> bool>(
         &self,
         claim: super_platinum_core::drafts::store::protected::ClaimedDispatch,
@@ -93,7 +92,6 @@ impl Binding {
         })
         .await
     }
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     pub(super) async fn execute_claimed_with<F, Fut>(
         &self,
         claim: super_platinum_core::drafts::store::protected::ClaimedDispatch,

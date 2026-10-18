@@ -109,7 +109,7 @@ async fn send_thread_attachments(state: Signal<ShellState>) {
     start_file_upload(state, true).await;
 }
 
-async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
+pub(crate) async fn start_file_upload(mut state: Signal<ShellState>, in_thread: bool) {
     let Some((transport, client, workspaces)) = credentials(&state) else {
         state
             .write()

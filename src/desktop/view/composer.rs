@@ -4,6 +4,7 @@ use super_platinum_core::FormatMark;
 use super::rich::attachment_chip;
 use crate::state::{ComposerTarget, ShellState};
 
+mod commands;
 mod field;
 
 pub(crate) fn field_mount_token(shell: &ShellState, target: ComposerTarget) -> Option<String> {
@@ -208,6 +209,7 @@ pub(crate) fn composer(state: Signal<ShellState>, text: &str, channel_name: &str
     rsx! {
         footer { key: "{field_key}", class: "composer-wrap",
             super::completion::ComposerCompletion {state,target:ComposerTarget::Channel,field_id:"channel-composer"}
+            {commands::panel(state, ComposerTarget::Channel)}
             {format_toolbar(state, ComposerTarget::Channel)}
             if !composer_attachments.is_empty() {
                 div { class: "attachment-chips",
@@ -220,6 +222,10 @@ pub(crate) fn composer(state: Signal<ShellState>, text: &str, channel_name: &str
                 button { class: "composer-icon-btn", title: "Attach files", "aria-label":"Attach files",
                     onclick:move |_|{spawn(choose_attachments(state,ComposerTarget::Channel));},
                     {crate::icons::icon(crate::icons::Icon::Add, "icon sm")}
+                }
+                button { class:"composer-icon-btn", title:"App shortcuts", "aria-label":"App shortcuts",
+                    onclick:{let expected=field_key.clone();move |_|crate::message_buttons::shortcuts::open_global(state,ComposerTarget::Channel,&expected)},
+                    {crate::icons::icon(crate::icons::Icon::GridView,"icon sm")}
                 }
                 field::ComposerField {
                     key: "{field_key}", state, target: ComposerTarget::Channel,
@@ -256,6 +262,7 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
     rsx! {
         footer { key: "{field_key}", class: "thread-composer",
             super::completion::ComposerCompletion {state,target:ComposerTarget::Thread,field_id:"thread-composer"}
+            {commands::panel(state, ComposerTarget::Thread)}
             {format_toolbar(state, ComposerTarget::Thread)}
             if !snapshot.core.thread_composer_attachments.is_empty() {
                 div { class: "attachment-chips",
@@ -268,6 +275,10 @@ pub(crate) fn thread_composer(mut state: Signal<ShellState>, snapshot: &ShellSta
                 button { class: "composer-icon-btn", title: "Attach files", "aria-label":"Attach files",
                     onclick:move |_|{spawn(choose_attachments(state,ComposerTarget::Thread));},
                     {crate::icons::icon(crate::icons::Icon::Add, "icon sm")}
+                }
+                button { class:"composer-icon-btn", title:"App shortcuts", "aria-label":"App shortcuts",
+                    onclick:{let expected=field_key.clone();move |_|crate::message_buttons::shortcuts::open_global(state,ComposerTarget::Thread,&expected)},
+                    {crate::icons::icon(crate::icons::Icon::GridView,"icon sm")}
                 }
                 field::ComposerField {
                     key: "{field_key}", state, target: ComposerTarget::Thread,

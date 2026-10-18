@@ -14,6 +14,7 @@ pub(crate) mod sort;
 mod target;
 pub(crate) mod text_create;
 pub(crate) mod view_create;
+pub(crate) mod view_order;
 pub(crate) mod visibility;
 pub(crate) use target::Target;
 use target::{Input, Intent, Permit};
@@ -41,6 +42,7 @@ pub(crate) struct Presentation {
     pub creation: Option<super_platinum_core::slack_lists::ViewLayout>,
     pub text_creation: bool,
     pub deletion: Option<field_delete::Presentation>,
+    pub reorder: Option<view_order::Presentation>,
     pub field_choice: Option<text_create::Choice>,
     pub select_draft: Option<text_create::select::Draft>,
     pub rating_draft: Option<super_platinum_core::slack_lists::RatingOptions>,
@@ -140,14 +142,16 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
                 || !grouping::projection_current(shell, &e.target))
         {
             "This view changed since grouping was observed. Check current grouping before finishing this review. The request will not be repeated.".into()
-        } else if (e.target.is_text_creation() || e.target.is_deletion())
+        } else if (e.target.is_text_creation() || e.target.is_deletion() || e.target.is_reorder())
             && e.stage == Stage::Observed
             && !e
                 .review
                 .as_ref()
                 .is_some_and(|p| p.navigation_current(shell))
         {
-            if e.target.is_deletion() {
+            if e.target.is_reorder() {
+                "This List view changed since the order was observed. Check current views before finishing this review. The move request will not be repeated.".into()
+            } else if e.target.is_deletion() {
                 "This List view changed since the field was observed. Check current fields before finishing this review. The delete request will not be repeated.".into()
             } else {
                 "This List view changed since the field was observed. Check current fields before finishing this review. The create request will not be repeated.".into()
@@ -181,6 +185,7 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
             creation: e.target.creation(),
             text_creation: e.target.is_text_creation(),
             deletion: field_delete::presentation(e),
+            reorder: view_order::presentation(shell, e),
             field_choice: e.target.is_text_creation().then_some(e.field_choice),
             rating_draft: (e.target.is_text_creation()
                 && matches!(
@@ -237,6 +242,7 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
                     if e.target.creation().is_some()
                         || e.target.is_text_creation()
                         || e.target.is_deletion()
+                        || e.target.is_reorder()
                     {
                         p.navigation_current(shell)
                     } else {
@@ -372,7 +378,7 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
             return false;
         };
         Some(records)
-    } else if target.is_deletion() {
+    } else if target.is_deletion() || target.is_reorder() {
         let Some(records) = text_create::bounded_population(shell) else {
             return false;
         };
@@ -381,7 +387,9 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
         None
     };
     let before = target.name(document).unwrap().to_owned();
-    let input = if target.is_deletion() {
+    let input = if target.is_reorder() {
+        Input::Reorder
+    } else if target.is_deletion() {
         Input::DeleteColumn
     } else if target.is_text_creation() {
         Input::NewTextField(String::new())
@@ -459,7 +467,9 @@ fn open_target(shell: &mut ShellState, target: Target, visit: u64) -> bool {
                 original: document.clone(),
                 intent: None,
                 stage: Stage::Editing,
-                message: if target.is_deletion() {
+                message: if target.is_reorder() {
+                    "Review this one-step move, then Save for everyone. Cancel leaves the shared view order unchanged.".into()
+                } else if target.is_deletion() {
                     "Permanently delete the selected field from every view? This app does not offer Undo for field deletion.".into()
                 } else if target.is_text_creation() {
                     "Create one field shared with everyone who has access to this List. Existing items and view settings are kept.".into()
@@ -506,7 +516,8 @@ pub(crate) fn input(mut state: Signal<ShellState>, serial: u64, value: String) {
             .get_mut(&key)
             .filter(|e| e.serial == serial && e.stage == Stage::Editing)
         {
-            if !e.target.is_deletion()
+            if !e.target.is_reorder()
+                && !e.target.is_deletion()
                 && !e.target.is_text_creation()
                 && !e.target.is_filter()
                 && !e.target.is_sort()
@@ -537,7 +548,7 @@ fn close_entry(shell: &ShellState, serial: u64) -> bool {
             && (!e.target.is_grouping()
                 || e.stage != Stage::Observed
                 || grouping::review_current(shell, &e))
-            && (!(e.target.is_text_creation() || e.target.is_deletion())
+            && (!(e.target.is_text_creation() || e.target.is_deletion() || e.target.is_reorder())
                 || e.stage != Stage::Observed
                 || e.review
                     .as_ref()
@@ -550,6 +561,7 @@ fn close_entry(shell: &ShellState, serial: u64) -> bool {
                     if e.target.creation().is_some()
                         || e.target.is_text_creation()
                         || e.target.is_deletion()
+                        || e.target.is_reorder()
                     {
                         p.navigation_current(&shell)
                     } else {
@@ -622,7 +634,9 @@ fn admitted(
     with_registry(|r| {
         let e = r.entries.get_mut(&guard.key).unwrap();
         e.stage = Stage::Saving;
-        e.message = if e.target.is_deletion() {
+        e.message = if e.target.is_reorder() {
+            "Saving shared view order...".into()
+        } else if e.target.is_deletion() {
             "Deleting field...".into()
         } else if e.target.is_text_creation() {
             format!(
@@ -678,7 +692,7 @@ fn completed(
                 Stage::Uncertain
             };
             e.raw_reply = result.ok();
-            e.message=if e.target.is_deletion(){if not_requested{"The delete request was not sent. Close this editor and review a new attempt."}else{"Field deletion is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_text_creation(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The field request is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_filter(){if not_requested{"The filter request was not sent. Close this editor and review a new attempt."}else{"The shared filter is not confirmed. Check the current filter explicitly. This request will not be sent again."}}else if e.target.is_grouping(){if not_requested{"The grouping request was not sent. Close this editor and review a new attempt."}else{"The shared grouping is not confirmed. Check current grouping explicitly. This request will not be sent again."}}else if e.target.is_sort(){if not_requested{"The sort request was not sent. Close this editor and review a new attempt."}else{"The shared sort is not confirmed. Check the current sort explicitly. This request will not be sent again."}}else if e.target.is_visibility(){if not_requested{"The visibility request was not sent. Close this editor and review a new attempt."}else{"Field visibility is not confirmed. Check the current view explicitly. This request will not be sent again."}}else if e.target.is_precision(){if not_requested{"The number format request was not sent. Close this editor and review a new attempt."}else{"The number format is not confirmed. Check the current format explicitly. This request will not be sent again."}}else if e.target.creation().is_some(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The create request is not confirmed. Check current views explicitly. This request will not be sent again."}}else if not_requested{"The rename was not sent. Close this editor and review the name again."}else{"The rename is not confirmed. Check the current name before doing anything else. This request will not be sent again."}.into();
+            e.message=if e.target.is_reorder(){if not_requested{"The move request was not sent. Close this editor and review a new attempt."}else{"The shared view order is not confirmed. Check current views explicitly. This request will not be sent again."}}else if e.target.is_deletion(){if not_requested{"The delete request was not sent. Close this editor and review a new attempt."}else{"Field deletion is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_text_creation(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The field request is not confirmed. Check current fields explicitly. This request will not be sent again."}}else if e.target.is_filter(){if not_requested{"The filter request was not sent. Close this editor and review a new attempt."}else{"The shared filter is not confirmed. Check the current filter explicitly. This request will not be sent again."}}else if e.target.is_grouping(){if not_requested{"The grouping request was not sent. Close this editor and review a new attempt."}else{"The shared grouping is not confirmed. Check current grouping explicitly. This request will not be sent again."}}else if e.target.is_sort(){if not_requested{"The sort request was not sent. Close this editor and review a new attempt."}else{"The shared sort is not confirmed. Check the current sort explicitly. This request will not be sent again."}}else if e.target.is_visibility(){if not_requested{"The visibility request was not sent. Close this editor and review a new attempt."}else{"Field visibility is not confirmed. Check the current view explicitly. This request will not be sent again."}}else if e.target.is_precision(){if not_requested{"The number format request was not sent. Close this editor and review a new attempt."}else{"The number format is not confirmed. Check the current format explicitly. This request will not be sent again."}}else if e.target.creation().is_some(){if not_requested{"The create request was not sent. Close this editor and review a new attempt."}else{"The create request is not confirmed. Check current views explicitly. This request will not be sent again."}}else if not_requested{"The rename was not sent. Close this editor and review the name again."}else{"The rename is not confirmed. Check the current name before doing anything else. This request will not be sent again."}.into();
         }
     });
     // Deliberately no canonical projection and no automatic read or resend.
@@ -691,7 +705,7 @@ fn checkable(shell: &ShellState, e: &registry::Entry) -> bool {
     ) || (e.target.is_grouping()
         && e.stage == Stage::Observed
         && !grouping::review_current(shell, e))
-        || ((e.target.is_text_creation() || e.target.is_deletion())
+        || ((e.target.is_text_creation() || e.target.is_deletion() || e.target.is_reorder())
             && e.stage == Stage::Observed
             && !e
                 .review
@@ -722,7 +736,9 @@ pub(crate) fn check(mut state: Signal<ShellState>, serial: u64) {
             e.review = None;
             e.available = None;
             e.observed_field = None;
-            e.message = if e.target.is_deletion() {
+            e.message = if e.target.is_reorder() {
+                "Checking current shared view order...".into()
+            } else if e.target.is_deletion() {
                 "Checking current fields...".into()
             } else if e.target.is_text_creation() {
                 "Checking current fields...".into()
@@ -803,6 +819,12 @@ fn checked(
                 applied = true;
                 if stage == Stage::Available {
                     "A matching new view is now available. Opening it is navigation, not proof this request created it."
+                } else if old.target.is_reorder() {
+                    if stage == Stage::Observed {
+                        "The current shared view order matches this move. This does not prove which request changed it."
+                    } else {
+                        "The returned views differ from this move. Review the current order. The earlier request may still arrive; closing does not repeat or undo it."
+                    }
                 } else if old.target.is_deletion() {
                     if stage == Stage::Observed {
                         "The field is absent from the current schema and every view. This does not prove which request removed it."

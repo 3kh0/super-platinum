@@ -148,6 +148,69 @@ impl Book {
                 .values()
                 .any(|r| !matches!(r.stage, Stage::FinishedClassified | Stage::Superseded))
     }
+    pub(super) fn capacity_blocked(&self, count: usize) -> bool {
+        self.incomplete.is_none()
+            && self
+                .records
+                .len()
+                .checked_add(count)
+                .is_some_and(|n| n > MAX_RECORDS)
+            && u64::try_from(count)
+                .ok()
+                .and_then(|n| self.sequence.checked_add(n))
+                .is_some()
+    }
+    /// Only an exact consumer-observed terminal can retire diagnostic metadata.
+    /// Durable SQLite lineage, idempotency, and command records are untouched.
+    pub(super) fn acknowledge_success(&mut self, id: u64, report: terminal::Report) -> bool {
+        let eligible = self.incomplete.is_none()
+            && self.records.get(&id).is_some_and(|record| {
+                record.stage == Stage::FinishedClassified
+                    && record.terminal == Some(report)
+                    && matches!(
+                        report.execution,
+                        terminal::Execution::ReadObserved | terminal::Execution::StorageAccepted
+                    )
+                    && report.inventory == terminal::Inventory::NotAssessed
+            })
+            && !self.requests.values().any(|value| *value == id)
+            && !self.updates.values().any(|value| *value == id);
+        if eligible {
+            self.records.remove(&id);
+        }
+        eligible
+    }
+    /// Closed completed-family callers validate holder/link/result custody first.
+    /// Validate the entire batch before removing any accounting record.
+    pub(super) fn acknowledge_family(&mut self, reports: &[(u64, terminal::Report)]) -> bool {
+        let ids: BTreeSet<_> = reports.iter().map(|(id, _)| *id).collect();
+        if reports.is_empty()
+            || ids.len() != reports.len()
+            || self.incomplete.is_some()
+            || self
+                .requests
+                .values()
+                .chain(self.updates.values())
+                .any(|id| ids.contains(id))
+            || reports.iter().any(|(id, report)| {
+                !matches!(
+                    report.execution,
+                    terminal::Execution::StorageAccepted | terminal::Execution::ReadObserved
+                ) || !matches!(
+                    report.inventory,
+                    terminal::Inventory::NotAssessed | terminal::Inventory::OperationPending
+                ) || self.records.get(id).is_none_or(|record| {
+                    record.stage != Stage::FinishedClassified || record.terminal != Some(*report)
+                })
+            })
+        {
+            return false;
+        }
+        for id in ids {
+            self.records.remove(&id);
+        }
+        true
+    }
     pub(super) fn terminal(&self, id: u64) -> Option<terminal::Report> {
         self.records.get(&id).and_then(|record| record.terminal)
     }
@@ -369,3 +432,10 @@ impl Drop for Executing<'_> {
 #[cfg(test)]
 #[path = "accounting_tests.rs"]
 mod tests;
+
+#[path = "accounting_archive.rs"]
+mod archive;
+#[path = "accounting_baseline.rs"]
+mod baseline;
+#[path = "accounting_writer.rs"]
+mod writer;

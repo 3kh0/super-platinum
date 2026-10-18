@@ -228,6 +228,7 @@ fn source_thread_notifications_keep_canonical_destination_through_xml_launch() {
         .global
         .insert("threads_everything".into(), json!(true));
     core.session = Some(super_platinum_core::config::Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: [(
             "T1".into(),

@@ -222,3 +222,24 @@ pub(crate) fn protected_owned_requested() -> bool {
                 std::env::var_os(format!("SUPER_PLATINUM_PROTECTED_OWNED_SEND_{suffix}")).is_some()
             })
 }
+
+/// A partial owned baseline request must never enter ordinary boot.
+pub(crate) fn protected_baseline_requested() -> bool {
+    std::env::var("SUPER_PLATINUM_FIXTURE").is_ok_and(|v| v.starts_with("protected-owned-baseline"))
+        || ["CHECK", "ROOT", "NONCE", "SCENARIO", "CAPTURE_DIR"]
+            .iter()
+            .any(|suffix| {
+                std::env::var_os(format!("SUPER_PLATINUM_PROTECTED_OWNED_BASELINE_{suffix}"))
+                    .is_some()
+            })
+}
+
+/// A partial named Slash request must never enter ordinary boot.
+pub(crate) fn protected_slash_requested() -> bool {
+    std::env::var("SUPER_PLATINUM_FIXTURE").is_ok_and(|v| v.starts_with("protected-owned-slash"))
+        || ["CHECK", "ROOT", "NONCE", "SCENARIO", "CAPTURE_DIR"]
+            .iter()
+            .any(|suffix| {
+                std::env::var_os(format!("SUPER_PLATINUM_PROTECTED_OWNED_SLASH_{suffix}")).is_some()
+            })
+}

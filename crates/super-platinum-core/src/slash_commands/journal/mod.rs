@@ -17,6 +17,10 @@ mod schema;
 mod transaction;
 pub use queue::Client;
 pub(crate) use queue::Command;
+// Only an existing owned migration transaction may use this internal primitive.
+pub(crate) fn install_transaction(conn: &Connection, account: &str) -> Result<(), Failure> {
+    schema::install_transaction(conn, account)
+}
 
 const MAX_RECORDS: usize = 4096;
 const MAX_BYTES: usize = 16 * 1024 * 1024;

@@ -121,6 +121,22 @@ impl Context {
             Backend::Fixture(capability) => capability.channel_info(id).await,
         }
     }
+    pub async fn peer_info(&self, id: &str) -> Result<Value, Error> {
+        match &self.backend {
+            Backend::Live { transport, .. } => {
+                let request = super_platinum_core::slack::edge::users_info(
+                    &self.client,
+                    &self.session,
+                    &[id.to_owned()],
+                )
+                .map_err(|_| {
+                    Error::Transport("File share peer request could not be prepared".into())
+                })?;
+                transport.execute(request).await
+            }
+            Backend::Fixture(capability) => capability.peer_info(id).await,
+        }
+    }
     pub async fn after_begin(&self, receipt: &Receipt) -> Result<(), Error> {
         match &self.backend {
             Backend::Live { .. } => Ok(()),
@@ -234,19 +250,7 @@ pub(crate) fn destinations(shell: &ShellState, query: &str) -> Vec<Destination> 
     let candidates = team
         .channels
         .values()
-        .filter(|c| {
-            (9..=64).contains(&c.id.len())
-                && matches!(c.id.as_bytes().first(), Some(b'C' | b'G'))
-                && c.id
-                    .bytes()
-                    .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
-                && !c.is_archived
-                && !c.is_ext_shared
-                && !c.is_im
-                && !c.is_mpim
-                && (c.is_channel || c.is_private || c.is_group)
-                && c.extra.get("is_member") == Some(&Value::Bool(true))
-        })
+        .filter(|c| recipients::eligible(shell, &c.id))
         .filter_map(|c| {
             let name = super_platinum_core::state::channel_display_name(team, c);
             name.to_lowercase().contains(&query).then(|| Destination {
@@ -274,22 +278,13 @@ pub(crate) fn destinations(shell: &ShellState, query: &str) -> Vec<Destination> 
         .collect()
 }
 pub(super) fn selected(shell: &ShellState, id: &str) -> Option<Destination> {
-    // Exact lookup cannot depend on the capped search result's first page.
     let context = Context::capture(shell)?;
     let workspace = shell.core.workspaces.get(&context.key.team)?;
     let channel = workspace.channels.get(id)?;
-    if channel.id != id {
-        return None;
-    }
-    let name = super_platinum_core::state::channel_display_name(workspace, channel);
-    // Owner capture applies the exact joined C/G/map-id constraint without IO.
-    policy_owner::Owner::capture(shell, id)?;
-    if channel.is_archived || channel.is_ext_shared {
-        return None;
-    }
+    recipients::capture(shell, id)?;
     Some(Destination {
         id: id.into(),
-        name,
+        name: super_platinum_core::state::channel_display_name(workspace, channel),
         private: channel.is_private || channel.is_group,
     })
 }

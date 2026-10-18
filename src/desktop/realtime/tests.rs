@@ -723,6 +723,7 @@ fn realtime_worker_rejects_credentials_replaced_before_first_poll() {
     let mut core = core();
     core.transport = Some(Arc::new(Transport::new("fixture-cookie").unwrap()));
     core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "fixture-cookie".into(),
         workspaces: [(
             TEAM.into(),

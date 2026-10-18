@@ -21,6 +21,7 @@ pub(crate) fn install(shell: &mut ShellState) {
         token: String::new(),
     };
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: String::new(),
         workspaces: [("T1".into(), session)].into(),
     });

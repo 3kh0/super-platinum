@@ -467,6 +467,7 @@ fn validated_file_events_retire_preflight_and_reads_but_refresh_recovers() {
     let mut shell = shell();
     shell.core.transport = Some(Arc::new(Transport::new("fixture").unwrap()));
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "fixture".into(),
         workspaces: [(
             "T1".into(),

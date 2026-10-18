@@ -13,8 +13,74 @@ struct State {
     checkpoint: Option<Arc<Held<o::CheckpointInput, durable::WriteResult>>>,
     preserve: Option<Arc<Held<o::PreserveInput, durable::WriteResult>>>,
     refusal: Option<o::AdmissionError>,
+    read_acknowledged: bool,
+    checkpoint_acknowledged: Option<durable::Review>,
+}
+enum CheckpointAcknowledgment {
+    Clean(o::SuccessAcknowledgment<o::CheckpointInput, durable::WriteResult>),
+    Settled(o::WriterSettlementAcknowledgment<o::CheckpointInput, durable::WriteResult>),
+}
+impl CheckpointAcknowledgment {
+    fn acknowledge(self) -> Result<(), durable::Error> {
+        match self {
+            Self::Clean(receipt) => receipt
+                .acknowledge()
+                .map_err(|(e, _)| super::owned_route::ui(e)),
+            Self::Settled(receipt) => receipt
+                .acknowledge()
+                .map_err(|(e, _)| super::owned_route::ui(e)),
+        }
+    }
 }
 impl Write {
+    /// Called only after the actor handled the exact applied/current receipt.
+    pub(super) fn acknowledge_applied(
+        &self,
+        expected: &durable::Review,
+    ) -> Result<(), durable::Error> {
+        let mut state = self.state.lock().map_err(|_| durable::Error::Storage)?;
+        if let Some(prior) = &state.checkpoint_acknowledged {
+            return if prior.same(expected) {
+                Ok(())
+            } else {
+                Err(durable::Error::Stale)
+            };
+        }
+        let checkpoint = state.checkpoint.clone().ok_or(durable::Error::Pending)?;
+        let job = checkpoint.job().map_err(super::owned_route::ui)?;
+        let (actual, receipt) = match job.observe_checkpoint() {
+            Ok((actual, receipt)) => (actual, CheckpointAcknowledgment::Clean(receipt)),
+            Err(_) => {
+                // A repaired write or a checkpoint during pending Send is not
+                // clean success. Observe its exact history through the closed
+                // writer receipt; every other refusal remains an error.
+                let (actual, _history, receipt) = job
+                    .observe_checkpoint_settlement()
+                    .map_err(super::owned_route::ui)?;
+                (actual, CheckpointAcknowledgment::Settled(receipt))
+            }
+        };
+        if !actual.same(expected) {
+            return Err(durable::Error::Stale);
+        }
+        if !state.read_acknowledged {
+            if let Some(read) = &state.read {
+                let (_, acknowledgment) = read
+                    .job()
+                    .map_err(super::owned_route::ui)?
+                    .observe_success()
+                    .map_err(super::owned_route::ui)?;
+                acknowledgment
+                    .acknowledge()
+                    .map_err(|(e, _)| super::owned_route::ui(e))?;
+            }
+            state.read_acknowledged = true;
+        }
+        receipt.acknowledge()?;
+        state.checkpoint_acknowledged = Some(actual);
+        Ok(())
+    }
+
     /// Desktop holder membership only. Core job progression is a separate edge.
     pub(super) fn ownership_stamp(
         &self,

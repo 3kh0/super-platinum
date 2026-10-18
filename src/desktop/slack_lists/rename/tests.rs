@@ -504,3 +504,5 @@ fn bounded_registry_isolates_test_threads_and_retains_each_ui_instance() {
 mod grouping;
 
 mod field_delete;
+
+mod view_order;

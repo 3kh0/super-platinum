@@ -67,33 +67,27 @@ impl Inventory {
                     .is_none_or(|seq| seq == 0 || seq > i64::MAX as u64)
                 || (!review_only && section.deleted()? == Some(true))
                 || section.raw().uint(11)?.unwrap_or(0) != 0
-                || section.parents()?.is_some_and(|p| !p.fields().is_empty())
                 || section.raw().boolean(29)? == Some(true)
                 || section.raw().has(15)
             {
-                return Err(Error::Unsupported);
-            }
-            let kind = (
-                section.section_type()?.unwrap_or(0),
-                section.style()?.unwrap_or(0),
-            );
-            if !matches!(kind, (0, 0) | (64, 48)) {
                 return Err(Error::Unsupported);
             }
             let value = section.raw().string(8)?.ok_or(Error::Unsupported)?;
             // Canonical-only bounded cohort: temporary positions can require a
             // second source mutation (B61P deduplication), which is not this intent.
             position::canonical(value)?;
-            if section.raw().string(21)?.is_some_and(|path| path != value)
-                || positions
-                    .insert(value.to_owned(), section.id().to_owned())
-                    .is_some()
+            if positions
+                .insert(value.to_owned(), section.id().to_owned())
+                .is_some()
                 || sections
                     .insert(section.id().to_owned(), section.clone())
                     .is_some()
             {
                 return Err(Error::Unsupported);
             }
+        }
+        for section in sections.values() {
+            validate_placement(section, &sections)?;
         }
         Ok(Self {
             owner,
@@ -124,6 +118,7 @@ impl Inventory {
     pub fn paragraph(&self, section: &Section, now: u64) -> Result<TextDraft, Error> {
         if section.section_type()?.unwrap_or(0) != 0
             || section.style()?.unwrap_or(0) != 0
+            || section.parents()?.is_some_and(|p| !p.fields().is_empty())
             || section.read_only()? == Some(true)
             || section.attributes()?.is_some_and(|a| a.has(29))
         {
@@ -179,15 +174,16 @@ impl Inventory {
     }
     pub fn safe_delete(&self, id: &str) -> Result<(), Error> {
         self.get(id)?;
-        // previousSibling()/nextSibling() use REACHABLE, not ALL. A static title
-        // can be hidden by renderer configuration, so it is not proof of a
-        // reachable sibling. Ordinary flat paragraphs cannot be hidden titles,
-        // orphans, missing-layout children or descendants in this inventory.
+        // Source sibling lookup uses REACHABLE. Only known top-level text and
+        // H1-H3 headings witness it here: title/unknown/list-child visibility is
+        // not inferred from count. No nested target or replacement is admitted.
         let mut sibling = false;
         for section in self.sections.values() {
             if section.id() != id
                 && section.section_type()?.unwrap_or(0) == 0
-                && section.style()?.unwrap_or(0) == 0
+                && matches!(section.style()?.unwrap_or(0), 0..=3)
+                && section.parents()?.is_none_or(|p| p.fields().is_empty())
+                && section.deleted()? != Some(true)
             {
                 sibling = true;
                 break;
@@ -198,4 +194,54 @@ impl Inventory {
         }
         Ok(())
     }
+}
+
+/// Preserve mixed siblings without granting editing authority over them. The
+/// one admitted parented shape is an ordinary child of a top-level known list.
+/// Layouts, orphan/ambiguous parents and arbitrary nested containers still fail.
+fn validate_placement(
+    section: &Section,
+    sections: &BTreeMap<String, Section>,
+) -> Result<(), Error> {
+    let position = section.raw().string(8)?.ok_or(Error::Unsupported)?;
+    let parents = section.parents()?;
+    let Some(parents) = parents.filter(|p| !p.fields().is_empty()) else {
+        if section
+            .raw()
+            .string(21)?
+            .is_some_and(|path| path != position)
+        {
+            return Err(Error::Unsupported);
+        }
+        return Ok(());
+    };
+    if parents
+        .fields()
+        .iter()
+        .any(|field| !matches!(field.tag(), 1 | 4))
+        || section.section_type()?.unwrap_or(0) != 0
+        || section.style()?.unwrap_or(0) != 0
+    {
+        return Err(Error::Unsupported);
+    }
+    // string() rejects repeated IDs; this is deliberately not a recursive tree.
+    let parent = sections
+        .get(parents.string(1)?.ok_or(Error::Unsupported)?)
+        .ok_or(Error::Unsupported)?;
+    let style = parent.style()?.ok_or(Error::Unsupported)?;
+    if parent.section_type()? != Some(1)
+        || !matches!(style, 5..=7)
+        || parent.parents()?.is_some_and(|p| !p.fields().is_empty())
+        || parent.deleted()? == Some(true)
+        || parents.uint(4)? != Some(style)
+    {
+        return Err(Error::Unsupported);
+    }
+    let parent_position = parent.raw().string(8)?.ok_or(Error::Unsupported)?;
+    if parent_position >= position
+        || section.raw().string(21)? != Some(format!("{parent_position}-{position}").as_str())
+    {
+        return Err(Error::Unsupported);
+    }
+    Ok(())
 }

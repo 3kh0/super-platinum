@@ -133,6 +133,7 @@ fn multi_channels_allow_enterprise_but_context_change_retires_capture() {
     let mut session = super::tests::session();
     session.enterprise_id = Some("E_MULTI".into());
     shell.core.session = Some(super_platinum_core::config::Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic-cookie".into(),
         workspaces: [("T1".into(), session)].into(),
     });

@@ -4,11 +4,9 @@ use super::{editor::Editor, local_writer::LocalWriter};
 
 enum HandoffReply {
     Legacy(durable::Reply<durable::Release>),
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     Owned(Arc<super::owned_release::Release>, operation::Operation),
 }
 impl Editor {
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     pub(super) async fn retry_owned_handoff(
         self: &Arc<Self>,
         parent: operation::Operation,
@@ -196,12 +194,8 @@ impl Editor {
             if operation.as_ref().is_some_and(|op| !op.current()) {
                 return Err(durable::Error::Stale);
             }
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             let routed = self.owner.account.owned.clone();
-            #[cfg(not(any(test, feature = "protected-native-fixture")))]
-            let routed: Option<()> = None;
             let reply = if routed.is_some() {
-                #[cfg(any(test, feature = "protected-native-fixture"))]
                 {
                     let route = routed.as_ref().expect("checked route");
                     let parent = operation.as_ref().ok_or(durable::Error::Unsupported)?;
@@ -215,10 +209,6 @@ impl Editor {
                     parent.retain(|s| s.owned_release = Some(held.clone()))?;
                     held.held.submit().map_err(super::owned_route::ui)?;
                     HandoffReply::Owned(held, parent.clone())
-                }
-                #[cfg(not(any(test, feature = "protected-native-fixture")))]
-                {
-                    unreachable!()
                 }
             } else {
                 HandoffReply::Legacy(self.owner.release(fresh.clone())?)
@@ -246,7 +236,6 @@ impl Editor {
 
                     lease
                 }
-                #[cfg(any(test, feature = "protected-native-fixture"))]
                 HandoffReply::Owned(held, parent) => {
                     let lease = held.finish(&parent).await?;
                     if !parent.current() {
@@ -287,7 +276,6 @@ impl Editor {
         authority: Option<(&operation::Operation, &durable::Review)>,
     ) -> Result<(), durable::Error> {
         let mut state = self.state.lock().map_err(|_| durable::Error::Storage)?;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if self.owner.account.owned.is_some() {
             let (parent, expected) = authority.ok_or(durable::Error::Unsupported)?;
             if !parent.current()

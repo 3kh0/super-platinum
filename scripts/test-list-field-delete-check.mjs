@@ -214,3 +214,34 @@ test('same-id replacement of a retained fallback cannot pass phase-focus proof',
   h.byId.set(old.id,replacement);h.document.activeElement=replacement;
   assert.equal(h.api.geometry('uncertain').ok,false);
 });
+
+function actualFindFocus(h) {
+  const e = h.find(); e.value = '';
+  e.style.outlineWidth = '0px'; e.style.outlineStyle = 'none';
+  e.style.boxShadow = 'rgba(50, 140, 255, 0.1) 0px 0px 0px 3px';
+  for (const side of ['Top','Right','Bottom','Left']) {
+    e.style[`border${side}Width`] = '1px'; e.style[`border${side}Style`] = 'solid'; e.style[`border${side}Color`] = 'rgb(50, 140, 255)';
+  }
+  return e;
+}
+test('Find query accepts actual shared border-shadow focus with no outline',()=>{
+  const h=harness(),e=actualFindFocus(h);let inputs=0;
+  e.dispatchEvent=event=>{assert.equal(event.type,'input');inputs++;};
+  assert.equal(h.api.query().ok,true);assert.equal(h.document.activeElement,e);
+  assert.equal(e.value,'Launch item 0');assert.equal(inputs,1);
+});
+test('Find focus refuses absent/wrong shadow, border, lost focus and clipped full ring before input',()=>{
+  const mutations=[
+    e=>e.style.boxShadow='none',e=>e.style.boxShadow='rgba(50, 140, 255, 0) 0px 0px 0px 3px',
+    e=>e.style.boxShadow='rgba(50, 140, 255, 0.1) 0px 0px 0px 2px',
+    e=>e.style.boxShadow='rgba(50, 140, 255, 0.1) 0px 0px 0px 3px, rgba(0, 0, 0, 1) 0px 0px 0px 5px',
+    e=>e.style.borderTopWidth='0px',e=>e.style.borderTopColor='rgba(50, 140, 255, 0)',e=>e.focus=()=>{},
+    (e,h)=>{const focus=e.focus.bind(e);e.focus=()=>{focus();h.disconnect(h.root());};},
+    e=>e.bounds=[2.99999,65,180,24],
+    (e,h)=>{h.root().style.overflowX='hidden';e.bounds=[6.99999,65,180,24];},
+  ];
+  for(const mutate of mutations){const h=harness(),e=actualFindFocus(h);let inputs=0;e.dispatchEvent=()=>inputs++;
+    mutate(e,h);const result=h.api.query();assert.equal(result.ok,false,JSON.stringify(result));
+    assert.equal(result.reason,'find-focus-ring-or-owner');assert.equal(e.value,'');assert.equal(inputs,0);
+  }
+});

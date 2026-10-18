@@ -9,7 +9,6 @@ pub(super) enum Command {
     Retire(Stored, Reply<bool>),
     Load(String, Reply<Vec<Stored>>),
 }
-#[cfg(any(test, feature = "protected-test-support"))]
 impl Command {
     pub(super) fn identity(&self) -> (&str, &'static str) {
         match self {

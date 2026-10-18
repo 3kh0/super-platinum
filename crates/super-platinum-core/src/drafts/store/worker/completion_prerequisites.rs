@@ -3,6 +3,11 @@ use super::*;
 use p::commands::Action;
 
 #[derive(Clone)]
+pub struct GapInput {
+    pub stream: p::Stream,
+    pub reason: p::GapReason,
+}
+#[derive(Clone)]
 pub struct TeamInput {
     pub scope: Scope,
 }
@@ -18,6 +23,59 @@ pub(in crate::drafts::store::worker) struct TakeoverInput {
 }
 
 impl Worker {
+    pub(in crate::drafts::store::worker) fn hold_mark_gap(
+        &self,
+        input: GapInput,
+    ) -> Result<Step<GapInput, ()>, Refused<GapInput>> {
+        // Match Client::mark_gap: revocation is synchronous even when storage
+        // admission refuses. Nothing here grants a new Stream or send permit.
+        input.stream.revoke();
+        let scope = Scope {
+            account_id: input.stream.account().to_owned(),
+            key: DraftKey {
+                team: input.stream.team().to_owned(),
+                channel: String::new(),
+                thread: None,
+            },
+        };
+        if !bounded(&scope.account_id, Some(&scope.key)) {
+            return Err(refusal(
+                &mut self.pending.lock().unwrap(),
+                Reason::Metadata,
+                input,
+            ));
+        }
+        // Empty channel is metadata for this team-only action, not a fabricated
+        // conversation. The executor consumes the actual opaque Stream only.
+        self.step(&scope, input, "protected-mark-gap", |i, reply| {
+            Action::MarkGap {
+                stream: i.stream.clone(),
+                reason: i.reason,
+                reply,
+            }
+        })
+    }
+
+    pub(in crate::drafts::store::worker) fn hold_renew_local(
+        &self,
+        input: p::LocalInventory,
+    ) -> Result<Step<p::LocalInventory, p::LocalWriterLease>, Refused<p::LocalInventory>> {
+        if !bounded(&input.scope().account_id, Some(&input.scope().key)) {
+            return Err(refusal(
+                &mut self.pending.lock().unwrap(),
+                Reason::Metadata,
+                input,
+            ));
+        }
+        let scope = input.scope().clone();
+        self.step(&scope, input, "protected-renew-local", |i, reply| {
+            Action::RenewLocal {
+                expected: i.clone(),
+                reply,
+            }
+        })
+    }
+
     pub(in crate::drafts::store::worker) fn hold_local_inventory(
         &self,
         scope: Scope,

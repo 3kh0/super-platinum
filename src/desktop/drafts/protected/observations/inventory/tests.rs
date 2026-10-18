@@ -14,6 +14,7 @@ fn work(f: &Fixture) -> Arc<Work> {
             .unwrap(),
         owner,
         editor: None,
+        storage: Mutex::default(),
     })
 }
 

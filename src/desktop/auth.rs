@@ -361,12 +361,23 @@ fn session_from_localconfig(local_config: &str, d_cookie: String) -> Result<Sess
         .ok_or("localConfig has no `teams`")?;
 
     let mut workspaces = BTreeMap::new();
+    let mut unified_user_client_enabled = BTreeMap::new();
     for (key, team) in teams {
         let token = jstr(team, "token").unwrap_or("");
         if !token.starts_with("xoxc-") {
             continue;
         }
         let team_id = jstr(team, "id").unwrap_or(key).to_owned();
+        if let Some(enabled) = team
+            .get("is_unified_user_client_enabled")
+            .and_then(serde_json::Value::as_bool)
+        {
+            unified_user_client_enabled.insert(team_id.clone(), enabled);
+        } else {
+            // Match the existing last-record credential replacement if aliases
+            // resolve to the same actual team id; do not retain an older flag.
+            unified_user_client_enabled.remove(&team_id);
+        }
         let url = jstr(team, "url")
             .map(|u| u.trim_end_matches('/').to_owned())
             .unwrap_or_else(|| format!("https://{team_id}.slack.com"));
@@ -403,8 +414,11 @@ fn session_from_localconfig(local_config: &str, d_cookie: String) -> Result<Sess
         workspaces.retain(|id, _| id.starts_with('E'));
     }
 
+    // A captured flag never creates a credential or authorizes a workspace.
+    unified_user_client_enabled.retain(|id, _| workspaces.contains_key(id));
     Ok(Session {
         d_cookie,
+        unified_user_client_enabled,
         workspaces,
     })
 }
@@ -412,6 +426,50 @@ fn session_from_localconfig(local_config: &str, d_cookie: String) -> Result<Sess
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn captures_per_team_unified_flags_without_defaulting_missing_or_invalid_values() {
+        let lc = r#"{"teams":{
+            "alias":{"id":"T_TRUE","token":"xoxc-true","is_unified_user_client_enabled":true},
+            "T_FALSE":{"token":"xoxc-false","is_unified_user_client_enabled":false},
+            "T_MISSING":{"token":"xoxc-missing"},
+            "T_INVALID":{"token":"xoxc-invalid","is_unified_user_client_enabled":"true"},
+            "T_NO_AUTH":{"token":"invalid","is_unified_user_client_enabled":true}
+        }}"#;
+        let captured = session_from_localconfig(lc, "fixture-only".into()).unwrap();
+        assert_eq!(
+            captured.unified_user_client_enabled,
+            BTreeMap::from([("T_TRUE".into(), true), ("T_FALSE".into(), false)])
+        );
+        assert!(!captured.unified_user_client_enabled.contains_key("alias"));
+        assert!(!captured.workspaces.contains_key("T_NO_AUTH"));
+        assert_eq!(captured.workspaces.len(), 4);
+    }
+
+    #[test]
+    fn duplicate_team_alias_does_not_attach_previous_flag_to_replacement_credentials() {
+        let lc = r#"{"teams":{
+            "a":{"id":"T1","token":"xoxc-first","is_unified_user_client_enabled":true},
+            "z":{"id":"T1","token":"xoxc-last"}
+        }}"#;
+        let captured = session_from_localconfig(lc, "fixture-only".into()).unwrap();
+        assert_eq!(captured.workspaces["T1"].token, "xoxc-last");
+        assert!(captured.unified_user_client_enabled.is_empty());
+    }
+
+    #[test]
+    fn enterprise_capture_keeps_only_exact_retained_credential_flags() {
+        let lc = r#"{"teams":{
+            "alias":{"id":"E_GRID","token":"xoxc-grid","is_unified_user_client_enabled":true},
+            "T_CHILD":{"token":"xoxc-child","enterprise_id":"E_GRID","is_unified_user_client_enabled":false}
+        }}"#;
+        let captured = session_from_localconfig(lc, "fixture-only".into()).unwrap();
+        assert_eq!(captured.workspaces.len(), 1);
+        assert_eq!(
+            captured.unified_user_client_enabled,
+            BTreeMap::from([("E_GRID".into(), true)])
+        );
+    }
 
     #[test]
     fn builds_session_from_localconfig() {

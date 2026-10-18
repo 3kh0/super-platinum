@@ -38,7 +38,7 @@ fn insert(snapshot: &CanvasCollabSnapshot) -> PreparedStructureEdit {
         snapshot,
         "item",
         Side::After,
-        &TextDraft::from_rtml("&amp;&lt;<br>😀<b>X</b>").unwrap(),
+        &TextDraft::from_rtml("&amp;&lt;<br>\u{1f600}<b>X</b>").unwrap(),
         100,
     )
     .unwrap()
@@ -158,6 +158,12 @@ fn insertion_projection_and_zero_sequence_dirty_bootstrap() {
     assert_ne!(wire.string(8).unwrap(), wire.string(12).unwrap());
     let (_, object) = doc.get(ROOT, "text").unwrap().unwrap();
     let marks = doc.marks(&object).unwrap();
+    // The escaped source model has 13 ASCII units, then one non-BMP
+    // scalar (two UTF-16 units); bold X must remain at 15..16.
+    assert_eq!(
+        doc.text(&object).unwrap(),
+        "&amp;&lt;<br>\u{1f600}X\u{feff}"
+    );
     assert!(
         marks
             .iter()
@@ -270,7 +276,7 @@ fn ack_requires_exact_id_local_sequence_owner_sent_head_and_no_extra_updates() {
     let section = canonical_ack(&prepared, &snapshot);
     let wrong = crdt::insert(
         section.id(),
-        &TextDraft::from_rtml("&amp;&lt;<br>😀<b>X</b>").unwrap(),
+        &TextDraft::from_rtml("&amp;&lt;<br>\u{1f600}<b>X</b>").unwrap(),
         "fedcba987654",
         100,
     )
@@ -658,3 +664,5 @@ fn action_projection_preserves_core_eligibility_without_allocating_write_intents
 }
 
 mod base_zero_text;
+
+mod mixed;

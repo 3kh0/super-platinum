@@ -4,6 +4,7 @@ pub(crate) mod field_delete;
 mod filter;
 pub(crate) mod grouping;
 mod text_create;
+pub(crate) mod view_order;
 pub(crate) use text_create::select as select_create;
 pub(crate) use text_create::{
     EntityCase, FieldCreateMode, field_create_check_enabled, field_create_mode, seed_text_create,
@@ -140,7 +141,8 @@ pub(super) fn enabled(shell: &ShellState) -> bool {
         || filter_check_enabled()
         || grouping::check_enabled()
         || field_create_check_enabled()
-        || field_delete::check_enabled())
+        || field_delete::check_enabled()
+        || view_order::check_enabled())
         && super::super::fixture::enabled(shell)
         && shell.core.session.is_none()
         && shell.core.transport.is_none()
@@ -197,6 +199,9 @@ pub(super) async fn read(
     if !enabled(&state.peek()) || !guard.current(&state.peek(), stage) {
         return Err(Error::Api("fixture_retired".into()));
     }
+    if view_order::check_enabled() {
+        view_order::read_form(&request)?;
+    }
     let delete_policy = if field_delete::check_enabled() {
         field_delete::policy_response(&request)?
     } else {
@@ -208,7 +213,8 @@ pub(super) async fn read(
         let raw = match path.as_str() {
             "/api/files.info" => {
                 json!({"ok":true,"file":l.file_response(stage, precision_check_enabled() || number_rename_check_enabled() || visibility_check_enabled() || sort_check_enabled() || filter_check_enabled()
-        || grouping::check_enabled() || field_create_check_enabled() || field_delete::check_enabled())})
+        || grouping::check_enabled() || field_create_check_enabled() || field_delete::check_enabled()
+        || view_order::check_enabled())})
             }
             "/api/experiments.getByUser" => delete_policy
                 .ok_or_else(|| Error::Api("fixture_delete_policy_not_configured".into()))?,
@@ -254,6 +260,9 @@ pub(super) async fn write(
         return Err(ListColumnRenameFailure::NotRequested(
             Error::TransportNotConfigured,
         ));
+    }
+    if permit.is_reorder() {
+        return view_order::write(state, guard, permit).await;
     }
     if permit.is_deletion() {
         return field_delete::write(state, guard, permit).await;
@@ -360,6 +369,7 @@ pub(super) fn finished(guard: &Guard, kind: &str, applied: bool) {
         || grouping::check_enabled()
         || field_create_check_enabled()
         || field_delete::check_enabled()
+        || view_order::check_enabled()
     {
         ledger()
             .lock()

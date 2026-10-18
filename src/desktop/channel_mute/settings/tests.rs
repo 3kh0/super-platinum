@@ -127,6 +127,7 @@ fn cookie_or_workspace_url_rotation_rejects_mute_and_settings_dispatch_and_adopt
         let mut s = shell();
         let w = synthetic_session(&token(&s));
         s.core.session = Some(Session {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "synthetic-cookie".into(),
             workspaces: [("T1".into(), w)].into(),
         });

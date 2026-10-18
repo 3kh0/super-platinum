@@ -17,6 +17,7 @@ mod delivery;
 mod draft_io;
 mod drafts;
 mod durable;
+mod recipients;
 pub(crate) use durable::close::{dialog as close_dialog, review_current as review_captured_note};
 pub(crate) use durable::has_capture;
 pub(crate) use durable::open::{retry as retry_open, start as open};
@@ -58,7 +59,9 @@ impl Refusal {
             Self::Owner => "Reconnect to this workspace before sharing. Your note is retained.",
             Self::Changed => "This file or destination changed. Reopen Share before continuing.",
             Self::Source => "This file cannot be shared here.",
-            Self::Destination => "Choose a joined internal channel that allows new posts.",
+            Self::Destination => {
+                "Choose an available channel or open direct message that allows new posts."
+            }
             Self::Note => "The note could not be read. Your draft is still here.",
             Self::Storage => {
                 "The share record could not be saved. Check saved file shares before trying again."
@@ -128,6 +131,7 @@ fn uncaptured(dialog: &Dialog) -> bool {
 }
 pub(crate) fn choose(shell: &mut ShellState, id: &str, destination: &str) -> Result<(), Refusal> {
     let selected = admission::selected(shell, destination).ok_or(Refusal::Destination)?;
+    let recipient = recipients::capture(shell, destination).ok_or(Refusal::Destination)?;
     let dialog = visible(shell)
         .filter(|d| d.id == id && d.phase == Phase::Editing && d.durable.is_some() && !d.closing)
         .ok_or(Refusal::Changed)?;
@@ -136,8 +140,15 @@ pub(crate) fn choose(shell: &mut ShellState, id: &str, destination: &str) -> Res
     }
     let dialog = shell.file_share.dialog.as_mut().ok_or(Refusal::Changed)?;
     dialog.destination = Some(selected);
-    dialog.error = None;
+    shell.file_share.selected_recipient = Some((id.into(), destination.into(), recipient));
+    shell.file_share.dialog.as_mut().unwrap().error = None;
     Ok(())
+}
+pub(crate) fn destination_current(shell: &ShellState, dialog: &Dialog) -> bool {
+    dialog
+        .destination
+        .as_ref()
+        .is_some_and(|d| recipients::chosen(shell, &dialog.id, &d.id))
 }
 pub(crate) fn close(shell: &mut ShellState, id: &str) {
     if visible(shell).is_some_and(|d| d.id == id) {

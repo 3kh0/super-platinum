@@ -18,11 +18,30 @@ function compoundFilterSnapshot(proof) {
   if(field.tagName!=='SELECT'||op.tagName!=='SELECT'||remove.tagName!=='BUTTON'||(input&&input.tagName!=='INPUT'))return null;
   if(field.value!==p.column||op.value!==p.operator||[field,op,remove,...ns].some(n=>n.disabled))return null;
   if(input&&(input.type!=='number'||input.value.length>128||!input.validity.valid||input.validity.badInput))return null;
-  controls.push(field,op,remove,...ns);
-  snapshot.push({id:p.id,epoch:p.epoch,column:p.column,operator:p.operator,value:input?input.value:null,valid:true});
+  const choices=all('[data-filter-choice]');
+  let value=input?input.value:null;
+  if(p.select){
+   const s=p.select;
+   if(p.number||!Array.isArray(s.choices)||!Array.isArray(s.values)||typeof s.active!=='boolean'||new Set(s.choices).size!==s.choices.length||new Set(s.values).size!==s.values.length||s.values.some(v=>!s.choices.includes(v))||(!s.active&&s.values.length)||choices.length!==(s.active?s.choices.length:0))return null;
+   if(choices.some((n,j)=>n.tagName!=='INPUT'||n.type!=='checkbox'||n.dataset.filterChoice!==s.choices[j]||n.disabled||typeof n.checked!=='boolean'||n.checked!==s.values.includes(s.choices[j])))return null;
+   value=JSON.stringify(s.values);
+  }else if(choices.length)return null;
+  const kinds=all('[data-filter-date-kind]'),dates=all('[data-filter-date-value]');
+  if(p.date){
+   const d=p.date,presets=['today','yesterday','tomorrow','this_week','next_week','last_week'];
+   if(p.number||p.select||typeof d.active!=='boolean'||(d.kind!=='custom'&&!presets.includes(d.kind))||kinds.length!==(d.active?1:0)||dates.length!==(d.active&&d.kind==='custom'?1:0))return null;
+   if(kinds.some(n=>n.tagName!=='SELECT'||n.disabled||n.value!==d.kind))return null;
+   if(dates.some(n=>n.tagName!=='INPUT'||n.disabled||n.type!=='date'||!/^\d{4}-\d{2}-\d{2}$/.test(n.value)||!n.validity.valid||n.validity.badInput))return null;
+   value=d.active?(d.kind==='custom'?dates[0].value:d.kind):null;
+  }else if(kinds.length||dates.length)return null;
+  controls.push(field,op,remove,...ns,...choices,...kinds,...dates);
+  snapshot.push({id:p.id,epoch:p.epoch,column:p.column,operator:p.operator,value,valid:true});
  }
  const expected=proof.rows.filter(p=>p.number).length;
- if(set.querySelectorAll('[data-filter-value]').length!==expected||set.querySelectorAll('input').length!==expected||['[data-filter-field]','[data-filter-operator]','[data-filter-remove]'].some(s=>set.querySelectorAll(s).length!==rows.length))return null;
+ const dateCount=proof.rows.filter(p=>p.date?.active&&p.date.kind==='custom').length;
+ const kindCount=proof.rows.filter(p=>p.date?.active).length;
+ const choiceCount=proof.rows.reduce((n,p)=>n+(p.select?.active?p.select.choices.length:0),0);
+ if(set.querySelectorAll('[data-filter-value]').length!==expected||set.querySelectorAll('input').length!==expected+choiceCount+dateCount||set.querySelectorAll('[data-filter-date-value]').length!==dateCount||set.querySelectorAll('[data-filter-date-kind]').length!==kindCount||set.querySelectorAll('[data-filter-choice]').length!==choiceCount||['[data-filter-field]','[data-filter-operator]','[data-filter-remove]'].some(s=>set.querySelectorAll(s).length!==rows.length))return null;
  const ids=['slack-list-filter-add-field','slack-list-filter-add','slack-list-filter-clear','slack-list-rename-confirm'];
  for(const id of ids){const found=Array.from(root.querySelectorAll('#'+id));if(found.length!==1||found[0].tagName!==(id.endsWith('-field')?'SELECT':'BUTTON'))return null;controls.push(found[0]);}
  const cancel=root.querySelector('#slack-list-rename-close');if(!cancel?.isConnected||cancel.disabled||cancel.tagName!=='BUTTON')return null;

@@ -9,15 +9,15 @@ use super_platinum_core::drafts::{
 
 enum ReviewReply {
     Legacy(durable::Reply<durable::Review>),
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     Owned(Arc<super::owned_send::Send>),
+    Baseline(Arc<super::owned_baseline::Finish>),
 }
 impl ReviewReply {
     async fn wait(self) -> Result<durable::Review, durable::Error> {
         match self {
             Self::Legacy(reply) => account::wait(reply).await,
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             Self::Owned(held) => held.consumed().await,
+            Self::Baseline(held) => held.wait().await,
         }
     }
 }
@@ -34,7 +34,7 @@ pub(crate) enum Action {
     Control(durable::Control),
     Settle(LocalChoice),
     Baseline {
-        evidence: Box<super::baseline::Evidence>,
+        evidence: Arc<super::baseline::Evidence>,
         choice: RemoteChoice,
         state: dioxus::prelude::Signal<crate::state::ShellState>,
     },
@@ -59,6 +59,7 @@ pub(crate) struct ProjectionBarrier {
     pub(super) id: String,
     pub(super) renew_writer: bool,
     pub(super) authority: Option<ProjectionAuthority>,
+    pub(super) owned_finish: Option<Arc<super::owned_baseline::Finish>>,
 }
 #[derive(Clone)]
 pub(super) struct ProjectionAuthority {
@@ -112,7 +113,7 @@ impl Editor {
             .clone()
             .apply_inner_owned(lease, action, guard, Some(operation.clone()))
             .await?;
-        operation.consumed(&value)?;
+        operation.applied(&value)?;
         Ok(value)
     }
     pub async fn prepare_review(
@@ -219,6 +220,7 @@ impl Editor {
                 evidence: evidence.as_ref().clone(),
                 choice: choice.clone(),
                 capture: captured.clone(),
+                owned: ownership::Tracked::default(),
             })),
             _ => None,
         };
@@ -239,34 +241,65 @@ impl Editor {
             let stream = guard()?;
             let expected = lease.claim(&captured)?;
             let before = expected.clone();
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             let routed = self.owner.account.owned.clone();
-            #[cfg(not(any(test, feature = "protected-native-fixture")))]
-            let routed: Option<()> = None;
             let reply = if routed.is_some() {
-                #[cfg(any(test, feature = "protected-native-fixture"))]
                 {
                     let route = routed.as_ref().expect("checked route");
-                    if !matches!(action, Action::Consume(ConsumeKind::Send)) {
-                        return Err(route.unsupported());
+                    match action {
+                        Action::Consume(ConsumeKind::Send) => {
+                            let parent = operation.as_ref().ok_or(durable::Error::Unsupported)?;
+                            let stream = stream.ok_or(durable::Error::Gap)?;
+                            self.owner.check_stream(&stream)?;
+                            self.owner.check(&expected)?;
+                            let held = super::owned_send::Send::new(
+                                route,
+                                super::owned_route::o::SendInput { stream, expected },
+                            );
+                            parent.retain(|s| s.owned_send = Some(held.clone()))?;
+                            held.consume.submit().map_err(super::owned_route::ui)?;
+                            ReviewReply::Owned(held)
+                        }
+                        Action::Baseline {
+                            evidence,
+                            choice,
+                            state: shell,
+                        } => {
+                            use dioxus::prelude::ReadableExt;
+                            if !evidence.evidence.review().same(&expected) {
+                                return Err(durable::Error::Stale);
+                            }
+                            let current = shell.try_peek().map_err(|_| durable::Error::Stale)?;
+                            if !evidence.binding.current(&current)
+                                || !evidence.source.current(&current)
+                            {
+                                return Err(durable::Error::Gap);
+                            }
+                            self.owner
+                                .check_stream(&stream.ok_or(durable::Error::Gap)?)?;
+                            if state.owned_baseline_finishes.len() >= retention::MAX_JOBS {
+                                return Err(durable::Error::Pending);
+                            }
+                            let held = super::owned_baseline::Finish::new(
+                                route,
+                                evidence.evidence.clone(),
+                                choice,
+                            );
+                            *choice_retry
+                                .as_ref()
+                                .ok_or(durable::Error::Stale)?
+                                .owned
+                                .lock()
+                                .map_err(|_| durable::Error::Storage)? = Some(held.clone());
+                            if let Some(parent) = &operation {
+                                parent.retain_baseline_finish(held.clone())?;
+                            }
+                            state.owned_baseline_finishes.push(held.clone());
+                            state.choice_retry = choice_retry.clone();
+                            held.submit()?;
+                            ReviewReply::Baseline(held)
+                        }
+                        _ => return Err(route.unsupported()),
                     }
-                    let parent = operation.as_ref().ok_or(durable::Error::Unsupported)?;
-                    let stream = stream.ok_or(durable::Error::Gap)?;
-                    self.owner.check_stream(&stream)?;
-                    self.owner.check(&expected)?;
-                    let held = super::owned_send::Send::new(
-                        route,
-                        super::owned_route::o::SendInput { stream, expected },
-                    );
-                    // Existing root owns returned input and complete fixed family
-                    // before actual Consume enqueue or any await.
-                    parent.retain(|s| s.owned_send = Some(held.clone()))?;
-                    held.consume.submit().map_err(super::owned_route::ui)?;
-                    ReviewReply::Owned(held)
-                }
-                #[cfg(not(any(test, feature = "protected-native-fixture")))]
-                {
-                    unreachable!()
                 }
             } else {
                 let reply = ReviewReply::Legacy(match action {
@@ -301,7 +334,8 @@ impl Editor {
                         if !evidence.binding.current(&shell) || !evidence.source.current(&shell) {
                             return Err(durable::Error::Gap);
                         }
-                        self.owner.choose_baseline(evidence.evidence, choice)?
+                        self.owner
+                            .choose_baseline(evidence.evidence.clone(), choice)?
                     }
                 });
 
@@ -337,6 +371,9 @@ impl Editor {
                         id: barrier_id(),
                         renew_writer,
                         authority,
+                        owned_finish: choice_retry
+                            .as_ref()
+                            .and_then(|r| r.owned.lock().ok()?.clone()),
                     });
                     state.barrier = Some(barrier.clone());
                     Some(barrier)

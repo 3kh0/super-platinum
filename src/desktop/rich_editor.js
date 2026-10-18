@@ -129,11 +129,16 @@
         for (const key of knownStyles) delete unknownStyles[key];
         const style = styles(node, {...inherited, ...unknownStyles});
         if (node.tagName === 'A') {
-          const children = inlines(node, style);
-          const value = {...original, type: 'link', url: node.getAttribute('href') || original?.url || '', text: children.map(v => v.text || '').join('')};
-          const linkStyle = children[0]?.style || style;
-          if (Object.keys(linkStyle).length) value.style = linkStyle; else delete value.style;
-          result.push(value); continue;
+          // One browser anchor may contain several independently styled/opaque
+          // text runs. Keep their typed leaves instead of flattening to first style.
+          const children = inlines(node, style, original || source);
+          for (const child of children.length ? children : [{text: '', style}]) {
+            const value = {...original, ...child, type: 'link', url: node.getAttribute('href') || original?.url || '', text: child.text || ''};
+            const linkStyle = child.style || style;
+            if (Object.keys(linkStyle).length) value.style = linkStyle; else delete value.style;
+            result.push(value);
+          }
+          continue;
         }
         result.push(...inlines(node, style, original?.type === 'text' ? original : source));
         if (blockTags.has(node.tagName) && node.nextSibling) result.push({type: 'text', text: '\n'});
@@ -198,27 +203,48 @@
     const element=node=>node?.nodeType===Node.ELEMENT_NODE?node:node?.parentElement;
     const anchor=node=>{const a=element(node)?.closest('a');return a&&root.contains(a)?a:null;};
     const nearestOriginal=node=>{if(model.originals.has(node))return model.originals.get(node);for(let n=element(node);n&&n!==root;n=n.parentElement){const v=model.originals.get(n);if(v?.type==='text'||v?.type==='link')return v;}return null;};
+    const paragraph=node=>{
+      for(let n=element(node);n&&n!==root;n=n.parentElement) {
+        if(model.originals.get(n)?.type==='rich_text')return null;
+        if(blockTags.has(n.tagName)||n.tagName==='LI')return n;
+      }
+      return null;
+    };
+    const textNodes=parent=>{const nodes=[],walker=document.createTreeWalker(parent,NodeFilter.SHOW_TEXT);while(walker.nextNode())nodes.push(walker.currentNode);return nodes;};
+    const selectedTexts=(scope,range)=>textNodes(scope).filter(node=>{
+      if(!range.intersectsNode(node))return false;
+      const part=document.createRange();part.selectNodeContents(node);
+      if(range.compareBoundaryPoints(Range.START_TO_START,part)>0)part.setStart(range.startContainer,range.startOffset);
+      if(range.compareBoundaryPoints(Range.END_TO_END,part)<0)part.setEnd(range.endContainer,range.endOffset);
+      return !part.collapsed&&part.toString().length>0;
+    });
     const snapshot=()=>{
       if(!current())return null;
       const selection=getSelection();if(!selection?.rangeCount)return null;
       const range=selection.getRangeAt(0);
       if(!root.contains(range.startContainer)||!root.contains(range.endContainer))return null;
       const first=anchor(range.startContainer),last=anchor(range.endContainer);
-      if(first!==last)return null;
-      const saved=range.cloneRange();
-      if(first) {
-        if(first.querySelector('[contenteditable=false],br')||!first.textContent)return null;
-        saved.selectNodeContents(first);
-      } else if(range.collapsed || range.startContainer!==range.endContainer || range.startContainer.nodeType!==Node.TEXT_NODE
-        || element(range.startContainer)?.closest('[contenteditable=false]') || !range.toString().trim())return null;
-      const text=saved.toString();if(/[\r\n]/.test(text))return null;
-      return {range:saved,selection:range.cloneRange(),anchor:first,text,html:root.innerHTML,revision:model.revision,
+      const saved=range.cloneRange(),existing=first&&first===last?first:null;
+      if(existing) saved.selectNodeContents(existing);
+      else if(range.collapsed)return null;
+      const scope=paragraph(saved.startContainer);
+      if(!scope||scope!==paragraph(saved.endContainer))return null;
+      // No atom or line/block boundary may be included, even when both endpoints
+      // are ordinary text. Adjacent unselected tokens remain untouched.
+      if([...scope.querySelectorAll('[contenteditable=false],br,img,video,audio,iframe,hr')].some(node=>saved.intersectsNode(node)))return null;
+      const nodes=selectedTexts(scope,saved),links=[...new Set(nodes.map(anchor).filter(Boolean))];
+      if(!nodes.length||nodes.some(node=>element(node)?.closest('[contenteditable=false]')))return null;
+      // A split browser representation of one URL remains editable as a group.
+      // Combining different URLs or a linked/unlinked mixture is not inferred.
+      if(links.length&&(nodes.some(node=>!anchor(node))||new Set(links.map(a=>a.getAttribute('href')||model.originals.get(a)?.url||'')).size!==1))return null;
+      const text=saved.toString();if(!text.trim()||/[\r\n]/.test(text))return null;
+      return {range:saved,selection:range.cloneRange(),anchor:existing,links,scope,text,html:root.innerHTML,revision:model.revision,
         anchorNode:selection.anchorNode,anchorOffset:selection.anchorOffset,focusNode:selection.focusNode,focusOffset:selection.focusOffset,
-        original:clone((first?model.originals.get(first):nearestOriginal(range.startContainer))||{})};
+        original:clone((existing?model.originals.get(existing):nearestOriginal(nodes[0]))||{})};
     };
     const valid=()=>pending && current() && pending.revision===model.revision && pending.html===root.innerHTML
       && root.contains(pending.range.startContainer)&&root.contains(pending.range.endContainer)&&pending.range.toString()===pending.text
-      && (!pending.anchor||root.contains(pending.anchor));
+      && root.contains(pending.scope)&&pending.links.every(a=>root.contains(a));
     const restore=range=>{root.focus({preventScroll:true});const selection=getSelection();selection.removeAllRanges();selection.addRange(range);};
     const close=(focus=true)=>{
       const previous=pending;pending=null;panel.hidden=true;trigger.setAttribute('aria-expanded','false');
@@ -233,8 +259,8 @@
       if(!current())return;
       if(!panel.hidden){close();return;}
       pending=snapshot();panel.hidden=false;trigger.setAttribute('aria-expanded','true');error.hidden=true;
-      input.value=pending?.anchor?(pending.anchor.getAttribute('href')||pending.original.url||''):'';
-      input.disabled=!pending;apply.disabled=!pending;remove.hidden=!pending?.anchor;remove.disabled=!pending;
+      input.value=pending?.links.length?(pending.links[0].getAttribute('href')||pending.original.url||''):'';
+      input.disabled=!pending;apply.disabled=!pending;remove.hidden=!pending?.links.length;remove.disabled=!pending;
       if(!pending) {complain('Select text or place the cursor inside one link.');cancel.focus({preventScroll:true});}
       else {input.focus({preventScroll:true});input.select();}
     });
@@ -247,20 +273,20 @@
       if(!valid()){complain('The editor changed. Cancel and select the text again.');return;}
       const url=unlink?null:destination(input.value);
       if(!unlink&&!url){complain('Enter an http, https, mailto or slack link without spaces or control characters.');input.focus({preventScroll:true});return;}
-      if(unlink&&!pending.anchor)return;
+      if(unlink&&!pending.links.length)return;
       const operation=pending;
-      // Retain actual text nodes across native unlink for unknown inline fields.
-      // WeakMap metadata never enters HTML; undo keeps browser-owned nodes/history.
-      const texts=[];const walker=document.createTreeWalker(operation.anchor||root,NodeFilter.SHOW_TEXT);
-      if(operation.anchor)while(walker.nextNode())texts.push(walker.currentNode);
+      // Native commands retain the undo transaction; provenance stays private.
+      // Capture the entire paragraph so splits on either side keep their fields.
+      let offset=0;
+      const runs=textNodes(operation.scope).map(node=>{const start=offset;offset+=node.length;return {start,end:offset,text:node.data,original:clone(nearestOriginal(node)||{})};});
       restore(operation.range);
       const changed=document.execCommand(unlink?'unlink':'createLink',false,url);
       if(!changed){complain('This selection could not be changed. Cancel and select the text again.');return;}
-      if(unlink) {
-        for(const node of texts)if(root.contains(node))model.originals.set(node,clone(operation.original));
-      } else {
-        const selection=getSelection(),a=anchor(selection?.anchorNode)||anchor(operation.range.startContainer);
-        if(a)model.originals.set(a,{...operation.original,type:'link'});
+      offset=0;
+      for(const node of textNodes(operation.scope)) {
+        const start=offset;offset+=node.length;
+        const run=runs.find(run=>start>=run.start&&offset<=run.end&&node.data===run.text.slice(start-run.start,offset-run.start));
+        if(run)model.originals.set(node,clone(run.original));
       }
       // Engine commands normally emit input. Mark dirty also on engines whose
       // command succeeds without that event; never reset the native undo stack.

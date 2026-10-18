@@ -11,7 +11,6 @@ pub(super) fn execute(
     let _ = (&pending, isolated, &open);
     let account = command.account.as_str();
     match command.action {
-        #[cfg(any(test, feature = "protected-test-support"))]
         Action::Inventory { reply } => {
             let result = (|| {
                 if !valid_uuid(account) {

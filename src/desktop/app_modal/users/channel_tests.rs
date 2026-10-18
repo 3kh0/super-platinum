@@ -259,6 +259,7 @@ fn modal_channel_pending_and_changed_owner_block_selection_without_dispatch() {
 fn enterprise(shell: &mut ShellState) {
     use super_platinum_core::config::{Session as Credentials, WorkspaceSession};
     shell.core.session = Some(Credentials {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic-cookie".into(),
         workspaces: [(
             "T1".into(),

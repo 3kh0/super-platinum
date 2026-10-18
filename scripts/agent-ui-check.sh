@@ -22,14 +22,18 @@ FIXTURES=(
   rail-account-snoozed
   animated-reaction reaction-picker later later-files later-files-narrow later-empty later-error later-reminder later-new-reminder
   bookmarks bookmarks-narrow bookmarks-edit bookmarks-remove bookmarks-error bookmarks-folder bookmarks-folder-remove bookmarks-move
+  channel-canvas-surface channel-canvas-surface-narrow
+  channel-tabs-canvas channel-tabs-canvas-narrow
   bookmarks-emoji bookmarks-emoji-narrow
   canvas-create canvas-create-narrow canvas-create-error
   canvas-creation-durable canvas-creation-durable-narrow
   canvas canvas-narrow canvas-loading canvas-error canvas-rename canvas-rename-error canvas-readonly
   canvas-comments canvas-comments-narrow
+  canvas-comment-resolve canvas-comment-resolve-narrow canvas-comment-reply canvas-comment-reply-narrow
   canvas-checklist canvas-checklist-narrow canvas-checklist-saving canvas-checklist-uncertain
   canvas-text canvas-text-narrow
   canvas-structure canvas-structure-narrow
+  canvas-structure-mixed canvas-structure-mixed-narrow
   canvas-replacement canvas-replacement-narrow
   canvas-structure-text canvas-structure-text-narrow
   canvas-local-review canvas-local-review-narrow
@@ -58,7 +62,7 @@ FIXTURES=(
   appearance-blue-steel appearance-paper-bag appearance-custom-background
   image-viewer-upload image-viewer-embed-compact gif-picker-attachment
   pdf-preview pdf-preview-narrow pdf-preview-error pdf-preview-search-long
-  file-share file-share-narrow file-share-pressure file-share-pressure-narrow file-share-draft-reopen
+  file-share file-share-narrow file-share-dm file-share-dm-narrow file-share-group-dm file-share-group-dm-narrow file-share-pressure file-share-pressure-narrow file-share-draft-reopen
   message-file-actions message-file-actions-narrow
   viewer-actions-files viewer-actions-message viewer-actions-narrow viewer-actions-pdf
   file-actions file-actions-narrow file-actions-channel-narrow file-rename file-rename-narrow file-rename-channel-narrow file-recovery file-recovery-narrow file-preview-renamed-files file-preview-renamed-message
@@ -73,6 +77,10 @@ FIXTURES=(
   composer-upload-progress
   edit-message-composer accounts self-menu self-menu-notifications
   multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout button-metadata button-metadata-narrow block-control-values block-control-values-narrow
+  app-shortcuts app-shortcuts-narrow
+  app-home app-home-narrow
+  app-calendar app-calendar-narrow app-calendar-modern app-calendar-modern-narrow
+  app-calendar-connect app-calendar-connect-narrow app-calendar-uncertain app-calendar-uncertain-narrow
   app-modal-form app-modal-form-narrow app-modal-lifecycle app-modal-lifecycle-narrow
   app-modal-users app-modal-users-narrow
   app-modal-user app-modal-user-narrow
@@ -91,6 +99,7 @@ FIXTURES=(
   slack-list-number-rename slack-list-number-rename-narrow
   slack-list-field-visibility slack-list-field-visibility-narrow
   slack-list-view-filter slack-list-view-filter-narrow
+  slack-list-select-filter slack-list-select-filter-narrow
   slack-list-number-filter slack-list-number-filter-narrow
   slack-list-compound-filter slack-list-compound-filter-narrow
   slack-list-text-field-create slack-list-text-field-create-narrow
@@ -132,10 +141,14 @@ FIXTURES=(
   slack-list-board-move slack-list-board-move-narrow slack-list-board-move-checkbox slack-list-board-move-checkbox-narrow
   slack-list-find slack-list-find-narrow slack-list-find-board slack-list-find-board-narrow slack-list-find-empty slack-list-find-empty-narrow
   slack-list-view-rename slack-list-view-rename-narrow
+  slack-list-view-order slack-list-view-order-narrow
   slack-list-view-create slack-list-view-create-narrow
   slack-list-subitem-create slack-list-subitem-create-narrow slack-list-subitem-uncertain slack-list-subitem-uncertain-narrow
   self-status-editor self-status-editor-narrow
   profile-edit profile-edit-narrow
+  profile-sections profile-sections-narrow
+  profile-pronunciation profile-pronunciation-narrow
+  profile-photo profile-photo-narrow
   profile-title profile-title-narrow
   message-radio-buttons message-radio-buttons-narrow
   message-multi-controls message-multi-controls-narrow
@@ -196,6 +209,9 @@ owned_fixture_route() {
     slack-list-rating-default-field-create|slack-list-rating-default-field-create-narrow|slack-list-rating-standard-field-create|slack-list-rating-standard-field-create-narrow|slack-list-rating-custom-field-create|slack-list-rating-custom-field-create-narrow)
       owned_route="Use the sealed Rating field-create runner with owned captures and trusted keyboard actions."
       return 0 ;;
+    slack-list-view-order|slack-list-view-order-narrow)
+      owned_route="Use the sealed saved-view ordering runner with owned captures and readiness."
+      return 0 ;;
     slack-list-field-delete|slack-list-field-delete-narrow)
       owned_route="Use the sealed field deletion runner with owned captures and readiness."
       return 0 ;;
@@ -208,7 +224,7 @@ owned_fixture_route() {
     file-preview-refresh-check|file-preview-refresh-check-narrow)
       owned_route="Use the sealed file-preview refresh runner with its owned marker and Save sentinel."
       return 0 ;;
-    file-share|file-share-narrow|file-share-draft-reopen|file-share-pressure|file-share-pressure-narrow)
+    file-share|file-share-narrow|file-share-dm|file-share-dm-narrow|file-share-group-dm|file-share-group-dm-narrow|file-share-draft-reopen|file-share-pressure|file-share-pressure-narrow)
       owned_route="Use the sealed Share native runner with an owned capability marker and private journals."
       return 0 ;;
     original-download-save-workflow)
@@ -224,6 +240,12 @@ owned_fixture_route() {
       return 0 ;;
     slack-list-subitem-create|slack-list-subitem-create-narrow|slack-list-subitem-uncertain|slack-list-subitem-uncertain-narrow)
       owned_route="Use scripts/check-slack-list-subitem-native.py for the owned subitem workflow."
+      return 0 ;;
+    protected-owned-baseline|protected-owned-baseline-narrow)
+      owned_route="Requires the sealed configured-backend baseline driver and an explicitly feature-built binary."
+      return 0 ;;
+    protected-owned-slash|protected-owned-slash-narrow)
+      owned_route="Requires the sealed Slash fixture driver; native acceptance runner is not yet prepared."
       return 0 ;;
     protected-adoption|protected-adoption-narrow)
       owned_route="Use scripts/check-protected-adoption-native.py with an explicitly feature-built binary."

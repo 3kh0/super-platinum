@@ -1,7 +1,9 @@
 //! Visit-owned canonical reads and retained one-attempt checklist operations.
 //! Protocol eligibility, partial building and readback proof remain core-owned.
 #![allow(dead_code)] // Network/UI wiring follows verified protocol integration.
-use crate::state::{Overlay, ShellState};
+#[cfg(test)]
+use crate::state::Overlay;
+use crate::state::ShellState;
 use std::sync::Arc;
 use super_platinum_core::{
     canvas::edit::{AcceptedCheckbox, EditSession, PreparedCheckboxEdit},
@@ -25,6 +27,9 @@ const MAX_RECEIPTS: usize = 8;
 const MAX_TOTAL_RECEIPTS: usize = 32;
 #[derive(Default)]
 pub(crate) struct State {
+    pub(in crate::canvas) local_editor: Option<u64>,
+    pub(in crate::canvas) comment_replies: super::comments::reply::Root,
+    pub(in crate::canvas) comment_operations: super::comments::mutation::State,
     serial: u64,
     view: Option<Visit>,
     operations: Vec<Operation>,
@@ -133,7 +138,7 @@ impl State {
 }
 fn view_current(shell: &ShellState, view: &Visit) -> bool {
     view.scope.current(shell)
-        && shell.overlay == Some(Overlay::Canvas)
+        && super::surface::visible(shell, &view.file)
         && shell.shortcut_generation == view.generation
         && shell
             .canvas
@@ -161,7 +166,7 @@ pub(crate) fn open_visit(shell: &mut ShellState) {
     let Some(file) = shell.canvas.as_ref().map(|target| target.id.clone()) else {
         return;
     };
-    if shell.overlay != Some(Overlay::Canvas) || scope.deleted(shell, &file) {
+    if !super::surface::visible(shell, &file) || scope.deleted(shell, &file) {
         return;
     }
     shell.canvas_checklist.view = Some(Visit {
@@ -344,10 +349,14 @@ fn capacity_reason(shell: &ShellState) -> Option<&'static str> {
         .iter()
         .filter(|operation| operation.attempt.scope.stable_current(shell))
         .count()
+        + super::comments::mutation::retained_count(shell).0
         >= MAX_RECEIPTS
     {
         Some("Eight canvas changes in this workspace still need review before another edit.")
-    } else if shell.canvas_checklist.operations.len() >= MAX_TOTAL_RECEIPTS {
+    } else if shell.canvas_checklist.operations.len()
+        + super::comments::mutation::retained_count(shell).1
+        >= MAX_TOTAL_RECEIPTS
+    {
         Some(
             "32 canvas changes are retained across accounts. Review those changes before starting another edit.",
         )
@@ -374,7 +383,10 @@ pub(super) fn begin(
     if view.loading || view.stale {
         return Err("Refresh this canvas before editing.");
     }
-    if operation_index(shell, &view.file).is_some() {
+    if operation_index(shell, &view.file).is_some()
+        || super::comments::mutation::pending_for_current_file(shell)
+        || super::comments::reply::pending_for_current_file(shell)
+    {
         return Err("Wait for the previous change to be checked.");
     }
     if let Some(reason) = capacity_reason(shell) {
@@ -693,4 +705,23 @@ pub(super) fn with_edit_session<T>(
         shell.canvas_checklist.sessions.len() - 1
     });
     Some(prepare(&mut shell.canvas_checklist.sessions[index].session))
+}
+
+/// Shared file-wide custody; comments cannot overlap a document edit.
+pub(in crate::canvas) fn has_pending_write(shell: &ShellState) -> bool {
+    shell
+        .canvas
+        .as_ref()
+        .is_some_and(|canvas| operation_index(shell, &canvas.id).is_some())
+}
+
+pub(in crate::canvas) fn document_operation_count(shell: &ShellState) -> (usize, usize) {
+    let operations = &shell.canvas_checklist.operations;
+    (
+        operations
+            .iter()
+            .filter(|operation| operation.attempt.scope.stable_current(shell))
+            .count(),
+        operations.len(),
+    )
 }

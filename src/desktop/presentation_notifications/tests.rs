@@ -194,6 +194,7 @@ fn credential_rotation_drops_view_but_retains_possible_sent_receipt() {
     fixture::complete(&mut s, true);
     let old = mount_key(&s);
     s.core.session = Some(super_platinum_core::config::Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "new-cookie".into(),
         workspaces: [("T1".into(), session(&s, &a.token).unwrap())].into(),
     });

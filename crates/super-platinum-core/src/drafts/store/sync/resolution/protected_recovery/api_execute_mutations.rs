@@ -141,7 +141,6 @@ pub(super) fn execute(
             let _ = reply.send(result);
             report
         }
-        #[cfg(any(test, feature = "protected-test-support"))]
         Action::PrepareConsumedSend {
             stream,
             consumed,

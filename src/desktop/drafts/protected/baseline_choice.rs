@@ -13,6 +13,7 @@ pub(super) struct Retry {
     pub evidence: baseline::Evidence,
     pub choice: RemoteChoice,
     pub capture: Capture,
+    pub owned: ownership::Tracked<Option<Arc<super::owned_baseline::Finish>>>,
 }
 impl Editor {
     pub async fn retry_baseline_choice(
@@ -43,16 +44,34 @@ impl Editor {
             retry
         };
         let result = async {
+            let owned = retry
+                .owned
+                .lock()
+                .map_err(|_| durable::Error::Storage)?
+                .clone();
             let reply = {
                 let shell = state.try_peek().map_err(|_| durable::Error::Stale)?;
                 if !retry.evidence.binding.current(&shell) || !retry.evidence.source.current(&shell)
                 {
                     return Err(durable::Error::Gap);
                 }
-                self.owner
-                    .choose_baseline(retry.evidence.evidence.clone(), retry.choice.clone())?
+                if let Some(owned) = &owned {
+                    owned.retry()?;
+                    None
+                } else {
+                    Some(
+                        self.owner.choose_baseline(
+                            retry.evidence.evidence.clone(),
+                            retry.choice.clone(),
+                        )?,
+                    )
+                }
             };
-            let after = account::wait(reply).await?;
+            let after = if let Some(owned) = owned {
+                owned.wait().await?
+            } else {
+                account::wait(reply.ok_or(durable::Error::Stale)?).await?
+            };
             let current = self.owner.review().await?;
             if !current.same(&after) {
                 return Err(durable::Error::Stale);
@@ -95,6 +114,11 @@ impl Editor {
                         source: retry.evidence.source.clone(),
                         binding: Some(retry.evidence.binding.clone()),
                     }),
+                    owned_finish: retry
+                        .owned
+                        .lock()
+                        .map_err(|_| durable::Error::Storage)?
+                        .clone(),
                 });
                 current.barrier = Some(barrier.clone());
                 Ok(Box::new(Applied {

@@ -4,6 +4,12 @@
   if(!root||!dialog)return;
   const serial=root.dataset.renameSerial,visit=dialog.dataset.dialogGeneration;
   if(root.dataset.groupingView&&!root.__groupingOpener){const opener=dialog.querySelector('#slack-list-grouping');if(opener?.dataset.groupingView===root.dataset.groupingView)root.__groupingOpener=opener;}
+  if(root.dataset.reorderDirection&&!root.__reorderOpener){
+    const proof=dialog.__viewOrderOpener;
+    delete dialog.__viewOrderOpener;
+    const opener=proof?.button;
+    if(opener?.isConnected&&dialog.contains(opener)&&proof.visit===visit&&proof.selection===dialog.dataset.viewSelection&&proof.view===root.dataset.renameView&&proof.direction===root.dataset.reorderDirection&&opener.dataset.reorderSelection===proof.selection&&opener.dataset.reorderView===proof.view&&opener.dataset.reorderDirection===proof.direction)root.__reorderOpener=opener;
+  }
   if(!root.__renameReturnBound){
     root.__renameReturnBound=true;
     root.addEventListener('click',event=>{

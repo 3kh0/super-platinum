@@ -8,6 +8,9 @@ use std::{fs::OpenOptions, path::Path, time::Duration};
 const MAX_RECEIPTS: i64 = 32;
 const MAX_BODY: usize = crate::canvas::wire::MAX_BYTES * 5 + 128 * 1024;
 
+mod comments;
+pub mod replies;
+pub use comments::{CommentBegin, CommentDecision, CommentReceipt, CommentReview};
 mod review;
 pub use review::{LocalDecision, LocalReview};
 
@@ -83,8 +86,18 @@ impl Journal {
         conn.execute_batch("PRAGMA synchronous=FULL; PRAGMA journal_mode=DELETE;")?;
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
         let version: i64 = tx.query_row("PRAGMA user_version", [], |r| r.get(0))?;
-        if !matches!(version, 0 | 1 | 2) {
+        if !matches!(version, 0 | 1 | 2 | 3 | 4) {
             return Err(invalid());
+        }
+        if version == 4 {
+            let clocks: i64 = tx.query_row(
+                "SELECT count(*) FROM reply_clock WHERE singleton=1 AND value>=0",
+                [],
+                |r| r.get(0),
+            )?;
+            if clocks != 1 {
+                return Err(invalid());
+            }
         }
         tx.execute_batch("CREATE TABLE IF NOT EXISTS identity(singleton INTEGER PRIMARY KEY CHECK(singleton=1),account TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS receipts(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,
@@ -92,7 +105,20 @@ impl Journal {
           CREATE TABLE IF NOT EXISTS local_reviews(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,
           operation TEXT NOT NULL UNIQUE,body TEXT NOT NULL,observed TEXT NOT NULL,reviewed_at INTEGER NOT NULL,
           decision TEXT NOT NULL CHECK(decision='local_unlock_outcome_unknown'));
-          PRAGMA user_version=2;")?;
+          CREATE TABLE IF NOT EXISTS comment_receipts(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,
+          operation TEXT NOT NULL UNIQUE,body TEXT NOT NULL,PRIMARY KEY(workspace,user,file));
+          CREATE TABLE IF NOT EXISTS comment_reviews(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,
+          operation TEXT NOT NULL UNIQUE,body TEXT NOT NULL,observed TEXT NOT NULL,decision TEXT NOT NULL CHECK(decision='local_unlock_outcome_unknown'));
+          CREATE TABLE IF NOT EXISTS reply_drafts(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,root TEXT NOT NULL,id TEXT PRIMARY KEY,body TEXT NOT NULL);
+          CREATE INDEX IF NOT EXISTS reply_draft_owner ON reply_drafts(workspace,user,file,root);
+          CREATE TABLE IF NOT EXISTS reply_clock(singleton INTEGER PRIMARY KEY CHECK(singleton=1),value INTEGER NOT NULL CHECK(value>=0));
+          INSERT OR IGNORE INTO reply_clock VALUES(1,0);
+          CREATE TABLE IF NOT EXISTS reply_captures(id TEXT PRIMARY KEY);
+          CREATE TABLE IF NOT EXISTS reply_attempts(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,id TEXT NOT NULL UNIQUE,body TEXT NOT NULL,PRIMARY KEY(workspace,user,file));
+          CREATE TABLE IF NOT EXISTS reply_late_results(id TEXT PRIMARY KEY,observed TEXT NOT NULL);
+          CREATE TABLE IF NOT EXISTS reply_history(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,id TEXT PRIMARY KEY,body TEXT NOT NULL,observed TEXT NOT NULL,status TEXT NOT NULL);
+          CREATE INDEX IF NOT EXISTS reply_history_owner ON reply_history(workspace,user,file,id);
+          PRAGMA user_version=4;")?;
         tx.execute("INSERT OR IGNORE INTO identity VALUES(1,?1)", [&owner])?;
         let actual: String =
             tx.query_row("SELECT account FROM identity WHERE singleton=1", [], |r| {
@@ -118,7 +144,11 @@ impl Journal {
         if let Some(old) = read(&tx, checkpoint.scope())? {
             return Ok(Begin::Blocked(old));
         }
-        let count: i64 = tx.query_row("SELECT count(*) FROM receipts", [], |r| r.get(0))?;
+        let count: i64 = tx.query_row(
+            "SELECT (SELECT count(*) FROM receipts)+(SELECT count(*) FROM comment_receipts)+(SELECT count(*) FROM reply_attempts)",
+            [],
+            |r| r.get(0),
+        )?;
         if count >= MAX_RECEIPTS {
             return Err(invalid());
         }
@@ -155,6 +185,9 @@ impl Journal {
 }
 fn read(conn: &Connection, scope: &Scope) -> Result<Option<Receipt>, AppError> {
     scope_valid(scope)?;
+    if comments::present(conn, scope)? || replies::present(conn, scope)? {
+        return Err(invalid());
+    }
     let row:Option<(String,String)>=conn.query_row(
         "SELECT operation,CASE WHEN length(CAST(body AS BLOB))<=?4 THEN body ELSE NULL END FROM receipts WHERE workspace=?1 AND user=?2 AND file=?3",
         params![scope.workspace,scope.user,scope.file,MAX_BODY as i64],|r|Ok((r.get(0)?,r.get(1)?))).optional()?;

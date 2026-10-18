@@ -1,0 +1,12 @@
+.modal.profile-photo { width: min(460px, calc(100vw - 24px)); }
+.profile-photo-body { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.profile-photo-source { position: relative; overflow: hidden; margin: 0 auto; flex: 0 0 auto; }
+.profile-photo-source img, .profile-photo-preview img { display: block; max-width: none; image-orientation: none; }
+.profile-photo-crop { position: absolute; border: 2px solid var(--text); box-shadow: 0 0 0 500px #0008; pointer-events: none; box-sizing: border-box; }
+.profile-photo-preview { position: relative; overflow: hidden; width: 72px; height: 72px; flex: 0 0 72px; border-radius: 8px; margin: 0 auto; }
+.profile-photo-preview img { position: absolute; }
+.profile-photo-caption { text-align: center; color: var(--muted); margin: 0; }
+.profile-photo-current { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; margin: 0 auto; }
+.profile-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.profile-photo input[type="range"] { width: 100%; margin: 4px 0; }
+.profile-photo footer button { min-width: 88px; }

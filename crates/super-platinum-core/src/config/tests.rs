@@ -19,6 +19,7 @@ fn reset() {
 
 fn session() -> Session {
     Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "xoxd-cookie".into(),
         workspaces: BTreeMap::from([
             (
@@ -299,6 +300,7 @@ fn migrates_legacy_secrets_to_single_entry() {
 
     let session = session();
     let meta = SessionMeta {
+        unified_user_client_enabled: BTreeMap::new(),
         workspaces: session
             .workspaces
             .values()
@@ -330,5 +332,69 @@ fn migrates_legacy_secrets_to_single_entry() {
             .lock()
             .expect("test secret store poisoned")
             .contains_key("d_cookie")
+    );
+}
+
+#[test]
+fn per_team_unified_metadata_roundtrips_true_false_and_unknown() {
+    let _guard = test_lock();
+    reset();
+    let mut original = session();
+    let mut third = original.workspaces["T_ONE"].clone();
+    third.team_id = "T_THREE".into();
+    original.workspaces.insert(third.team_id.clone(), third);
+    original.unified_user_client_enabled =
+        BTreeMap::from([("T_ONE".into(), true), ("T_TWO".into(), false)]);
+    save_session(&original).unwrap();
+    let loaded = load_session().unwrap().unwrap();
+    assert_eq!(
+        loaded.unified_user_client_enabled,
+        original.unified_user_client_enabled
+    );
+    assert_eq!(loaded.unified_user_client_enabled.get("T_THREE"), None);
+    assert_eq!(loaded.workspaces.len(), 3);
+    let raw = serde_json::to_value(&original).unwrap();
+    let restored: Session = serde_json::from_value(raw).unwrap();
+    assert_eq!(
+        restored.unified_user_client_enabled,
+        original.unified_user_client_enabled
+    );
+}
+
+#[test]
+fn legacy_session_and_metadata_leave_unified_mode_unknown() {
+    let original = session();
+    let raw = serde_json::to_value(&original).unwrap();
+    assert!(raw.get("unified_user_client_enabled").is_none());
+    let restored: Session = serde_json::from_value(raw).unwrap();
+    assert!(restored.unified_user_client_enabled.is_empty());
+    let raw_meta = serde_json::to_value(SessionMeta::from(&original)).unwrap();
+    assert!(raw_meta.get("unified_user_client_enabled").is_none());
+    let meta: SessionMeta = serde_json::from_value(raw_meta).unwrap();
+    let rebuilt = session_from_parts(meta, &SessionSecrets::from(&original)).unwrap();
+    assert!(rebuilt.unified_user_client_enabled.is_empty());
+    assert_eq!(rebuilt.workspaces.len(), 2);
+}
+
+#[test]
+fn unified_metadata_never_creates_credentials_or_changes_secret_shape() {
+    let mut original = session();
+    original
+        .unified_user_client_enabled
+        .insert("T_UNAUTHORIZED".into(), true);
+    let meta = SessionMeta::from(&original);
+    let secrets = SessionSecrets::from(&original);
+    assert!(!secrets.tokens.contains_key("T_UNAUTHORIZED"));
+    assert!(
+        serde_json::to_value(&secrets)
+            .unwrap()
+            .get("unified_user_client_enabled")
+            .is_none()
+    );
+    let rebuilt = session_from_parts(meta, &secrets).unwrap();
+    assert!(!rebuilt.workspaces.contains_key("T_UNAUTHORIZED"));
+    assert_eq!(
+        rebuilt.unified_user_client_enabled.get("T_UNAUTHORIZED"),
+        Some(&true)
     );
 }

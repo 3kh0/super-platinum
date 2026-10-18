@@ -43,7 +43,6 @@ impl Owner {
     ) -> Result<Dispatched, durable::Error> {
         self.account.initialize().await?;
         self.check(&expected)?;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if self.account.owned.is_some() {
             let held = parent
                 .record()
@@ -184,7 +183,6 @@ impl Owner {
         &self,
         operation_id: &str,
     ) -> Result<Dispatched, durable::Error> {
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if self.account.owned.is_some() {
             for parent in self.account.retained_operations()? {
                 let held = {

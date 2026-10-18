@@ -30,7 +30,6 @@ impl Command {
         // Inspect the tag by reference: moving Action here would put its largest
         // payload back in this frame before the selected handler can consume it.
         match &self.action {
-            #[cfg(any(test, feature = "protected-test-support"))]
             Action::Inventory { .. } => handlers_queries::execute(self, open, pending, isolated),
             Action::Load { .. } => handlers_queries::execute(self, open, pending, isolated),
             Action::Review { .. } => handlers_queries::execute(self, open, pending, isolated),
@@ -59,7 +58,6 @@ impl Command {
             }
             Action::Control { .. } => handlers_mutations::execute(self, open, pending, isolated),
             Action::Prepare { .. } => handlers_mutations::execute(self, open, pending, isolated),
-            #[cfg(any(test, feature = "protected-test-support"))]
             Action::PrepareConsumedSend { .. } => {
                 handlers_mutations::execute(self, open, pending, isolated)
             }
@@ -102,7 +100,6 @@ impl Command {
             Action::ReserveObservation { .. } => {
                 handlers_observations::execute(self, open, pending, isolated)
             }
-            #[cfg(any(test, feature = "protected-test-support"))]
             Action::FinishRetainedObservation { .. } => {
                 handlers_observations::execute(self, open, pending, isolated)
             }
@@ -111,7 +108,6 @@ impl Command {
             }
             Action::Release { .. } => handlers_local::execute(self, open, pending, isolated),
             Action::StartLocal { .. } => handlers_local::execute(self, open, pending, isolated),
-            #[cfg(any(test, feature = "protected-test-support"))]
             Action::StartRetainedLocal { .. } => {
                 handlers_local::execute(self, open, pending, isolated)
             }

@@ -232,6 +232,7 @@ fn credential_rotation_retires_view_not_dirty_draft_or_uncertain_receipt() {
     fixture::complete(&mut s, true);
     let old = mount_key(&s);
     s.core.session = Some(super_platinum_core::config::Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "rotated".into(),
         workspaces: [("T1".into(), session(&s, &a.token).unwrap())].into(),
     });

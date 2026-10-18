@@ -8,6 +8,7 @@ fn shell() -> ShellState {
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
     shell.core.active_account = Some("download-test".into());
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic-cookie".into(),
         workspaces: std::collections::BTreeMap::from([(
             "T1".into(),

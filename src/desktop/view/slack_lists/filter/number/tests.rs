@@ -47,6 +47,7 @@ fn harness() -> (VirtualDom, Draft, Mutations) {
                 current: Some(ViewFilterChoice::None),
                 choices: vec![("A".into(), "A".into()), ("B".into(), "B".into())],
                 numbers: vec!["A".into(), "B".into()],
+                selects: vec![],
                 choice,
                 rows: vec![filter::Row {
                     id: 17,

@@ -19,24 +19,58 @@ pub fn visible_links<'a>(shell: &'a ShellState, channel: &str) -> Option<&'a Lin
         .then_some(&shell.core.channel_links)
 }
 
-pub fn select(mut state: Signal<ShellState>, tab: ChannelTab) {
-    if state.peek().channel_tab == tab {
+pub fn select(state: Signal<ShellState>, tab: ChannelTab) {
+    select_route(
+        state,
+        crate::channel_tabs::selection::Route::Resource(tab),
+        None,
+        None,
+    );
+}
+pub(crate) fn select_route(
+    mut state: Signal<ShellState>,
+    route: crate::channel_tabs::selection::Route,
+    visit: Option<crate::channel_tabs::Visit>,
+    step: Option<crate::channel_tabs::selection::Step>,
+) {
+    if (route.tab() == ChannelTab::AppHome && !crate::app_home::eligible(&state.peek()))
+        || state.peek().overlay.is_some()
+        || !state.peek().conversation_visible()
+    {
         return;
     }
+    let (epoch, team, channel, generation, canvas_generation, previous, main_view) = {
+        let shell = state.peek();
+        if crate::channel_tabs::selection::current(&shell).as_ref() == Some(&route) {
+            return;
+        }
+        (
+            shell.core.account_epoch,
+            shell.core.active_team.clone(),
+            shell.core.active_channel.clone(),
+            shell.channel_generation,
+            shell.shortcut_generation,
+            shell.channel_tab,
+            shell.main_view,
+        )
+    };
+    let tab = route.tab();
     dioxus::core::spawn_forever(async move {
-        let (epoch, team, channel, generation, previous) = {
-            let shell = state.peek();
-            (
-                shell.core.account_epoch,
-                shell.core.active_team.clone(),
-                shell.core.active_channel.clone(),
-                shell.channel_generation,
-                shell.channel_tab,
-            )
-        };
         let Some(channel) = channel else {
             return;
         };
+        if previous == ChannelTab::Canvas {
+            let safe = tokio::time::timeout(std::time::Duration::from_secs(1),
+                dioxus::document::eval(&format!(r#"const p=document.getElementById('channel-canvas-panel')||document.getElementById('channel-canvas-unavailable');dioxus.send(!!p && p.dataset.dialogGeneration==={} && !p.querySelector('#canvas-text-editor,.canvas-rename'));"#,serde_json::json!(canvas_generation.to_string()))).recv::<bool>()).await;
+            if !matches!(safe, Ok(Ok(true))) {
+                if state.peek().channel_generation == generation {
+                    state
+                        .write()
+                        .show_toast("Finish or cancel the Canvas edit before changing tabs.");
+                }
+                return;
+            }
+        }
         let bookmark = if previous == ChannelTab::Messages {
             // Use the center visible row, not the overscan range's first row.
             // Reading this before unmount keeps a resource round trip from
@@ -61,10 +95,23 @@ pub fn select(mut state: Signal<ShellState>, tab: ChannelTab) {
                 || shell.core.active_team != team
                 || shell.core.active_channel.as_ref() != Some(&channel)
                 || shell.channel_generation != generation
+                || shell.shortcut_generation != canvas_generation
                 || shell.channel_tab != previous
+                || shell.overlay.is_some()
+                || (tab == ChannelTab::AppHome && !crate::app_home::eligible(&shell))
+                || !crate::canvas::surface::same_conversation(&shell, main_view)
+                || (previous == ChannelTab::Canvas && !crate::canvas::surface::can_leave(&shell))
+                || visit.as_ref().is_some_and(|v| !v.current(&shell))
+                || step
+                    .as_ref()
+                    .is_some_and(|s| !crate::channel_tabs::selection::accepts(&shell, s))
             {
                 return;
             }
+            if !crate::channel_tabs::selection::record(&mut shell, route.clone(), step.as_ref()) {
+                return;
+            }
+            crate::canvas::checklist::close_visit(&mut shell);
             use super_platinum_core::domain::PendingScrollTarget;
             crate::read_preferences::opening::cancel(&mut shell);
             if previous == ChannelTab::Messages {
@@ -85,7 +132,11 @@ pub fn select(mut state: Signal<ShellState>, tab: ChannelTab) {
                 };
                 shell.core.pending_scroll_to = Some((channel.clone(), target));
             }
+            if previous == ChannelTab::AppHome {
+                crate::app_home::leave(&mut shell);
+            }
             shell.channel_tab = tab;
+            shell.shortcut_generation = shell.shortcut_generation.wrapping_add(1);
             // Invalidate measurements and history work queued by the old DOM.
             shell.channel_generation = shell.channel_generation.wrapping_add(1);
             if tab == ChannelTab::Messages {
@@ -115,7 +166,8 @@ pub async fn refresh(state: Signal<ShellState>) {
     };
     let tab = state.peek().channel_tab;
     match tab {
-        ChannelTab::Messages => {}
+        ChannelTab::Messages | ChannelTab::Canvas => {}
+        ChannelTab::AppHome => crate::app_home::refresh(state).await,
         ChannelTab::Bookmarks => crate::bookmarks::load(state, channel).await,
         ChannelTab::Pins => crate::pins::load(state, channel).await,
         ChannelTab::Files => {

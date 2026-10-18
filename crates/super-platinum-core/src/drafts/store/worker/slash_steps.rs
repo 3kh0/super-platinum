@@ -6,7 +6,14 @@ use p::slash_runtime::{Command as SlashCommand, Input as SlashInput};
 pub(in crate::drafts::store::worker) type SlashReserved = Step<Arc<SlashInput>, ()>;
 pub(in crate::drafts::store::worker) type SlashClaimed =
     Step<Arc<SlashInput>, p::slash_runtime::QueuedClaim>;
+type ArchiveStep = Step<Arc<p::slash_runtime::ArchiveInput>, p::slash_runtime::Archived>;
+#[path = "slash_archive_retry.rs"]
+mod archive_retry;
 struct Held {
+    archive: Mutex<Option<ArchiveStep>>,
+    changed: Condvar,
+    #[cfg(test)]
+    wait_test: Mutex<Option<mpsc::Sender<&'static str>>>,
     input: Arc<SlashInput>,
     status: Mutex<Status>,
 }
@@ -24,6 +31,7 @@ struct Status {
     failures: Vec<(u64, p::Error)>,
     disconnected: bool,
     building: bool,
+    fresh_outstanding: bool,
 }
 #[derive(Clone)]
 pub(in crate::drafts::store::worker) struct SlashCompletion {
@@ -43,6 +51,9 @@ impl std::fmt::Debug for SlashAttemptError {
     }
 }
 impl SlashCompletion {
+    pub(in crate::drafts::store::worker) fn same_holder(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.held, &other.held)
+    }
     pub(in crate::drafts::store::worker) fn key(&self) -> Key {
         self.key.clone()
     }
@@ -60,7 +71,19 @@ impl SlashCompletion {
     pub(in crate::drafts::store::worker) fn take_fresh_clear(&self) -> Option<p::FreshClear> {
         let mut s = self.held.status.lock().unwrap();
         s.poll();
-        s.result.as_mut()?.as_mut().ok()?.take_fresh_clear()
+        let witness = s.result.as_mut()?.as_mut().ok()?.take_fresh_clear()?;
+        s.fresh_outstanding = true;
+        Some(witness)
+    }
+    pub(in crate::drafts::store::worker) fn consume_fresh_clear(&self) -> bool {
+        let Ok(mut s) = self.held.status.lock() else {
+            return false;
+        };
+        if !s.fresh_outstanding {
+            return false;
+        }
+        s.fresh_outstanding = false;
+        true
     }
     pub(in crate::drafts::store::worker) fn terminal(
         &self,
@@ -128,7 +151,7 @@ impl Worker {
         self.submit_slash_completion(c)
             .map_err(SlashAttemptError::Storage)
     }
-    #[cfg(test)]
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub(in crate::drafts::store::worker) async fn fixture_execute_slash<F, Fut>(
         &self,
         c: &SlashCompletion,
@@ -215,6 +238,10 @@ impl Worker {
         let input = parent.input().as_ref().clone();
         let (key, held) = self.transfer(parent, "slash-complete", true, |claim, _| {
             Arc::new(Held {
+                archive: Mutex::new(None),
+                changed: Condvar::new(),
+                #[cfg(test)]
+                wait_test: Mutex::new(None),
                 input,
                 status: Mutex::new(Status {
                     claim: Some(claim.claim),
@@ -230,6 +257,7 @@ impl Worker {
                     failures: Vec::new(),
                     disconnected: false,
                     building: false,
+                    fresh_outstanding: false,
                 }),
             })
         })?;
@@ -430,5 +458,49 @@ impl Worker {
         drop(s);
         drop(pending);
         self.submit_slash_completion(c)
+    }
+}
+
+#[path = "slash_wait.rs"]
+mod wait;
+
+#[path = "slash_family_retirement.rs"]
+mod family_retirement;
+
+impl Worker {
+    pub(in crate::drafts::store::worker) fn hold_slash_archive(
+        &self,
+        completion: &SlashCompletion,
+        input: Arc<p::slash_runtime::ArchiveInput>,
+    ) -> Result<ArchiveStep, Reason> {
+        // This dedicated holder mutex is never acquired under Pending/Status.
+        // Reattached completion handles share it, so capture cannot issue twice.
+        let mut retained = completion
+            .held
+            .archive
+            .lock()
+            .map_err(|_| Reason::Incomplete)?;
+        if let Some(step) = retained.as_ref() {
+            let prior = step.input();
+            if prior.intent != input.intent
+                || !prior.expected.same(&input.expected)
+                || prior.writer.id() != input.writer.id()
+                || prior.serial != input.serial
+            {
+                return Err(Reason::Stale);
+            }
+            return self.reattach_step(&step.key);
+        }
+        let scope = input.expected.scope().clone();
+        let step = self
+            .family_request(&scope, input, &["slash-archive"], |input, reply| {
+                Request::SlashProtected(Box::new(SlashCommand::Archive {
+                    input: input.clone(),
+                    reply,
+                }))
+            })
+            .map_err(|e| e.reason)?;
+        *retained = Some(step.clone());
+        Ok(step)
     }
 }

@@ -113,7 +113,6 @@ impl State {
     pub(super) fn reserve(&mut self, account: &str) -> Result<u64, Reason> {
         self.check(account, false)?;
         if self.slots.len() >= MAX_SLOTS {
-            self.incomplete = Some(Reason::Capacity);
             return Err(Reason::Capacity);
         }
         let Some(id) = self.next.checked_add(1) else {
@@ -203,7 +202,7 @@ impl State {
 fn refusal<T>(pending: &mut Pending, reason: Reason, input: T) -> Refused<T> {
     if matches!(
         reason,
-        Reason::Metadata | Reason::Capacity | Reason::Counter | Reason::Incomplete
+        Reason::Metadata | Reason::Counter | Reason::Incomplete
     ) {
         if let Some(state) = &mut pending.admission {
             state.incomplete.get_or_insert(reason);
@@ -254,7 +253,16 @@ impl Worker {
             .as_ref()
             .is_none_or(|book| !book.admission_room(1))
         {
-            return Err(refusal(pending, Reason::Incomplete, request));
+            let reason = if pending
+                .accounting
+                .as_ref()
+                .is_some_and(|b| b.capacity_blocked(1))
+            {
+                Reason::Capacity
+            } else {
+                Reason::Incomplete
+            };
+            return Err(refusal(pending, reason, request));
         }
         let Some(upgrade_generation) = pending.upgrade_generation.checked_add(1) else {
             return Err(refusal(pending, Reason::Counter, request));
@@ -266,7 +274,16 @@ impl Worker {
             .unwrap()
             .request(index, request.identity())
         else {
-            return Err(refusal(pending, Reason::Incomplete, request));
+            let reason = if pending
+                .accounting
+                .as_ref()
+                .is_some_and(|b| b.capacity_blocked(1))
+            {
+                Reason::Capacity
+            } else {
+                Reason::Incomplete
+            };
+            return Err(refusal(pending, reason, request));
         };
         pending.upgrade_generation = upgrade_generation;
         pending.requests.push(request);
@@ -333,13 +350,13 @@ pub(super) use completion::{
 };
 
 pub use completion::{
-    CheckpointInput, LocalOutcome, LocalWriteInput, MutationInput, OpenInput, PreserveInput,
-    ReleaseInput, SendInput, TeamInput, WriteOutcome,
+    CheckpointInput, GapInput, LocalOutcome, LocalWriteInput, MutationInput, OpenInput,
+    PreserveInput, ReleaseInput, SendInput, TeamInput, WriteOutcome,
 };
 
 #[path = "accounted_wait.rs"]
 mod accounted_wait;
 
 pub(in crate::drafts::store::worker) use completion::{
-    SlashClaimed, SlashCompletion, SlashReserved,
+    SlashAttemptError, SlashClaimed, SlashCompletion, SlashReserved,
 };

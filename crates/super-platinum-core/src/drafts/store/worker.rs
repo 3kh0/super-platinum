@@ -19,12 +19,10 @@ use std::{
     sync::{Condvar, Mutex, OnceLock, mpsc},
 };
 
-#[cfg(any(test, feature = "protected-test-support"))]
 mod accounting;
-#[cfg(any(test, feature = "protected-test-support"))]
 mod admission;
+pub(super) mod configured;
 pub(crate) mod protected_queue;
-#[cfg(any(test, feature = "protected-test-support"))]
 #[path = "worker/request_identity.rs"]
 mod request_identity;
 pub(super) mod uploads;
@@ -32,10 +30,8 @@ pub(super) mod uploads;
 type Updates = BTreeMap<(String, DraftKey), LocalDraft>;
 type Reply<T> = mpsc::SyncSender<Result<T, AppError>>;
 enum Request {
-    #[cfg(any(test, feature = "protected-test-support"))]
     StoreUpgrade(Box<super::protected::upgrade::Command>),
     SlashJournal(Box<crate::slash_commands::journal::Command>),
-    #[cfg(any(test, feature = "protected-test-support"))]
     SlashProtected(Box<super::protected::slash_runtime::Command>),
     Protected(Box<super::protected::commands::Command>),
     Upload(uploads::Command),
@@ -75,13 +71,11 @@ enum Request {
 }
 #[derive(Default)]
 struct Pending {
-    #[cfg(any(test, feature = "protected-test-support"))]
     accounting: Option<accounting::Book>,
-    #[cfg(any(test, feature = "protected-test-support"))]
     admission: Option<admission::State>,
-    #[cfg(any(test, feature = "protected-test-support"))]
     upgrade_generation: u64,
     updates: Updates,
+    refused_configured_updates: Updates,
     requests: Vec<Request>,
     failed: BTreeSet<String>,
     blocked: BTreeSet<String>,
@@ -90,20 +84,28 @@ struct Pending {
 struct Worker {
     #[cfg(test)]
     slash_open_gate: Mutex<Option<(mpsc::Sender<()>, mpsc::Receiver<()>)>>,
-    #[cfg(any(test, feature = "protected-test-support"))]
     upgrade_id: OnceLock<String>,
     protected_fixture: bool,
+    configured_default: bool,
     pending: Mutex<Pending>,
     ready: Condvar,
-    #[cfg(any(test, feature = "protected-test-support"))]
     accounted: Condvar,
     #[cfg(test)]
     accounted_waiters: std::sync::atomic::AtomicUsize,
 }
 impl Worker {
     fn enqueue(&self, account: String, entries: BTreeMap<DraftKey, LocalDraft>) {
+        if self.configured_default && !configured::registry().ordinary(&account) {
+            let mut pending = self.pending.lock().unwrap();
+            pending.failed.insert(account.clone());
+            for (key, value) in entries {
+                pending
+                    .refused_configured_updates
+                    .insert((account.clone(), key), value);
+            }
+            return;
+        }
         let mut pending = self.pending.lock().unwrap();
-        #[cfg(any(test, feature = "protected-test-support"))]
         {
             pending.upgrade_generation = pending.upgrade_generation.saturating_add(1);
             if let Some(admission) = &mut pending.admission {
@@ -111,7 +113,6 @@ impl Worker {
             }
         }
         for (key, draft) in entries {
-            #[cfg(any(test, feature = "protected-test-support"))]
             if let Some(book) = &mut pending.accounting {
                 book.update(&account, &key, false);
             }
@@ -122,7 +123,6 @@ impl Worker {
     fn submit(&self, request: Request) {
         self.submit_recorded(request, false);
     }
-    #[cfg(any(test, feature = "protected-test-support"))]
     fn submit_bootstrap(&self, request: Request) {
         // Only existing retained A/B startup routes call this. Old Client calls
         // are latched before routing, including rejected AfterRestart attempts.
@@ -131,18 +131,18 @@ impl Worker {
         self.submit_recorded(request, bootstrap);
     }
     fn submit_recorded(&self, request: Request, _bootstrap: bool) {
+        if self.configured_default {
+            configured::registry().ordinary(request.identity().account);
+        }
         let mut pending = self.pending.lock().unwrap();
-        #[cfg(any(test, feature = "protected-test-support"))]
         if !_bootstrap {
             if let Some(admission) = &mut pending.admission {
                 admission.unsupported = true;
             }
         }
-        #[cfg(any(test, feature = "protected-test-support"))]
         {
             pending.upgrade_generation = pending.upgrade_generation.saturating_add(1);
         }
-        #[cfg(any(test, feature = "protected-test-support"))]
         {
             let index = pending.requests.len();
             if let Some(book) = &mut pending.accounting {
@@ -154,17 +154,13 @@ impl Worker {
         self.ready.notify_one();
     }
     fn cycle(&self, open: impl Fn(&str) -> Result<DraftStore, AppError>) -> bool {
-        #[cfg(any(test, feature = "protected-test-support"))]
         let upgrade_generation;
-        #[cfg(any(test, feature = "protected-test-support"))]
         let accounting_batch;
         let (updates, requests) = {
             let mut pending = self.pending.lock().unwrap();
-            #[cfg(any(test, feature = "protected-test-support"))]
             {
                 upgrade_generation = pending.upgrade_generation;
             }
-            #[cfg(any(test, feature = "protected-test-support"))]
             {
                 let requests = pending.requests.len();
                 let updates = pending.updates.len();
@@ -179,7 +175,6 @@ impl Worker {
                 std::mem::take(&mut pending.requests),
             )
         };
-        #[cfg(any(test, feature = "protected-test-support"))]
         let mut executing = accounting::Executing::new(self, accounting_batch);
         let mut accounts: BTreeMap<String, Entries> = BTreeMap::new();
         for ((account, key), draft) in updates {
@@ -187,10 +182,8 @@ impl Worker {
         }
         let mut retry = false;
         for (account, entries) in accounts {
-            #[cfg(any(test, feature = "protected-test-support"))]
             let diagnostic_account = executing.update_account(&account);
             let result = open(&account).and_then(|mut store| store.save_legacy(&entries));
-            #[cfg(any(test, feature = "protected-test-support"))]
             let update_reports = executing.update_reports(&account, &result);
             let mut pending = self.pending.lock().unwrap();
             match result {
@@ -206,7 +199,6 @@ impl Worker {
                     for (key, draft) in entries {
                         let Pending {
                             updates,
-                            #[cfg(any(test, feature = "protected-test-support"))]
                             accounting,
                             ..
                         } = &mut *pending;
@@ -216,7 +208,6 @@ impl Worker {
                         if let std::collections::btree_map::Entry::Vacant(entry) =
                             updates.entry((account.clone(), key))
                         {
-                            #[cfg(any(test, feature = "protected-test-support"))]
                             if let Some(book) = accounting {
                                 let (owner, key) = entry.key();
                                 book.update(owner, key, true);
@@ -227,14 +218,11 @@ impl Worker {
                 }
             }
             drop(pending);
-            #[cfg(any(test, feature = "protected-test-support"))]
             if let Some(account) = diagnostic_account {
                 executing.finish_updates(&account, update_reports);
             }
         }
-        #[cfg(any(test, feature = "protected-test-support"))]
         let upgrade_sole = requests.len() == 1;
-        #[cfg(any(test, feature = "protected-test-support"))]
         let mut slash_detached: BTreeMap<String, usize> = {
             let mut counts = BTreeMap::new();
             for request in &requests {
@@ -245,14 +233,12 @@ impl Worker {
             counts
         };
         for (_request_index, request) in requests.into_iter().enumerate() {
-            #[cfg(any(test, feature = "protected-test-support"))]
             if let Some(account) = request.slash_fence_account() {
                 if let Some(count) = slash_detached.get_mut(account) {
                     *count -= 1;
                 }
             }
             let _report = match request {
-                #[cfg(any(test, feature = "protected-test-support"))]
                 Request::SlashProtected(command) => {
                     let account = command.account().to_owned();
                     match open(&account) {
@@ -288,7 +274,6 @@ impl Worker {
                         }
                     }
                 }
-                #[cfg(any(test, feature = "protected-test-support"))]
                 Request::StoreUpgrade(command) => {
                     upgrade::execute(self, *command, upgrade_generation, upgrade_sole)
                 }
@@ -614,7 +599,6 @@ impl Worker {
                     report
                 }
             };
-            #[cfg(any(test, feature = "protected-test-support"))]
             executing.finish_request(_request_index, _report);
         }
         retry
@@ -627,7 +611,7 @@ impl Worker {
                     pending = self.ready.wait(pending).unwrap();
                 }
             }
-            if self.cycle(DraftStore::open_default) {
+            if self.cycle(|account| configured::registry().open_ordinary(account)) {
                 let pending = self.pending.lock().unwrap();
                 let _ = self
                     .ready
@@ -644,7 +628,10 @@ fn worker() -> &'static Worker {
             .name("super-platinum-drafts".into())
             .spawn(|| worker().run())
             .expect("draft worker starts");
-        Worker::default()
+        Worker {
+            configured_default: true,
+            ..Worker::default()
+        }
     })
 }
 pub(crate) fn enqueue_slash_journal(command: crate::slash_commands::journal::Command) {
@@ -840,14 +827,11 @@ mod dispatch_stack_tests;
 #[path = "worker/slash_journal_tests.rs"]
 mod slash_journal_tests;
 
-#[cfg(any(test, feature = "protected-test-support"))]
 #[path = "worker/upgrade.rs"]
 mod upgrade;
 #[cfg(test)]
 pub(in crate::drafts::store) use upgrade::TestWorker as UpgradeTestWorker;
-#[cfg(any(test, feature = "protected-test-support"))]
 pub(in crate::drafts::store) use upgrade::UpgradeFence;
-#[cfg(any(test, feature = "protected-test-support"))]
 pub(crate) mod owned_queue;
 
 #[cfg(test)]

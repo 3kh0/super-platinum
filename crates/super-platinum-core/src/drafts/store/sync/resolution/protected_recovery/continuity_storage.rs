@@ -114,8 +114,7 @@ pub(super) fn lease_scope(lease: &LiveLease, scope: &Scope) -> Result<(), AppErr
     Ok(())
 }
 
-/// Explicit test-only format upgrade. No startup/production caller exists.
-#[cfg(any(test, feature = "protected-test-support"))]
+/// Private format installation used by validated owned migration/shadow inspection.
 pub(super) fn activate(store: &DraftStore, account: &str) -> Result<(), AppError> {
     let tx = adapter_atomic::begin(&store.0)?;
     owner(&tx, account)?;

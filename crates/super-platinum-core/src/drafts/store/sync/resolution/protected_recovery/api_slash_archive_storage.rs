@@ -32,8 +32,15 @@ pub(super) struct ArchivedRecord {
 }
 fn validate_attestation(conn: &Connection, raw: &str) -> Result<Attestation, AppError> {
     let a: Attestation = wire::strict(raw)?;
-    let (binding, bytes) = bindings::exact(conn, &a.scope, &a.intent)?;
-    let (terminal, _) = completion::settlement_raw(conn, &a.scope, &a.intent)?;
+    let index = completion::validated(conn, &a.scope.account_id)?;
+    validate_attestation_with(&index, a)
+}
+fn validate_attestation_with(
+    index: &completion::ValidatedSettlements,
+    a: Attestation,
+) -> Result<Attestation, AppError> {
+    let (binding, bytes) = index.bindings().exact(&a.scope, &a.intent)?;
+    let (terminal, _) = index.settlement(&a.scope, &a.intent)?;
     let evidence = ManagedEvidence::decode(&a.evidence)
         .map_err(|_| invalid("invalid managed delivery evidence"))?;
     if a.version != 1
@@ -105,9 +112,13 @@ pub(super) fn attest(
     )?;
     audit(conn, &scope.account_id)
 }
-fn check_archive(conn: &Connection, a: &ArchivedRecord) -> Result<(), AppError> {
-    let (binding, raw) = bindings::exact(conn, &a.scope, &a.intent)?;
-    let (terminal, settlement) = completion::settlement_raw(conn, &a.scope, &a.intent)?;
+fn check_archive(
+    index: &completion::ValidatedSettlements,
+    attestations: &std::collections::BTreeMap<String, String>,
+    a: &ArchivedRecord,
+) -> Result<(), AppError> {
+    let (binding, raw) = index.bindings().exact(&a.scope, &a.intent)?;
+    let (terminal, settlement) = index.settlement(&a.scope, &a.intent)?;
     let before =
         views::managed(a.before.restore()?).map_err(|_| invalid("archive predecessor absent"))?;
     let after =
@@ -134,8 +145,7 @@ fn check_archive(conn: &Connection, a: &ArchivedRecord) -> Result<(), AppError> 
         || a.team.epoch != before.row().lineage().verified_epoch()
         || a.team.lease_id.as_deref().is_none_or(|v| !valid_uuid(v))
         || !writers::slash_receipt_matches(&a.writer_receipt, &a.writer, a.serial, &before)?
-        || attestation_raw(conn, &a.scope.account_id, &a.intent)?.as_deref()
-            != Some(a.attestation.as_str())
+        || attestations.get(&a.intent).map(String::as_str) != Some(a.attestation.as_str())
     {
         return Err(invalid("archive ownership changed"));
     }
@@ -154,30 +164,30 @@ fn check_archive(conn: &Connection, a: &ArchivedRecord) -> Result<(), AppError> 
         ) => a.choice_id.as_deref().is_some_and(valid_uuid),
         _ => false,
     };
-    let current = slash_journal::protected_inventory(conn, &a.scope.account_id)
-        .map_err(|_| invalid("missing archived command"))?
-        .into_iter()
-        .find(|r| r.id() == a.intent);
-    if !reason || current.as_ref() != Some(&a.retired) {
+    let current = index.bindings().journal(&a.intent);
+    if !reason || current != Some(&a.retired) {
         return Err(invalid("archive terminal/reason contradiction"));
     }
     Ok(())
 }
 pub(super) fn audit(conn: &Connection, account: &str) -> Result<(), AppError> {
     history::require(conn, account)?;
-    completion::audit(conn, account)?;
-    bindings::all(conn, account)?;
+    let index = completion::validated(conn, account)?;
     let(n,size):(i64,i64)=conn.query_row("SELECT COUNT(*),COALESCE(SUM(LENGTH(CAST(content AS BLOB))+LENGTH(CAST(intent AS BLOB))),0) FROM (SELECT intent,content FROM composer_draft_slash_archives UNION ALL SELECT intent,content FROM composer_draft_slash_attestations UNION ALL SELECT intent,content FROM composer_draft_slash_bindings UNION ALL SELECT intent,binding AS content FROM composer_draft_slash_archives)",[],|r|Ok((r.get(0)?,r.get(1)?)))?;
     // Combined binding bytes plus history and attestation, never separate resettable budgets.
     if !(0..=12288).contains(&n) || !(0..=16777216).contains(&size) {
         return Err(invalid("slash archival evidence bound"));
     }
     let mut q=conn.prepare("SELECT intent,CASE WHEN LENGTH(CAST(content AS BLOB))<=4194304 THEN content ELSE NULL END FROM composer_draft_slash_attestations")?;
+    let mut attestations = std::collections::BTreeMap::new();
     for row in q.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))? {
         let (id, raw) = row?;
-        let a = validate_attestation(conn, &raw)?;
+        let a = validate_attestation_with(&index, wire::strict(&raw)?)?;
         if a.intent != id || a.scope.account_id != account {
             return Err(invalid("attestation index mismatch"));
+        }
+        if attestations.insert(id, raw).is_some() {
+            return Err(invalid("duplicate attestation"));
         }
     }
     let mut q=conn.prepare("SELECT intent,destination,enrollment,binding,CASE WHEN LENGTH(CAST(content AS BLOB))<=4194304 THEN content ELSE NULL END FROM composer_draft_slash_archives")?;
@@ -203,7 +213,7 @@ pub(super) fn audit(conn: &Connection, account: &str) -> Result<(), AppError> {
         if b.enrollment != enrollment {
             return Err(invalid("archive enrollment changed"));
         }
-        check_archive(conn, &a)?;
+        check_archive(&index, &attestations, &a)?;
     }
     if remote::enabled(conn)? {
         remote::audit_remote(conn, account)?;

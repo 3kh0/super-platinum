@@ -182,7 +182,7 @@ impl BootScope {
     pub fn aggregate_workspaces(&self) -> bool {
         self.top_level_org && !self.internal_teams.is_empty()
     }
-    fn permission(&self, response: &Value, permission: &str) -> ProfileEditCapability {
+    pub(super) fn permission(&self, response: &Value, permission: &str) -> ProfileEditCapability {
         let allowed = if self.aggregate_workspaces() {
             let Some(map) = response.get("allowed_per_team").and_then(Value::as_object) else {
                 return ProfileEditCapability::Unknown(

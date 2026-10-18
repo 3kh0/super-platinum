@@ -2,6 +2,15 @@ use super::ShellState;
 use crate::model::*;
 
 impl ShellState {
+    /// Exact shared mounting condition for the conversation pane (including tabs).
+    pub(crate) fn conversation_visible(&self) -> bool {
+        !matches!(
+            self.main_view,
+            MainView::Unreads | MainView::Threads | MainView::Files | MainView::Scheduled
+        ) && self.detail_open()
+            && !(matches!(self.main_view, MainView::Activity | MainView::Later)
+                && self.thread_root.is_some())
+    }
     /// Complete synthetic source; unlike `messages`, this is not a viewport slice.
     /// Native fixture checks use it to detect source mutation across window changes.
     pub(crate) fn fixture_message_source(&self) -> Option<&[MessageVm]> {
@@ -342,6 +351,8 @@ impl ShellState {
         self.channel_generation = self.channel_generation.wrapping_add(1);
         self.loading_older = false;
         self.core.active_channel = Some(channel_id.clone());
+        crate::canvas::checklist::close_visit(self);
+        crate::channel_tabs::selection::ordinary_open(self);
         self.sync_composer_drafts();
         if let Some(team) = self.core.active_team.clone()
             && let Some(workspace) = self.core.workspaces.get_mut(&team)
@@ -445,6 +456,8 @@ impl ShellState {
             .or_else(|| workspace.channels.keys().next().cloned());
         self.main_view = MainView::Home;
         self.refresh_from_core();
+        crate::canvas::checklist::close_visit(self);
+        crate::channel_tabs::selection::ordinary_open(self);
         let unread = self
             .channels
             .get(self.active_channel)

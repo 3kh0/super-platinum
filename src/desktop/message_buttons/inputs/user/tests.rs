@@ -134,6 +134,7 @@ fn users_confirm_cancel_preserves_wire_and_prepare_commits_full_siblings() {
 fn picker_query_and_mount_generations_and_transport_guard_are_independent() {
     let (mut shell, source, metadata, mounted) = setup();
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: [("T1".into(), session(&source))].into(),
     });

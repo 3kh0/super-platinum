@@ -214,6 +214,7 @@ mod tests {
     fn discovery_is_account_and_socket_scoped_but_survives_navigation() {
         let mut core = crate::fixture::fixture_core();
         core.session = Some(super_platinum_core::config::Session {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "fixture-cookie".into(),
             workspaces: [(
                 "T1".into(),

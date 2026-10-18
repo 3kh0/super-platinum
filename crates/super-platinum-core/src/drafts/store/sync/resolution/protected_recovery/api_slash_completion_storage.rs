@@ -55,7 +55,7 @@ pub(super) fn install(conn: &Connection, account: &str) -> Result<(), AppError> 
         2 => (),
         _ => return Err(invalid("partial completion schema")),
     }
-    all(conn, account)?;
+    validated(conn, account)?;
     Ok(())
 }
 fn view(value: Option<&views::InventoryRecord>) -> Result<Option<Review>, AppError> {
@@ -83,8 +83,8 @@ fn same_terminal_or_retired(current: &SlashRecord, saved: &SlashRecord) -> Resul
     expected["retired"] = serde_json::json!(true);
     Ok(expected == serde_json::to_value(current)?)
 }
-fn validate(conn: &Connection, receipt: &Receipt) -> Result<(), AppError> {
-    let (binding, raw) = bindings::exact(conn, &receipt.scope, &receipt.intent)?;
+fn validate(index: &bindings::Validated, receipt: &Receipt) -> Result<(), AppError> {
+    let (binding, raw) = index.exact(&receipt.scope, &receipt.intent)?;
     let terminal = &receipt.terminal;
     crate::slash_commands::controller::Controller::restore(terminal.clone())
         .map_err(|_| invalid("invalid terminal command"))?;
@@ -96,11 +96,8 @@ fn validate(conn: &Connection, receipt: &Receipt) -> Result<(), AppError> {
     {
         return Err(invalid("completion binding changed"));
     }
-    let journal = slash_journal::protected_inventory(conn, &receipt.scope.account_id)
-        .map_err(|_| invalid("command journal unavailable"))?;
-    let current = journal
-        .iter()
-        .find(|r| r.id() == receipt.intent)
+    let current = index
+        .journal(&receipt.intent)
         .ok_or_else(|| invalid("missing terminal command"))?;
     if !same_terminal_or_retired(current, terminal)? {
         return Err(invalid("completion contradicts journal"));
@@ -175,14 +172,32 @@ fn validate(conn: &Connection, receipt: &Receipt) -> Result<(), AppError> {
     }
     Ok(())
 }
-fn all(conn: &Connection, account: &str) -> Result<Vec<Receipt>, AppError> {
+pub(super) struct Validated {
+    pub(super) bindings: bindings::Validated,
+    entries: std::collections::BTreeMap<String, (Receipt, String)>,
+}
+impl Validated {
+    pub(super) fn settlement(
+        &self,
+        scope: &Scope,
+        id: &str,
+    ) -> Result<(&SlashRecord, &str), AppError> {
+        self.entries
+            .get(id)
+            .filter(|(r, _)| r.scope == *scope)
+            .map(|(r, raw)| (&r.terminal, raw.as_str()))
+            .ok_or_else(|| invalid("missing exact settlement"))
+    }
+}
+pub(super) fn validated(conn: &Connection, account: &str) -> Result<Validated, AppError> {
     require(conn, account)?;
+    let bindings = bindings::validated(conn, account)?;
     let (n,bytes):(i64,i64)=conn.query_row("SELECT COUNT(*),COALESCE(SUM(LENGTH(CAST(content AS BLOB))+LENGTH(CAST(intent AS BLOB))+LENGTH(CAST(destination AS BLOB))),0) FROM composer_draft_slash_completions",[],|r|Ok((r.get(0)?,r.get(1)?)))?;
     if !(0..=4096).contains(&n) || !(0..=16777216).contains(&bytes) {
         return Err(invalid("completion inventory bound"));
     }
     let mut q=conn.prepare("SELECT intent,destination,CASE WHEN LENGTH(CAST(content AS BLOB))<=4194304 THEN content ELSE NULL END FROM composer_draft_slash_completions")?;
-    let mut result = Vec::new();
+    let mut entries = std::collections::BTreeMap::new();
     for row in q.query_map([], |r| {
         Ok((
             r.get::<_, String>(0)?,
@@ -198,24 +213,29 @@ fn all(conn: &Connection, account: &str) -> Result<Vec<Receipt>, AppError> {
         {
             return Err(invalid("completion index changed"));
         }
-        validate(conn, &receipt)?;
-        result.push(receipt);
+        validate(&bindings, &receipt)?;
+        if entries.insert(id, (receipt, raw)).is_some() {
+            return Err(invalid("duplicate completion"));
+        }
     }
-    Ok(result)
+    Ok(Validated { bindings, entries })
 }
 pub(super) fn audit(conn: &Connection, account: &str) -> Result<(), AppError> {
-    all(conn, account).map(|_| ())
+    validated(conn, account).map(|_| ())
 }
 pub(super) fn read(
     conn: &Connection,
     account: &str,
     id: &str,
 ) -> Result<Option<Receipt>, AppError> {
-    Ok(all(conn, account)?.into_iter().find(|r| r.intent == id))
+    Ok(validated(conn, account)?.entries.remove(id).map(|(r, _)| r))
 }
 pub(super) fn insert(conn: &Connection, receipt: &Receipt) -> Result<(), AppError> {
     require(conn, &receipt.scope.account_id)?;
-    validate(conn, receipt)?;
+    validate(
+        &bindings::validated(conn, &receipt.scope.account_id)?,
+        receipt,
+    )?;
     let raw = serde_json::to_string(receipt)?;
     if raw.len() > 4 * 1024 * 1024 {
         return Err(invalid("completion receipt bound"));
@@ -228,6 +248,6 @@ pub(super) fn insert(conn: &Connection, receipt: &Receipt) -> Result<(), AppErro
             raw
         ],
     )?;
-    all(conn, &receipt.scope.account_id)?;
+    validated(conn, &receipt.scope.account_id)?;
     Ok(())
 }

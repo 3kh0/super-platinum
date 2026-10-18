@@ -33,6 +33,8 @@ fn structured_response_allowlist_uses_exact_path_and_post() {
         "views.get",
         "views.submit",
         "views.close",
+        "apps.actions.v2.execute",
+        "apps.home.dispatchOpenEvent",
     ] {
         assert!(is_block_interaction_request(&request(format!(
             "https://fixture.slack.com/api/{endpoint}?reason=test"
@@ -177,7 +179,13 @@ async fn structured_read_waits_for_confirmed_link_recovery() {
 
 #[tokio::test]
 async fn offline_mutations_are_rejected_without_queuing_for_recovery() {
-    for endpoint in ["blocks.actions", "views.submit", "views.close"] {
+    for endpoint in [
+        "blocks.actions",
+        "views.submit",
+        "views.close",
+        "apps.actions.v2.execute",
+        "apps.home.dispatchOpenEvent",
+    ] {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let transport = Transport::new("fixture-cookie").unwrap();
@@ -205,7 +213,7 @@ async fn offline_mutations_are_rejected_without_queuing_for_recovery() {
 
 #[tokio::test]
 async fn action_and_submit_server_errors_are_single_attempts() {
-    for endpoint in ["blocks.actions", "views.submit"] {
+    for endpoint in ["blocks.actions", "views.submit", "apps.actions.v2.execute"] {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let server =
@@ -290,4 +298,76 @@ async fn suggestions_reject_oversize_before_decode_with_or_without_declared_leng
         );
         server.await.unwrap();
     }
+}
+
+#[tokio::test]
+async fn app_shortcut_rate_limit_and_lost_dispatch_feedback_are_single_attempt() {
+    for rate in [true, false] {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            if rate {
+                respond(
+                    listener,
+                    "429 Too Many Requests",
+                    "Retry-After: 17\r\n",
+                    "private",
+                )
+                .await
+            } else {
+                respond(
+                    listener,
+                    "200 OK",
+                    "",
+                    r#"{"ok":false,"error":"dispatch_failed"}"#,
+                )
+                .await
+            }
+        });
+        let transport = Transport::new("fixture-cookie").unwrap();
+        let result = transport
+            .execute_block_interaction(request(format!(
+                "http://{address}/api/apps.actions.v2.execute"
+            )))
+            .await;
+        if rate {
+            assert!(matches!(
+                result,
+                Err(Error::RateLimited {
+                    retry_after_secs: Some(17)
+                })
+            ));
+        } else {
+            assert_eq!(result.unwrap()["error"], "dispatch_failed");
+        }
+        server.await.unwrap();
+    }
+}
+
+#[tokio::test]
+async fn home_open_event_preserves_rate_limit_and_never_retries_dispatch() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = tokio::spawn(async move {
+        respond(
+            listener,
+            "429 Too Many Requests",
+            "Retry-After: 17\r\n",
+            r#"{"ok":false,"error":"ratelimited"}"#,
+        )
+        .await
+    });
+    let transport = Transport::new("fixture-cookie").unwrap();
+    let result = transport
+        .execute_block_interaction(request(format!(
+            "http://{address}/api/apps.home.dispatchOpenEvent"
+        )))
+        .await;
+    assert!(matches!(
+        result,
+        Err(Error::RateLimited {
+            retry_after_secs: Some(17)
+        })
+    ));
+    server.await.unwrap();
 }

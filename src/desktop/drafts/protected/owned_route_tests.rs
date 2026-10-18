@@ -568,12 +568,42 @@ async fn local_fifo_storage_retry_keeps_failed_input_and_coalesced_newer_input()
         .release_completion_owned(result.review, intent, parent)
         .await
         .unwrap();
+    let writer = f.editor.state.lock().unwrap().released.clone().unwrap();
+    let initial_serial = writer.snapshot().serial;
     fault(&f, durable::test_support::FaultPoint::LocalCommit).await;
     f.editor.submit(&local("First local write")).unwrap();
     assert!(matches!(
         f.editor.flush().await,
         Err(durable::Error::Storage)
     ));
+    // Retained means outstanding custody, not a permanent successful-write log.
+    // Before repair, keep the exact failed job/input and refuse every receipt.
+    let retained: Vec<_> = f
+        .ops()
+        .retained()
+        .into_iter()
+        .filter(|job| job.family == "protected-write-local")
+        .collect();
+    assert_eq!(retained.len(), 1);
+    let key = retained[0].key.clone();
+    let first = f.ops().resume_write_local(&key).unwrap();
+    let input = first.input();
+    assert_eq!(first.state(), o::JobState::Failed(durable::Error::Storage));
+    assert!(matches!(
+        first.local_result(),
+        Some(Err(durable::Error::Storage))
+    ));
+    assert!(first.observe_local_write().is_err());
+    assert!(first.observe_local_write_settlement().is_err());
+    assert_eq!(input.predecessor, initial_serial);
+    assert_eq!(input.serial, initial_serial + 1);
+    assert!(same_local(&input.expected, &local(NEWER)));
+    assert!(same_local(&input.local, &local("First local write")));
+    let failed = writer.snapshot();
+    assert_eq!(failed.serial, input.serial);
+    assert_eq!(failed.failed_inputs.len(), 1);
+    assert_eq!(failed.failed_inputs[0].0, input.serial);
+    assert!(same_local(&failed.failed_inputs[0].1, &input.local));
     assert!(matches!(
         f.editor.submit(&local("Newest local write")),
         Err(durable::Error::Pending)
@@ -588,7 +618,51 @@ async fn local_fifo_storage_retry_keeps_failed_input_and_coalesced_newer_input()
             .text,
         NEWER
     );
+    let coalesced = writer.snapshot();
+    assert_eq!(coalesced.serial, input.serial);
+    assert_eq!(coalesced.failed_inputs.len(), 1);
+    assert!(same_local(&coalesced.failed_inputs[0].1, &input.local));
+    assert!(same_local(
+        coalesced.pending.as_ref().unwrap(),
+        &local("Newest local write")
+    ));
+    assert!(Arc::ptr_eq(
+        &input,
+        &f.ops().resume_write_local(&key).unwrap().input()
+    ));
+    assert_eq!(
+        f.ops()
+            .retained()
+            .iter()
+            .filter(|job| job.family == "protected-write-local")
+            .count(),
+        1
+    );
+    // Pause the real freshness read after the retry applies, before the lane
+    // acknowledges its settlement. Observing/dropping a receipt is not cleanup.
+    let (at_read, continue_read) = f.account.owned.as_ref().unwrap().hold_next_local_read();
     f.editor.retry_local_storage().unwrap();
+    tokio::time::timeout(std::time::Duration::from_secs(5), at_read)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(first.observe_local_write().is_err());
+    let (applied, history, dropped) = first.observe_local_write_settlement().unwrap();
+    assert!(same_local(applied.local(), &input.local));
+    assert_eq!(history.failed_submissions().len(), 1);
+    assert!(history.failed_submissions()[0] < history.successful_submission());
+    assert!(!history.operation_pending());
+    drop(dropped);
+    assert_eq!(
+        f.ops()
+            .retained()
+            .iter()
+            .filter(|job| job.family == "protected-write-local")
+            .count(),
+        1
+    );
+    assert!(Arc::ptr_eq(&input, &first.input()));
+    continue_read.send(()).unwrap();
     f.editor.flush().await.unwrap();
     assert_eq!(
         f.owner
@@ -601,13 +675,38 @@ async fn local_fifo_storage_retry_keeps_failed_input_and_coalesced_newer_input()
         "Newest local write"
     );
     assert!(f.editor.snapshot().pending.is_none());
+    // The historical result proves the first immutable write really applied;
+    // the distinct next serial and fresh inventory prove the newer FIFO write.
+    assert!(Arc::ptr_eq(&input, &first.input()));
+    let Some(Ok(o::LocalOutcome::Applied(first_applied))) = first.local_result() else {
+        panic!("exact repaired first write must retain its Applied result")
+    };
+    assert!(same_local(first_applied.local(), &input.local));
+    let settled = writer.snapshot();
+    assert_eq!(settled.serial, input.serial + 1);
+    assert!(!settled.running);
+    assert!(settled.error.is_none());
+    assert!(settled.failed_inputs.is_empty());
+    assert!(settled.pending.is_none());
+    let current = f.owner.local_inventory().await.unwrap();
+    assert!(same_local(current.local(), &local("Newest local write")));
+    assert!(settled.inventory.as_ref().unwrap().same(&current));
+    // Exact settlement acknowledgment retires the repaired slot/history; the
+    // clean receipt retires the second write. Neither can be replayed.
+    assert!(matches!(
+        f.ops().resume_write_local(&key),
+        Err(o::AdmissionError::Stale)
+    ));
+    assert_eq!(first.submit(), Err(o::AdmissionError::Stale));
+    assert_eq!(first.retry_storage(), Err(o::AdmissionError::Stale));
+    assert!(first.observe_local_write_settlement().is_err());
     assert_eq!(
         f.ops()
             .retained()
             .iter()
             .filter(|x| x.family == "protected-write-local")
             .count(),
-        2
+        0
     );
 }
 
@@ -705,3 +804,6 @@ async fn parent_retired_during_retry_inventory_read_keeps_same_completed_child_w
 }
 
 mod inventory;
+
+#[path = "owned_route_tests/retirement.rs"]
+mod retirement;

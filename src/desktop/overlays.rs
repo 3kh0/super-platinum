@@ -21,6 +21,9 @@ pub fn overlay_view(
     if overlay == Overlay::MessageMultiSelect {
         return crate::view::message_multi::dialog(state);
     }
+    if overlay == Overlay::AppShortcuts {
+        return crate::message_buttons::shortcuts::view::dialog(state);
+    }
     if overlay == Overlay::AppModal {
         return crate::view::app_modal::app_modal(state);
     }
@@ -73,6 +76,7 @@ pub fn overlay_view(
         Overlay::MessageExternalSelect => unreachable!("external select owns its dialog"),
         Overlay::MessageUserSelect => unreachable!("message user select owns its dialog"),
         Overlay::MessageMultiSelect => unreachable!("message multi select owns its dialog"),
+        Overlay::AppShortcuts => unreachable!("app shortcuts own their dialog"),
         Overlay::AppModal => unreachable!("app form owns its dialog"),
         Overlay::SelfMenu => unreachable!("self menu renders as a rail popover"),
         Overlay::SlackList => unreachable!("list owns its dialog"),

@@ -369,7 +369,8 @@ pub(crate) fn flush_closes(mut state: Signal<ShellState>) {
 }
 /// Reconnection/account replacement invalidates tokens and any in-flight UI work.
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
-    let users_changed = users::poll(shell) | external::poll(shell);
+    let users_changed =
+        crate::message_buttons::shortcuts::poll(shell) | users::poll(shell) | external::poll(shell);
     if shell
         .app_modal
         .as_ref()
@@ -403,6 +404,9 @@ pub(crate) fn realtime(
     let RtEvent::Unknown(raw) = event else {
         return false;
     };
+    if !crate::app_home::accepts_modal(shell, raw) {
+        return false;
+    }
     if !matches!(raw.kind.as_str(), "view_opened" | "view_updated") {
         return false;
     }
@@ -503,7 +507,11 @@ pub(crate) fn register_viewed_action(
     register_action_with_context(shell, app_id, source_conversation, viewed)
 }
 
-fn register_action_with_context(
+pub(crate) fn capture_shortcut_viewed(shell: &ShellState) -> Option<ViewedConversation> {
+    origin::capture(shell)
+}
+
+pub(crate) fn register_action_with_context(
     shell: &mut ShellState,
     app_id: &str,
     origin_conversation: Option<String>,
@@ -551,4 +559,47 @@ pub(crate) fn reject_action(shell: &mut ShellState, action: &ActionToken) {
     if let Some(session) = shell.app_modal.as_mut() {
         session.modal.reject(&action.scope, &action.token);
     }
+}
+
+pub(crate) fn home_fixture_open(
+    shell: &mut ShellState,
+    team: &str,
+    generation: u64,
+    event: &RtEvent,
+) {
+    if !crate::fixture::is_fixture() && !cfg!(test) {
+        return;
+    }
+    realtime(shell, team, generation, event);
+    if let Some(session) = shell.app_modal.as_mut().filter(|s| {
+        s.modal
+            .stack()
+            .last()
+            .is_some_and(|v| v.id == "V_HOME_FORM" && v.app_id == "A_HOME")
+    }) {
+        session.fixture = true;
+    }
+}
+pub(crate) fn home_fixture_complete(
+    shell: &mut ShellState,
+    client_token: &str,
+    response: api::BlockViewSubmission,
+) {
+    if !crate::fixture::is_fixture() && !cfg!(test) {
+        return;
+    }
+    let Some(session) = shell.app_modal.as_ref().filter(|s| s.fixture) else {
+        return;
+    };
+    let Some(view) = session.modal.stack().last().map(|v| v.id.clone()) else {
+        return;
+    };
+    let revision = session.modal.revision();
+    requests::complete(
+        shell,
+        &view,
+        revision,
+        client_token,
+        Ok(api::BlockViewResponse::Accepted(response)),
+    );
 }

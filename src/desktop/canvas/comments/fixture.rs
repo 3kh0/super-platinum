@@ -9,11 +9,13 @@ struct Record {
 }
 static RECORD: OnceLock<Mutex<Record>> = OnceLock::new();
 pub(in crate::canvas) fn requested() -> bool {
-    crate::fixture::is_fixture()
-        && matches!(
-            std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
-            Ok("canvas-comments" | "canvas-comments-narrow")
-        )
+    reply::fixture::requested()
+        || mutation::fixture::requested()
+        || crate::fixture::is_fixture()
+            && matches!(
+                std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
+                Ok("canvas-comments" | "canvas-comments-narrow")
+            )
 }
 fn eligible(shell: &ShellState) -> bool {
     requested()
@@ -43,6 +45,12 @@ fn reply(ts: &str, parent: &str, text: &str) -> Value {
     json!({"type":"message","ts":ts,"thread_ts":parent,"user":"U2","text":text})
 }
 pub(super) fn response(shell: &ShellState, ticket: &Ticket) -> Result<Value, Error> {
+    if reply::fixture::requested() {
+        return reply::fixture::response(shell, ticket);
+    }
+    if mutation::fixture::requested() {
+        return mutation::fixture::response(shell, ticket);
+    }
     if !eligible(shell) || !ticket.owner.current(shell) {
         return Err(Error::Api("canvas_comment_fixture_unavailable".into()));
     }
@@ -86,4 +94,11 @@ pub(super) fn response(shell: &ShellState, ticket: &Ticket) -> Result<Value, Err
         }
         _ => return Err(Error::Api("fixture_unexpected_comment_query".into())),
     })
+}
+
+pub(super) fn file() -> super_platinum_core::slack::models::File {
+    serde_json::from_value(
+        serde_json::json!({"id":"Ffixture","filetype":"quip","access":"write","is_locked":false}),
+    )
+    .unwrap()
 }

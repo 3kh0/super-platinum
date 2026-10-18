@@ -46,6 +46,7 @@ pub(crate) mod radio_fixture;
 pub(crate) mod select_check;
 pub(crate) mod select_fixture;
 pub(crate) mod service;
+pub(crate) mod shortcuts;
 pub(crate) mod source;
 pub(crate) mod time_check;
 pub(crate) mod time_fixture;
@@ -57,6 +58,7 @@ mod tests;
 
 #[derive(Default)]
 pub(crate) struct State {
+    pub(crate) shortcuts: shortcuts::State,
     pub(crate) hydration_revision: u64,
     pub(crate) fixture: Option<fixture::Fixture>,
     pub(crate) select_fixture: Option<select_fixture::Fixture>,

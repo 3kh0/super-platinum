@@ -11,13 +11,13 @@ use std::sync::{
 pub(crate) struct Account {
     id: String,
     client: durable::Client,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     pub(super) owned: Option<Arc<super::owned_route::Route>>,
     initialization: Arc<initialization::Holder>,
     ready: AtomicBool,
     gates: Mutex<BTreeMap<DraftKey, Arc<tokio::sync::Mutex<()>>>>,
     gaps: Mutex<(u64, BTreeMap<String, PendingGap>)>,
     pub(super) source_jobs: Tracked<super::source::jobs::Book>,
+    pub(super) ingress: Tracked<Vec<Arc<ObservationQueue>>>,
     pub(super) journal: Mutex<super::journal::Journal>,
     pub(super) editors: Tracked<super::retention::Editors>,
     pub(super) operations: Tracked<super::operation::Records>,
@@ -100,7 +100,6 @@ impl Account {
     #[cfg(test)]
     pub(super) fn from_initialized(value: durable::owned_store::Initialized) -> Arc<Self> {
         Arc::new(Self {
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             owned: None,
             id: value.account().to_owned(),
             client: value.client(),
@@ -109,6 +108,7 @@ impl Account {
             gates: Mutex::default(),
             gaps: Mutex::default(),
             source_jobs: Tracked::default(),
+            ingress: Tracked::default(),
             journal: Mutex::default(),
             editors: Tracked::default(),
             operations: Tracked::default(),
@@ -117,7 +117,6 @@ impl Account {
     #[cfg(any(test, feature = "protected-native-fixture"))]
     pub(super) fn isolated(id: String, client: durable::Client) -> Arc<Self> {
         Arc::new(Self {
-            #[cfg(any(test, feature = "protected-native-fixture"))]
             owned: None,
             id,
             client,
@@ -126,6 +125,7 @@ impl Account {
             gates: Mutex::default(),
             gaps: Mutex::default(),
             source_jobs: Tracked::default(),
+            ingress: Tracked::default(),
             journal: Mutex::default(),
             editors: Tracked::default(),
             operations: Tracked::default(),
@@ -133,7 +133,6 @@ impl Account {
     }
     /// Only an actual once-cold initialized owned route can construct this
     /// fixture Account. Default captured/isolated/factory behavior is unchanged.
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     pub(super) fn from_retained(value: durable::owned_store::Initialized) -> Arc<Self> {
         let initialized = initialization::Holder::supplied(value.clone());
         let route = super::owned_route::Route::new(value);
@@ -146,6 +145,7 @@ impl Account {
             gates: Mutex::default(),
             gaps: Mutex::default(),
             source_jobs: Tracked::default(),
+            ingress: Tracked::default(),
             journal: Mutex::default(),
             editors: Tracked::default(),
             operations: Tracked::default(),
@@ -167,7 +167,6 @@ impl Account {
             .entry(id.to_owned())
             .or_insert_with(|| {
                 Arc::new(Self {
-                    #[cfg(any(test, feature = "protected-native-fixture"))]
                     owned: None,
                     id: id.to_owned(),
                     client: durable::Client::new(id.to_owned()),
@@ -176,6 +175,7 @@ impl Account {
                     gates: Mutex::default(),
                     gaps: Mutex::default(),
                     source_jobs: Tracked::default(),
+                    ingress: Tracked::default(),
                     journal: Mutex::default(),
                     editors: Tracked::default(),
                     operations: Tracked::default(),
@@ -308,16 +308,16 @@ impl Account {
         self.initialization.initialize(self).await
     }
 
-    pub async fn inventory(self: &Arc<Self>) -> Result<durable::Loaded, durable::Error> {
+    pub async fn inventory(self: &Arc<Self>) -> Result<Arc<durable::Loaded>, durable::Error> {
         self.initialize().await?;
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if let Some(route) = &self.owned {
-            return Err(route.unsupported());
+            return route.inventory().await;
         }
-        wait(self.client.load(durable::LoadMode::Current)).await
+        wait(self.client.load(durable::LoadMode::Current))
+            .await
+            .map(Arc::new)
     }
     pub(super) fn client(&self) -> Result<&durable::Client, durable::Error> {
-        #[cfg(any(test, feature = "protected-native-fixture"))]
         if let Some(route) = &self.owned {
             return Err(route.unsupported());
         }

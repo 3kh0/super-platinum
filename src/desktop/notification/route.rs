@@ -160,6 +160,7 @@ mod tests {
         shell.core.workspaces.get_mut("T1").unwrap().self_user_id = "USELF".into();
         let user = shell.core.workspaces["T1"].self_user_id.clone();
         shell.core.session = Some(super_platinum_core::config::Session {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "synthetic".into(),
             workspaces: [(
                 "T1".into(),

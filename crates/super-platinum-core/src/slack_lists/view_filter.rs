@@ -1,10 +1,14 @@
-//! Complete bounded Checkbox/Number AND filter replacement for an ordinary saved Table.
+//! Complete bounded Checkbox/Number/Select/Date AND filter replacement for an ordinary saved Table.
 //! This authoring boundary is deliberately narrower than saved-view read projection.
 use super::{Column, ColumnRename, Document, ListError, PersonalTaskLists, ViewRename};
 #[cfg(test)]
 mod compound_tests;
+mod date;
 mod number;
+pub use date::DateFilterOperator;
+mod select;
 pub use number::NumberFilterOperator;
+pub use select::SelectFilterOperator;
 use serde_json::{Value, json};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -12,6 +16,16 @@ pub enum ViewFilterChoice {
     /// Canonical flat 2..=8 condition set; nested sets and None rows refuse.
     All(Vec<ViewFilterChoice>),
     None,
+    Select {
+        column_id: String,
+        operator: SelectFilterOperator,
+        values: Vec<String>,
+    },
+    Date {
+        column_id: String,
+        operator: DateFilterOperator,
+        value: Option<String>,
+    },
     Checkbox {
         column_id: String,
         checked: bool,
@@ -40,7 +54,10 @@ impl ViewFilterChoice {
     }
     pub fn column_id(&self) -> Option<&str> {
         match self {
-            Self::Checkbox { column_id, .. } | Self::Number { column_id, .. } => Some(column_id),
+            Self::Checkbox { column_id, .. }
+            | Self::Number { column_id, .. }
+            | Self::Date { column_id, .. }
+            | Self::Select { column_id, .. } => Some(column_id),
             _ => None,
         }
     }
@@ -59,9 +76,17 @@ fn identity(s: &str) -> bool {
 impl ViewFilter {
     /// Borrowed presentation hint. Admission separately checks raw identity and policy.
     pub fn supports_column(column: &Column) -> bool {
-        (column.kind == "checkbox" || (column.kind == "number" && ColumnRename::supports(column)))
+        (column.kind == "checkbox"
+            || column.kind == "date"
+            || (column.kind == "number" && ColumnRename::supports(column))
+            || select::choices(column).is_some())
             && identity(&column.id)
             && identity(&column.key)
+    }
+    pub fn select_choices(column: &Column) -> Option<Vec<(String, String)>> {
+        Self::supports_column(column)
+            .then(|| select::choices(column))
+            .flatten()
     }
     /// None means unsupported, not unfiltered. Missing filters and [] mean unfiltered.
     /// Extra rule members (including optional column_id), null, and oversized sets
@@ -133,6 +158,33 @@ impl ViewFilter {
             let value = match row {
                 ViewFilterChoice::None | ViewFilterChoice::All(_) => {
                     return Err(ListError("Choose a flat set of filter conditions."));
+                }
+                ViewFilterChoice::Select {
+                    column_id,
+                    operator,
+                    values,
+                } => {
+                    let column = document
+                        .column(column_id)
+                        .filter(|c| Self::supports_column(c))
+                        .ok_or(ListError("Choose a supported Select field."))?;
+                    select::wire(column, *operator, values)
+                        .ok_or(ListError("Review the selected filter options."))?
+                }
+                ViewFilterChoice::Date {
+                    column_id,
+                    operator,
+                    value,
+                } => {
+                    let column = document
+                        .column(column_id)
+                        .filter(|c| c.kind == "date" && Self::supports_column(c))
+                        .ok_or(ListError("Choose an ordinary Date field."))?;
+                    if !operator.valid_value(value.as_deref()) {
+                        return Err(ListError("Choose a valid calendar date or relative date."));
+                    }
+                    let values: Vec<&str> = value.as_deref().into_iter().collect();
+                    json!({"key":column.key,"operator":operator.as_str(),"values":values})
                 }
                 ViewFilterChoice::Checkbox { column_id, checked } => {
                     let column = document
@@ -236,12 +288,39 @@ fn parse_condition(document: &Document, value: &Value) -> Option<ViewFilterChoic
         return None;
     }
     let key = rule.get("key")?.as_str()?;
-    let operator = NumberFilterOperator::parse(rule.get("operator")?.as_str()?)?;
+    let operator = rule.get("operator")?.as_str()?;
     let values = rule.get("values")?.as_array()?;
     let column = document.columns.iter().find(|c| c.key == key)?;
     if !ViewFilter::supports_column(column) {
         return None;
     }
+    if column.kind == "select" {
+        let op = SelectFilterOperator::parse(operator)?;
+        let values = values
+            .iter()
+            .map(|v| v.as_str().map(str::to_owned))
+            .collect::<Option<Vec<_>>>()?;
+        select::wire(column, op, &values)?;
+        return Some(ViewFilterChoice::Select {
+            column_id: column.id.clone(),
+            operator: op,
+            values,
+        });
+    }
+    if column.kind == "date" {
+        let operator = DateFilterOperator::parse(operator)?;
+        let value = match values.as_slice() {
+            [] => None,
+            [Value::String(v)] => Some(v.as_str()),
+            _ => return None,
+        };
+        return operator.valid_value(value).then(|| ViewFilterChoice::Date {
+            column_id: column.id.clone(),
+            operator,
+            value: value.map(str::to_owned),
+        });
+    }
+    let operator = NumberFilterOperator::parse(operator)?;
     if column.kind == "checkbox" {
         if !values.is_empty() {
             return None;

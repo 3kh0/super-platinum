@@ -199,6 +199,7 @@ pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) 
         let result = if super::super::fixture::enabled(&state.peek()) {
             fixture::write(state, &guard, permit).await
         } else if let Some(context) = guard.scope.request(&state.peek()) {
+            let reorder = permit.is_reorder();
             let deletion = permit.is_deletion();
             let text_creation = permit.is_text_creation();
             let sort = permit.is_sort();
@@ -212,7 +213,12 @@ pub(super) fn save(mut state: Signal<ShellState>, guard: Guard, intent: Intent) 
             let current = || {
                 guard.current(&state.peek(), Stage::Saving) && !registry::blocked(&guard.key.owner)
             };
-            if deletion {
+            if reorder {
+                context
+                    .transport
+                    .execute_list_view_reorder(request, current)
+                    .await
+            } else if deletion {
                 context
                     .transport
                     .execute_list_column_delete(request, current)

@@ -4,8 +4,8 @@ use super::*;
 use crate::drafts::store::protected as p;
 
 pub use a::{
-    CheckpointInput, LocalOutcome, LocalWriteInput, MutationInput, OpenInput, PreserveInput,
-    ReleaseInput, SendInput, TeamInput, WriteOutcome,
+    CheckpointInput, GapInput, LocalOutcome, LocalWriteInput, MutationInput, OpenInput,
+    PreserveInput, ReleaseInput, SendInput, TeamInput, WriteOutcome,
 };
 
 /// Admission refusal is never a durable Error and must not trigger Preserve.
@@ -318,6 +318,7 @@ impl StorageJob<LocalWriteInput, p::LocalWriteResult> {
 }
 impl Operations {
     /// Named isolated fixture fault; the unchanged executor refuses a nonisolated worker.
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub fn fixture_fault(
         &self,
         scope: Scope,
@@ -417,6 +418,40 @@ impl Operations {
 mod completions;
 pub use completions::*;
 
+#[path = "owned_slash.rs"]
+mod slash;
+pub use slash::*;
+
 #[cfg(test)]
 #[path = "owned_operations_tests.rs"]
 mod tests;
+
+#[path = "owned_success.rs"]
+mod success;
+pub use success::{SuccessAcknowledgment, WriterSettlement, WriterSettlementAcknowledgment};
+
+#[cfg(test)]
+#[path = "owned_success_tests.rs"]
+mod success_tests;
+
+#[path = "owned_family_retirement.rs"]
+mod family_retirement;
+pub use family_retirement::*;
+
+#[path = "owned_upload.rs"]
+mod upload;
+pub use upload::*;
+
+#[path = "owned_observation.rs"]
+mod observation;
+pub use observation::*;
+
+#[path = "owned_baseline.rs"]
+mod baseline;
+pub use baseline::*;
+
+root!(mark_gap, resume_mark_gap, hold_mark_gap, GapInput, ());
+
+#[cfg(test)]
+#[path = "owned_stream_gap_tests.rs"]
+mod stream_gap_tests;

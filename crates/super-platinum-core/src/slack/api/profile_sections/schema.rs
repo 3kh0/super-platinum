@@ -52,6 +52,9 @@ impl OwnProfileSections {
     pub fn user_id(&self) -> &str {
         &self.user
     }
+    pub fn sections(&self) -> &[Value] {
+        &self.sections
+    }
     pub fn raw(&self) -> &Value {
         &self.raw
     }

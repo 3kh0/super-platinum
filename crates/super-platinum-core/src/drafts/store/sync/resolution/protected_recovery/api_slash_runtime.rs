@@ -19,7 +19,34 @@ pub(crate) struct QueuedClaim {
     pub(crate) claim: Claim,
     pub(crate) activity: u64,
 }
+/// Current accepted native checkpoint, bound by the closed owned facade.
+pub(crate) struct ArchiveInput {
+    pub(crate) stream: Stream,
+    pub(crate) expected: Review,
+    pub(crate) writer: Writer,
+    pub(crate) serial: u64,
+    pub(crate) intent: String,
+}
+#[derive(Clone)]
+pub(crate) struct Archived {
+    pub(crate) review: Review,
+    pub(crate) intent: String,
+}
+fn archive_error(error: archive::ArchiveError) -> Error {
+    match error {
+        archive::ArchiveError::Storage => Error::Storage,
+        archive::ArchiveError::Stale => Error::Stale,
+        archive::ArchiveError::Pending => Error::Pending,
+        archive::ArchiveError::NeedsRemoteReview | archive::ArchiveError::ChoiceRequired => {
+            Error::ReviewRequired
+        }
+    }
+}
 pub(crate) enum Command {
+    Archive {
+        input: Arc<ArchiveInput>,
+        reply: mpsc::Sender<Result<Archived, Error>>,
+    },
     Reserve {
         input: Arc<Input>,
         reply: mpsc::Sender<Result<(), Error>>,
@@ -37,12 +64,14 @@ pub(crate) enum Command {
 impl Command {
     pub(crate) fn account(&self) -> &str {
         match self {
+            Self::Archive { input, .. } => &input.expected.scope().account_id,
             Self::Reserve { input, .. } | Self::Claim { input, .. } => input.account(),
             Self::Complete { target, .. } => &target.scope().account_id,
         }
     }
     pub(crate) fn scope(&self) -> &Scope {
         match self {
+            Self::Archive { input, .. } => input.expected.scope(),
             Self::Reserve { input, .. } | Self::Claim { input, .. } => input.expected.scope(),
             Self::Complete { target, .. } => target.scope(),
         }
@@ -56,6 +85,32 @@ impl Command {
     ) -> crate::drafts::store::terminal::Report {
         use crate::drafts::store::terminal;
         match self {
+            Self::Archive { input, reply } => {
+                let result = (|| {
+                    if pending_input {
+                        return Err(Error::Pending);
+                    }
+                    let store = store?;
+                    let reviewed = archive::inspect(
+                        store,
+                        &input.stream,
+                        &input.expected,
+                        &input.writer,
+                        input.serial,
+                        &input.intent,
+                    )
+                    .map_err(archive_error)?;
+                    let archived =
+                        archive::archive_known(store, &reviewed).map_err(archive_error)?;
+                    Ok(Archived {
+                        review: archived.historical_review().map_err(archive_error)?,
+                        intent: archived.original_intent().to_owned(),
+                    })
+                })();
+                let report = terminal::protected(&result, terminal::accepted);
+                let _ = reply.send(result);
+                report
+            }
             Self::Reserve { input, reply } => {
                 let result = (|| {
                     if pending_input {
@@ -142,9 +197,17 @@ pub(crate) fn fixture_review(store: &DraftStore, scope: &Scope) -> Review {
     views::review(&store.0, scope).unwrap()
 }
 
+#[cfg(any(test, feature = "protected-test-support"))]
+pub(crate) fn seed_fresh_fixture(store: &mut DraftStore, account: &str) -> Result<(), Error> {
+    disk(storage::activate(store, account))?;
+    disk(adapter_schema::install(store, account))?;
+    disk(slash_journal::install(&mut store.0, account))?;
+    install(store, account)?;
+    completion::install(store, account)?;
+    history::migrate(store, account)?;
+    Ok(())
+}
 #[cfg(test)]
 pub(crate) fn fixture_seed(store: &mut DraftStore, account: &str) {
-    storage::activate(store, account).unwrap();
-    adapter_schema::install(store, account).unwrap();
-    fixture_install(store, account);
+    seed_fresh_fixture(store, account).unwrap();
 }

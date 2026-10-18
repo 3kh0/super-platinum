@@ -35,7 +35,7 @@ impl Selection {
 struct Load {
     selection: Arc<Selection>,
     ticket: session::LoadTicket,
-    job: Arc<Job<durable::Loaded>>,
+    job: Arc<Job<Arc<durable::Loaded>>>,
 }
 /// This owner is retained by its caller across ShellState replacement. Its
 /// selection is explicitly reconciled with each new shell; there is no timer.
@@ -159,7 +159,7 @@ impl Discovery {
     }
     /// Recover readiness after a UI waiter was canceled. This does not issue
     /// another read or duplicate the one-use result.
-    pub fn pending_load(&self, shell: &ShellState) -> Option<Wait<durable::Loaded>> {
+    pub fn pending_load(&self, shell: &ShellState) -> Option<Wait<Arc<durable::Loaded>>> {
         let selected = self.selection(shell).ok()?;
         self.load
             .as_ref()
@@ -169,7 +169,7 @@ impl Discovery {
     pub fn begin_load(
         &mut self,
         shell: &ShellState,
-    ) -> Result<Wait<durable::Loaded>, durable::Error> {
+    ) -> Result<Wait<Arc<durable::Loaded>>, durable::Error> {
         let selected = self.selection(shell)?.clone();
         if self.load.is_some() {
             return Err(durable::Error::Pending);
@@ -208,7 +208,7 @@ impl Discovery {
     pub fn finish_load(
         &mut self,
         shell: &ShellState,
-        wait: &Wait<durable::Loaded>,
+        wait: &Wait<Arc<durable::Loaded>>,
     ) -> Result<(), durable::Error> {
         let selected = self.selection(shell)?.clone();
         let load = self.load.as_ref().ok_or(durable::Error::Stale)?;
@@ -236,5 +236,22 @@ struct ReadPermit(Arc<AtomicUsize>);
 impl Drop for ReadPermit {
     fn drop(&mut self) {
         self.0.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+
+impl Discovery {
+    pub(in super::super) fn publish_current(
+        &mut self,
+        shell: &ShellState,
+        before: &View,
+        after: View,
+    ) -> bool {
+        let Ok(selected) = self.selection(shell).cloned() else {
+            return false;
+        };
+        self.status == Status::Ready
+            && self
+                .session
+                .apply(selected.account.id(), selected.epoch, before, after)
     }
 }

@@ -83,8 +83,7 @@ pub(super) fn known(conn: &Connection, team: &str) -> Result<u64, AppError> {
         .map(|n| n.unwrap_or(0))
 }
 
-/// Installation is explicit and private/test-only. Loading v5 never calls this.
-#[cfg(any(test, feature = "protected-test-support"))]
+/// Installation is explicit and private to validated owned migration. Loading v5 never calls this.
 pub(super) fn install(store: &DraftStore, account: &str) -> Result<(), AppError> {
     let tx = adapter_atomic::begin(&store.0)?;
     owner(&tx, account)?;

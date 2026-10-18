@@ -114,6 +114,7 @@ fn dirty_old_credential_proof_blocks_submit_but_required_field_can_correct() {
     view["blocks"][0]["optional"] = json!(false);
     s.app_modal = Some(super::super::Session::fixture(view));
     s.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: [("T1".into(), fixture::workspace())].into(),
     });

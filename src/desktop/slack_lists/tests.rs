@@ -22,6 +22,7 @@ pub(super) fn make_shell() -> ShellState {
     let user = shell.core.workspaces[&team].self_user_id.clone();
     shell.self_account.user_id = user.clone();
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: [(
             team.clone(),

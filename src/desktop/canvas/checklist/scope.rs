@@ -50,7 +50,7 @@ impl Scope {
     }
     /// Pending delivery belongs to the stable Slack identity even after its
     /// credentials rotate. This grants no permission to dispatch or adopt data.
-    pub(super) fn stable_current(&self, shell: &ShellState) -> bool {
+    pub(in crate::canvas) fn stable_current(&self, shell: &ShellState) -> bool {
         self.account == shell.core.active_account
             && shell.core.active_team.as_ref() == Some(&self.team)
             && shell.self_account.user_id == self.user

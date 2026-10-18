@@ -3,6 +3,7 @@
 //! users.profile.set title patch or an administrator profile-section editor.
 use super::*;
 use serde_json::{Value, json};
+pub mod custom;
 mod schema;
 pub use schema::OwnProfileSections;
 #[cfg(test)]

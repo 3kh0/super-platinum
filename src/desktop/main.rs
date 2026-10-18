@@ -4,6 +4,7 @@ use dioxus::prelude::*;
 
 mod activity_feed;
 mod agent;
+mod app_home;
 mod app_modal;
 mod appearance;
 mod auth;
@@ -17,6 +18,7 @@ mod canvas_create;
 mod channel_discovery;
 mod channel_mute;
 mod channel_resources;
+mod channel_tabs;
 mod channel_vm;
 mod clipboard;
 mod clipboard_check;
@@ -120,6 +122,41 @@ fn main() {
         #[cfg(feature = "protected-native-fixture")]
         if !drafts::protected::enrollment_fixture::enabled() || fixture::protected_requested() {
             eprintln!("protected-enrollment: exact exclusive fixture alias and CHECK=1 required");
+            std::process::exit(2);
+        }
+    }
+    if fixture::protected_baseline_requested() {
+        #[cfg(not(feature = "protected-native-fixture"))]
+        {
+            eprintln!("protected-owned-baseline: fixture feature required");
+            std::process::exit(2);
+        }
+        #[cfg(feature = "protected-native-fixture")]
+        if !drafts::protected::production::baseline_native::enabled()
+            || fixture::protected_requested()
+            || fixture::protected_owned_requested()
+            || fixture::protected_enrollment_requested()
+            || fixture::protected_adoption_requested()
+            || fixture::protected_slash_requested()
+        {
+            eprintln!("protected-owned-baseline: exact exclusive fixture opt-in required");
+            std::process::exit(2);
+        }
+    }
+    if fixture::protected_slash_requested() {
+        #[cfg(not(feature = "protected-native-fixture"))]
+        {
+            eprintln!("protected-owned-slash: fixture feature required");
+            std::process::exit(2);
+        }
+        #[cfg(feature = "protected-native-fixture")]
+        if !drafts::protected::slash_native::enabled()
+            || fixture::protected_requested()
+            || fixture::protected_owned_requested()
+            || fixture::protected_enrollment_requested()
+            || fixture::protected_adoption_requested()
+        {
+            eprintln!("protected-owned-slash: exact exclusive fixture opt-in required");
             std::process::exit(2);
         }
     }

@@ -430,6 +430,7 @@ fn cookie_token_enterprise_transport_and_newer_reads_revoke_original_admission()
         let (mut s, _c) = shell();
         let team = s.core.active_team.clone().unwrap();
         s.core.session = Some(Session {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "synthetic-cookie".into(),
             workspaces: BTreeMap::from([(
                 team.clone(),

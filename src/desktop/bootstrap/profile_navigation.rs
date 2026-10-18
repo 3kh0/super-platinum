@@ -453,6 +453,7 @@ mod tests {
                 name: "Fixture".into(),
             };
             shell.core.session = Some(super_platinum_core::config::Session {
+                unified_user_client_enabled: Default::default(),
                 d_cookie: "synthetic-only".into(),
                 workspaces: [("T1".into(), session)].into(),
             });

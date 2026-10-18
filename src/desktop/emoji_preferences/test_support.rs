@@ -195,6 +195,7 @@ fn shell() -> ShellState {
     shell.core.transport = Some(Arc::new(Transport::new("synthetic-cookie").unwrap()));
     shell.core.client = SlackClient::default();
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic-cookie".into(),
         workspaces: [(
             "T1".into(),

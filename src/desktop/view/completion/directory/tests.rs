@@ -180,6 +180,7 @@ fn credential_rotation_rejects_dispatch_and_late_adoption_but_navigation_retains
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
     shell.core.active_team = Some("T1".into());
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: [(
             "T1".into(),

@@ -73,11 +73,9 @@ pub(super) fn slash_guard(conn: &Connection, scope: &Scope) -> Result<(), AppErr
     slash_intent::guard(conn, scope)
 }
 
-#[cfg(any(test, feature = "protected-test-support"))]
 #[path = "api_store_upgrade.rs"]
 pub(in crate::drafts::store) mod upgrade;
 
-#[cfg(any(test, feature = "protected-test-support"))]
 #[path = "api_owned_store.rs"]
 pub mod owned_store;
 

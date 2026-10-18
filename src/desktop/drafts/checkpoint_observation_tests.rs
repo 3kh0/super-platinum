@@ -39,6 +39,7 @@ impl Fixture {
         shell.core.account_epoch = 7;
         shell.core.transport = Some(Arc::new(Transport::new("fixture-only-cookie").unwrap()));
         shell.core.session = Some(Session {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "fixture-only-cookie".into(),
             workspaces: [(
                 team.clone(),

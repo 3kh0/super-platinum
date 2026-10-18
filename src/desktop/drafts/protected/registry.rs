@@ -30,6 +30,28 @@ impl Registry {
         self.get(account, epoch, key)
             .is_some_and(|current| Arc::ptr_eq(&current, editor))
     }
+    /// Input preservation only, never renderer installation or dispatch proof.
+    /// A replacement registry may have no installed writer yet, while Host still
+    /// owns this exact Editor. A competing writer or wrong registry owner refuses.
+    pub fn accepts_retained_input(
+        &self,
+        account: &str,
+        epoch: u64,
+        key: &DraftKey,
+        editor: &Arc<Editor>,
+    ) -> bool {
+        let Ok(state) = self.0.lock() else {
+            return false;
+        };
+        state.account.as_deref() == Some(account)
+            && state.epoch == epoch
+            && editor.scope().account_id == account
+            && &editor.scope().key == key
+            && state
+                .writers
+                .get(key)
+                .is_none_or(|current| Arc::ptr_eq(current, editor))
+    }
     pub fn replace(
         &self,
         account: &str,

@@ -24,6 +24,7 @@ pub(crate) struct Capture {
     rows: Vec<Row>,
     input: ViewFilterChoice,
     review: owner::Review,
+    selects: Vec<(String, Vec<String>)>,
     deadline: Instant,
 }
 impl Drop for Capture {
@@ -38,8 +39,15 @@ impl Drop for Capture {
     }
 }
 impl Capture {
+    fn review_select_choices(&self, id: &str) -> Vec<String> {
+        self.selects
+            .iter()
+            .find(|(key, _)| key == id)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default()
+    }
     pub(crate) fn proof(&self) -> Value {
-        serde_json::json!({"token":self.token.to_string(),"serial":self.serial.to_string(),"visit":self.visit.to_string(),"structure":self.structure.to_string(),"rows":self.rows.iter().zip(self.input.conditions()).map(|(r,v)|serde_json::json!({"id":r.id.to_string(),"epoch":r.epoch.to_string(),"column":v.column_id(),"operator":operator(v),"number":matches!(v,ViewFilterChoice::Number{operator,..} if operator.requires_value())})).collect::<Vec<_>>()})
+        serde_json::json!({"token":self.token.to_string(),"serial":self.serial.to_string(),"visit":self.visit.to_string(),"structure":self.structure.to_string(),"rows":self.rows.iter().zip(self.input.conditions()).map(|(r,v)|{ let mut proof=serde_json::json!({"id":r.id.to_string(),"epoch":r.epoch.to_string(),"column":v.column_id(),"operator":operator(v),"number":matches!(v,ViewFilterChoice::Number{operator,..} if operator.requires_value())}); if let ViewFilterChoice::Select{column_id,operator,values}=v { proof["select"]=serde_json::json!({"choices":self.review_select_choices(column_id),"values":values,"active":operator.requires_values()}); } if let ViewFilterChoice::Date{operator,value,..}=v {proof["date"]=serde_json::json!({"active":operator.requires_value(),"kind":value.as_deref().filter(|v|DateFilterOperator::is_preset(v)).unwrap_or("custom")});} proof }).collect::<Vec<_>>()})
     }
     pub(crate) fn remaining(&self) -> Duration {
         self.deadline.saturating_duration_since(Instant::now())
@@ -74,6 +82,8 @@ pub(super) fn operator(v: &ViewFilterChoice) -> &'static str {
             }
         }
         ViewFilterChoice::Number { operator, .. } => operator.as_str(),
+        ViewFilterChoice::Select { operator, .. } => operator.as_str(),
+        ViewFilterChoice::Date { operator, .. } => operator.as_str(),
         _ => "",
     }
 }
@@ -107,6 +117,15 @@ pub(crate) fn reserve(
         rows: e.filter_rows,
         input,
         review,
+        selects: e
+            .original
+            .columns
+            .iter()
+            .filter_map(|c| {
+                ViewFilter::select_choices(c)
+                    .map(|v| (c.id.clone(), v.into_iter().map(|(id, _)| id).collect()))
+            })
+            .collect(),
         deadline,
     })
 }
@@ -138,6 +157,26 @@ pub(crate) fn finish_at(
             return None;
         }
         match value {
+            ViewFilterChoice::Date {
+                operator, value, ..
+            } => {
+                if !operator.valid_value(seen.value.as_deref()) {
+                    return None;
+                }
+                // Presets are structural choices, never authorized by native text capture.
+                if value.as_deref().is_some_and(DateFilterOperator::is_preset) {
+                    if seen.value != *value {
+                        return None;
+                    }
+                } else if seen
+                    .value
+                    .as_deref()
+                    .is_some_and(|v| !DateFilterOperator::is_calendar(v))
+                {
+                    return None;
+                }
+                *value = seen.value;
+            }
             ViewFilterChoice::Number {
                 operator, value, ..
             } => {
@@ -145,6 +184,14 @@ pub(crate) fn finish_at(
                     return None;
                 }
                 *value = seen.value;
+            }
+            ViewFilterChoice::Select {
+                operator, values, ..
+            } => {
+                let observed: Vec<String> = serde_json::from_str(seen.value.as_deref()?).ok()?;
+                if &observed != values || !operator.valid_values(&observed) {
+                    return None;
+                }
             }
             ViewFilterChoice::Checkbox { .. } => {
                 if seen.value.is_some() {

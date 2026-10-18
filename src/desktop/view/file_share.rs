@@ -10,6 +10,22 @@ mod recovery;
 mod status;
 pub(crate) use recovery::{RecoveryDialog, SavedFileShares};
 
+fn destination_icon(shell: &ShellState, destination: &file_share::Destination) -> Icon {
+    let direct = shell
+        .core
+        .active_team
+        .as_ref()
+        .and_then(|team| shell.core.workspaces.get(team))
+        .and_then(|w| w.channels.get(&destination.id))
+        .is_some_and(|c| c.is_im || c.is_mpim);
+    if direct {
+        Icon::DirectMessages
+    } else if destination.private {
+        Icon::Lock
+    } else {
+        Icon::Tag
+    }
+}
 fn frame(root: &str, generation: &str, selectors: &[&str], scroll: bool) {
     let script = include_str!("file_share/frame.js");
     let root = serde_json::to_string(root).unwrap();
@@ -124,7 +140,8 @@ pub(crate) fn FileShareDialog(mut state: Signal<ShellState>) -> Element {
     };
     let editable = dialog.phase == Phase::Editing && !dialog.closing;
     let picker_open = editable && (dialog.destination.is_none() || searching());
-    let can_submit = editable && dialog.editor_ready && dialog.destination.is_some();
+    let can_submit =
+        editable && dialog.editor_ready && file_share::destination_current(&snapshot, dialog);
     let blocks = serde_json::to_string(&dialog.note).unwrap_or_else(|_| "[]".into());
     let selected = dialog.destination.clone();
     let result = matches!(dialog.phase, Phase::Outcome | Phase::StorageFailed)
@@ -166,10 +183,13 @@ pub(crate) fn FileShareDialog(mut state: Signal<ShellState>) -> Element {
                 button {id:"file-share-close",r#type:"button",class:"icon-btn","aria-label":"Close file share",disabled:dialog.closing,onclick:move |_|close(state,&close_id),{icon(Icon::Close,"icon")}}
             }
             div {class:"file-share-body",
+                if editable && dialog.destination.is_some() && !file_share::destination_current(&snapshot, dialog) {
+                    p {class:"file-share-hint", "Choose the destination again to confirm the current recipient. Your message is retained."}
+                }
                 div {class:"file-share-source",{icon(Icon::AttachFile,"icon")}strong {"{dialog.file_title}"}}
                 if let Some(destination)=&selected {
                     div {class:"file-share-selected",
-                        if dialog.receipt.is_none() {{icon(if destination.private {Icon::Lock}else{Icon::Tag},"icon sm")}}
+                        if dialog.receipt.is_none() {{icon(destination_icon(&snapshot, destination),"icon sm")}}
                         span {"To {destination.name}"}
                         if editable && !picker_open {button {id:"file-share-change-destination",r#type:"button",
                             onmounted:move |_|{let pending=*choice_focus.peek();if pending {choice_focus.set(false);frame("file-share-dialog",&change_id,&["#file-share-change-destination"],false);}},
@@ -178,7 +198,7 @@ pub(crate) fn FileShareDialog(mut state: Signal<ShellState>) -> Element {
                 }
                 if picker_open {
                     label {r#for:"file-share-destination","Conversation"}
-                    input {id:"file-share-destination",value:query(),placeholder:"Search joined conversations",autocomplete:"off",role:"combobox","aria-autocomplete":"list","aria-expanded":true,"aria-controls":"file-share-options",
+                    input {id:"file-share-destination",value:query(),placeholder:"Search channels and direct messages",autocomplete:"off",role:"combobox","aria-autocomplete":"list","aria-expanded":true,"aria-controls":"file-share-options",
                         "aria-activedescendant":(!matches.read().is_empty()).then(||format!("file-share-option-{}",selected_index())),
                         onmounted:move |_|frame("file-share-dialog",&input_mount_id,&["#file-share-destination"],false),
                         oninput:move |event|{query.set(event.value());active.set(0);},
@@ -189,18 +209,18 @@ pub(crate) fn FileShareDialog(mut state: Signal<ShellState>) -> Element {
                             _=>{}
                         }
                     }
-                    div {id:"file-share-options",class:"file-share-options",role:"listbox","aria-label":"Joined conversations",
+                    div {id:"file-share-options",class:"file-share-options",role:"listbox","aria-label":"Available conversations",
                         for (index,destination) in matches.read().iter().enumerate() {
-                            {let destination=destination.clone();let dialog_id=id.clone();rsx!{
+                            {let destination=destination.clone();let choice_icon=destination_icon(&snapshot,&destination);let dialog_id=id.clone();rsx!{
                                 button {id:"file-share-option-{index}",key:"{destination.id}",r#type:"button",class:if index==selected_index(){"file-share-option selected"}else{"file-share-option"},role:"option","aria-selected":index==selected_index(),"data-destination":destination.id.clone(),
                                     onclick:move |_|{if choose(state,&dialog_id,&destination.id,query,active,searching){choice_focus.set(true);}},
-                                    {icon(if destination.private {Icon::Lock}else{Icon::Tag},"icon sm")}span {"{destination.name}"}
+                                    {icon(choice_icon,"icon sm")}span {"{destination.name}"}
                                 }
                             }}
                         }
-                        if matches.read().is_empty() {p {class:"file-share-hint",role:"status","No eligible joined conversations match."}}
+                        if matches.read().is_empty() {p {class:"file-share-hint",role:"status","No available conversations match."}}
                     }
-                    p {class:"file-share-hint","Choose a conversation you have joined in this workspace."}
+                    p {class:"file-share-hint","Choose a joined channel or an open direct message in this workspace."}
                 }
                 if dialog.editor_ready {
                     super::rich_editor::RichEditor {id:"file-share-note",label:"Add a message (optional)",blocks,autofocus:false,allow_lists:true,disabled:!editable}

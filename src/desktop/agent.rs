@@ -69,6 +69,10 @@ pub async fn serve(
     #[cfg(feature = "protected-native-fixture")]
     crate::drafts::protected::owned_native::check::start(state, desktop.clone());
     #[cfg(feature = "protected-native-fixture")]
+    crate::drafts::protected::slash_native::start(state);
+    #[cfg(feature = "protected-native-fixture")]
+    crate::drafts::protected::production::baseline_native::start(state, desktop.clone());
+    #[cfg(feature = "protected-native-fixture")]
     crate::drafts::protected::enrollment_fixture::check::start(state, desktop.clone());
     #[cfg(feature = "protected-native-fixture")]
     crate::drafts::protected::adoption_fixture::check::start(state, desktop.clone());

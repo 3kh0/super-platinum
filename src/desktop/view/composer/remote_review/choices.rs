@@ -125,3 +125,62 @@ pub(super) fn allowed(review: &RemoteReview, choice: &RemoteChoice) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+/// Display-only projection of the exact owned BaselineEvidence. Choice authority
+/// remains in that evidence and the existing worker's full-inventory CAS.
+pub(super) fn build_protected(evidence: &crate::drafts::protected::Evidence) -> Vec<Choice> {
+    let review = evidence.review();
+    let scope = review.scope();
+    let mut rows = Vec::new();
+    let mut push = |choice, label: String, local: &LocalDraft| {
+        let raw = review.row().state().desired().filter(|raw| {
+            codec::decode(&scope.key, raw).is_ok_and(|p| p.composer() == &local.composer)
+        });
+        let supported = local.attachments.is_empty()
+            && (raw.is_some()
+                || local.composer.text.is_empty()
+                || codec::encode_composer(&scope.key, &local.composer).is_ok());
+        rows.push(Choice {label,choice:Some(RemoteChoice::Local(choice)),content:Content::Local(local.clone()),retained:raw.cloned(),unavailable:(!supported).then_some("This version contains files or content that cannot be chosen here. Cancel to keep it and review it in Drafts; choosing another version replaces it.")});
+    };
+    push(
+        LocalChoice::Current,
+        "Current saved local draft".into(),
+        review.local(),
+    );
+    if let Some(blocked) = review.blocked() {
+        push(
+            LocalChoice::Blocked {
+                token: blocked.token.clone(),
+            },
+            "Preserved local version".into(),
+            &blocked.draft,
+        );
+    }
+    for (index, value) in review.alternates().iter().enumerate() {
+        push(
+            LocalChoice::Alternate {
+                writer_id: value.writer_id.clone(),
+                revision: value.revision,
+            },
+            format!("Saved local version {}", index + 1),
+            &value.draft,
+        );
+    }
+    if let Workflow::Conflict {
+        remote: Some(previous),
+        ..
+    } = review.row().state().workflow()
+    {
+        if previous.snapshot != evidence.remote().snapshot {
+            rows.push(Choice {label:"Previously preserved Slack version".into(),choice:None,content:Content::Snapshot(previous.snapshot.clone()),retained:None,unavailable:Some("This older Slack version is shown for comparison. Only the latest checked Slack version can be selected.")});
+        }
+    }
+    rows.push(Choice {
+        label: "Latest checked Slack version".into(),
+        choice: Some(RemoteChoice::Remote),
+        content: Content::Snapshot(evidence.remote().snapshot.clone()),
+        retained: None,
+        unavailable: None,
+    });
+    rows
+}

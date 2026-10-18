@@ -18,8 +18,10 @@ use super_platinum_core::{
 };
 use tokio::sync::oneshot;
 
+mod conversation;
 pub(super) mod reopen;
 mod request;
+pub(super) use conversation::{Conversation, peer};
 
 pub(super) const ACCOUNT: &str = "89fce7ae-a2c9-4c74-919b-4176535d5d70";
 pub(super) const TEAM: &str = "T00000001";
@@ -126,6 +128,10 @@ impl Inputs {
                 self.fixture.as_str(),
                 "file-share"
                     | "file-share-narrow"
+                    | "file-share-dm"
+                    | "file-share-dm-narrow"
+                    | "file-share-group-dm"
+                    | "file-share-group-dm-narrow"
                     | "file-share-pressure"
                     | "file-share-pressure-narrow"
             )
@@ -210,6 +216,7 @@ impl Paths {
 }
 
 struct Inner {
+    conversation: Conversation,
     paths: Paths,
     restart: Option<reopen::Seal>,
     case: Case,
@@ -254,6 +261,7 @@ impl Capability {
             return Err(Rejected::Owner);
         }
         Ok(Self(Arc::new(Inner {
+            conversation: Conversation::from_alias(&inputs.fixture),
             paths: Paths::load(&inputs)?,
             restart: None,
             case: inputs.case,
@@ -282,6 +290,7 @@ impl Capability {
             ack,
         };
         Ok(Self(Arc::new(Inner {
+            conversation: Conversation::from_alias(&inputs.fixture),
             paths: Paths::load(&inputs)?,
             restart: None,
             case,
@@ -361,7 +370,7 @@ impl Capability {
         Ok(())
     }
     fn record_begin(&self, receipt: &Receipt) -> Result<Option<oneshot::Receiver<()>>, Rejected> {
-        if self.0.restart.is_some() || !valid_receipt(receipt) {
+        if self.0.restart.is_some() || !valid_receipt(receipt, self.destination_id()) {
             return Err(Rejected::Request);
         }
         let mut ledger = self.0.ledger.lock().map_err(|_| Rejected::Poisoned)?;
@@ -425,17 +434,17 @@ impl Capability {
         Ok(json!({"ok":true,"file":source_file()}))
     }
     pub(super) fn destination_info(&self, id: &str) -> Result<Value, Rejected> {
-        if id != DESTINATION {
+        if id != self.destination_id() {
             return Err(Rejected::Read);
         }
         self.read("conversations.info")?;
-        Ok(json!({"ok":true,"channel":destination()}))
+        Ok(json!({"ok":true,"channel":self.0.conversation.raw()}))
     }
     /// Transient zero-credential builder input, never ShellState.session.
     /// The reserved .invalid origin cannot enter the real mutation allowlist.
     pub(super) fn prepare(&self, intent: &Intent) -> Result<PreparedRequest, Rejected> {
         let intent = intent.request().map_err(|_| Rejected::Request)?;
-        if intent.file_id() != FILE || intent.destination() != DESTINATION {
+        if intent.file_id() != FILE || intent.destination() != self.destination_id() {
             return Err(Rejected::Request);
         }
         let input = self.builder_session();
@@ -454,7 +463,7 @@ impl Capability {
     ) -> Result<oneshot::Receiver<Result<Value, Error>>, Rejected> {
         if self.0.restart.is_some()
             || self.0.case == Case::SourceStale
-            || !valid_receipt(receipt)
+            || !valid_receipt(receipt, self.destination_id())
             || !request::matches(&request, &self.prepare(&receipt.intent)?)
         {
             return Err(Rejected::Request);
@@ -499,7 +508,13 @@ impl Capability {
         if ledger.begun.as_ref() != Some(receipt) {
             return Err(Rejected::Request);
         }
-        if ledger.reads != ["files.info", "conversations.info"] {
+        if ledger.reads
+            != if self.0.conversation == Conversation::Direct {
+                vec!["files.info", "conversations.info", "users/info"]
+            } else {
+                vec!["files.info", "conversations.info"]
+            }
+        {
             return Err(Rejected::Read);
         }
         let (sender, receiver) = oneshot::channel();
@@ -552,12 +567,12 @@ fn redirected(metadata: &std::fs::Metadata) -> bool {
 fn rejected(_error: Rejected) -> Error {
     Error::Transport("disconnected file Share fixture rejected an operation".into())
 }
-fn valid_receipt(receipt: &Receipt) -> bool {
+fn valid_receipt(receipt: &Receipt, destination: &str) -> bool {
     receipt.state() == State::Unconfirmed
         && receipt.scope.team == TEAM
         && receipt.scope.user == USER
         && receipt.scope.file == FILE
-        && receipt.scope.destination == DESTINATION
+        && receipt.scope.destination == destination
 }
 fn disconnected_owner(shell: &ShellState) -> bool {
     shell.core.session.is_none()

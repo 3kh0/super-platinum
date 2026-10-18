@@ -31,7 +31,6 @@ pub(super) fn finish(
     })
 }
 // Same transaction/guards; only the private retained worker owns this Arc token.
-#[cfg(any(test, feature = "protected-test-support"))]
 pub(super) fn finish_retained(
     store: &DraftStore,
     ticket: &ObservationTicket,

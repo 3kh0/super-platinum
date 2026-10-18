@@ -9,6 +9,7 @@ pub(super) struct Journal {
     pub deferred_checks: BTreeMap<Key, super::recovery::DeferredCheck>,
     pub baselines: BTreeMap<Key, Arc<super::baseline::Completion>>,
     pub deferred_baselines: BTreeMap<Key, super::baseline::DeferredBaseline>,
+    pub owned_baselines: BTreeMap<DraftKey, Arc<super::owned_baseline::Read>>,
     pub next_job: u64,
     pub active: BTreeMap<u64, Scope>,
     repairs: std::collections::BTreeSet<(Key, RetainedKind)>,
@@ -117,13 +118,14 @@ impl Account {
     }
 }
 impl Journal {
-    fn occupied(&self) -> usize {
+    pub(super) fn occupied(&self) -> usize {
         self.active.len()
             + self.mutations.len()
             + self.checks.len()
             + self.deferred_checks.len()
             + self.baselines.len()
             + self.deferred_baselines.len()
+            + self.owned_baselines.len()
     }
     // Caller holds the journal lock. Check all fallible admission work before
     // removing the unique ticket; replacing its slot works even at capacity.
@@ -142,7 +144,8 @@ impl Journal {
         Ok((id, retained))
     }
     pub fn busy_team(&self, team: &str) -> bool {
-        self.active.values().any(|scope| scope.key.team == team)
+        self.owned_baselines.keys().any(|key| key.team == team)
+            || self.active.values().any(|scope| scope.key.team == team)
             || self.repairs.iter().any(|((key, _), _)| key.team == team)
             || self.mutations.keys().any(|(key, _)| key.team == team)
             || self.checks.keys().any(|(key, _)| key.team == team)
@@ -154,7 +157,8 @@ impl Journal {
                 .any(|(key, _)| key.team == team)
     }
     pub fn busy_scope(&self, scope: &Scope) -> bool {
-        self.active.values().any(|current| current == scope)
+        self.owned_baselines.contains_key(&scope.key)
+            || self.active.values().any(|current| current == scope)
             || self.repairs.iter().any(|((key, _), _)| key == &scope.key)
             || self.mutations.keys().any(|(key, _)| key == &scope.key)
             || self.checks.keys().any(|(key, _)| key == &scope.key)

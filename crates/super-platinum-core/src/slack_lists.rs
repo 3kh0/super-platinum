@@ -23,6 +23,10 @@ pub use column_create::{
     NumberCreatePrecision, SelectCreateFormat, SelectCreateOption, SelectCreateOptions,
 };
 mod view_rename;
+mod view_reorder;
+pub use view_reorder::{
+    ViewReorder, ViewReorderAttempt, ViewReorderDirection, ViewReorderPermit, ViewReorderPhase,
+};
 mod view_sort;
 pub use column_precision::{
     ColumnPrecision, ColumnPrecisionAttempt, ColumnPrecisionPermit, ColumnPrecisionPhase,
@@ -36,8 +40,8 @@ pub use view_create::{
     ViewCreate, ViewCreateAttempt, ViewCreatePermit, ViewCreatePhase, ViewLayout,
 };
 pub use view_filter::{
-    NumberFilterOperator, ViewFilter, ViewFilterAttempt, ViewFilterChoice, ViewFilterPermit,
-    ViewFilterPhase,
+    DateFilterOperator, NumberFilterOperator, SelectFilterOperator, ViewFilter, ViewFilterAttempt,
+    ViewFilterChoice, ViewFilterPermit, ViewFilterPhase,
 };
 pub use view_grouping::{
     ViewGrouping, ViewGroupingAttempt, ViewGroupingChoice, ViewGroupingPermit, ViewGroupingPhase,

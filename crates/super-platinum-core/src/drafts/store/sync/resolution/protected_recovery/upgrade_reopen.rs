@@ -77,7 +77,7 @@ impl Owned {
             use std::os::windows::fs::OpenOptionsExt;
             options.share_mode(1);
         }
-        let marker = options.open(marker_path)?;
+        let marker = options.open(&marker_path)?;
         marker
             .try_lock()
             .map_err(|_| invalid("fixture account still owned"))?;
@@ -97,6 +97,7 @@ impl Owned {
         }
         let owner = Arc::new(Self {
             root,
+            marker_path,
             path,
             account: ticket.account,
             marker: Mutex::new(marker),

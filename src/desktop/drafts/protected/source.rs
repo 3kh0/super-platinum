@@ -1,5 +1,5 @@
 //! Captured socket provenance plus a revocable durable continuity capability.
-//! This module has no realtime receiver or production wiring.
+//! Actual socket ownership is wired by production::socket; no receiver is duplicated here.
 use super::*;
 use crate::{drafts::observation, state::ShellState};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -42,6 +42,40 @@ impl Source {
         .await
     }
 
+    /// Reuse only an actual current remote proof already stored for this exact
+    /// Stream. An unverified remote row needs an explicit baseline read/choice;
+    /// it must never pass through local-origin verification.
+    pub(crate) async fn prepare_basis(
+        self: &Arc<Self>,
+        state: dioxus::prelude::Signal<ShellState>,
+        owner: Owner,
+        expected: durable::Review,
+    ) -> Result<durable::Review, durable::Error> {
+        use dioxus::prelude::ReadableExt;
+        if expected.row().state().acknowledged().is_none() {
+            return self.verify_local(state, owner, expected).await;
+        }
+        owner.check(&expected)?;
+        let actual = owner.review().await?;
+        let stream = {
+            let shell = state.try_peek().map_err(|_| durable::Error::Stale)?;
+            self.stream(&shell)?
+        };
+        owner.check_stream(&stream)?;
+        if !actual.same(&expected) {
+            return Err(durable::Error::Stale);
+        }
+        if actual.row().lineage().basis() != durable::Basis::Remote
+            || actual.row().lineage().verified_epoch() != stream.epoch()
+            || !editor_proof::clean(&actual)
+        {
+            return Err(durable::Error::ReviewRequired);
+        }
+        // No verification is minted here. Existing Consume/Slash admission
+        // independently rechecks full current inventory and pending ingress.
+        Ok(actual)
+    }
+
     /// A local basis is an explicit full-inventory decision. Opening a socket
     /// alone neither verifies a row nor enrolls local content.
     pub async fn verify_local(
@@ -55,19 +89,27 @@ impl Source {
         let source = self.clone();
         let (send, receive) = tokio::sync::oneshot::channel();
         dioxus::core::spawn_forever(async move {
-            let result = async {
-                let current = owner.review().await?;
-                if !current.same(&expected) {
-                    return Err(durable::Error::Stale);
+            let result =
+                async {
+                    let current = owner.review().await?;
+                    if !current.same(&expected) {
+                        return Err(durable::Error::Stale);
+                    }
+                    let stream = {
+                        let shell = state.try_peek().map_err(|_| durable::Error::Stale)?;
+                        source.stream(&shell)?
+                    };
+                    owner.check_stream(&stream)?;
+                    if let Some(route) = &owner.account.owned {
+                        return super::owned_route::Held::new(route.operations.verify_local(
+                            durable::owned_store::MutationInput { stream, expected },
+                        ))
+                        .observed_success()
+                        .await;
+                    }
+                    account::wait(owner.client()?.verify_local(stream, expected)).await
                 }
-                let stream = {
-                    let shell = state.try_peek().map_err(|_| durable::Error::Stale)?;
-                    source.stream(&shell)?
-                };
-                owner.check_stream(&stream)?;
-                account::wait(owner.client()?.verify_local(stream, expected)).await
-            }
-            .await;
+                .await;
             let _ = send.send(result);
         });
         receive.await.map_err(|_| durable::Error::Storage)?
@@ -167,6 +209,19 @@ impl Source {
                     .retire_stream(self.stream.clone(), reason, Some(self.runtime.clone()))
             }
         }
+    }
+    /// The actual worker completion is required before a reconnect can use a
+    /// replacement Stream. Canceling this waiter leaves the cleanup child held.
+    pub(crate) async fn close(
+        self: &Arc<Self>,
+        reason: durable::GapReason,
+    ) -> Result<(), durable::Error> {
+        self.gap(reason);
+        self.cleanup
+            .as_ref()
+            .ok_or(durable::Error::Unsupported)?
+            .gap_ready()
+            .await
     }
     /// Explicit disk-only repair. It never opens a stream or invokes transport.
     pub fn retry_gap(self: &Arc<Self>) -> Result<(), durable::Error> {

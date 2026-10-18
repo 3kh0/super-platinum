@@ -342,6 +342,7 @@ fn captured_session_rejects_replacement_but_response_decode_remains_original_sco
     shell.core.account_epoch = binding.epoch;
     shell.core.transport = Some(binding.transport.clone());
     shell.core.session = Some(super_platinum_core::config::Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "test-only-cookie".into(),
         workspaces: [(team.clone(), binding.workspace.clone())]
             .into_iter()

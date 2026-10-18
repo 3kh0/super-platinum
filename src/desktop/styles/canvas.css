@@ -156,3 +156,22 @@
 .canvas-comments-note { margin:0; padding:8px 20px; border-top:1px solid var(--border); flex-shrink:0; }
 .canvas-comments-error { color:var(--text); }
 @media(max-width:700px) { .canvas-dialog:has(.canvas-comments) .canvas-toolbar { flex-wrap:wrap; padding:6px 12px; gap:6px; } .canvas-comments-toolbar { padding:6px 12px; gap:6px; } .canvas-comments-scroll { padding:12px; } .canvas-comments-note { padding:6px 12px; } }
+
+/* Explicit local review keeps its actions outside the scrolling evidence. */
+.canvas-comment-review h3 { font-size:var(--text-md); margin:0 0 8px; }
+.canvas-comment-review p { font-size:var(--text-sm); margin:0 0 8px; }
+.canvas-comment-review input[type="checkbox"] { flex:none; }
+
+.canvas-comment-reply-field { width:100%; min-height:72px; max-height:160px; resize:vertical; }
+.canvas-comment-reply-version { white-space:pre-wrap; overflow-wrap:anywhere; max-height:160px; overflow:auto; }
+
+.canvas-comment-reply { display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3); }
+.canvas-comment-reply .canvas-comments-toolbar { padding:var(--space-2) 0; }
+.canvas-comment-reply-field { box-sizing:border-box; color:var(--text); background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:var(--space-2); font:inherit; }
+.canvas-comment-reply-field:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+/* Embedded channel tabs reuse the Canvas body and controls, without modal positioning. */
+.channel-canvas-panel { display:flex; flex:1; flex-direction:column; min-height:0; min-width:0; overflow:hidden; }
+.channel-canvas-panel > header { display:flex; align-items:center; }
+.channel-canvas-panel .canvas-toolbar { flex-wrap:wrap; }
+.channel-canvas-panel > header .canvas-more { margin:0; flex-shrink:0; }

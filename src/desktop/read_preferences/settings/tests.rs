@@ -170,6 +170,7 @@ fn exact_credentials_rotation_invalidates_captured_reads() {
         let t = Token::capture(&s).unwrap();
         let workspace = session(&s, &t).unwrap();
         s.core.session = Some(super_platinum_core::config::Session {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "fake-cookie".into(),
             workspaces: [("T1".into(), workspace)].into(),
         });

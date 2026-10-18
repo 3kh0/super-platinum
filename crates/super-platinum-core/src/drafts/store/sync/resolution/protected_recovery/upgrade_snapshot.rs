@@ -225,7 +225,7 @@ impl Image {
     // Never run a schema string copied from an unrecognized database.
     pub fn shadow(&self) -> Result<DraftStore, AppError> {
         self.shape()?;
-        let conn = Connection::open_in_memory()?;
+        let conn = Connection::open("")?;
         conn.execute_batch("PRAGMA synchronous=FULL;")?;
         for object in &self.schema {
             if object.kind == "table" && object.name != "sqlite_sequence" {

@@ -64,6 +64,23 @@ pub(super) fn install(store: &DraftStore, account: &str) -> Result<(), Error> {
     disk(tx.commit())
 }
 
+/// Closed owned-store migration only. All schema steps share its transaction.
+/// No fixture seed, dispatch permission, Current load, or local draft mutation.
+pub(super) fn initialize_transaction(conn: &Connection, account: &str) -> Result<(), AppError> {
+    if conn.is_autocommit() {
+        return Err(invalid("slash initialization requires owned transaction"));
+    }
+    adapter_schema::require(conn)?;
+    owner(conn, account)?;
+    slash_journal::install_transaction(conn, account)
+        .map_err(|_| invalid("slash journal initialization failed"))?;
+    bindings::install(conn, account)?;
+    completion::install_transaction(conn, account)?;
+    history::migrate_transaction(conn, account)
+        .map_err(|_| invalid("slash history initialization failed"))?;
+    upgrade_audit(conn, account, true, true)
+}
+
 pub(super) fn guard(conn: &Connection, scope: &Scope) -> Result<(), AppError> {
     bindings::guard(conn, scope)
 }
@@ -181,9 +198,8 @@ pub(super) fn claim(
 #[path = "api_slash_tests.rs"]
 mod tests;
 
-// Private test-build-only schema/audit bridge for inactive store inspection.
+// Private schema/audit bridge for validated owned store migration.
 // Operates on a trusted in-memory reference or shadow, never the inspected file.
-#[cfg(any(test, feature = "protected-test-support"))]
 pub(super) fn upgrade_reference(
     store: &mut DraftStore,
     account: &str,
@@ -207,7 +223,6 @@ pub(super) fn upgrade_reference(
     }
     Ok(())
 }
-#[cfg(any(test, feature = "protected-test-support"))]
 pub(super) fn upgrade_audit(
     conn: &Connection,
     account: &str,

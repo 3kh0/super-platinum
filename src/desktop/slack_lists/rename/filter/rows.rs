@@ -25,6 +25,9 @@ pub(crate) enum Action {
     Clear,
     Field(u64, u64, String),
     Operator(u64, u64, NumberFilterOperator),
+    SelectOperator(u64, u64, SelectFilterOperator),
+    DateOperator(u64, u64, DateFilterOperator),
+    DateValue(u64, u64, String),
 }
 fn default(doc: &Document, id: &str) -> Option<ViewFilterChoice> {
     let c = doc.column(id).filter(|c| ViewFilter::supports_column(c))?;
@@ -33,6 +36,18 @@ fn default(doc: &Document, id: &str) -> Option<ViewFilterChoice> {
             column_id: id.into(),
             operator: NumberFilterOperator::Equal,
             value: None,
+        }
+    } else if c.kind == "date" {
+        ViewFilterChoice::Date {
+            column_id: id.into(),
+            operator: DateFilterOperator::Equal,
+            value: None,
+        }
+    } else if c.kind == "select" {
+        ViewFilterChoice::Select {
+            column_id: id.into(),
+            operator: SelectFilterOperator::Contains,
+            values: vec![],
         }
     } else {
         ViewFilterChoice::Checkbox {
@@ -134,6 +149,80 @@ pub(crate) fn structural(
                 e.filter_rows[i].epoch = next_id();
                 format!("filter-field-{id}")
             }
+            Action::DateValue(id, epoch, selected) => {
+                let i = e
+                    .filter_rows
+                    .iter()
+                    .position(|r| r.id == id && r.epoch == epoch)?;
+                let ViewFilterChoice::Date {
+                    operator, value, ..
+                } = &mut values[i]
+                else {
+                    return None;
+                };
+                if !operator.requires_value()
+                    || (selected != "custom" && !DateFilterOperator::is_preset(&selected))
+                {
+                    return None;
+                }
+                if selected == "custom" {
+                    if !value.as_deref().is_some_and(DateFilterOperator::is_preset) {
+                        return None;
+                    }
+                    // Captured Custom -> on changes operator to Equal; retain no invented date.
+                    *operator = DateFilterOperator::Equal;
+                    *value = None;
+                } else {
+                    if value.as_deref() == Some(selected.as_str()) {
+                        return None;
+                    }
+                    *value = Some(selected);
+                }
+                e.filter_rows[i].epoch = next_id();
+                format!("filter-date-kind-{id}")
+            }
+            Action::DateOperator(id, epoch, op) => {
+                let i = e
+                    .filter_rows
+                    .iter()
+                    .position(|r| r.id == id && r.epoch == epoch)?;
+                let ViewFilterChoice::Date {
+                    operator, value, ..
+                } = &mut values[i]
+                else {
+                    return None;
+                };
+                if *operator == op {
+                    return None;
+                }
+                *operator = op;
+                if !op.requires_value() {
+                    *value = None;
+                }
+                e.filter_rows[i].epoch = next_id();
+                format!("filter-operator-{id}")
+            }
+            Action::SelectOperator(id, epoch, op) => {
+                let i = e
+                    .filter_rows
+                    .iter()
+                    .position(|r| r.id == id && r.epoch == epoch)?;
+                let ViewFilterChoice::Select {
+                    operator, values, ..
+                } = &mut values[i]
+                else {
+                    return None;
+                };
+                if *operator == op {
+                    return None;
+                }
+                *operator = op;
+                if !op.requires_values() {
+                    values.clear();
+                }
+                e.filter_rows[i].epoch = next_id();
+                format!("filter-operator-{id}")
+            }
             Action::Operator(id, epoch, op) => {
                 let i = e
                     .filter_rows
@@ -200,18 +289,24 @@ pub(crate) fn update_value(
             return false;
         };
         let mut values = input.conditions().to_vec();
-        let Some(ViewFilterChoice::Number {
-            operator,
-            value: old,
-            ..
-        }) = values.get_mut(i)
-        else {
-            return false;
-        };
-        if !operator.requires_value() {
-            return false;
+        match values.get_mut(i) {
+            Some(ViewFilterChoice::Number {
+                operator,
+                value: old,
+                ..
+            }) if operator.requires_value() => *old = Some(value),
+            Some(ViewFilterChoice::Date {
+                operator,
+                value: old,
+                ..
+            }) if operator.requires_value()
+                && !old.as_deref().is_some_and(DateFilterOperator::is_preset)
+                && !DateFilterOperator::is_preset(&value) =>
+            {
+                *old = Some(value)
+            }
+            _ => return false,
         }
-        *old = Some(value);
         e.input = Input::Filter(ViewFilterChoice::from_conditions(values));
         true
     })

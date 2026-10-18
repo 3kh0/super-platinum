@@ -97,6 +97,43 @@ impl Root {
         entries.remove(index);
         Ok(())
     }
+    /// Exact native-completed baseline choice; returns the observed original
+    /// terminal status without rewriting Failed as an uninterrupted success.
+    pub(crate) fn acknowledge_baseline(
+        &self,
+        operation: &Operation,
+    ) -> Result<Status, durable::Error> {
+        let mut entries = self
+            .entries
+            .try_borrow_mut()
+            .map_err(|_| durable::Error::Storage)?;
+        let index = entries
+            .iter()
+            .position(|entry| entry.operation.same(operation))
+            .ok_or(durable::Error::Stale)?;
+        {
+            let state = entries[index]
+                .state
+                .try_borrow()
+                .map_err(|_| durable::Error::Storage)?;
+            if state.polling || state.future.is_some() {
+                return Err(durable::Error::Pending);
+            }
+        }
+        let observed = operation.acknowledge_baseline_projection()?;
+        entries.remove(index);
+        Ok(observed)
+    }
+    #[cfg(feature = "protected-native-fixture")]
+    pub(crate) fn fixture_retained_operations(&self) -> Result<Vec<u64>, durable::Error> {
+        Ok(self
+            .entries
+            .try_borrow()
+            .map_err(|_| durable::Error::Storage)?
+            .iter()
+            .map(|v| v.operation.id())
+            .collect())
+    }
     /// Private composition point; only typed capture/delivery constructors call it.
     /// The actual non-Send future remains in this root, never only in the Task.
     pub(super) fn install(
@@ -197,3 +234,7 @@ impl Drop for Root {
 #[cfg(test)]
 #[path = "protected_operations/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "protected_operations/baseline_tests.rs"]
+mod baseline_tests;

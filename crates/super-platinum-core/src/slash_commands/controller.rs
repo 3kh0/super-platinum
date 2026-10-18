@@ -16,6 +16,12 @@ use std::{
     },
 };
 
+#[cfg(any(test, feature = "protected-test-support"))]
+#[path = "fixture_context.rs"]
+mod fixture_context;
+#[cfg(any(test, feature = "protected-test-support"))]
+pub(crate) use fixture_context::FixtureContext;
+
 #[path = "managed_terminal.rs"]
 mod managed_terminal;
 #[cfg(test)]
@@ -365,3 +371,7 @@ mod claimed;
 #[cfg(test)]
 pub(crate) use claimed::fixture_plan;
 pub(crate) use claimed::{ArmRefused, ClaimPlan};
+
+#[path = "production_context.rs"]
+mod production_context;
+pub(crate) use production_context::{DiscoveryFailure, ProductionContext};

@@ -1,5 +1,5 @@
-//! Inactive Slice 2a. Explicit test support only; no production Default migration route.
-//! An opaque fresh temporary owner and actual Worker fence are both mandatory.
+//! Validated owned migration; never an implicit Default-store upgrade.
+//! An opaque configured/fixture owner and actual Worker fence are mandatory.
 use super::*;
 use crate::drafts::store::terminal;
 use rusqlite::OpenFlags;
@@ -13,6 +13,8 @@ mod owned;
 mod rich;
 #[path = "upgrade_schema.rs"]
 mod schema;
+#[path = "upgrade_slash.rs"]
+mod slash;
 #[path = "upgrade_snapshot.rs"]
 mod snapshot;
 #[cfg(test)]
@@ -54,21 +56,28 @@ pub(in crate::drafts::store) enum Reply {
     Inspected(Arc<Review>),
     Committed(Receipt),
     Opened(Arc<Review>),
+    SlashInitialized { review: String, changed: bool },
 }
 pub(in crate::drafts::store) enum Action {
     Inspect,
     Commit(Arc<Review>),
     Handoff(Arc<Review>),
+    InitializeSlash(Arc<Review>),
 }
 pub(in crate::drafts::store) struct Command {
     owner: Arc<Owned>,
     action: Action,
     reply: mpsc::SyncSender<Result<Reply, AppError>>,
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub after_open: Option<Box<dyn FnOnce() + Send>>,
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub before_seal: Option<Box<dyn FnOnce() + Send>>,
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub after_seal: Option<Box<dyn FnOnce() + Send>>,
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub fault: Option<Step>,
 }
+#[cfg(any(test, feature = "protected-test-support"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(in crate::drafts::store) enum Step {
     Opened,
@@ -90,9 +99,13 @@ impl Command {
                 owner,
                 action,
                 reply,
+                #[cfg(any(test, feature = "protected-test-support"))]
                 after_open: None,
+                #[cfg(any(test, feature = "protected-test-support"))]
                 before_seal: None,
+                #[cfg(any(test, feature = "protected-test-support"))]
                 after_seal: None,
+                #[cfg(any(test, feature = "protected-test-support"))]
                 fault: None,
             },
             rx,
@@ -106,6 +119,13 @@ impl Command {
         let report = terminal::app(&result, |value| match value {
             Reply::Inspected(_) | Reply::Opened(_) => terminal::read(value),
             Reply::Committed(_) => terminal::accepted(value),
+            Reply::SlashInitialized { changed, .. } => {
+                if *changed {
+                    terminal::accepted(value)
+                } else {
+                    terminal::read(value)
+                }
+            }
         });
         let _ = self.reply.send(result);
         report
@@ -114,6 +134,9 @@ impl Command {
         self.owner.check()?;
         fence.check(self.owner.account())?;
         self.owner.bind_worker(fence.worker_id())?;
+        if let Action::InitializeSlash(review) = &self.action {
+            return self.initialize_slash(review.clone(), fence);
+        }
         if let Action::Handoff(review) = &self.action {
             review.validate_handoff(&self.owner, fence.worker_id(), fence.generation())?;
             fence.seal(self.owner.account())?;
@@ -135,7 +158,9 @@ impl Command {
                 self.owner.path(),
                 match self.action {
                     Action::Inspect => OpenFlags::SQLITE_OPEN_READ_ONLY,
-                    Action::Commit(_) | Action::Handoff(_) => OpenFlags::SQLITE_OPEN_READ_WRITE,
+                    Action::Commit(_) | Action::Handoff(_) | Action::InitializeSlash(_) => {
+                        OpenFlags::SQLITE_OPEN_READ_WRITE
+                    }
                 },
             )?)
         } else {
@@ -144,11 +169,13 @@ impl Command {
         if let Some(conn) = &conn {
             conn.busy_timeout(std::time::Duration::from_millis(100))?;
         }
+        #[cfg(any(test, feature = "protected-test-support"))]
         if let Some(hook) = self.after_open.take() {
             hook();
         }
         fence.check(self.owner.account())?;
         self.owner.check()?;
+        #[cfg(any(test, feature = "protected-test-support"))]
         step(self.fault, Step::Opened)?;
         if matches!(self.action, Action::Inspect) {
             let image = if let Some(conn) = &conn {
@@ -266,10 +293,13 @@ impl Command {
                 {
                     schema::complete_local_schema(&tx)?;
                 }
+                #[cfg(any(test, feature = "protected-test-support"))]
                 step(self.fault, Step::Ordinary)?;
                 storage::activate(&store, self.owner.account())?;
+                #[cfg(any(test, feature = "protected-test-support"))]
                 step(self.fault, Step::Imported)?;
                 adapter_schema::install(&store, self.owner.account())?;
+                #[cfg(any(test, feature = "protected-test-support"))]
                 step(self.fault, Step::Adapter)?;
                 let result = Image::read(&tx)?;
                 if let Some(before) = &review.image {
@@ -290,22 +320,27 @@ impl Command {
                     "INSERT INTO composer_draft_migration_receipt VALUES(1,1,?1,?2,?3,?4)",
                     params![self.owner.account(), review.id, source, result],
                 )?;
+                #[cfg(any(test, feature = "protected-test-support"))]
                 step(self.fault, Step::History)?;
                 schema::classify(&Image::read(&tx)?, self.owner.account())?;
                 let integrity: String = tx.query_row("PRAGMA integrity_check", [], |r| r.get(0))?;
                 if integrity != "ok" {
                     return Err(invalid("migration integrity check failed"));
                 }
+                #[cfg(any(test, feature = "protected-test-support"))]
                 if let Some(hook) = self.before_seal.take() {
                     hook();
                 }
                 self.owner.check()?;
                 same_file(&self.owner, bound_file)?;
+                #[cfg(any(test, feature = "protected-test-support"))]
                 step(self.fault, Step::BeforeCommit)?;
                 fence.seal(self.owner.account())?;
+                #[cfg(any(test, feature = "protected-test-support"))]
                 if let Some(hook) = self.after_seal.take() {
                     hook();
                 }
+                #[cfg(any(test, feature = "protected-test-support"))]
                 if self.fault == Some(Step::Commit) {
                     // Genuine deferred-FK failure at SQLite COMMIT, not an early return.
                     tx.execute_batch("CREATE TABLE upgrade_fault_parent(id INTEGER PRIMARY KEY); CREATE TABLE upgrade_fault_child(id INTEGER REFERENCES upgrade_fault_parent(id) DEFERRABLE INITIALLY DEFERRED); INSERT INTO upgrade_fault_child VALUES(1);")?;
@@ -357,6 +392,7 @@ fn imported(review: &Review) -> usize {
         .and_then(|v| v.tables.get("composer_draft_sync"))
         .map_or(0, |t| t.rows.len())
 }
+#[cfg(any(test, feature = "protected-test-support"))]
 fn step(fault: Option<Step>, at: Step) -> Result<(), AppError> {
     if fault == Some(at) {
         Err(invalid("injected upgrade fault"))
@@ -372,6 +408,7 @@ fn receipt_matches(image: &Image, review: &Review) -> Result<bool, AppError> {
     let row = &table.rows[0];
     Ok(row[3].text()? == review.id && row[4].text()? == serde_json::to_string(&review.image)?)
 }
+#[cfg(any(test, feature = "protected-test-support"))]
 pub(in crate::drafts::store) fn audit_test_store(
     store: &DraftStore,
     account: &str,

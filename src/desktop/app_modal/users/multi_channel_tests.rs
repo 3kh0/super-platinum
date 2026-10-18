@@ -110,6 +110,7 @@ fn initial_selection_outside_first_page_and_enterprise_are_supported_without_ori
         token: "synthetic".into(),
     };
     s.core.session = Some(super_platinum_core::config::Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: [("T1".into(), ws)].into(),
     });

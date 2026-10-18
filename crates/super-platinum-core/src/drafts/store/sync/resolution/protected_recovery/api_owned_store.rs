@@ -1,7 +1,13 @@
-//! Explicit inactive fixture ownership. No configured path, account UUID, SQL,
+//! Explicit configured cold ownership and gated fixture construction. No path, SQL,
 //! initialization mode or drain certificate can be supplied by a caller.
 //! Construction, handoff, reopening and waits perform disk I/O: use off renderer.
 use super::*;
+// Explicitly select the owned facade. The parent's legacy BaselineCompletion
+// otherwise shadows the public operations glob through the private import above.
+pub use crate::drafts::store::worker::owned_queue::operations::{
+    BaselineAcknowledgment, BaselineClaimed, BaselineCompletion, BaselineFinishInput,
+    BaselineInput, BaselineOutcome, BaselineRead, BaselineReserved, BaselineState,
+};
 use crate::drafts::store::worker::{
     owned_queue::{Job, Queue},
     protected_queue::Route,
@@ -58,6 +64,40 @@ pub struct CommitReceipt {
 }
 
 impl OwnedRoute {
+    /// Explicit cold acquisition only. Call off the renderer before the first
+    /// configured draft load/write. Failed acquisition is retained; a warm
+    /// default-worker account cannot be switched or drained by this method.
+    pub fn acquire_configured_cold(account: &str) -> Result<Self, Error> {
+        Ok(Self {
+            queue: crate::drafts::store::worker::configured::registry().acquire(account)?,
+        })
+    }
+
+    /// Fresh temporary store only, seeded before inspection. Blocking/off-renderer.
+    /// The returned context is structurally disconnected and has no live fallback.
+    #[cfg(any(test, feature = "protected-test-support"))]
+    pub fn fresh_slash_fixture(
+        target: SlashFixtureTarget,
+        outcome: SlashFixtureOutcome,
+    ) -> Result<(Self, SlashFixture), Error> {
+        let queue = Queue::fresh()?;
+        let fixture = SlashFixture::create(queue.clone(), target, outcome)?;
+        Ok((Self { queue }, fixture))
+    }
+
+    /// Closed temporary remote-baseline seed. No configured account/path input.
+    /// Call off-renderer, then perform the normal inspect/commit/open/cold path.
+    #[cfg(any(test, feature = "protected-test-support"))]
+    pub fn fresh_baseline_fixture(
+        target: BaselineFixtureTarget,
+        outcome: BaselineFixtureOutcome,
+    ) -> Result<(Self, BaselineFixture), Error> {
+        let queue = Queue::fresh()?;
+        let fixture = BaselineFixture::create(queue.clone(), target, outcome)?;
+        Ok((Self { queue }, fixture))
+    }
+
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub fn fresh_fixture() -> Result<Self, Error> {
         Ok(Self {
             queue: Queue::fresh()?,
@@ -65,6 +105,7 @@ impl OwnedRoute {
     }
     /// Locator parsing only selects the known temporary fixture. Real marker
     /// locking, file identity and read-only inspection establish fresh authority.
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub fn reopen_fixture(ticket: &str) -> Result<Self, Error> {
         Ok(Self {
             queue: Queue::reopen(ticket)?,
@@ -186,6 +227,7 @@ impl OpenedStore {
     pub fn migration_id(&self) -> Option<&str> {
         self.migration_id.as_deref()
     }
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub fn fixture_ticket(&self) -> Result<String, Error> {
         self.queue.ticket()
     }
@@ -200,3 +242,7 @@ impl OpenedStore {
 #[path = "api_owned_initialization.rs"]
 mod initialization;
 pub use initialization::*;
+
+#[path = "api_owned_slash_schema.rs"]
+mod slash_schema;
+pub use slash_schema::*;

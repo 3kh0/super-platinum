@@ -75,3 +75,12 @@
 .channel-mute-duration-controls { align-items:center; }
 .channel-mute-duration-controls label { font-size:var(--text-sm); color:var(--muted); }
 .channel-mute-duration-controls select { height:32px; min-width:120px; margin:0; padding:4px 8px; border:1px solid var(--border); border-radius:8px; background:var(--surface-raised); color:var(--text); font:inherit; }
+
+/* Channel tab management uses the existing compact channel-details surface. */
+.channel-tabs-manager input, .channel-tabs-manager select { width:100%; min-width:0; height:var(--control-height,32px); padding:0 8px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font:inherit; }
+.channel-tabs-manager .channel-detail-field { display:flex; flex-direction:column; gap:8px; }
+.channel-tabs-manager .scheduled-actions { flex-wrap:wrap; }
+.channel-tabs-manager h3 { margin:0; font-size:var(--text-sm); }
+
+.channel-tabs:has(#channel-tabs-manage) { overflow-x:auto; }
+.channel-tabs:has(#channel-tabs-manage) > button { flex:0 0 auto; white-space:nowrap; }

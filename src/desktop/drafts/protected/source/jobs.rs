@@ -187,7 +187,34 @@ impl Job {
         if !self.current(&state, &account) {
             return Err(durable::Error::Gap);
         }
-        let read = ReplyJob::new(account.client()?.stream_state(self.team.clone()));
+        // Owned admission needs a real enrolled destination. Team continuity
+        // is created by enrollment, never by a fabricated empty-channel scope.
+        let scope = if account.owned.is_some() {
+            let loaded = account.inventory().await?;
+            let key = loaded
+                .managed()
+                .keys()
+                .find(|key| key.team == self.team)
+                .cloned()
+                .ok_or(durable::Error::Stale)?;
+            if !self.current(&state, &account) {
+                return Err(durable::Error::Gap);
+            }
+            Some(Scope {
+                account_id: account.id().to_owned(),
+                key,
+            })
+        } else {
+            None
+        };
+        let read = match &account.owned {
+            Some(route) => ReplyJob::owned(route.operations.stream_state(
+                durable::owned_store::TeamInput {
+                    scope: scope.clone().ok_or(durable::Error::Stale)?,
+                },
+            )),
+            None => ReplyJob::new(account.client()?.stream_state(self.team.clone())),
+        };
         {
             let mut held = self.state.lock().unwrap();
             held.read = Some(read.clone());
@@ -198,7 +225,15 @@ impl Job {
         if !self.current(&state, &account) {
             return Err(durable::Error::Gap);
         }
-        let open = ReplyJob::new(account.client()?.open_stream(self.team.clone(), expected));
+        let open = match &account.owned {
+            Some(route) => ReplyJob::owned(route.operations.open_stream(
+                durable::owned_store::OpenInput {
+                    scope: scope.ok_or(durable::Error::Stale)?,
+                    expected,
+                },
+            )),
+            None => ReplyJob::new(account.client()?.open_stream(self.team.clone(), expected)),
+        };
         {
             let mut held = self.state.lock().unwrap();
             held.open = Some(open.clone());
@@ -261,6 +296,9 @@ impl Job {
     }
     pub(super) fn retire(self: &Arc<Self>, stream: durable::Stream, reason: durable::GapReason) {
         self.gap.retire(stream, reason);
+    }
+    pub(super) async fn gap_ready(&self) -> Result<(), durable::Error> {
+        self.gap.ready().await
     }
     pub(super) fn retry_gap(self: &Arc<Self>) -> Result<(), durable::Error> {
         self.gap.submit()

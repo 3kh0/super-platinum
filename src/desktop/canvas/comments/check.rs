@@ -3,6 +3,8 @@ use super::*;
 use serde_json::{Value, json};
 mod ready;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    mutation::check::start(state, desktop.clone());
+    reply::check::start(state, desktop.clone());
     if !fixture::requested()
         || std::env::var("SUPER_PLATINUM_CANVAS_COMMENTS_CHECK").as_deref() != Ok("1")
     {

@@ -277,6 +277,7 @@ fn captured_socket_source_rejects_account_transport_credential_and_generation_ch
         shell.core.account_epoch = 7;
         shell.core.transport = Some(Arc::new(Transport::new("fixture-only-cookie").unwrap()));
         shell.core.session = Some(Session {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "fixture-only-cookie".into(),
             workspaces: [(
                 team.clone(),

@@ -32,6 +32,7 @@ fn sample() -> ShellState {
     shell.self_account.user_id = session.user_id.clone();
     shell.core.active_account = Some("synthetic-account".into());
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic-cookie".into(),
         workspaces: [(session.team_id.clone(), session)].into(),
     });
@@ -483,3 +484,5 @@ fn pending_even_without_remaining_ticket_is_not_reclaimed() {
     owner.invalidate(true);
     assert!(owner.reclaimable());
 }
+
+mod direct;

@@ -13,6 +13,9 @@ use super_platinum_core::slack_lists::{
 use super_platinum_core::slack_lists::{
     ViewGrouping, ViewGroupingAttempt, ViewGroupingChoice, ViewGroupingPermit,
 };
+use super_platinum_core::slack_lists::{
+    ViewReorder, ViewReorderAttempt, ViewReorderDirection, ViewReorderPermit,
+};
 use super_platinum_core::slack_lists::{ViewSort, ViewSortAttempt, ViewSortChoice, ViewSortPermit};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Target {
@@ -21,6 +24,7 @@ pub(crate) enum Target {
     NewTextField(String),
     Precision(String),
     View(String),
+    Reorder(String, ViewReorderDirection),
     Filter(String),
     Sort(String),
     Grouping(String),
@@ -38,9 +42,13 @@ impl Target {
             | Self::Sort(v)
             | Self::Grouping(v)
             | Self::Filter(v) => Some(v),
+            Self::Reorder(v, _) => Some(v),
             Self::NewView(_, _) => None,
             Self::Visibility { view, .. } => Some(view),
         }
+    }
+    pub fn is_reorder(&self) -> bool {
+        matches!(self, Self::Reorder(..))
     }
     pub fn is_deletion(&self) -> bool {
         matches!(self, Self::DeleteColumn(_))
@@ -80,6 +88,7 @@ impl Target {
         matches!(
             self,
             Self::NewTextField(_)
+                | Self::Reorder(..)
                 | Self::View(_)
                 | Self::Sort(_)
                 | Self::Grouping(_)
@@ -109,7 +118,11 @@ impl Target {
             Self::Column(id) | Self::DeleteColumn(id) | Self::Precision(id) => {
                 doc.column(id).map(|c| c.name.as_str())
             }
-            Self::View(id) | Self::Sort(id) | Self::Filter(id) | Self::Grouping(id) => doc
+            Self::View(id)
+            | Self::Reorder(id, _)
+            | Self::Sort(id)
+            | Self::Filter(id)
+            | Self::Grouping(id) => doc
                 .views
                 .iter()
                 .find(|v| v["id"] == id.as_str())?
@@ -123,6 +136,7 @@ impl Target {
                 .views
                 .iter()
                 .any(|v| v["id"] == id.as_str() && v["type"] == "table" && ViewRename::supports(v)),
+            Self::Reorder(id, direction) => ViewReorder::choices(doc, id).contains(direction),
             Self::NewView(_, _) => ViewCreate::supports(doc),
             Self::Filter(view) => ViewFilter::current(doc, view).is_some(),
             Self::Sort(view) => ViewSort::current(doc, view).is_some(),
@@ -148,7 +162,8 @@ impl Target {
         personal: Option<&PersonalTaskLists>,
     ) -> Result<Intent, super_platinum_core::slack_lists::ListError> {
         let name = input.name().unwrap_or_default();
-        if self.is_deletion() != matches!(input, Input::DeleteColumn)
+        if self.is_reorder() != matches!(input, Input::Reorder)
+            || self.is_deletion() != matches!(input, Input::DeleteColumn)
             || self.is_text_creation() != matches!(input, Input::NewTextField(_))
             || self.is_filter() != matches!(input, Input::Filter(_))
             || self.is_sort() != matches!(input, Input::Sort(_))
@@ -161,6 +176,9 @@ impl Target {
             ));
         }
         match self {
+            Self::Reorder(id, direction) => {
+                ViewReorder::capture(doc, id, *direction, allow, personal).map(Intent::Reorder)
+            }
             Self::DeleteColumn(_) => Err(super_platinum_core::slack_lists::ListError(
                 "Field deletion requires authenticated schema permissions.",
             )),
@@ -217,6 +235,7 @@ impl Target {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum Input {
+    Reorder,
     DeleteColumn,
     Name(String),
     NewTextField(String),
@@ -242,6 +261,7 @@ pub(super) enum Intent {
     NewTextField(ColumnCreate),
     Precision(ColumnPrecision),
     View(ViewRename),
+    Reorder(ViewReorder),
     Visibility(ViewFieldVisibility),
     Filter(ViewFilter),
     Sort(ViewSort),
@@ -256,6 +276,7 @@ impl Intent {
             Self::NewTextField(i) => i.original(),
             Self::Precision(i) => i.original(),
             Self::View(i) => i.original(),
+            Self::Reorder(i) => i.original(),
             Self::Visibility(i) => i.original(),
             Self::Filter(i) => i.original(),
             Self::Sort(i) => i.original(),
@@ -265,6 +286,7 @@ impl Intent {
     }
     pub fn input(&self) -> Input {
         match self {
+            Self::Reorder(_) => Input::Reorder,
             Self::DeleteColumn(_) => Input::DeleteColumn,
             Self::Column(i) => Input::Name(i.desired_name().into()),
             Self::NewTextField(i) => Input::NewTextField(i.desired_name().into()),
@@ -283,6 +305,7 @@ impl Intent {
             Self::DeleteColumn(i) => i.observes_desired(doc),
             Self::Precision(i) => i.observes_desired(doc),
             Self::View(i) => i.observes_desired(doc),
+            Self::Reorder(i) => i.observes_desired(doc),
             Self::Visibility(i) => i.observes_desired(doc),
             Self::Filter(i) => i.observes_desired(doc),
             Self::Sort(i) => i.observes_desired(doc),
@@ -297,6 +320,10 @@ impl Intent {
         personal: &PersonalTaskLists,
     ) -> Option<Permit> {
         match self {
+            Self::Reorder(i) => ViewReorderAttempt::new(i.clone())
+                .admit(doc, allow, Some(personal))
+                .ok()
+                .map(Permit::Reorder),
             Self::DeleteColumn(_) => None, // Authenticated-user admission is mandatory.
             Self::NewTextField(_) => None, // Population/current-user admission is mandatory.
             Self::Grouping(i) => ViewGroupingAttempt::new(i.clone())
@@ -340,6 +367,7 @@ pub(super) enum Permit {
     NewTextField(ColumnCreatePermit),
     Precision(ColumnPrecisionPermit),
     View(ViewRenamePermit),
+    Reorder(ViewReorderPermit),
     Visibility(ViewFieldVisibilityPermit),
     Filter(ViewFilterPermit),
     Sort(ViewSortPermit),
@@ -347,6 +375,9 @@ pub(super) enum Permit {
     Create(ViewCreatePermit),
 }
 impl Permit {
+    pub fn is_reorder(&self) -> bool {
+        matches!(self, Self::Reorder(..))
+    }
     pub fn is_deletion(&self) -> bool {
         matches!(self, Self::DeleteColumn(_))
     }
@@ -391,6 +422,9 @@ impl Permit {
             }
             Self::Column(p) => {
                 super_platinum_core::slack::api::list_column_rename(client, session, p)
+            }
+            Self::Reorder(p) => {
+                super_platinum_core::slack::api::list_view_reorder(client, session, p)
             }
             Self::View(p) => super_platinum_core::slack::api::list_view_rename(client, session, p),
             Self::Sort(p) => super_platinum_core::slack::api::list_view_sort(client, session, p),

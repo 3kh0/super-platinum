@@ -27,6 +27,10 @@ pub(crate) fn intercept(state: Signal<ShellState>) -> bool {
 
 pub(crate) fn intercept_target(mut state: Signal<ShellState>, target: ComposerTarget) -> bool {
     #[cfg(feature = "protected-native-fixture")]
+    if super::protected::slash_native::intercept(state, target) {
+        return true;
+    }
+    #[cfg(feature = "protected-native-fixture")]
     if super::protected::owned_native::intercept(state, target) {
         return true;
     }
@@ -39,6 +43,9 @@ pub(crate) fn intercept_target(mut state: Signal<ShellState>, target: ComposerTa
         // A named managed-Send fixture never falls through to legacy sending,
         // even when its required explicit opt-in is absent or malformed.
         return fixture::named();
+    }
+    if super::protected::production::send::intercept(state, target) {
+        return true;
     }
     let captured = {
         let mut shell = state.write();

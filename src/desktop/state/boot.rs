@@ -296,9 +296,10 @@ impl ShellState {
         core.screen = super_platinum_core::state::Screen::Main;
         core.accounts = accounts.sessions.clone();
         core.active_account = Some(accounts.active_account.clone());
-        let drafts = super_platinum_core::drafts::store::load(&accounts.active_account);
-        let drafts_load_failed = drafts.is_err();
-        core.drafts = super_platinum_core::drafts::DraftBook::restored(drafts.unwrap_or_default());
+        // Async startup restore acquires the configured owner before any draft
+        // I/O. This unpublished shell must not start the ordinary worker first.
+        let drafts_load_failed = false;
+        core.drafts = Default::default();
         core.attachment_seq = core
             .drafts
             .items
@@ -386,6 +387,7 @@ impl ShellState {
             chat_paused: false,
             main_view: MainView::Home,
             channel_tab: ChannelTab::Messages,
+            channel_tabs: Default::default(),
             dm_query: String::new(),
             dm_unread_only: false,
             activity_tab: ActivityTab::default(),
@@ -460,6 +462,7 @@ impl ShellState {
             canvas_checklist: Default::default(),
             canvas_create: None,
             canvas_creation: Default::default(),
+            app_home: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -538,6 +541,7 @@ impl ShellState {
             chat_paused: false,
             main_view: MainView::Home,
             channel_tab: ChannelTab::Messages,
+            channel_tabs: Default::default(),
             dm_query: String::new(),
             dm_unread_only: false,
             activity_tab: ActivityTab::default(),
@@ -612,6 +616,7 @@ impl ShellState {
             canvas_checklist: Default::default(),
             canvas_create: None,
             canvas_creation: Default::default(),
+            app_home: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -884,6 +889,7 @@ impl ShellState {
             chat_paused: false,
             main_view: MainView::Home,
             channel_tab: ChannelTab::Messages,
+            channel_tabs: Default::default(),
             dm_query: String::new(),
             dm_unread_only: false,
             activity_tab: ActivityTab::default(),
@@ -958,6 +964,7 @@ impl ShellState {
             canvas_checklist: Default::default(),
             canvas_create: None,
             canvas_creation: Default::default(),
+            app_home: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -975,6 +982,12 @@ impl ShellState {
     pub(crate) fn fixture_variant(media: MediaRegistry, name: &str) -> Self {
         let mut state = Self::fixture(media);
         match name {
+            "channel-canvas-surface" | "channel-canvas-surface-narrow" => {
+                crate::canvas::surface::install_fixture(&mut state)
+            }
+            "channel-tabs-canvas" | "channel-tabs-canvas-narrow" => {
+                crate::channel_tabs::fixture::install(&mut state)
+            }
             "channel-window-10000" => crate::channel_vm::channel_window_fixture(&mut state),
             "member-add"
             | "member-live-refresh"
@@ -1050,6 +1063,9 @@ impl ShellState {
             | "slack-list-board-move-checkbox"
             | "slack-list-board-move-checkbox-narrow" => {
                 crate::slack_lists::fixture::board_move::install(&mut state, name)
+            }
+            "slack-list-view-order" | "slack-list-view-order-narrow" => {
+                crate::slack_lists::fixture::view_order::install(&mut state, name);
             }
             "slack-list-field-delete" | "slack-list-field-delete-narrow" => {
                 crate::slack_lists::fixture::field_delete::install(&mut state, name);
@@ -1149,6 +1165,9 @@ impl ShellState {
             "slack-list-number-filter" | "slack-list-number-filter-narrow" => {
                 crate::slack_lists::fixture::number_filter::install(&mut state, name);
             }
+            "slack-list-select-filter" | "slack-list-select-filter-narrow" => {
+                crate::slack_lists::fixture::select_filter::install(&mut state, name);
+            }
             "slack-list-view-filter" | "slack-list-view-filter-narrow" => {
                 crate::slack_lists::fixture::view_filter::install(&mut state, name);
             }
@@ -1189,6 +1208,15 @@ impl ShellState {
             "profile-title" | "profile-title-narrow" => {
                 crate::profile_title::fixture::install(&mut state)
             }
+            "profile-photo" | "profile-photo-narrow" => {
+                crate::profile_edit::photo::fixture::install(&mut state)
+            }
+            "profile-pronunciation" | "profile-pronunciation-narrow" => {
+                crate::profile_edit::sections::fixture::install_pronunciation(&mut state);
+            }
+            "profile-sections" | "profile-sections-narrow" => {
+                crate::profile_edit::sections::fixture::install(&mut state)
+            }
             "profile-edit" | "profile-edit-narrow" => {
                 crate::profile_edit::fixture::install(&mut state)
             }
@@ -1228,6 +1256,20 @@ impl ShellState {
             }
             "system-messages" => crate::fixture::system_messages(&mut state),
             "slack-links" | "slack-links-narrow" => crate::slack_links_check::install(&mut state),
+            "app-home" | "app-home-narrow" => crate::app_home::fixture::install(&mut state),
+            "app-calendar"
+            | "app-calendar-narrow"
+            | "app-calendar-modern"
+            | "app-calendar-modern-narrow"
+            | "app-calendar-connect"
+            | "app-calendar-connect-narrow"
+            | "app-calendar-uncertain"
+            | "app-calendar-uncertain-narrow" => {
+                crate::message_buttons::shortcuts::fixture::calendar(&mut state, name)
+            }
+            "app-shortcuts" | "app-shortcuts-narrow" => {
+                crate::message_buttons::shortcuts::fixture::install(&mut state)
+            }
             "app-modal-users" | "app-modal-users-narrow" => {
                 crate::app_modal::users_fixture::install(&mut state)
             }
@@ -1333,6 +1375,14 @@ impl ShellState {
             }
             "managed-draft-schedule" | "managed-draft-schedule-narrow" => {
                 crate::drafts::schedule::fixture::apply(&mut state)
+            }
+            #[cfg(feature = "protected-native-fixture")]
+            "protected-owned-baseline" | "protected-owned-baseline-narrow" => {
+                crate::drafts::protected::production::baseline_native::apply(&mut state)
+            }
+            #[cfg(feature = "protected-native-fixture")]
+            "protected-owned-slash" | "protected-owned-slash-narrow" => {
+                crate::drafts::protected::slash_native::apply(&mut state)
             }
             #[cfg(feature = "protected-native-fixture")]
             "protected-owned-send" | "protected-owned-send-narrow" => {
@@ -1592,12 +1642,18 @@ impl ShellState {
             | "canvas-narrow"
             | "canvas-comments"
             | "canvas-comments-narrow"
+            | "canvas-comment-resolve"
+            | "canvas-comment-resolve-narrow"
+            | "canvas-comment-reply"
+            | "canvas-comment-reply-narrow"
             | "canvas-checklist"
             | "canvas-checklist-narrow"
             | "canvas-text"
             | "canvas-text-narrow"
             | "canvas-structure"
             | "canvas-structure-narrow"
+            | "canvas-structure-mixed"
+            | "canvas-structure-mixed-narrow"
             | "canvas-replacement"
             | "canvas-replacement-narrow"
             | "canvas-structure-text"
@@ -1617,6 +1673,7 @@ impl ShellState {
                     permalink: None,
                 });
                 state.overlay = Some(Overlay::Canvas);
+                crate::canvas::comments::install_fixture(&mut state);
             }
             "unreads" => state.main_view = MainView::Unreads,
             "dms" => state.main_view = MainView::Dms,
@@ -2226,7 +2283,11 @@ impl ShellState {
             "file-share"
             | "file-share-narrow"
             | "file-share-pressure"
-            | "file-share-pressure-narrow" => crate::file_share::check::seed::install(&mut state),
+            | "file-share-pressure-narrow"
+            | "file-share-dm"
+            | "file-share-dm-narrow"
+            | "file-share-group-dm"
+            | "file-share-group-dm-narrow" => crate::file_share::check::seed::install(&mut state),
             "message-file-actions" | "message-file-actions-narrow" => {
                 crate::file_actions::attachment::check::fixture(&mut state)
             }

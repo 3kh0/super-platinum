@@ -275,10 +275,10 @@ mod tests;
 mod schedule_readback;
 pub(crate) use schedule_readback::check_schedule_with;
 
-#[cfg(any(test, feature = "protected-native-fixture"))]
 mod owned_attempt;
-#[cfg(any(test, feature = "protected-native-fixture"))]
 pub(crate) use owned_attempt::RegisteredMutation;
 
 #[cfg(test)]
 mod owned_route_fixture;
+
+mod slash;

@@ -151,6 +151,7 @@ fn credential_and_transport_replacement_invalidate_same_view_search() {
         let (mut shell, _, _, _) = setup();
         shell.core.transport = Some(Arc::new(Transport::new("synthetic-cookie").unwrap()));
         shell.core.session = Some(Credentials {
+            unified_user_client_enabled: Default::default(),
             d_cookie: "synthetic-cookie".into(),
             workspaces: [(
                 "T1".into(),

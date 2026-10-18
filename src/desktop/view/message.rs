@@ -46,6 +46,20 @@ fn message_tools(
     channel_id: &str,
     surface: RowSurface,
 ) -> Element {
+    let shortcut_source = {
+        let shell = state.read();
+        let bag = if surface.in_thread() {
+            shell
+                .thread_root
+                .clone()
+                .map(|root| crate::message_buttons::source::Bag::Thread { root })
+        } else {
+            Some(crate::message_buttons::source::Bag::Timeline)
+        };
+        bag.and_then(|bag| {
+            crate::message_buttons::source::Source::capture(&shell, message, channel_id, bag).ok()
+        })
+    };
     let can_reply = !surface.in_thread();
     if message.pending {
         return rsx! {};
@@ -69,6 +83,12 @@ fn message_tools(
                     move |_| crate::reaction_picker::open(state, channel.clone(), ts.clone())
                 },
                 {crate::icons::icon(crate::icons::Icon::AddReaction, "icon sm")}
+            }
+            if let Some(source)=shortcut_source {
+                button{title:"Message shortcuts","aria-label":"Message shortcuts",
+                    onclick:move |_|crate::message_buttons::shortcuts::open_message(state,source.clone()),
+                    {crate::icons::icon(crate::icons::Icon::GridView,"icon sm")}
+                }
             }
             if can_reply {
                 button {

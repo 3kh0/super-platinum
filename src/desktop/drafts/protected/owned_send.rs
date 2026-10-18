@@ -4,6 +4,8 @@ use super::ownership::Tracked as Mutex;
 use super::*;
 use crate::drafts::network::{Binding, RegisteredMutation};
 
+mod retire;
+
 type Prepared = o::StorageJob<Arc<o::SendInput>, durable::DispatchTicket>;
 type Claimed = o::StorageJob<Arc<o::SendInput>, durable::ClaimedDispatch>;
 pub(super) struct Send {
@@ -16,6 +18,8 @@ struct State {
     claimed: Option<Claimed>,
     adapter: Option<RegisteredMutation>,
     refusal: Option<o::AdmissionError>,
+    acknowledgment: Option<o::SendAcknowledgment>,
+    acknowledged: Option<durable::Review>,
 }
 impl Send {
     /// Desktop holder membership only. Core job progression is a separate edge.

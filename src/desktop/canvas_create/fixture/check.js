@@ -35,10 +35,11 @@
       f.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
       return {ok:true};
     }
-    if(operation==='reopen'){
+    if(operation==='reopen-ready'||operation==='reopen'){
       if(document.querySelector('[data-keyboard-dialog]'))return {ok:false,reason:'another dialog still mounted'};
       const b=[...document.querySelectorAll('.files-header button')].find(e=>e.textContent.trim()==='New canvas');
       if(!b||b.disabled)return {ok:false,reason:'actual New canvas control missing'};
+      if(operation==='reopen-ready'){const ready=hit(b);return {ok:ready,reason:ready?undefined:'New canvas is covered'};}
       b.scrollIntoView({block:'nearest'});b.focus();
       if(!hit(b))return {ok:false,reason:'New canvas is covered'};
       b.click();return {ok:true};

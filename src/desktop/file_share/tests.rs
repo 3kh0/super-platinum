@@ -23,6 +23,7 @@ fn sample() -> (ShellState, crate::file_actions::Target) {
     shell.core.active_account = Some(ACCOUNT.into());
     shell.self_account.user_id = user.clone();
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic-cookie".into(),
         workspaces: [(
             team.clone(),

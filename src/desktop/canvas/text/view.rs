@@ -122,8 +122,11 @@ pub(in crate::canvas) fn Editor(
 // focus in a replacement canvas or after the user focused another control.
 const MOUNT: &str = r#"function mountCanvasText(generation,visit,section){
  const editor=document.getElementById('canvas-text-editor');
- if(editor?.dataset.editorGeneration!==String(generation))return;
- const dialog=editor.closest('[role=dialog]');
+ if(editor?.dataset.editorGeneration!==String(generation)||editor.dataset.canvasVisit!==String(visit))return;
+ const dialog=editor.closest('.canvas-dialog[data-dialog-generation]');
+ if(!dialog?.isConnected||dialog.dataset.dialogGeneration!==String(visit))return;
+ if(!((dialog.id==='shell-overlay-dialog'&&dialog.getAttribute('role')==='dialog')||
+      (dialog.id==='channel-canvas-panel'&&dialog.getAttribute('role')==='region')))return;
  const observer=new MutationObserver(()=>{
   if(editor.isConnected)return;observer.disconnect();
   if(!dialog?.isConnected||dialog.dataset.dialogGeneration!==String(visit)||dialog.querySelector('#canvas-text-editor'))return;

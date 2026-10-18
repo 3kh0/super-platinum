@@ -55,6 +55,7 @@ pub(crate) fn install(shell: &mut ShellState) -> Result<(), String> {
     super::super::fixture::install(shell, "file-preview-refresh");
     shell.core.active_account = Some("refresh-native-fixture".into());
     shell.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: String::new(),
         workspaces: std::collections::BTreeMap::from([(
             "T1".into(),

@@ -333,3 +333,6 @@ mod inventory;
 
 #[path = "owned_local_fifo_tests.rs"]
 mod local_fifo;
+
+#[path = "owned_send_retirement_tests.rs"]
+mod retirement_tests;

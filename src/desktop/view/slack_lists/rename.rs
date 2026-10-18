@@ -3,6 +3,7 @@ mod entity;
 mod field_delete;
 mod rating;
 mod select;
+mod view_order;
 use crate::slack_lists::rename::{self, Stage};
 pub(super) fn action(
     state: Signal<ShellState>,
@@ -42,7 +43,7 @@ pub(super) fn view_action(state: Signal<ShellState>, visit: u64) -> Element {
     let selection = rename::selection(&shell).unwrap();
     let disabled = !rename::can_view(&shell);
     drop(shell);
-    rsx! {button{id:"slack-list-rename-view",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,"data-rename-view":"{id}","aria-label":"Rename selected view",title:"Rename selected view",onclick:move |_|rename::open_view(state,visit,selection),{icon(Icon::Compose,"icon")}span{"Rename view"}}}
+    rsx! {{view_order::actions(state,visit)}button{id:"slack-list-rename-view",r#type:"button",class:"slack-list-action slack-list-rename-header",disabled,"data-rename-view":"{id}","aria-label":"Rename selected view",title:"Rename selected view",onclick:move |_|rename::open_view(state,visit,selection),{icon(Icon::Compose,"icon")}span{"Rename view"}}}
 }
 pub(super) fn create_action(state: Signal<ShellState>, visit: u64) -> Element {
     let selection = rename::selection(&state.read()).unwrap_or_default();
@@ -73,6 +74,9 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
     let text_creation = view.text_creation;
     let deletion = view.deletion;
     let deleting = deletion.is_some();
+    let reorder = view.reorder;
+    let reordering = reorder.is_some();
+    let order_direction = reorder.as_ref().map(|p| p.direction).unwrap_or_default();
     let field_choice = view.field_choice;
     let field_kind = field_choice.map(|c| c.kind.as_str()).unwrap_or_default();
     let field_label = field_choice
@@ -115,7 +119,9 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
     } else {
         String::new()
     };
-    let title = if deleting {
+    let title = if reordering {
+        "Move view".to_owned()
+    } else if deleting {
         "Delete field".to_owned()
     } else if text_creation {
         "Add field".to_owned()
@@ -148,7 +154,7 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
     let select_valid = view.select_draft.as_ref().is_none_or(|d| d.ready());
     let filter_save = filter.clone();
     let grouping_save = view_grouping.clone();
-    let unchanged = if deleting {
+    let unchanged = if deleting || reordering {
         false
     } else if let Some(p) = &view_grouping {
         p.desired == p.original
@@ -182,7 +188,7 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
     ) || (matches!(view.stage, Stage::Conflict | Stage::Available)
         && view.current_review);
     let closable = closable
-        && (!(text_creation || deleting || view_grouping.is_some())
+        && (!(text_creation || deleting || reordering || view_grouping.is_some())
             || view.stage != Stage::Observed
             || view.current_review);
     let stage = format!("{:?}", view.stage);
@@ -190,11 +196,11 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
     rsx! { {std::iter::once(rsx! {
         div{key:"{serial}",class:"slack-list-editor-shade"}
         section{inert:picker.map(|_|true),id:"slack-list-rename",class:"slack-list-cell-editor",role:"dialog","aria-modal":"true","aria-labelledby":"slack-list-rename-title",
-            "data-keyboard-dialog":"true","data-delete-column":if deleting{column.clone()}else{String::new()},"data-rename-serial":"{serial}","data-rename-stage":"{stage}","data-rename-column":"{column}","data-precision-column":"{precision_column}","data-rename-view":"{saved_view}","data-view-create":"{create_layout}","data-visibility-view":"{visibility_view}","data-filter-view":"{filter_view}","data-new-text-field-view":"{text_view}","data-sort-view":"{sort_view}","data-grouping-view":"{grouping_view}",
+            "data-keyboard-dialog":"true","data-reorder-direction":"{order_direction}","data-delete-column":if deleting{column.clone()}else{String::new()},"data-rename-serial":"{serial}","data-rename-stage":"{stage}","data-rename-column":"{column}","data-precision-column":"{precision_column}","data-rename-view":"{saved_view}","data-view-create":"{create_layout}","data-visibility-view":"{visibility_view}","data-filter-view":"{filter_view}","data-new-text-field-view":"{text_view}","data-sort-view":"{sort_view}","data-grouping-view":"{grouping_view}",
             onmounted:move |_|{dioxus::document::eval(&format!("{}\n{}\n{}",include_str!("rename_restore.js"),include_str!("view_create_restore.js"),include_str!("rename_focus.js")));},
             h3{id:"slack-list-rename-title","{title}"}
             div{class:"slack-list-editor-body",
-                if !deleting && !text_creation && creation.is_none() && precision.is_none() && visibility.is_none() && sort.is_none() && filter.is_none() && view_grouping.is_none(){p{class:"slack-list-editor-item","Original name: {view.before}"}}
+                if !reordering && !deleting && !text_creation && creation.is_none() && precision.is_none() && visibility.is_none() && sort.is_none() && filter.is_none() && view_grouping.is_none(){p{class:"slack-list-editor-item","Original name: {view.before}"}}
                 if text_creation {
                     label{r#for:"slack-list-new-field-kind","Type"}
                     select{id:"slack-list-new-field-kind",value:"{field_kind}","data-field-choice":"{field_revision}",disabled:!editing||!view.can_confirm,
@@ -236,7 +242,7 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
                         }
                     }
                 }
-                if let Some(p)=deletion.clone() {{field_delete::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=view_grouping.clone() {{super::grouping::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=filter.clone() {{super::filter::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=sort.clone() {{super::sort::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=visibility.clone() {{super::visibility::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=precision.clone() {{super::precision::fields(state,serial,visit,p,editing && view.can_confirm)}} else {
+                if let Some(p)=reorder.clone() {{view_order::fields(p)}} else if let Some(p)=deletion.clone() {{field_delete::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=view_grouping.clone() {{super::grouping::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=filter.clone() {{super::filter::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=sort.clone() {{super::sort::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=visibility.clone() {{super::visibility::fields(state,serial,visit,p,editing && view.can_confirm)}} else if let Some(p)=precision.clone() {{super::precision::fields(state,serial,visit,p,editing && view.can_confirm)}} else {
                 label{r#for:"slack-list-rename-name","{label}"}
                 input{id:"slack-list-rename-name",r#type:"text","data-field-choice":"{field_revision}",value:"{view.name}",maxlength:view.limit,disabled:!editing||(text_creation&&!view.can_confirm),
                     oninput:move |event|{if text_creation {if let Some(rendered)=field_choice {rename::text_create::input(state,serial,visit,selected,rendered,event.value());}}else{rename::input(state,serial,event.value())}}}
@@ -254,10 +260,10 @@ fn render_panel(state: Signal<ShellState>, view: rename::Presentation) -> Elemen
             div{class:"slack-list-editor-actions",
                 button{id:"slack-list-rename-leave",r#type:"button",onclick:move |_|{let mut state=state;crate::slack_lists::close_shell(&mut state.write());},"Close list"}
                 if closable{button{id:"slack-list-rename-close",r#type:"button",onclick:move |_|close(state,serial,visit),if editing{"Cancel"}else if matches!(view.stage,Stage::Conflict|Stage::Available){"Close review"}else{"Done"}}}
-                if editing{button{id:"slack-list-rename-confirm",r#type:"button",class:if deleting{"danger"}else{"primary"},disabled:picker.is_some()||!view.can_confirm||!filter_valid||!select_valid||(!deleting&&precision.is_none()&&visibility.is_none()&&sort.is_none()&&filter.is_none()&&view_grouping.is_none()&&view.name.trim().is_empty())||unchanged,
-                    onclick:move |_|{if let Some(p)=grouping_save.clone(){rename::grouping::confirm(state,serial,visit,p.choice)}else{super::filter::confirm(state,serial,visit,filter_save.clone())}},if deleting{"Delete field permanently"}else if visibility.is_some()||sort.is_some()||filter.is_some()||view_grouping.is_some(){"Save for everyone"}else if precision.is_some(){"Save"}else if text_creation{"Create field"}else if creation.is_some(){"Create view"}else{"Rename {noun}"}}}
+                if editing{button{id:"slack-list-rename-confirm",r#type:"button",class:if deleting{"danger"}else{"primary"},disabled:picker.is_some()||!view.can_confirm||!filter_valid||!select_valid||(!reordering&&!deleting&&precision.is_none()&&visibility.is_none()&&sort.is_none()&&filter.is_none()&&view_grouping.is_none()&&view.name.trim().is_empty())||unchanged,
+                    onclick:move |_|{if let Some(p)=grouping_save.clone(){rename::grouping::confirm(state,serial,visit,p.choice)}else{super::filter::confirm(state,serial,visit,filter_save.clone())}},if deleting{"Delete field permanently"}else if reordering||visibility.is_some()||sort.is_some()||filter.is_some()||view_grouping.is_some(){"Save for everyone"}else if precision.is_some(){"Save"}else if text_creation{"Create field"}else if creation.is_some(){"Create view"}else{"Rename {noun}"}}}
                 if checkable{button{id:"slack-list-rename-check",r#type:"button",class:"primary",disabled:!view.can_check,
-                    onclick:move |_|rename::check(state,serial),if view_grouping.is_some(){"Check current grouping"}else if sort.is_some(){"Check current sort"}else if filter.is_some(){"Check current filter"}else if visibility.is_some(){"Check current visibility"}else if precision.is_some(){"Check current format"}else if text_creation||deleting{"Check current fields"}else if creation.is_some(){"Check current views"}else{"Check current {noun}"}}}
+                    onclick:move |_|rename::check(state,serial),if reordering{"Check current views"}else if view_grouping.is_some(){"Check current grouping"}else if sort.is_some(){"Check current sort"}else if filter.is_some(){"Check current filter"}else if visibility.is_some(){"Check current visibility"}else if precision.is_some(){"Check current format"}else if text_creation||deleting{"Check current fields"}else if creation.is_some(){"Check current views"}else{"Check current {noun}"}}}
                 if view.stage==Stage::Available {button{id:"slack-list-new-view-open",r#type:"button",class:"primary",disabled:!view.can_navigate,onclick:move |_|{if let Some(opened)=rename::view_create::open_available(state,serial){let proof=serde_json::to_string(&opened).unwrap();dioxus::document::eval(&format!("window.__listViewCreateReturn?.commit({proof})"));}},"Open view"}}
                 if busy{span{role:"status","Please wait..."}}
             }

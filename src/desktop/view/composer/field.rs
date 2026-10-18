@@ -19,6 +19,7 @@ pub(super) struct MountLease {
     target: u8,
     alive: Cell<bool>,
     mounted: Cell<bool>,
+    slash: std::cell::RefCell<Vec<std::sync::Weak<crate::drafts::protected::owned_slash::Context>>>,
 }
 
 fn target_key(target: ComposerTarget) -> u8 {
@@ -37,9 +38,15 @@ impl MountLease {
             target: target_key(target),
             alive: Cell::new(true),
             mounted: Cell::new(false),
+            slash: Default::default(),
         });
         VISITS.with_borrow_mut(|visits| {
-            visits.insert((view, lease.target), Rc::downgrade(&lease));
+            if let Some(old) = visits
+                .insert((view, lease.target), Rc::downgrade(&lease))
+                .and_then(|v| v.upgrade())
+            {
+                old.revoke_slash();
+            }
         });
         lease
     }
@@ -55,7 +62,33 @@ impl MountLease {
             })
     }
 
+    pub(super) fn revoke_slash(&self) {
+        for context in self
+            .slash
+            .borrow_mut()
+            .drain(..)
+            .filter_map(|v| v.upgrade())
+        {
+            context.revoke();
+        }
+    }
+    pub(super) fn watch_slash(
+        &self,
+        context: &std::sync::Arc<crate::drafts::protected::owned_slash::Context>,
+    ) -> bool {
+        if !self.current() {
+            return false;
+        }
+        let mut values = self.slash.borrow_mut();
+        values.retain(|v| v.strong_count() != 0);
+        if values.len() >= crate::drafts::protected::operation::MAX_OPERATIONS {
+            return false;
+        }
+        values.push(std::sync::Arc::downgrade(context));
+        true
+    }
     fn retire(&self) {
+        self.revoke_slash();
         self.alive.set(false);
         VISITS.with_borrow_mut(|visits| {
             let key = (self.view, self.target);
@@ -98,6 +131,7 @@ pub(super) fn ComposerField(
     };
     let mounted = lease.clone();
     let input = lease.clone();
+    let composing = lease.clone();
     let keydown = lease.clone();
     let destination = state.peek().composer_key(target);
     let account = state.peek().core.active_account.clone();
@@ -127,7 +161,9 @@ pub(super) fn ComposerField(
                 mount_autosize(id);
                 projection::mount_native(id, &mounted.scope, &mounted.token);
             },
+            oncompositionstart: move |_| composing.revoke_slash(),
             oninput: move |event| {
+                input.revoke_slash();
                 let value = event.value();
                 let end = value.len();
                 let mut shell = state.write();
@@ -190,5 +226,45 @@ mod tests {
         assert!(channel.current());
         assert!(!thread.current());
         channel.retire();
+    }
+}
+
+#[cfg(test)]
+mod slash_tests {
+    use super::*;
+    use super_platinum_core::drafts::store::protected::owned_store::{
+        OwnedRoute, SlashFixtureOutcome, SlashFixtureTarget,
+    };
+    #[test]
+    fn exact_mount_input_and_replacement_permanently_revoke_only_owned_context() {
+        let (_, first_context) = OwnedRoute::fresh_slash_fixture(
+            SlashFixtureTarget::Channel,
+            SlashFixtureOutcome::HeldClear,
+        )
+        .unwrap();
+        let first_context = std::sync::Arc::new(first_context);
+        let first = MountLease::new(8101, ComposerTarget::Channel, "scope".into());
+        first.mounted.set(true);
+        let first_watch =
+            crate::drafts::protected::owned_slash::Context::fixture(first_context.clone());
+        assert!(first.watch_slash(&first_watch));
+        first.revoke_slash();
+        assert!(!first_context.is_live());
+        let (_, second_context) = OwnedRoute::fresh_slash_fixture(
+            SlashFixtureTarget::Channel,
+            SlashFixtureOutcome::HeldClear,
+        )
+        .unwrap();
+        let second_context = std::sync::Arc::new(second_context);
+        let second_watch =
+            crate::drafts::protected::owned_slash::Context::fixture(second_context.clone());
+        assert!(first.watch_slash(&second_watch));
+        let second = MountLease::new(8101, ComposerTarget::Channel, "scope".into());
+        second.mounted.set(true);
+        assert!(!second_context.is_live());
+        assert!(!first.watch_slash(&second_watch));
+        first.retire();
+        assert!(second.current());
+        second.retire();
     }
 }

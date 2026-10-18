@@ -39,9 +39,11 @@ pub use list_view_grouping::ListViewGroupingFailure;
 pub use list_view_sort::ListViewSortFailure;
 mod list_view_create;
 mod list_view_rename;
+mod list_view_reorder;
 pub use list_field_visibility::ListFieldVisibilityFailure;
 pub use list_view_create::ListViewCreateFailure;
 pub use list_view_rename::ListViewRenameFailure;
+pub use list_view_reorder::ListViewReorderFailure;
 mod list_column_rename_read;
 pub use list_column_rename::ListColumnRenameFailure;
 pub use list_column_rename_read::ListColumnRenameReadFailure;
@@ -50,6 +52,7 @@ mod mention_search;
 mod notification_preferences;
 mod notification_schedule;
 mod own_profile;
+mod own_profile_photo;
 mod presentation_notifications;
 mod profile_sections;
 mod read_preferences;
@@ -587,11 +590,34 @@ impl Transport {
 }
 
 fn is_block_interaction_request(req: &PreparedRequest) -> bool {
+    // Calendar has one captured scalar preference write. Never grant this
+    // single-attempt seam to unrelated preferences or arbitrary form members.
+    if req.method == "POST"
+        && url::Url::parse(&req.url).is_ok_and(|u| u.path() == "/api/users.prefs.set")
+    {
+        let RequestBody::Form(fields) = &req.body else {
+            return false;
+        };
+        let map: std::collections::BTreeMap<_, _> = fields
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect();
+        return map.len() == fields.len()
+            && map.len() == 4
+            && map.get("token").is_some_and(|s| !s.is_empty())
+            && map.get("name") == Some(&"calendar_share_event_in_channel")
+            && matches!(map.get("value"), Some(&"true" | &"false"))
+            && map.get("_x_reason") == Some(&"prefs-api/setUserPrefByApi");
+    }
     req.method == "POST"
         && url::Url::parse(&req.url).is_ok_and(|url| {
             matches!(
                 url.path(),
                 "/api/blocks.actions"
+                    | "/api/apps.actions.v2.execute"
+                    | "/api/apps.home.dispatchOpenEvent"
+                    | "/api/calendar.event.create"
+                    | "/api/rooms.request"
                     | "/api/blocks.suggestions"
                     | "/api/views.get"
                     | "/api/views.submit"
@@ -1042,3 +1068,7 @@ mod tests {
 
 #[cfg(any(test, feature = "protected-test-support"))]
 mod disconnected_fixture;
+
+#[cfg(test)]
+#[path = "transport/calendar_tests.rs"]
+mod calendar_tests;

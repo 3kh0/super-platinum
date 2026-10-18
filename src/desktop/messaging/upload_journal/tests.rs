@@ -185,6 +185,7 @@ fn send_visit_rejects_credential_rotation_but_allows_navigation() {
     s.core.transport = Some(transport.clone());
     let team = s.core.active_team.clone().unwrap();
     s.core.session = Some(super_platinum_core::config::Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "synthetic".into(),
         workspaces: std::collections::BTreeMap::from([(
             team.clone(),

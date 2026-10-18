@@ -146,6 +146,7 @@ fn credential_mount_key_rotates_without_erasing_retained_uncertain_operation() {
     let old = mount_key(&s);
     let w = session(&s, &a.token).unwrap();
     s.core.session = Some(Session {
+        unified_user_client_enabled: Default::default(),
         d_cookie: "rotated".into(),
         workspaces: [("T1".into(), w)].into(),
     });

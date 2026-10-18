@@ -4,6 +4,7 @@ use super::*;
 use crate::profile_text::Field;
 use serde_json::{Value, json};
 mod capabilities;
+pub mod photo;
 use capabilities::BootScope;
 pub use capabilities::{FreshOwnProfileCapabilities, ProfileEditCapability};
 #[cfg(test)]

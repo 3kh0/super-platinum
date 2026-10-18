@@ -1,4 +1,5 @@
-//! Temporary fixture ownership only; no configured production path constructor.
+//! Opaque fixture/configured ownership. Configured construction is restricted
+//! to the cold account coordinator; no public path or drain boolean is accepted.
 use super::*;
 use std::{
     fs::{File, OpenOptions},
@@ -9,6 +10,7 @@ use std::{
 
 pub(in crate::drafts::store) struct Owned {
     root: PathBuf,
+    marker_path: PathBuf,
     path: PathBuf,
     account: String,
     marker: Mutex<File>,
@@ -17,7 +19,7 @@ pub(in crate::drafts::store) struct Owned {
     reopened: Option<(File, Identity)>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct Identity(Vec<u64>);
+pub(in crate::drafts::store) struct Identity(Vec<u64>);
 
 pub(super) fn identity(file: &File) -> Result<Identity, AppError> {
     #[cfg(unix)]
@@ -84,6 +86,7 @@ fn retained(path: &Path) -> Result<File, AppError> {
     Ok(options.open(path)?)
 }
 impl Owned {
+    #[cfg(any(test, feature = "protected-test-support"))]
     pub(in crate::drafts::store) fn fresh() -> Result<Arc<Self>, AppError> {
         let base = std::fs::canonicalize(std::env::temp_dir())?;
         plain_chain(&base)?;
@@ -108,6 +111,7 @@ impl Owned {
         let path = root.join(format!("drafts-{account}.sqlite"));
         Ok(Arc::new(Self {
             root,
+            marker_path,
             path,
             account,
             marker: Mutex::new(marker),
@@ -136,6 +140,10 @@ impl Owned {
     }
     pub(in crate::drafts::store) fn check(&self) -> Result<(), AppError> {
         plain_chain(&self.root)?;
+        plain_chain(&self.marker_path)?;
+        if self.marker_path.parent() != Some(self.root.as_path()) {
+            return Err(invalid("owner marker escaped configured directory"));
+        }
         // Windows byte-range locks deny reads through another opened handle,
         // including one in this process. Keep the original lock held and read
         // only through its owning handle. The mutex also serializes its cursor.
@@ -161,13 +169,13 @@ impl Owned {
                 return Err(invalid("reopened fixture database replaced"));
             }
         }
-        let actual = retained(&self.root.join("owner"))?;
+        let actual = retained(&self.marker_path)?;
         if identity(&actual)? != self.identity {
             return Err(invalid("upgrade marker replaced"));
         }
         Ok(())
     }
-    pub(super) fn retain_db(&self) -> Result<Option<(File, Identity)>, AppError> {
+    pub(in crate::drafts::store) fn retain_db(&self) -> Result<Option<(File, Identity)>, AppError> {
         self.check()?;
         match std::fs::symlink_metadata(&self.path) {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
@@ -219,9 +227,9 @@ impl Owned {
         Ok(())
     }
 }
-// No Drop deletion: failed test evidence is retained. No user/config root can be
-// supplied, and no account UUID is accepted from a caller. Future production
-// construction requires a separately reviewed account-wide coordinator.
+// No Drop deletion: neither user drafts nor failed fixture evidence are removed.
+// Configured construction is private to the account-wide coordinator and uses
+// the existing config::data_dir path; public fixture tickets cannot select it.
 
 #[cfg(test)]
 mod marker_tests {
@@ -290,5 +298,9 @@ mod marker_tests {
     }
 }
 
+#[path = "upgrade_configured.rs"]
+mod configured;
+
+#[cfg(any(test, feature = "protected-test-support"))]
 #[path = "upgrade_reopen.rs"]
 mod reopen;

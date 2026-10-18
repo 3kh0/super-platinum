@@ -79,7 +79,11 @@ impl InstallRequest {
     pub async fn prepare(self) -> Result<ReadyInstall, durable::Error> {
         let owner = self.editor.owner.clone();
         let guard = owner.gate.clone().lock_owned().await;
-        let fresh = account::wait(owner.client()?.review(owner.scope().clone())).await?;
+        let fresh = if let Some(route) = &owner.account.owned {
+            route.review(owner.scope().clone()).await?
+        } else {
+            account::wait(owner.client()?.review(owner.scope().clone())).await?
+        };
         if !fresh.same(&self.expected)
             || !self.selection.0.live.load(Ordering::Acquire)
             || !self.visit.current()
@@ -256,5 +260,23 @@ impl Host {
         }
         self.adoptions.remove(&receipt.adoption);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl Host {
+    /// Real registration/read/commit; intentionally bypasses only native proof.
+    pub(in super::super) async fn install_without_native_for_test(
+        &mut self,
+        shell: &ShellState,
+        adoption: &Adoption,
+    ) -> Result<Installed, durable::Error> {
+        let ready = self
+            .install_request(shell, adoption, None, Visit::new())?
+            .prepare()
+            .await?;
+        let receipt = self.commit_installation(shell, ready)?;
+        self.acknowledge_installation(&receipt)?;
+        Ok(receipt)
     }
 }

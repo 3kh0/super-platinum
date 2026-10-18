@@ -80,19 +80,14 @@ impl Account {
     }
     /// Shared across account switches. A second view must never run restart
     /// normalization while another view has a live request in flight.
-    pub fn production(account: &str) -> Result<Arc<Self>, Fault> {
-        if crate::fixture::is_fixture() {
-            return Err(Fault::Storage);
-        }
-        static ACCOUNTS: OnceLock<Mutex<BTreeMap<String, Arc<Account>>>> = OnceLock::new();
-        let mut accounts = ACCOUNTS
-            .get_or_init(Mutex::default)
-            .lock()
-            .map_err(|_| Fault::Storage)?;
-        Ok(accounts
-            .entry(account.into())
-            .or_insert_with(|| Self::new(Backend::Account(account.into())))
-            .clone())
+    pub fn production(_account: &str) -> Result<Arc<Self>, Fault> {
+        // Ordinary callers must use the retained configured account. Refusal is
+        // an intermediate guard, not a replacement for connected delivery.
+        Err(if crate::fixture::is_fixture() {
+            Fault::Storage
+        } else {
+            Fault::Unsupported
+        })
     }
     async fn initialize(&self) -> Result<(), Fault> {
         let mut initialization = self.initialization.lock().await;

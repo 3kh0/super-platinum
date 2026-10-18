@@ -60,6 +60,8 @@ pub(crate) struct State {
     pub dialog: Option<Dialog>,
     pub recovery: Recovery,
     pub(super) context: Option<admission::Context>,
+    // Exact dialog selection, never restored from a persisted display label.
+    pub(super) selected_recipient: Option<(String, String, Value)>,
     pub(super) policies: BTreeMap<String, policy_owner::Owner>,
     // Carried into replacement ShellState. Captured workers also own this Arc.
     pub(super) custody: Arc<std::sync::Mutex<recovery::Custody>>,
@@ -74,6 +76,7 @@ impl State {
             durable::retire(dialog, &self.custody);
         }
         self.dialog = None;
+        self.selected_recipient = None;
         self.recovery = Recovery::default();
         self.policies.clear();
         self.context = admission::Context::capture(shell);

@@ -5,6 +5,27 @@ use super::{
     editor::Editor,
 };
 
+/// One exact owned registration for a native-applied projection. Failed or
+/// superseded work remains attached to the Editor; another barrier cannot
+/// silently allocate a replacement job or another writer.
+pub(super) struct Registration {
+    barrier: Arc<ProjectionBarrier>,
+    review: durable::Review,
+    held: Arc<super::owned_route::Held<durable::Review, durable::Writer>>,
+}
+
+#[cfg(test)]
+#[path = "projection/owned_tests.rs"]
+mod owned_tests;
+
+/// Constructed only after the actual RendererApplied receipt and the existing
+/// current-review/native-authority/registration checks have completed.
+pub(crate) struct Acknowledged {
+    pub(super) barrier: Arc<ProjectionBarrier>,
+    pub(super) review: durable::Review,
+    pub(super) editor: std::sync::Weak<Editor>,
+}
+
 pub(crate) struct ProjectionTicket {
     barrier: Arc<ProjectionBarrier>,
     review: durable::Review,
@@ -198,6 +219,14 @@ impl Editor {
         self: &Arc<Self>,
         applied: crate::view::composer::protected_projection::RendererApplied,
     ) -> Result<(), durable::Error> {
+        self.acknowledge_projection_observed(applied)
+            .await
+            .map(|_| ())
+    }
+    pub(crate) async fn acknowledge_projection_observed(
+        self: &Arc<Self>,
+        applied: crate::view::composer::protected_projection::RendererApplied,
+    ) -> Result<Arc<Acknowledged>, durable::Error> {
         let ticket = applied.into_editor_ticket();
         let editor = self.clone();
         self.runtime
@@ -212,7 +241,20 @@ impl Editor {
                 if !review.same(&ticket.review) || !editor_proof::clean(&review) {
                     return Err(durable::Error::Stale);
                 }
-                let writer = if ticket.barrier.renew_writer {
+                let registration = if ticket.barrier.renew_writer {
+                    editor.projection_registration(&ticket, &review)?
+                } else {
+                    None
+                };
+                let writer = if let Some(registration) = &registration {
+                    Some(
+                        registration
+                            .held
+                            .value()
+                            .await
+                            .map_err(super::owned_route::ui)??,
+                    )
+                } else if ticket.barrier.renew_writer {
                     Some(account::wait(editor.owner.register(review.clone())?).await?)
                 } else {
                     None
@@ -233,7 +275,43 @@ impl Editor {
                     {
                         return Err(durable::Error::Stale);
                     }
+                    if let Some(registration) = &registration {
+                        if state
+                            .projection_registration
+                            .as_ref()
+                            .is_none_or(|held| !Arc::ptr_eq(held, registration))
+                        {
+                            return Err(durable::Error::Stale);
+                        }
+                        let job = registration.held.job().map_err(super::owned_route::ui)?;
+                        let (observed, acknowledgment) =
+                            job.observe_success().map_err(super::owned_route::ui)?;
+                        if observed.id() != writer.id()
+                            || observed.scope() != writer.scope()
+                            || observed.enrollment() != writer.enrollment()
+                        {
+                            return Err(durable::Error::Stale);
+                        }
+                        // The renderer has already accepted the exact projection;
+                        // current native authority, barrier, serial and storage
+                        // were checked above while holding this same state lock.
+                        acknowledgment
+                            .acknowledge()
+                            .map_err(|(error, _)| super::owned_route::ui(error))?;
+                        state.projection_registration = None;
+                    }
                     state.writer = writer;
+                }
+                if let Some(finish) = &ticket.barrier.owned_finish {
+                    // Actual durable choice and native projection have now
+                    // been observed. Retry history may refuse memory retirement;
+                    // keep that exact job in the Editor instead of discarding it
+                    // or undoing an already accepted renderer projection.
+                    if finish.acknowledge(&review).is_ok() {
+                        state
+                            .owned_baseline_finishes
+                            .retain(|v| !Arc::ptr_eq(v, finish));
+                    }
                 }
                 state.barrier = None;
                 state.parked = false;
@@ -242,9 +320,44 @@ impl Editor {
                 state.direct = current.row().state().local_preservation_intent().cloned();
                 drop(state);
                 editor.notify();
-                Ok(())
+                Ok(Arc::new(Acknowledged {
+                    barrier: ticket.barrier,
+                    review,
+                    editor: Arc::downgrade(&editor),
+                }))
             })
             .await
             .map_err(|_| durable::Error::Storage)?
+    }
+
+    fn projection_registration(
+        &self,
+        ticket: &ProjectionTicket,
+        review: &durable::Review,
+    ) -> Result<Option<Arc<Registration>>, durable::Error> {
+        let Some(route) = &self.owner.account.owned else {
+            return Ok(None);
+        };
+        let mut state = self.state.lock().map_err(|_| durable::Error::Storage)?;
+        if !ticket.authority_live()
+            || !projection_current(&state, &ticket.barrier)
+            || !state.review.same(review)
+        {
+            return Err(durable::Error::Stale);
+        }
+        if let Some(held) = &state.projection_registration {
+            if !Arc::ptr_eq(&held.barrier, &ticket.barrier) || !held.review.same(review) {
+                return Err(durable::Error::Pending);
+            }
+            return Ok(Some(held.clone()));
+        }
+        let held = Arc::new(Registration {
+            barrier: ticket.barrier.clone(),
+            review: review.clone(),
+            held: super::owned_route::Held::new(route.operations.register(review.clone())),
+        });
+        // Retain admission refusal and actual job before submit/await.
+        state.projection_registration = Some(held.clone());
+        Ok(Some(held))
     }
 }

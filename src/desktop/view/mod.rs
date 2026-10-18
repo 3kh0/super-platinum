@@ -9,6 +9,7 @@ mod channel_details;
 mod channel_membership;
 mod channel_notifications;
 mod channel_resources;
+mod channel_tabs;
 mod channel_window_check;
 mod chrome;
 mod completion;
@@ -112,9 +113,11 @@ const CSS: &str = concat!(
     include_str!("../styles/composer.css"),
     include_str!("../styles/overlays.css"),
     include_str!("../styles/app-modal.css"),
+    include_str!("../styles/app-home.css"),
     include_str!("../styles/button-confirmation.css"),
     include_str!("../styles/self-status.css"),
     include_str!("../styles/profile-edit.css"),
+    include_str!("../styles/profile-photo.css"),
     include_str!("../styles/profile-title.css"),
     include_str!("../styles/slack-lists.css"),
     include_str!("../styles/settings.css"),
@@ -274,10 +277,7 @@ pub fn shell() -> Element {
     // Unreads and Threads are lists, not conversations. Every other surface
     // shows the conversation it has open — and DMs and Activity stay on their
     // empty state until a row in their own list opens one.
-    let show_timeline = match snapshot.main_view {
-        MainView::Unreads | MainView::Threads | MainView::Files | MainView::Scheduled => false,
-        _ => snapshot.detail_open() && !activity_thread_focus,
-    };
+    let show_timeline = snapshot.conversation_visible();
     // A conversation is a conversation wherever it is shown: Slack's Activity
     // and DMs panes carry a composer exactly like the channel view does, so a
     // message opened from a notification can be answered where it is read.
@@ -330,7 +330,11 @@ pub fn shell() -> Element {
                             {conversation_header(state, &snapshot, channel_name, huddle.as_ref())}
                         }
                         {channel_resources::tabs(state, snapshot.channel_tab)}
-                        if snapshot.channel_tab == ChannelTab::Bookmarks {
+                        if snapshot.channel_tab == ChannelTab::AppHome {
+                            {crate::app_home::view::panel(state)}
+                        } else if snapshot.channel_tab == ChannelTab::Canvas {
+                            crate::canvas::surface::Panel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}-{snapshot.channel_generation}-{snapshot.shortcut_generation}",state}
+                        } else if snapshot.channel_tab == ChannelTab::Bookmarks {
                             crate::bookmarks::BookmarksPanel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}",state,channel:active_channel_id.to_owned()}
                         } else if snapshot.channel_tab == ChannelTab::Pins {
                             pins::PinsPanel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}-{active_channel_id}",state,channel:active_channel_id.to_owned()}

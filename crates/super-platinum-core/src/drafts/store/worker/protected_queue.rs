@@ -1,5 +1,5 @@
-//! Existing Worker routing. The isolated route is explicit test support only;
-//! enabling its feature cannot change the Default route or normal persistence.
+//! Existing Worker routing. Configured owned routes are production; isolated
+//! temporary routes remain explicit test support.
 #[cfg(any(test, feature = "protected-test-support"))]
 use super::super::protected::Error;
 use super::super::protected::commands::Command;
@@ -7,7 +7,6 @@ use super::*;
 #[derive(Clone)]
 pub(crate) enum Route {
     Default,
-    #[cfg(any(test, feature = "protected-test-support"))]
     Owned(std::sync::Arc<super::owned_queue::Queue>),
     #[cfg(any(test, feature = "protected-test-support"))]
     Isolated(std::sync::Arc<isolated::Queue>),
@@ -15,7 +14,6 @@ pub(crate) enum Route {
 impl Route {
     pub(crate) fn submit(&self, command: Command) {
         match self {
-            #[cfg(any(test, feature = "protected-test-support"))]
             Self::Owned(queue) => queue.submit_protected(command),
             Self::Default => worker().submit(Request::Protected(Box::new(command))),
             #[cfg(any(test, feature = "protected-test-support"))]

@@ -67,6 +67,28 @@ fn row_fields(
         })
         .cloned()
         .collect::<Vec<_>>();
+    let select = if let ViewFilterChoice::Select {
+        operator, values, ..
+    } = &value
+    {
+        Some((*operator, values.clone()))
+    } else {
+        None
+    };
+    let date = if let ViewFilterChoice::Date {
+        operator, value, ..
+    } = &value
+    {
+        Some((*operator, value.clone()))
+    } else {
+        None
+    };
+    let select_choices = p
+        .selects
+        .iter()
+        .find(|(key, _)| key == &column)
+        .map(|(_, values)| values.clone())
+        .unwrap_or_default();
     let (op, number, initial) = match &value {
         ViewFilterChoice::Checkbox { checked, .. } => (
             if *checked {
@@ -80,6 +102,9 @@ fn row_fields(
         ViewFilterChoice::Number {
             operator, value, ..
         } => (*operator, true, value.clone().unwrap_or_default()),
+        ViewFilterChoice::Select { .. } | ViewFilterChoice::Date { .. } => {
+            (Op::IsEmpty, false, String::new())
+        }
         _ => return rsx! {},
     };
     let ops = if number {
@@ -104,6 +129,11 @@ fn row_fields(
     div{key:"{id}",class:"slack-list-filter-row","data-filter-row":"{id}","data-filter-epoch":"{epoch}",
     label{r#for:"filter-field-{id}","Field"}
     select{id:"filter-field-{id}","data-filter-field":"true",value:column.clone(),disabled:!editable,onchange:move|e|focus::action(state,serial,visit,structure,filter::Action::Field(id,epoch,e.value()),None),for(key,name)in fields {option{value:key.clone(),selected:key==column,"{name}"}}}
+    if let Some((operator, selected)) = select {
+        {super::select::fields(state,serial,visit,structure,id,epoch,operator,selected,select_choices,editable)}
+    } else if let Some((operator,value))=date {
+        {super::date::fields(state,serial,visit,structure,id,epoch,operator,value,editable)}
+    } else {
     label{r#for:"filter-operator-{id}","Condition"}
     select{id:"filter-operator-{id}","data-filter-operator":"true",value:op.as_str(),disabled:!editable,onchange:move|e|{if let Some(op)=[Op::Equal,Op::NotEqual,Op::LessThan,Op::GreaterThan,Op::IsEmpty,Op::IsNotEmpty].into_iter().find(|op|op.as_str()==e.value()){focus::action(state,serial,visit,structure,filter::Action::Operator(id,epoch,op),None);}},
     for choice in ops {option{value:choice.as_str(),selected:choice==op,if number{"{number::label(choice)}"}else if choice==Op::IsEmpty{"is not checked"}else{"is checked"}}}}
@@ -111,6 +141,7 @@ fn row_fields(
     label{key:"{id}:{version}",r#for:"filter-value-{id}","Value"}
     input{id:"filter-value-{id}","data-filter-value":"true",r#type:"number",step:"any",initial_value:initial.clone(),disabled:!editable,"aria-invalid":invalid,oninput:move|e|{if filter::update_value(&state.peek(),serial,visit,id,epoch,e.value()){let mut state=state;state.write();}}}
     }}
+    }
     button{id:"filter-remove-{id}","data-filter-remove":"true",r#type:"button",class:"slack-list-action",disabled:!editable,onclick:move |_|focus::action(state,serial,visit,structure,filter::Action::Remove(id),None),"Remove condition"}
     }
     }

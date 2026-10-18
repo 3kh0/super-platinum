@@ -299,7 +299,10 @@ fn text_object(value: Option<&Value>, allow_mrkdwn: bool) -> bool {
             .all(|k| value.get(k).is_none_or(Value::is_boolean))
 }
 
-fn validate_button(button: &Value, self_user_id: &str) -> Result<(), MessageActionError> {
+pub(super) fn validate_button(
+    button: &Value,
+    self_user_id: &str,
+) -> Result<(), MessageActionError> {
     if button.get("type").and_then(Value::as_str) != Some("button") {
         return Err(MessageActionError::UnsupportedButton);
     }

@@ -343,20 +343,25 @@ async fn first_managed_write_failure_survives_replacement_and_exact_retry() {
     next.core.active_account = Some(f.account.id().into());
     next.core.account_epoch = 9;
     let selected = f.host.select(&next, f.account.clone()).unwrap();
-    assert!(matches!(
-        f.host
-            .submit(&next, &selected, &key(0), &local("No hidden route")),
-        Err(durable::Error::Stale)
+    let newer = local("Newer replacement input");
+    let serial = f.host.submit(&next, &selected, &key(0), &newer).unwrap();
+    let snapshot = installed.editor().snapshot();
+    assert_eq!(snapshot.serial, serial);
+    assert!(same_local(snapshot.pending.as_ref().unwrap(), &newer));
+    assert!(same_local(
+        &snapshot.failed_inputs[0],
+        &local("Failed managed input")
+    ));
+    assert!(same_local(
+        &f.host.managed_presentations(&f.account).unwrap()[&key(0)],
+        &newer,
     ));
     let retained = f.host.installation(&f.account, &key(0)).unwrap();
     assert!(Arc::ptr_eq(retained.editor(), installed.editor()));
     assert_eq!(retained.editor().snapshot().failed_inputs.len(), 1);
     retained.editor().retry_storage().unwrap();
     retained.editor().flush().await.unwrap();
-    assert!(same_local(
-        f.current(0).await.local(),
-        &local("Failed managed input")
-    ));
+    assert!(same_local(f.current(0).await.local(), &newer));
     assert!(
         !f.host
             .route_snapshot(&next, &key(0))

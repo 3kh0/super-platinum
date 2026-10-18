@@ -18,7 +18,6 @@ struct State {
     reply: Option<durable::Reply<durable::Loaded>>,
     task: Option<tokio::task::JoinHandle<()>>,
     outcome: Option<Result<Arc<durable::Loaded>, durable::Error>>,
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     supplied: Option<durable::owned_store::Initialized>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -40,7 +39,6 @@ impl Holder {
                 reply: None,
                 task: None,
                 outcome: None,
-                #[cfg(any(test, feature = "protected-native-fixture"))]
                 supplied: None,
             }),
             changed: tokio::sync::watch::channel(()).0,
@@ -48,7 +46,6 @@ impl Holder {
             gate: std::sync::Mutex::default(),
         })
     }
-    #[cfg(any(test, feature = "protected-native-fixture"))]
     pub(super) fn supplied(value: durable::owned_store::Initialized) -> Arc<Self> {
         let holder = Self::new();
         {
