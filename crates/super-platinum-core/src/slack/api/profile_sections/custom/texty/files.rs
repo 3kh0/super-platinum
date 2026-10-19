@@ -6,7 +6,9 @@ use crate::{
 };
 use serde_json::Value;
 mod cache;
+mod ordered;
 pub use cache::{QueryCache, RequestToken};
+pub use ordered::OrderedResponse;
 #[cfg(test)]
 mod tests;
 

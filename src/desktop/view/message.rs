@@ -27,11 +27,13 @@ use crate::state::{MessageVm, RichNode, ShellState};
 pub(crate) enum RowSurface {
     Timeline,
     Thread,
+    /// An independently owned thread reader has no timeline mutation authority.
+    ReadOnlyThread,
 }
 
 impl RowSurface {
     fn in_thread(self) -> bool {
-        self == Self::Thread
+        matches!(self, Self::Thread | Self::ReadOnlyThread)
     }
 }
 
@@ -46,6 +48,9 @@ fn message_tools(
     channel_id: &str,
     surface: RowSurface,
 ) -> Element {
+    if surface == RowSurface::ReadOnlyThread {
+        return rsx! {};
+    }
     let shortcut_source = {
         let shell = state.read();
         let bag = if surface.in_thread() {
@@ -275,7 +280,9 @@ pub(crate) fn message_row(
 ) -> Element {
     // Text-only rows never need canonical bag scans or action revision clones.
     // This allocation-free walk short-circuits at the first supported app control or identified file.
+    let read_only = surface == RowSurface::ReadOnlyThread;
     let action_source = action_bag
+        .filter(|_| !read_only)
         .filter(|_| !message.pending && body_has_owned_control(&message.body))
         .and_then(|bag| {
             crate::message_buttons::source::Source::capture(snapshot, message, channel_id, bag).ok()
@@ -303,11 +310,12 @@ pub(crate) fn message_row(
     } else {
         "message"
     };
-    let editing = snapshot
-        .core
-        .editing
-        .as_ref()
-        .is_some_and(|(channel, ts)| channel == channel_id && ts == &message.id);
+    let editing = !read_only
+        && snapshot
+            .core
+            .editing
+            .as_ref()
+            .is_some_and(|(channel, ts)| channel == channel_id && ts == &message.id);
     // Double-clicking a channel message opens its thread with the reply box
     // focused. A thread reply is already where that would go, a row being
     // edited needs its clicks for the editor, and a pending message has no
@@ -339,7 +347,7 @@ pub(crate) fn message_row(
             {message_tools(state, message, channel_id, surface)}
             div { class: "message-content",
                 if !in_thread { {broadcast_context(state,snapshot,message,channel_id)} }
-                if crate::pins::is_pinned(snapshot,channel_id,message) {
+                if !read_only && crate::pins::is_pinned(snapshot,channel_id,message) {
                     div {class:"message-pin-label",{crate::icons::icon(crate::icons::Icon::Pin,"icon sm")} "Pinned"}
                 }
                 if !compact {
@@ -375,7 +383,7 @@ pub(crate) fn message_row(
                     if !message.attachments.is_empty() {
                         {attachment_embeds(state, snapshot.media_epoch, &message.attachments)}
                     }
-                    if let Some(attachments) = snapshot.pending_attachments_for_message(&message.id) {
+                    if let Some(attachments) = (!read_only).then(|| snapshot.pending_attachments_for_message(&message.id)).flatten() {
                         {pending_attachment_strip(attachments, snapshot.upload_ui_epoch)}
                         {delivery::row(state,snapshot,&message.id)}
                     }
@@ -383,7 +391,11 @@ pub(crate) fn message_row(
                 if !message.reactions.is_empty() {
                     div { class: "message-actions",
                         ondoubleclick: |event| event.stop_propagation(),
-                        {reactions_row(state, &snapshot.media, snapshot.media_epoch, channel_id, message)}
+                        {if read_only {
+                            super::rich::reactions_read_only(state, &snapshot.media, snapshot.media_epoch, message)
+                        } else {
+                            reactions_row(state, &snapshot.media, snapshot.media_epoch, channel_id, message)
+                        }}
                     }
                 }
                 if !in_thread && message.reply_count > 0 {

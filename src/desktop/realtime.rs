@@ -707,7 +707,9 @@ fn apply_in_view_with_groups(
                 .or_default()
                 .merge_update(super_platinum_core::state::visible_message(message));
         }
-        RtEvent::MessageChanged { channel, message } => {
+        RtEvent::MessageChanged {
+            channel, message, ..
+        } => {
             if core.later.matches_scope(core.account_epoch, team) {
                 core.later.update_message(&channel, &message);
             }

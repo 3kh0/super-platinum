@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, HashSet};
 
 mod board_record_move;
 mod cell_edit;
+pub mod comments;
 pub use board_record_move::{
     BoardRecordMove, BoardRecordMoveAttempt, BoardRecordMovePermit, BoardRecordMovePhase,
 };

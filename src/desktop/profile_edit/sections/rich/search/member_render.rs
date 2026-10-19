@@ -1,6 +1,6 @@
 //! Profile member strings from the original source/policy and this query's
 //! renderer. These observations grant no native caret or selection authority.
-use super::{Search, group_render, group_source, member_names, render};
+use super::{Search, file_render, file_source, group_render, group_source, member_names, render};
 use crate::{
     directory_member_fetches::search::Snapshot, profile_edit::sections::rich::query::Lease,
     state::ShellState,
@@ -38,6 +38,7 @@ pub(super) struct Observed {
     source: Arc<Snapshot>,
     names: Arc<member_names::Observation>,
     groups: Option<group_render::Observed>,
+    files: Option<file_render::Observed>,
     raw_query: String,
     pub(super) formatted_query: String,
     pub(super) query: local::PreparedQuery,
@@ -55,10 +56,38 @@ impl Observed {
             && search.current(shell)
             && self.source.current(shell)
             && self.names.current(shell, search)
+            && self.files.as_ref().is_none_or(|files| files.current(shell))
             && self
                 .groups
                 .as_ref()
                 .is_none_or(|groups| groups.current(shell))
+    }
+    pub(super) fn file_names(
+        &self,
+        row: &super_platinum_core::slack::api::custom::texty::file_title_source::CandidateObservation,
+    ) -> Result<super_platinum_core::slack::api::custom::texty::file_matching::Names, ranking::Error>
+    {
+        self.files
+            .as_ref()
+            .ok_or_else(|| missing("file renderer"))?
+            .names(row, |text| self.normalize(text))
+    }
+    pub(super) fn query_has_link(&self) -> Result<bool, ranking::Error> {
+        self.files
+            .as_ref()
+            .map(|files| files.has_link())
+            .ok_or_else(|| missing("file query links"))
+    }
+    pub(super) fn template_context(
+        &self,
+        _row: &super_platinum_core::slack::api::custom::texty::file_title_source::CandidateObservation,
+    ) -> Result<
+        super_platinum_core::slack::api::custom::texty::file_matching::TemplateContext,
+        ranking::Error,
+    > {
+        Err(missing(
+            "canned-template creator enterprise and paid context",
+        ))
     }
     pub(super) fn group_names(&self, row: &groups::Snapshot) -> Result<groups::Names, Error> {
         self.groups
@@ -116,11 +145,24 @@ pub(super) async fn capture_mixed(
     names: Arc<member_names::Observation>,
     group_source: Option<Arc<group_source::Snapshot>>,
 ) -> Result<Observed, Error> {
+    capture_with_files(state, search, raw_query, source, names, group_source, None).await
+}
+
+pub(super) async fn capture_with_files(
+    state: Signal<ShellState>,
+    search: &Search,
+    raw_query: &str,
+    source: Arc<Snapshot>,
+    names: Arc<member_names::Observation>,
+    group_source: Option<Arc<group_source::Snapshot>>,
+    files: Option<Arc<file_source::Snapshot>>,
+) -> Result<Observed, Error> {
     let current = || {
         let shell = state.peek();
         search.current(&shell)
             && source.current(&shell)
             && names.current(&shell, search)
+            && files.as_ref().is_none_or(|files| files.current(&shell))
             && group_source
                 .as_ref()
                 .is_none_or(|groups| groups.current(&shell))
@@ -193,6 +235,21 @@ pub(super) async fn capture_mixed(
     } else {
         None
     };
+    let file_observed = if let Some(source) = files.as_ref() {
+        let observed = file_render::capture(
+            search,
+            &current,
+            &ticket,
+            &first.locale,
+            &query.normalized,
+            source.clone(),
+        )
+        .await?;
+        observed.extend_fields(&mut extra, &mut collation)?;
+        Some(observed)
+    } else {
+        None
+    };
     observe_fields(
         search,
         &current,
@@ -227,6 +284,7 @@ pub(super) async fn capture_mixed(
         self_row,
         comparisons,
         groups,
+        files: file_observed,
         fields,
         classes,
         locale: first.locale,

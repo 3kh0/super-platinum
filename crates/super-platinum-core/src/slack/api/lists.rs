@@ -3,6 +3,8 @@ use super::*;
 use crate::slack_lists::{CellEdit, CheckboxEdit, Document, PersonalTaskLists, RecordsPage};
 use serde_json::Value;
 
+mod comments;
+pub use comments::*;
 mod board_record_move;
 pub use board_record_move::*;
 mod column_create;

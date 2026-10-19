@@ -21,6 +21,7 @@ import time
 from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 from native_check import expected_viewport
 from workflow_activity_surfaces import STAGES as SURFACE_STAGES, validate as validate_surfaces
+from workflow_activity_source_replacement import STAGES as REPLACEMENT_STAGES, validate as validate_replacement
 
 PREFIX = 'workflow-activity-check: '
 EDGE = 'workflow-activity-capture: '
@@ -45,6 +46,7 @@ STAGES['execution'] = ('transcript','opened','closed','filtered','paged','metada
 STAGES['execution-failure'] = ('transcript','policy-denied','policy-retried','read-failed','read-retried','returned')
 STAGES['execution-retirement'] = ('transcript','route-held','route-retired','account-held','account-replaced')
 STAGES.update(SURFACE_STAGES)
+STAGES.update(REPLACEMENT_STAGES)
 BASE_FIXTURES = ('workflow-activity', 'workflow-activity-narrow')
 PICKER_FIXTURES = ('workflow-activity-members', 'workflow-activity-members-narrow')
 FIXTURES = BASE_FIXTURES + PICKER_FIXTURES
@@ -179,6 +181,8 @@ def validate_emoji(value, viewport):
 def validate(fixture, receipt, captures, scenario, *, platform=sys.platform, png=True):
     require(fixture in FIXTURES and scenario in STAGES, 'Unknown Activity fixture or case')
     require((fixture in PICKER_FIXTURES) is (scenario == 'picker'), 'Fixture/case mismatch')
+    if scenario in REPLACEMENT_STAGES:
+        return validate_replacement(fixture, receipt, captures, scenario, globals(), platform=platform, png=png)
     if scenario in SURFACE_STAGES:
         return validate_surfaces(fixture, receipt, captures, scenario, globals(), platform=platform, png=png)
     if scenario.startswith('execution'):

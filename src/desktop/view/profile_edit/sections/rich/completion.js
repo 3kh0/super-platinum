@@ -123,7 +123,10 @@
         (value.value.tab_id == null || value.value.tab_id === '')
       : pending.kind === 'member' && (
           (value.value?.type === 'user' && typeof value.value.user_id === 'string' && !!value.value.user_id) ||
-          (value.value?.type === 'usergroup' && typeof value.value.usergroup_id === 'string' && !!value.value.usergroup_id));
+          (value.value?.type === 'usergroup' && typeof value.value.usergroup_id === 'string' && !!value.value.usergroup_id) ||
+          (['canvas', 'file'].includes(value.value?.type) && typeof value.value.file_id === 'string' && !!value.value.file_id &&
+            typeof value.value.text === 'string' && !!value.value.text &&
+            (value.value.url == null || (typeof value.value.url === 'string' && !!value.value.url))));
     if (!validToken || typeof value.label !== 'string' || value.suffix !== ' ') return false;
     const ticket = pending;
     pending = null; rows = null; previous = null; inserting = true;

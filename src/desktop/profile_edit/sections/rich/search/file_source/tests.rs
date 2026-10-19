@@ -9,6 +9,75 @@ use super_platinum_core::{
     state::Workspace,
 };
 const TEAM: &str = "TFILES01";
+
+fn ordered_shared_file() -> files::OrderedResponse {
+    files::OrderedResponse::decode(br#"{"ok":true,"files":[{"id":"FORDER","mode":"quip","filetype":"quip","created":101,"title":"Shared Canvas","channels":["CTAIL"],"channel_map":{"z":{"id":"CZFIRST","team":"TFILES01"},"a":{"id":"CASECOND","team":"TFILES01"}}}]}"#).unwrap()
+}
+
+#[test]
+fn same_byte_shared_file_order_survives_native_publication_and_retirement() {
+    let mut shell = setup();
+    let response = ordered_shared_file();
+    let receipt = read(&mut shell);
+    let published = receipt
+        .publish_ordered(
+            &mut shell,
+            response.raw(),
+            response.rows(),
+            Some(response.channel_map_order()),
+        )
+        .unwrap();
+    assert_eq!(
+        published.rows()[0].effective()["channels"],
+        json!(["CZFIRST", "CASECOND", "CTAIL"])
+    );
+    assert_eq!(published.rows()[0].source(), &response.rows()[0]);
+    assert!(published.current(&shell));
+    event(&mut shell, "FORDER");
+    assert!(!published.current(&shell));
+    assert!(
+        receipt
+            .publish_ordered(
+                &mut shell,
+                response.raw(),
+                response.rows(),
+                Some(response.channel_map_order())
+            )
+            .is_err()
+    );
+}
+
+#[test]
+fn ordered_file_response_cannot_borrow_foreign_carrier_or_successor_socket() {
+    for socket in [false, true] {
+        let mut shell = setup();
+        let receipt = read(&mut shell);
+        let response = ordered_shared_file();
+        let mut carrier = response.raw().clone();
+        if socket {
+            shell.core.workspaces.get_mut(TEAM).unwrap().rt_generation += 1;
+        } else {
+            carrier["files"][0]["title"] = json!("Different response");
+        }
+        let rows = carrier["files"].as_array().unwrap();
+        assert!(
+            receipt
+                .publish_ordered(
+                    &mut shell,
+                    &carrier,
+                    rows,
+                    Some(response.channel_map_order())
+                )
+                .is_err()
+        );
+        assert!(
+            shell.profile_edit.sections.file_search.slots[TEAM]
+                .store
+                .source("FORDER")
+                .is_none()
+        );
+    }
+}
 fn setup() -> ShellState {
     let mut shell = ShellState::login(crate::media::MediaRegistry::default());
     let owner = WorkspaceSession {
@@ -239,7 +308,8 @@ fn unsupported_or_out_of_category_rows_are_explicit_not_silently_filtered() {
         snapshot.rows().iter().map(|r| r.id()).collect::<Vec<_>>(),
         ["F1"]
     );
-    assert_eq!(snapshot.unavailable_ids(), ["F2", "F3"]);
+    assert_eq!(snapshot.unavailable_ids(), ["F2"]);
+    assert_eq!(snapshot.excluded_ids(), ["F3"]);
     assert_eq!(snapshot.source("F2"), Some(&unsupported));
     assert_eq!(snapshot.source("F3"), Some(&hosted));
     assert!(snapshot.title("F2").is_err());
@@ -342,5 +412,27 @@ fn positive_prefix_precedes_failed_upsert_but_stale_ids_never_record_success() {
                 .unwrap()
                 .contains_prefix_of("stale-more", 211)
         );
+    }
+}
+
+#[test]
+fn excluded_receipt_is_not_reauthorized_after_socket_or_file_mutation() {
+    for socket in [false, true] {
+        let mut shell = setup();
+        let captured = read(&mut shell);
+        let hosted = json!({"id":"F3","mode":"hosted","filetype":"pdf","created":1});
+        let before = apply(&mut shell, &captured, vec![hosted.clone()]).unwrap();
+        assert_eq!(before.excluded_ids(), ["F3"]);
+        assert!(before.unavailable_ids().is_empty());
+        if socket {
+            shell.core.workspaces.get_mut(TEAM).unwrap().rt_generation += 1;
+        } else {
+            invalidate(&mut shell, TEAM, "F3");
+        }
+        assert!(!before.current(&shell));
+        let current = Snapshot::capture(&shell, TEAM).unwrap();
+        assert!(current.excluded_ids().is_empty());
+        assert_eq!(current.unavailable_ids(), ["F3"]);
+        assert_eq!(current.source("F3"), Some(&hosted));
     }
 }

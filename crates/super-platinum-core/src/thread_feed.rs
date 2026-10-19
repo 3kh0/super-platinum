@@ -113,9 +113,9 @@ impl ThreadsState {
                 .channel
                 .clone()
                 .map(|c| Change::Message(c, m.clone(), true)),
-            RtEvent::MessageChanged { channel, message } => {
-                Some(Change::Message(channel.clone(), message.clone(), false))
-            }
+            RtEvent::MessageChanged {
+                channel, message, ..
+            } => Some(Change::Message(channel.clone(), message.clone(), false)),
             RtEvent::MessageDeleted {
                 channel,
                 deleted_ts,
@@ -397,6 +397,7 @@ mod tests {
         c.threads_view.observe(&RtEvent::Message(reply.clone()));
         c.threads_view.observe(&RtEvent::Message(reply));
         c.threads_view.observe(&RtEvent::MessageChanged {
+            original_update: None,
             channel: "C".into(),
             message: Message {
                 ts: Some("10.0".into()),

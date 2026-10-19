@@ -3,6 +3,8 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub use super::realtime::message_update::{MessageUpdate, MessageUpdateKind};
+
 use super::models::{
     ActivityItem, ChannelId, DndInfo, HuddleInvite, Message, MessageTs, Room, User, UserId,
 };
@@ -28,6 +30,8 @@ pub enum RtEvent {
     MessageChanged {
         channel: ChannelId,
         message: Message,
+        /// Original parser evidence; legacy synthetic events have none.
+        original_update: Option<MessageUpdate>,
     },
     MessageDeleted {
         channel: ChannelId,

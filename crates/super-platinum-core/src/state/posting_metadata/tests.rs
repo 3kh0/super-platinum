@@ -802,3 +802,17 @@ fn local_boot_role_precedence_is_applied_once_and_later_reads_can_revoke_it() {
     .unwrap();
     assert_eq!(metadata.channel_admin(&config, &local("T1")), Ok(false));
 }
+
+#[test]
+fn thread_read_only_uses_current_inventory_and_ordered_raw_channel() {
+    let (mut m, c) = metadata();
+    let raw = json!({"id":"C1","is_file":true});
+    assert_eq!(m.thread_read_only(&c, &raw), Ok(true));
+    assert_eq!(m.effective(&c, &raw).unwrap().read_only, false);
+    let current = json!({"id":"C1","is_file":true,"is_read_only":false});
+    m.observe_channel(&c, &current).unwrap();
+    assert_eq!(m.thread_read_only(&c, &current), Ok(false));
+    let mut foreign = c.clone();
+    foreign.user = "UFOREIGN".into();
+    assert!(m.thread_read_only(&foreign, &current).is_err());
+}

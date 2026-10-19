@@ -194,6 +194,7 @@ fn choices() -> Choices {
         group_source: None,
         cancel: tokio::sync::watch::channel(false).0,
         ranking_current: None,
+        files: None,
         values: vec![
             Completion {
                 value: json!({"type":"channel","channel_id":"C00000001"}),
@@ -354,4 +355,89 @@ fn mixed_same_label_choices_keep_category_and_group_identity() {
     );
     assert!(choices.consume(3, 2, 1, &mut catalog).is_none());
     assert!(choices.consume(3, 2, 0, &mut catalog).is_none());
+}
+
+#[test]
+fn file_selection_keeps_canonical_wire_and_label_out_of_dom_and_catalog_custody() {
+    let mut choices = choices();
+    let raw = json!({"type":"canvas","file_id":"FCANVAS01","text":"https://fixture.invalid/f","url":"https://fixture.invalid/f"});
+    choices.values = vec![Completion {
+        value: raw.clone(),
+        label: "Canonical title".into(),
+    }];
+    let presentation = Presentation {
+        sequence: 3,
+        revision: 2,
+        labels: vec!["Canonical title".into()],
+        kinds: vec![CompletionKind::Canvas],
+    };
+    let rendered = serde_json::to_value(&presentation).unwrap();
+    assert_eq!(
+        rendered,
+        json!({"sequence":3,"revision":2,"labels":["Canonical title"],"kinds":["canvas"]})
+    );
+    assert!(!rendered.to_string().contains("FCANVAS01"));
+    let mut catalog = catalog::Catalog::default();
+    let selected = choices.consume(3, 2, 0, &mut catalog).unwrap();
+    assert_eq!(selected.value, raw);
+    let (shell, _, _) = mounted();
+    let owner = Owner::capture(&shell).unwrap();
+    let mut styled = raw.clone();
+    styled["style"] = json!({"bold":true,"italic":true});
+    assert!(
+        catalog
+            .context(
+                &[catalog::Witness {
+                    value: styled,
+                    label: selected.label.clone()
+                }],
+                &owner
+            )
+            .is_ok()
+    );
+    for mutation in 0..3 {
+        let mut wrong = raw.clone();
+        match mutation {
+            0 => wrong["file_id"] = json!("FOTHER001"),
+            1 => wrong["url"] = json!("https://fixture.invalid/other"),
+            _ => wrong["opaque"] = json!(true),
+        }
+        assert!(
+            catalog
+                .context(
+                    &[catalog::Witness {
+                        value: wrong,
+                        label: selected.label.clone()
+                    }],
+                    &owner
+                )
+                .is_err()
+        );
+    }
+    assert!(choices.consume(3, 2, 0, &mut catalog).is_none());
+}
+
+#[test]
+fn unauthenticated_file_json_in_private_values_cannot_bypass_source_selection() {
+    let (mut shell, visit, serial) = mounted();
+    let lease = begin(&mut shell, visit, serial, 1, 1).unwrap();
+    let q = shell
+        .profile_edit
+        .sections
+        .draft
+        .as_mut()
+        .unwrap()
+        .rich
+        .as_mut()
+        .unwrap()
+        .query
+        .as_mut()
+        .unwrap();
+    q.revision = 1;
+    q.values.push(Completion {
+        value: json!({"type":"file","file_id":"FFORGED01","text":"FFORGED01"}),
+        label: "Forged".into(),
+    });
+    assert!(choose(&mut shell, &lease, 1, 0).is_none());
+    assert!(lease.current(&shell));
 }

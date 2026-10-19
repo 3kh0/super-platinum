@@ -75,6 +75,8 @@ pub(super) fn RecordDetail(state: Signal<ShellState>) -> Element {
         header{class:"slack-list-record-header",button{id:"slack-list-record-back",r#type:"button",class:"slack-list-action",onclick:move |_|crate::slack_lists::close_record_detail(state,generation),{icon(Icon::ChevronRight,"icon")}if parent_return{"Back to parent"}else{"Back to list"}}
             h3{id:"slack-list-record-title","{title}"}
             div{class:"slack-list-record-actions",
+            button{id:"slack-list-record-comments",r#type:"button",class:"slack-list-action",disabled:detail.unavailable||view.loading||view.stale,
+                onclick:move |_|crate::slack_lists::comments::open(state,generation),"Comments"}
             if reminder_visible {button{id:"slack-list-record-reminder",r#type:"button",class:"slack-list-action",disabled:reminder_reason.is_some(),title:reminder_reason.unwrap_or("Remind me"),onclick:move |_|crate::slack_lists::reminder::open(state,generation),"Remind me"}}
             button{id:"slack-list-record-duplicate",r#type:"button",class:"slack-list-action",disabled:duplicate_reason.is_some(),title:duplicate_reason.unwrap_or("Duplicate item"),onclick:move |_|crate::slack_lists::create::duplicate::duplicate_item(state,generation),"Duplicate item"}
             button{id:"slack-list-record-delete",r#type:"button",class:"slack-list-action slack-list-delete-action",disabled:!deletion.enabled,title:deletion.reason.clone().unwrap_or_else(||"Delete item".into()),onclick:move |_|crate::slack_lists::delete::begin_delete(state,generation),{icon(Icon::Delete,"icon")}"Delete item"}

@@ -10,6 +10,9 @@ DIRECTORY = Path('/private/activity-captures')
 
 
 def sample(scenario='browse', narrow=False):
+    if scenario in R['REPLACEMENT_STAGES']:
+        from test_workflow_activity_source_replacement import sample as replacement_sample
+        return replacement_sample(scenario, narrow)
     if scenario in R['SURFACE_STAGES']:
         from test_workflow_activity_surfaces import sample as surface_sample
         return surface_sample(scenario, narrow)

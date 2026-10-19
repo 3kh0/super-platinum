@@ -175,6 +175,7 @@ mod tests {
             "T1",
             socket,
             RtEvent::MessageChanged {
+                original_update: None,
                 channel: CHANNEL.into(),
                 message: changed.clone(),
             },

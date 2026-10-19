@@ -4,6 +4,8 @@ mod board_choice_options;
 mod board_move;
 mod card_extended;
 mod card_order;
+mod comments;
+mod compose_comments;
 mod group_delete;
 mod lane_order;
 mod refinement_save;
@@ -46,6 +48,8 @@ mod view_rename;
 mod view_sort;
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    comments::start(state, desktop.clone());
+    compose_comments::start(state, desktop.clone());
     board_move::start(state, desktop.clone());
     lane_order::start(state, desktop.clone());
     refinement_save::start(state, desktop.clone());

@@ -8,8 +8,11 @@ use super_platinum_core::{
     slack::{PreparedRequest, api::custom::texty::channels},
 };
 mod facts;
-mod file_choice;
+pub(super) mod file_choice;
 mod file_policy;
+mod file_rank_input;
+mod file_read;
+mod file_render;
 pub(crate) mod file_source;
 mod group_policy;
 mod group_read;

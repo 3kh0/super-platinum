@@ -45,6 +45,12 @@ pub(crate) fn prepare(
     {
         return false;
     }
+    // Comments own a file conversation independent of the selected channel.
+    // A reaction only reprojects the existing rows; it must not schedule a read.
+    super::comments::apply_reaction(shell, team, generation, event);
+    super::comments::apply_deletion(shell, team, generation, event);
+    super::comments::apply_incoming(shell, team, generation, event);
+    super::comments::apply_edit(shell, team, generation, event);
     let Some(id) = list_id(event) else {
         return false;
     };

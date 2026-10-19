@@ -386,3 +386,41 @@
 .slack-list-assignment-person select:disabled { opacity:.55; cursor:default; }
 .slack-list-assignment-review :is(select,button):focus-visible { outline-offset:-2px; }
 .slack-list-assignment-review .slack-list-editor-actions { flex-wrap:wrap; }
+
+/* Independently owned item comment reader. */
+.slack-list-record-host:not([hidden]) { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.slack-list-comments { display: flex; flex: 1; min-height: 0; flex-direction: column; border-top: 1px solid var(--border); }
+.slack-list-dialog .slack-list-comments-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; flex-shrink: 0; }
+.slack-list-comments-header h3 { margin: 0; font-size: var(--text-lg); }
+.slack-list-dialog .slack-list-comments-header > button { position: static; display: flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0; }
+.slack-list-comments-header > button:last-child { margin-inline-start: auto; }
+.slack-list-comments-header #slack-list-comments-next { margin-inline-start: auto; }
+.slack-list-comments-header:has(#slack-list-comments-next) > button:last-child { margin-inline-start: 0; }
+#slack-list-comments-back .icon { width: 16px; height: 16px; transform: rotate(180deg); }
+.slack-list-comments-item, .slack-list-comments-status, .slack-list-comments > .slack-list-error, .slack-list-comments > .slack-list-warning { margin: 0; padding: 0 16px 8px; overflow-wrap: anywhere; }
+.slack-list-comments-item { color: var(--muted); font-size: var(--text-sm); }
+.slack-list-comments-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.slack-list-comments-scroll .message { min-width: 0; }
+.slack-list-comments-scroll .message-content { min-width: 0; overflow-wrap: anywhere; }
+.slack-list-comments-footer { display: flex; justify-content: flex-end; padding: 8px 16px; }
+.slack-list-comment-compose { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0; max-height: 48vh; overflow: hidden; padding: 8px 16px 12px; border-top: 1px solid var(--border); }
+.slack-list-comment-compose-editor { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.slack-list-comment-compose .rich-editor > label { display: block; margin-bottom: var(--space-1); font-size: var(--text-sm); }
+.slack-list-comment-compose .rich-reminder-editor { min-height: 64px; max-height: 144px; margin-bottom: var(--space-2); }
+.slack-list-comment-compose .format-toolbar { flex-wrap: wrap; }
+.slack-list-comment-compose-actions { display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+.slack-list-comment-compose-status { flex-shrink: 0; margin: 0 0 var(--space-2); font-size: var(--text-sm); overflow-wrap: anywhere; }
+.slack-list-comment-compose-preview { margin: var(--space-2) 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.slack-list-comments-footer:has(#slack-list-comment-write) { justify-content: space-between; gap: var(--space-2); }
+@media (max-width: 760px) {
+ .slack-list-dialog .slack-list-comments-header { gap: 8px; padding: 8px 12px; flex-wrap: wrap; }
+ .slack-list-comments-item, .slack-list-comments-status { padding-inline: 12px; }
+ .slack-list-comments:has(.slack-list-comment-compose) .slack-list-comments-scroll { min-height: 80px; }
+ .slack-list-comment-compose { padding: 8px 12px; max-height: none; }
+ /* Keep the textbox's accessible name without spending a separate compact row. */
+ .slack-list-comment-compose .rich-editor > label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+ .slack-list-comment-compose .rich-reminder-editor { min-height: 48px; max-height: 96px; }
+ .slack-list-dialog:has(.slack-list-comment-compose) .slack-list-heading > :not(h2),
+ .slack-list-dialog:has(.slack-list-comment-compose) .slack-list-header > button:not(#slack-list-close),
+ .slack-list-dialog:has(.slack-list-comment-compose) #slack-list-create-help { display: none; }
+}

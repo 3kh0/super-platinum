@@ -232,4 +232,31 @@ for (const text of ['Hello @team', 'Hello \uff20team']) {
  assert(!f.control.message({kind:'insert',sequence:1,revision:1,index:0,value:{type:'usergroup',usergroup_id:'SGROUP001'},label:'@team',suffix:' '}));
  assert.equal(f.insertions.length,0);groups++;
 }
+// Whole Canvas/List choices share the mention trigger and original caret ticket.
+for (const type of ['canvas', 'file']) for (const prefix of ['@', '\uff20']) {
+ const f=fixture();const text=`Hello ${prefix}Alex`;f.change(text);const q=f.events.at(-1);
+ assert(f.control.message({kind:'choices',sequence:q.sequence,revision:1,count:1}));
+ assert(f.control.message({kind:'choose',sequence:q.sequence,revision:1,index:0}));
+ const message=value=>({kind:'insert',sequence:q.sequence,revision:1,index:0,value,label:'Exact title',suffix:' '});
+ for (const value of [{type,file_id:''},{type,file_id:'F2'},{type,file_id:2,text:'F2'},
+   {type,file_id:'F2',text:'F2',url:42},{type:'list_record',file_id:'F2',text:'F2'},
+   {type:'channel',channel_id:'C2'}]) assert(!f.control.message(message(value)));
+ const value={type,file_id:'F2',text:'https://example.invalid/F2',url:'https://example.invalid/F2'};
+ assert(f.control.message(message(value)));
+ assert.deepEqual(f.insertions[0].value,value);assert.equal(f.insertions[0].ticket.before,text);
+ assert.equal(f.insertions[0].label,'Exact title');assert.equal(f.insertions.length,1);groups++;
+}
+for(const type of ['canvas','file']) {
+ const f=fixture();f.control.message({kind:'choices',sequence:1,revision:1,count:1});
+ f.control.message({kind:'choose',sequence:1,revision:1,index:0});
+ assert(!f.control.message({kind:'insert',sequence:1,revision:1,index:0,value:{type,file_id:'F2',text:'F2'},label:'Wrong trigger',suffix:' '}));
+ assert.equal(f.insertions.length,0);groups++;
+}
+{
+ const f=fixture();f.change('Hello @file');const q=f.events.at(-1);
+ f.control.message({kind:'choices',sequence:q.sequence,revision:1,count:1});
+ f.control.message({kind:'choose',sequence:q.sequence,revision:1,index:0});
+ assert(f.control.message({kind:'insert',sequence:q.sequence,revision:1,index:0,value:{type:'file',file_id:'F2',text:'F2'},label:'ID fallback',suffix:' '}));
+ assert.equal(f.insertions[0].value.text,'F2');groups++;
+}
 console.log(JSON.stringify({actualBridgeHelperGroups:groups,opaqueTicketPreserved:true,noBrowserExecution:true}));

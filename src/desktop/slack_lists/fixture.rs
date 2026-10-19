@@ -84,7 +84,7 @@ pub(crate) struct Fixture {
     record_open: record_open::State,
     creation: creation::State,
     document: Value,
-    records: Value,
+    pub(in crate::slack_lists) records: Value,
     pending: Option<EditAttempt>,
     attempts: usize,
     uncertain: bool,
@@ -111,7 +111,11 @@ fn loaded(fixture: &Fixture) -> Loaded {
 }
 pub(crate) fn install(shell: &mut ShellState, name: &str) {
     assert!(shell.core.transport.is_none() && shell.core.session.is_none());
-    let document = json!({"id":"F_LIST_FIXTURE","mode":"list","title":"Launch checklist","access":"write","is_locked":false,
+    if super::comments::fixture::compose::check_enabled() {
+        // Set the isolated journal account before the List captures its owner.
+        shell.core.active_account = Some("8624eb74-23f4-4bee-9872-e37f392485c0".into());
+    }
+    let mut document = json!({"id":"F_LIST_FIXTURE","mode":"list","title":"Launch checklist","access":"write","is_locked":false,
         "list_metadata":{"schema":[
             {"id":"C_NAME","key":"NAME","name":"Item","type":"text","is_primary_column":true},
             {"id":"C_CHECK","key":"done","name":"Done","type":"checkbox"},
@@ -125,7 +129,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
             {"id":"C_CURRENCY","key":"budget","name":"Budget","type":"currency"},
             {"id":"C_MULTI","key":"teams","name":"Teams","type":"select","options":{"format":"multi_select","choices":[{"value":"OPT_DESIGN","label":"Design"},{"value":"OPT_ENGINEERING","label":"Engineering"}]}}
         ],"views":[]}});
-    let records=(0..73).map(|i| {
+    let mut records=(0..73).map(|i| {
         let mut row=json!({"id":format!("R_LIST_{i:03}"),"list_id":"F_LIST_FIXTURE","position":i,"date_created":1700000000+i,
             "fields":[{"key":"NAME","text":format!("Launch item {:02}",i+1)},
                 {"key":"done","checkbox":i%2==1},{"key":"estimate","number":[i]},
@@ -148,6 +152,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
         if i==5 {row["fields"][2]["number"]=json!([12.5]);}
         row
     }).collect::<Vec<_>>();
+    super::comments::fixture::seed(&mut document, &mut records);
     let file: File = serde_json::from_value(document.clone()).expect("fixture file");
     shell.slack_lists.fixture = Some(Fixture {
         personal_completion: false,

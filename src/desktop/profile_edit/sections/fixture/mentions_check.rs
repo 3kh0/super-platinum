@@ -75,7 +75,9 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
         return;
     }
     if super::completion::named() && std::env::var(super::completion::FLAG).as_deref() == Ok("1") {
-        if std::env::var(super::completion::groups::FLAG).as_deref() == Ok("1") {
+        if super::completion::files::named() {
+            super::file_completion_check::start(state, desktop);
+        } else if std::env::var(super::completion::groups::FLAG).as_deref() == Ok("1") {
             super::group_completion_check::start(state, desktop);
         } else if std::env::var("SUPER_PLATINUM_PROFILE_MEMBER_COMPLETION_CHECK").as_deref()
             == Ok("1")

@@ -4,6 +4,7 @@ use super::*;
 pub(crate) mod check;
 pub(crate) mod completion;
 pub(crate) mod completion_check;
+pub(crate) mod file_completion_check;
 pub(crate) mod files;
 pub(crate) mod group_completion_check;
 pub(crate) mod group_recovery;

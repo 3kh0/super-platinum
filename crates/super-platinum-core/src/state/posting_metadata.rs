@@ -317,6 +317,18 @@ impl Metadata {
             .map_err(Into::into)
     }
 
+    /// Actual gq7X read-only selector for thread admission; no file root-post override.
+    pub fn thread_read_only(&self, config: &Configuration, channel: &Value) -> Result<bool> {
+        let ctx = self.context(config, channel)?;
+        let key = channel
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or(Unknown::Identity)?;
+        self.observation(config, key)
+            .thread_read_only(channel, &ctx)
+            .map_err(Into::into)
+    }
+
     fn observation(&self, config: &Configuration, key: &str) -> Observed {
         self.observations
             .get(key)

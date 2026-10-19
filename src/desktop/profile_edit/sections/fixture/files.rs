@@ -177,6 +177,16 @@ pub(crate) async fn read(
     state: Signal<ShellState>,
     request: &PreparedRequest,
 ) -> Result<Value, Error> {
+    if super::completion::files::enabled(&state.peek()) {
+        let shell = state.peek();
+        if url::Url::parse(&request.url)
+            .ok()
+            .is_none_or(|url| url.path() != "/api/files.info")
+        {
+            return Err(unavailable());
+        }
+        return super::completion::request(&shell, request).map(|(raw, _)| raw);
+    }
     {
         let shell = state.peek();
         if !enabled(&shell) {

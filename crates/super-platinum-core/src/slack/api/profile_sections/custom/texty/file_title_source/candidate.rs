@@ -24,6 +24,7 @@ pub(super) fn project(
     incoming: &Map<String, Value>,
     previous: Option<&Value>,
     team: Option<&str>,
+    channel_map_order: Option<&[String]>,
 ) -> Result<Value, Error> {
     // canvas_metadata is handled explicitly, including embedded file references.
     // Other conservative title/status/reset gates remain.
@@ -57,7 +58,10 @@ pub(super) fn project(
         output.entry(key).or_insert_with(|| json!([]));
     }
     output.insert("actions".into(), actions(prior, &raw)?);
-    output.insert("channels".into(), channels(prior, &raw, team)?);
+    output.insert(
+        "channels".into(),
+        channels(prior, &raw, team, channel_map_order)?,
+    );
     output.insert(
         "is_starred".into(),
         json!(truth(
@@ -213,7 +217,12 @@ fn actions(prior: &Value, raw: &Value) -> Result<Value, Error> {
     };
     Ok(json!([selected]))
 }
-fn channels(prior: &Value, raw: &Value, team: Option<&str>) -> Result<Value, Error> {
+fn channels(
+    prior: &Value,
+    raw: &Value,
+    team: Option<&str>,
+    order: Option<&[String]>,
+) -> Result<Value, Error> {
     if !truth(&raw["channels"]) {
         return Ok(Value::Array(array_or_empty(&prior["channels"])?));
     }
@@ -224,10 +233,28 @@ fn channels(prior: &Value, raw: &Value, team: Option<&str>) -> Result<Value, Err
     let team = team.filter(|t| !t.is_empty()).ok_or_else(unavailable)?;
     let map = raw["channel_map"].as_object().ok_or_else(unavailable)?;
     let mut result = Vec::new();
-    let mut selected: Vec<(&String, &Value)> = map
-        .iter()
-        .filter(|(_, entry)| truth(&entry["is_org_shared"]) || entry["team"] == team)
-        .collect();
+    let mut selected: Vec<(&String, &Value)> = if let Some(order) = order {
+        if order.len() != map.len()
+            || order
+                .iter()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+                != order.len()
+        {
+            return Err(unavailable());
+        }
+        order
+            .iter()
+            .map(|key| {
+                map.get(key)
+                    .map(|entry| (key, entry))
+                    .ok_or_else(unavailable)
+            })
+            .collect::<Result<Vec<_>, _>>()?
+    } else {
+        map.iter().collect()
+    };
+    selected.retain(|(_, entry)| truth(&entry["is_org_shared"]) || entry["team"] == team);
     // JSON Value has lost string-key insertion order. Numeric JS index keys
     // have an independently established order; multiple other selected keys
     // need an original-byte sidecar before this branch can be authoritative.
@@ -236,7 +263,7 @@ fn channels(prior: &Value, raw: &Value, team: Option<&str>) -> Result<Value, Err
             .ok()
             .filter(|i| *i != u32::MAX && i.to_string() == key)
     };
-    if selected.len() > 1 {
+    if order.is_none() && selected.len() > 1 {
         if selected.iter().any(|(key, _)| index(key).is_none()) {
             return Err(unavailable());
         }

@@ -6,6 +6,7 @@ use crate::{
 use dioxus::prelude::*;
 mod board;
 mod board_move;
+pub(crate) mod comments;
 mod create;
 mod delete;
 mod editor;
@@ -46,6 +47,9 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
     let deleting = deletion.as_ref().is_some_and(|operation| operation.pending);
     let detail_generation = view.detail.as_ref().map(|detail| detail.generation);
     let detail_open = view.detail.as_ref().map(|detail| detail.open_generation);
+    let comments_generation =
+        crate::slack_lists::comments::presentation(&state.read()).map(|view| view.generation);
+    let comments_open = comments_generation.is_some();
     let is_board = view.layout_kind == crate::slack_lists::ProjectionLayout::Board;
     let count = view.entries.len();
     let page_count = count.div_ceil(PAGE_SIZE).max(1);
@@ -118,10 +122,10 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
     }).collect::<Vec<Element>>()
     };
     rsx! {
-        div{class:"scrim",onclick:move |_|crate::slack_lists::close_shell(&mut state.write())}
+        div{class:"scrim",onclick:move |_|comments::close_list(state,generation)}
         section{id:"shell-overlay-dialog",class:"modal slack-list-dialog",role:"dialog","aria-modal":"true","aria-labelledby":"slack-list-title",tabindex:"-1",
             "data-keyboard-dialog":"true","data-dialog-kind":"other","data-dialog-generation":generation,"data-layout-generation":layout,"data-list-id":"{view.list_id}","data-view-selection":"{selection_generation}",
-            onkeydown:move |event|if event.key()==Key::Escape{event.prevent_default();event.stop_propagation();if let Some(detail)=detail_generation {crate::slack_lists::close_record_detail(state,detail);}else{crate::slack_lists::close_shell(&mut state.write());}},
+            onkeydown:move |event|if event.key()==Key::Escape{event.prevent_default();event.stop_propagation();if let Some(comments)=comments_generation {comments::back(state,comments);}else if let Some(detail)=detail_generation {crate::slack_lists::close_record_detail(state,detail);}else{comments::close_list(state,generation);}},
             onmounted:move |_|{dioxus::document::eval(INSTALL_KEYBOARD);},
             header{class:"slack-list-header",
                 div{class:"slack-list-heading",h2{id:"slack-list-title","{view.title}"}
@@ -146,7 +150,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                 }
                 {create::action(state,generation,layout)}
                 button{id:"slack-list-refresh",r#type:"button",class:"slack-list-action",disabled:view.loading||deleting,onclick:move |_|crate::slack_lists::refresh(state),"Refresh"}
-                button{id:"slack-list-close",r#type:"button",class:"icon-btn","aria-label":"Close list",onclick:move |_|crate::slack_lists::close_shell(&mut state.write()),{icon(Icon::Close,"icon")}}
+                button{id:"slack-list-close",r#type:"button",class:"icon-btn","aria-label":"Close list",onclick:move |_|comments::close_list(state,generation),{icon(Icon::Close,"icon")}}
             }
             if detail_generation.is_none()&&view.find_available {{find::bar(state,&view)}}
             div{class:"slack-list-notices","aria-live":"polite",
@@ -184,7 +188,12 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                     button{id:"slack-list-next",r#type:"button",disabled:current_page+1>=page_count,onclick:move |_|{page.set((page_next.clone(),current_page+1));reset_scroll();},"Next"}}}
             }
             }
-            if let Some(open)=detail_open {record::RecordDetail{key:"record-detail-{open}",state}}
+            if let Some(open)=detail_open {
+                div{class:"slack-list-record-host",hidden:comments_open.then_some(true),inert:comments_open.then_some(true),
+                    record::RecordDetail{key:"record-detail-{open}",state}
+                }
+            }
+            {comments::panel(state)}
             if let Some(completion)=crate::slack_lists::completion::presentation(&state.read()) {
                 div{id:"slack-list-completion-status",class:"slack-list-warning",role:"status","aria-busy":completion.pending,
                     p{"{completion.message}"}

@@ -26,8 +26,10 @@ mod global_notifications;
 mod list_column_delete;
 mod list_column_precision;
 mod list_column_rename;
+mod list_comments;
 pub use list_column_delete::ListColumnDeleteFailure;
 pub use list_column_precision::ListColumnPrecisionFailure;
+pub use list_comments::ListCommentReplyFailure;
 mod list_assignee;
 pub use list_assignee::ListAssigneeFailure;
 mod list_todo;
@@ -71,6 +73,7 @@ mod own_profile_photo;
 mod own_profile_recording;
 mod presentation_notifications;
 mod profile_channel_search;
+mod profile_file_search;
 mod profile_group_search;
 mod profile_member_search;
 mod profile_sections;
@@ -79,6 +82,7 @@ mod read_shortcuts;
 mod slash_command;
 mod upload_readback;
 mod workflow_management;
+pub use crate::slack::api::custom::texty::files::OrderedResponse as ProfileFileSearchResponse;
 pub use channel_read_dispatch::{ChannelReadAttempt, ChannelReadReceipt, ChannelReadResponse};
 pub use directory_response::DirectoryResponse as ActivityMemberResponse;
 pub use directory_response::DirectoryResponse as AutocompleteOfflineResponse;
@@ -580,12 +584,16 @@ impl Transport {
             ordered.raw
         } else if let Some(original_bytes) = original_bytes {
             let bytes = response
-                .text()
+                .bytes()
                 .await
                 .map_err(|_| Error::Transport("invalid split response bytes".into()))?;
-            let value = serde_json::from_str(&bytes)
+            // This seam promises original bytes, so charset conversion and
+            // replacement of invalid UTF8 must never precede observation.
+            let text = std::str::from_utf8(&bytes)
+                .map_err(|_| Error::Transport("invalid original response UTF8".into()))?;
+            let value = serde_json::from_slice(&bytes)
                 .map_err(|_| Error::Transport("invalid split response JSON".into()))?;
-            *original_bytes = Some(bytes);
+            *original_bytes = Some(text.to_owned());
             value
         } else if url::Url::parse(&req.url).is_ok_and(|url| url.path() == "/api/blocks.suggestions")
         {

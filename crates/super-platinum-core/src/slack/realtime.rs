@@ -9,6 +9,7 @@ use super::events::{RawEvent, RtEvent};
 use super::models::{Message as SlackMessage, TeamId};
 
 mod member_subscription;
+pub(super) mod message_update;
 pub use member_subscription::{MemberSubscription, MemberSubscriptionError, SubscriptionReceipt};
 
 /// How often the client pings flannel.
@@ -353,11 +354,23 @@ fn parse_event_value(value: Value) -> Option<RtEvent> {
                 // Replies resend the existing parent, including its mentions.
                 // They update every stored copy but must not announce a new
                 // message or increment unread counts.
-                Some("message_changed" | "message_replied") => {
+                Some(subtype @ ("message_changed" | "message_replied")) => {
                     let nested = value.get("message")?.clone();
-                    let mut message: SlackMessage = serde_json::from_value(nested).ok()?;
+                    let mut message: SlackMessage = serde_json::from_value(nested.clone()).ok()?;
+                    let kind = if subtype == "message_changed" {
+                        message_update::MessageUpdateKind::Changed
+                    } else {
+                        message_update::MessageUpdateKind::Replied
+                    };
+                    let original_update = Some(message_update::MessageUpdate::capture(
+                        kind, &channel, nested, &message,
+                    ));
                     message.channel.get_or_insert(channel.clone());
-                    Some(RtEvent::MessageChanged { channel, message })
+                    Some(RtEvent::MessageChanged {
+                        channel,
+                        message,
+                        original_update,
+                    })
                 }
                 Some("message_deleted") => {
                     let deleted_ts = value.get("deleted_ts").and_then(Value::as_str)?.to_owned();
@@ -650,7 +663,9 @@ mod tests {
     fn parses_message_changed_and_deleted() {
         let changed = r#"{"type":"message","subtype":"message_changed","channel":"C1","message":{"ts":"1.2","text":"edited"}}"#;
         match parse_event(changed) {
-            Some(RtEvent::MessageChanged { channel, message }) => {
+            Some(RtEvent::MessageChanged {
+                channel, message, ..
+            }) => {
                 assert_eq!(channel, "C1");
                 assert_eq!(message.text.as_deref(), Some("edited"));
                 assert_eq!(message.channel.as_deref(), Some("C1"));
@@ -676,7 +691,9 @@ mod tests {
     fn parses_message_replied_as_parent_update() {
         let replied = r#"{"type":"message","subtype":"message_replied","channel":"C1","message":{"type":"message","user":"U1","text":"actual","ts":"1.2"}}"#;
         match parse_event(replied) {
-            Some(RtEvent::MessageChanged { channel, message }) => {
+            Some(RtEvent::MessageChanged {
+                channel, message, ..
+            }) => {
                 assert_eq!(channel, "C1");
                 assert_eq!(message.user.as_deref(), Some("U1"));
                 assert_eq!(message.text.as_deref(), Some("actual"));

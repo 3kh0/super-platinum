@@ -111,6 +111,7 @@ pub(in crate::profile_edit::sections::rich) struct Snapshot {
     store: source::Store,
     rows: Vec<source::CandidateObservation>,
     unavailable: Vec<String>,
+    excluded: Vec<String>,
     stamps: BTreeMap<String, Stamp>,
     publication: Option<Arc<()>>,
 }
@@ -139,6 +140,7 @@ impl Snapshot {
         let collection = slot.store.candidates();
         let mut unavailable = collection.unavailable_ids().to_vec();
         let mut rows = Vec::new();
+        let mut excluded = Vec::new();
         let mut stamps = BTreeMap::new();
         for row in collection.rows() {
             match slot.stamps.get(row.id()) {
@@ -151,6 +153,17 @@ impl Snapshot {
                 _ => unavailable.push(row.id().into()),
             }
         }
+        for row in collection.excluded() {
+            match slot.stamps.get(row.id()) {
+                Some(stamp)
+                    if !slot.invalidated.contains(row.id()) && stamp.current(shell, row.id()) =>
+                {
+                    excluded.push(row.id().to_owned());
+                    stamps.insert(row.id().to_owned(), stamp.clone());
+                }
+                _ => unavailable.push(row.id().to_owned()),
+            }
+        }
         Ok(Arc::new(Self {
             owner,
             state: state.identity.clone(),
@@ -160,6 +173,7 @@ impl Snapshot {
             store: slot.store.clone(),
             rows,
             unavailable,
+            excluded,
             stamps,
             publication,
         }))
@@ -169,6 +183,11 @@ impl Snapshot {
     }
     pub(in crate::profile_edit::sections::rich) fn unavailable_ids(&self) -> &[String] {
         &self.unavailable
+    }
+    /// Proven effective-category exclusions only. Currentness includes their
+    /// original socket/event receipts just like selectable candidate rows.
+    pub(in crate::profile_edit::sections::rich) fn excluded_ids(&self) -> &[String] {
+        &self.excluded
     }
     /// Raw evidence for unavailable rows is not category, title or rank authority.
     pub(in crate::profile_edit::sections::rich) fn source(&self, id: &str) -> Option<&Value> {
@@ -204,6 +223,30 @@ impl Snapshot {
                             .all(|(id, stamp)| stamp.current(shell, id))
                 })
     }
+}
+
+/// Closed offline fixture observation of the same current source used to rank
+/// choices. This grants no acquisition, mutation, or live inspection authority.
+pub(crate) fn fixture_completion_proof(shell: &ShellState) -> Result<Value, Error> {
+    if !crate::profile_edit::sections::fixture::completion::files::enabled(shell) {
+        return Err(unavailable());
+    }
+    let team = shell.core.active_team.as_deref().ok_or_else(unavailable)?;
+    let snapshot = Snapshot::capture(shell, team)?;
+    let rows: Vec<_> = snapshot
+        .rows()
+        .iter()
+        .filter(|row| matches!(row.id(), "FCOMPLETE1" | "FCOMPLETE2"))
+        .map(|row| {
+            serde_json::json!({
+                "id": row.id(), "source": row.source(), "effective": row.effective()
+            })
+        })
+        .collect();
+    Ok(serde_json::json!({
+        "rows": rows, "unavailableIds": snapshot.unavailable_ids(),
+        "excludedIds": snapshot.excluded_ids()
+    }))
 }
 
 /// Captured before the first request. Publication cannot substitute a newer
@@ -354,6 +397,7 @@ impl Fence {
         shell: &ShellState,
         carrier: &Value,
         rows: &[Value],
+        order: Option<&source::ChannelMapOrder>,
     ) -> Result<(source::Store, Vec<String>), Error> {
         if !self.current(shell) {
             return Err(unavailable());
@@ -367,7 +411,11 @@ impl Fence {
             .get(team)
             .ok_or_else(unavailable)?;
         let mut next = slot.store.clone();
-        let receipt = next.ingest_batch(carrier, rows, &self.owner.session)?;
+        let receipt = if let Some(order) = order {
+            next.ingest_batch_ordered(carrier, rows, &self.owner.session, order)?
+        } else {
+            next.ingest_batch(carrier, rows, &self.owner.session)?
+        };
         // Include embedded rows, and IDs absent at request time. File events
         // during acquisition cannot be hidden by a previously empty cache.
         if receipt.entries().iter().any(|entry| {
@@ -387,13 +435,23 @@ impl Fence {
             .collect();
         Ok((next, stamps))
     }
+    #[cfg(test)]
     fn publish(
         &self,
         shell: &mut ShellState,
         carrier: &Value,
         rows: &[Value],
     ) -> Result<Arc<Snapshot>, Error> {
-        let (next, stamps) = self.stage(shell, carrier, rows)?;
+        self.publish_ordered(shell, carrier, rows, None)
+    }
+    fn publish_ordered(
+        &self,
+        shell: &mut ShellState,
+        carrier: &Value,
+        rows: &[Value],
+        order: Option<&source::ChannelMapOrder>,
+    ) -> Result<Arc<Snapshot>, Error> {
+        let (next, stamps) = self.stage(shell, carrier, rows, order)?;
         let team = &self.owner.session.team_id;
         let slot = shell
             .profile_edit
@@ -451,13 +509,17 @@ impl Read {
         &self,
         shell: &mut ShellState,
         search: &Search,
-        carrier: &Value,
-        rows: &[Value],
+        response: &files::OrderedResponse,
     ) -> Result<Arc<Snapshot>, Error> {
         if !self.current(shell, search) {
             return Err(unavailable());
         }
-        self.fence.publish(shell, carrier, rows)
+        self.fence.publish_ordered(
+            shell,
+            response.raw(),
+            response.rows(),
+            Some(response.channel_map_order()),
+        )
     }
     pub(super) fn cached(
         &self,

@@ -18,6 +18,7 @@ pub(crate) const REMOTE: &str = "CCOMPLETE1";
 pub(crate) const REMOTE_LABEL: &str = "project-completion";
 pub(crate) const SECOND: &str = "CCOMPLETE2";
 pub(crate) const SECOND_LABEL: &str = "project-cove";
+pub(crate) mod files;
 pub(crate) mod groups;
 pub(crate) mod members;
 
@@ -227,11 +228,15 @@ fn validate(
     let url = url::Url::parse(&request.url).map_err(|_| refused())?;
     let member_search = url.path().ends_with("/users/search");
     let group_search = url.path().ends_with("/usergroups/search");
-    let search = member_search || group_search || url.path().ends_with("/channels/search");
+    let file_search = url.path().ends_with("/search.autocomplete.files");
+    let search =
+        member_search || group_search || file_search || url.path().ends_with("/channels/search");
     let method = if member_search {
         "users/search"
     } else if group_search {
         "usergroups/search"
+    } else if file_search {
+        "search.autocomplete.files"
     } else if search {
         "channels/search"
     } else {
@@ -242,12 +247,11 @@ fn validate(
             name_policy::request::user(client, owner),
             json!({"ok":true,"prefs":{"frecency":"{}"}}),
         ),
-        "experiments.getByUser" => (
-            api::list_experiments(client, owner),
-            json!({"ok":true,"assignments":{}}),
-        ),
+        "experiments.getByUser" => (api::list_experiments(client, owner), files::assignments()),
         "client.gantryBoot" => (grid::discovery(client, owner), members::gantry(owner)),
         "client.userBoot" => (api::user_boot(client, owner), members::boot(owner)),
+        "search.autocomplete.files" => files::plan(client, owner, request)?,
+        "files.info" => files::info(client, owner, request)?,
         "users/search" => members::plan(client, owner, request)?,
         "usergroups/search" => groups::plan(client, owner, request)?,
         "api.getFlannelHttpUrl" => (
@@ -368,6 +372,8 @@ fn start(model: &Model, owner: &WorkspaceSession, accepted: Accepted) -> Result<
         ledger.completed += 1;
         Ok(Start::Ready(if accepted.method == "users/search" {
             members::reply(owner, mode)
+        } else if accepted.method == "search.autocomplete.files" {
+            files::reply(owner, mode)
         } else if accepted.method == "usergroups/search" {
             groups::reply(owner, mode)
         } else {
@@ -419,6 +425,23 @@ pub(crate) async fn search(
         Start::Held(receiver) => wait(model, receiver).await,
     }
 }
+pub(crate) async fn file_search(
+    state: Signal<ShellState>,
+    request: &PreparedRequest,
+) -> Result<super_platinum_core::slack::api::custom::texty::files::OrderedResponse, Error> {
+    {
+        let shell = state.peek();
+        if !files::enabled(&shell)
+            || url::Url::parse(&request.url).map_err(|_| refused())?.path()
+                != "/api/search.autocomplete.files"
+        {
+            return Err(refused());
+        }
+    }
+    let (bytes, _) = search(state, request).await?;
+    let bytes = bytes.as_str().ok_or_else(refused)?;
+    super_platinum_core::slack::api::custom::texty::files::OrderedResponse::decode(bytes.as_bytes())
+}
 pub(crate) fn mode(shell: &ShellState, value: Mode) -> Result<(), Error> {
     let model = handle(shell)?;
     let mut ledger = model.0.lock().unwrap();
@@ -464,8 +487,13 @@ impl Model {
             .iter()
             .filter(|r| r["method"] == "usergroups/search")
             .count();
-        let searches = channel_searches + member_searches + group_searches;
-        json!({"requests":ledger.requests,"searches":searches,"channelSearches":channel_searches,"memberSearches":member_searches,"groupSearches":group_searches,"active":searches.saturating_sub(ledger.completed),
+        let file_searches = ledger
+            .requests
+            .iter()
+            .filter(|r| r["method"] == "search.autocomplete.files")
+            .count();
+        let searches = channel_searches + member_searches + group_searches + file_searches;
+        json!({"requests":ledger.requests,"searches":searches,"channelSearches":channel_searches,"memberSearches":member_searches,"groupSearches":group_searches,"fileSearches":file_searches,"active":searches.saturating_sub(ledger.completed),
             "held":!ledger.held.is_empty(),"heldQueries":ledger.held.iter().map(|h|json!({"serial":h.serial,"query":h.query})).collect::<Vec<_>>(),
             "completed":ledger.completed,"cancelled":ledger.cancelled,"networkCalls":0})
     }

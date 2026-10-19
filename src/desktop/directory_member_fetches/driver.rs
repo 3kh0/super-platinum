@@ -48,6 +48,14 @@ impl Client {
         if crate::fixture::is_fixture()
             && !crate::profile_edit::sections::fixture::member_recovery::enabled()
         {
+            let shell = state.peek();
+            if crate::profile_edit::sections::fixture::completion::files::enabled(&shell) {
+                // Mixed file reopening may need files.info while all USER rows
+                // are already settled. This grants no member dispatcher access:
+                // no subscription, slot, root task or network read is created.
+                settled_without_member_io(&shell, team, ids)?;
+                return Ok(None);
+            }
             return Err(unavailable());
         }
         let subscription = register(&mut state.write(), team, ids)?;
@@ -87,6 +95,43 @@ impl Client {
             sub.changed().await?;
         }
     }
+}
+
+fn settled_without_member_io(shell: &ShellState, team: &str, ids: &[String]) -> Result<(), Error> {
+    let context = Context::capture(shell, team)?;
+    let workspace = shell.core.workspaces.get(team).ok_or_else(unavailable)?;
+    let store = &workspace.directory_members;
+    let observed = store.observations(
+        &context.account,
+        &context.session,
+        context.epoch,
+        GENERATION,
+    )?;
+    let absent = Capture::network_only(observed, ids)?;
+    if !absent.ids().is_empty() {
+        return Err(unavailable());
+    }
+    let subset = store.subset(
+        &context.account,
+        &context.session,
+        context.epoch,
+        GENERATION,
+        &ids.iter().cloned().collect(),
+        &workspace.users,
+    )?;
+    if !context.current(shell)
+        || !subset.current(
+            store,
+            &context.account,
+            &context.session,
+            context.epoch,
+            GENERATION,
+            &workspace.users,
+        )
+    {
+        return Err(unavailable());
+    }
+    Ok(())
 }
 impl Drop for Client {
     fn drop(&mut self) {

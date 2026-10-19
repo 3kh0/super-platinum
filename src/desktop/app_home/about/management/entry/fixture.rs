@@ -3,6 +3,9 @@ use super::*;
 use super_platinum_core::{slack::models::Message, state::ChannelMessages};
 
 pub(crate) const TS: &str = "1781524800.000001";
+pub(crate) const SUCCESSOR_ROOT: &str = "1781524750.000001";
+pub(crate) const SUCCESSOR_TS: &str = "1781524850.000001";
+pub(crate) const SUCCESSOR_OPEN: &str = "View successor workflow execution";
 pub(crate) const ROOT: &str = "1781524700.000001";
 pub(crate) const COMPOSER: &str = "Uncommitted conversation draft \u{4e2d}\u{1f642}";
 pub(crate) const THREAD_COMPOSER: &str = "Uncommitted thread reply \u{4e2d}\u{1f642}";
@@ -21,6 +24,8 @@ pub(crate) fn enabled(s: &ShellState) -> bool {
                 | "execution-focused"
                 | "execution-thread-retirement"
                 | "execution-pins-retirement"
+                | "execution-thread-replacement"
+                | "execution-pin-removal"
         )
 }
 pub(crate) fn install(s: &mut ShellState) {
@@ -28,8 +33,14 @@ pub(crate) fn install(s: &mut ShellState) {
 }
 fn install_case(s: &mut ShellState, scenario: &str) {
     let focused = scenario == "execution-focused";
-    let thread = matches!(scenario, "execution-thread" | "execution-thread-retirement") || focused;
-    let pins = matches!(scenario, "execution-pins" | "execution-pins-retirement");
+    let thread = matches!(
+        scenario,
+        "execution-thread" | "execution-thread-retirement" | "execution-thread-replacement"
+    ) || focused;
+    let pins = matches!(
+        scenario,
+        "execution-pins" | "execution-pins-retirement" | "execution-pin-removal"
+    );
     s.channel_tab = crate::state::ChannelTab::Messages;
     s.overlay = None;
     s.app_modal = None;
@@ -66,6 +77,20 @@ fn install_case(s: &mut ShellState, scenario: &str) {
     if thread || pins {
         message.thread_ts = Some(ROOT.into());
     }
+    let successor = if matches!(
+        scenario,
+        "execution-thread-replacement" | "execution-pin-removal"
+    ) {
+        let mut raw = serde_json::to_value(&message).expect("Original synthetic action");
+        raw["ts"] = json!(SUCCESSOR_TS);
+        raw["thread_ts"] = json!(SUCCESSOR_ROOT);
+        raw["text"] = json!("A different source retains this workflow draft.");
+        raw["blocks"] = json!([{"type":"section","block_id":"successor-description","text":{"type":"plain_text","text":"A different source retains this workflow draft."}},
+            {"type":"actions","block_id":"execution-open","elements":[element(SUCCESSOR_OPEN,json!({"type":"wfb","wf_id":"WF_REVIEW","execution_id":"E_REVIEW"}))]}]);
+        Some(serde_json::from_value::<Message>(raw).expect("Successor action"))
+    } else {
+        None
+    };
     let mut bag = ChannelMessages::default();
     bag.loaded = true;
     bag.upsert(if thread || pins {
@@ -90,6 +115,17 @@ fn install_case(s: &mut ShellState, scenario: &str) {
         s.core
             .threads
             .insert(("TWORKFLOW".into(), "C2".into(), ROOT.into()), bag);
+        if let Some(successor) = successor {
+            let mut bag = ChannelMessages::default();
+            bag.loaded = true;
+            bag.upsert(serde_json::from_value(json!({"ts":SUCCESSOR_ROOT,"channel":"C2","user":"UWORKFLOW",
+                "text":"Successor thread with its own draft.","reply_count":1,"latest_reply":SUCCESSOR_TS,"thread_ts":SUCCESSOR_ROOT})).unwrap());
+            bag.upsert(successor);
+            s.core.threads.insert(
+                ("TWORKFLOW".into(), "C2".into(), SUCCESSOR_ROOT.into()),
+                bag,
+            );
+        }
         s.begin_thread(ROOT.into(), None);
         s.thread_loading = false;
         s.refresh_thread_from_core();
@@ -107,19 +143,25 @@ fn install_case(s: &mut ShellState, scenario: &str) {
         use super_platinum_core::pins::{PinnedItem, PinsPage};
         s.core.pins.ensure_scope(s.core.account_epoch, "TWORKFLOW");
         let generation = s.core.pins.begin("C2");
-        assert!(s.core.pins.apply(
-            generation,
-            PinsPage {
-                items: vec![PinnedItem {
-                    kind: "message".into(),
-                    channel: Some("C2".into()),
-                    message: Some(message),
-                    created: Some(1781524900),
-                    created_by: Some("UWORKFLOW".into()),
-                    ..Default::default()
-                }]
-            }
-        ));
+        let mut items = vec![PinnedItem {
+            kind: "message".into(),
+            channel: Some("C2".into()),
+            message: Some(message),
+            created: Some(1781524900),
+            created_by: Some("UWORKFLOW".into()),
+            ..Default::default()
+        }];
+        if let Some(message) = successor {
+            items.push(PinnedItem {
+                kind: "message".into(),
+                channel: Some("C2".into()),
+                message: Some(message),
+                created: Some(1781524901),
+                created_by: Some("UWORKFLOW".into()),
+                ..Default::default()
+            });
+        }
+        assert!(s.core.pins.apply(generation, PinsPage { items }));
         s.channel_tab = crate::state::ChannelTab::Pins;
     }
 }
@@ -226,5 +268,88 @@ mod tests {
         assert!(Source::capture(&s, &vm, "C2", Bag::Thread { root: ROOT.into() }).is_ok());
         assert!(Source::capture(&s, &vm, "C2", Bag::Timeline).is_err());
         assert!(s.thread_messages.iter().any(|m| m.ts == TS));
+    }
+    #[test]
+    fn replacement_fixture_keeps_old_bag_but_only_selected_successor_admits_action() {
+        let mut s = setup("execution-thread-replacement");
+        let old_key = ("TWORKFLOW".into(), "C2".into(), ROOT.into());
+        let new_key = ("TWORKFLOW".into(), "C2".into(), SUCCESSOR_ROOT.into());
+        let old = s.core.threads[&old_key]
+            .messages
+            .iter()
+            .find(|m| m.ts.as_deref() == Some(TS))
+            .unwrap()
+            .clone();
+        let new = s.core.threads[&new_key]
+            .messages
+            .iter()
+            .find(|m| m.ts.as_deref() == Some(SUCCESSOR_TS))
+            .unwrap()
+            .clone();
+        let vm = crate::message_vm::message_vm(&s.core.workspaces["TWORKFLOW"], &old, &s.media);
+        let source = Source::capture(&s, &vm, "C2", Bag::Thread { root: ROOT.into() }).unwrap();
+        let original = serde_json::to_value(&s.core.threads[&old_key].messages).unwrap();
+        let generation = s.thread_generation;
+        s.begin_thread(SUCCESSOR_ROOT.into(), None);
+        s.thread_loading = false;
+        s.refresh_thread_from_core();
+        assert_eq!(s.thread_generation, generation + 1);
+        assert_eq!(
+            serde_json::to_value(&s.core.threads[&old_key].messages).unwrap(),
+            original
+        );
+        assert!(source.client_message(&s).is_err());
+        let vm = crate::message_vm::message_vm(&s.core.workspaces["TWORKFLOW"], &new, &s.media);
+        assert!(
+            Source::capture(
+                &s,
+                &vm,
+                "C2",
+                Bag::Thread {
+                    root: SUCCESSOR_ROOT.into()
+                }
+            )
+            .is_ok()
+        );
+        assert!(
+            s.core.workspaces["TWORKFLOW"].messages["C2"]
+                .messages
+                .iter()
+                .all(|m| m.blocks.is_empty())
+        );
+    }
+    #[test]
+    fn pin_removal_fixture_uses_real_event_and_preserves_independent_survivor() {
+        let mut s = setup("execution-pin-removal");
+        let key = format!("message:{TS}");
+        let survivor = format!("message:{SUCCESSOR_TS}");
+        let message = s.core.pins.items[&key].message.as_ref().unwrap();
+        let vm = crate::message_vm::message_vm(&s.core.workspaces["TWORKFLOW"], message, &s.media);
+        let source = Source::capture(
+            &s,
+            &vm,
+            "C2",
+            Bag::Pins {
+                item_key: key.clone(),
+            },
+        )
+        .unwrap();
+        let saved = serde_json::to_value(s.core.pins.items[&survivor].message.as_ref()).unwrap();
+        let generation = s.core.pins.generation;
+        let raw=serde_json::from_value(json!({"type":"pin_removed","channel_id":"C2","item":{"type":"message","ts":TS},"event_ts":"1781524999.000001"})).unwrap();
+        let update = super_platinum_core::pins::PinUpdate::from_event(&raw).unwrap();
+        assert!(s.core.apply_pin_event("TWORKFLOW", &update));
+        s.core.update_pin_copies("TWORKFLOW", "C2", TS, false);
+        assert_eq!(s.core.pins.generation, generation + 1);
+        assert!(!s.core.pins.items.contains_key(&key));
+        assert_eq!(
+            serde_json::to_value(s.core.pins.items[&survivor].message.as_ref()).unwrap(),
+            saved
+        );
+        assert_eq!(s.core.pins.version("C2", &key), Some("1781524999.000001"));
+        assert!(source.client_message(&s).is_err());
+        let message = s.core.pins.items[&survivor].message.as_ref().unwrap();
+        let vm = crate::message_vm::message_vm(&s.core.workspaces["TWORKFLOW"], message, &s.media);
+        assert!(Source::capture(&s, &vm, "C2", Bag::Pins { item_key: survivor }).is_ok());
     }
 }

@@ -141,6 +141,16 @@ impl Observed {
         }
         Ok(())
     }
+    /// gq7X.P only, used by pS2E.canThread. Unlike root-post effective(),
+    /// this must not force file/huddle read-only to false.
+    pub fn thread_read_only(&self, channel: &Value, ctx: &Context<'_>) -> Result<bool> {
+        ctx.check(channel)?;
+        if channel["id"].as_str() != Some(self.channel_id.as_str()) {
+            return Err(Unknown::Identity);
+        }
+        adjust(self.read_only.ok_or(Unknown::EffectiveFlags)?, channel, ctx)
+    }
+
     /// Applies the captured plan/general/external-host exceptions after the
     /// preference or effective-flag observation. File and huddle root posting
     /// remains refused (FS2H always rejects huddle channels independently).

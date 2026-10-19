@@ -12,9 +12,23 @@ pub(super) struct Choices {
     source: Option<Arc<canonical::Canonical>>,
     member_source: Option<Arc<crate::directory_member_fetches::search::Snapshot>>,
     group_source: Option<Arc<super::search::group_source::Snapshot>>,
+    files: Option<FileChoices>,
     values: Vec<Completion>,
     cancel: tokio::sync::watch::Sender<bool>,
     ranking_current: Option<Arc<dyn Fn(&ShellState) -> bool + Send + Sync>>,
+}
+
+#[derive(Clone)]
+struct FileChoices {
+    search: Arc<super::search::Search>,
+    choices: std::collections::BTreeMap<String, Arc<super::search::file_choice::Choice>>,
+}
+impl FileChoices {
+    fn current(&self, shell: &ShellState) -> bool {
+        self.choices
+            .values()
+            .all(|choice| choice.current(shell, &self.search))
+    }
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -28,6 +42,29 @@ pub(crate) struct Presentation {
     pub sequence: u64,
     pub revision: u64,
     pub labels: Vec<String>,
+    pub kinds: Vec<CompletionKind>,
+}
+
+/// Display category only; no selectable identity crosses this boundary.
+#[derive(Clone, Copy, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum CompletionKind {
+    Channel,
+    Member,
+    Group,
+    Canvas,
+    List,
+}
+impl Completion {
+    fn kind(&self) -> CompletionKind {
+        match self.value["type"].as_str() {
+            Some("channel") => CompletionKind::Channel,
+            Some("usergroup") => CompletionKind::Group,
+            Some("canvas") => CompletionKind::Canvas,
+            Some("file") => CompletionKind::List,
+            _ => CompletionKind::Member,
+        }
+    }
 }
 
 /// Host-created identity. Neither a DOM query nor a result row can construct it.
@@ -179,6 +216,7 @@ pub(crate) fn begin(
         values: Vec::new(),
         cancel,
         ranking_current: None,
+        files: None,
     });
     Some(lease)
 }
@@ -204,6 +242,7 @@ pub(crate) fn close(shell: &mut ShellState, lease: &Lease) -> bool {
     q.source = None;
     q.member_source = None;
     q.group_source = None;
+    q.files = None;
     q.ranking_current = None;
     q.cancel.send_replace(true);
     true
@@ -257,16 +296,19 @@ pub(super) fn publish_channels_checked(
         .as_mut()?;
     let revision = q.revision.checked_add(1).filter(|r| *r < MAX_SAFE)?;
     let labels = values.iter().map(|c| c.label.clone()).collect();
+    let kinds = values.iter().map(Completion::kind).collect();
     q.revision = revision;
     q.values = values;
     q.source = Some(source);
     q.member_source = None;
     q.group_source = None;
+    q.files = None;
     q.ranking_current = ranking_current;
     Some(Presentation {
         sequence: lease.sequence,
         revision,
         labels,
+        kinds,
     })
 }
 
@@ -297,6 +339,7 @@ pub(super) fn publish_members_checked(
 pub(super) enum MentionId {
     Member(String),
     Group(String),
+    File(String),
 }
 
 /// Both categories share one ranked batch and one private selection receipt.
@@ -310,6 +353,41 @@ pub(super) fn publish_mixed_checked(
     group_labels: &std::collections::BTreeMap<String, String>,
     ranking_current: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
 ) -> Option<Presentation> {
+    publish_all_checked(
+        shell,
+        lease,
+        source,
+        groups,
+        ids,
+        group_labels,
+        std::collections::BTreeMap::new(),
+        None,
+        ranking_current,
+    )
+}
+
+pub(super) fn publish_all_checked(
+    shell: &mut ShellState,
+    lease: &Lease,
+    source: Arc<crate::directory_member_fetches::search::Snapshot>,
+    groups: Option<Arc<super::search::group_source::Snapshot>>,
+    ids: &[MentionId],
+    group_labels: &std::collections::BTreeMap<String, String>,
+    files: std::collections::BTreeMap<String, Arc<super::search::file_choice::Choice>>,
+    search: Option<Arc<super::search::Search>>,
+    ranking_current: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
+) -> Option<Presentation> {
+    let files = if files.is_empty() {
+        None
+    } else {
+        Some(FileChoices {
+            search: search?,
+            choices: files,
+        })
+    };
+    if files.as_ref().is_some_and(|files| !files.current(shell)) {
+        return None;
+    }
     if !lease.current(shell)
         || !source.current(shell)
         || groups.as_ref().is_some_and(|source| !source.current(shell))
@@ -324,6 +402,19 @@ pub(super) fn publish_mixed_checked(
         .map(|selection| {
             let id = match selection {
                 MentionId::Member(id) => id,
+                MentionId::File(id) => {
+                    let choice = files.as_ref()?.choices.get(id)?;
+                    let value = choice.value();
+                    if value["file_id"].as_str() != Some(id.as_str())
+                        || !matches!(value["type"].as_str(), Some("file" | "canvas"))
+                    {
+                        return None;
+                    }
+                    return Some(Completion {
+                        value: value.clone(),
+                        label: choice.label().into(),
+                    });
+                }
                 MentionId::Group(id) => {
                     groups.as_ref()?.rows().iter().find(|row| row.id() == id)?;
                     return Some(Completion {
@@ -353,16 +444,19 @@ pub(super) fn publish_mixed_checked(
         .as_mut()?;
     let revision = q.revision.checked_add(1).filter(|r| *r < MAX_SAFE)?;
     let labels = values.iter().map(|c| c.label.clone()).collect();
+    let kinds = values.iter().map(Completion::kind).collect();
     q.revision = revision;
     q.values = values;
     q.source = None;
     q.member_source = Some(source);
     q.group_source = groups;
+    q.files = files;
     q.ranking_current = Some(ranking_current);
     Some(Presentation {
         sequence: lease.sequence,
         revision,
         labels,
+        kinds,
     })
 }
 
@@ -398,8 +492,17 @@ pub(crate) fn choose(
         }
         _ => false,
     };
-    if !source_current {
+    if !source_current || q.files.as_ref().is_some_and(|files| !files.current(shell)) {
         return None;
+    }
+    let selected = q.selected(lease.sequence, revision, index)?;
+    if matches!(selected.value["type"].as_str(), Some("file" | "canvas")) {
+        let files = q.files.as_ref()?;
+        let id = selected.value["file_id"].as_str()?;
+        let choice = files.choices.get(id)?;
+        if choice.value() != &selected.value || choice.label() != selected.label {
+            return None;
+        }
     }
     if q.ranking_current
         .as_ref()
@@ -446,7 +549,7 @@ mod tests;
 /// Closed native acceptance can identify equal-label rows without exposing
 /// selectable tokens in the product DOM or granting an insertion capability.
 pub(crate) fn fixture_choices(shell: &ShellState) -> Option<Value> {
-    if !fixture::completion::groups::enabled(shell) {
+    if !fixture::completion::groups::enabled(shell) && !fixture::completion::files::enabled(shell) {
         return None;
     }
     let q = shell

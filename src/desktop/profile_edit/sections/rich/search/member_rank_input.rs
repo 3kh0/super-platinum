@@ -29,8 +29,16 @@ pub(super) struct Input {
     native: Value,
     ids: BTreeSet<String>,
     draft_revision: u64,
+    files: Option<file_rank_input::Input>,
 }
 impl Input {
+    pub(super) fn file_ignore_fuzzy(&self) -> Result<bool, Error> {
+        self.files
+            .as_ref()
+            .map(|files| files.ignore_fuzzy())
+            .ok_or_else(unavailable)
+    }
+
     fn base_current(&self, s: &ShellState, search: &Search) -> bool {
         self.lease.current(s)
             && search.current(s)
@@ -39,6 +47,10 @@ impl Input {
             && self.preferences.current(s)
             && self.cache.current(s)
             && self.navigation.current(s)
+            && self
+                .files
+                .as_ref()
+                .is_none_or(|files| files.current(s, search))
     }
     pub(super) fn current(&self, s: &ShellState, search: &Search) -> bool {
         self.base_current(s, search)
@@ -73,8 +85,25 @@ pub(super) async fn capture(
     rows: &[Value],
     lower: impl Fn(&str) -> Result<String, rank::Error>,
 ) -> Result<Input, Error> {
+    capture_with_files(state, search, names, source, preferences, rows, lower, None).await
+}
+
+pub(super) async fn capture_with_files(
+    state: Signal<ShellState>,
+    search: &Search,
+    names: Arc<member_names::Observation>,
+    source: Arc<Snapshot>,
+    preferences: Arc<ranking::Preferences>,
+    rows: &[Value],
+    lower: impl Fn(&str) -> Result<String, rank::Error>,
+    files: Option<Arc<file_source::Snapshot>>,
+) -> Result<Input, Error> {
     let current = |s: &ShellState| {
-        search.current(s) && names.current(s, search) && source.current(s) && preferences.current(s)
+        search.current(s)
+            && names.current(s, search)
+            && source.current(s)
+            && preferences.current(s)
+            && files.as_ref().is_none_or(|files| files.current(s))
     };
     if !current(&state.peek()) {
         return Err(unavailable());
@@ -153,6 +182,18 @@ pub(super) async fn capture(
         selectors["affinity"][id] = json!(cache.offline().affinity(id));
         selectors["channelPriority"][id] = json!(cache.offline().priority(id));
     }
+    let files = files
+        .map(|source| {
+            file_rank_input::capture(
+                &state.peek(),
+                search,
+                source,
+                &cache,
+                preferences.assignments(),
+                &mut selectors,
+            )
+        })
+        .transpose()?;
     let result = Input {
         selectors,
         history: preferences.history().clone(),
@@ -171,6 +212,7 @@ pub(super) async fn capture(
         native,
         ids,
         draft_revision,
+        files,
     };
     if !result.current(&state.peek(), search) {
         return Err(unavailable());

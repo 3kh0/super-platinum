@@ -395,3 +395,135 @@ fn accepted_direct_source_is_no_longer_absent_even_if_invalidated() {
         );
     });
 }
+
+#[test]
+fn closed_file_reopen_no_work_requires_actual_settled_member_source() {
+    let (dom, mut state) = harness();
+    dom.in_runtime(|| {
+        let ids = vec!["U00000001".into(), "U00000001".into()];
+        assert!(settled_without_member_io(&state.peek(), "T1", &ids).is_err());
+        let (a, _, _) = pair(state);
+        let mut elected = elect(state, &a);
+        let mut private = stage(state, &elected);
+        render(state, &elected, &mut private);
+        // A completed HTTP receipt/private renderer is not canonical settlement.
+        assert!(settled_without_member_io(&state.peek(), "T1", &ids).is_err());
+        private
+            .install(&mut state.write(), &mut elected, |_| true)
+            .unwrap();
+        let shell = state.peek();
+        let source_before = shell.core.workspaces["T1"].directory_members.cached();
+        let native_before = serde_json::to_value(&shell.core.workspaces["T1"].users).unwrap();
+        let slots = shell.directory_member_fetches.slots.len();
+        assert!(settled_without_member_io(&shell, "T1", &ids).is_ok());
+        assert!(
+            settled_without_member_io(&shell, "T1", &["U00000001".into(), "UABSENT01".into()])
+                .is_err()
+        );
+        assert_eq!(shell.directory_member_fetches.slots.len(), slots);
+        assert_eq!(
+            shell
+                .directory_member_fetches
+                .activity
+                .started
+                .load(Ordering::Relaxed),
+            0
+        );
+        assert_eq!(
+            shell
+                .directory_member_fetches
+                .activity
+                .finished
+                .load(Ordering::Relaxed),
+            0
+        );
+        assert_eq!(
+            shell.core.workspaces["T1"].directory_members.cached(),
+            source_before
+        );
+        assert_eq!(
+            serde_json::to_value(&shell.core.workspaces["T1"].users).unwrap(),
+            native_before
+        );
+        drop(shell);
+        assert!(register(&mut state.write(), "T1", &ids).is_ok_and(|v| v.is_none()));
+    });
+}
+
+#[test]
+fn closed_file_reopen_refuses_pending_invalidated_native_drift_and_foreign_source() {
+    for mutation in 0..5 {
+        let (dom, mut state) = harness();
+        dom.in_runtime(|| {
+            let (a, _, _) = pair(state);
+            let mut elected = elect(state, &a);
+            let mut private = stage(state, &elected);
+            render(state, &elected, &mut private);
+            private
+                .install(&mut state.write(), &mut elected, |_| true)
+                .unwrap();
+            assert!(settled_without_member_io(&state.peek(), "T1", &["U00000001".into()]).is_ok());
+            {
+                let mut shell = state.write();
+                let owner = shell.core.session.as_ref().unwrap().workspaces["T1"].clone();
+                match mutation {
+                    0 => shell
+                        .core
+                        .workspaces
+                        .get_mut("T1")
+                        .unwrap()
+                        .directory_members
+                        .invalidate("U00000001"),
+                    1 => {
+                        shell
+                            .core
+                            .workspaces
+                            .get_mut("T1")
+                            .unwrap()
+                            .users
+                            .get_mut("U00000001")
+                            .unwrap()
+                            .name = Some("Unaccepted drift".into())
+                    }
+                    2 => shell.core.active_account = Some("foreign".into()),
+                    3 => shell
+                        .core
+                        .workspaces
+                        .get_mut("T1")
+                        .unwrap()
+                        .directory_members
+                        .enqueue(
+                            "A",
+                            &owner,
+                            super_platinum_core::state::directory_members::Origin::DirectUpsert,
+                            vec![json!({"id":"U00000001","name":"Pending","profile":{}})],
+                            json!({}),
+                        )
+                        .unwrap(),
+                    _ => {
+                        shell
+                            .core
+                            .workspaces
+                            .get_mut("T1")
+                            .unwrap()
+                            .users
+                            .remove("U00000001");
+                    }
+                }
+            }
+            assert!(
+                settled_without_member_io(&state.peek(), "T1", &["U00000001".into()]).is_err(),
+                "mutation {mutation}"
+            );
+            assert_eq!(
+                state
+                    .peek()
+                    .directory_member_fetches
+                    .activity
+                    .started
+                    .load(Ordering::Relaxed),
+                0
+            );
+        });
+    }
+}

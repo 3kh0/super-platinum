@@ -279,3 +279,42 @@ fn malformed_preference_retires_old_grant_and_file_huddle_cannot_root_post() {
         assert!(!observed.effective(&c, &ctx).unwrap().permits_root_post());
     }
 }
+
+#[test]
+fn list_thread_selector_never_inherits_root_post_file_override() {
+    let member = json!({"id":"U1"});
+    let team = json!({"id":"T1","plan":"plus"});
+    let ctx = context(&team, &member);
+    let channel = json!({"id":"C1","is_file":true});
+    let read = Observed::from_inventory("C1".into(), true, false);
+    assert_eq!(read.effective(&channel, &ctx).unwrap().read_only, false);
+    assert_eq!(read.thread_read_only(&channel, &ctx), Ok(true));
+    assert_eq!(
+        Observed::unknown("C1".into()).thread_read_only(&channel, &ctx),
+        Err(Unknown::EffectiveFlags)
+    );
+    assert_eq!(
+        Observed::from_inventory("C1".into(), false, true).thread_read_only(&channel, &ctx),
+        Ok(false)
+    );
+    assert_eq!(
+        read.thread_read_only(&json!({"id":"C2"}), &ctx),
+        Err(Unknown::Identity)
+    );
+}
+#[test]
+fn list_thread_selector_retains_source_plan_and_im_branch_order() {
+    let member = json!({"id":"U1"});
+    let team = json!({"id":"T1"});
+    let mut ctx = context(&team, &member);
+    let c = json!({"id":"C1","is_file":true,"is_im":true});
+    let r = Observed::from_inventory("C1".into(), true, false);
+    ctx.manage_posting_access = Some(true);
+    assert_eq!(r.thread_read_only(&c, &ctx), Ok(true));
+    ctx.manage_posting_access = Some(false);
+    assert_eq!(r.thread_read_only(&c, &ctx), Ok(false));
+    ctx.manage_posting_access = None;
+    assert_eq!(r.thread_read_only(&c, &ctx), Err(Unknown::FeatureAccess));
+    let paid = json!({"id":"T1","plan":"plus"});
+    assert_eq!(r.thread_read_only(&c, &context(&paid, &member)), Ok(false));
+}

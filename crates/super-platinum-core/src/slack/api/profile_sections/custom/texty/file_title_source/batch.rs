@@ -18,6 +18,10 @@ impl CandidateObservation {
     pub fn receipt(&self) -> &Value {
         &self.row.receipt
     }
+    /// Original observed ordering for the effective inherited channel_map, if known.
+    pub fn channel_map_keys(&self) -> Option<&[String]> {
+        self.row.channel_map_order.as_deref().map(Vec::as_slice)
+    }
     /// Only supported selector facts. Never a complete processed File model.
     pub fn effective(&self) -> &Value {
         self.row.candidate.as_ref().expect("candidate")
@@ -37,6 +41,7 @@ pub struct Collection {
     order: Vec<String>,
     rows: Vec<CandidateObservation>,
     unavailable: Vec<String>,
+    excluded: Vec<CategoryObservation>,
 }
 impl Collection {
     /// Source insertion order; this is a bounded observed cache, not inventory.
@@ -45,6 +50,12 @@ impl Collection {
     }
     pub fn unavailable_ids(&self) -> &[String] {
         &self.unavailable
+    }
+    pub fn excluded(&self) -> &[CategoryObservation] {
+        &self.excluded
+    }
+    pub fn excluded_ids(&self) -> impl Iterator<Item = &str> {
+        self.excluded.iter().map(|row| row.id())
     }
     pub fn current(&self, store: &Store) -> bool {
         Arc::ptr_eq(&self.identity, &store.identity)
@@ -119,10 +130,14 @@ impl Store {
     pub fn candidates(&self) -> Collection {
         let mut rows = Vec::new();
         let mut unavailable = Vec::new();
+        let mut excluded = Vec::new();
         for id in &self.order {
             match self.candidate(id) {
                 Ok(row) => rows.push(row),
-                Err(_) => unavailable.push(id.clone()),
+                Err(_) => match self.category(id) {
+                    Ok(category) if category.exclusion().is_some() => excluded.push(category),
+                    _ => unavailable.push(id.clone()),
+                },
             }
         }
         Collection {
@@ -131,6 +146,7 @@ impl Store {
             order: self.order.clone(),
             rows,
             unavailable,
+            excluded,
         }
     }
     /// Accepted search.autocomplete.files carrier and its exact decoded array.
@@ -145,6 +161,27 @@ impl Store {
         carrier: &Value,
         rows: &[Value],
         owner: &WorkspaceSession,
+    ) -> Result<BatchReceipt, Error> {
+        self.ingest_batch_inner(carrier, rows, owner, None)
+    }
+    pub fn ingest_batch_ordered(
+        &mut self,
+        carrier: &Value,
+        rows: &[Value],
+        owner: &WorkspaceSession,
+        order: &ChannelMapOrder,
+    ) -> Result<BatchReceipt, Error> {
+        if !order.matches(carrier) {
+            return Err(malformed());
+        }
+        self.ingest_batch_inner(carrier, rows, owner, Some(order))
+    }
+    fn ingest_batch_inner(
+        &mut self,
+        carrier: &Value,
+        rows: &[Value],
+        owner: &WorkspaceSession,
+        observed_order: Option<&ChannelMapOrder>,
     ) -> Result<BatchReceipt, Error> {
         if carrier["ok"] != true
             || carrier.get("error").is_some_and(|v| !v.is_null())
@@ -190,6 +227,12 @@ impl Store {
                 .ok_or_else(malformed)?;
             // Intentionally self.rows, never final_rows: source pre-batch view.
             let previous = self.rows.get(id);
+            let incoming_order = observed_order.and_then(|order| order.keys(root, embedded));
+            let channel_map_order = if incoming.contains_key("channel_map") {
+                incoming_order.map(|keys| Arc::new(keys.to_vec()))
+            } else {
+                previous.and_then(|row| row.channel_map_order.clone())
+            };
             let candidate = if previous.is_some_and(|r| r.candidate.is_none()) {
                 None
             } else {
@@ -197,6 +240,7 @@ impl Store {
                     incoming,
                     previous.and_then(|r| r.candidate.as_ref()),
                     Some(&owner.team_id),
+                    incoming_order,
                 )
                 .ok()
             };
@@ -220,7 +264,9 @@ impl Store {
             } else {
                 project(&title_input, previous.and_then(|r| r.effective.as_ref())).ok()
             };
-            let bytes = carrier_bytes
+            let category = category::project(incoming, previous.map(AsRef::as_ref));
+            let bytes = category.as_ref().map_or(0, |v| v.to_string().len())
+                + carrier_bytes
                 + raw.to_string().len()
                 + effective.as_ref().map_or(0, |v| v.to_string().len())
                 + candidate.as_ref().map_or(0, |v| v.to_string().len());
@@ -229,6 +275,8 @@ impl Store {
                 source: raw.clone(),
                 effective,
                 candidate,
+                category,
+                channel_map_order,
                 bytes,
             });
             if !final_rows.contains_key(id) {

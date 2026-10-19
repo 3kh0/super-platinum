@@ -14,6 +14,7 @@ use super_platinum_core::{
 pub(crate) mod board_move;
 mod cell_receipts;
 pub(crate) mod check;
+pub(crate) mod comments;
 pub(crate) mod completion;
 pub(crate) mod create;
 pub(crate) mod date_context;
@@ -76,6 +77,7 @@ pub(crate) struct State {
     delete: delete::State,
     reminder: reminder::State,
     completion: completion::State,
+    comments: comments::State,
     pub(crate) fixture: Option<fixture::Fixture>,
 }
 #[derive(Clone)]

@@ -5,6 +5,8 @@ use std::time::Duration;
 mod channel;
 #[path = "../../entry/fixture/check.rs"]
 mod execution;
+#[path = "../../entry/fixture/replacement.rs"]
+mod execution_replacement;
 #[path = "../../entry/fixture/retirement.rs"]
 mod execution_retirement;
 #[path = "../../entry/fixture/surfaces.rs"]
@@ -85,6 +87,11 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
     dioxus::core::spawn_forever(async move {
         let result = match tokio::time::timeout(Duration::from_secs(180), async {
             if matches!(
+                case().as_str(),
+                "execution-thread-replacement" | "execution-pin-removal"
+            ) {
+                execution_replacement::run(state, &desktop, &name).await
+            } else if matches!(
                 case().as_str(),
                 "execution-thread-retirement" | "execution-pins-retirement"
             ) {

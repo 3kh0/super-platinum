@@ -128,6 +128,7 @@ fn thread_feed_edits_follow_the_socket_generation_and_workspace() {
             ..Default::default()
         });
     let event = || RtEvent::MessageChanged {
+        original_update: None,
         channel: CHANNEL.into(),
         message: SlackMessage {
             ts: Some(ROOT.into()),

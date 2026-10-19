@@ -14,6 +14,7 @@ struct Popup {
     sequence: u64,
     revision: u64,
     labels: Vec<String>,
+    kinds: Vec<query::CompletionKind>,
     selected: usize,
     status: String,
     member: bool,
@@ -275,7 +276,7 @@ pub(super) fn Suggestions(
                             onclick:{let runtime=runtime.clone();let sequence=view.sequence;let revision=view.revision;move |_| {
                                 if let Some(eval)=runtime.eval.borrow().as_ref() { let _=eval.send(json!({"kind":"choose","sequence":sequence,"revision":revision,"index":index})); }
                             }},
-                            {icon(if view.member {Icon::AlternateEmail} else {Icon::Tag},"icon profile-rich-channel-icon")}
+                            {icon(completion_icon(view.kinds.get(index), view.member),"icon profile-rich-channel-icon")}
                             span { class:"profile-rich-option-label","{label}" }
                         }
                     }
@@ -297,6 +298,7 @@ fn publish(
         sequence: choices.sequence,
         revision: choices.revision,
         labels: choices.labels,
+        kinds: choices.kinds,
         selected: 0,
         member,
         status: if count == 0 {
@@ -310,6 +312,16 @@ fn publish(
             String::new()
         },
     });
+}
+
+fn completion_icon(kind: Option<&query::CompletionKind>, member: bool) -> Icon {
+    match kind {
+        Some(query::CompletionKind::Canvas) => Icon::Compose,
+        Some(query::CompletionKind::List) => Icon::FormatListBulleted,
+        Some(query::CompletionKind::Channel) => Icon::Tag,
+        _ if member => Icon::AlternateEmail,
+        _ => Icon::Tag,
+    }
 }
 
 fn trigger_matches(trigger: &str, token: &str) -> bool {

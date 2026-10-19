@@ -91,6 +91,37 @@ fn canonical<'a>(view: &'a View, detail: &Detail) -> Option<&'a Record> {
         && record.raw.get("created_by") == detail.creator.as_ref())
     .then_some(record)
 }
+
+/// Read-only comment ownership comes from this exact open canonical item.
+/// A hidden grid callback cannot borrow a detail visit or its refreshed root.
+pub(super) fn comments_target(
+    view: &View,
+    generation: u64,
+) -> Option<(
+    u64,
+    super_platinum_core::slack_lists::comments::Target,
+    String,
+)> {
+    let detail = view.detail.as_ref()?;
+    if detail.generation != generation
+        || detail.unavailable
+        || detail.revision != view.revision
+        || detail.selection_generation != view.layout.selection_generation
+        || view.editor.is_some()
+        || view.loading
+        || view.stale
+        || view.unavailable
+    {
+        return None;
+    }
+    let record = canonical(view, detail)?;
+    let target = super_platinum_core::slack_lists::comments::Target::capture(
+        &view.loaded.as_ref()?.document,
+        record,
+    )
+    .ok()?;
+    Some((detail.open_generation, target, detail.row.label.clone()))
+}
 /// Narrow delete authority: the same open detail and exact canonical record
 /// must remain current, even if a saved view hides its underlying row.
 pub(super) fn delete_target(view: &View, generation: u64) -> Option<(u64, String, String)> {

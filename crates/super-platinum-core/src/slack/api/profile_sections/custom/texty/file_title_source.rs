@@ -10,7 +10,11 @@ use std::{collections::BTreeMap, sync::Arc};
 
 mod batch;
 mod candidate;
+mod category;
+mod order;
 pub use batch::{BatchEntry, BatchReceipt, CandidateObservation, Collection};
+pub use category::{CategoryObservation, Exclusion};
+pub use order::ChannelMapOrder;
 
 const MAX_ROWS: usize = 128;
 const MAX_ROW_BYTES: usize = 1_048_576;
@@ -71,6 +75,8 @@ struct Row {
     source: Value,
     effective: Option<Value>,
     candidate: Option<Value>,
+    category: Option<Value>,
+    channel_map_order: Option<Arc<Vec<String>>>,
     bytes: usize,
 }
 
@@ -163,9 +169,14 @@ impl Store {
                 &mapped,
                 previous.and_then(|row| row.candidate.as_ref()),
                 None,
+                None,
             )
             .ok()
         };
+        let channel_map_order = (!incoming.contains_key("channel_map"))
+            .then(|| previous.and_then(|row| row.channel_map_order.clone()))
+            .flatten();
+        let category = category::project(&mapped, previous.map(AsRef::as_ref));
         let bytes = received.to_string().len()
             + raw.to_string().len()
             + effective
@@ -175,6 +186,7 @@ impl Store {
             + candidate
                 .as_ref()
                 .map_or(0, |value| value.to_string().len());
+        let bytes = bytes + category.as_ref().map_or(0, |v| v.to_string().len());
         let retained: usize = self
             .rows
             .iter()
@@ -195,6 +207,8 @@ impl Store {
                 source: raw.clone(),
                 effective,
                 candidate,
+                category,
+                channel_map_order,
                 bytes,
             }),
         );

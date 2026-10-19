@@ -85,6 +85,7 @@ fn message_changed_cannot_reintroduce_deleted_pin_files_before_pending_list_arri
         "T1",
         socket,
         RtEvent::MessageChanged {
+            original_update: None,
             channel: "C2".into(),
             message: changed,
         },

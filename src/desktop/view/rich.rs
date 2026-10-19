@@ -714,6 +714,28 @@ pub(crate) fn reactions_row(
     }
 }
 
+/// Display reactions for a reader that has no authority to change the thread.
+pub(crate) fn reactions_read_only(
+    state: Signal<ShellState>,
+    media: &crate::media::MediaRegistry,
+    media_epoch: u64,
+    message: &MessageVm,
+) -> Element {
+    rsx! {
+        for reaction in &message.reactions {
+            span {
+                key: "reaction-{reaction.name}",
+                "data-reaction-name": "{reaction.name}",
+                class: if reaction.own { "reaction own" } else { "reaction" },
+                title: reaction.reactors_label(),
+                "aria-label": reaction.reactors_label(),
+                {reaction_emoji(state, media, media_epoch, reaction, "reaction-emoji", "reaction-glyph")}
+                span { class: "reaction-count", "{reaction.count}" }
+            }
+        }
+    }
+}
+
 fn reaction_pill(
     state: Signal<ShellState>,
     media: &crate::media::MediaRegistry,

@@ -70,6 +70,8 @@ pub(crate) fn enabled(s: &ShellState) -> bool {
                 | "execution-focused"
                 | "execution-thread-retirement"
                 | "execution-pins-retirement"
+                | "execution-thread-replacement"
+                | "execution-pin-removal"
         )
         && s.app_home.about.management.activity_fixture.is_some()
 }

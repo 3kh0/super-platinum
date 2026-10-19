@@ -1,0 +1,761 @@
+{
+  "status": "PASS",
+  "count": 12,
+  "originals": {
+    "4OY3": "cbabe86b5c78e1ea23131e6ac88f277cb6ab51a6b18caf7b0ed473ba643bdbb2",
+    "kbkl": "3919d39fcc0e17f4d03c94a1d8db5da928d71ef79e41d781d67cff0bfec7fd50",
+    "XNVs": "3ad4a5819b9a56cd1ed3318af43f19690729f19b871fb6df4103a272b3d72d32"
+  },
+  "scope": "Original 4OY3/kbkl and original Canvas/List selectors. ZG fixture supplies only known normal or explicit not-visible branches; no full arbitrary-status claim.",
+  "tests": [
+    {
+      "name": "fresh hosted",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "created": 1,
+              "title": "PDF"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hosted partial retains both discriminants",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "created": 1,
+              "title": "PDF"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            false
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "title": "Next"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hosted mode inherits quip filetype",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 1,
+              "title": "Canvas"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "hosted"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pdf filetype inherits quip mode",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 1,
+              "title": "Canvas"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "filetype": "pdf"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        }
+      ]
+    },
+    {
+      "name": "duplicate category reads same predecessor",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 1,
+              "title": "Canvas"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "created": 1,
+              "title": "PDF"
+            },
+            {
+              "id": "F1",
+              "mode": "hosted"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            },
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reverse duplicates last assignment",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 1,
+              "title": "Canvas"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "hosted"
+            },
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "created": 1,
+              "title": "PDF"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            },
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "hosted",
+              "filetype": "pdf",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "passthrough mode not_visible",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 1,
+              "title": "Canvas"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "not_visible"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "not_visible"
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "not_visible"
+            }
+          ],
+          "native": [
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "passthrough mode template_not_visible",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 1,
+              "title": "Canvas"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "template_not_visible"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "template_not_visible"
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "template_not_visible"
+            }
+          ],
+          "native": [
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "passthrough file_access not_visible",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 1,
+              "title": "Canvas"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "file_access": "not_visible"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "file_access": "not_visible"
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "file_access": "not_visible"
+            }
+          ],
+          "native": [
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "passthrough file_access template_not_visible",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "created": 1,
+              "title": "Canvas"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "quip",
+              "filetype": "quip",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        },
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "file_access": "template_not_visible"
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "file_access": "template_not_visible"
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "file_access": "template_not_visible"
+            }
+          ],
+          "native": [
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "poll is not whole list",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "list",
+              "filetype": "list",
+              "subtype": "poll",
+              "created": 1
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "list",
+              "filetype": "list",
+              "subtype": "poll",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "list",
+              "filetype": "list",
+              "subtype": "poll",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quip wins over poll",
+      "steps": [
+        {
+          "rows": [
+            {
+              "id": "F1",
+              "mode": "list",
+              "filetype": "quip",
+              "subtype": "poll",
+              "created": 1
+            }
+          ],
+          "projected": [
+            {
+              "id": "F1",
+              "mode": "list",
+              "filetype": "quip",
+              "subtype": "poll",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "effective": [
+            {
+              "id": "F1",
+              "mode": "list",
+              "filetype": "quip",
+              "subtype": "poll",
+              "isUnknown": false,
+              "isNonExistent": false,
+              "is_tombstoned": false
+            }
+          ],
+          "native": [
+            true
+          ]
+        }
+      ]
+    }
+  ]
+}
