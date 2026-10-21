@@ -192,7 +192,7 @@ async fn load(
                     )?
                 };
                 let result = if fixture::enabled(&state.peek()) {
-                    tokio::select! {r=fixture::run_access::picker(state,&request)=>r.ok_or_else(unavailable)?,_=acquire::retired(state,o,generation)=>return Err(unavailable())}
+                    tokio::select! {r=crate::app_home::about::management::permissions::picker_request(state,&request,false)=>r.ok_or_else(unavailable)?,_=acquire::retired(state,o,generation)=>return Err(unavailable())}
                 } else if crate::fixture::is_fixture() {
                     return Err(unavailable());
                 } else if members {

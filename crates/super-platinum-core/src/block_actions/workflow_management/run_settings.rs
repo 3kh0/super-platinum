@@ -373,6 +373,24 @@ impl Draft {
     }
     /// None is the source's changed-only no-op, not an acknowledged write.
     pub fn desired(&self, ctx: &Context, policy: &TargetPolicy) -> Result<Option<Command>, Error> {
+        self.desired_for(ctx, policy, false)
+    }
+    /// Embedded Finish Up (fkuW) prepends the current scope with concat, unlike
+    /// standalone settings' union. This can retain a duplicate current scope
+    /// already present in an acquired named grant normalized to Everyone.
+    pub fn desired_embedded(
+        &self,
+        ctx: &Context,
+        policy: &TargetPolicy,
+    ) -> Result<Option<Command>, Error> {
+        self.desired_for(ctx, policy, true)
+    }
+    fn desired_for(
+        &self,
+        ctx: &Context,
+        policy: &TargetPolicy,
+        embedded: bool,
+    ) -> Result<Option<Command>, Error> {
         ctx.validate()?;
         if !self.unresolved.is_empty() {
             return Err(Error::Unresolved);
@@ -419,7 +437,11 @@ impl Draft {
             } else {
                 &mut teams
             };
-            *own = update(&[ctx.current_team_id.clone()], &[], own);
+            if embedded {
+                own.insert(0, ctx.current_team_id.clone());
+            } else {
+                *own = update(&[ctx.current_team_id.clone()], &[], own);
+            }
         }
         Ok(Some(Command::RunPermission {
             permission_type: mode.as_str().into(),

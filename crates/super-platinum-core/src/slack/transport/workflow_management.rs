@@ -1,8 +1,10 @@
 //! Workflow metadata writes and export initiation retain responses and never replay.
 use super::*;
 mod collaborators;
+mod confirmation_add;
 mod copy_permission;
 mod delete;
+mod publish;
 mod run_permission;
 mod unpublish;
 

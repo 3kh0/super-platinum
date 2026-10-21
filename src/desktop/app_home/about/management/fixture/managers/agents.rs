@@ -56,11 +56,44 @@ fn profile(app: &str) -> Option<Value> {
     Some(row)
 }
 
+fn loading_snapshot(v: &Value) -> bool {
+    let c = &v["confirmation"];
+    let m = &c["managerDraft"];
+    let facts = &m["agentFacts"];
+    v["visible"] == true
+        && c["current"] == true
+        && c["visit"].as_u64().is_some()
+        && c["visit"] == v["visit"]
+        && c["document"].as_u64().is_some()
+        && c["document"] == v["document"]["id"]
+        && c["revision"].as_u64().is_some()
+        && c["revision"] == v["document"]["revision"]
+        && m["pending"] == true
+        && m["generation"].as_u64().is_some()
+        && facts["generation"] == m["generation"]
+        && m["query"].is_string()
+        && facts["query"] == m["query"]
+        && facts["status"] == "loading"
+}
+
+fn loading(s: &ShellState) -> bool {
+    let Some(h) = s.app_home.about.management.surface.as_ref() else {
+        return false;
+    };
+    h.owner.ctx.current(s)
+        && loading_snapshot(&crate::app_home::about::management::permissions::snapshot(
+            s, h.id,
+        ))
+}
+
 pub(super) async fn read(
     mut state: Signal<ShellState>,
     request: &PreparedRequest,
 ) -> Option<Result<Value, Error>> {
-    if !active() {
+    // Metadata policy also uses client.init and experiment requests. A method
+    // (or even identical experiment fields) cannot identify an agent read.
+    // Delegate those reads unless the original manager batch is loading now.
+    if !active() || !loading(&state.peek()) {
         return None;
     }
     let (method, fields) = match super::super::decode(request) {
@@ -252,5 +285,41 @@ mod tests {
         raw["apps"][0]["isUnknown"] = json!(true);
         assert!(eligibility::decode_page(&raw).is_err());
         assert_eq!(raw["apps"][0]["bot_user"]["id"], "UMANAFYES");
+    }
+
+    #[test]
+    fn metadata_and_stale_batches_never_route_to_agent_fact_adapter() {
+        // Even identical experiments.getByUser fields must delegate before
+        // or after the actual original fact batch, independently of method.
+        let original = json!({"visit":10,"visible":true,
+            "document":{"id":20,"revision":30},
+            "confirmation":{"current":true,"visit":10,"document":20,"revision":30,
+                "managerDraft":{"pending":true,"generation":40,"query":"manager",
+                    "agentFacts":{"generation":40,"query":"manager","status":"loading"}}}});
+        assert!(loading_snapshot(&original));
+        for (pointer, value) in [
+            ("/confirmation", Value::Null),
+            ("/visible", json!(false)),
+            ("/confirmation/current", json!(false)),
+            ("/confirmation/visit", json!(11)),
+            ("/document/id", json!(21)),
+            ("/document/revision", json!(31)),
+            ("/confirmation/managerDraft/pending", json!(false)),
+            ("/confirmation/managerDraft/generation", json!(41)),
+            ("/confirmation/managerDraft/query", json!("ordinary")),
+            ("/confirmation/managerDraft/agentFacts", Value::Null),
+            (
+                "/confirmation/managerDraft/agentFacts/status",
+                json!("ready"),
+            ),
+            (
+                "/confirmation/managerDraft/agentFacts/status",
+                json!("failed"),
+            ),
+        ] {
+            let mut changed = original.clone();
+            *changed.pointer_mut(pointer).unwrap() = value;
+            assert!(!loading_snapshot(&changed), "{pointer}");
+        }
     }
 }

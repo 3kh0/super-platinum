@@ -2,6 +2,7 @@
 use super::*;
 use crate::app_home::inputs::native::Release;
 mod finish;
+pub(crate) mod finish_up;
 mod groups;
 pub(super) mod managers;
 mod native;
@@ -19,6 +20,8 @@ mod tests;
 pub(super) struct Book {
     confirmation: Option<Confirmation>,
     pub(super) attempts: Vec<Attempt>,
+    pub(super) first_attempts: Vec<finish_up::Attempt>,
+    pub(super) first_avatar_receipts: Vec<Value>,
 }
 impl Book {
     pub(super) fn retire_confirmation(&mut self) {
@@ -29,6 +32,7 @@ impl Book {
 }
 #[derive(Clone)]
 struct Original {
+    embedded: bool,
     id: u64,
     visit: u64,
     document: u64,
@@ -40,6 +44,7 @@ struct Original {
     owner: Owner,
 }
 struct Confirmation {
+    finish_up: Option<finish_up::Local>,
     original: Original,
     release: Release,
     selected: String,
@@ -77,6 +82,7 @@ impl Original {
         let d = document(s, visit)?;
         let h = s.app_home.about.management.surface.as_ref()?;
         Some(Self {
+            embedded: false,
             id: next(),
             visit,
             document: d.id,
@@ -111,8 +117,14 @@ impl Original {
             })
     }
     fn expected(&self) -> Value {
-        json!({"id":self.id,"visit":self.visit,"document":self.document,"revision":self.revision,
-            "title":self.title,"description":self.description})
+        {
+            let mut value = json!({"id":self.id,"visit":self.visit,"document":self.document,"revision":self.revision,
+            "title":self.title,"description":self.description});
+            if self.embedded {
+                value["finishUp"] = json!(true);
+            }
+            value
+        }
     }
 }
 fn supported(editor: &Editor) -> bool {
@@ -189,14 +201,16 @@ pub(super) fn select(mut state: Signal<ShellState>, visit: u64, id: u64, value: 
     }
     let captured = {
         let s = state.peek();
-        settings::owned(&s, visit, id).map(|c| {
-            (
+        settings::owned(&s, visit, id).and_then(|c| {
+            let pane = finish_up::details_action(c)?;
+            Some((
                 c.original.clone(),
                 c.settings.as_ref().map(|v| v.expected()),
-            )
+                pane,
+            ))
         })
     };
-    let Some((original, expected)) = captured else {
+    let Some((original, expected, pane)) = captured else {
         return;
     };
     dioxus::core::spawn_forever(async move {
@@ -215,6 +229,9 @@ pub(super) fn select(mut state: Signal<ShellState>, visit: u64, id: u64, value: 
         let Some(c) = settings::owned(&s, visit, id) else {
             return;
         };
+        if !pane.current(c) {
+            return;
+        }
         if c.settings.as_ref().map(|v| v.epoch)
             != expected.as_ref().and_then(|e| e["epoch"].as_u64())
         {
@@ -311,7 +328,9 @@ pub(super) fn confirmation(s: &ShellState, visit: u64) -> Option<u64> {
         .map(|c| c.original.id)
 }
 pub(super) fn retained(book: &Book, pending: Option<u64>) -> bool {
-    pending.is_some_and(|id| book.attempts.iter().any(|a| a.original.id == id))
+    pending.is_some_and(|id| {
+        book.attempts.iter().any(|a| a.original.id == id) || finish_up::retained(book, id)
+    })
 }
 pub(super) fn owns(s: &ShellState, visit: u64) -> bool {
     retained(
@@ -341,6 +360,7 @@ pub(super) fn open(mut state: Signal<ShellState>, visit: u64) {
         let settings = settings::Settings::capture(&s, &original);
         let managers = managers::Managers::capture(&s, &original);
         s.app_home.about.management.permissions.confirmation = Some(Confirmation {
+            finish_up: None,
             selected: original.editor.copy_permissions()["permission_type"]
                 .as_str()
                 .unwrap()
@@ -392,6 +412,10 @@ pub(super) fn open(mut state: Signal<ShellState>, visit: u64) {
     });
 }
 pub(super) fn cancel(mut state: Signal<ShellState>, visit: u64, id: u64) {
+    if finish_up::active(&state.peek(), visit) {
+        finish_up::cancel(state, visit, id);
+        return;
+    }
     let (original, selected, expected) = {
         let s = state.peek();
         let Some(c) = s
@@ -436,6 +460,9 @@ pub(super) fn cancel(mut state: Signal<ShellState>, visit: u64, id: u64) {
     });
 }
 pub(super) fn confirm(mut state: Signal<ShellState>, visit: u64, id: u64) {
+    if finish_up::active(&state.peek(), visit) {
+        return;
+    }
     let (original, desired, settings_expected, run_command, settings_epoch) = {
         let s = state.peek();
         let Some(c) = s
@@ -623,4 +650,31 @@ fn exact(s: &ShellState, id: u64) -> bool {
                     .as_ref()
                     .is_none_or(|v| v.source_current(s, &a.original))
         })
+}
+
+async fn picker_read(
+    state: Signal<ShellState>,
+    request: &super_platinum_core::slack::PreparedRequest,
+    managers: bool,
+) -> Option<Result<Value, Error>> {
+    if fixture::first_publish::requested() {
+        fixture::first_publish::read(state, request).await
+    } else if managers {
+        fixture::managers::read(state, request).await
+    } else {
+        fixture::run_access::read(state, request).await
+    }
+}
+async fn picker_request(
+    state: Signal<ShellState>,
+    request: &super_platinum_core::slack::PreparedRequest,
+    managers: bool,
+) -> Option<Result<(Value, Option<Vec<String>>), Error>> {
+    if fixture::first_publish::requested() {
+        fixture::first_publish::picker(state, request).await
+    } else if managers {
+        fixture::managers::picker(state, request).await
+    } else {
+        fixture::run_access::picker(state, request).await
+    }
 }

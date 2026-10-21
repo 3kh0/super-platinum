@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const script=fs.readFileSync(new URL('./native.js',import.meta.url),'utf8');
+let checks=0;
+function scene(){
+ const expected={epoch:8,selected:'',rows:[{id:'CONE',label:'one'},{id:'CTWO',label:'two'}]},original={id:3},local={};
+ const panel={dataset:{addEpoch:'8',addSelected:''},isConnected:true,contains:n=>Object.values(nodes).includes(n)};
+ const select={tagName:'SELECT',value:'',disabled:false,isConnected:true,options:[{value:'',textContent:'No channel'},{value:'CONE',textContent:'one'},{value:'CTWO',textContent:'two'}]};
+ const done={tagName:'BUTTON',textContent:'Done',isConnected:true,disabled:false},refresh={tagName:'BUTTON',textContent:'Refresh channel choices',isConnected:true,disabled:false};
+ const nodes={'workflow-confirmation-add':panel,'workflow-confirmation-channel':select,'workflow-finish-done':done,'workflow-confirmation-retry':refresh};
+ const saved={},root={__workflowManagement:{permissionsConfirmation:saved},querySelector:id=>nodes[id.slice(1)]??null};
+ const s={expected,original,local,nodes,saved,root,parent:true,frame:()=>{}};
+ for(const node of Object.values(nodes))node.getClientRects=()=>node.hidden?[]:[{}];
+ const ctx=vm.createContext({document:{getElementById:()=>s.root},getComputedStyle:node=>({display:node.hidden?'none':'block',visibility:'visible'}),workflowFinishUp:()=>s.parent,requestAnimationFrame:f=>{s.frame();f();},console});
+ vm.runInContext(script,ctx);s.bind=()=>ctx.workflowConfirmationAddBind(original,local,expected);s.current=action=>ctx.workflowConfirmationAddCurrent(original,local,expected,action);s.lock=channel=>ctx.workflowConfirmationAddLock(original,local,expected,channel);return s;
+}
+async function test(name,fn){await fn();checks++;console.log('ok '+name);}
+await test('original controls bind and current',async()=>{let s=scene();assert.equal(await s.bind(),true);assert.equal(s.current(),true);});
+await test('delayed expected render waits without replay',async()=>{let s=scene();s.nodes['workflow-confirmation-add'].dataset.addEpoch='7';let n=0;s.frame=()=>{if(++n===3)s.nodes['workflow-confirmation-add'].dataset.addEpoch='8';};assert.equal(await s.bind(),true);assert.equal(n,3);});
+await test('newer epoch refuses',async()=>{let s=scene();s.nodes['workflow-confirmation-add'].dataset.addEpoch='9';assert.equal(await s.bind(),false);});
+await test('same-ID select replacement refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-channel']={...s.nodes['workflow-confirmation-channel']};assert.equal(s.current(),false);assert.equal(await s.bind(),false);});
+await test('same-ID panel replacement refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-add']={...s.nodes['workflow-confirmation-add']};assert.equal(s.current(),false);});
+await test('same-ID Done replacement refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-finish-done']={...s.nodes['workflow-finish-done']};assert.equal(s.current({kind:'done'}),false);});
+await test('parent native buffer or IME refusal propagates',async()=>{let s=scene();await s.bind();s.parent=false;assert.equal(s.current(),false);assert.equal(await s.bind(),false);});
+await test('parent retirement during render wait aborts',async()=>{let s=scene();s.nodes['workflow-confirmation-add'].dataset.addEpoch='7';s.frame=()=>{s.parent=false;};assert.equal(await s.bind(),false);});
+await test('root replacement during render wait aborts',async()=>{let s=scene();s.nodes['workflow-confirmation-add'].dataset.addEpoch='7';s.frame=()=>{s.root={...s.root};};assert.equal(await s.bind(),false);});
+await test('option identity change refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-channel'].options[1].value='CFORGED';assert.equal(s.current(),false);});
+await test('option label change refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-channel'].options[1].textContent='forged';assert.equal(s.current(),false);});
+await test('extra hidden option refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-channel'].options.push({value:'CFORGED',textContent:'forged'});assert.equal(s.current(),false);});
+await test('native value ahead requires exact select action',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-channel'].value='CONE';assert.equal(s.current(),false);assert.equal(s.current({kind:'select',value:'CONE'}),true);assert.equal(s.current({kind:'select',value:'CTWO'}),false);});
+await test('disabled select cannot select',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-channel'].disabled=true;assert.equal(s.current({kind:'select',value:''}),false);});
+await test('disabled Done cannot act',async()=>{let s=scene();await s.bind();s.nodes['workflow-finish-done'].disabled=true;assert.equal(s.current({kind:'done'}),false);});
+await test('disabled refresh cannot act',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-retry'].disabled=true;assert.equal(s.current({kind:'refresh'}),false);});
+await test('detached original select refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-channel'].isConnected=false;assert.equal(s.current(),false);});
+await test('bad input refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-channel'].validity={badInput:true};assert.equal(s.current(),false);});
+await test('hidden panel refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-confirmation-add'].hidden=true;assert.equal(s.current(),false);});
+await test('hidden Done refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-finish-done'].hidden=true;assert.equal(s.current({kind:'done'}),false);});
+await test('forged Done caption refuses',async()=>{let s=scene();await s.bind();s.nodes['workflow-finish-done'].textContent='Add to Channel';assert.equal(s.current({kind:'done'}),false);});
+await test('navigation lock owns exact original until released',async()=>{let s=scene();await s.bind();let release;const done=new Promise(r=>release=r);let proof;const task=s.lock({send:v=>proof=v,recv:()=>done});assert.equal(proof,true);assert.ok(s.saved.confirmationAddLock);let second;await s.lock({send:v=>second=v,recv:()=>done});assert.equal(second,false);release();await task;assert.equal(s.saved.confirmationAddLock,undefined);});
+await test('expired parent cannot acquire navigation lock',async()=>{let s=scene();await s.bind();s.parent=false;let proof;await s.lock({send:v=>proof=v,recv:()=>Promise.resolve()});assert.equal(proof,false);assert.equal(s.saved.confirmationAddLock,undefined);});
+await test('Done remains guarded while no-selection listing is pending',async()=>{let s=scene();s.expected.rows=[];s.nodes['workflow-confirmation-channel'].options=[{value:'',textContent:'No channel'}];s.nodes['workflow-confirmation-channel'].disabled=true;s.nodes['workflow-confirmation-retry'].disabled=true;assert.equal(await s.bind(),true);assert.equal(s.current({kind:'done'}),true);assert.equal(s.current({kind:'select',value:''}),false);assert.equal(s.current({kind:'refresh'}),false);s.parent=false;assert.equal(s.current({kind:'done'}),false);});
+console.log(`${checks} confirmation Add native checks passed`);

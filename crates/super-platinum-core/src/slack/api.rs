@@ -15,6 +15,7 @@ use super::models::{
     TeamProfileField, TeamProfilePage, ThreadsViewPage, User, UserId, UserProfile, UserProfilePage,
 };
 use super::transport::Transport;
+pub mod avatar;
 mod block_actions;
 mod block_suggestions;
 mod block_views;

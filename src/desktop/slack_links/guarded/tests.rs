@@ -74,7 +74,7 @@ fn retired_occurrence_cannot_publish_report_or_select_even_when_route_visit_is_c
     assert!(!attempt.resolve(&mut s, "CACTMISS01", channel(), revision));
     attempt.failed(&mut s, &feedback, &Error::Api("private response".into()));
     attempt.failed(&mut s, &None, &Error::Api("retired response".into()));
-    assert!(attempt.select(&mut s, "CACTMISS01").is_none());
+    assert!(attempt.select(&mut s, "CACTMISS01", false).is_none());
     assert!(!s.core.workspaces["T1"].channels.contains_key("CACTMISS01"));
     assert_eq!(s.core.active_channel, active);
     assert_eq!(failures.get(), 0);
@@ -105,7 +105,8 @@ fn route_owner_retirement_still_blocks_a_permissive_caller() {
         let revision = s.core.workspaces["T1"].channel_lifecycle.revision();
         assert!(!attempt.current(&s));
         assert!(!attempt.resolve(&mut s, "CACTMISS01", channel(), revision));
-        assert!(attempt.select(&mut s, "CACTMISS01").is_none());
+        assert!(attempt.select(&mut s, "CACTMISS01", false).is_none());
+        assert!(attempt.select(&mut s, "CACTMISS01", true).is_none());
     }
 }
 
@@ -131,16 +132,49 @@ fn known_selection_transfers_refresh_to_successor_without_old_caller_authority()
         .insert("CACTMISS01".into(), channel());
     let current = Rc::new(Cell::new(true));
     let attempt = attempt(&mut s, current.clone());
-    let next = attempt.select(&mut s, "CACTMISS01").unwrap();
+    let next = attempt.select(&mut s, "CACTMISS01", false).unwrap();
     assert_eq!(s.core.active_channel.as_deref(), Some("CACTMISS01"));
     assert_eq!(s.main_view, MainView::Home);
     assert_eq!(s.channel_tab, ChannelTab::Messages);
     current.set(false);
     assert!(!attempt.current(&s));
     assert!(next.current(&s));
-    assert!(attempt.select(&mut s, "CACTMISS01").is_none());
+    assert!(attempt.select(&mut s, "CACTMISS01", false).is_none());
     s.channel_generation += 1;
     assert!(!next.current(&s));
+}
+
+#[test]
+fn explicit_workflows_route_keeps_one_navigation_and_does_not_persist_a_tab() {
+    let mut s = shell();
+    s.core
+        .workspaces
+        .get_mut("T1")
+        .unwrap()
+        .channels
+        .insert("CACTMISS01".into(), channel());
+    let original = serde_json::to_value(&s.core.workspaces["T1"].channels["CACTMISS01"]).unwrap();
+    let generation = s.channel_generation;
+    let current = Rc::new(Cell::new(true));
+    let attempt = attempt(&mut s, current.clone());
+    let next = attempt.select(&mut s, "CACTMISS01", true).unwrap();
+    assert_eq!(s.channel_generation, generation.wrapping_add(1));
+    assert_eq!(s.core.active_channel.as_deref(), Some("CACTMISS01"));
+    assert_eq!(s.channel_tab, ChannelTab::Workflows);
+    assert_eq!(
+        crate::channel_tabs::selection::current(&s),
+        Some(crate::channel_tabs::selection::Route::Resource(
+            ChannelTab::Workflows
+        )),
+    );
+    assert_eq!(
+        serde_json::to_value(&s.core.workspaces["T1"].channels["CACTMISS01"]).unwrap(),
+        original,
+    );
+    current.set(false);
+    assert!(!attempt.current(&s));
+    assert!(next.current(&s));
+    assert!(attempt.select(&mut s, "CACTMISS01", true).is_none());
 }
 
 #[test]

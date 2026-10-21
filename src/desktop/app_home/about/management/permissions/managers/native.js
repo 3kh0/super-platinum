@@ -1,5 +1,7 @@
 function workflowManagers(original, expected, action) {
+ if(action&&original.finishUp&&!workflowFinishUpDetails(document.getElementById('workflow-management')?.__workflowManagement?.permissionsConfirmation))return false;
  if(!workflowPermissionsCheck(original,true))return false;
+ if(original.finishUp&&!workflowFinishUpBuffers(document.getElementById('workflow-management')?.__workflowManagement?.permissionsConfirmation))return false;
  const root=document.getElementById('workflow-management'),saved=root.__workflowManagement.permissionsConfirmation;
  const panel=root.querySelector('#workflow-permissions'),box=root.querySelector('#workflow-permissions-manager-settings');
  const query=box?.querySelector('#workflow-permissions-manager-query');
@@ -13,7 +15,7 @@ function workflowManagers(original, expected, action) {
  if(nodes.some(n=>n&&(!n.isConnected||!panel.contains(n))))return false;
  const old=saved.managers;
  if(old?.epoch===String(expected.epoch)){if(old.nodes.length!==nodes.length||old.nodes.some((n,i)=>n!==nodes[i]))return false;}
- else {if(action||old&&BigInt(old.epoch)>=BigInt(String(expected.epoch)))return false;saved.managers={epoch:String(expected.epoch),nodes};if(!old)query.focus?.({preventScroll:true});}
+ else {if(action||old&&BigInt(old.epoch)>=BigInt(String(expected.epoch)))return false;saved.managers={epoch:String(expected.epoch),nodes};if(!old&&!original.finishUp)query.focus?.({preventScroll:true});}
  if(action?.kind==='add'&&!results.some(n=>n.dataset.managerResult===action.value&&!n.disabled))return false;
  if(action?.kind==='remove'&&!selected.some(n=>n.dataset.managerSelected===action.value&&!n.disabled))return false;
  return true;

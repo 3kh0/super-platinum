@@ -5,6 +5,8 @@ use crate::config::WorkspaceSession;
 
 use super::xparams::{Identity, XParams};
 
+mod avatar;
+
 #[derive(Debug, Clone)]
 pub struct SlackClientConfig {
     pub identity: Identity,

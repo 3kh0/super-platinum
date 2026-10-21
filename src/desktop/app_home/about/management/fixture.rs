@@ -3,8 +3,10 @@ use super::*;
 use super_platinum_core::slack::{PreparedRequest, client::RequestBody};
 pub(crate) mod check;
 pub(crate) mod delete;
+pub(crate) mod first_publish;
 pub(crate) mod managers;
 pub(crate) mod permissions;
+pub(crate) mod publish;
 pub(crate) mod run_access;
 pub(crate) mod unpublish;
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -20,6 +22,8 @@ pub(crate) enum Mode {
 pub(super) struct Model {
     deletion: Option<delete::Model>,
     publication: Option<unpublish::Model>,
+    publishing: Option<publish::Model>,
+    first_publish: Option<first_publish::Model>,
     permissions: Option<permissions::Model>,
     run_access: Option<run_access::Model>,
     managers: Option<managers::Model>,
@@ -41,6 +45,9 @@ pub(super) fn enabled(s: &ShellState) -> bool {
             .is_some_and(|h| h.fixture)
 }
 pub(crate) fn install(s: &mut ShellState, managed: bool, uncertain: bool) {
+    if first_publish::requested() && s.core.active_account.is_none() {
+        s.core.active_account = Some("synthetic-workflow-first-publish".into());
+    }
     let managed = managed || managers::requested() && managers::case() == "managers-no-trigger";
     if managers::requested() && s.core.active_account.is_none() {
         s.core.active_account = Some("synthetic-workflow-managers".into());
@@ -61,6 +68,7 @@ pub(crate) fn install(s: &mut ShellState, managed: bool, uncertain: bool) {
     s.core
         .workspaces
         .insert(workspace.team_id.clone(), workspace);
+    first_publish::confirmation::install_identity(s);
     super::super::fixture::install(s, false);
     let h = s.app_home.about.surface.as_mut().unwrap();
     let owner = h.owner.clone();
@@ -71,6 +79,8 @@ pub(crate) fn install(s: &mut ShellState, managed: bool, uncertain: bool) {
     s.app_home.about.management.fixture = Some(Model {
         deletion: None,
         publication: None,
+        publishing: None,
+        first_publish: None,
         permissions: None,
         run_access: None,
         managers: None,
@@ -90,9 +100,11 @@ pub(crate) fn install(s: &mut ShellState, managed: bool, uncertain: bool) {
     });
     delete::install(s);
     unpublish::install(s);
+    publish::install(s);
     permissions::install(s);
     run_access::install(s);
     managers::install(s);
+    first_publish::install(s);
 }
 fn refused() -> Error {
     Error::Api("workflow_management_not_sent_fixture".into())

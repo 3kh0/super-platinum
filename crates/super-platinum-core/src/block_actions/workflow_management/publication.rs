@@ -2,6 +2,12 @@
 //! publishability proofs; workflowCanBePublished additionally needs its actual
 //! blocking-error, step and permission selectors.
 use super::*;
+mod inputs;
+mod trigger_types;
+pub use inputs::{PublicationAssessment, PublicationInputs};
+pub use trigger_types::TriggerTypes;
+#[cfg(test)]
+mod acquisition_tests;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Publication<'a> {
@@ -18,6 +24,54 @@ impl Editor {
     }
 }
 impl Publication<'_> {
+    /// Native direct-publish receipt boundary. Retains the original raw reply;
+    /// this check does not settle a mutation or manufacture a readback ACK.
+    /// An already-published baseline requires a new nonempty version. An exact
+    /// unpublished baseline with a prior version may acknowledge that same
+    /// version; independent readback still compares the complete ACK workflow.
+    pub fn acknowledges_publish(&self, raw: &Value) -> bool {
+        let Some(was_published) = self.workflow["is_published"].as_bool() else {
+            return false;
+        };
+        let Some(prior_version) = self.workflow["last_published_version_id"]
+            .as_str()
+            .filter(|id| !id.is_empty())
+        else {
+            return false;
+        };
+        self.publish_reply_shape(raw)
+            && (!was_published
+                || raw["decorated_workflow"]["last_published_version_id"].as_str()
+                    != Some(prior_version))
+    }
+
+    /// Explicit Finish Up boundary. Does not broaden direct publish/republish.
+    /// Only an exact false baseline with absent/null/empty prior version is
+    /// never-published here; arbitrary JavaScript-falsy shapes are not grants.
+    pub fn acknowledges_first_publish(&self, raw: &Value) -> bool {
+        self.workflow["is_published"] == json!(false)
+            && match self.workflow.get("last_published_version_id") {
+                None | Some(Value::Null) => true,
+                Some(Value::String(id)) => id.is_empty(),
+                _ => false,
+            }
+            && self.publish_reply_shape(raw)
+    }
+
+    fn publish_reply_shape(&self, raw: &Value) -> bool {
+        let workflow = &raw["decorated_workflow"];
+        success(raw).is_ok()
+            && workflow["id"] == self.workflow["id"]
+            && workflow["app_id"] == self.workflow["app_id"]
+            && workflow["steps"].is_array()
+            && workflow["input_parameters"].is_object()
+            && raw["available_data"].is_object()
+            && workflow["is_published"] == json!(true)
+            && workflow["last_published_version_id"]
+                .as_str()
+                .is_some_and(|id| !id.is_empty())
+            && workflow["unpublished_change_count"].as_u64().is_some()
+    }
     pub fn is_published(&self) -> bool {
         self.workflow.get("is_published").is_some_and(truthy)
     }

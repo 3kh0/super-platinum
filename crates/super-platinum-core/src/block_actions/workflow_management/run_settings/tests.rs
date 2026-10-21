@@ -1,5 +1,6 @@
 use super::*;
 use serde_json::json;
+mod embedded;
 
 #[test]
 fn picker_filters_do_not_revoke_original_canonical_grants() {

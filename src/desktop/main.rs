@@ -20,6 +20,7 @@ mod channel_mute;
 mod channel_resources;
 mod channel_tabs;
 mod channel_vm;
+mod channel_workflows;
 mod clipboard;
 mod clipboard_check;
 mod completion_check;

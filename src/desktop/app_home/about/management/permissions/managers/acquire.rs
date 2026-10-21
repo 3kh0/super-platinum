@@ -169,7 +169,7 @@ async fn discovery(
     let request = DirectoryEndpoint::discovery(&ctx.client, &ctx.session)?;
     let now = Instant::now();
     let raw = if fixture::enabled(&state.peek()) {
-        tokio::select! {r=fixture::managers::read(state,&request)=>r.ok_or_else(unavailable)??,_=retired(state,o,g)=>return Err(unavailable())}
+        tokio::select! {r=crate::app_home::about::management::permissions::picker_read(state,&request,true)=>r.ok_or_else(unavailable)??,_=retired(state,o,g)=>return Err(unavailable())}
     } else if crate::fixture::is_fixture() {
         return Err(unavailable());
     } else {
@@ -218,7 +218,7 @@ async fn load(
                 let request =
                     endpoint.member_info(&ctx.client, &ctx.session, Instant::now(), &read)?;
                 let (raw, keys) = if fixture::enabled(&state.peek()) {
-                    tokio::select! {r=fixture::managers::picker(state,&request)=>r.ok_or_else(unavailable)??,_=retired(state,o,g)=>return Err(unavailable())}
+                    tokio::select! {r=crate::app_home::about::management::permissions::picker_request(state,&request,true)=>r.ok_or_else(unavailable)??,_=retired(state,o,g)=>return Err(unavailable())}
                 } else if crate::fixture::is_fixture() {
                     return Err(unavailable());
                 } else {
@@ -256,7 +256,7 @@ async fn load(
             let request =
                 read.request(&ctx.client, &ctx.session, Some(&endpoint), Instant::now())?;
             let (raw, keys) = if fixture::enabled(&state.peek()) {
-                tokio::select! {r=fixture::managers::picker(state,&request)=>r.ok_or_else(unavailable)??,_=retired(state,o,g)=>return Err(unavailable())}
+                tokio::select! {r=crate::app_home::about::management::permissions::picker_request(state,&request,true)=>r.ok_or_else(unavailable)??,_=retired(state,o,g)=>return Err(unavailable())}
             } else if crate::fixture::is_fixture() {
                 return Err(unavailable());
             } else {

@@ -61,6 +61,7 @@ pub struct ShellState {
     pub main_view: MainView,
     pub channel_tab: ChannelTab,
     pub(crate) channel_tabs: crate::channel_tabs::Root,
+    pub(crate) channel_workflows: crate::channel_workflows::Root,
     pub dm_query: String,
     pub dm_unread_only: bool,
     pub activity_tab: ActivityTab,

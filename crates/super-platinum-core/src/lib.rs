@@ -6,6 +6,7 @@ pub mod bookmarks;
 pub mod cache;
 pub mod canvas;
 pub mod channel_tabs;
+pub mod channel_workflows;
 pub mod composer_completion;
 pub mod composer_emoji;
 pub mod config;

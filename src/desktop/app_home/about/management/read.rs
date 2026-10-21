@@ -54,11 +54,15 @@ impl Lease {
             return Err(unavailable());
         }
         let result = if self.synthetic {
-            if let Some(result) = fixture::managers::read(state, &request).await {
+            if let Some(result) = fixture::first_publish::read(state, &request).await {
+                result
+            } else if let Some(result) = fixture::managers::read(state, &request).await {
                 result
             } else if let Some(result) = fixture::run_access::read(state, &request).await {
                 result
             } else if let Some(result) = fixture::permissions::read(state, &request).await {
+                result
+            } else if let Some(result) = fixture::publish::read(state, &request).await {
                 result
             } else if let Some(result) = fixture::unpublish::read(state, &request).await {
                 result
@@ -227,6 +231,10 @@ pub(super) fn editor(mut state: Signal<ShellState>, visit: u64, id: String) {
         permissions::check(state, visit);
         return;
     }
+    if publish::owns(&state.peek(), visit) {
+        publish::check(state, visit);
+        return;
+    }
     if unpublish::owns(&state.peek(), visit) {
         unpublish::check(state, visit);
         return;
@@ -276,6 +284,7 @@ fn adopt(s: &mut ShellState, lease: &Lease, editor: Editor) -> Result<(), Error>
         let d = &mut book.documents[index];
         if delete::retained(&book.deletions, d.pending)
             || unpublish::retained(&book.unpublishing, d.pending)
+            || publish::retained(&book.publishing, d.pending)
             || permissions::retained(&book.permissions, d.pending)
         {
             // A read cannot resolve, replay, or erase a Delete receipt.

@@ -98,6 +98,7 @@ const CSS: &str = concat!(
     include_str!("../styles/files.css"),
     include_str!("../styles/canvas.css"),
     include_str!("../styles/bookmarks.css"),
+    include_str!("../styles/channel-workflows.css"),
     include_str!("../styles/pins.css"),
     include_str!("../styles/forward.css"),
     include_str!("../styles/file-share.css"),
@@ -279,6 +280,7 @@ pub fn shell() -> Element {
     // empty state until a row in their own list opens one.
     let show_timeline = snapshot.conversation_visible();
     let workflow_entry = crate::app_home::about::management::entry::showing(&snapshot);
+    let workflow_details = crate::channel_workflows::details::visible(&snapshot);
     // A conversation is a conversation wherever it is shown: Slack's Activity
     // and DMs panes carry a composer exactly like the channel view does, so a
     // message opened from a notification can be answered where it is read.
@@ -350,6 +352,8 @@ pub fn shell() -> Element {
                             crate::canvas::surface::Panel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}-{snapshot.channel_generation}-{snapshot.shortcut_generation}",state}
                         } else if crate::channel_tabs::selection::folder_selected(&snapshot) {
                             crate::channel_tabs::folder::Panel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}-{snapshot.channel_generation}",state}
+                        } else if snapshot.channel_tab == ChannelTab::Workflows {
+                            crate::channel_workflows::Panel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}-{snapshot.channel_generation}",state}
                         } else if snapshot.channel_tab == ChannelTab::Bookmarks {
                             crate::bookmarks::BookmarksPanel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}",state,channel:active_channel_id.to_owned()}
                         } else if snapshot.channel_tab == ChannelTab::Pins {
@@ -456,7 +460,7 @@ pub fn shell() -> Element {
             if let Some(root) = snapshot.thread_root.as_ref() {
                 aside {
                     class: if activity_thread_focus { "thread-pane wide" } else { "thread-pane" },
-                    style:if workflow_entry{"display:none"}else{"display:flex"},
+                    style:if workflow_entry || workflow_details{"display:none"}else{"display:flex"},
                     // A file dropped on the thread is a reply in it. Stopping
                     // here keeps the shell's handler from filing it into the
                     // channel composer as well.
@@ -544,10 +548,17 @@ pub fn shell() -> Element {
                 }
             }
             if snapshot.profile_user.is_some() && !crate::canvas::comments::profile_active(&snapshot) {
-                {crate::profile::profile_pane(state, &snapshot)}
+                div { style:if workflow_details{"display:none"}else{"display:contents"},
+                    {crate::profile::profile_pane(state, &snapshot)}
+                }
             }
             if snapshot.group_panel.is_some() {
-                {crate::usergroups::pane(state, &snapshot)}
+                div { style:if workflow_details{"display:none"}else{"display:contents"},
+                    {crate::usergroups::pane(state, &snapshot)}
+                }
+            }
+            if workflow_details {
+                crate::channel_workflows::details::Panel { state }
             }
             {huddle_stage::stage(state, &snapshot)}
             div {

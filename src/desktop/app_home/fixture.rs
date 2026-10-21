@@ -13,10 +13,34 @@ pub(crate) fn install(s: &mut ShellState) {
         token: "synthetic-home-token".into(),
     };
     s.core.session = Some(super_platinum_core::config::Session {
-        unified_user_client_enabled: Default::default(),
+        unified_user_client_enabled:
+            if crate::app_home::about::management::fixture::first_publish::confirmation::requested()
+            {
+                [(team.clone(), false)].into()
+            } else {
+                Default::default()
+            },
         d_cookie: "synthetic".into(),
         workspaces: [(team.clone(), session)].into(),
     });
+    if crate::app_home::about::management::fixture::first_publish::confirmation::requested() {
+        // Project the actual synthetic credential workspace before Home/About
+        // capture, just as the closed Activity channel fixture does.
+        s.workspaces = s
+            .core
+            .session
+            .as_ref()
+            .unwrap()
+            .workspaces
+            .values()
+            .map(|w| crate::state::WorkspaceVm {
+                id: w.team_id.clone(),
+                name: w.name.clone(),
+                initials: "W".into(),
+            })
+            .collect();
+        s.active_workspace = 0;
+    }
     s.core.transport = Some(Arc::new(
         super_platinum_core::slack::Transport::new("synthetic").unwrap(),
     ));

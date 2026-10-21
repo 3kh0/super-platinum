@@ -4,8 +4,10 @@ use crate::slack_links_check::wait_dom;
 use dioxus::desktop::DesktopContext;
 use std::time::Duration;
 mod delete;
+mod first_publish;
 mod managers;
 mod permissions;
+mod publish;
 mod run_access;
 mod unpublish;
 
@@ -92,7 +94,23 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
     }
     dioxus::core::spawn_forever(async move {
         let result = match tokio::time::timeout(Duration::from_secs(150), async {
-            if !std::env::var(super::managers::CASE_ENV)
+            if !std::env::var(super::first_publish::CASE_ENV)
+                .unwrap_or_default()
+                .is_empty()
+            {
+                if !super::first_publish::requested() {
+                    return Err("Invalid or overlapping first-Publish flags".into());
+                }
+                first_publish::run(state, &desktop, &name).await
+            } else if !std::env::var(super::publish::CASE_ENV)
+                .unwrap_or_default()
+                .is_empty()
+            {
+                if !super::publish::requested() {
+                    return Err("Invalid or overlapping Publish fixture flags".into());
+                }
+                publish::run(state, &desktop, &name).await
+            } else if !std::env::var(super::managers::CASE_ENV)
                 .unwrap_or_default()
                 .is_empty()
             {
@@ -132,7 +150,9 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
                 json!({"ok":false,"fixture":name,"error":"Workflow management timed out"})
             }
         };
-        if super::unpublish::requested()
+        if super::first_publish::requested()
+            || super::publish::requested()
+            || super::unpublish::requested()
             || super::permissions::requested()
             || super::run_access::requested()
             || super::managers::requested()

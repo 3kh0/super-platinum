@@ -14,10 +14,20 @@ pub(in crate::app_home::about::management) fn change(
         let Some(settings) = c.settings.as_ref().filter(|v| v.current(&s, &c.original)) else {
             return;
         };
-        (c.original.clone(), settings.epoch, settings.expected())
+        {
+            let Some(pane) = finish_up::details_action(c) else {
+                return;
+            };
+            (
+                c.original.clone(),
+                settings.epoch,
+                settings.expected(),
+                pane,
+            )
+        }
     };
     dioxus::core::spawn_forever(async move {
-        let (original, epoch, expected) = captured;
+        let (original, epoch, expected, pane) = captured;
         if !managers::verify(state, &original).await {
             return;
         }
@@ -28,6 +38,9 @@ pub(in crate::app_home::about::management) fn change(
         let Some(c) = owned(&s, visit, id) else {
             return;
         };
+        if !pane.current(c) {
+            return;
+        }
         if !c
             .settings
             .as_ref()
@@ -143,10 +156,20 @@ pub(in crate::app_home::about::management) fn search(
         let Some(settings) = c.settings.as_ref().filter(|v| v.current(&s, &c.original)) else {
             return;
         };
-        (c.original.clone(), settings.epoch, settings.expected())
+        {
+            let Some(pane) = finish_up::details_action(c) else {
+                return;
+            };
+            (
+                c.original.clone(),
+                settings.epoch,
+                settings.expected(),
+                pane,
+            )
+        }
     };
     dioxus::core::spawn_forever(async move {
-        let (original, epoch, expected) = captured;
+        let (original, epoch, expected, pane) = captured;
         let action = json!({"kind":if external{"external-query"}else{"query"},"value":text});
         if !managers::verify(state, &original).await {
             return;
@@ -159,6 +182,9 @@ pub(in crate::app_home::about::management) fn search(
             let Some(c) = owned(&s, visit, id) else {
                 return;
             };
+            if !pane.current(c) {
+                return;
+            }
             if !c
                 .settings
                 .as_ref()

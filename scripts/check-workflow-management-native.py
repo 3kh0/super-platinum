@@ -22,6 +22,12 @@ from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 from native_check import expected_viewport
 from workflow_management_delete import STAGES as DELETE_STAGES, validate as validate_delete
 from workflow_management_unpublish import STAGES as UNPUBLISH_STAGES, validate as validate_unpublish
+from workflow_management_publish import STAGES as PUBLISH_STAGES, validate as validate_publish
+from workflow_management_first_publish import STAGES as FIRST_PUBLISH_STAGES, validate as validate_first_publish, choose_owned_file, AVATAR_PATH, avatar_path, retain_native_failure, avatar_request_path, avatar_case, chooser_count, chooser_request
+from workflow_management_confirmation_add import STAGES as CONFIRMATION_ADD_STAGES, validate as validate_confirmation_add
+from workflow_management_channel_workflows import STAGES as CHANNEL_WORKFLOWS_STAGES, validate as validate_channel_workflows
+from workflow_management_channel_workflow_details import STAGES as CHANNEL_WORKFLOW_DETAILS_STAGES, validate as validate_channel_workflow_details
+FIRST_PUBLISH_STAGES = {**FIRST_PUBLISH_STAGES, **CONFIRMATION_ADD_STAGES, **CHANNEL_WORKFLOWS_STAGES, **CHANNEL_WORKFLOW_DETAILS_STAGES}
 from workflow_management_permissions import STAGES as PERMISSIONS_STAGES, validate as validate_permissions
 from workflow_management_run_access import STAGES as RUN_ACCESS_STAGES, validate as validate_run_access
 from workflow_management_run_access_prerequisites import STAGES as RUN_PREREQUISITE_STAGES, validate as validate_run_prerequisites
@@ -72,14 +78,21 @@ def validate_owned(receipt, expected, dimensions=None):
                 'Native capture dimensions changed after placement')
 
 
-def validate_closed(native, expected, captures, admitted, dimensions=None, *, platform=sys.platform, png=True, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None):
+def validate_closed(native, expected, captures, admitted, dimensions=None, *, platform=sys.platform, png=True, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False):
     waiting = H['closed_receipts'](native.log, WAITING)
     require(len(waiting) == 1, 'Missing or duplicate closed readiness request')
     validate_ready(waiting[0], expected)
     # Strict newline parsing also rejects partial trailing terminal/capture records.
     for prefix in (PREFIX, EDGE):
         require(H['closed_receipts'](native.log, prefix) == native.receipts(prefix), 'Closed log parse changed')
-    receipt = validate_log(native, expected['fixture'], captures, platform, png, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case)
+    if first_publish_case is not None:
+        prefix = 'workflow-first-publish-chooser: '
+        choosers = H['closed_receipts'](native.log, prefix)
+        require(choosers == native.receipts(prefix), 'Closed chooser record changed')
+        require(len(choosers) == chooser_count(first_publish_case), 'Original file chooser request inventory changed')
+        for serial, request in enumerate(choosers,1):
+            chooser_request(request,first_publish_case,expected['fixture'],expected['pid'],serial)
+    receipt = validate_log(native, expected['fixture'], captures, platform, png, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody)
     require(receipt == admitted, 'Closed log changed after terminal receipt')
     validate_owned(receipt, expected, dimensions)
     return receipt
@@ -103,9 +116,27 @@ def validate_png(path, dimensions):
     require(list(struct.unpack('>II', header[16:24])) == dimensions, 'PNG dimensions differ from native capture')
 
 
-def validate(fixture, receipt, captures, *, platform=sys.platform, png=True, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None):
+def validate(fixture, receipt, captures, *, platform=sys.platform, png=True, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False):
     require(fixture in FIXTURES, 'Unknown workflow fixture')
-    require(sum(x is not None for x in (delete_case, unpublish_case, permissions_case, run_access_case, managers_case)) <= 1, 'Conflicting workflow operation cases')
+    require(receipt.get('threadCustody', False) is thread_custody, 'Requested thread custody mode differs from native receipt')
+    require(not thread_custody or first_publish_case in ('first-details-success', 'first-details-errors', 'first-details-close-held'), 'Thread custody requires an admitted details case')
+    require(sum(x is not None for x in (delete_case, unpublish_case, permissions_case, run_access_case, managers_case, publish_case, first_publish_case)) <= 1, 'Conflicting workflow operation cases')
+    require(first_publish_case is not None or receipt.get('firstPublishCase') is None, 'Unrequested first-Publish receipt')
+    if first_publish_case is not None:
+        require(first_publish_case in FIRST_PUBLISH_STAGES and fixture in ('workflow-editor','workflow-editor-narrow'), 'Invalid first-Publish fixture')
+        require(all(receipt.get(k) is None for k in ('publishCase','managersCase','runAccessCase','permissionsCase','deleteCase','unpublishCase')), 'Foreign first-Publish operation receipt')
+        validator = (validate_channel_workflow_details if first_publish_case in CHANNEL_WORKFLOW_DETAILS_STAGES else
+                     validate_channel_workflows if first_publish_case in CHANNEL_WORKFLOWS_STAGES else
+                     validate_confirmation_add if first_publish_case in CONFIRMATION_ADD_STAGES else validate_first_publish)
+        return validator(fixture, first_publish_case, receipt, captures,
+            viewport=expected_viewport(fixture, platform), rectangle=rectangle, validate_png=validate_png, png=png)
+    require(publish_case is not None or receipt.get('publishCase') is None, 'Unrequested Publish receipt')
+    if publish_case is not None:
+        require(publish_case in PUBLISH_STAGES and fixture in ('workflow-editor', 'workflow-editor-narrow'),
+                'Invalid Publish fixture/case')
+        require(all(receipt.get(k) is None for k in ('deleteCase','unpublishCase','permissionsCase','runAccessCase','managersCase')), 'Foreign operation receipt')
+        return validate_publish(fixture, publish_case, receipt, captures,
+                                expected_viewport(fixture, platform), rectangle, validate_png, png=png)
     if managers_case is not None:
         require(managers_case in MANAGERS_STAGES and fixture in ('workflow-editor', 'workflow-editor-narrow'),
                 'Invalid managers fixture/case')
@@ -247,12 +278,15 @@ def validate(fixture, receipt, captures, *, platform=sys.platform, png=True, del
         require(receipt.get('replacement') is None, 'Unexpected account replacement')
 
 
-def validate_log(native, fixture, captures, platform=sys.platform, png=True, *, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None):
+def validate_log(native, fixture, captures, platform=sys.platform, png=True, *, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False):
     receipts = native.receipts(PREFIX)
     require(len(receipts) == 1, 'Missing or duplicate terminal receipt')
     receipt = receipts[0]
-    validate(fixture, receipt, captures, platform=platform, png=png, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case)
-    stages = (MANAGERS_STAGES[managers_case] if managers_case is not None else
+    require(receipt.get('threadCustody', False) is thread_custody, 'Requested thread custody mode differs from native receipt')
+    validate(fixture, receipt, captures, platform=platform, png=png, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody)
+    stages = (FIRST_PUBLISH_STAGES[first_publish_case] if first_publish_case is not None else
+              PUBLISH_STAGES[publish_case] if publish_case is not None else
+              MANAGERS_STAGES[managers_case] if managers_case is not None else
               RUN_ACCESS_STAGES[run_access_case] if run_access_case is not None else
               PERMISSIONS_STAGES[permissions_case] if permissions_case is not None else
               UNPUBLISH_STAGES[unpublish_case] if unpublish_case is not None else
@@ -262,11 +296,11 @@ def validate_log(native, fixture, captures, platform=sys.platform, png=True, *, 
     return receipt
 
 
-def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None):
+def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False):
     require(fixture in FIXTURES, 'Unknown workflow fixture')
     require(delete_case is None or delete_case in DELETE_STAGES
             and fixture in ('workflow-editor', 'workflow-editor-narrow'), 'Invalid Delete run')
-    require(sum(x is not None for x in (delete_case, unpublish_case, permissions_case, run_access_case, managers_case)) <= 1, 'Conflicting workflow operation cases')
+    require(sum(x is not None for x in (delete_case, unpublish_case, permissions_case, run_access_case, managers_case, publish_case, first_publish_case)) <= 1, 'Conflicting workflow operation cases')
     require(unpublish_case is None or unpublish_case in UNPUBLISH_STAGES
             and fixture in ('workflow-editor', 'workflow-editor-narrow'), 'Invalid Unpublish run')
     require(permissions_case is None or permissions_case in PERMISSIONS_STAGES
@@ -275,6 +309,9 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
             and fixture in ('workflow-editor', 'workflow-editor-narrow'), 'Invalid Run access run')
     require(managers_case is None or managers_case in MANAGERS_STAGES
             and fixture in ('workflow-editor', 'workflow-editor-narrow'), 'Invalid managers run')
+    require(publish_case is None or publish_case in PUBLISH_STAGES
+            and fixture in ('workflow-editor', 'workflow-editor-narrow'), 'Invalid Publish run')
+    require(first_publish_case is None or first_publish_case in FIRST_PUBLISH_STAGES and fixture in ('workflow-editor','workflow-editor-narrow'), 'Invalid first-Publish run')
     captures.mkdir(parents=True, exist_ok=True)
     nonce = secrets.token_hex(16)
     directory = captures / f'workflow-management-{nonce}'
@@ -286,6 +323,13 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
     checks = {FLAG: '1', 'SUPER_PLATINUM_UI_CAPTURE_DIR': str(captures),
               'SUPER_PLATINUM_WORKFLOW_MANAGEMENT_NONCE': nonce,
               'SUPER_PLATINUM_WORKFLOW_MANAGEMENT_READY_DIR': str(directory)}
+    require(not thread_custody or first_publish_case in ('first-details-success', 'first-details-errors', 'first-details-close-held'), 'Thread custody requires an admitted details case')
+    if thread_custody:
+        checks['SUPER_PLATINUM_WORKFLOW_DETAILS_THREAD_CHECK'] = '1'
+        evidence['threadCustody'] = True
+    if first_publish_case is not None:
+        checks['SUPER_PLATINUM_WORKFLOW_FIRST_PUBLISH_CASE'] = first_publish_case
+        evidence['firstPublishCase'] = first_publish_case
     if delete_case is not None:
         checks['SUPER_PLATINUM_WORKFLOW_DELETE_CASE'] = delete_case
         evidence['deleteCase'] = delete_case
@@ -298,6 +342,9 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
     if run_access_case is not None:
         checks['SUPER_PLATINUM_WORKFLOW_RUN_ACCESS_CASE'] = run_access_case
         evidence['runAccessCase'] = run_access_case
+    if publish_case is not None:
+        checks['SUPER_PLATINUM_WORKFLOW_PUBLISH_CASE'] = publish_case
+        evidence['publishCase'] = publish_case
     if managers_case is not None:
         checks['SUPER_PLATINUM_WORKFLOW_MANAGERS_CASE'] = managers_case
         evidence['managersCase'] = managers_case
@@ -329,6 +376,16 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
                     deadline, sampled, count = time.monotonic() + 150, 0., 0
                     while True:
                         native.require_running()
+                        choosers = native.receipts('workflow-first-publish-chooser: ')
+                        require(len(choosers)<=chooser_count(first_publish_case), 'Repeated or unrequested file chooser request')
+                        completed=evidence.setdefault('fileChoosers',[]) if avatar_case(first_publish_case) else []
+                        for serial,request in enumerate(choosers,1):
+                            chooser_request(request,first_publish_case,fixture,native.process.pid,serial)
+                            if serial<=len(completed): continue
+                            reply=choose_owned_file(native.process.pid,request,
+                                avatar_path(first_publish_case),native.require_running)
+                            completed.append(dict(reply,serial=serial,case=first_publish_case,input=request['input']))
+                            if serial==1: evidence['fileChooser']=reply
                         edges = native.receipts(EDGE)
                         if pointer:
                             for edge in edges[count:]:
@@ -338,7 +395,10 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
                                 sampled = time.monotonic()
                         count = len(edges)
                         if native.receipts(PREFIX):
-                            evidence['native'] = validate_log(native, fixture, captures, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case)
+                            if avatar_case(first_publish_case):
+                                require(len(evidence.get('fileChoosers',[]))==chooser_count(first_publish_case) and all(v.get('dialogClosed') is True for v in evidence['fileChoosers']),
+                                        'Original owned file chooser did not complete')
+                            evidence['native'] = validate_log(native, fixture, captures, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody)
                             validate_owned(evidence['native'], expected, evidence.get('expectedPngDimensions'))
                             if pointer:
                                 pointer.check('terminal', require_clear=True)
@@ -346,6 +406,8 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
                         require(time.monotonic() < deadline, 'Workflow native receipt timed out')
                         time.sleep(.05)
             except BaseException:
+                if first_publish_case is not None:
+                    retain_native_failure(evidence, native.receipts(PREFIX), fixture, first_publish_case)
                 try:
                     path = captures / f'{fixture}-failure.png'
                     native.capture(path)
@@ -357,7 +419,7 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
         if sys.platform == 'win32':
             H['validate_pointer_cleanup'](evidence.get('pointer', {}))
         validate_closed(native, expected, captures, evidence['native'], evidence.get('expectedPngDimensions'),
-                        delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case)
+                        delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody)
         if handle:
             evidence['exitIdentity'] = process_api.times(handle)
             H['validate_exit'](evidence['processCreationFiletime'], evidence['exitIdentity'])
@@ -386,15 +448,18 @@ def main():
     parser.add_argument('--binary', type=Path, default=Path(os.environ.get('SUPER_PLATINUM_BINARY', DEFAULT_BINARY)))
     parser.add_argument('--captures', type=Path, default=ROOT / 'tmp/workflow-management-native')
     parser.add_argument('--fixture', action='append', choices=FIXTURES)
+    parser.add_argument('--thread-custody', action='store_true', help='Verify an open thread and unsent draft across workflow details using closed fixture messages')
     cases = parser.add_mutually_exclusive_group()
     cases.add_argument('--delete-case', choices=tuple(DELETE_STAGES))
     cases.add_argument('--unpublish-case', choices=tuple(UNPUBLISH_STAGES))
+    cases.add_argument('--publish-case', choices=tuple(PUBLISH_STAGES))
+    cases.add_argument('--first-publish-case', choices=tuple(FIRST_PUBLISH_STAGES))
     cases.add_argument('--permissions-case', choices=tuple(PERMISSIONS_STAGES))
     cases.add_argument('--run-access-case', choices=tuple(RUN_ACCESS_STAGES))
     cases.add_argument('--managers-case', choices=tuple(MANAGERS_STAGES))
     args = parser.parse_args()
     captures = args.captures.resolve()
-    fixtures = args.fixture or (('workflow-editor', 'workflow-editor-narrow') if args.delete_case or args.unpublish_case or args.permissions_case or args.run_access_case or args.managers_case else FIXTURES)
+    fixtures = args.fixture or (('workflow-editor', 'workflow-editor-narrow') if args.delete_case or args.unpublish_case or args.permissions_case or args.run_access_case or args.managers_case or args.publish_case or args.first_publish_case else FIXTURES)
     require(not args.delete_case or all(f in ('workflow-editor', 'workflow-editor-narrow') for f in fixtures),
             'Delete requires the existing editor fixture')
     require(not args.unpublish_case or all(f in ('workflow-editor', 'workflow-editor-narrow') for f in fixtures),
@@ -403,11 +468,13 @@ def main():
             'Permissions requires the existing editor fixture')
     require(not args.run_access_case or all(f in ('workflow-editor', 'workflow-editor-narrow') for f in fixtures),
             'Run access requires the existing editor fixture')
+    require(not args.publish_case or all(f in ('workflow-editor', 'workflow-editor-narrow') for f in fixtures),
+            'Publish requires an editor fixture')
     require(not args.managers_case or all(f in ('workflow-editor', 'workflow-editor-narrow') for f in fixtures),
             'Managers requires the existing editor fixture')
     for fixture in fixtures:
         require(not (captures / f'{fixture}.log').exists(), 'Use a fresh capture directory')
-        run_fixture(fixture, args.binary.resolve(), captures, args.delete_case, args.unpublish_case, args.permissions_case, args.run_access_case, args.managers_case)
+        run_fixture(fixture, args.binary.resolve(), captures, args.delete_case, args.unpublish_case, args.permissions_case, args.run_access_case, args.managers_case, args.publish_case, args.first_publish_case, args.thread_custody)
 
 
 if __name__ == '__main__':

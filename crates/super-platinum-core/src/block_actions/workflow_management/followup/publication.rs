@@ -2,6 +2,18 @@
 use super::*;
 impl FollowUpPlan {
     pub fn publication_observation(&self, current: &Editor) -> Observation {
+        self.publication_observation_for(current, false)
+    }
+
+    /// Finish Up readback only; never grants a direct-publish acknowledgment.
+    pub fn publication_observation_first_publish(&self, current: &Editor) -> Observation {
+        if !matches!(self.primary.command(), Command::Published(true)) {
+            return Observation::Unavailable;
+        }
+        self.publication_observation_for(current, true)
+    }
+
+    fn publication_observation_for(&self, current: &Editor, first_publish: bool) -> Observation {
         let Command::Published(published) = self.primary.command() else {
             return Observation::Unavailable;
         };
@@ -16,6 +28,26 @@ impl FollowUpPlan {
             || raw.get("input_parameters") != self.workflow.get("input_parameters")
         {
             return Observation::Different;
+        }
+        if *published {
+            let Outcome::Succeeded(receipt) = self.primary.slots()[0].outcome() else {
+                return Observation::Unavailable;
+            };
+            let publication = self.primary.original().publication();
+            let acknowledged = if first_publish {
+                publication.acknowledges_first_publish(receipt)
+            } else {
+                publication.acknowledges_publish(receipt)
+            };
+            if !acknowledged {
+                return Observation::Unavailable;
+            }
+            // Published(true) may start from an already-published version with
+            // unchanged inputs. Match the actual ACK version/change metadata
+            // and complete workflow content, not just a positive boolean.
+            if raw != &self.workflow {
+                return Observation::Different;
+            }
         }
         let matches = match (self.primary.original().trigger(), current.trigger()) {
             (None, None) => true,

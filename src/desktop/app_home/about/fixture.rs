@@ -107,10 +107,14 @@ pub(crate) fn install_modal(s: &mut ShellState) {
 // Other named fixtures never fall back to an authenticated transport.
 pub(super) fn read_enabled(s: &ShellState) -> bool {
     management::activity::fixture::channel::enabled(s)
+        || crate::channel_workflows::fixture::enabled(s)
 }
 pub(super) fn read_response(
     s: &ShellState,
     request: &super_platinum_core::slack::PreparedRequest,
 ) -> Result<serde_json::Value, Error> {
+    if crate::channel_workflows::fixture::enabled(s) {
+        return crate::channel_workflows::fixture::about_response(s, request);
+    }
     management::activity::fixture::channel::about_response(s, request)
 }

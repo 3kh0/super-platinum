@@ -56,7 +56,7 @@ pub(super) fn CustomTabs(state: Signal<ShellState>) -> Element {
     }
     rsx! {
         if let Some(base)=inventory {
-            for row in base.rows().iter().filter(|r|r["type"]=="folder"||r.get("id").and_then(|v|v.as_str()).is_some_and(|s|s.starts_with("Ct"))) {
+            for row in base.rows().iter().filter(|r|r["type"]!="workflows"&&(r["type"]=="folder"||r.get("id").and_then(|v|v.as_str()).is_some_and(|s|s.starts_with("Ct")))) {
                 if let Some(id)=channel_tabs::id(row) {
                     {let base=base.clone();let id=id.to_owned();let allowed=current&&(base.canvas_record(&id).is_ok()||channel_tabs::folder::Folder::capture(&base,&id).is_ok());let label=tab_label(row);let visit=visit.clone();let active=selected.as_deref()==Some(id.as_str());rsx!{
                         button{class:if active{"active"}else{""},"aria-pressed":active,title:if allowed{"Open channel tab"}else{"This tab type is not available yet"},disabled:!allowed,onclick:move |_|if let Some(v)=visit.as_ref(){tabs::open_canvas(state,v,base.clone(),id.clone())},"{label}"}

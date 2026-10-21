@@ -40,13 +40,26 @@ pub(crate) fn panel(mut state: Signal<ShellState>) -> Element {
         || permissions::confirming(&s, visit);
     let unpublish_confirmation = unpublish::confirmation(&s, visit);
     let unpublish_owned = unpublish::owns(&s, visit);
-    let permission_confirmation = permissions::confirmation(&s, visit);
+    let first_publish_active = permissions::finish_up::active(&s, visit);
+    let permission_confirmation =
+        permissions::confirmation(&s, visit).filter(|_| !first_publish_active);
     let permission_selected = permissions::selected(&s, visit).unwrap_or_default();
     let permission_owned = permissions::owns(&s, visit);
     let can_permissions = permissions::available(&s, visit);
     let can_save_permissions = permissions::save_enabled(&s, visit);
     let team_name = h.owner.ctx.session.name.clone();
     let can_unpublish = unpublish::available(&s, visit);
+    let show_publish = publish::shown(&s, visit);
+    let show_first_publish = permissions::finish_up::shown(&s, visit);
+    let review_first_publish = permissions::finish_up::review_available(&s, visit);
+    let publish_caption = d
+        .as_ref()
+        .and_then(|d| publish::caption(&d.editor))
+        .unwrap_or("Publish");
+    let can_publish = publish::available(&s, visit);
+    let publish_owned = publish::owns(&s, visit);
+    let publish_retry = publish::retry_available(&s, visit);
+    let publish_dirty = show_publish && d.as_ref().is_some_and(Document::dirty);
     let delete_owned = delete::owns(&s, visit);
     let deleted = delete::terminal(&s, visit);
     let can_activity = activity::permitted(&s, visit) && !busy && !confirming && !delete_owned;
@@ -92,7 +105,8 @@ pub(crate) fn panel(mut state: Signal<ShellState>) -> Element {
                 div{class:"workflow-management-feedback",
                     p{id:"workflow-management-navigation-notice",role:"status"}
                     if let Some(notice)=surface_notice{p{role:"status","{notice}"}}
-                    if let Some(notice)=d.notice{p{id:if delete_owned{"workflow-delete-status"}else if unpublish_owned{"workflow-unpublish-status"}else if permission_owned{"workflow-permissions-status"}else{"workflow-management-document-notice"},role:"status","{notice}"}}
+                    if let Some(notice)=d.notice{p{id:if delete_owned{"workflow-delete-status"}else if unpublish_owned{"workflow-unpublish-status"}else if permission_owned{"workflow-permissions-status"}else if publish_owned||show_publish{"workflow-publish-status"}else{"workflow-management-document-notice"},role:"status","{notice}"}}
+                    if publish_dirty {p{id:"workflow-publish-save-guidance",role:"status","Save details before publishing."}}
                     if let Some(notice)=policy_notice{p{role:"status","{notice}"}}
                     if busy{p{role:"status","Checking workflow details and permissions…"}}
                     for outcome in outcomes{p{class:"workflow-management-outcome","{outcome}"}}
@@ -120,6 +134,7 @@ pub(crate) fn panel(mut state: Signal<ShellState>) -> Element {
                         }
                     }
                 }
+                {permissions::finish_up::panel(state,visit)}
                 if let Some(id)=permission_confirmation {
                     section{id:"workflow-permissions",class:"workflow-management-feedback",role:"region","aria-labelledby":"workflow-permissions-heading","data-confirmation":id,
                         h3{id:"workflow-permissions-heading","Permissions"}
@@ -142,10 +157,14 @@ pub(crate) fn panel(mut state: Signal<ShellState>) -> Element {
                 div{class:"workflow-management-actions",
                     button{id:"workflow-management-activity",r#type:"button",disabled:!can_activity,onclick:move |_|activity::show(state,visit),"Activity"}
                     if !direct {button{id:"workflow-management-managed",r#type:"button",disabled:busy||confirming,onclick:move |_|read::list(state,visit,false),"Managed by you"}}
-                    button{id:if permission_owned{"workflow-permissions-check"}else{"workflow-management-check"},r#type:"button",disabled:busy||confirming||delete_owned,onclick:move |_|read::editor(state,visit,d.editor.workflow_id().into()),"Check current workflow"}
-                    if d.observed.is_some()&&!delete_owned&&!unpublish_owned&&!permission_owned{button{id:"workflow-management-use-current",r#type:"button",disabled:busy||confirming,onclick:move |_|write::use_current(state,visit),"Use current workflow"}}
+                    button{id:if permission_owned{"workflow-permissions-check"}else if publish_owned{"workflow-publish-check"}else{"workflow-management-check"},r#type:"button",disabled:busy||confirming||delete_owned,onclick:move |_|read::editor(state,visit,d.editor.workflow_id().into()),if publish_owned{"Check current publication"}else{"Check current workflow"}}
+                    if d.observed.is_some()&&!delete_owned&&!unpublish_owned&&!publish_owned&&!permission_owned{button{id:"workflow-management-use-current",r#type:"button",disabled:busy||confirming,onclick:move |_|write::use_current(state,visit),"Use current workflow"}}
                     if !deleted {button{id:"workflow-management-delete",class:"danger",r#type:"button",disabled:!can_edit,onclick:move |_|delete::open(state,visit),"Delete workflow"}}
                     if d.editor.raw_workflow()["is_published"]==true {button{id:"workflow-management-unpublish",class:"danger",r#type:"button",disabled:!can_unpublish,onclick:move |_|unpublish::open(state,visit),"Unpublish workflow"}}
+                    if show_publish {button{id:"workflow-management-publish",r#type:"button",disabled:!can_publish,onclick:move |_|publish::start(state,visit,false),"{publish_caption}"}}
+                    if show_first_publish {button{id:"workflow-management-finish-up",r#type:"button",disabled:!can_edit,onclick:move |_|permissions::finish_up::open(state,visit),"Finish Up"}}
+                    if review_first_publish {button{id:"workflow-management-review-first-publication",r#type:"button",disabled:busy||confirming,onclick:move |_|permissions::finish_up::resume(state,visit),"Review first publication"}}
+                    if publish_retry {button{id:"workflow-publish-retry",r#type:"button",onclick:move |_|publish::start(state,visit,true),"Retry publication checks"}}
                     button{id:"workflow-management-permissions",r#type:"button",disabled:!can_permissions,onclick:move |_|permissions::open(state,visit),"Permissions"}
                     button{id:"workflow-management-save",r#type:"button",disabled:!can_save,onclick:move |_|write::save(state,visit),"Save details"}
                 }

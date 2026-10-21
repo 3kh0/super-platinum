@@ -122,9 +122,19 @@ impl Attempt {
         }
     }
 
-    fn select(&self, shell: &mut ShellState, channel: &str) -> Option<Visit> {
+    fn select(&self, shell: &mut ShellState, channel: &str, workflows: bool) -> Option<Visit> {
         if !self.current(shell) || !select_target(shell, channel, None) {
             return None;
+        }
+        if workflows {
+            // The explicit source route selects this destination without adding
+            // a persistent tab record or creating a second navigation intent.
+            shell.channel_tab = ChannelTab::Workflows;
+            crate::channel_tabs::selection::record(
+                shell,
+                crate::channel_tabs::selection::Route::Resource(ChannelTab::Workflows),
+                None,
+            );
         }
         // From this point the original caller is intentionally no longer
         // current. History belongs to the successor conversation visit.
@@ -162,11 +172,32 @@ async fn while_current<T>(
 }
 
 pub(crate) async fn open_channel_guarded(
+    state: Signal<ShellState>,
+    team: String,
+    channel: String,
+    guard: NavigationGuard,
+    feedback: FailureFeedback,
+) {
+    open_destination(state, team, channel, guard, feedback, false).await;
+}
+
+pub(crate) async fn open_channel_workflows_guarded(
+    state: Signal<ShellState>,
+    team: String,
+    channel: String,
+    guard: NavigationGuard,
+    feedback: FailureFeedback,
+) {
+    open_destination(state, team, channel, guard, feedback, true).await;
+}
+
+async fn open_destination(
     mut state: Signal<ShellState>,
     team: String,
     channel: String,
     guard: NavigationGuard,
     feedback: FailureFeedback,
+    workflows: bool,
 ) {
     if !(guard.current)(&state.peek()) {
         return;
@@ -328,7 +359,7 @@ pub(crate) async fn open_channel_guarded(
     }
     let successor = {
         let mut shell = state.write();
-        let successor = attempt.select(&mut shell, &channel);
+        let successor = attempt.select(&mut shell, &channel, workflows);
         if successor.is_none() && attempt.current(&shell) {
             scoped_failure(&mut shell, &feedback, "This conversation is unavailable.");
         }
@@ -339,7 +370,9 @@ pub(crate) async fn open_channel_guarded(
     if let Some(successor) = successor
         && successor.current(&state.peek())
     {
-        crate::bootstrap::refresh_selected_channel(state).await;
+        if !workflows {
+            crate::bootstrap::refresh_selected_channel(state).await;
+        }
     }
 }
 

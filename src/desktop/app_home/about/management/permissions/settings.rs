@@ -102,6 +102,15 @@ impl Settings {
             .ok_or(domain::Error::Unresolved)?
             .desired(&self.context, &self.policy)
     }
+    pub(super) fn desired_embedded(&self) -> Result<Option<protocol::Command>, domain::Error> {
+        if self.pending {
+            return Err(domain::Error::Unresolved);
+        }
+        self.draft
+            .as_ref()
+            .ok_or(domain::Error::Unresolved)?
+            .desired_embedded(&self.context, &self.policy)
+    }
     pub(super) fn snapshot(&self) -> Value {
         json!({"epoch":self.epoch,"generation":self.generation,"pending":self.pending,
             "mode":self.display_mode(),"ids":self.draft.as_ref().map(Draft::ids),

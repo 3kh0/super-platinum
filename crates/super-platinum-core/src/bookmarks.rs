@@ -17,6 +17,8 @@ pub struct Bookmark {
     pub parent_id: Option<String>,
     #[serde(default)]
     pub rank: Option<String>,
+    #[serde(default, alias = "shortcutId")]
+    pub shortcut_id: Option<String>,
 }
 impl Bookmark {
     pub fn title(&self) -> &str {
@@ -39,6 +41,7 @@ impl Bookmark {
             && self.link == other.link
             && self.emoji == other.emoji
             && self.parent_id == other.parent_id
+            && self.shortcut_id == other.shortcut_id
     }
 }
 pub fn valid_link(value: &str) -> bool {

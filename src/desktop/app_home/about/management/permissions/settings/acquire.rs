@@ -62,7 +62,7 @@ pub(super) async fn discovery(
     let request = DirectoryEndpoint::discovery(&ctx.client, &ctx.session)?;
     let observed = Instant::now();
     let raw = if fixture::enabled(&state.peek()) {
-        tokio::select! {r=fixture::run_access::read(state,&request)=>r.ok_or_else(unavailable)??,_=retired(state,o,generation)=>return Err(unavailable())}
+        tokio::select! {r=crate::app_home::about::management::permissions::picker_read(state,&request,false)=>r.ok_or_else(unavailable)??,_=retired(state,o,generation)=>return Err(unavailable())}
     } else if crate::fixture::is_fixture() {
         return Err(unavailable());
     } else {
@@ -87,7 +87,7 @@ pub(super) async fn request(
     let ctx = &o.owner.ctx;
     let request = read.request(&ctx.client, &ctx.session, endpoint, Instant::now())?;
     let result = if fixture::enabled(&state.peek()) {
-        tokio::select! {result=fixture::run_access::picker(state,&request)=>result.unwrap_or_else(||Err(unavailable())),_=retired(state,o,generation)=>Err(unavailable())}
+        tokio::select! {result=crate::app_home::about::management::permissions::picker_request(state,&request,false)=>result.unwrap_or_else(||Err(unavailable())),_=retired(state,o,generation)=>Err(unavailable())}
     } else if crate::fixture::is_fixture() {
         Err(unavailable())
     } else {

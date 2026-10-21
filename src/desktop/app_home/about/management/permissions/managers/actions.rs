@@ -72,13 +72,14 @@ fn edit(mut state: Signal<ShellState>, visit: u64, id: u64, action: Value) {
     let captured = {
         let s = state.peek();
         settings::owned(&s, visit, id).and_then(|c| {
+            let pane = finish_up::details_action(c)?;
             c.managers
                 .as_ref()
                 .filter(|m| m.current(&s, &c.original))
-                .map(|m| (c.original.clone(), m.expected()))
+                .map(|m| (c.original.clone(), m.expected(), pane))
         })
     };
-    let Some((o, e)) = captured else { return };
+    let Some((o, e, pane)) = captured else { return };
     dioxus::core::spawn_forever(async move {
         if !checked(state, &o, &e, Some(&action)).await {
             return;
@@ -87,6 +88,9 @@ fn edit(mut state: Signal<ShellState>, visit: u64, id: u64, action: Value) {
         let Some(c) = settings::owned(&s, visit, id) else {
             return;
         };
+        if !pane.current(c) {
+            return;
+        }
         if !c
             .managers
             .as_ref()

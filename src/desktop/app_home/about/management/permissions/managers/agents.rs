@@ -88,7 +88,7 @@ async fn request(
     acquire::authorize(state, o, generation).await?;
     let result = if fixture::enabled(&state.peek()) {
         tokio::select! {
-            r=fixture::managers::read(state,&request)=>r.ok_or_else(unavailable)?,
+            r=crate::app_home::about::management::permissions::picker_read(state,&request,true)=>r.ok_or_else(unavailable)?,
             _=acquire::retired(state,o,generation)=>return Err(unavailable()),
         }
     } else if crate::fixture::is_fixture() {

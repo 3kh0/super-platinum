@@ -5,6 +5,7 @@ mod activity;
 mod activity_export;
 pub mod activity_members;
 pub mod capabilities;
+pub mod confirmation_add;
 mod editor;
 mod followup;
 mod list;
@@ -26,7 +27,7 @@ pub use list::{List, ListPage, ListQuery, ListRow, ListWorkflows, Sort};
 pub use mutation::{Command, FollowUp, MutationPlan, Outcome, Slot, StepAction};
 pub use name::{NameError, description_invalid, validate_name};
 pub use observe::Observation;
-pub use publication::Publication;
+pub use publication::{Publication, PublicationAssessment, PublicationInputs, TriggerTypes};
 pub use trigger::TriggerUpdate;
 
 pub mod member_hydration;

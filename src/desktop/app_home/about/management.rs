@@ -15,6 +15,7 @@ pub(crate) mod fixture;
 mod native;
 mod owner;
 pub(crate) mod permissions;
+pub(crate) mod publish;
 pub(crate) mod unpublish;
 use owner::Owner;
 mod policy;
@@ -32,6 +33,7 @@ pub(super) struct State {
     attempts: Vec<write::Attempt>,
     deletions: delete::Book,
     unpublishing: unpublish::Book,
+    publishing: publish::Book,
     permissions: permissions::Book,
     fixture: Option<fixture::Model>,
     exports: Vec<activity::export::Attempt>,
@@ -279,9 +281,30 @@ pub(crate) fn carry_pending(previous: &mut ShellState, loaded: &mut ShellState) 
         .app_home
         .about
         .management
+        .publishing
+        .attempts
+        .append(&mut old.publishing.attempts);
+    loaded
+        .app_home
+        .about
+        .management
         .permissions
         .attempts
         .append(&mut old.permissions.attempts);
+    loaded
+        .app_home
+        .about
+        .management
+        .permissions
+        .first_attempts
+        .append(&mut old.permissions.first_attempts);
+    loaded
+        .app_home
+        .about
+        .management
+        .permissions
+        .first_avatar_receipts
+        .append(&mut old.permissions.first_avatar_receipts);
     loaded
         .app_home
         .about

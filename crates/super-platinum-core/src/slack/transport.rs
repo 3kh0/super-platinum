@@ -12,6 +12,7 @@ use wreq_util::Emulation;
 use super::Error;
 use super::client::{PreparedRequest, RequestBody, redact_secrets};
 
+mod avatar;
 mod canvas_collab;
 mod canvas_edit;
 mod draft_mutation;

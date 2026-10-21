@@ -10,7 +10,7 @@ function workflowPermissionsCurrent(expected) {
   const saved=state?.permissionsConfirmation;
   return !!saved && saved.root===root && saved.state===state && saved.key===JSON.stringify(expected)
     && root.isConnected && state.lease===saved.lease && !!saved.lease && !state.composing
-    && !document.querySelector('[role="dialog"][aria-modal="true"]')
+    && workflowPermissionsModal(expected,saved)
     && root.dataset.managementVisit===String(expected.visit)
     && root.dataset.managementDocument===String(expected.document)
     && root.dataset.managementRevision===String(expected.revision)
@@ -23,7 +23,7 @@ async function workflowPermissionsLock(expected,channel) {
   const root=document.getElementById('workflow-management'), state=root?.__workflowManagement;
   if(!state||state.permissionsConfirmation||state.lease) {channel.send(false);return false;}
   const saved={root,state,key:JSON.stringify(expected),title:root.querySelector('#workflow-management-title'),
-    description:root.querySelector('#workflow-management-description'),lease:null};
+    description:root.querySelector('#workflow-management-description'),focus:document.activeElement,lease:null};
   state.permissionsConfirmation=saved;
   try {
     return await workflowManagementLock(expected,{
@@ -42,6 +42,7 @@ async function workflowPermissionsLock(expected,channel) {
               node.setSelectionRange(selection.start,selection.end,selection.direction);
           }
         }
+        if(expected.finishUp && saved.focus?.isConnected && (!document.activeElement || document.activeElement===document.body || saved.modal?.contains(document.activeElement))) saved.focus.focus?.({preventScroll:true});
       }
     }
   }
@@ -71,7 +72,7 @@ function workflowPermissionsFinish(expected) {
     ||saved.title!==root.querySelector('#workflow-management-title')
     ||saved.description!==root.querySelector('#workflow-management-description')
     ||![saved.title,saved.description].every(n=>n.isConnected&&root.contains(n)&&!n.validity?.badInput)
-    ||document.querySelector('[role="dialog"][aria-modal="true"]')) return null;
+    ||!workflowPermissionsModal(expected,saved)) return null;
   saved.finishSelection=[saved.title,saved.description].map(node=>({node,value:node.value,
     start:node.selectionStart,end:node.selectionEnd,direction:node.selectionDirection}));
   return {title:saved.title.value,description:saved.description.value};
@@ -86,6 +87,7 @@ function workflowPermissionsBind(expected) {
   saved.panel=panel; saved.choice=choice; return true;
 }
 function workflowPermissionsChoice(expected,value) {
+  if(expected.finishUp&&!workflowFinishUpDetails(document.getElementById('workflow-management')?.__workflowManagement?.permissionsConfirmation))return false;
   if(!workflowPermissionsCheck(expected)) return false;
   const root=document.getElementById('workflow-management'), saved=root.__workflowManagement.permissionsConfirmation;
   return !!saved.choice && saved.panel===root.querySelector('#workflow-permissions')
@@ -97,7 +99,9 @@ function workflowPermissionsChoice(expected,value) {
 // Settings use the same original metadata lease. A newer render can install a
 // new selection generation, but cannot replace a node within that generation.
 function workflowPermissionsSettings(original, expected, action) {
+  if(action&&original.finishUp&&!workflowFinishUpDetails(document.getElementById('workflow-management')?.__workflowManagement?.permissionsConfirmation))return false;
   if (!workflowPermissionsCheck(original,true)) return false;
+  if (original.finishUp && !workflowFinishUpBuffers(document.getElementById('workflow-management')?.__workflowManagement?.permissionsConfirmation)) return false;
   const root=document.getElementById('workflow-management'), saved=root.__workflowManagement.permissionsConfirmation;
   const panel=root.querySelector('#workflow-permissions'), box=root.querySelector('#workflow-permissions-run-settings');
   if (!panel || panel!==saved.panel || !box || !panel.contains(box) || box.dataset.settingsEpoch!==String(expected.epoch)) return false;
@@ -157,4 +161,30 @@ async function workflowPermissionsBindSettings(original, expected) {
     });
   }
   return false;
+}
+
+// Only the captured Finish Up modal is admitted. Another modal is never a grant.
+function workflowPermissionsModal(expected,saved) {
+  if(!expected.finishUp)return !document.querySelector('[role="dialog"][aria-modal="true"]');
+  const dialogs=[...document.querySelectorAll('[role="dialog"][aria-modal="true"]')];
+  const modal=document.getElementById('workflow-finish-up');
+  if(!saved.modal)return dialogs.length===0 || dialogs.length===1 && dialogs[0]===modal && modal.dataset.finishOwner===String(expected.id) && saved.root.contains(modal);
+  return dialogs.length===1 && dialogs[0]===saved.modal && modal===saved.modal && modal.isConnected && saved.root.contains(modal);
+}
+function workflowFinishUpBuffers(saved) {
+  if(!saved?.modal)return false;
+  const f=saved.finish;
+  return !!f && f.title===saved.modal.querySelector('#workflow-finish-title') && f.description===saved.modal.querySelector('#workflow-finish-description')
+    && f.title.isConnected && f.description.isConnected && !f.title.validity?.badInput && !f.description.validity?.badInput
+    && f.title.value===saved.modal.dataset.finishTitle && f.description.value===saved.modal.dataset.finishDescription;
+}
+
+// Only new embedded settings actions require the visible Details pane. Original
+// owned acquisition/binding remains current while its genuine controls are hidden.
+function workflowFinishUpDetails(saved) {
+ const modal=saved?.modal,pane=saved?.finishPanes?.details;
+ return !!modal&&!!pane&&modal.isConnected&&pane.isConnected&&modal.dataset.finishPane==='details'
+  &&modal.dataset.finishBound==='true'&&saved.finishPane?.name==='details'&&saved.finishPane.node===pane
+  &&saved.finishPane.epoch===modal.dataset.finishEpoch&&modal.querySelector('#workflow-finish-details')===pane
+  &&pane.style.display==='flex'&&getComputedStyle(pane).display==='flex';
 }

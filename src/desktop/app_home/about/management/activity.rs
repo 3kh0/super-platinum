@@ -139,6 +139,7 @@ pub(super) fn permitted(s: &ShellState, visit: u64) -> bool {
         && !super::permissions::owns(s, visit)
         && !super::unpublish::confirming(s, visit)
         && !super::unpublish::owns(s, visit)
+        && !super::publish::owns(s, visit)
         && !super::delete::confirming(s, visit)
         && !super::delete::owns(s, visit)
         && admitted(s, visit)

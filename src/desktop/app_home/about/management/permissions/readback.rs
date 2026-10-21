@@ -21,6 +21,7 @@ pub(in crate::app_home::about::management) fn check(mut state: Signal<ShellState
             return;
         };
         let original = Original {
+            embedded: false,
             id: next(),
             visit,
             document: d.id,

@@ -10,6 +10,7 @@ pub enum ChannelTab {
     Links,
     Pins,
     Bookmarks,
+    Workflows,
     Canvas,
 }
 

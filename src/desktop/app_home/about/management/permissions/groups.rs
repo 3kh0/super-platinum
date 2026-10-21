@@ -101,12 +101,7 @@ pub(super) async fn execute(
                 .execute_workflow_run_permission(request)
                 .await
         } else {
-            lease
-                .owner
-                .ctx
-                .transport
-                .execute_workflow_management(request)
-                .await
+            lease.owner.ctx.transport.execute(request).await
         };
         let mut s = state.write();
         if let Err(Error::RateLimited { retry_after_secs }) = &result {

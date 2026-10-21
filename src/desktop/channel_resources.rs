@@ -168,9 +168,9 @@ pub async fn refresh(state: Signal<ShellState>) {
         // This named closed scenario exercises a fresh About owner and its
         // guarded fixture responses. Every other fixture stays disconnected.
         if state.peek().channel_tab == ChannelTab::AppAbout
-            && crate::app_home::about::management::activity::fixture::channel::enabled(
+            && (crate::app_home::about::management::activity::fixture::channel::enabled(
                 &state.peek(),
-            )
+            ) || crate::channel_workflows::fixture::enabled(&state.peek()))
         {
             crate::app_home::about::refresh(state).await;
         }
@@ -181,7 +181,8 @@ pub async fn refresh(state: Signal<ShellState>) {
     };
     let tab = state.peek().channel_tab;
     match tab {
-        ChannelTab::Messages | ChannelTab::Canvas => {}
+        // Workflows owns its mounted read and Retry lifecycle.
+        ChannelTab::Messages | ChannelTab::Canvas | ChannelTab::Workflows => {}
         ChannelTab::AppHome => crate::app_home::refresh(state).await,
         ChannelTab::AppAbout => crate::app_home::about::refresh(state).await,
         ChannelTab::Bookmarks => crate::bookmarks::load(state, channel).await,
